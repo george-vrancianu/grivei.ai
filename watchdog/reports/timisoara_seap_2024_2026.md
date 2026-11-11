@@ -32,6 +32,7 @@ PORR 9.7%, SYLC 7.2%), but the top 20 only 47%.
 | 5 | ROGERA PREST COM | 27098220 | Timiș | 16 | 104 |
 | 6 | BARIERRA SYSTEM | 32257003 | Timiș | 9 | 98 |
 | 7 | KARSAN (Turkey) | — | — | 1 | 86 |
+| 8 | Elsaco Electronic | 7464520 | Botoșani | 1 | 71 |
 | 9 | ROGERA | 15197220 | Timiș | 10 | 69 |
 
 ## The "green spaces" block: ROGERA / ROGERA PREST COM / BARIERRA / GOSPODĂRIREA COMUNALĂ ARAD / GREEN CITY ANDLIV
