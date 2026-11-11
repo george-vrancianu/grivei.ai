@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "entity-pages": "vite --open \"/#/authority/4384206\"",
     "build": "vite build"
   },
   "dependencies": {

@@ -1,6 +1,7 @@
 // PROTOTYPE, throwaway. Drill-down content shared by the variants.
 import { Box, Chip, Link, Stack, Typography, Divider } from "@mui/material";
 import { authorities, suppliers, records, countyName, ron, kindLabel } from "./data";
+import { href } from "./entity";
 
 function RecordLine({ r }) {
   return (
@@ -21,9 +22,10 @@ export default function Detail({ sel }) {
       <Stack spacing={1}>
         <Chip size="small" label={kindLabel[r.kind]} sx={{ alignSelf: "start" }} />
         <Typography variant="h6">{r.title}</Typography>
+        <Link href={href.record(sel.id)}>Open the record page →</Link>
         <Typography variant="body2"><b>{ron(r.value)}</b> · {r.date} · {r.proc}</Typography>
-        <Typography variant="body2">Authority: {authorities.get(r.authority).name}</Typography>
-        <Typography variant="body2">Supplier(s): {r.suppliers.map((c) => `${suppliers.get(c)?.name} (CUI ${c})`).join("; ")}</Typography>
+        <Typography variant="body2">Authority: <Link href={href.authority(r.authority)}>{authorities.get(r.authority).name}</Link></Typography>
+        <Typography variant="body2">Supplier(s): {r.suppliers.map((c) => <Link key={c} href={href.supplier(c)} sx={{ mr: 1 }}>{suppliers.get(c)?.name} (CUI {c})</Link>)}</Typography>
         <Typography variant="body2" color="text.secondary">{r.cpv}</Typography>
         <Link href={r.url} target="_blank">Source document: {r.code} on e-licitatie.ro ↗</Link>
       </Stack>
@@ -37,6 +39,7 @@ export default function Detail({ sel }) {
     <Stack spacing={1}>
       <Chip size="small" label={isSup ? "Supplier" : "Contracting authority"} sx={{ alignSelf: "start" }} />
       <Typography variant="h6">{ent.name}</Typography>
+      <Link href={href[sel.type](sel.id)}>Open the full page →</Link>
       <Typography variant="body2">CUI {ent.cui} · {countyName.get(ent.county) || "county unknown"}</Typography>
       <Typography variant="body2"><b>{ron(total)}</b> across {recs.length} records
         ({recs.filter((r) => r.kind === "contract").length} contracts, {recs.filter((r) => r.kind === "direct").length} direct purchases)</Typography>

@@ -72,7 +72,7 @@ export default function VariantC() {
                   <TableRow hover onClick={() => setOpen(open === s.cui ? null : s.cui)} sx={{ cursor: "pointer" }}>
                     <TableCell padding="checkbox"><IconButton size="small"><KeyboardArrowDownIcon sx={{ transform: open === s.cui ? "rotate(180deg)" : "none" }} /></IconButton></TableCell>
                     <TableCell>
-                      <Typography variant="body2">{suppliers.get(s.cui)?.name}</Typography>
+                      <Link href={`#/supplier/${s.cui}`} variant="body2" onClick={(e) => e.stopPropagation()}>{suppliers.get(s.cui)?.name}</Link>
                       <Typography variant="caption" color="text.secondary">CUI {s.cui} · {countyName.get(suppliers.get(s.cui)?.county) || "county unknown"} · {s.n} records</Typography>
                     </TableCell>
                     <TableCell sx={{ width: 90 }}><LinearProgress variant="determinate" value={(100 * s.value) / total} /><Typography variant="caption">{((100 * s.value) / total).toFixed(1)}%</Typography></TableCell>
