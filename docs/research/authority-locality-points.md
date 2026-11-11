@@ -155,6 +155,55 @@ What it means for plotting:
 - **Supplier localities.** The same pipeline places suppliers (ANAF covers companies), for a later "where the money goes" view. Out of scope here.
 - **Attribution wording** for ANCPI and INS (CC BY 4.0) joins the deferred legal-posture list in #2.
 
+## Addendum: full-population check (all Q3 2026 authorities)
+
+A second pass, run independently on the same day, repeated the test on **every** authority CUI instead of a sample. It took the distinct authority CUIs from both "Achizitii directe TIII 2026" and "Contracte TIII 2026" in [`achizitii-publice-2026`](https://data.gov.ro/dataset/achizitii-publice-2026): **13,314 CUIs**, sent to ANAF v9 in 134 requests spaced 1.5 s apart.
+
+**Coverage.**
+- ANAF found **13,313 / 13,314**. The one CUI it didn't return is 29691098.
+- A parser following the rules in §2 resolved **13,297 (99.9%)** to a SIRUTA UAT. That breaks down as 7,578 at UAT level only, 4,660 to a village, and 1,060 to a Bucharest sector.
+- ANAF names a village (`Sat …` / `Loc. …`) for 4,673 authorities (35%).
+
+**The 16 misses show two pitfalls the 1,000-row sample didn't hit:**
+
+1. **The SIRUTA spelling differs from ANAF's beyond diacritic marks.** Some SIRUTA 2026 commune names keep an `I` where ANAF writes `â`:
+   - ANAF `Râşca` (CJ) vs SIRUTA `RIŞCA` 59238;
+   - ANAF `Bâra` (NT) vs SIRUTA `BIRA` 121386;
+   - ANAF `Covăsânţ` (AR) vs SIRUTA `COVĂSINŢ` 10514.
+
+   NFKD folding turns `Â` into `A`, so these don't meet. **Map `Â` and `Î` to `I` before stripping marks**, or retry with that fold when the first attempt misses.
+2. **Initials and punctuation.** ANAF writes `C. A. Rosetti` and `Alexandru I. Cuza`, while SIRUTA writes `C.A. ROSETTI` / `C.A.ROSETTI` and `ALEXANDRU I.CUZA`. **Drop `.` and the spaces around initials** when folding.
+
+One miss is an ANAF typo: `Com. Vârtoapele` (CUI 6938090, COMUNA VÂRTOAPE, TR) for the commune `VÂRTOAPE` 154932. Keep a small **alias table** for cases like this, and log anything still unmatched.
+
+With both fixes and the alias, every authority ANAF returned resolves. The "no unmatched rows" result in §1 holds for the full population, but only with these extra rules.
+
+**How many authorities share a UAT, full population (13,297 placed; Bucharest counted as one):**
+
+| UAT type | Authorities | Share | UATs with ≥1 authority | Mean per UAT | Max |
+|---|---|---|---|---|---|
+| Bucharest | 1,059 | 8.0% | 1 | 1,059 | per sector up to 311 (Sector 1) |
+| County-seat municipality (`TIP 1`) | 3,924 | 29.5% | 40 / 40 | **98** | 194 (Cluj-Napoca) |
+| Other municipality (`TIP 4`) | 924 | 6.9% | 62 / 62 | 15 | 34 |
+| Town (`TIP 2`) | 1,143 | 8.6% | 216 / 216 | 5 | 29 |
+| Commune (`TIP 3`) | 6,247 | 47.0% | 2,853 / 2,862 | 2.2 | 9 |
+
+- **3,172 of the 3,181 UATs have at least one active authority.** Almost every commune hall buys something each quarter, so a zoomed county shows nearly all of its UATs as marks.
+- The median is 2 authorities per UAT. Per mark: 208 UATs have 1 authority, 2,710 have 2–4, 197 have 5–19, 41 have 20–99, and 16 have 100 or more.
+- **Brașov county:** 398 authorities on 58 UATs. Municipiul Brașov holds 172 (43%), then Făgăraș 23, Codlea 15 and Săcele 14.
+- **Timiș county:** 424 authorities on 99 UATs. Municipiul Timișoara holds 167 (39%), then Lugoj 22 and Sânnicolau Mare 8.
+
+The sample's estimates in §4 hold, and so does its recommendation: one aggregated mark per UAT. These counts cover authorities active in one quarter. A multi-year window adds a few more small authorities per UAT, but doesn't change the shape.
+
+**Wikidata check on the same matches.**
+- All 13,297 placed authorities resolve to a SIRUTA code that has a Wikidata `P625` coordinate.
+- Across all of SIRUTA, one point lies outside Romania's bounding box: `FRUNZARU` 129077, whose latitude and longitude are swapped (47.85, 32.68).
+- Only two villages lie more than 25 km from their UAT's Wikidata point: `FRUNZARU` and `PIELEŞTI` 16070. Both are among the gross errors §3 lists, and the ANCPI polygon check catches them.
+
+**SEAP `city` homonyms, measured on placed authorities.** Outside Bucharest, 269 of 12,238 placed authorities (2.2%) sit in a locality whose bare folded name is shared with a locality of another UAT in the same county. For these, SEAP's `city` alone is ambiguous and the postal-code tiebreak is needed.
+
+Live `getCAEntityView` checks on 9 more authorities all agreed with ANAF. The set covered commune halls, a commune-based regie, a forestry office, and research and airport companies seated in town villages (Măgurele, Otopeni). Each returned a bare ASCII `city` equal to ANAF's village or UAT name, plus the postal code in `address`.
+
 ## Sources
 
 - INS SIRUTA S1 2026: [data.gov.ro/dataset/siruta_s1-2026](https://data.gov.ro/dataset/siruta_s1-2026) (`siruta_s1_2026.csv`, `legenda-siruta.xml`; CC BY 4.0; read 2026-11-11).
@@ -164,3 +213,4 @@ What it means for plotting:
 - e-licitatie.ro: SPA bundle `app-pub?v=KEofz3XYcPN18N6ksFkq2x81KaIcnF96CAXAvkV4EBs1` (the `kSelectCity` → `ComboPub/searchCity` directive), `ComboPub/searchCity` (national total; Brașov `parentId=10`, 4 pages), `ComboPub/searchContractingAuthorities`, `Entity/getCAEntityView/{12617,8480,176476,36714}`, fetched 2026-11-11.
 - ADR SEAP export: [achizitii-publice-2026](https://data.gov.ro/dataset/achizitii-publice-2026), "Achizitii directe TIII 2026" (authority CUIs for the sample).
 - geoBoundaries API `gbOpen/ROU/ALL` (ADM2 source: ANCPI 2016, CC BY 4.0). geo-spatial.org [Romania vector datasets page](https://geo-spatial.org/vechi/download/romania-seturi-vectoriale) (site footer licence CC BY-SA 3.0). Geofabrik taginfo for Romania (`siruta:code` key counts). [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) §4.4 (share-alike for derivative databases).
+- Addendum: ANAF v9, 134 live requests (13,314 CUIs) on 2026-11-11; ADR "Contracte TIII 2026" and "Achizitii directe TIII 2026" (all authority CUIs); e-licitatie.ro `ComboPub/searchContractingAuthorities` and `Entity/getCAEntityView/{2552,4865,23063,4534,20613,2163,11045,5236,58088}`, fetched 2026-11-11.
