@@ -15,3 +15,17 @@ Release 1 seeds SEAP nationally, from 2021-01-01 onward, from ADR's quarterly ex
 - Each bulk file is validated before loading, and a file that fails is quarantined. Each quarter loads all or nothing, and a re-uploaded quarter replaces that quarter wholesale. A known gap, like the mis-uploaded Q2 2025 DAN file, stays empty and shows as a gap.
 - County and locality come from ANAF for every authority and supplier with a Romanian CUI. SEAP's per-entity endpoints are only a fallback.
 - The earlier Brașov/Timișoara crawl batches are reseeded from bulk and kept only as a validation fixture.
+
+## Amended 2026-11-11: records recur across quarters
+
+Measuring the bulk exports ([Data caveats](https://github.com/george-vrancianu/grivei.ai/issues/23)) showed two things the original decision assumed away:
+
+- **An award notice is re-exported in every quarter it is updated.** Its framework agreement and subsequent-contract rows come with it, however old they are. By 2026 Q3, 64% of a quarter's contract rows (70% of its RON) had already appeared in an earlier quarter.
+- **A contract's value is repeated on each of its lot rows** (96% of multi-lot contracts), as well as on each winner's row.
+
+So:
+
+- A contract is identified by **award notice code and contract number** across all quarters, not by public code, lot and winner within one quarter. Lots and winners are attributes of the contract. Its value is counted once, or summed over lots when the lots carry different values.
+- When the same contract appears in several files, **the version from the most recent notice publication wins**. A re-uploaded old quarter cannot overwrite a newer version. It is reloaded like any file, and per-contract precedence decides.
+- Each file still loads all or nothing, and a failing file is still quarantined. "A re-uploaded quarter replaces that quarter wholesale" no longer holds, because no quarter owns its rows exclusively.
+- DAs and DANs keep their public code as identity.
