@@ -15,8 +15,16 @@ The harvester and loader that bring one Source's documents into the graph.
 _Avoid_: scraper, integration
 
 **Release**:
-A shipped increment of the public explorer that makes one more Source explorable, with its own search surface on the shared graph.
+An increment of the explorer that makes one more Source explorable, with its own search surface on the shared graph; whether it is public is a separate matter (see Go-live).
 _Avoid_: version, phase
+
+**Go-live**:
+The moment the explorer becomes public at grivei.ai, with its legal posture settled and a public host; Releases before it run locally.
+_Avoid_: launch, release (when going public is meant)
+
+**Raw archive**:
+Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
+_Avoid_: cache, dump, backup
 
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
@@ -90,7 +98,19 @@ _Avoid_: mode, layer, view
 The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier).
 
 **Coverage lens**:
-The lens showing, per county and per Source, how much has been harvested; grey means not harvested, never no spending.
+The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. Grey means not harvested, never no spending.
+
+**Coverage status**:
+One of harvested, harvested with known gaps, partial, or not harvested, for one Source in one county.
+_Avoid_: coverage %, completeness score
+
+**Known gap**:
+A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page.
+_Avoid_: missing data, hole, outage
+
+**Unplaced authority**:
+A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value.
+_Avoid_: unknown county, orphan
 
 **Flow lens**:
 The lens on an entity page's Relationships tab showing where across Romania its money comes from (supplier) or goes (contracting authority).
