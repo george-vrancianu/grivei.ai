@@ -25,7 +25,9 @@ import requests
 
 BASE = "https://e-licitatie.ro"
 HDR = {"Content-Type": "application/json", "Accept": "application/json",
-       "User-Agent": "watchdog-research/0.1 (+contact: see README)"}
+       "User-Agent": "watchdog-research/0.1 (+contact: see README)",
+       # api-pub answers 403 "Referrer cannot be null" without it (since ~Nov 2026); the public UI sends this one.
+       "Referer": "https://e-licitatie.ro/pub"}
 PAUSE = 0.35
 
 

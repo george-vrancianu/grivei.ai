@@ -12,6 +12,7 @@ without direct access). The generated viewers: `viewer/brasov.html`, `viewer/tim
 watchdog/
 ├── run_all.sh              # rebuild from scratch
 ├── requirements.txt        # only `requests` (for the harvester); everything else uses psql
+├── requirements-dev.txt    # + pytest, for tests/
 ├── sql/
 │   ├── 001_schema.sql      # sources, documents (raw), entities, aliases, edges + typed SEAP tables
 │   ├── 002_load_seap.sql   # turns a SEAP JSON batch into document -> entity/edge -> typed tables
@@ -43,6 +44,17 @@ Viewer per authority:
 ```bash
 python tools/export_graph.py --authority "MUNICIPIUL TIMISOARA" --county Timis --out viewer/timisoara.graph.json
 python tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/timisoara.html --title "Watchdog Timișoara"
+```
+
+## Tests
+
+The connector tests live in `tests/`. They stub the HTTP layer and never call e-licitatie.ro.
+
+```bash
+cd watchdog
+python -m venv .venv              # or: uv venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest
 ```
 
 ## The data model, in brief

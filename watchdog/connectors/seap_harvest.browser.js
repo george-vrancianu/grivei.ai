@@ -1,4 +1,6 @@
 // Variant run from the browser console on https://e-licitatie.ro/pub (same API as seap_harvest.py).
+// api-pub rejects calls without a Referer (403 "Referrer cannot be null"). Run this from a tab on https://e-licitatie.ro/pub:
+// the browser then sends one by itself, and post() also sets it explicitly. From another origin it will not work.
 // 1) set CA (the authority's SEAP id; find it with:
 //    fetch('/api-pub/ComboPub/searchContractingAuthorities?filter=municipiul%20brasov&pageIndex=0&pageSize=50&parentId=').then(r=>r.json()).then(j=>console.table(j.items))
 // 2) run the script; 3) when window.__H.status==='done', copy JSON.stringify({authority:__H.ca,da:__H.da,notices:__H.notices,contracts:__H.contracts,harvested_at:new Date().toISOString()})
@@ -6,7 +8,7 @@ const CA = 3289, FROM = "2024-01-01T00:00:00+02:00", TO = new Date().toISOString
 window.__H = { status: 'running', log: [], da: [], notices: [], contracts: [], ca: { seapId: CA } };
 (async () => {
   const H = window.__H;
-  const post = async (u, b) => { const r = await fetch('https://e-licitatie.ro' + u, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(b) }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
+  const post = async (u, b) => { const r = await fetch('https://e-licitatie.ro' + u, { method: 'POST', referrer: 'https://e-licitatie.ro/pub', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(b) }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   try {
     for (let p = 0; ; p++) {
