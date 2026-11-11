@@ -13,3 +13,19 @@ python3 -I scripts/build_data.py <geoBoundaries-ROU-ADM1_simplified.geojson> ../
 ```
 
 Data: the Brașov and Timișoara SEAP batches, accepted direct purchases plus contracts; in memory, no backend. County shapes: [geoBoundaries](https://www.geoboundaries.org/) ROU ADM1 (CC BY 4.0), keyed on ISO 3166-2:RO.
+
+## Zoomed county ([County geometry and zoomed-county detail](https://github.com/george-vrancianu/grivei.ai/issues/25))
+
+Route `#/county/<ISO>`, variants `?zoom=A|B|C`; outline toggle compares geoBoundaries ADM1 with ANCPI's UATs dissolved per county. Money lens only.
+
+- **A, Points on the outline**: one circle per UAT, area ∝ RON (√), no UAT borders.
+- **B, UAT choropleth**: ANCPI UAT polygons coloured by RON (log), no points.
+- **C, Villages + seat breakout**: faint UAT borders, points at ANAF's village where named, the county seat taken off the map into a bar by authority kind.
+
+```bash
+npm run county                       # http://localhost:5173/?zoom=A#/county/RO-BV
+# rebuild src/countygeo.json (Q3 2026, all counties):
+python3 -I scripts/build_county_geo.py siruta.csv wd_siruta.csv anaf_all.json da-tiii-2026.xlsx contracte-tiii-2026.xlsx uat_0.geojson uat_2000.geojson
+```
+
+Data: ADR "Achizitii directe" + "Contracte" TIII 2026 (awarded value, framework ceilings out), ANAF v9 seat locality for every authority CUI, INS SIRUTA S1 2026, Wikidata P843/P625 points (accepted only inside the ANCPI polygon, else ANCPI point-on-surface), ANCPI AU FeatureServer UAT polygons (`maxAllowableOffset=0.0015`). The "national" split is a rough name regex, not the real rule.

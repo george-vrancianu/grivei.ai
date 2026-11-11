@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "entity-pages": "vite --open \"/#/authority/4384206\"",
+    "county": "vite --open \"/?zoom=A#/county/RO-BV\"",
     "build": "vite build"
   },
   "dependencies": {

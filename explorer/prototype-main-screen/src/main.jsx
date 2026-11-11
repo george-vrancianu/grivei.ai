@@ -1,7 +1,7 @@
 // PROTOTYPE, throwaway. Answers "what does a visitor see on drilling into a SEAP hit?" (issue #8).
 // Main-screen variants (?variant=A|B|C) and entity-page variants (?page=A|B|C),
 // routed by hash: #/authority/<cui>, #/supplier/<cui>, #/record/<i>; empty hash = main screen.
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import Switcher from "./Switcher";
@@ -13,6 +13,8 @@ import EntityB from "./EntityB";
 import EntityC from "./EntityC";
 import RecordPage from "./RecordPage";
 import { profile } from "./entity";
+const CountyZoom = lazy(() => import("./CountyZoom"));
+const ZOOMS = { A: "Points on the outline", B: "UAT choropleth", C: "Villages + seat breakout" };
 
 const VARIANTS = { A: "Choropleth + drawer", B: "Coverage tiles + master-detail", C: "Flows + ranked suppliers" };
 const PAGES = { A: "Dossier", B: "Ledger", C: "Relationships" };
@@ -31,12 +33,16 @@ function App() {
   const [hash, setHash] = useState(location.hash);
   const [v, setV] = useState(param("variant", "A"));
   const [pg, setPg] = useState(param("page", "A"));
+  const [z, setZ] = useState(param("zoom", "A"));
   useEffect(() => { const h = () => { setHash(location.hash); scrollTo(0, 0); }; addEventListener("hashchange", h); return () => removeEventListener("hashchange", h); }, []);
   const [, type, id] = hash.split("/");
   let body, sw;
   if (type === "authority" || type === "supplier") {
     body = <Entity type={type} id={decodeURIComponent(id)} v={pg} />;
     sw = <Switcher variants={PAGES} current={pg} onChange={(k) => { setParam("page", k); setPg(k); }} />;
+  } else if (type === "county") {
+    body = <Suspense fallback={<p style={{ padding: 20 }}>Loading county geometry…</p>}><CountyZoom iso={id} v={z} /></Suspense>;
+    sw = <Switcher variants={ZOOMS} current={z} onChange={(k) => { setParam("zoom", k); setZ(k); }} />;
   } else if (type === "record") {
     body = <RecordPage i={+id} />;
   } else {

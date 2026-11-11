@@ -48,6 +48,7 @@ export default function VariantA() {
               <ToggleButton value="supplier">where it goes (supplier)</ToggleButton>
             </ToggleButtonGroup>
             {county && <Chip label={`County: ${countyName.get(county) || county}`} onDelete={() => setCounty(null)} />}
+            {county && county.startsWith("RO-") && <Chip color="primary" label="Zoom into county →" onClick={() => (location.hash = `#/county/${county}`)} />}
           </Stack>
           <svg viewBox={`0 0 ${W} ${H}`} width="100%">
             {planar.features.map((f) => {
