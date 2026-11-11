@@ -45,4 +45,21 @@ The default lens: public money by county, either where it is spent (contracting 
 The lens showing, per county and per Source, how much has been harvested; grey means not harvested, never no spending.
 
 **Flow lens**:
-The lens on one entity's page showing where across Romania its money comes from or goes.
+The lens on an entity page's Relationships tab showing where across Romania its money comes from (supplier) or goes (contracting authority).
+
+**Entity page**:
+The page, with its own URL, for one contracting authority or supplier; it has three tabs over the same data, Overview (the default), Records and Relationships.
+_Avoid_: profile, drawer, detail view
+
+**Overview tab**:
+The entity page's summary card: headline numbers, Signals, top counterparties, procedure types, consortia, largest records.
+
+**Records tab**:
+The entity page's filterable table of every record, its filters kept in the URL so a filtered list can be cited.
+_Avoid_: ledger
+
+**Relationships tab**:
+The entity page's view of how money moves between the entity and its counterparties: a counterparty graph, a monthly timeline and the Flow lens.
+
+**Record page**:
+The page, with its own URL, for one SEAP record (a contract or a direct purchase), linking to its source document.
