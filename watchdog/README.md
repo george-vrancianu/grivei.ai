@@ -4,14 +4,17 @@ An entity graph (institutions, companies, later people) built from public source
 with mandatory provenance for every link. First vertical: public procurement (SEAP).
 
 Full rebuild in one command (empty database + the batches in `data/raw/`): `./run_all.sh`.
-The harvester comes in two equivalent variants: `connectors/seap_harvest.py` (Python, `pip install -r requirements.txt`)
-and `connectors/seap_harvest.browser.js` (to paste into the browser console on e-licitatie.ro, if you are running from a network
-without direct access). The generated viewers: `viewer/brasov.html`, `viewer/timisoara.html` (open them directly in a browser).
+The harvester comes in two variants: `connectors/seap_harvest.py` (Python, `pip install -r requirements.txt`), the
+reference one, and `connectors/seap_harvest.browser.js` (to paste into the browser console on e-licitatie.ro, if you are
+running from a network without direct access). They are not equivalent: when a list query hits the server's result cap
+(2,000 direct purchases, 3,000 notices), the .py splits the date range and carries on, while the .js stops with an error
+and you have to narrow its date range by hand. The generated viewers: `viewer/brasov.html`, `viewer/timisoara.html` (open them directly in a browser).
 
 ```
 watchdog/
 ├── run_all.sh              # rebuild from scratch
 ├── requirements.txt        # only `requests` (for the harvester); everything else uses psql
+├── requirements-dev.txt    # + pytest, for tests/
 ├── sql/
 │   ├── 001_schema.sql      # sources, documents (raw), entities, aliases, edges + typed SEAP tables
 │   ├── 002_load_seap.sql   # turns a SEAP JSON batch into document -> entity/edge -> typed tables
@@ -19,6 +22,7 @@ watchdog/
 ├── connectors/
 │   ├── seap_harvest.py     # downloads DA + award notices + contracts for one authority (needs `requests`)
 │   └── load_batch.py       # loads the JSON into Postgres and runs the transformation (needs only `psql`)
+├── tests/                  # pytest: harvester (HTTP stubbed) and loader (throwaway Postgres)
 ├── data/raw/               # the JSON batches exactly as they came from the source (keep them; they are the evidence)
 └── reports/                # the reports produced
 ```
@@ -43,6 +47,19 @@ Viewer per authority:
 ```bash
 python tools/export_graph.py --authority "MUNICIPIUL TIMISOARA" --county Timis --out viewer/timisoara.graph.json
 python tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/timisoara.html --title "Watchdog Timișoara"
+```
+
+## Tests
+
+The SEAP Connector's tests live in `tests/`, in two groups. The harvester tests (`tests/test_seap_harvest.py`) stub
+the HTTP layer and never call e-licitatie.ro. The loader tests (`tests/test_load_seap.py`) start a throwaway Postgres cluster in a temp directory
+(`initdb` + `pg_ctl`, private Unix socket) and are skipped when the Postgres server binaries are missing.
+
+```bash
+cd watchdog
+python -m venv .venv              # or: uv venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest
 ```
 
 ## The data model, in brief

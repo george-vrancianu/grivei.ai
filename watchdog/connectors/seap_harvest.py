@@ -16,17 +16,25 @@ The endpoints are the ones used by the public SEAP interface (undocumented, but 
 
 Example:
   python connectors/seap_harvest.py --authority "MUNICIPIUL BRASOV" --from 2024-01-01 --out data/raw/seap_brasov.json
-Needs only `requests`. Be gentle with the server: ~3 requests/second, pages of 100.
+Needs only `requests`. Be gentle with the server: ~3 requests/second, pages of 1000. List queries are capped
+server-side (2,000 DAs, 3,000 notices per query): a window that hits the cap is split by date, see capped_list().
 """
 import argparse, json, sys, time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import requests
 
 BASE = "https://e-licitatie.ro"
 HDR = {"Content-Type": "application/json", "Accept": "application/json",
-       "User-Agent": "watchdog-research/0.1 (+contact: see README)"}
-PAUSE = 0.35
+       "User-Agent": "watchdog-research/0.1 (+contact: see README)",
+       # api-pub answers 403 "Referrer cannot be null" without it (since ~Nov 2026); the public UI sends this one.
+       "Referer": "https://e-licitatie.ro/pub"}
+PAUSE = 0.35               # seconds between requests
+PAGE_SIZE = 1000           # rows per page of the list endpoints
+DA_CAP = 2000              # DirectAcquisition_MaxListItems in the /pub page config
+NOTICE_CAP = 3000          # CaNotice_MaxListItems
+CONTRACTS_TAKE = 1000      # contracts per GetCANoticeContracts page
+RETRIES, RETRY_PAUSE = 3, 5  # retries of a request after a transient error; backoff step in seconds
 
 
 def post(path, body):
@@ -56,58 +64,141 @@ def iso(d, end=False):
     return f"{d}T23:59:59+03:00" if end else f"{d}T00:00:00+02:00"
 
 
+
+def transient(e):
+    """A request error worth retrying: no answer at all (connection, timeout), a server error (5xx), throttling (429)
+    or the 403 api-pub sometimes returns under load. Other HTTP errors would fail the same way again."""
+    if not isinstance(e, requests.HTTPError) or e.response is None:
+        return True
+    s = e.response.status_code
+    return s >= 500 or s in (403, 429)
+
+
+def with_retries(what, call):
+    """`call()`, retried RETRIES times after a transient request error (with a growing pause); any other error, or
+    the last transient one, propagates."""
+    for attempt in range(RETRIES + 1):
+        try:
+            return call()
+        except requests.RequestException as e:
+            if attempt == RETRIES or not transient(e):
+                raise
+            print(f"  ! {what} (attempt {attempt + 1}/{RETRIES + 1}): {e}", file=sys.stderr)
+            time.sleep(RETRY_PAUSE * (attempt + 1))
+
+
+def capped_list(label, fetch, d_from, d_to, cap, key):
+    """All raw rows of a capped list endpoint between two days (inclusive), deduped by `key`.
+
+    `fetch(day_from, day_to, page_index)` returns one page (`items`, `total`, `searchTooLong`). The server stops
+    at `cap` rows per query and filters by day only, so a window that hits the cap is split in halves down to
+    a single day; a single day still over the cap raises rather than truncate silently.
+    """
+    rows = {}
+
+    def window(a, b):
+        got, p, seen = 0, 0, set()
+        while True:
+            j = with_retries(f"{label} {a}..{b} page {p}", lambda: fetch(a.isoformat(), b.isoformat(), p))
+            if j.get("searchTooLong") or j["total"] >= cap:
+                if p:
+                    raise RuntimeError(f"{label} {a}..{b}: hit the {cap} cap on page {p}")
+                # On purpose, this also fires for a single day with total == cap and no searchTooLong: that day
+                # may well be complete, but a capped answer looks the same, and we can't split it to tell.
+                if a == b:
+                    raise RuntimeError(f"{label} {a}: one day is over the {cap} result cap; cannot split further")
+                mid = a + (b - a) // 2
+                print(f"  {label}: {a}..{b} over the cap, splitting at {mid}", file=sys.stderr)
+                time.sleep(PAUSE); window(a, mid)
+                time.sleep(PAUSE); window(mid + timedelta(days=1), b)
+                return
+            for i in j["items"]:
+                rows[i[key]] = i
+                seen.add(i[key])
+            got += len(j["items"])
+            print(f"  {label} {a}..{b}: {got}/{j['total']}", file=sys.stderr)
+            if got >= j["total"]:
+                # The list is unsorted, so a page may repeat rows of an earlier one: the raw count then reaches
+                # total while some rows were never sent. Only the unique count proves the window is complete.
+                if len(seen) < j["total"]:
+                    raise RuntimeError(f"{label} {a}..{b}: {len(seen)} unique of {j['total']} rows; "
+                                       f"pages repeated rows, the rest were never sent")
+                return
+            if not j["items"]:
+                raise RuntimeError(f"{label} {a}..{b}: empty page {p} at {got}, total {j['total']}")
+            p += 1; time.sleep(PAUSE)
+
+    window(date.fromisoformat(d_from[:10]), date.fromisoformat(d_to[:10]))
+    return list(rows.values())
+
+
 def direct_acquisitions(ca_id, d_from, d_to):
-    out, p = [], 0
-    while True:
-        j = post("/api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/", {
-            "pageSize": 100, "pageIndex": p, "showOngoingDa": False, "cookieContext": None,
+    def fetch(a, b, p):
+        return post("/api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/", {
+            "pageSize": PAGE_SIZE, "pageIndex": p, "showOngoingDa": False, "cookieContext": None,
             "sysDirectAcquisitionStateId": None, "publicationDateStart": None, "publicationDateEnd": None,
-            "finalizationDateStart": iso(d_from), "finalizationDateEnd": iso(d_to, True),
+            "finalizationDateStart": iso(a), "finalizationDateEnd": iso(b, True),
             "cpvCategoryId": None, "contractingAuthorityId": ca_id, "supplierId": None, "cpvCodeId": None,
             "assignedUserId": None, "isOpenForCorrection": None, "sysDirectAcquisitionTypeId": None,
             "directAcquisitionName": None, "uniqueIdentificationCode": None})
-        for i in j["items"]:
-            out.append({"id": i["directAcquisitionId"], "code": i["uniqueIdentificationCode"],
-                        "name": i["directAcquisitionName"], "state": (i.get("sysDirectAcquisitionState") or {}).get("text"),
-                        "cpv": i["cpvCode"], "pub": i["publicationDate"], "fin": i["finalizationDate"],
-                        "supplier": i["supplier"], "ca": i["contractingAuthority"],
-                        "est": i["estimatedValueRon"], "val": i["closingValue"]})
-        print(f"  direct purchases: {len(out)}/{j['total']}", file=sys.stderr)
-        if len(out) >= j["total"] or not j["items"]:
-            return out
-        p += 1; time.sleep(PAUSE)
+    out = []
+    for i in capped_list("direct purchases", fetch, d_from, d_to, DA_CAP, "directAcquisitionId"):
+        out.append({"id": i["directAcquisitionId"], "code": i["uniqueIdentificationCode"],
+                    "name": i["directAcquisitionName"], "state": (i.get("sysDirectAcquisitionState") or {}).get("text"),
+                    "cpv": i["cpvCode"], "pub": i["publicationDate"], "fin": i["finalizationDate"],
+                    "supplier": i["supplier"], "ca": i["contractingAuthority"],
+                    "est": i["estimatedValueRon"], "val": i["closingValue"]})
+    return out
 
 
 def award_notices(ca_id, d_from, d_to):
-    out, p = [], 0
-    while True:
-        j = post("/api-pub/NoticeCommon/GetCANoticeList/", {
-            "sysNoticeTypeIds": [], "sortProperties": [], "pageIndex": p, "pageSize": 100,
+    def fetch(a, b, p):
+        return post("/api-pub/NoticeCommon/GetCANoticeList/", {
+            "sysNoticeTypeIds": [], "sortProperties": [], "pageIndex": p, "pageSize": PAGE_SIZE,
             "contractingAuthorityId": ca_id,
-            "startPublicationDate": iso(d_from), "endPublicationDate": iso(d_to, True)})
-        t = lambda k: (i.get(k) or {}).get("text")
-        for i in j["items"]:
-            out.append({"caNoticeId": i["caNoticeId"], "noticeId": i["noticeId"], "procedureId": i["procedureId"],
-                        "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "state": t("sysNoticeState"),
-                        "procState": t("sysProcedureState"), "ca": i["contractingAuthorityNameAndFN"],
-                        "title": i["contractTitle"], "contractType": t("sysAcquisitionContractType"),
-                        "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),
-                        "cpv": i["cpvCodeAndName"], "value": i["ronContractValue"], "date": i["noticeStateDate"],
-                        "isOnline": i["isOnline"], "cur": i["currencyCode"], "est": i["estimatedValueExport"]})
-        print(f"  award notices: {len(out)}/{j['total']}", file=sys.stderr)
-        if len(out) >= j["total"] or not j["items"]:
-            return out
-        p += 1; time.sleep(PAUSE)
+            "startPublicationDate": iso(a), "endPublicationDate": iso(b, True)})
+    out = []
+    t = lambda k: (i.get(k) or {}).get("text")
+    for i in capped_list("award notices", fetch, d_from, d_to, NOTICE_CAP, "caNoticeId"):
+        out.append({"caNoticeId": i["caNoticeId"], "noticeId": i["noticeId"], "procedureId": i["procedureId"],
+                    "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "versionId": i["sysNoticeVersionId"],
+                    "state": t("sysNoticeState"),
+                    "procState": t("sysProcedureState"), "ca": i["contractingAuthorityNameAndFN"],
+                    "title": i["contractTitle"], "contractType": t("sysAcquisitionContractType"),
+                    "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),
+                    "cpv": i["cpvCodeAndName"], "value": i["ronContractValue"], "date": i["noticeStateDate"],
+                    "isOnline": i["isOnline"], "cur": i["currencyCode"], "est": i["estimatedValueExport"]})
+    return out
+
 
 
 def contracts_for(notice):
-    j = post("/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts", {
-        "caNoticeId": notice["caNoticeId"], "contractNo": None, "winnerTitle": None, "winnerFiscalNumber": None,
-        "contractDate": {"from": None, "to": None}, "contractValue": {"from": None, "to": None},
-        "contractMinOffer": {"from": None, "to": None}, "contractMaxOffer": {"from": None, "to": None},
-        "contractTitle": None, "lots": None, "sortOrder": [], "sysContractFrameworkType": {}, "skip": 0, "take": 200})
+    """All the contracts of one award notice, paged with skip/take until `total`; fails unless `total` distinct
+    contracts came back."""
+    items = []
+    while True:
+        j = post("/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts", {
+            "caNoticeId": notice["caNoticeId"], "contractNo": None, "winnerTitle": None, "winnerFiscalNumber": None,
+            "contractDate": {"from": None, "to": None}, "contractValue": {"from": None, "to": None},
+            "contractMinOffer": {"from": None, "to": None}, "contractMaxOffer": {"from": None, "to": None},
+            "contractTitle": None, "lots": None, "sortOrder": [], "sysContractFrameworkType": {},
+            "skip": len(items), "take": CONTRACTS_TAKE})
+        page = j.get("items") or []
+        items += page
+        if len(items) >= j["total"]:
+            # sortOrder is empty, so a page may repeat a contract of an earlier one; then another was never sent.
+            items = list({c["caNoticeContractId"]: c for c in items}.values())
+            unique = len(items)
+            if unique < j["total"]:
+                raise RuntimeError(f"contracts of notice {notice['caNoticeId']}: {unique} unique of {j['total']}; "
+                                   f"pages repeated contracts, the rest were never sent")
+            break
+        if not page:
+            raise RuntimeError(f"contracts of notice {notice['caNoticeId']}: empty page at skip "
+                               f"{len(items)}, total {j['total']}")
+        time.sleep(PAUSE)
     out = []
-    for c in j.get("items", []):
+    for c in items:
         ws = []
         for w in c.get("winners") or []:
             a = w.get("address") or {}
@@ -122,6 +213,19 @@ def contracts_for(notice):
     return out
 
 
+def all_contracts(notices):
+    """The contracts of every notice. A transient request error is retried RETRIES times; a notice that still
+    fails, or fails deterministically (an empty page, a 4xx), fails the run: a batch missing some notices'
+    contracts would be silently truncated."""
+    contracts = []
+    for k, n in enumerate(notices, 1):
+        contracts += with_retries(f"contracts {n['caNoticeId']}", lambda: contracts_for(n))
+        if k % 25 == 0:
+            print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
+        time.sleep(PAUSE)
+    return contracts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--authority", required=True, help='e.g. "MUNICIPIUL BRASOV"')
@@ -134,15 +238,7 @@ def main():
     print(f"Authority: {auth['name']} (CUI {auth['cui']}, SEAP id {auth['seapId']})", file=sys.stderr)
     da = direct_acquisitions(auth["seapId"], a.d_from, a.d_to)
     notices = award_notices(auth["seapId"], a.d_from, a.d_to)
-    contracts = []
-    for k, n in enumerate(notices, 1):
-        try:
-            contracts += contracts_for(n)
-        except Exception as e:  # one broken notice doesn't stop the whole batch
-            print(f"  ! contracts {n['caNoticeId']}: {e}", file=sys.stderr)
-        if k % 25 == 0:
-            print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
-        time.sleep(PAUSE)
+    contracts = all_contracts(notices)
     payload = {"authority": {k: auth[k] for k in ("seapId", "cui", "name")}, "da": da, "notices": notices,
                "contracts": contracts, "harvested_at": datetime.utcnow().isoformat() + "Z"}
     with open(a.out, "w", encoding="utf-8") as f:
