@@ -63,10 +63,13 @@ def load(db, tmp_path, notices):
                     "--file", f, "--db", db], check=True, capture_output=True)
 
 
-def notice(ca_notice_id, type_id, version_id="absent"):
+NO_VERSION = object()  # the notice has no versionId key, as in batches harvested before the connector kept it
+
+
+def notice(ca_notice_id, type_id, version_id=NO_VERSION):
     n = {"caNoticeId": ca_notice_id, "noticeNo": f"N{ca_notice_id}", "typeId": type_id, "title": "T",
          "date": "2025-01-01T00:00:00", "isOnline": True}
-    if version_id != "absent":
+    if version_id is not NO_VERSION:
         n["versionId"] = version_id
     return n
 

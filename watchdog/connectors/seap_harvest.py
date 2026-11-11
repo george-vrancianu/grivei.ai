@@ -29,7 +29,12 @@ HDR = {"Content-Type": "application/json", "Accept": "application/json",
        "User-Agent": "watchdog-research/0.1 (+contact: see README)",
        # api-pub answers 403 "Referrer cannot be null" without it (since ~Nov 2026); the public UI sends this one.
        "Referer": "https://e-licitatie.ro/pub"}
-PAUSE = 0.35
+PAUSE = 0.35               # seconds between requests
+PAGE_SIZE = 1000           # rows per page of the list endpoints
+DA_CAP = 2000              # DirectAcquisition_MaxListItems in the /pub page config
+NOTICE_CAP = 3000          # CaNotice_MaxListItems
+CONTRACTS_TAKE = 1000      # contracts per GetCANoticeContracts page
+RETRIES, RETRY_PAUSE = 3, 5  # retries of a notice's contracts after a transient error; backoff step in seconds
 
 
 def post(path, body):
@@ -59,10 +64,6 @@ def iso(d, end=False):
     return f"{d}T23:59:59+03:00" if end else f"{d}T00:00:00+02:00"
 
 
-PAGE_SIZE = 1000
-DA_CAP = 2000       # DirectAcquisition_MaxListItems in the /pub page config
-NOTICE_CAP = 3000   # CaNotice_MaxListItems
-
 
 def capped_list(label, fetch, d_from, d_to, cap, key):
     """All raw rows of a capped list endpoint between two days (inclusive), deduped by `key`.
@@ -91,8 +92,10 @@ def capped_list(label, fetch, d_from, d_to, cap, key):
                 rows[i[key]] = i
             got += len(j["items"])
             print(f"  {label} {a}..{b}: {got}/{j['total']}", file=sys.stderr)
-            if got >= j["total"] or not j["items"]:
+            if got >= j["total"]:
                 return
+            if not j["items"]:
+                raise RuntimeError(f"{label} {a}..{b}: empty page {p} at {got}, total {j['total']}")
             p += 1; time.sleep(PAUSE)
 
     window(date.fromisoformat(d_from[:10]), date.fromisoformat(d_to[:10]))
@@ -138,8 +141,6 @@ def award_notices(ca_id, d_from, d_to):
     return out
 
 
-CONTRACTS_TAKE = 1000
-
 
 def contracts_for(notice):
     """All the contracts of one award notice, paged with skip/take until `total`."""
@@ -175,20 +176,27 @@ def contracts_for(notice):
     return out
 
 
-RETRIES, RETRY_PAUSE = 3, 5
+def transient(e):
+    """A request error worth retrying: no answer at all (connection, timeout), a server error (5xx), throttling (429)
+    or the 403 api-pub sometimes returns under load. Other HTTP errors would fail the same way again."""
+    if not isinstance(e, requests.HTTPError) or e.response is None:
+        return True
+    s = e.response.status_code
+    return s >= 500 or s in (403, 429)
 
 
 def all_contracts(notices):
-    """The contracts of every notice. A notice that still fails after RETRIES retries fails the run:
-    a batch missing some notices' contracts would be silently truncated."""
+    """The contracts of every notice. A transient request error is retried RETRIES times; a notice that still
+    fails, or fails deterministically (an empty page, a 4xx), fails the run: a batch missing some notices'
+    contracts would be silently truncated."""
     contracts = []
     for k, n in enumerate(notices, 1):
         for attempt in range(RETRIES + 1):
             try:
                 contracts += contracts_for(n)
                 break
-            except Exception as e:
-                if attempt == RETRIES:
+            except requests.RequestException as e:
+                if attempt == RETRIES or not transient(e):
                     raise
                 print(f"  ! contracts {n['caNoticeId']} (attempt {attempt + 1}/{RETRIES + 1}): {e}", file=sys.stderr)
                 time.sleep(RETRY_PAUSE * (attempt + 1))

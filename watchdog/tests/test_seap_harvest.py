@@ -138,6 +138,13 @@ def test_award_notices_page_by_1000_until_the_total(server):
     assert [s[2:] for s in seen] == [(0, 1000), (1, 1000)]
 
 
+def test_award_notices_fail_on_an_empty_page_before_total(server):
+    server(NOTICE_DATES, lambda d_from, d_to, page, size: {
+        "items": [notice_row(1)] if page == 0 else [], "total": 2, "searchTooLong": False})
+    with pytest.raises(RuntimeError, match="empty page"):
+        seap_harvest.award_notices(3289, "2024-03-01", "2024-03-31")
+
+
 def test_award_notices_keep_the_notice_version(server):
     server(NOTICE_DATES, lambda *q: {"items": [notice_row(1, type_id=18, version_id=1)], "total": 1,
                                      "searchTooLong": False})
@@ -172,7 +179,8 @@ def test_contracts_for_fails_on_an_empty_page_before_total(http, monkeypatch):
 
 @pytest.fixture
 def flaky_post(monkeypatch):
-    """Stubs `post`: each notice id fails as many times as `failures[id]` says, then answers one contract."""
+    """Stubs `post`: each notice id fails as many times as `failures[id]` says, then answers one contract.
+    `failures[id]` is a count (HTTP 502) or a (count, status) pair; status None is a dropped connection."""
     monkeypatch.setattr(seap_harvest, "PAUSE", 0)
     monkeypatch.setattr(seap_harvest, "RETRY_PAUSE", 0)
     failures, calls = {}, []
@@ -180,9 +188,15 @@ def flaky_post(monkeypatch):
     def post(path, body):
         nid = body["caNoticeId"]
         calls.append(nid)
-        if failures.get(nid, 0) > 0:
-            failures[nid] -= 1
-            raise seap_harvest.requests.HTTPError("502 Bad Gateway")
+        f = failures.get(nid, 0)
+        left, status = f if isinstance(f, tuple) else (f, 502)
+        if left > 0:
+            failures[nid] = (left - 1, status)
+            if status is None:
+                raise seap_harvest.requests.ConnectionError("connection reset")
+            r = seap_harvest.requests.Response()
+            r.status_code = status
+            raise seap_harvest.requests.HTTPError(f"{status} error", response=r)
         return {"items": [contract(nid)], "total": 1}
 
     monkeypatch.setattr(seap_harvest, "post", post)
@@ -203,3 +217,33 @@ def test_all_contracts_fails_the_run_when_a_notice_keeps_failing(flaky_post):
         seap_harvest.all_contracts([{"caNoticeId": 1}, {"caNoticeId": 2}, {"caNoticeId": 3}])
     assert calls.count(2) == seap_harvest.RETRIES + 1
     assert 3 not in calls
+
+
+def test_all_contracts_does_not_retry_an_empty_page(monkeypatch):
+    """An empty page before total is deterministic: retrying it only delays the failure."""
+    monkeypatch.setattr(seap_harvest, "PAUSE", 0)
+    monkeypatch.setattr(seap_harvest, "RETRY_PAUSE", 0)
+    calls = []
+
+    def post(path, body):
+        calls.append(body["skip"])
+        return {"items": [contract(1)] if body["skip"] == 0 else [], "total": 2}
+
+    monkeypatch.setattr(seap_harvest, "post", post)
+    with pytest.raises(RuntimeError, match="empty page"):
+        seap_harvest.all_contracts([{"caNoticeId": 1}])
+    assert calls == [0, 1]
+
+
+def test_all_contracts_does_not_retry_a_client_error(flaky_post):
+    failures, calls = flaky_post
+    failures[1] = (99, 404)
+    with pytest.raises(seap_harvest.requests.HTTPError):
+        seap_harvest.all_contracts([{"caNoticeId": 1}])
+    assert calls == [1]
+
+
+def test_all_contracts_retries_a_dropped_connection(flaky_post):
+    failures, _ = flaky_post
+    failures[1] = (1, None)
+    assert [c["id"] for c in seap_harvest.all_contracts([{"caNoticeId": 1}])] == [1]
