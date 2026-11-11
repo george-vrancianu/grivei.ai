@@ -15,8 +15,16 @@ The harvester and loader that bring one Source's documents into the graph.
 _Avoid_: scraper, integration
 
 **Release**:
-A shipped increment of the public explorer that makes one more Source explorable, with its own search surface on the shared graph.
+An increment of the explorer that makes one more Source explorable, with its own search surface on the shared graph; whether it is public is a separate matter (see Go-live).
 _Avoid_: version, phase
+
+**Go-live**:
+The moment the explorer becomes public at grivei.ai, with its legal posture settled and a public host; Releases before it run locally.
+_Avoid_: launch, release (when going public is meant)
+
+**Raw archive**:
+Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
+_Avoid_: cache, dump, backup
 
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
