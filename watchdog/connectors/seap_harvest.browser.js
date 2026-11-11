@@ -21,11 +21,26 @@ window.__H = { status: 'running', log: [], da: [], notices: [], contracts: [], c
       for (const i of j.items) H.notices.push({ caNoticeId: i.caNoticeId, noticeId: i.noticeId, procedureId: i.procedureId, noticeNo: i.noticeNo, typeId: i.sysNoticeTypeId, state: i.sysNoticeState?.text, procState: i.sysProcedureState?.text, ca: i.contractingAuthorityNameAndFN, title: i.contractTitle, contractType: i.sysAcquisitionContractType?.text, procType: i.sysProcedureType?.text, assignType: i.sysContractAssigmentType?.text, cpv: i.cpvCodeAndName, value: i.ronContractValue, date: i.noticeStateDate, isOnline: i.isOnline, cur: i.currencyCode, est: i.estimatedValueExport });
       if (H.notices.length >= j.total || !j.items.length) break; await sleep(350);
     }
+    // All contracts of one notice, paged with skip/take until total; an empty page before total is an error.
+    const contractsFor = async n => {
+      const items = [];
+      for (;;) {
+        const j = await post('/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts', { caNoticeId: n.caNoticeId, contractNo: null, winnerTitle: null, winnerFiscalNumber: null, contractDate: { from: null, to: null }, contractValue: { from: null, to: null }, contractMinOffer: { from: null, to: null }, contractMaxOffer: { from: null, to: null }, contractTitle: null, lots: null, sortOrder: [], sysContractFrameworkType: {}, skip: items.length, take: 1000 });
+        const page = j.items || [];
+        items.push(...page);
+        if (items.length >= j.total) return items;
+        if (!page.length) throw new Error('contracts of notice ' + n.caNoticeId + ': empty page at skip ' + items.length + ', total ' + j.total);
+        await sleep(350);
+      }
+    };
+    // A notice that still fails after 3 retries fails the run (status 'error: ...'): no silently truncated batch.
     for (const n of H.notices) {
-      try {
-        const j = await post('/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts', { caNoticeId: n.caNoticeId, contractNo: null, winnerTitle: null, winnerFiscalNumber: null, contractDate: { from: null, to: null }, contractValue: { from: null, to: null }, contractMinOffer: { from: null, to: null }, contractMaxOffer: { from: null, to: null }, contractTitle: null, lots: null, sortOrder: [], sysContractFrameworkType: {}, skip: 0, take: 200 });
-        for (const c of j.items || []) H.contracts.push({ caNoticeId: n.caNoticeId, noticeNo: c.noticeNo, id: c.caNoticeContractId, contractNo: c.contractNo, date: c.contractDate, title: c.contractTitle, lots: c.lotsNoCaption, lotsCaption: c.lotsCaption, value: c.contractValue, cur: c.currency?.text, valueRon: c.defaultCurrencyContractValue, winners: (c.winners || []).map(w => ({ name: w.name, cui: w.fiscalNumber, entityId: w.entityId, city: w.address?.city, county: w.address?.county?.text, country: w.address?.country, isSME: w.address?.isSME, addr: w.address?.address })) });
-      } catch (e) { H.log.push('contracts err ' + n.caNoticeId + ' ' + e.message); }
+      let items;
+      for (let attempt = 0; ; attempt++) {
+        try { items = await contractsFor(n); break; }
+        catch (e) { if (attempt === 3) throw e; H.log.push('contracts retry ' + n.caNoticeId + ' ' + e.message); await sleep(5000 * (attempt + 1)); }
+      }
+      for (const c of items) H.contracts.push({ caNoticeId: n.caNoticeId, noticeNo: c.noticeNo, id: c.caNoticeContractId, contractNo: c.contractNo, date: c.contractDate, title: c.contractTitle, lots: c.lotsNoCaption, lotsCaption: c.lotsCaption, value: c.contractValue, cur: c.currency?.text, valueRon: c.defaultCurrencyContractValue, winners: (c.winners || []).map(w => ({ name: w.name, cui: w.fiscalNumber, entityId: w.entityId, city: w.address?.city, county: w.address?.county?.text, country: w.address?.country, isSME: w.address?.isSME, addr: w.address?.address })) });
       H.done = (H.done || 0) + 1; await sleep(250);
     }
     H.status = 'done';

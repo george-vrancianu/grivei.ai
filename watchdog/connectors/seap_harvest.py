@@ -102,14 +102,29 @@ def award_notices(ca_id, d_from, d_to):
         p += 1; time.sleep(PAUSE)
 
 
+CONTRACTS_TAKE = 1000
+
+
 def contracts_for(notice):
-    j = post("/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts", {
-        "caNoticeId": notice["caNoticeId"], "contractNo": None, "winnerTitle": None, "winnerFiscalNumber": None,
-        "contractDate": {"from": None, "to": None}, "contractValue": {"from": None, "to": None},
-        "contractMinOffer": {"from": None, "to": None}, "contractMaxOffer": {"from": None, "to": None},
-        "contractTitle": None, "lots": None, "sortOrder": [], "sysContractFrameworkType": {}, "skip": 0, "take": 200})
+    """All the contracts of one award notice, paged with skip/take until `total`."""
+    items = []
+    while True:
+        j = post("/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts", {
+            "caNoticeId": notice["caNoticeId"], "contractNo": None, "winnerTitle": None, "winnerFiscalNumber": None,
+            "contractDate": {"from": None, "to": None}, "contractValue": {"from": None, "to": None},
+            "contractMinOffer": {"from": None, "to": None}, "contractMaxOffer": {"from": None, "to": None},
+            "contractTitle": None, "lots": None, "sortOrder": [], "sysContractFrameworkType": {},
+            "skip": len(items), "take": CONTRACTS_TAKE})
+        page = j.get("items") or []
+        items += page
+        if len(items) >= j["total"]:
+            break
+        if not page:
+            raise RuntimeError(f"contracts of notice {notice['caNoticeId']}: empty page at skip "
+                               f"{len(items)}, total {j['total']}")
+        time.sleep(PAUSE)
     out = []
-    for c in j.get("items", []):
+    for c in items:
         ws = []
         for w in c.get("winners") or []:
             a = w.get("address") or {}
@@ -124,6 +139,29 @@ def contracts_for(notice):
     return out
 
 
+RETRIES, RETRY_PAUSE = 3, 5
+
+
+def all_contracts(notices):
+    """The contracts of every notice. A notice that still fails after RETRIES retries fails the run:
+    a batch missing some notices' contracts would be silently truncated."""
+    contracts = []
+    for k, n in enumerate(notices, 1):
+        for attempt in range(RETRIES + 1):
+            try:
+                contracts += contracts_for(n)
+                break
+            except Exception as e:
+                if attempt == RETRIES:
+                    raise
+                print(f"  ! contracts {n['caNoticeId']} (attempt {attempt + 1}/{RETRIES + 1}): {e}", file=sys.stderr)
+                time.sleep(RETRY_PAUSE * (attempt + 1))
+        if k % 25 == 0:
+            print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
+        time.sleep(PAUSE)
+    return contracts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--authority", required=True, help='e.g. "MUNICIPIUL BRASOV"')
@@ -136,15 +174,7 @@ def main():
     print(f"Authority: {auth['name']} (CUI {auth['cui']}, SEAP id {auth['seapId']})", file=sys.stderr)
     da = direct_acquisitions(auth["seapId"], a.d_from, a.d_to)
     notices = award_notices(auth["seapId"], a.d_from, a.d_to)
-    contracts = []
-    for k, n in enumerate(notices, 1):
-        try:
-            contracts += contracts_for(n)
-        except Exception as e:  # one broken notice doesn't stop the whole batch
-            print(f"  ! contracts {n['caNoticeId']}: {e}", file=sys.stderr)
-        if k % 25 == 0:
-            print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
-        time.sleep(PAUSE)
+    contracts = all_contracts(notices)
     payload = {"authority": {k: auth[k] for k in ("seapId", "cui", "name")}, "da": da, "notices": notices,
                "contracts": contracts, "harvested_at": datetime.utcnow().isoformat() + "Z"}
     with open(a.out, "w", encoding="utf-8") as f:
