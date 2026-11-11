@@ -33,8 +33,24 @@ A contracting authority whose remit is the whole country (ministry, national age
 _Avoid_: central authority
 
 **Record**:
-One SEAP document entry in the graph (a direct purchase, a contract award to one winner on one lot, or an award notice), with its own page and source link. A search matches records; what it shows are results.
+One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
+
+**Awarded value**:
+The value a record was awarded at, in RON, as published; the only money measure the explorer sums. It is not what was paid, and later contract modifications are not included.
+_Avoid_: spent, spending, paid, payments
+
+**Framework ceiling**:
+The maximum value of a framework agreement; shown on its record but never summed, because the subsequent contracts awarded under it are counted instead.
+_Avoid_: framework value, contract value (for a framework agreement)
+
+**Consortium share**:
+A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
+_Avoid_: split, portion
+
+**Suspect value**:
+An awarded value flagged by a published rule as likely a data-entry error; the record stays shown and searchable but is left out of sums. The source value is never edited.
+_Avoid_: outlier, error, corrected value
 
 **Signal**:
 A query result worth verifying in the source documents; never a conclusion or an accusation.
@@ -47,7 +63,7 @@ One way the explorer's map of Romania encodes data; the map shows one lens at a 
 _Avoid_: mode, layer, view
 
 **Money lens**:
-The default lens: public money by county, either where it is spent (contracting authority) or where it goes (supplier).
+The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier).
 
 **Coverage lens**:
 The lens showing, per county and per Source, how much has been harvested; grey means not harvested, never no spending.
