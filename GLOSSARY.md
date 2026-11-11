@@ -10,12 +10,16 @@ A public-money watchdog: Romanian public sources joined into one graph of instit
 A public registry Grivei.ai draws data from (SEAP, ANI, ONRC, Ministerul Finanțelor, portal.just.ro, ANAF).
 _Avoid_: directory, public directory, database
 
+**Reference source**:
+A Source used only to enrich the graph (placing entities, confirming identity, counting what coverage is measured against), never explorable on its own, such as ANAF or the Ministerul Finanțelor list of public entities; it joins through the first Release that needs it, never as a Release of its own.
+_Avoid_: lookup, enrichment source, auxiliary source
+
 **Connector**:
 The harvester and loader that bring one Source's documents into the graph.
 _Avoid_: scraper, integration
 
 **Release**:
-An increment of the explorer that makes one more Source explorable, with its own search surface on the shared graph; whether it is public is a separate matter (see Go-live).
+An increment of the explorer that makes one more Source explorable, with its own search surface on the shared graph, chosen beside the search bar one Source at a time; a Reference source is never a Release. Whether it is public is a separate matter (see Go-live).
 _Avoid_: version, phase
 
 **Go-live**:
