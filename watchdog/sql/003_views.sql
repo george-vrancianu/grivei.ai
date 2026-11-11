@@ -43,7 +43,9 @@ SELECT d.code, d.state, d.finalized_at::date AS finalized, s.canonical_name AS s
   JOIN legal_threshold t ON t.kind = CASE WHEN d.cpv_code LIKE '45%' THEN 'direct_works' ELSE 'direct_goods_services' END
  WHERE d.value_ron > t.ron;
 
--- Suspected splitting: same supplier, same CPV, several DAs within 30 days, cumulatively above the threshold
+-- Suspected splitting: same supplier, same CPV, several accepted DAs in the same calendar month,
+-- each at or below the threshold, cumulatively above it.
+-- Grouping is by calendar month, not a rolling 30-day window: DAs split across a month boundary are not caught.
 CREATE OR REPLACE VIEW v_da_possible_splitting AS
 WITH g AS (
   SELECT d.supplier_id, d.cpv_code,
