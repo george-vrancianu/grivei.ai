@@ -32,13 +32,53 @@ _Avoid_: buyer, institution (when the paying role is meant)
 A contracting authority whose remit is the whole country (ministry, national agency, national company); it sits beside the county map, not inside Bucharest.
 _Avoid_: central authority
 
+**Supplier**:
+A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF knows; an entity that both buys and sells is one entity in both roles.
+_Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
+
+**Name-only supplier**:
+A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
+_Avoid_: unknown supplier, unidentified supplier
+
+**Natural-person supplier**:
+An individual who wins a record; shown only as "Persoană fizică", never named, never given an entity page.
+_Avoid_: PFA (when any individual is meant), person (alone)
+
+**Alias**:
+A spelling under which an entity was published in a Source, kept with its dates; shown on the entity page, never used to merge entities.
+_Avoid_: variant, AKA, old name
+
+**Identity override**:
+A reviewed, reasoned correction to which supplier a record is attached; the entity page shows it as curated. It never splits a joint venture into its members.
+_Avoid_: manual merge, fix, mapping
+
 **Record**:
-One SEAP document entry in the graph (a direct purchase, a contract award to one winner on one lot, or an award notice), with its own page and source link. A search matches records; what it shows are results.
+One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
 
+**Awarded value**:
+The value a record was awarded at, in RON, as published; the only money measure the explorer sums. It is not what was paid, and later contract modifications are not included.
+_Avoid_: spent, spending, paid, payments
+
+**Framework ceiling**:
+The maximum value of a framework agreement; shown on its record but never summed, because the subsequent contracts awarded under it are counted instead.
+_Avoid_: framework value, contract value (for a framework agreement)
+
+**Consortium share**:
+A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
+_Avoid_: split, portion
+
+**Suspect value**:
+An awarded value flagged by a published rule as likely a data-entry error; the record stays shown and searchable but is left out of sums. The source value is never edited.
+_Avoid_: outlier, error, corrected value
+
 **Signal**:
-A query result worth verifying in the source documents; never a conclusion or an accusation.
-_Avoid_: finding, red flag, evidence
+A set of one or more records matched by a published rule, worth verifying in the source documents; never a conclusion or an accusation. It belongs to its records, and through them shows on every entity page they touch; Signals are counted, never scored.
+_Avoid_: finding, red flag, evidence, risk score
+
+**Signal rule**:
+One published rule that produces Signals (for example, possible splitting of direct purchases); each has its own section on the methodology page with its time window and how often it fires nationally.
+_Avoid_: Signal type, check, test
 
 ### Explorer
 
@@ -47,7 +87,7 @@ One way the explorer's map of Romania encodes data; the map shows one lens at a 
 _Avoid_: mode, layer, view
 
 **Money lens**:
-The default lens: public money by county, either where it is spent (contracting authority) or where it goes (supplier).
+The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier).
 
 **Coverage lens**:
 The lens showing, per county and per Source, how much has been harvested; grey means not harvested, never no spending.
