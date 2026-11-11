@@ -1,0 +1,213 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-height split — graph canvas left, dossier panel right; panel stacks under the graph on phones. */
+:root {
+  --bg: #f6f5f1; --panel: #ffffff; --fg: #1d1f1a; --muted: #6b6e63; --line: #d9d8cf;
+  --auth: #2b3a67; --local: #3d7a5a; --away: #b8762a; --neg: #b3312f; --cons: #7a6bb0;
+  --focus: #2b3a67;
+  --font: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15171a; --panel: #1d2024; --fg: #e8e6df; --muted: #9a9d94; --line: #33373d;
+  --auth: #8fa3e0; --local: #6fbf92; --away: #e0a15a; --neg: #e8716e; --cons: #a99be0; --focus: #8fa3e0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1d2024; --fg: #e8e6df; --muted: #9a9d94; --line: #33373d;
+  --auth: #8fa3e0; --local: #6fbf92; --away: #e0a15a; --neg: #e8716e; --cons: #a99be0; --focus: #8fa3e0; color-scheme: dark }
+
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--font); }
+.app { display: grid; grid-template-columns: 1fr 360px; grid-template-rows: auto 1fr; height: 100%; min-height: 0; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: .01em; }
+header h1 span { color: var(--muted); font-weight: 400; }
+.ctl { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.ctl input[type=search] { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; width: 190px; }
+.ctl input[type=range] { width: 120px; accent-color: var(--focus); }
+.ctl label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.ctl input[type=checkbox] { accent-color: var(--focus); }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.sw.line { width: 16px; height: 0; border-top: 2px solid; border-radius: 0; }
+button { font: inherit; font-size: 12.5px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+button:hover { border-color: var(--focus); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+#stage { position: relative; min-height: 0; min-width: 0; }
+#stage svg { width: 100%; height: 100%; display: block; cursor: grab; }
+#stage svg:active { cursor: grabbing; }
+.hint { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; min-height: 0;
+  padding-block: 14px; padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+aside h2 { font-size: 16px; margin: 0 0 2px; line-height: 1.25; text-wrap: balance; }
+aside .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin-bottom: 14px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+.kv dd.mono { font-family: var(--mono); font-size: 12.5px; }
+aside h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 16px 0 6px; font-weight: 600; }
+.rel { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.rel:first-of-type { border-top: 0; }
+.rel .n { cursor: pointer; } .rel .n:hover { color: var(--focus); text-decoration: underline; }
+.rel .m { color: var(--muted); font-size: 12px; grid-column: 1 / -1; }
+.rel .ron { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; margin-left: 6px; vertical-align: 1px; }
+.tag.neg { color: var(--neg); }
+.src a { font-family: var(--mono); font-size: 11.5px; color: var(--focus); word-break: break-all; }
+.empty { color: var(--muted); font-size: 13px; }
+.top li { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px; cursor: pointer; }
+.top li:hover { color: var(--focus); }
+.top { list-style: none; padding: 0; margin: 0; }
+.top .ron { font-variant-numeric: tabular-nums; color: var(--muted); }
+.lbl { font-size: 10.5px; fill: var(--fg); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(360px, 55vh) 1fr; }
+  aside { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .ctl input[type=search] { width: 140px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Watchdog <span id="hdr">· public procurement</span></h1>
+    <div class="ctl"><input id="q" type="search" placeholder="search company or CUI" aria-label="Search company or CUI"></div>
+    <div class="ctl"><label><input id="f-award" type="checkbox" checked><span class="sw line" style="border-color:var(--auth)"></span>contracts</label>
+      <label><input id="f-da" type="checkbox" checked><span class="sw line" style="border-color:var(--local);opacity:.7"></span>direct purchases</label>
+      <label><input id="f-cons" type="checkbox" checked><span class="sw line" style="border-color:var(--cons);border-top-style:dashed"></span>consortia</label></div>
+    <div class="ctl"><label for="minron">min</label><input id="minron" type="range" min="0" max="7" step="0.1" value="5"><span id="minron-v" style="font-variant-numeric:tabular-nums;min-width:7ch"></span></div>
+    <div class="ctl"><span class="sw" style="background:var(--auth)"></span>authority <span class="sw" style="background:var(--local)"></span><span id="home-lbl">authority's county</span> <span class="sw" style="background:var(--away)"></span>other county <span class="sw" style="background:var(--neg)"></span>neg. without publication</div>
+    <button id="reset" type="button">Reset view</button>
+  </header>
+  <div id="stage"><svg aria-label="Procurement graph"></svg><div class="hint">click a node = dossier · double-click = neighbours only · scroll wheel = zoom</div></div>
+  <aside id="panel"></aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = __GRAPH_DATA__;
+const byId = new Map(DATA.nodes.map(n => [n.id, n]));
+const titleCase = s => s.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
+document.getElementById('hdr').textContent = '· ' + (DATA.authority ? titleCase(DATA.authority) : 'all authorities') + ' · public procurement ' + (DATA.period || '').replace(/-\d\d-\d\d/g, '');
+const fmt = v => v >= 1e6 ? (v/1e6).toFixed(1) + ' million' : v >= 1e3 ? Math.round(v/1e3).toLocaleString('en-US') + ' thousand' : Math.round(v).toLocaleString('en-US');
+const fmtRon = v => fmt(v) + ' RON';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// the "home" county: the one declared at export or, failing that, the most frequent among suppliers
+const HOME = (DATA.home_county || (() => { const c = {}; DATA.nodes.forEach(n => { if (n.county) c[n.county] = (c[n.county] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || ''; })()).toLowerCase();
+document.getElementById('home-lbl').textContent = HOME ? titleCase(HOME) : 'authority\'s county';
+const colorOf = n => n.kind === 'institution' ? css('--auth') : n.n_neg > 0 ? css('--neg') : (n.county || '').toLowerCase() === HOME ? css('--local') : n.county ? css('--away') : css('--muted');
+const edgeColor = e => e.rel === 'CONSORTIUM_WITH' ? css('--cons') : e.n_neg > 0 ? css('--neg') : e.rel === 'DIRECT_PURCHASE' ? css('--local') : css('--auth');
+const rScale = d3.scaleSqrt().domain([0, d3.max(DATA.nodes, n => n.in_ron) || 1]).range([3, 34]);
+const wScale = d3.scaleSqrt().domain([0, d3.max(DATA.edges, e => e.ron) || 1]).range([0.6, 7]);
+
+const svg = d3.select('#stage svg');
+const g = svg.append('g');
+const gl = g.append('g'), gn = g.append('g'), gt = g.append('g');
+const zoom = d3.zoom().scaleExtent([0.15, 6]).on('zoom', ev => g.attr('transform', ev.transform));
+svg.call(zoom).on('dblclick.zoom', null);
+
+let focus = null;        // id of the node the view is centred on (double-click)
+let selected = null;
+const sim = d3.forceSimulation().force('charge', d3.forceManyBody().strength(-90)).force('collide', d3.forceCollide(n => rScale(n.in_ron) + 4))
+  .force('link', d3.forceLink().id(n => n.id).distance(e => e.rel === 'CONSORTIUM_WITH' ? 60 : 90 + 60 * (1 - Math.min(1, e.ron / 1e8)))).alphaDecay(0.03);
+
+function state() {
+  const minRon = Math.pow(10, +document.getElementById('minron').value) - 1;
+  document.getElementById('minron-v').textContent = fmtRon(minRon);
+  const rels = new Set(); if (document.getElementById('f-award').checked) rels.add('AWARDED_CONTRACT');
+  if (document.getElementById('f-da').checked) rels.add('DIRECT_PURCHASE'); if (document.getElementById('f-cons').checked) rels.add('CONSORTIUM_WITH');
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  return { minRon, rels, q };
+}
+
+function visibleGraph() {
+  const { minRon, rels } = state();
+  let edges = DATA.edges.filter(e => rels.has(e.rel) && (e.rel === 'CONSORTIUM_WITH' || e.ron >= minRon));
+  if (focus != null) {
+    const nb = new Set([focus]); DATA.edges.forEach(e => { if (e.source === focus || e.source.id === focus) nb.add(e.target.id ?? e.target); if (e.target === focus || e.target.id === focus) nb.add(e.source.id ?? e.source); });
+    edges = edges.filter(e => nb.has(e.source.id ?? e.source) && nb.has(e.target.id ?? e.target));
+  }
+  const ids = new Set(); edges.forEach(e => { ids.add(e.source.id ?? e.source); ids.add(e.target.id ?? e.target); });
+  if (focus != null) ids.add(focus);
+  const nodes = DATA.nodes.filter(n => ids.has(n.id));
+  return { nodes, edges: edges.map(e => ({ ...e, source: e.source.id ?? e.source, target: e.target.id ?? e.target })) };
+}
+
+function render() {
+  const { nodes, edges } = visibleGraph();
+  const { q } = state();
+  const rect = document.getElementById('stage').getBoundingClientRect();
+  sim.force('center', d3.forceCenter(rect.width / 2, rect.height / 2));
+  const link = gl.selectAll('line').data(edges, e => e.source + '-' + e.target + e.rel);
+  link.exit().remove();
+  link.enter().append('line').merge(gl.selectAll('line'))
+    .attr('stroke', edgeColor).attr('stroke-width', e => e.rel === 'CONSORTIUM_WITH' ? 1.2 : wScale(e.ron))
+    .attr('stroke-dasharray', e => e.rel === 'CONSORTIUM_WITH' ? '4 3' : null).attr('stroke-opacity', 0.55);
+  const node = gn.selectAll('circle').data(nodes, n => n.id);
+  node.exit().remove();
+  node.enter().append('circle').merge(gn.selectAll('circle'))
+    .attr('r', n => rScale(n.in_ron)).attr('fill', colorOf).attr('fill-opacity', 0.85)
+    .attr('stroke', n => n.id === selected ? css('--fg') : css('--panel')).attr('stroke-width', n => n.id === selected ? 2.5 : 1)
+    .style('cursor', 'pointer')
+    .on('click', (ev, n) => select(n.id)).on('dblclick', (ev, n) => { ev.stopPropagation(); focus = focus === n.id ? null : n.id; render(); })
+    .call(d3.drag().on('start', (ev, n) => { if (!ev.active) sim.alphaTarget(0.3).restart(); n.fx = n.x; n.fy = n.y; })
+      .on('drag', (ev, n) => { n.fx = ev.x; n.fy = ev.y; }).on('end', (ev, n) => { if (!ev.active) sim.alphaTarget(0); n.fx = null; n.fy = null; }));
+  const labelled = nodes.filter(n => rScale(n.in_ron) >= 9 || n.kind === 'institution' || n.id === selected || (q && (n.name.toLowerCase().includes(q) || (n.cui || '').includes(q))));
+  const txt = gt.selectAll('text').data(labelled, n => n.id);
+  txt.exit().remove();
+  txt.enter().append('text').attr('class', 'lbl').merge(gt.selectAll('text')).text(n => n.name.length > 28 ? n.name.slice(0, 26) + '…' : n.name)
+    .attr('font-weight', n => q && (n.name.toLowerCase().includes(q) || (n.cui || '').includes(q)) ? 600 : 400);
+  gn.selectAll('circle').attr('opacity', n => q ? ((n.name.toLowerCase().includes(q) || (n.cui || '').includes(q)) ? 1 : 0.25) : 1);
+  sim.nodes(nodes); sim.force('link').links(edges); sim.alpha(0.6).restart();
+  sim.on('tick', () => {
+    gl.selectAll('line').attr('x1', e => e.source.x).attr('y1', e => e.source.y).attr('x2', e => e.target.x).attr('y2', e => e.target.y);
+    gn.selectAll('circle').attr('cx', n => n.x).attr('cy', n => n.y);
+    gt.selectAll('text').attr('x', n => n.x + rScale(n.in_ron) + 3).attr('y', n => n.y + 3.5);
+  });
+}
+
+function select(id) {
+  selected = id; const n = byId.get(id);
+  gn.selectAll('circle').attr('stroke', m => m.id === selected ? css('--fg') : css('--panel')).attr('stroke-width', m => m.id === selected ? 2.5 : 1);
+  const rels = DATA.edges.filter(e => (e.source.id ?? e.source) === id || (e.target.id ?? e.target) === id)
+    .map(e => { const otherId = (e.source.id ?? e.source) === id ? (e.target.id ?? e.target) : (e.source.id ?? e.source); return { e, other: byId.get(otherId) }; })
+    .sort((a, b) => b.e.ron - a.e.ron);
+  const relName = { AWARDED_CONTRACT: 'contract', DIRECT_PURCHASE: 'direct purchase', CONSORTIUM_WITH: 'consortium' };
+  const urls = [...new Set(rels.flatMap(r => r.e.urls || []))].slice(0, 8);
+  document.getElementById('panel').innerHTML = `
+    <h2>${esc(n.name)}</h2>
+    <div class="sub">${n.kind === 'institution' ? 'contracting authority' : 'company'}${n.county ? ' · ' + esc(n.county) : ''}${n.city ? ' · ' + esc(n.city) : ''}${n.sme === true ? ' · SME' : ''}</div>
+    <dl class="kv">
+      <dt>CUI</dt><dd class="mono">${esc(n.cui || '—')}</dd>
+      ${n.kind !== 'institution' ? `<dt>Awarded</dt><dd>${fmtRon(n.in_ron)} in ${n.n_in} awards (consortia at full value)</dd>` : ''}
+      ${n.n_neg ? `<dt>Negotiations</dt><dd>${n.n_neg} without prior publication</dd>` : ''}
+      ${n.aliases && n.aliases.length > 1 ? `<dt>Appears as</dt><dd>${n.aliases.map(esc).join(' · ')}</dd>` : ''}
+    </dl>
+    <h3>Links (${rels.length})</h3>
+    ${rels.length ? rels.slice(0, 40).map(r => `<div class="rel"><span class="n" data-id="${r.other.id}">${esc(r.other.name)}${r.e.n_neg ? '<span class="tag neg">neg. without publication</span>' : ''}</span>
+       <span class="ron">${r.e.ron ? fmtRon(r.e.ron) : ''}</span>
+       <span class="m">${r.e.n} × ${relName[r.e.rel]}${r.e.first ? ' · ' + r.e.first.slice(0, 7) + (r.e.last !== r.e.first ? ' → ' + r.e.last.slice(0, 7) : '') : ''}</span></div>`).join('') : '<p class="empty">nothing above the current filter</p>'}
+    <h3>Source documents (SEAP)</h3>
+    <div class="src">${urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace('https://e-licitatie.ro/pub/', ''))}</a>`).join('<br>') || '<span class="empty">—</span>'}</div>`;
+  document.querySelectorAll('#panel .rel .n').forEach(el => el.addEventListener('click', () => select(+el.dataset.id)));
+}
+
+function home() {
+  const top = DATA.nodes.filter(n => n.kind !== 'institution').sort((a, b) => b.in_ron - a.in_ron).slice(0, 15);
+  const total = d3.sum(DATA.nodes, n => n.in_ron);
+  document.getElementById('panel').innerHTML = `
+    <h2>Who gets the money</h2>
+    <div class="sub">${DATA.nodes.length} entities · ${DATA.edges.length} links · ${fmtRon(total)} awarded · SEAP data ${DATA.generated_at.slice(0, 10)}</div>
+    <p class="empty">Node size = value of awards won. Red = company that received at least one negotiated award without prior publication. Dashed line = won together (consortium). Framework agreement values are ceilings, not payments.</p>
+    <h3>Top 15 suppliers</h3>
+    <ol class="top">${top.map(n => `<li data-id="${n.id}"><span>${esc(n.name)}</span><span class="ron">${fmtRon(n.in_ron)}</span></li>`).join('')}</ol>`;
+  document.querySelectorAll('#panel .top li').forEach(el => el.addEventListener('click', () => select(+el.dataset.id)));
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+['f-award', 'f-da', 'f-cons', 'minron'].forEach(id => document.getElementById(id).addEventListener('input', render));
+document.getElementById('q').addEventListener('input', () => { const { q } = state(); if (q) { const hit = DATA.nodes.find(n => n.name.toLowerCase().includes(q) || (n.cui || '').includes(q)); if (hit) select(hit.id); } render(); });
+document.getElementById('reset').addEventListener('click', () => { focus = null; selected = null; document.getElementById('q').value = ''; document.getElementById('minron').value = 5; svg.transition().call(zoom.transform, d3.zoomIdentity); home(); render(); });
+window.addEventListener('resize', render);
+home(); render();
+</script>

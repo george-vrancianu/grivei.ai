@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Municipiul Brasov — network of major suppliers",
+    "output": "diagrams/brasov-top10.html",
+    "visual_preset": "editorial",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "security": {
+          "label": "contracting authority / negotiation without publication"
+        },
+        "backend": {
+          "label": "company from the same county"
+        },
+        "external": {
+          "label": "company from another county"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "municipiul_brasov",
+      "type": "security",
+      "label": "Municipiul Brasov",
+      "sublabel": "CUI 4384206 · contracting authority",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "comprest",
+      "type": "backend",
+      "label": "Comprest",
+      "sublabel": "CUI 1095130 · Brasov · 6 negotiations without publication",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "rs_activ",
+      "type": "backend",
+      "label": "Rs Activ",
+      "sublabel": "CUI 17296459 · Brasov · 10 negotiations without publication",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "recon",
+      "type": "backend",
+      "label": "Recon",
+      "sublabel": "CUI 3623887 · Brasov",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "fincodrum",
+      "type": "backend",
+      "label": "Fincodrum",
+      "sublabel": "CUI 24796449 · Brasov",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "miracons",
+      "type": "backend",
+      "label": "Miracons",
+      "sublabel": "CUI 17373748 · Brasov",
+      "row": 1,
+      "col": 4
+    },
+    {
+      "id": "euro_strada",
+      "type": "backend",
+      "label": "Euro Strada",
+      "sublabel": "CUI 6538816 · Brasov",
+      "row": 1,
+      "col": 5
+    },
+    {
+      "id": "straco_holding",
+      "type": "external",
+      "label": "Straco Holding",
+      "sublabel": "CUI 21711634 · Bucuresti",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "bmc_truck_bus",
+      "type": "external",
+      "label": "Bmc Truck & Bus",
+      "sublabel": "CUI 14442959 · Ilfov",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "eren_cons",
+      "type": "backend",
+      "label": "Eren Cons",
+      "sublabel": "CUI 17203875 · Brasov",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "clarom_trans_s_r_l",
+      "type": "backend",
+      "label": "Clarom Trans S.R.L.",
+      "sublabel": "CUI 19256531 · Brasov",
+      "row": 5,
+      "col": 0
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "consortium: 7 companies winning together",
+      "wraps": [
+        "comprest",
+        "rs_activ",
+        "recon",
+        "fincodrum",
+        "miracons",
+        "euro_strada",
+        "straco_holding"
+      ],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "c_comprest",
+      "from": "municipiul_brasov",
+      "to": "comprest",
+      "label": "21 contracts + 1 DA · 581.2 million RON · 6 neg. without publication (177.7 million)",
+      "variant": "security"
+    },
+    {
+      "id": "c_rs_activ",
+      "from": "municipiul_brasov",
+      "to": "rs_activ",
+      "label": "26 contracts + 2 DA · 544.9 million RON · 10 neg. without publication (77.8 million)",
+      "variant": "security"
+    },
+    {
+      "id": "c_recon",
+      "from": "municipiul_brasov",
+      "to": "recon",
+      "label": "24 contracts + 6 DA · 190.3 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_bmc_truck_bus",
+      "from": "municipiul_brasov",
+      "to": "bmc_truck_bus",
+      "label": "1 contract · 187.1 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_fincodrum",
+      "from": "municipiul_brasov",
+      "to": "fincodrum",
+      "label": "11 contracts · 119.6 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_miracons",
+      "from": "municipiul_brasov",
+      "to": "miracons",
+      "label": "3 contracts · 113.2 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_euro_strada",
+      "from": "municipiul_brasov",
+      "to": "euro_strada",
+      "label": "2 contracts · 95.4 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_straco_holding",
+      "from": "municipiul_brasov",
+      "to": "straco_holding",
+      "label": "2 contracts · 95.4 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_eren_cons",
+      "from": "municipiul_brasov",
+      "to": "eren_cons",
+      "label": "1 contract + 1 DA · 89.4 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_clarom_trans_s_r_l",
+      "from": "municipiul_brasov",
+      "to": "clarom_trans_s_r_l",
+      "label": "27 contracts + 6 DA · 86.7 million RON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k_rs_activ_recon",
+      "from": "rs_activ",
+      "to": "recon",
+      "label": "12× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_rs_activ_comprest",
+      "from": "rs_activ",
+      "to": "comprest",
+      "label": "3× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_rs_activ_straco_holding",
+      "from": "rs_activ",
+      "to": "straco_holding",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_rs_activ_euro_strada",
+      "from": "rs_activ",
+      "to": "euro_strada",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_rs_activ_miracons",
+      "from": "rs_activ",
+      "to": "miracons",
+      "label": "3× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_rs_activ_fincodrum",
+      "from": "rs_activ",
+      "to": "fincodrum",
+      "label": "11× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_recon_straco_holding",
+      "from": "recon",
+      "to": "straco_holding",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_recon_euro_strada",
+      "from": "recon",
+      "to": "euro_strada",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_recon_miracons",
+      "from": "recon",
+      "to": "miracons",
+      "label": "3× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_recon_fincodrum",
+      "from": "recon",
+      "to": "fincodrum",
+      "label": "11× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_straco_holding_euro_strada",
+      "from": "straco_holding",
+      "to": "euro_strada",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_straco_holding_miracons",
+      "from": "straco_holding",
+      "to": "miracons",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_straco_holding_fincodrum",
+      "from": "straco_holding",
+      "to": "fincodrum",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_euro_strada_miracons",
+      "from": "euro_strada",
+      "to": "miracons",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_euro_strada_fincodrum",
+      "from": "euro_strada",
+      "to": "fincodrum",
+      "label": "2× together",
+      "variant": "dashed"
+    },
+    {
+      "id": "k_miracons_fincodrum",
+      "from": "miracons",
+      "to": "fincodrum",
+      "label": "2× together",
+      "variant": "dashed"
+    }
+  ]
+}
