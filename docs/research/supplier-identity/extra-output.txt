@@ -1,0 +1,61 @@
+## "S.C. " prefix and doubled legal form, by file
+2021_CON 125082 S.C. prefix 1.7% doubled 645
+2021_DA 555219 S.C. prefix 1.0% doubled 298
+2022_CON 85653 S.C. prefix 2.1% doubled 502
+2022_DA 543491 S.C. prefix 0.9% doubled 293
+2023_CON 89765 S.C. prefix 1.8% doubled 502
+2023_DA 609655 S.C. prefix 0.7% doubled 205
+2023_DAN 67302 S.C. prefix 60.4% doubled 16390
+2023_FARA 2562 S.C. prefix 0.7% doubled 1
+2024_CON 75832 S.C. prefix 2.2% doubled 443
+2024_DA 618492 S.C. prefix 0.7% doubled 257
+2024_DAN 67131 S.C. prefix 62.1% doubled 16930
+2024_FARA 2580 S.C. prefix 1.4% doubled 1
+2025_CON 85447 S.C. prefix 3.2% doubled 583
+2025_DA 603526 S.C. prefix 0.6% doubled 181
+2025_DAN 84612 S.C. prefix 62.2% doubled 20086
+2025_FARA 2258 S.C. prefix 0.5% doubled 1
+2026_CON 105198 S.C. prefix 3.4% doubled 635
+2026_DA 541471 S.C. prefix 0.5% doubled 159
+2026_DAN 75051 S.C. prefix 60.2% doubled 16866
+2026_FARA 2508 S.C. prefix 3.5% doubled 2
+top 5 no-CUI rows: 34.4 bn = 39% of no-CUI RON
+top 20 no-CUI rows: 57.7 bn = 66% of no-CUI RON
+top 100 no-CUI rows: 80.2 bn = 91% of no-CUI RON
+no-CUI RON by kind: {}
+{'FARA': (467, '29.55 bn'), 'CON': (1324, '58.41 bn'), 'DAN': (6091, '0.07 bn'), 'DA': (1712, '0.02 bn')}
+no-CUI by sampled quarter: {'2021': (774, '3.4% RON'), '2022': (305, '15.7% RON'), '2023': (2227, '16.1% RON'), '2024': (1910, '9.7% RON'), '2025': (2290, '16.6% RON'), '2026': (2088, '13.2% RON')}
+rows >= 1 bn RON: 52 106.7 bn of which no-CUI 21
+no-CUI RON share among rows < 1 bn: 5.33%
+
+## invalid check digit: 5124 RO-looking (<=8 digits, not foreign): 3724 5007.6 M RON Counter({'DAN': 2656, 'DA': 862, 'CON': 163, 'FARA': 43})
+  10-digit invalid: 514 41.5 bn RON for 9-10 digit
+
+## non-RO ids (normalised to [0-9A-Z]): 2442 with >1 name spelling: 160
+   CZ46960031 ['ZLIN AVION SERVICE', 'ZLIN-AVION SERVICE', 'ZLIN-AVION SERVICE S.R.O.', 'ZLÍN-AVION SERVICE']
+   DE216481953 ['LGC STANDARDS', 'LGC STANDARDS GMBH', 'LGC STANDARDS GMBH GERMANY', 'LGC STANDARS GMBH']
+   611648780 ['ZOOM COMMUNICATIONS', 'ZOOM COMMUNICATIONS INC.', 'ZOOM COMMUNICATIONS, INC', 'ZOOM VIDEO COMMUNICATIONS INC.']
+   GB376766987 ['JOHN WILEY & SONS LTD.', 'JOHN WILEY & SONS UK', 'JOHN WILEY & SONS, INC.', 'WILEY']
+   DE209719094 ['SPRINGER NATURE CUSTOMER SERVICE CENTER GMBH', 'SPRINGER NATURE CUSTOMER SRVICE CENTER GMBH', 'SPRINGER NATURE GROUP', 'SPRINGER NATURE GROUP GMBH']
+   X ['EFFECTTECH LIMITED', 'KPMG TAX, LEGAL&ACCOUNTANCY', 'LIWACOM INFORMATIONSTECHNIK GMBH', 'VISUAL CROSSING DEUTSCHLAND']
+
+## 10-digit CUIs passing the RO check digit: 57 2.70 bn [('2461490647', "D'AGOSTINO ANGELO ANTONIO COSTRUZIONI GENERALI S.R.L."), ('04880340874', 'MIGIFRA SRL'), ('04880340874', 'MIGIFRA SRL'), ('04596040966', 'SC SIRTI SA'), ('04596040966', 'SC SIRTI SA'), ('04596040966', 'SC SIRTI SA')]
+valid CUI digit-length distribution: [(2, 768), (3, 1054), (4, 771), (5, 6267), (6, 157461), (7, 1363509), (8, 2803283), (9, 71), (10, 57)]
+
+## supplier CUI is a contracting-authority CUI somewhere in the sample: 79507 22.18 bn 3.37%
+   of which equal to the same row's authority: 186 1.27 bn
+   by kind: Counter({'DA': 46379, 'DAN': 23353, 'CON': 9400, 'FARA': 375})
+    9434372 DELTAMED 4889 M
+    9434372 DELTAMED S.R.L. 3743 M
+    13267213 SPEEH HIDROELECTRICA SA 1775 M
+    427410 COMPANIA NATIONALA POSTA ROMANA S.A. 923 M
+    11653560 COMPANIA NATIONALA UNIFARM 820 M
+    14232728 Societatea pentru Servicii de Mentenanta a Retelei 612 M
+    11492278 Softronic S.R.L. 528 M
+    13554423 ROMARM 520 M
+    326768 STIMPEX 495 M
+    28627965 BlueSpace TECHNOLOGY 451 M
+    22579117 MARISTAR COM 400 M
+    326768 STIMPEX S.A. 373 M
+
+## names that look like individuals/PFA/II/cabinets: 26511 valid CUI: 26291

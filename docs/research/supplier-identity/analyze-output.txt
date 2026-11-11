@@ -1,0 +1,283 @@
+# Raw rows by kind: {'DA': 3835970, 'CON': 1061682, 'DAN': 294567, 'FARA': 9940}
+# Deduplicated winner rows: 4342835 RON 658.00 bn
+   CON: 566,977 rows, 578.59 bn
+   DA: 3,471,854 rows, 28.01 bn
+   DAN: 294,096 rows, 9.41 bn
+   FARA: 9,908 rows, 41.99 bn
+# Contracts (distinct notice+contract no): 461826  with >1 winner: 63792
+
+## Category of supplier CUI value (deduplicated winner rows)
+| valid_ro_cui | 4,333,241 | 99.78% | 569.95 bn | 86.62% | {'CON': 565653, 'FARA': 9441, 'DA': 3470142, 'DAN': 288005} |
+| invalid_check_digit | 5,124 | 0.12% | 50.13 bn | 7.62% | {'CON': 561, 'FARA': 70, 'DA': 1053, 'DAN': 3440} |
+| foreign_vat_format | 1,317 | 0.03% | 9.94 bn | 1.51% | {'CON': 449, 'FARA': 54, 'DA': 63, 'DAN': 751} |
+| other_junk | 1,091 | 0.03% | 17.72 bn | 2.69% | {'CON': 154, 'FARA': 30, 'DA': 509, 'DAN': 398} |
+| too_long_digits | 1,059 | 0.02% | 8.22 bn | 1.25% | {'CON': 128, 'FARA': 8, 'DA': 30, 'DAN': 893} |
+| blank | 640 | 0.01% | 66.6 M | 0.01% | {'CON': 9, 'FARA': 126, 'DAN': 505} |
+| cnp_like_13_digits | 187 | 0.00% | 91.7 M | 0.01% | {'CON': 10, 'FARA': 172, 'DA': 5} |
+| text_not_a_code | 137 | 0.00% | 1.88 bn | 0.29% | {'CON': 5, 'FARA': 7, 'DA': 48, 'DAN': 77} |
+| trade_register_no | 27 | 0.00% | 0.2 M | 0.00% | {'DAN': 27} |
+| excel_scientific | 12 | 0.00% | 5.0 M | 0.00% | {'CON': 8, 'DA': 4} |
+
+## Category by kind (rows, RON share within kind)
+CON {'valid_ro_cui': (565653, '99.77%', '89.91%'), 'invalid_check_digit': (561, '0.10%', '5.41%'), 'foreign_vat_format': (449, '0.08%', '1.69%'), 'other_junk': (154, '0.03%', '1.25%'), 'too_long_digits': (128, '0.02%', '1.41%'), 'cnp_like_13_digits': (10, '0.00%', '0.02%'), 'blank': (9, '0.00%', '0.01%'), 'excel_scientific': (8, '0.00%', '0.00%'), 'text_not_a_code': (5, '0.00%', '0.31%')}
+DA {'valid_ro_cui': (3470142, '99.95%', '99.92%'), 'invalid_check_digit': (1053, '0.03%', '0.06%'), 'other_junk': (509, '0.01%', '0.01%'), 'foreign_vat_format': (63, '0.00%', '0.00%'), 'text_not_a_code': (48, '0.00%', '0.00%'), 'too_long_digits': (30, '0.00%', '0.00%'), 'cnp_like_13_digits': (5, '0.00%', '0.00%'), 'excel_scientific': (4, '0.00%', '0.00%')}
+DAN {'valid_ro_cui': (288005, '97.93%', '99.23%'), 'invalid_check_digit': (3440, '1.17%', '0.41%'), 'too_long_digits': (893, '0.30%', '0.10%'), 'foreign_vat_format': (751, '0.26%', '0.13%'), 'blank': (505, '0.17%', '0.02%'), 'other_junk': (398, '0.14%', '0.09%'), 'text_not_a_code': (77, '0.03%', '0.02%'), 'trade_register_no': (27, '0.01%', '0.00%')}
+FARA {'valid_ro_cui': (9441, '95.29%', '29.62%'), 'cnp_like_13_digits': (172, '1.74%', '0.00%'), 'blank': (126, '1.27%', '0.06%'), 'invalid_check_digit': (70, '0.71%', '44.70%'), 'foreign_vat_format': (54, '0.55%', '0.36%'), 'other_junk': (30, '0.30%', '25.02%'), 'too_long_digits': (8, '0.08%', '0.08%'), 'text_not_a_code': (7, '0.07%', '0.15%')}
+
+## Examples per category
+excel_scientific [('1.00761E+12', 'Turboenergy Power Chisinau Sucursala Targoviste', 'Romania', '2021_CON'), ('1.00761E+12', 'Turboenergy Power', 'Romania', '2021_CON'), ('1.0026E+12', 'PORTAVITA', 'Moldova', '2021_CON'), <two entries for individuals redacted>]
+
+invalid_check_digit [('388672339', 'SIXENSE MONITORING', 'France', '2021_CON'), ('681234148', 'Helios Technology Limited, trading as Helios', 'Romania', '2021_CON'), ('805614023', 'AGRICULTURAL PRODUCTION &  HANDLING B.V.', 'Netherlands', '2021_CON'), ('4795011135', 'HRH Limited', 'United Kingdom', '2021_CON'), ('7025291001', '3TI PROGETTI ITALIA - INGEGNERIA INTEGRATA S.P.A.', 'Italy', '2021_CON'), ('3728590872', 'OPERES', 'Italy', '2021_CON'), ('94207780', 'INTRAKAT', 'Greece', '2021_CON'), ('6746680724', 'MANELLI IMPRESA', 'Italy', '2021_CON')]
+foreign_vat_format [('BG130545438', 'Telelink Business Services EAD', 'Bulgaria', '2021_CON'), ('BG205809328', 'Telelink City', 'Bulgaria', '2021_CON'), ('IT08069460015', 'VAR', 'Italy', '2021_CON'), ('FR 82542021829', 'SAFEGE SAS', 'France', '2021_CON'), ('PL5240015630', 'SOLARIS BUS & COACH sp. z. o. o', 'Poland', '2021_CON'), ('ATU 18379608', 'Shimadzu Handelsgesellschaft mbH', 'Austria', '2021_CON'), ('NL822997502', 'HILL INTERNATIONAL N.V.', 'Netherlands', '2021_CON'), ('FR15319159877', 'THALES LAS FRANCE SAS', 'France', '2021_CON')]
+other_junk [('R1718417', 'STA-CO', 'Romania', '2021_CON'), ('16-0980138', 'Ramboll Americas Engineering Solutions, Inc', 'United States', '2021_CON'), ('A-28854727', 'FCC CONSTRUCCION S.A.', 'Romania', '2021_CON'), ('A13395264', 'OBRAS PUBLICAS Y REGADIOS', 'Spain', '2021_CON'), ('R 21790662', 'AGORA PROIECT', 'Romania', '2021_CON'), ('R 3353619', 'COMFRIG', 'Romania', '2021_CON'), ('R 15168887', 'CONFER GROUP SRL ONESTI', 'Romania', '2021_CON'), ('A 16199374', 'S.C. VIALES Y OBRAS PUBLICAS S.A.', 'Spain', '2021_CON')]
+blank [('', 'SC KONSENT SA', 'Romania', '2021_CON'), ('', 'IASICON S.A.', 'Romania', '2021_CON'), ('', 'EXPERT CONT S.R.L.', 'Romania', '2021_CON'), ('', 'SC PEGANI CONSTRUCT SRL', 'Romania', '2021_CON'), ('', 'CONSTRUCTUS S.R.L.', 'Romania', '2021_CON'), ('', 'Drumuri si Poduri S.A.', 'Romania', '2021_CON'), ('', 'CONI S.R.L.', 'Romania', '2021_CON'), <individual redacted>]
+too_long_digits [('<13-digit personal code redacted>', 'Turboenergy Power', 'Romania', '2021_CON'), ('970240000816', 'NAC "Kazatomprom" JSC', 'Kazakhstan', '2021_CON'), ('<13-digit personal code redacted>', 'PORTAVITA', 'Moldova', '2021_CON'), ('110000410110064', 'Metstar Radar', 'Romania', '2021_CON'), ('+40 0755768415', 'ECUFIX SOLUTIONS SRL', 'Romania', '2021_CON'), ('56207750302584', "SADE-COMPAGNIE GENERALE  DE TRAVAUX D'HYDRAULIQUE", '', '2022_CON'), ('<13-digit personal code redacted>', 'ISAF-EXIM', '', '2022_CON'), ('16073691004', 'GRIDSPERTISE', '', '2022_CON')]
+cnp_like_13_digits [examples redacted: names and personal numeric codes of individuals]
+text_not_a_code [('RO HTT', 'C&A Company Consulting', 'Romania', '2023_CON'), ('GEMH 06556101000', 'Asocierea „RAIL WORKS"   formata din ALSTOM TRANSPORT S.A., AKTOR S.A.si ARCADA COMPANY S.A.  liderul al asocierii AKTOR S.A.', 'Romania', '2023_CON'), ('302 588 801 R.C.S.NANTERRE', 'LOUIS BERGER', 'France', '2023_CON'), ('BUS01-00165', 'Sulzer Pumps (Canada) Inc', '', '2024_FARA'), ('HST 871235347RT0001', 'CURTISS-WRIGHT NUCLEAR CANADA', '', '2024_FARA'), ('VAT BE 0413330856', 'SWIFT SC', '', '2024_FARA'), <individual redacted>, ('AGRIFRPP882', 'STUDIO MIRCEA CANTOR', '', '2026_FARA')]
+trade_register_no [('J40/10454/20', 'DELTA SRS BROKER DE ASIGURARE-REASIGURARE SRL', '', '2023_DAN'), ('J12/582/199', 'SC CENTER POINT EXIM SRL', '', '2023_DAN'), <PFA redacted>, <PFA redacted>, ('J16 /984 /20', 'AMARRAGE SISTEM SRL', '', '2023_DAN'), <PFA redacted>, ('J15/259/2021', 'S.C. ENERGY LUDESTI S.R.L.', '', '2024_DAN'), ('J30/60/1991', 'SC MAGNOLIA TRANSPORT IMPEX SA', '', '2024_DAN')]
+
+## Format flags on rows whose CUI normalises to a valid Romanian CUI
+| plain digits, no fix needed | 3,890,599 | 89.78% | 29.82% |
+| xlsx_numeric_cell | 1,352,510 | 31.21% | 13.70% |
+| ro_prefix | 382,326 | 8.82% | 63.66% |
+| ro_with_separator | 321,703 | 7.42% | 52.50% |
+| outer_whitespace | 60,119 | 1.39% | 6.50% |
+| ro_lowercase | 3,529 | 0.08% | 0.09% |
+| leading_zeros | 117 | 0.00% | 0.02% |
+| stray_punctuation | 116 | 0.00% | 0.02% |
+| label_prefix | 38 | 0.00% | 0.00% |
+
+## Format flags by file (share of valid rows with RO prefix / whitespace / numeric cell)
+2021_CON 124900 {'ro_prefix': '82.21%', 'ro_with_separator': '74.29%', 'ro_lowercase': '0.13%', 'stray_punctuation': '0.00%', 'leading_zeros': '0.00%'}
+2021_DA 554627 {'ro_prefix': '0.47%', 'ro_lowercase': '0.47%', 'stray_punctuation': '0.00%', 'label_prefix': '0.00%', 'outer_whitespace': '0.00%'}
+2022_CON 85485 {'outer_whitespace': '70.32%', 'ro_prefix': '0.24%', 'ro_lowercase': '0.24%', 'ro_with_separator': '0.15%', 'leading_zeros': '0.02%', 'stray_punctuation': '0.01%', 'label_prefix': '0.01%'}
+2022_DA 543354 {'leading_zeros': '0.01%'}
+2023_CON 89496 {'ro_prefix': '80.07%', 'ro_with_separator': '68.24%', 'ro_lowercase': '0.09%', 'leading_zeros': '0.00%', 'stray_punctuation': '0.01%'}
+2023_DA 609502 {'leading_zeros': '0.00%'}
+2023_DAN 65686 {'ro_prefix': '2.11%', 'ro_with_separator': '0.27%', 'ro_lowercase': '0.04%', 'stray_punctuation': '0.01%', 'leading_zeros': '0.01%'}
+2023_FARA 2373 {'ro_prefix': '72.10%', 'ro_with_separator': '59.08%', 'leading_zeros': '0.04%', 'label_prefix': '0.04%', 'ro_lowercase': '0.13%'}
+2024_CON 75584 {'ro_prefix': '76.43%', 'ro_with_separator': '64.21%', 'ro_lowercase': '0.12%', 'leading_zeros': '0.01%', 'stray_punctuation': '0.02%'}
+2024_DA 618233 {'leading_zeros': '0.00%'}
+2024_DAN 65821 {'ro_prefix': '1.81%', 'leading_zeros': '0.02%', 'stray_punctuation': '0.00%', 'ro_lowercase': '0.04%', 'ro_with_separator': '0.24%', 'label_prefix': '0.00%'}
+2024_FARA 2487 {'ro_prefix': '64.29%', 'ro_with_separator': '50.14%', 'ro_lowercase': '0.28%', 'label_prefix': '0.04%'}
+2025_CON 85187 {'xlsx_numeric_cell': '26.74%', 'ro_prefix': '73.26%', 'ro_with_separator': '60.59%', 'ro_lowercase': '0.17%', 'stray_punctuation': '0.02%'}
+2025_DA 603228 {'xlsx_numeric_cell': '100.00%'}
+2025_DAN 82972 {'xlsx_numeric_cell': '98.55%', 'ro_prefix': '1.44%', 'ro_with_separator': '0.17%', 'ro_lowercase': '0.01%', 'stray_punctuation': '0.00%', 'label_prefix': '0.00%', 'leading_zeros': '0.00%'}
+2025_FARA 2166 {'ro_prefix': '69.62%', 'ro_with_separator': '59.60%', 'ro_lowercase': '0.14%'}
+2026_CON 105001 {'xlsx_numeric_cell': '29.45%', 'ro_prefix': '70.55%', 'ro_with_separator': '58.96%', 'ro_lowercase': '0.14%', 'stray_punctuation': '0.02%'}
+2026_DA 541198 {'xlsx_numeric_cell': '100.00%'}
+2026_DAN 73526 {'xlsx_numeric_cell': '98.75%', 'ro_prefix': '1.23%', 'ro_with_separator': '0.10%', 'label_prefix': '0.02%', 'ro_lowercase': '0.01%', 'stray_punctuation': '0.00%'}
+2026_FARA 2415 {'ro_prefix': '58.80%', 'ro_with_separator': '48.07%', 'ro_lowercase': '0.29%', 'stray_punctuation': '0.08%'}
+
+## Collapse: distinct raw strings 137823 -> distinct valid normalised CUIs 126061
+raw spellings per normalised CUI (5 = 5+): [(1, 116633), (2, 7170), (3, 2183), (4, 74), (5, 1)]
+   16728583 [' 16728583', '16728583', '16728583,', 'RO 16728583', 'RO16728583,']
+   8955860 [' 8955860', '8955860', 'RO 8955860', 'RO8955860']
+   335278 [' 335278', '335278', 'RO 335278', 'RO335278']
+   4851409 [' 4851409', '4851409', 'RO 4851409', 'RO4851409']
+   13591928 [' 13591928', '13591928', 'RO 13591928', 'RO13591928']
+
+## Invalid check digits
+invalid rows 5124 name maps to exactly one valid CUI 1188 50.6 M to several 180 to none 3756
+   ('3324092', 'MEDI SENSE SRL', '33240921')
+   ('3324092', 'MEDI SENSE SRL', '33240921')
+   ('3324092', 'MEDI SENSE SRL', '33240921')
+   ('02858031202', 'CONSORZIO STABILE EBG', '33997522')
+   ('3324092', 'MEDI SENSE SRL', '33240921')
+   ('RO317126', 'LOIAL IMPEX S.R.L.', '3176126')
+   ('RO317126', 'LOIAL IMPEX S.R.L.', '3176126')
+   ('RO317126', 'LOIAL IMPEX S.R.L.', '3176126')
+   ('RO317126', 'LOIAL IMPEX S.R.L.', '3176126')
+   ('RO317126', 'LOIAL IMPEX S.R.L.', '3176126')
+invalid by country column: [('(no country col)', 4764), ('Romania', 161), ('Italy', 98), ('Türkiye', 30), ('United Kingdom', 7), ('Canada', 7), ('Turkey', 6), ('France', 5)]
+invalid by digit length: [(1, 5), (2, 7), (3, 28), (4, 93), (5, 144), (6, 844), (7, 979), (8, 1665), (9, 845), (10, 514)]
+
+## Supplier CUI equals the contracting authority CUI: 186 rows 1.27 bn 0.19%
+  by kind Counter({'DAN': 161, 'CON': 23, 'FARA': 2})
+   2021_CON 185078 RO 13328043 | Societatea Comerciala pentru Servicii de Mentenanta a Retelei Electrice de Transport Smart S.A. | 0.23 bn
+   2021_CON 190729 RO 1443170 | TANCRAD S.R.L. | 0.16 bn
+   2022_CON 190469  1443170 | HIDROCONSTRUCTIA S.A. | 0.13 bn
+   2021_CON 189088 RO 1443170 | HIDROCONSTRUCTIA S.A. | 94.8 M
+   2021_CON 188822 RO 1443170 | ROTARY CONSTRUCTII S.R.L. | 83.0 M
+   2022_CON 175905 3897378 | TEHNIC ASIST S.R.L. | 78.5 M
+   2021_CON 190687 4494764 | GP SAGEATA PROD S.R.L. | 68.6 M
+   2022_CON 190389  20330054 | HIDROCONSTRUCTIA S.A. | 67.7 M
+   2021_CON 189418 RO 1443170 | HIDROCONSTRUCTIA S.A. | 50.7 M
+   2021_CON 190144 RO 13328043 | RETRASIB S.A. | 41.1 M
+
+## Rows without a usable CUI: why
+total without usable CUI: 9,594 rows (0.22%), 88.05 bn (13.38%)
+| consortium name | 16 | 0.00% | 37.72 bn | 5.73% |
+| foreign (country column) | 605 | 0.01% | 18.31 bn | 2.78% |
+| invalid_check_digit | 4,920 | 0.11% | 17.08 bn | 2.60% |
+| foreign (VAT prefix) | 1,027 | 0.02% | 6.65 bn | 1.01% |
+| too_long_digits | 1,029 | 0.02% | 4.85 bn | 0.74% |
+| other_junk | 1,004 | 0.02% | 3.30 bn | 0.50% |
+| text_not_a_code | 135 | 0.00% | 68.5 M | 0.01% |
+| blank | 638 | 0.01% | 66.3 M | 0.01% |
+| excel_scientific | 9 | 0.00% | 5.0 M | 0.00% |
+| cnp_like_13_digits | 184 | 0.00% | 0.9 M | 0.00% |
+| trade_register_no | 27 | 0.00% | 0.2 M | 0.00% |
+top no-usable-CUI rows by RON:
+   2025_FARA CAN1138844 '125644669' | FCSA JV |  | 15.76 bn
+   2026_FARA CAN1140758 '789509-7' | Asocierea  Candu Energy Inc. –  Canadian Commercial Corporation – Ansa |  | 10.24 bn
+   2023_CON 181353 'A-28854727' | "Asocierea FCC - ASTALDI-CONVENSA , tronson 3", formata din FCC Constr | Romania | 3.10 bn
+   2022_CON CAN1042051 '094149722' | Asocierea RailWorks formata din Aktor S.A.(Lider), Alstom Transport S. |  | 2.72 bn
+   2023_FARA CAN1117439 '7895097' | Asocierea Candu Energy Inc – Canadian Commercial Corporation | Canada | 2.60 bn
+   2022_CON CAN1073344 '2060011753' | Cengiz Insaat Sanayi ve Ticaret A.S. |  | 2.13 bn
+   2022_CON CAN1073344 '6120028093' | MAPA INSAAT VE TICARET ANONIM SIRKETI |  | 2.13 bn
+   2023_CON 178201 '00398970582' | Asocierea Astaldi Spa-FCC Construccion SA-Salcef Construzioni Edili e  | Romania | 2.09 bn
+   2023_CON 178201 '00398970582' | Asocierea Astaldi Spa-FCC Construccion SA-Salcef Construzioni Edili e  | Romania | 2.00 bn
+   2023_CON CAN1093297 'A-28854727' | FCC CONSTRUCCION S.A. | Romania | 1.92 bn
+   2023_CON 181353 'GEMH 06556101000' | Asocierea „RAIL WORKS"   formata din ALSTOM TRANSPORT S.A., AKTOR S.A. | Romania | 1.78 bn
+   2025_CON CAN1145385 '20038799007' | Euro-Asfalt |  | 1.54 bn
+   2025_CON CAN1157175 '20038799007' | Euro-Asfalt |  | 1.49 bn
+   2025_CON CAN1158870 '20038799007' | Euro-Asfalt |  | 1.24 bn
+   2022_CON CAN1074935 '0590006036' | Alsim Alarko Sanayi Tesisleri ve Ticaret A.S. |  | 1.20 bn
+
+valid-checksum CUI but foreign country column: 23 1.49 bn
+   2461490647 D'AGOSTINO ANGELO ANTONIO COSTRUZIONI GENERALI S.R.L. Italy
+   28982347 Sellier&Bellot a.s. Czech Republic
+   28982347 Sellier&Bellot a.s. Czech Republic
+   28982347 Sellier&Bellot a.s. Czech Republic
+   1152147 FRESIA S.P.A. Italy
+   1152147 FRESIA S.P.A. Italy
+   1152147 FRESIA S.P.A. Italy
+   302477747 UAB CIVITTA Lithuania
+rows with a country column: 848460 non-Romania: 628
+
+## Consortium-looking names: 1242 rows 42.31 bn by cat [('valid_ro_cui', 1222), ('other_junk', 8), ('invalid_check_digit', 7), ('foreign_vat_format', 2), ('blank', 2), ('text_not_a_code', 1)]
+   '125644669' | FCSA JV | 15.76 bn | n_winners 1
+   '789509-7' | Asocierea  Candu Energy Inc. –  Canadian Commercial Corporation – Ansaldo Nucleare S.p.A. –  Korea H | 10.24 bn | n_winners 1
+   'A-28854727' | "Asocierea FCC - ASTALDI-CONVENSA , tronson 3", formata din FCC Construccion SA, Astaldi S.p.A., Con | 3.10 bn | n_winners 1
+   '094149722' | Asocierea RailWorks formata din Aktor S.A.(Lider), Alstom Transport S.A. si Arcada Company S.A | 2.72 bn | n_winners 1
+   '7895097' | Asocierea Candu Energy Inc – Canadian Commercial Corporation | 2.60 bn | n_winners 1
+   '00398970582' | Asocierea Astaldi Spa-FCC Construccion SA-Salcef Construzioni Edili e Ferroviarie Spa-SC Thales Syst | 2.09 bn | n_winners 1
+   '00398970582' | Asocierea Astaldi Spa-FCC Construccion SA-Salcef Construzioni Edili e Ferroviarie Spa-SC Thales Syst | 2.00 bn | n_winners 1
+   'GEMH 06556101000' | Asocierea „RAIL WORKS"   formata din ALSTOM TRANSPORT S.A., AKTOR S.A.si ARCADA COMPANY S.A.  lideru | 1.78 bn | n_winners 1
+rows in multi-winner contracts: 178851 284.99 bn 43.31%
+
+## CNP-like (personal numeric code) supplier ids: 187 91.7 M
+
+## Name variants per valid normalised CUI
+exact string
+   | 1 | 90,941 CUIs (72.14%) | 21.35% of rows | 27.09% of RON |
+   | 2 | 29,715 CUIs (23.57%) | 45.88% of rows | 37.04% of RON |
+   | 3-5 | 5,157 CUIs (4.09%) | 26.97% of rows | 32.70% of RON |
+   | 6-10 | 175 CUIs (0.14%) | 4.94% of rows | 2.29% of RON |
+   | 11+ | 73 CUIs (0.06%) | 0.86% of rows | 0.89% of RON |
+case+space folded
+   | 1 | 91,352 CUIs (72.47%) | 21.41% of rows | 27.62% of RON |
+   | 2 | 29,675 CUIs (23.54%) | 46.06% of rows | 36.79% of RON |
+   | 3-5 | 4,845 CUIs (3.84%) | 27.37% of rows | 32.58% of RON |
+   | 6-10 | 140 CUIs (0.11%) | 4.82% of rows | 2.84% of RON |
+   | 11+ | 49 CUIs (0.04%) | 0.34% of rows | 0.18% of RON |
+diacritics/punct/legal form stripped
+   | 1 | 121,256 CUIs (96.19%) | 85.60% of rows | 87.28% of RON |
+   | 2 | 4,145 CUIs (3.29%) | 8.10% of rows | 6.97% of RON |
+   | 3-5 | 580 CUIs (0.46%) | 5.91% of rows | 5.55% of RON |
+   | 6-10 | 57 CUIs (0.05%) | 0.10% of rows | 0.02% of RON |
+   | 11+ | 23 CUIs (0.02%) | 0.30% of rows | 0.18% of RON |
+CUIs: 126061
+  most spellings 16054368 102 ['COMPANIA NATIONALA DE ADMINISTRARE A INFRASTRUCTURII RUTIERE SA', 'COMPANIA NATIONALA DE ADMINISTRARE A INFRASTRUCTURII RUTIERE', 'CNAIR', 'CNAIR DRDP CLUJ', 'Compania Nationala de Administrare a Infrastructurii Rutiere', 'Compania Nationala de Administrare a Infrastructurii Rutiere S.A.', 'COMPANIA NATIONALA DE ADMINISTRARE A INFRASTRUCTURII RUTIERE S.A.', 'CNAIR-DRDP BUCURESTI', 'C.N.A.I.R.', 'CNAIR-DRDP Constanta', 'Compania nationala de administrare a infrastructurii rutiere', 'Compania Nationala de Administrare a Infrastructurii Rutiere SA']
+  most spellings 18921652 79 ['SC JUMBO EC.R S.R.L.', 'JUMBO EC.R SRL', 'JUMBO EC.RS.R.L.', 'JUMBO EC.RS.R.L', 'SC JUMBO ECR SRL', 'JUMBO EC.R. SRL', 'JUMBO E.C.R.', 'SC JUMBO EC.R S.R.L', 'JUMBO', 'Jumbo Ec.R Srl', 'JUMBO E.C.R', 'SC JUMBO EC.RS.R.L.']
+  most spellings 13348610 45 ['S.C. REWE ROMANIA SRL', 'REWE ROMANIA SRL', 'SC REWE ROMANIA SRL', 'SC Rewe Romania SRL', 'REWE ROMANIA', 'REWE ROMANIA SRL/PENNY', 'Rewe Romania SRL', 'Rewe (Romania) SRL', 'Rewe Romania', 'SC REWE (ROMANI) SRL/PENNY', 'REWE (ROMANIA) SRL', 'S.C. REWE ROMANIA S.R.L.']
+  most spellings 14476722 43 ['DISTRIBUTIE ENERGIE ELECTRICA ROMANIA SA', 'Distributie Energie Electrica Romania S.A.', 'Distribuție Energie Electrică Romania S.A. Sucursala Bistrița', 'Distributie Energie Electrica Romania SA - Sucursala Brasov', 'Distributie Energie Electrica Romania SA', 'Distributie Energie Electrica Romania', 'Distributie Energie electrica SA', 'DISTRIBUTIE ENERGIE ELECTRICA ROMANIA', 'DISTRIBUTIE ENERGIE ELECTRICA ROMANIA S.A.', 'DISTRIBUTIE ENERGIE ELECTRICA', 'Distribuție Energie Electrică Romania SA', 'DISTRIBUŢIE ENERGIE ELECTRICĂ ROMANIA S.A.']
+  most spellings 17686532 37 ['INSTITUTIA PREFECTULUI MUNICIPIUL BUCURESTI', 'DIRECTIA GENERALA PERMISE DE CONDUCERE SI INMATRICULARI', 'instituția prefectului municipiul București', 'D.R.P.C.I.V.', 'DRPCIV SLOBOZIA', 'Institutia Prefectului Municipiului Bucuresti', 'INSTITUTIA PREFECTULUI JUDETULUI ARGES', 'DIRECTIA REGIM PERMISE DE CONDUCERE SI INMATRICULAREA VEHICULELOR', 'Institutia prefectului jud. Arges', 'Institutia Prefectului Judetului Cluj - Serviciul Inmatriculari auto', 'Institutia Prefectului Judetului Iasi', 'Directia Regim Permise de Conducere si Inmatricularea Vehiculelor DRPCIV']
+typical (top-RON CUIs with >1 spelling):
+   430008 11.15 bn 3 ['CONSTRUCTII ERBASU S.A.', 'CONSTRUCTII ERBASU', 'S.C. CONSTRUCTII ERBASU S.A.']
+   8955860 10.47 bn 5 ['ALLIANCE HEALTHCARE ROMANIA', 'ALLIANCE HEALTHCARE ROMÂNIA SRL', 'FARMEXPERT D.C.I. S.R.L.', 'S.C. ALLIANCE HEALTHCARE ROMANIA S.R.L.', 'ALLIANCE HEALTHCARE SRL']
+   9434372 8.64 bn 3 ['DELTAMED', 'S.C. DELTAMED S.R.L.', 'DELTAMED S.R.L.']
+   16601724 8.51 bn 3 ['PORR CONSTRUCT', 'PORR CONSTRUCT S.R.L.', 'S.C. PORR CONSTRUCT S.R.L.']
+   6640696 7.83 bn 2 ['S.C. Alstom Transport S.A.', 'S.C. S.C. Alstom Transport S.A. S.A.']
+   335278 7.14 bn 4 ['FARMEXIM S.A.', 'Farmexim', 'S.C. FARMEXIM S.A. S.A.', 'FARMEXIM SA']
+   31994414 6.07 bn 2 ['SA & PE CONSTRUCT SRL', 'SC SA & PE CONSTRUCT SRL']
+   17042060 6.07 bn 2 ['S.C. TEHNOSTRADE S.R.L. S.R.L.', 'TEHNOSTRADE S.R.L.']
+   6544184 5.52 bn 2 ['CONCELEX', 'CONCELEX S.R.L.']
+   9378655 4.00 bn 11 ['DR.MAX', 'S.C. DR.MAX S.R.L.', 'Dr Max SRL', 'DR. MAX S.R.L.', 'S.C. DR. MAX SRL', 'Dr.Max']
+   17487 3.94 bn 2 ["BOG'ART", "BOG'ART S.R.L."]
+   14399840 3.63 bn 2 ['DANTE INTERNATIONAL S.A.', 'S.C. DANTE INTERNATIONAL S.A. S.A.']
+   6891914 3.58 bn 3 ['STRABAG', 'STRABAG S.R.L.', 'S.C. STRABAG S.R.L.']
+   14052360 3.39 bn 2 ['Concelex Engineering S.R.L', 'Asocierea Concelex Engineering S.R.L si Act Construct SRL']
+   9311280 3.36 bn 6 ['MEDIPLUS EXIM', 'MEDIPLUS EXIM SRL', 'MEDIPLUS EXIM S.R.L.', 'S.C. MEDIPLUS EXIM S.R.L.', 'EUROPHARM HOLDING', 'FELSIN FARM S.R.L.']
+   34397550 3.24 bn 5 ['INEDIT CLEAN TOTAL', 'INEDITGRUP.RO', 'INEDIT GRUP.RO', 'S.C. INEDIT CLEAN TOTAL S.R.L.', 'S.C. INEDITGRUP.RO S.R.L.']
+   14403216 3.10 bn 2 ['AIRBUS HELICOPTERS ROMANIA', 'S.C. AIRBUS HELICOPTERS ROMANIA S.A.']
+   12751583 2.86 bn 3 ['ROMPETROL DOWNSTREAM', 'S.C. ROMPETROL DOWNSTREAM S.R.L.', 'ROMPETROL DOWNSTREAM SRL']
+   18626610 2.78 bn 2 ['S.C. Roplastserv SRL S.R.L.', 'Roplastserv SRL']
+   11201891 2.72 bn 9 ['OMV PETROM MARKETING', 'S.C. OMV PETROM MARKETING S.R.L.', 'OMV PETROM MARKETING S.R.L.', 'OMV PETROM MARKETING SRL', 'SC OMV PETROM MARKETING SRL', 'OMV PETROM S.A.']
+   8971726 2.50 bn 3 ['VODAFONE ROMANIA', 'VODAFONE ROMANIA S.A.', 'S.C. VODAFONE ROMANIA S.A. S.R.L.']
+   25872722 2.23 bn 2 ['Drum Concept', 'Drum COncept']
+   13943110 2.17 bn 3 ['RENAULT COMMERCIAL ROUMANIE', 'RENAULT COMMERCIAL ROUMANIE S.R.L.', 'S.C. RENAULT COMMERCIAL ROUMANIE S.R.L.']
+   39870594 2.17 bn 2 ['ROTARY CONSTRUCTII MENTENANTA', 'S.C. ROTARY CONSTRUCTII MENTENANTA S.A.']
+   13991630 2.16 bn 3 ['OSCAR DOWNSTREAM', 'S.C. OSCAR DOWNSTREAM S.R.L.', 'OSCAR DOWNSTREAM S.R.L.']
+   22842662 2.05 bn 2 ['ALPENSIDE', 'SC ALPENSIDE SRL']
+   8566375 1.94 bn 5 ['S.C NISARA IMPEX S.R.L', 'NISARA IMPEX', 'NISARA IMPEX S.R.L', 'S.C. NISARA IMPEX S.R.L.', 'S.C. S.C NISARA IMPEX S.R.L S.R.L.']
+   5437520 1.81 bn 2 ['ARCADA COMPANY', 'S.C. ARCADA COMPANY S.A.']
+   17544945 1.77 bn 3 ['DIGISIGN', 'S.C. DIGISIGN S.A.', 'DIGISIGN S.A.']
+   8006670 1.73 bn 3 ['TANCRAD', 'TANCRAD S.R.L.', 'S.C. TANCRAD S.R.L.']
+   11080242 1.72 bn 5 ['B.BRAUN MEDICAL', 'B.BRAUN MEDICAL SRL', 'S.C. B.BRAUN MEDICAL S.R.L.', 'B.BRAUN MEDICAL S.R.L.', 'KAPAMED INTERNATIONAL']
+   200106 1.63 bn 2 ['PHARMAFARM', 'PHARMAFARM S.A.']
+   33623676 1.60 bn 2 ['INTERMEDIA SERVICES TOP', 'S.C. INTERMEDIA SERVICES TOP S.R.L.']
+   3391027 1.60 bn 4 ['FRESENIUS KABI ROMANIA', 'FRESENIUS KABI ROMANIA SRL', 'FRESENIUS KABI ROMANIA S.R.L.', 'S.C. FRESENIUS KABI ROMANIA S.R.L.']
+
+## One CUI, names sharing no token (after stripping legal forms)
+CUIs with a disjoint-name pair: 1003 0.80% rows 272986 RON 41.07 bn 7.21%
+   8955860 10.47 bn ['ALLIANCE HEALTHCARE ROMANIA', 'ALLIANCE HEALTHCARE ROMÂNIA SRL', 'FARMEXPERT D.C.I. S.R.L.', 'S.C. ALLIANCE HEALTHCARE ROMANIA S.R.L.', 'ALLIANCE HEALTHCARE SRL']
+   9311280 3.36 bn ['MEDIPLUS EXIM', 'MEDIPLUS EXIM SRL', 'MEDIPLUS EXIM S.R.L.', 'S.C. MEDIPLUS EXIM S.R.L.', 'EUROPHARM HOLDING']
+   34397550 3.24 bn ['INEDIT CLEAN TOTAL', 'INEDITGRUP.RO', 'INEDIT GRUP.RO', 'S.C. INEDIT CLEAN TOTAL S.R.L.', 'S.C. INEDITGRUP.RO S.R.L.']
+   11201891 2.72 bn ['OMV PETROM MARKETING', 'S.C. OMV PETROM MARKETING S.R.L.', 'OMV PETROM MARKETING S.R.L.', 'OMV PETROM MARKETING SRL', 'SC OMV PETROM MARKETING SRL']
+   11080242 1.72 bn ['B.BRAUN MEDICAL', 'B.BRAUN MEDICAL SRL', 'S.C. B.BRAUN MEDICAL S.R.L.', 'B.BRAUN MEDICAL S.R.L.', 'KAPAMED INTERNATIONAL']
+   566 1.42 bn ['ELECTROMONTAJ S.A.', 'ELECTROMONTAJ', 'Asocierea: ELECTROMONTAJ SA Sucursala Bacau (lider) – EXIMPROD POWER SYSTEMS SA', '<individual redacted>']
+   1199107 1.20 bn ['BIO EEL S.R.L.', 'BIOEEL', 'S.C. BIO EEL S.R.L. S.R.L.']
+   5888716 1.13 bn ['RCS & RDS S.A.', 'Digi Romania S.A. -', 'Digi Romania S.A.', 'RCS & RDS S.A. -', 'RCS&RDS']
+   1151753 1.02 bn ['VOESTALPINE RAILWAY SYSTEMS ROMANIA', 'S.C. VOESTALPINE RAILWAY SYSTEMS ROMANIA S.A.', 'VAE APCAROM S.A. (actualmente Voestalpine Railway Systems Romania SA)', 'VAE APCAROM S.A.', 'VOESTALPINE RAILWAY SYSTEMS ROMANIA SA']
+   427410 0.95 bn ['C.N. COMPANIA NATIONALA POSTA ROMANA S.A. S.A.', 'COMPANIA NATIONALA POSTA ROMANA S.A.', 'C.N. COMPANIA NATIONALA POSTA ROMANA S.A. S.A. - OP HATEG', 'C.N. COMPANIA NATIONALA POSTA ROMANA S.A.', 'C.N. COMPANIA NATIONALA POSTA ROMANA S.A. S.A. - Agentia Santamaria-Orlea']
+   6089555 0.93 bn ['S.C. UNITED WASTE SOLUTIONS S.R.L.', 'ROSAL GRUP', 'UNITED WASTE SOLUTIONS', 'ROSAL GRUP SA', 'S.C. BIN GO SOLUTIONS S.R.L.']
+   9625593 0.77 bn ['MEDICAL ORTOVIT', 'MEDICAL ORTOVIT S.R.L.', 'S.C. MEDICAL ORTOVIT S.R.L.', 'STRYKER ROMANIA']
+   16790810 0.74 bn ['ANTREPRIZA DE CONSTRUCTII DRUMURI SI AUTOSTRAZI', 'AQUA PARC SRL']
+   15687329 0.69 bn ['Wiebe Romania', 'BAWI CONSTRUCTION  (fosta WIEBE ROMÂNIA)', 'BAWI CONSTRUCTION']
+   3596251 0.69 bn ['DONA. LOGISTICA', 'S.C. DONA.LOGISTICA S.R.L.', 'SIEPCOFAR', 'S.C. DONA. LOGISTICA S.A.', 'S.C. SIEPCOFAR S.A.']
+   1443170 0.58 bn ['S.C. Compania de Utilitati Publice S.R.L.', 'HIDROCONSTRUCTIA S.A.', 'Compania de Utilitati Publice', 'TANCRAD S.R.L.', 'ROTARY CONSTRUCTII S.R.L.']
+   6614131 0.51 bn ['ASSECO SEE', 'ASEE Solutions', 'ASEE Solutions S.R.L.', 'S.C. ASEE Solutions S.R.L.']
+   10933694 0.51 bn ['B.N.BUSINESS S.R.L.', 'BN BUSINESS', 'S.C. B.N.BUSINESS S.R.L. S.R.L.', 'B.N.BUSINESS S.R.L. -', 'S.C. BN BUSINESS S.R.L.']
+   28627965 0.50 bn ['BLUESPACE TECHNOLOGY S.R.L.', 'BlueSpace TECHNOLOGY', 'BLUE SPACE TEHNOLOGY', 'SC BLUE SPACE TECHONOLOGY SRL', 'S.C. BlueSpace TECHNOLOGY S.R.L.']
+   29802703 0.49 bn ['MSC Operational SA', 'MSC OPERATIONAL S.A.', 'EPLUS SMART ENERGY']
+   30917324 0.48 bn ['BAU STARK', 'CONCRETE & DESIGN SOLUTIONS SRL']
+   14873188 0.45 bn ['GEIGER BRASOV', 'CONSAL S.R.L.', 'S.C. GEIGER BRASOV S.R.L.']
+   18035010 0.43 bn ['DELUXE MEDICRAFTS', 'DELUXE CARDS', 'DELUXE MEDICRAFTS SRL', 'alpha ned']
+   5018980 0.35 bn ['INOVECO', 'S.C. IRIDEX-GROUP-PLASTIC S.R.L.']
+   13328043 0.29 bn ['RETRASIB S.A.', 'Societatea Comerciala pentru Servicii de Mentenanta a Retelei Electrice de Transport Smart S.A.', 'S.M.B. S.R.L.', 'ELM ELECTROMONTAJ CLUJ S.A.']
+   5175054 0.27 bn ['S & T ROMANIA', 'KONTRON SERVICES ROMANIA', 'S.C. KONTRON SERVICES ROMANIA S.R.L.', 'KONTRON SERVICES ROMAMNIA SRL', 'KONTRON SERVICES ROMANIA SRL']
+   27895927 0.23 bn ['Dataware Consulting S.R.L.', 'DENDRIO INNOVATIONS', 'DENDRIO INNOVATIONS SRL', 'S.C. Dataware Consulting S.R.L. S.R.L.', 'S.C. DENDRIO INNOVATIONS S.R.L.']
+   336290 0.21 bn ['Asigurarea Romaneasca ASIROM VIENNA INSURANCE GROUP', 'S.C. Asigurarea Romaneasca ASIROM VIENNA INSURANCE GROUP S.A.', 'Asigurarea Româneasca ASIROM VIENNA INSURANCE GROUP S.A.', 'ASOCIEREA ASITO KAPITAL S.A.- SOCIETATE DE ASIGURARE - REASIGURARE']
+   2329485 0.21 bn ["BRIARI'S IND", "S.C. BRIARI'S IND S.A.", "S.C. BRIARI'S IND S.R.L.", 'Briaris', "BRIARI'S IND SA"]
+   9482566 0.18 bn ['DANCO PRO COMMUNICATION S.R.L.', 'S.C. DANCO PRO COMMUNICATION S.R.L. S.R.L.', 'EXIMTUR S.R.L.']
+
+## One normalised name, several valid CUIs
+names with >1 CUI: 1314  CUIs involved: 2823
+of which distinctive (>=2 tokens, >=12 chars): 533
+   PORR CONSTRUCT [('1443170', '0.58 bn', 29), ('16601724', '8.51 bn', 315)]
+   EUROPHARM HOLDING [('6567900', '0.38 bn', 14689), ('9311280', '3.36 bn', 30668)]
+   DANTE INTERNATIONAL [('14399840', '3.63 bn', 14919), ('42643192', '0.0 M', 1)]
+   OMV PETROM MARKETING [('11201891', '2.72 bn', 9398), ('1590082', '0.33 bn', 422), ('28447271', '0.0 M', 2)]
+   CONCRETE DESIGN SOLUTIONS [('30917324', '0.48 bn', 130), ('31730943', '1.47 bn', 394), ('8716154', '38.1 M', 6)]
+   ARCADA COMPANY [('11054529', '59.3 M', 43), ('5437520', '1.81 bn', 109)]
+   B BRAUN MEDICAL [('11080242', '1.72 bn', 19841), ('23517392', '88.1 M', 615)]
+   KAPAMED INTERNATIONAL [('11080242', '1.72 bn', 19841), ('29589509', '57.5 M', 1121)]
+   N NATIONALA POSTA ROMANA [('11653560', '0.82 bn', 8906), ('15346437', '0.2 M', 52), ('15673684', '0.1 M', 25), ('30515831', '0.1 M', 34), ('30537341', '0.0 M', 19), ('30565694', '0.0 M', 32), ('30716720', '0.0 M', 18), ('40708694', '0.0 M', 1), ('427410', '0.95 bn', 9261)]
+   STRYKER ROMANIA [('12704530', '0.77 bn', 1929), ('9625593', '0.77 bn', 3588)]
+   TELEKOM ROMANIA COMMUNICATIONS [('427320', '0.30 bn', 1558), ('5888716', '1.13 bn', 4734)]
+   ORANGE ROMANIA [('3430258', '0.0 M', 4), ('9010105', '1.31 bn', 3010)]
+   DONA LOGISTICA [('33358111', '0.34 bn', 10135), ('3596251', '0.69 bn', 22215)]
+   NATIONALA POSTA ROMANA [('15673684', '0.1 M', 25), ('30515831', '0.1 M', 34), ('30537341', '0.0 M', 19), ('30565694', '0.0 M', 32), ('40704315', '0.1 M', 2), ('427410', '0.95 bn', 9261)]
+   CN POSTA ROMANA [('15673684', '0.1 M', 25), ('30515831', '0.1 M', 34), ('30537341', '0.0 M', 19), ('30716720', '0.0 M', 18), ('427410', '0.95 bn', 9261)]
+   N POSTA ROMANA [('15673684', '0.1 M', 25), ('30565694', '0.0 M', 32), ('30716720', '0.0 M', 18), ('427410', '0.95 bn', 9261)]
+   BIN GO SOLUTIONS [('23715217', '0.0 M', 2), ('26834093', '0.0 M', 4), ('6089555', '0.93 bn', 142)]
+   UNITED WASTE SOLUTIONS [('26834093', '0.0 M', 4), ('6089555', '0.93 bn', 142)]
+   PENTRU SERVICII DE MENTENANTA RETELEI ELECTRICE DE TRANSPORT SMART [('13328043', '0.29 bn', 5), ('14232728', '0.61 bn', 13)]
+   ROTARY CONSTRUCTII [('1443170', '0.58 bn', 29), ('1565534', '0.25 bn', 6)]
+   ELM ELECTROMONTAJ CLUJ [('13328043', '0.29 bn', 5), ('201594', '0.49 bn', 13)]
+   MEDIST LIFE SCIENCE [('24205119', '0.17 bn', 1713), ('6705884', '0.57 bn', 2349)]
+   RETELE ELECTRICE [('14232728', '0.61 bn', 13), ('14507322', '1.4 M', 45)]
+   DE UTILITATI PUBLICE [('1443170', '0.58 bn', 29), ('18916672', '0.3 M', 54)]
+   DIRECTIA DE SANATATE PUBLICA JUDETULUI ARAD [('10933694', '0.51 bn', 6698), ('3519496', '0.1 M', 59)]
