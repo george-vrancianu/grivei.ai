@@ -16,10 +16,11 @@ The endpoints are the ones used by the public SEAP interface (undocumented, but 
 
 Example:
   python connectors/seap_harvest.py --authority "MUNICIPIUL BRASOV" --from 2024-01-01 --out data/raw/seap_brasov.json
-Needs only `requests`. Be gentle with the server: ~3 requests/second, pages of 100.
+Needs only `requests`. Be gentle with the server: ~3 requests/second, pages of 1000. List queries are capped
+server-side (2,000 DAs, 3,000 notices per query): a window that hits the cap is split by date, see capped_list().
 """
 import argparse, json, sys, time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import requests
 
@@ -58,48 +59,82 @@ def iso(d, end=False):
     return f"{d}T23:59:59+03:00" if end else f"{d}T00:00:00+02:00"
 
 
+PAGE_SIZE = 1000
+DA_CAP = 2000       # DirectAcquisition_MaxListItems in the /pub page config
+NOTICE_CAP = 3000   # CaNotice_MaxListItems
+
+
+def capped_list(label, fetch, d_from, d_to, cap, key):
+    """All raw rows of a capped list endpoint between two days (inclusive), deduped by `key`.
+
+    `fetch(day_from, day_to, page_index)` returns one page (`items`, `total`, `searchTooLong`). The server stops
+    at `cap` rows per query and filters by day only, so a window that hits the cap is split in halves down to
+    a single day; a single day still over the cap raises rather than truncate silently.
+    """
+    rows = {}
+
+    def window(a, b):
+        got, p = 0, 0
+        while True:
+            j = fetch(a.isoformat(), b.isoformat(), p)
+            if j.get("searchTooLong") or j["total"] >= cap:
+                if p:
+                    raise RuntimeError(f"{label} {a}..{b}: hit the {cap} cap on page {p}")
+                if a == b:
+                    raise RuntimeError(f"{label} {a}: one day is over the {cap} result cap; cannot split further")
+                mid = a + (b - a) // 2
+                print(f"  {label}: {a}..{b} over the cap, splitting at {mid}", file=sys.stderr)
+                time.sleep(PAUSE); window(a, mid)
+                time.sleep(PAUSE); window(mid + timedelta(days=1), b)
+                return
+            for i in j["items"]:
+                rows[i[key]] = i
+            got += len(j["items"])
+            print(f"  {label} {a}..{b}: {got}/{j['total']}", file=sys.stderr)
+            if got >= j["total"] or not j["items"]:
+                return
+            p += 1; time.sleep(PAUSE)
+
+    window(date.fromisoformat(d_from[:10]), date.fromisoformat(d_to[:10]))
+    return list(rows.values())
+
+
 def direct_acquisitions(ca_id, d_from, d_to):
-    out, p = [], 0
-    while True:
-        j = post("/api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/", {
-            "pageSize": 100, "pageIndex": p, "showOngoingDa": False, "cookieContext": None,
+    def fetch(a, b, p):
+        return post("/api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/", {
+            "pageSize": PAGE_SIZE, "pageIndex": p, "showOngoingDa": False, "cookieContext": None,
             "sysDirectAcquisitionStateId": None, "publicationDateStart": None, "publicationDateEnd": None,
-            "finalizationDateStart": iso(d_from), "finalizationDateEnd": iso(d_to, True),
+            "finalizationDateStart": iso(a), "finalizationDateEnd": iso(b, True),
             "cpvCategoryId": None, "contractingAuthorityId": ca_id, "supplierId": None, "cpvCodeId": None,
             "assignedUserId": None, "isOpenForCorrection": None, "sysDirectAcquisitionTypeId": None,
             "directAcquisitionName": None, "uniqueIdentificationCode": None})
-        for i in j["items"]:
-            out.append({"id": i["directAcquisitionId"], "code": i["uniqueIdentificationCode"],
-                        "name": i["directAcquisitionName"], "state": (i.get("sysDirectAcquisitionState") or {}).get("text"),
-                        "cpv": i["cpvCode"], "pub": i["publicationDate"], "fin": i["finalizationDate"],
-                        "supplier": i["supplier"], "ca": i["contractingAuthority"],
-                        "est": i["estimatedValueRon"], "val": i["closingValue"]})
-        print(f"  direct purchases: {len(out)}/{j['total']}", file=sys.stderr)
-        if len(out) >= j["total"] or not j["items"]:
-            return out
-        p += 1; time.sleep(PAUSE)
+    out = []
+    for i in capped_list("direct purchases", fetch, d_from, d_to, DA_CAP, "directAcquisitionId"):
+        out.append({"id": i["directAcquisitionId"], "code": i["uniqueIdentificationCode"],
+                    "name": i["directAcquisitionName"], "state": (i.get("sysDirectAcquisitionState") or {}).get("text"),
+                    "cpv": i["cpvCode"], "pub": i["publicationDate"], "fin": i["finalizationDate"],
+                    "supplier": i["supplier"], "ca": i["contractingAuthority"],
+                    "est": i["estimatedValueRon"], "val": i["closingValue"]})
+    return out
 
 
 def award_notices(ca_id, d_from, d_to):
-    out, p = [], 0
-    while True:
-        j = post("/api-pub/NoticeCommon/GetCANoticeList/", {
-            "sysNoticeTypeIds": [], "sortProperties": [], "pageIndex": p, "pageSize": 100,
+    def fetch(a, b, p):
+        return post("/api-pub/NoticeCommon/GetCANoticeList/", {
+            "sysNoticeTypeIds": [], "sortProperties": [], "pageIndex": p, "pageSize": PAGE_SIZE,
             "contractingAuthorityId": ca_id,
-            "startPublicationDate": iso(d_from), "endPublicationDate": iso(d_to, True)})
-        t = lambda k: (i.get(k) or {}).get("text")
-        for i in j["items"]:
-            out.append({"caNoticeId": i["caNoticeId"], "noticeId": i["noticeId"], "procedureId": i["procedureId"],
-                        "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "state": t("sysNoticeState"),
-                        "procState": t("sysProcedureState"), "ca": i["contractingAuthorityNameAndFN"],
-                        "title": i["contractTitle"], "contractType": t("sysAcquisitionContractType"),
-                        "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),
-                        "cpv": i["cpvCodeAndName"], "value": i["ronContractValue"], "date": i["noticeStateDate"],
-                        "isOnline": i["isOnline"], "cur": i["currencyCode"], "est": i["estimatedValueExport"]})
-        print(f"  award notices: {len(out)}/{j['total']}", file=sys.stderr)
-        if len(out) >= j["total"] or not j["items"]:
-            return out
-        p += 1; time.sleep(PAUSE)
+            "startPublicationDate": iso(a), "endPublicationDate": iso(b, True)})
+    out = []
+    t = lambda k: (i.get(k) or {}).get("text")
+    for i in capped_list("award notices", fetch, d_from, d_to, NOTICE_CAP, "caNoticeId"):
+        out.append({"caNoticeId": i["caNoticeId"], "noticeId": i["noticeId"], "procedureId": i["procedureId"],
+                    "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "state": t("sysNoticeState"),
+                    "procState": t("sysProcedureState"), "ca": i["contractingAuthorityNameAndFN"],
+                    "title": i["contractTitle"], "contractType": t("sysAcquisitionContractType"),
+                    "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),
+                    "cpv": i["cpvCodeAndName"], "value": i["ronContractValue"], "date": i["noticeStateDate"],
+                    "isOnline": i["isOnline"], "cur": i["currencyCode"], "est": i["estimatedValueExport"]})
+    return out
 
 
 def contracts_for(notice):
