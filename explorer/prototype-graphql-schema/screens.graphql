@@ -1,0 +1,125 @@
+# PROTOTYPE — one operation per decided screen, to check the SDL serves it.
+# Validated against schema.graphql by validate.mjs.
+
+# /explore/?q=deszapezire&from=2024-01-01&county=RO-BV&tab=suppliers
+query MainScreen($f: RecordFilter!, $side: CountySide) {
+  sources { id dataThrough { kind date } }
+  seap {
+    search(filter: $f) {
+      total { awarded records suspectLeftOut noValue estimated }
+      map(side: $side) {
+        counties { area total { awarded } }
+        national { awarded records }
+        unplaced { awarded records }
+        unknownSupplierCounty { awarded records }
+      }
+      goTo { key displayName }
+      suppliers(limit: 50) { count rows { entity { key displayName placement { county { code } } } matched { awarded records } } }
+      authorities(limit: 50) { count rows { entity { key displayName } matched { awarded records } } }
+      records(limit: 50) {
+        count
+        rows { record { code title value badges } matchedField { field text highlights } }
+      }
+    }
+  }
+}
+
+# Zoomed county: UAT choropleth
+query ZoomedCounty($f: RecordFilter!, $c: CountyCode!) {
+  uats(county: $c) { siruta name }
+  seap { search(filter: $f) { uatMap(county: $c) { area name total { awarded records } } } }
+}
+
+# /explore/supplier/<cui>  (Overview tab)
+query SupplierOverview($key: ID!) {
+  entity(key: $key) {
+    displayName identity cui anafStatus identityCurated
+    placement { county { name } uat { name } national placedBy }
+    aliases { name records first last differsFromAnaf }
+    seap {
+      asSupplier {
+        total { awarded records suspectLeftOut }
+        counterparties(limit: 10) { count topShare rows { entity { key displayName } total { awarded } } }
+        directPurchaseShare
+        procedures { value total { awarded records } }
+        consortia { members { entity { displayName } share } total { awarded } }
+        frameworks { count ceilings subsequentReported }
+        largestRecords { code title counted }
+        signals(limit: 20) {
+          count
+          rows {
+            rule date authority { displayName }
+            numbers {
+              __typename
+              ... on OverCapNumbers { value cap multiple }
+              ... on SplittingNumbers { purchases sum cap cpvGroup from to }
+              ... on FrameworkOverrunNumbers { ceiling subsequent ratio }
+              ... on NoPublicationNumbers { procedure }
+            }
+            reproduce { authority supplier signal cpv from to }
+          }
+        }
+      }
+      asAuthority { total { awarded } }   # both roles on one page
+    }
+  }
+}
+
+# /explore/authority/<cui>/records?signal=splitting&supplier=<cui>&cpv=301&from=…&to=…
+query AuthorityRecords($key: ID!, $f: RecordFilter!) {
+  entity(key: $key) {
+    seap {
+      asAuthority {
+        records(filter: $f) {
+          total { awarded records suspectLeftOut }
+          facets { channel { value total { records } } signal { value total { records } } counterparty { entity { displayName } matched { awarded } } }
+          records(limit: 100, offset: 0, order: DATE_DESC) {
+            count
+            rows { record { code title date value counted badges channel procedure winners { publishedName naturalPerson share entity { key } } signals { rule } } }
+          }
+        }
+      }
+    }
+  }
+}
+
+# /explore/supplier/<cui>/relationships
+query SupplierRelationships($key: ID!, $cp: ID) {
+  entity(key: $key) {
+    seap {
+      asSupplier {
+        counterparties(limit: 30) { rows { entity { key displayName } naturalPerson total { awarded } viaDirectPurchase { awarded } viaContract { awarded } wonTogether hasSignals } }
+        timeline(counterparty: $cp) { month total { awarded records } }
+        flow { counties { area total { awarded } } national { awarded } unplaced { awarded } }
+      }
+    }
+  }
+}
+
+# /explore/record/CAN1166685
+query RecordPage($code: ID!) {
+  seap {
+    record(code: $code) {
+      code title date kind channel procedure contractType
+      cpv { code description }
+      value counted badges caveatAnchors
+      provenance { source url via fetchedAt }
+      authority { key displayName }
+      winners { entity { key displayName } naturalPerson publishedName share }
+      framework { agreement { code } ceiling subsequentReported ratio }
+      signals { rule date reproduce { authority supplier signal cpv from to } }
+    }
+  }
+}
+
+# Coverage lens + /explore/coverage
+query CoveragePage($w: DateRange) {
+  sources { id name harvested }
+  coverage(source: SEAP, window: $w) {
+    counties { county status withRecords publicEntities otherAuthorities }
+    grid { quarter kind state reason records dataThrough }
+    unplacedAuthorities { records awarded }
+    referenceSnapshot
+  }
+  signalRules { slug window { from to } baseRate baseRateYear dataThrough }
+}
