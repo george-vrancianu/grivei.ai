@@ -15,7 +15,7 @@ Then, on the machine with Archify installed:
 
 No Python dependencies; uses `psql`.
 """
-import argparse, json, os, re, subprocess, sys
+import argparse, json, os, re, subprocess, sys, unicodedata
 from collections import defaultdict
 
 DB = os.environ.get("DATABASE_URL", "postgresql://watchdog:watchdog@localhost/watchdog")
@@ -34,6 +34,10 @@ SELECT e.dst_id,
        coalesce(sum(e.amount_ron) FILTER (WHERE e.relation = 'DIRECT_PURCHASE'), 0)::bigint
   FROM edge e WHERE e.src_id = %d AND e.dst_id = ANY(%s) AND e.relation IN ('AWARDED_CONTRACT','DIRECT_PURCHASE')
  GROUP BY e.dst_id"""
+SQL_HOME_COUNTY = """
+SELECT x.attrs->>'county', count(*) FROM edge e JOIN entity x ON x.id = e.dst_id
+ WHERE e.src_id = %d AND e.relation IN ('AWARDED_CONTRACT','DIRECT_PURCHASE') AND x.attrs->>'county' <> ''
+ GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 1"""
 SQL_CONSORTIA = """
 SELECT src_id, dst_id, count(*) FROM edge WHERE relation = 'CONSORTIUM_WITH' AND src_id = ANY(%s) AND dst_id = ANY(%s)
  GROUP BY 1, 2"""
@@ -58,6 +62,11 @@ def mil(ron):
     return f"{int(ron)/1e6:.1f} million"
 
 
+def norm_county(s):
+    # "Brașov" == "BRASOV" == "brasov": case- and diacritics-insensitive
+    return "".join(c for c in unicodedata.normalize("NFKD", s or "") if not unicodedata.combining(c)).strip().lower()
+
+
 def plural(n, word):
     return f"{n} {word}" if n == 1 else f"{n} {word}s"
 
@@ -78,6 +87,7 @@ def main():
     ap.add_argument("--firms", nargs="*", default=[])
     ap.add_argument("--top", type=int, default=0)
     ap.add_argument("--title", default=None)
+    ap.add_argument("--county", default="", help="the authority's county (colors local companies); empty = the most frequent county among its suppliers")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -85,6 +95,11 @@ def main():
     if not auth:
         sys.exit("authority not found in entity")
     auth_id = int(auth[0][0])
+    # the "home" county, same rule as the viewer: declared with --county or, failing that, the most frequent among suppliers
+    home = a.county or next(iter(q(SQL_HOME_COUNTY % auth_id)), [""])[0]
+    if not home:
+        print("warning: no home county (--county not given, suppliers have none); every company is drawn as 'another county'", file=sys.stderr)
+    home = norm_county(home)
 
     firm_ids = []
     if a.top:
@@ -126,7 +141,7 @@ def main():
             c = k % 6
             e = ents[i]; aw = awards.get(i)
             sid = slug(e[1], used); ids[i] = sid
-            local = e[3].lower().startswith("bra")
+            local = bool(home) and norm_county(e[3]) == home
             sub = f"CUI {e[2]}" + (f" · {e[3]}" if e[3] else "")
             if aw and int(aw[3]):
                 sub += f" · {plural(int(aw[3]), 'negotiation')} without publication"

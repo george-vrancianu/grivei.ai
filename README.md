@@ -6,7 +6,12 @@ Grivei.ai is a public-money watchdog. It takes large public databases and uses a
 
 ## Status
 
-Research phase. There is no code here yet; this repository will hold the project as it takes shape.
+Research phase. The first source, public procurement from SEAP, is harvested and loaded into the graph; asset and interest declarations (ANI) are in progress. Results so far are signals to verify in the source documents, not conclusions.
+
+## What's here
+
+- [`watchdog/`](watchdog/): the project itself. SEAP harvester and loader, Postgres schema and views, export tools, graph viewers, diagrams and the first reports. See [`watchdog/README.md`](watchdog/README.md).
+- [`site/`](site/): the landing page for [grivei.ai](https://grivei.ai/), a static "under construction" page in English and Romanian. See [`site/README.md`](site/README.md).
 
 ## More
 

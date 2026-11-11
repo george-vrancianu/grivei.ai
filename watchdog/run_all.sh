@@ -14,6 +14,6 @@ python3 tools/build_viewer.py --data viewer/brasov.graph.json    --out viewer/br
 python3 tools/export_graph.py --authority "MUNICIPIUL TIMISOARA" --county Timis  --out viewer/timisoara.graph.json
 python3 tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/timisoara.html --title "Watchdog Timișoara"
 
-python3 tools/export_archify.py --authority "MUNICIPIUL BRASOV" --top 10 --out diagrams/brasov-top10.architecture.json
-python3 tools/export_archify.py --authority "MUNICIPIUL TIMISOARA" --top 10 --out diagrams/timisoara-top10.architecture.json
+python3 tools/export_archify.py --authority "MUNICIPIUL BRASOV"    --county Brasov --top 10 --out diagrams/brasov-top10.architecture.json
+python3 tools/export_archify.py --authority "MUNICIPIUL TIMISOARA" --county Timis  --top 10 --out diagrams/timisoara-top10.architecture.json
 echo "done: viewer/*.html, diagrams/*.architecture.json"

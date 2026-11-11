@@ -49,7 +49,7 @@
     },
     {
       "id": "rogera_prest_com",
-      "type": "external",
+      "type": "backend",
       "label": "Rogera Prest Com",
       "sublabel": "CUI 27098220 · Timis · 2 negotiations without publication",
       "row": 3,
@@ -57,7 +57,7 @@
     },
     {
       "id": "barierra_system_srl",
-      "type": "external",
+      "type": "backend",
       "label": "Barierra System Srl",
       "sublabel": "CUI 32257003 · Timis · 1 negotiation without publication",
       "row": 3,
@@ -65,7 +65,7 @@
     },
     {
       "id": "rogera",
-      "type": "external",
+      "type": "backend",
       "label": "Rogera",
       "sublabel": "CUI 15197220 · Timis",
       "row": 3,
