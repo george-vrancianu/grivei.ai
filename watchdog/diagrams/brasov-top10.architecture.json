@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Municipiul Brasov — rețeaua marilor furnizori",
+    "title": "Municipiul Brasov — network of major suppliers",
     "output": "diagrams/brasov-top10.html",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
@@ -11,13 +11,13 @@
       "mode": "auto",
       "entries": {
         "security": {
-          "label": "autoritate contractantă / negociere fără publicare"
+          "label": "contracting authority / negotiation without publication"
         },
         "backend": {
-          "label": "firmă din județ"
+          "label": "company from the same county"
         },
         "external": {
-          "label": "firmă din alt județ"
+          "label": "company from another county"
         }
       }
     }
@@ -27,7 +27,7 @@
       "id": "municipiul_brasov",
       "type": "security",
       "label": "Municipiul Brasov",
-      "sublabel": "CUI 4384206 · autoritate contractantă",
+      "sublabel": "CUI 4384206 · contracting authority",
       "row": 0,
       "col": 2
     },
@@ -35,7 +35,7 @@
       "id": "comprest",
       "type": "backend",
       "label": "Comprest",
-      "sublabel": "CUI 1095130 · Brasov · 6 negocieri fără publicare",
+      "sublabel": "CUI 1095130 · Brasov · 6 negotiations without publication",
       "row": 1,
       "col": 0
     },
@@ -43,7 +43,7 @@
       "id": "rs_activ",
       "type": "backend",
       "label": "Rs Activ",
-      "sublabel": "CUI 17296459 · Brasov · 10 negocieri fără publicare",
+      "sublabel": "CUI 17296459 · Brasov · 10 negotiations without publication",
       "row": 1,
       "col": 1
     },
@@ -115,7 +115,7 @@
   "boundaries": [
     {
       "kind": "security-group",
-      "label": "asociere: 7 firme care câștigă împreună",
+      "label": "consortium: 7 companies winning together",
       "wraps": [
         "comprest",
         "rs_activ",
@@ -133,182 +133,182 @@
       "id": "c_comprest",
       "from": "municipiul_brasov",
       "to": "comprest",
-      "label": "21 contracte + 1 DA · 581.2 mil. RON · 6 neg. fără publicare (177.7 mil.)",
+      "label": "21 contracts + 1 DA · 581.2 million RON · 6 neg. without publication (177.7 million)",
       "variant": "security"
     },
     {
       "id": "c_rs_activ",
       "from": "municipiul_brasov",
       "to": "rs_activ",
-      "label": "26 contracte + 2 DA · 544.9 mil. RON · 10 neg. fără publicare (77.8 mil.)",
+      "label": "26 contracts + 2 DA · 544.9 million RON · 10 neg. without publication (77.8 million)",
       "variant": "security"
     },
     {
       "id": "c_recon",
       "from": "municipiul_brasov",
       "to": "recon",
-      "label": "24 contracte + 6 DA · 190.3 mil. RON",
+      "label": "24 contracts + 6 DA · 190.3 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_bmc_truck_bus",
       "from": "municipiul_brasov",
       "to": "bmc_truck_bus",
-      "label": "1 contracte · 187.1 mil. RON",
+      "label": "1 contract · 187.1 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_fincodrum",
       "from": "municipiul_brasov",
       "to": "fincodrum",
-      "label": "11 contracte · 119.6 mil. RON",
+      "label": "11 contracts · 119.6 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_miracons",
       "from": "municipiul_brasov",
       "to": "miracons",
-      "label": "3 contracte · 113.2 mil. RON",
+      "label": "3 contracts · 113.2 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_euro_strada",
       "from": "municipiul_brasov",
       "to": "euro_strada",
-      "label": "2 contracte · 95.4 mil. RON",
+      "label": "2 contracts · 95.4 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_straco_holding",
       "from": "municipiul_brasov",
       "to": "straco_holding",
-      "label": "2 contracte · 95.4 mil. RON",
+      "label": "2 contracts · 95.4 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_eren_cons",
       "from": "municipiul_brasov",
       "to": "eren_cons",
-      "label": "1 contracte + 1 DA · 89.4 mil. RON",
+      "label": "1 contract + 1 DA · 89.4 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_clarom_trans_s_r_l",
       "from": "municipiul_brasov",
       "to": "clarom_trans_s_r_l",
-      "label": "27 contracte + 6 DA · 86.7 mil. RON",
+      "label": "27 contracts + 6 DA · 86.7 million RON",
       "variant": "emphasis"
     },
     {
       "id": "k_rs_activ_recon",
       "from": "rs_activ",
       "to": "recon",
-      "label": "12× împreună",
+      "label": "12× together",
       "variant": "dashed"
     },
     {
       "id": "k_rs_activ_comprest",
       "from": "rs_activ",
       "to": "comprest",
-      "label": "3× împreună",
+      "label": "3× together",
       "variant": "dashed"
     },
     {
       "id": "k_rs_activ_straco_holding",
       "from": "rs_activ",
       "to": "straco_holding",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_rs_activ_euro_strada",
       "from": "rs_activ",
       "to": "euro_strada",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_rs_activ_miracons",
       "from": "rs_activ",
       "to": "miracons",
-      "label": "3× împreună",
+      "label": "3× together",
       "variant": "dashed"
     },
     {
       "id": "k_rs_activ_fincodrum",
       "from": "rs_activ",
       "to": "fincodrum",
-      "label": "11× împreună",
+      "label": "11× together",
       "variant": "dashed"
     },
     {
       "id": "k_recon_straco_holding",
       "from": "recon",
       "to": "straco_holding",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_recon_euro_strada",
       "from": "recon",
       "to": "euro_strada",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_recon_miracons",
       "from": "recon",
       "to": "miracons",
-      "label": "3× împreună",
+      "label": "3× together",
       "variant": "dashed"
     },
     {
       "id": "k_recon_fincodrum",
       "from": "recon",
       "to": "fincodrum",
-      "label": "11× împreună",
+      "label": "11× together",
       "variant": "dashed"
     },
     {
       "id": "k_straco_holding_euro_strada",
       "from": "straco_holding",
       "to": "euro_strada",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_straco_holding_miracons",
       "from": "straco_holding",
       "to": "miracons",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_straco_holding_fincodrum",
       "from": "straco_holding",
       "to": "fincodrum",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_euro_strada_miracons",
       "from": "euro_strada",
       "to": "miracons",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_euro_strada_fincodrum",
       "from": "euro_strada",
       "to": "fincodrum",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_miracons_fincodrum",
       "from": "miracons",
       "to": "fincodrum",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     }
   ]

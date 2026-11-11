@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Încarcă un JSON produs de un conector în Postgres (tabela import_batch), apoi
-rulează scriptul SQL de transformare al sursei (sql/002_load_seap.sql).
+Loads a JSON produced by a connector into Postgres (the import_batch table), then
+runs the source's SQL transform script (sql/002_load_seap.sql).
 
-Nu are dependențe Python: folosește `psql` (variabila DATABASE_URL sau --db).
+No Python dependencies: uses `psql` (the DATABASE_URL variable or --db).
 
   python connectors/load_batch.py --source seap --file data/raw/seap_brasov.json
 """
@@ -17,7 +17,7 @@ def psql(db, *args, stdin=None):
     cmd = ["psql", db, "-v", "ON_ERROR_STOP=1", "-q", *args]
     r = subprocess.run(cmd, input=stdin, text=True, capture_output=True)
     if r.returncode:
-        sys.exit(f"psql a eșuat:\n{r.stderr}")
+        sys.exit(f"psql failed:\n{r.stderr}")
     return r.stdout
 
 
@@ -31,7 +31,7 @@ def main():
     raw = pathlib.Path(a.file).read_text(encoding="utf-8")
     tag = "$wd_json$"
     if tag in raw:
-        sys.exit("payload conține delimitatorul dollar-quote; schimbă tag-ul")
+        sys.exit("payload contains the dollar-quote delimiter; change the tag")
     psql(a.db, "-c", "CREATE TABLE IF NOT EXISTS import_batch (id bigserial PRIMARY KEY, source_id text NOT NULL REFERENCES source(id), loaded_at timestamptz NOT NULL DEFAULT now(), payload jsonb NOT NULL);")
     out = psql(a.db, "-At", stdin=f"INSERT INTO import_batch (source_id, payload) VALUES ('{a.source}', {tag}{raw}{tag}::jsonb) RETURNING id;")
     batch_id = out.strip().splitlines()[-1]

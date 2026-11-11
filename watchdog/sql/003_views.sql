@@ -1,18 +1,18 @@
 -- =====================================================================
---  Interogări de investigație (views). Toate pornesc din graf (edge) sau
---  din tabelele tipizate SEAP și pot fi filtrate pe orice autoritate.
+--  Investigation queries (views). All start from the graph (edge) or
+--  from the typed SEAP tables and can be filtered on any authority.
 -- =====================================================================
 
--- Praguri legale pentru achiziția directă (Legea 98/2016 art. 7 alin. 5, valori în vigoare 2023-2026)
+-- Legal thresholds for direct purchases (Law 98/2016 art. 7 para. 5, values in force 2023-2026)
 CREATE TABLE IF NOT EXISTS legal_threshold (
     kind text PRIMARY KEY, ron numeric NOT NULL, note text
 );
 INSERT INTO legal_threshold VALUES
- ('direct_goods_services', 270120, 'achiziție directă produse/servicii, fără TVA'),
- ('direct_works',          900400, 'achiziție directă lucrări, fără TVA')
+ ('direct_goods_services', 270120, 'direct purchase of goods/services, excl. VAT'),
+ ('direct_works',          900400, 'direct purchase of works, excl. VAT')
 ON CONFLICT (kind) DO UPDATE SET ron = EXCLUDED.ron;
 
--- Bani primiți per furnizor de la o autoritate, pe canal (DA vs contract)
+-- Money received per supplier from an authority, by channel (DA vs contract)
 CREATE OR REPLACE VIEW v_supplier_totals AS
 SELECT a.id AS authority_id, a.canonical_name AS authority,
        s.id AS supplier_id, s.canonical_name AS supplier, s.cui,
@@ -22,7 +22,7 @@ SELECT a.id AS authority_id, a.canonical_name AS authority,
        count(*) FILTER (WHERE e.relation='AWARDED_CONTRACT')  AS n_contracts,
        sum(e.amount_ron) FILTER (WHERE e.relation='AWARDED_CONTRACT')  AS ron_contracts,
        sum(e.amount_ron) AS ron_total,
-       -- valoarea împărțită egal între membrii asocierii (evită numărarea de N ori a aceluiași contract)
+       -- value split equally among consortium members (avoids counting the same contract N times)
        sum(e.amount_ron / greatest((e.attrs->>'n_winners')::int, 1)) AS ron_total_share,
        min(e.valid_from) AS first_seen, max(e.valid_from) AS last_seen
   FROM edge e
@@ -31,7 +31,7 @@ SELECT a.id AS authority_id, a.canonical_name AS authority,
  WHERE e.relation IN ('DIRECT_PURCHASE','AWARDED_CONTRACT')
  GROUP BY a.id, a.canonical_name, s.id, s.canonical_name, s.cui, s.attrs;
 
--- Achiziții directe peste pragul legal (ori eroare de introducere, ori problemă reală)
+-- Direct purchases above the legal threshold (either a data-entry error or a real problem)
 CREATE OR REPLACE VIEW v_da_over_threshold AS
 SELECT d.code, d.state, d.finalized_at::date AS finalized, s.canonical_name AS supplier, s.cui,
        d.name, d.cpv_code, d.estimated_ron, d.value_ron,
@@ -43,7 +43,7 @@ SELECT d.code, d.state, d.finalized_at::date AS finalized, s.canonical_name AS s
   JOIN legal_threshold t ON t.kind = CASE WHEN d.cpv_code LIKE '45%' THEN 'direct_works' ELSE 'direct_goods_services' END
  WHERE d.value_ron > t.ron;
 
--- Divizare suspectă: același furnizor, același CPV, mai multe DA în 30 de zile, cumulat peste prag
+-- Suspected splitting: same supplier, same CPV, several DAs within 30 days, cumulatively above the threshold
 CREATE OR REPLACE VIEW v_da_possible_splitting AS
 WITH g AS (
   SELECT d.supplier_id, d.cpv_code,
@@ -62,7 +62,7 @@ SELECT s.canonical_name AS supplier, s.cui, g.cpv_code, g.month, g.n, g.total, g
  WHERE g.n >= 2 AND g.total > t.ron AND g.max_single <= t.ron
  ORDER BY g.total DESC;
 
--- Proceduri fără competiție reală
+-- Procedures without real competition
 CREATE OR REPLACE VIEW v_noncompetitive_awards AS
 SELECT n.notice_no, n.published_at::date AS published, n.procedure_type, n.contract_type, n.title,
        c.contract_no, c.contract_date, c.value_ron, s.canonical_name AS winner, s.cui
@@ -72,7 +72,7 @@ SELECT n.notice_no, n.published_at::date AS published, n.procedure_type, n.contr
   JOIN entity s ON s.id = w.entity_id
  WHERE n.procedure_type ILIKE '%negociere fara%' OR n.procedure_type ILIKE '%fara publicare%';
 
--- Concentrare: cota primilor N furnizori din total
+-- Concentration: the top N suppliers' share of the total
 CREATE OR REPLACE VIEW v_concentration AS
 WITH t AS (SELECT supplier, ron_total_share AS ron_total, sum(ron_total_share) OVER () AS grand FROM v_supplier_totals),
      r AS (SELECT supplier, ron_total, grand, row_number() OVER (ORDER BY ron_total DESC) AS rn FROM t)
@@ -80,14 +80,14 @@ SELECT rn, supplier, ron_total, round(100*ron_total/grand,2) AS pct,
        round(100*sum(ron_total) OVER (ORDER BY rn)/grand,2) AS cum_pct
   FROM r;
 
--- Nume de firmă identic, CUI diferit (posibil "firmă-fenix" sau eroare SEAP) — de verificat la ONRC
+-- Identical company name, different CUI (possible "phoenix company" or SEAP error) — check against ONRC
 CREATE OR REPLACE VIEW v_same_name_different_cui AS
 SELECT norm_company_name(canonical_name) AS name_norm, count(*) AS n,
        string_agg(canonical_name || ' [' || cui || ']', ' | ') AS variants
   FROM entity WHERE kind='company' AND cui IS NOT NULL
  GROUP BY 1 HAVING count(*) > 1;
 
--- Rețele de asociere: cine a câștigat împreună cu cine
+-- Consortium networks: who won together with whom
 CREATE OR REPLACE VIEW v_consortia AS
 SELECT a.canonical_name AS firm_a, a.cui AS cui_a, b.canonical_name AS firm_b, b.cui AS cui_b,
        count(*) AS n_contracts, string_agg(DISTINCT e.attrs->>'notice_no', ', ') AS notices
@@ -95,7 +95,7 @@ SELECT a.canonical_name AS firm_a, a.cui AS cui_a, b.canonical_name AS firm_b, b
  WHERE e.relation='CONSORTIUM_WITH'
  GROUP BY 1,2,3,4 ORDER BY n_contracts DESC;
 
--- Vecinătatea unei entități în graf (pentru explorare): toate muchiile la 1 pas
+-- An entity's neighbourhood in the graph (for exploration): all edges 1 hop away
 CREATE OR REPLACE FUNCTION neighbours(p_entity_id bigint)
 RETURNS TABLE (relation text, direction text, other_id bigint, other_name text, other_cui text,
                amount_ron numeric, valid_from date, document_url text)

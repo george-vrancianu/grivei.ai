@@ -1,7 +1,7 @@
-// Varianta rulată din consola browserului pe https://e-licitatie.ro/pub (același API ca seap_harvest.py).
-// 1) setează CA (id-ul SEAP al autorității; îl afli cu:
+// Variant run from the browser console on https://e-licitatie.ro/pub (same API as seap_harvest.py).
+// 1) set CA (the authority's SEAP id; find it with:
 //    fetch('/api-pub/ComboPub/searchContractingAuthorities?filter=municipiul%20brasov&pageIndex=0&pageSize=50&parentId=').then(r=>r.json()).then(j=>console.table(j.items))
-// 2) rulează scriptul; 3) când window.__H.status==='done', copiază JSON.stringify({authority:__H.ca,da:__H.da,notices:__H.notices,contracts:__H.contracts,harvested_at:new Date().toISOString()})
+// 2) run the script; 3) when window.__H.status==='done', copy JSON.stringify({authority:__H.ca,da:__H.da,notices:__H.notices,contracts:__H.contracts,harvested_at:new Date().toISOString()})
 const CA = 3289, FROM = "2024-01-01T00:00:00+02:00", TO = new Date().toISOString();
 window.__H = { status: 'running', log: [], da: [], notices: [], contracts: [], ca: { seapId: CA } };
 (async () => {

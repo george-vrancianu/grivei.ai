@@ -1,23 +1,23 @@
 -- =====================================================================
---  WATCHDOG — schema de bază (PostgreSQL 14+)
+--  WATCHDOG — base schema (PostgreSQL 14+)
 --
---  Principiu: un graf de entități (persoane, firme, instituții) legate
---  prin muchii (edge) care provin ÎNTOTDEAUNA dintr-un document-sursă.
---  Nicio afirmație fără proveniență: fiecare rând din `edge` și fiecare
---  alias/atribut indică `document.id` de unde a fost extras.
+--  Principle: a graph of entities (people, companies, institutions) linked
+--  by edges that ALWAYS come from a source document.
+--  No claim without provenance: every row in `edge` and every
+--  alias/attribute points to the `document.id` it was extracted from.
 --
---  Straturi:
---    1. raw        — ce am primit de la sursă, neatins (jsonb)
---    2. typed      — tabele tipizate per domeniu (achiziții, ulterior ONRC, ANI)
---    3. graph      — entity / edge, comune tuturor domeniilor
---    4. views      — interogările de investigație
+--  Layers:
+--    1. raw        — what we received from the source, untouched (jsonb)
+--    2. typed      — typed tables per domain (procurement, later ONRC, ANI)
+--    3. graph      — entity / edge, shared by all domains
+--    4. views      — the investigation queries
 -- =====================================================================
 
-CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- potrivire fuzzy pe nume
+CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching
 CREATE EXTENSION IF NOT EXISTS unaccent;     -- "Brașov" = "Brasov"
 
 -- ---------------------------------------------------------------------
--- 1. SURSE ȘI PROVENIENȚĂ
+-- 1. SOURCES AND PROVENANCE
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS source (
     id          text PRIMARY KEY,               -- 'seap', 'onrc', 'ani', 'mfinante', 'just'
@@ -27,30 +27,30 @@ CREATE TABLE IF NOT EXISTS source (
 );
 
 INSERT INTO source (id, name, base_url, notes) VALUES
- ('seap',     'SEAP / SICAP (e-licitatie.ro)',     'https://e-licitatie.ro', 'Achiziții publice: anunțuri de atribuire, contracte, achiziții directe'),
- ('onrc',     'Oficiul Național al Registrului Comerțului', 'https://portal.onrc.ro', 'Asociați, administratori, sedii (acces contra cost / recom)'),
- ('mfinante', 'Ministerul Finanțelor — bilanțuri',   'https://mfinante.gov.ro', 'Cifra de afaceri, profit, angajați per CUI'),
- ('ani',      'Agenția Națională de Integritate',   'https://declaratii.integritate.eu', 'Declarații de avere și interese (PDF)'),
- ('just',     'Portalul instanțelor',              'https://portal.just.ro', 'Dosare, părți, soluții'),
- ('anaf',     'ANAF — date publice contribuabili', 'https://www.anaf.ro', 'Stare TVA, inactivi, CUI valid')
+ ('seap',     'SEAP / SICAP (e-licitatie.ro)',     'https://e-licitatie.ro', 'Public procurement: award notices, contracts, direct purchases'),
+ ('onrc',     'Oficiul Național al Registrului Comerțului', 'https://portal.onrc.ro', 'Shareholders, directors, registered offices (paid access / recom)'),
+ ('mfinante', 'Ministerul Finanțelor — balance sheets',   'https://mfinante.gov.ro', 'Turnover, profit, employees per CUI'),
+ ('ani',      'Agenția Națională de Integritate',   'https://declaratii.integritate.eu', 'Asset and interest declarations (PDF)'),
+ ('just',     'Portalul instanțelor',              'https://portal.just.ro', 'Cases, parties, rulings'),
+ ('anaf',     'ANAF — public taxpayer data', 'https://www.anaf.ro', 'VAT status, inactive taxpayers, CUI validity')
 ON CONFLICT (id) DO NOTHING;
 
--- Un document = o unitate recuperabilă de la sursă (un anunț, o fișă de firmă, un PDF).
+-- A document = one retrievable unit from the source (a notice, a company record, a PDF).
 CREATE TABLE IF NOT EXISTS document (
     id           bigserial PRIMARY KEY,
     source_id    text NOT NULL REFERENCES source(id),
     kind         text NOT NULL,                 -- 'award_notice', 'direct_acquisition', 'company_profile', 'asset_declaration'
-    external_id  text NOT NULL,                 -- id-ul din sursă (caNoticeId, DA code, CUI...)
+    external_id  text NOT NULL,                 -- the id in the source (caNoticeId, DA code, CUI...)
     url          text,
     fetched_at   timestamptz NOT NULL DEFAULT now(),
-    content_hash text,                          -- pentru a detecta modificări între rulări
-    raw          jsonb NOT NULL,                -- payload-ul original, neatins
+    content_hash text,                          -- to detect changes between runs
+    raw          jsonb NOT NULL,                -- the original payload, untouched
     UNIQUE (source_id, kind, external_id)
 );
 CREATE INDEX IF NOT EXISTS document_raw_gin ON document USING gin (raw jsonb_path_ops);
 
 -- ---------------------------------------------------------------------
--- 3. GRAFUL DE ENTITĂȚI  (definit înaintea tabelelor tipizate care îl referă)
+-- 3. THE ENTITY GRAPH  (defined before the typed tables that reference it)
 -- ---------------------------------------------------------------------
 CREATE TYPE entity_kind AS ENUM ('person', 'company', 'institution', 'other');
 
@@ -59,12 +59,12 @@ CREATE TABLE IF NOT EXISTS entity (
     kind           entity_kind NOT NULL,
     canonical_name text NOT NULL,
     name_norm      text GENERATED ALWAYS AS (lower(regexp_replace(canonical_name, '\s+', ' ', 'g'))) STORED,
-    -- identificatori "tari" (fac rezoluția entităților deterministă când există)
-    cui            text,                        -- cod fiscal fără prefix RO, doar cifre (firme, instituții)
+    -- "hard" identifiers (make entity resolution deterministic when present)
+    cui            text,                        -- tax code without the RO prefix, digits only (companies, institutions)
     onrc_reg_no    text,                        -- J08/123/2001
-    seap_entity_id bigint,                      -- entityId din SEAP (stabil per firmă în SEAP)
-    -- persoanele nu au identificator public; rezoluția e pe nume + context (vezi entity_alias)
-    attrs          jsonb NOT NULL DEFAULT '{}'::jsonb,   -- oraș, județ, IMM, CAEN, etc.
+    seap_entity_id bigint,                      -- SEAP entityId (stable per company within SEAP)
+    -- people have no public identifier; resolution is by name + context (see entity_alias)
+    attrs          jsonb NOT NULL DEFAULT '{}'::jsonb,   -- city, county, SME, CAEN, etc.
     created_at     timestamptz NOT NULL DEFAULT now(),
     updated_at     timestamptz NOT NULL DEFAULT now()
 );
@@ -72,7 +72,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS entity_cui_uq ON entity (cui) WHERE cui IS NOT
 CREATE INDEX IF NOT EXISTS entity_name_trgm ON entity USING gin (name_norm gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS entity_kind_idx ON entity (kind);
 
--- Toate numele sub care a apărut o entitate, cu documentul în care a apărut așa.
+-- Every name an entity has appeared under, with the document it appeared that way in.
 CREATE TABLE IF NOT EXISTS entity_alias (
     entity_id    bigint NOT NULL REFERENCES entity(id) ON DELETE CASCADE,
     alias        text   NOT NULL,
@@ -82,24 +82,24 @@ CREATE TABLE IF NOT EXISTS entity_alias (
 );
 CREATE INDEX IF NOT EXISTS entity_alias_trgm ON entity_alias USING gin (alias_norm gin_trgm_ops);
 
--- Tipurile de relații. Le ținem într-un tabel ca să fie documentate, nu enum.
+-- Relation types. Kept in a table so they are documented, not an enum.
 CREATE TABLE IF NOT EXISTS relation_type (
     id          text PRIMARY KEY,
     description text NOT NULL,
     directed    boolean NOT NULL DEFAULT true
 );
 INSERT INTO relation_type VALUES
- ('AWARDED_CONTRACT',   'instituție -> firmă: contract atribuit (anunț de atribuire SEAP)', true),
- ('DIRECT_PURCHASE',    'instituție -> firmă: achiziție directă finalizată (SEAP)', true),
- ('ADMINISTERS',        'persoană -> firmă: administrator / director (ONRC)', true),
- ('OWNS_SHARES',        'persoană/firmă -> firmă: asociat / acționar (ONRC); attrs.pct', true),
- ('HOLDS_OFFICE',       'persoană -> instituție: funcție publică (ANI, HCL)', true),
- ('DECLARED_INTEREST',  'persoană -> firmă: menționată în declarația de interese (ANI)', true),
- ('DECLARED_ASSET',     'persoană -> entitate/obiect: declarația de avere (ANI)', true),
- ('SAME_ADDRESS',       'entitate <-> entitate: sediu identic', false),
- ('FAMILY',             'persoană <-> persoană: rudenie declarată sau publică', false),
- ('PARTY_IN_CASE',      'entitate -> dosar (just.ro)', true),
- ('CONSORTIUM_WITH',    'firmă <-> firmă: au câștigat împreună (asociere)', false)
+ ('AWARDED_CONTRACT',   'institution -> company: awarded contract (SEAP award notice)', true),
+ ('DIRECT_PURCHASE',    'institution -> company: completed direct purchase (SEAP)', true),
+ ('ADMINISTERS',        'person -> company: administrator / director (ONRC)', true),
+ ('OWNS_SHARES',        'person/company -> company: partner / shareholder (ONRC); attrs.pct', true),
+ ('HOLDS_OFFICE',       'person -> institution: public office (ANI, HCL)', true),
+ ('DECLARED_INTEREST',  'person -> company: named in the declaration of interests (ANI)', true),
+ ('DECLARED_ASSET',     'person -> entity/object: asset declaration (ANI)', true),
+ ('SAME_ADDRESS',       'entity <-> entity: same registered office', false),
+ ('FAMILY',             'person <-> person: declared or public family tie', false),
+ ('PARTY_IN_CASE',      'entity -> court case (just.ro)', true),
+ ('CONSORTIUM_WITH',    'company <-> company: won together (consortium)', false)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS edge (
@@ -107,11 +107,11 @@ CREATE TABLE IF NOT EXISTS edge (
     src_id       bigint NOT NULL REFERENCES entity(id) ON DELETE CASCADE,
     dst_id       bigint NOT NULL REFERENCES entity(id) ON DELETE CASCADE,
     relation     text   NOT NULL REFERENCES relation_type(id),
-    document_id  bigint NOT NULL REFERENCES document(id),   -- PROVENIENȚA, obligatorie
+    document_id  bigint NOT NULL REFERENCES document(id),   -- PROVENANCE, mandatory
     valid_from   date,
     valid_to     date,
-    amount_ron   numeric(18,2),                 -- pentru contracte / achiziții
-    ref          text   NOT NULL DEFAULT '',          -- identifică faptul în interiorul documentului (nr. contract, cod DA)
+    amount_ron   numeric(18,2),                 -- for contracts / purchases
+    ref          text   NOT NULL DEFAULT '',          -- identifies the fact within the document (contract no., DA code)
     attrs        jsonb NOT NULL DEFAULT '{}'::jsonb,
     UNIQUE (src_id, dst_id, relation, document_id, ref)
 );
@@ -120,12 +120,12 @@ CREATE INDEX IF NOT EXISTS edge_dst_idx ON edge (dst_id, relation);
 CREATE INDEX IF NOT EXISTS edge_doc_idx ON edge (document_id);
 
 -- ---------------------------------------------------------------------
--- 2. TABELE TIPIZATE — domeniul ACHIZIȚII PUBLICE (SEAP)
+-- 2. TYPED TABLES — PUBLIC PROCUREMENT domain (SEAP)
 -- ---------------------------------------------------------------------
 
--- Anunț de atribuire (CAN / RFQ award / SCN award ...). Un anunț poate avea mai multe contracte.
+-- Award notice (CAN / RFQ award / SCN award ...). A notice can have several contracts.
 CREATE TABLE IF NOT EXISTS seap_award_notice (
-    ca_notice_id     bigint PRIMARY KEY,         -- caNoticeId din SEAP
+    ca_notice_id     bigint PRIMARY KEY,         -- caNoticeId from SEAP
     notice_no        text NOT NULL,              -- CAN1176289
     document_id      bigint NOT NULL REFERENCES document(id),
     authority_id     bigint NOT NULL REFERENCES entity(id),
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS seap_contract (
     value_ron        numeric(18,2)
 );
 
--- Un contract poate avea mai mulți câștigători (asociere).
+-- A contract can have several winners (consortium).
 CREATE TABLE IF NOT EXISTS seap_contract_winner (
     contract_id      bigint NOT NULL REFERENCES seap_contract(id) ON DELETE CASCADE,
     entity_id        bigint NOT NULL REFERENCES entity(id),
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS seap_contract_winner (
     PRIMARY KEY (contract_id, entity_id)
 );
 
--- Achiziții directe (sub prag) — volum mare, valori mici, dar aici se văd "furnizorii de casă".
+-- Direct purchases (below threshold) — high volume, small values, but this is where the "house suppliers" show up.
 CREATE TABLE IF NOT EXISTS seap_direct_acquisition (
     id               bigint PRIMARY KEY,         -- directAcquisitionId
     code             text NOT NULL UNIQUE,       -- DA41479203
@@ -181,15 +181,15 @@ CREATE INDEX IF NOT EXISTS seap_da_supplier_idx ON seap_direct_acquisition (supp
 CREATE INDEX IF NOT EXISTS seap_da_fin_idx ON seap_direct_acquisition (finalized_at);
 
 -- ---------------------------------------------------------------------
--- Funcții utilitare
+-- Utility functions
 -- ---------------------------------------------------------------------
 
--- Normalizează un cod fiscal: "RO 16310091" / "ro16310091" / "16310091" -> "16310091"
+-- Normalizes a tax code: "RO 16310091" / "ro16310091" / "16310091" -> "16310091"
 CREATE OR REPLACE FUNCTION norm_cui(t text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT NULLIF(regexp_replace(upper(coalesce(t,'')), '[^0-9]', '', 'g'), '')
 $$;
 
--- Nume normalizat pentru comparații (fără diacritice, fără forma juridică, fără punctuație)
+-- Normalized name for comparisons (no diacritics, no legal form, no punctuation)
 CREATE OR REPLACE FUNCTION norm_company_name(t text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT trim(regexp_replace(
            regexp_replace(
@@ -198,8 +198,8 @@ CREATE OR REPLACE FUNCTION norm_company_name(t text) RETURNS text LANGUAGE sql I
            '[^a-z0-9]+', ' ', 'g'))
 $$;
 
--- Upsert entitate după CUI (dacă există) sau după nume normalizat.
--- Întoarce entity.id. Adaugă aliasul + documentul de proveniență.
+-- Upsert an entity by CUI (if present) or by normalized name.
+-- Returns entity.id. Adds the alias + the provenance document.
 CREATE OR REPLACE FUNCTION upsert_entity(
     p_kind entity_kind, p_name text, p_cui text, p_document_id bigint,
     p_seap_entity_id bigint DEFAULT NULL, p_attrs jsonb DEFAULT '{}'::jsonb
@@ -213,7 +213,7 @@ BEGIN
     SELECT id INTO v_id FROM entity WHERE seap_entity_id = p_seap_entity_id;
   END IF;
   IF v_id IS NULL AND v_cui IS NULL THEN
-    -- fără identificator tare: potrivire exactă pe nume normalizat, același tip
+    -- no hard identifier: exact match on normalized name, same kind
     SELECT e.id INTO v_id FROM entity e
      WHERE e.kind = p_kind AND norm_company_name(e.canonical_name) = norm_company_name(p_name)
      LIMIT 1;

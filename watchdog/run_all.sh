@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Reconstruiește totul de la zero dintr-o bază Postgres goală + loturile JSON din data/raw/.
-# Necesită: psql în PATH, DATABASE_URL setat (ex. postgresql://watchdog:watchdog@localhost/watchdog), python3.
+# Rebuilds everything from scratch from an empty Postgres database + the JSON batches in data/raw/.
+# Requires: psql on PATH, DATABASE_URL set (e.g. postgresql://watchdog:watchdog@localhost/watchdog), python3.
 set -euo pipefail
 cd "$(dirname "$0")"
 : "${DATABASE_URL:=postgresql://watchdog:watchdog@localhost/watchdog}"; export DATABASE_URL
@@ -16,4 +16,4 @@ python3 tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/ti
 
 python3 tools/export_archify.py --authority "MUNICIPIUL BRASOV" --top 10 --out diagrams/brasov-top10.architecture.json
 python3 tools/export_archify.py --authority "MUNICIPIUL TIMISOARA" --top 10 --out diagrams/timisoara-top10.architecture.json
-echo "gata: viewer/*.html, diagrams/*.architecture.json"
+echo "done: viewer/*.html, diagrams/*.architecture.json"

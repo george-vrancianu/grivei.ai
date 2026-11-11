@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Municipiul Timisoara — rețeaua marilor furnizori",
+    "title": "Municipiul Timisoara — network of major suppliers",
     "output": "diagrams/timisoara-top10.html",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
@@ -11,13 +11,13 @@
       "mode": "auto",
       "entries": {
         "security": {
-          "label": "autoritate contractantă / negociere fără publicare"
+          "label": "contracting authority / negotiation without publication"
         },
         "backend": {
-          "label": "firmă din județ"
+          "label": "company from the same county"
         },
         "external": {
-          "label": "firmă din alt județ"
+          "label": "company from another county"
         }
       }
     }
@@ -27,7 +27,7 @@
       "id": "municipiul_timisoara",
       "type": "security",
       "label": "Municipiul Timisoara",
-      "sublabel": "CUI 14756536 · autoritate contractantă",
+      "sublabel": "CUI 14756536 · contracting authority",
       "row": 0,
       "col": 2
     },
@@ -51,7 +51,7 @@
       "id": "rogera_prest_com",
       "type": "external",
       "label": "Rogera Prest Com",
-      "sublabel": "CUI 27098220 · Timis · 2 negocieri fără publicare",
+      "sublabel": "CUI 27098220 · Timis · 2 negotiations without publication",
       "row": 3,
       "col": 0
     },
@@ -59,7 +59,7 @@
       "id": "barierra_system_srl",
       "type": "external",
       "label": "Barierra System Srl",
-      "sublabel": "CUI 32257003 · Timis · 1 negocieri fără publicare",
+      "sublabel": "CUI 32257003 · Timis · 1 negotiation without publication",
       "row": 3,
       "col": 1
     },
@@ -115,7 +115,7 @@
   "boundaries": [
     {
       "kind": "security-group",
-      "label": "asociere: 3 firme care câștigă împreună",
+      "label": "consortium: 3 companies winning together",
       "wraps": [
         "rogera_prest_com",
         "barierra_system_srl",
@@ -129,91 +129,91 @@
       "id": "c_bozankaya_rayli_sistemle",
       "from": "municipiul_timisoara",
       "to": "bozankaya_rayli_sistemle",
-      "label": "4 contracte · 667.1 mil. RON",
+      "label": "4 contracts · 667.1 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_porr_construct",
       "from": "municipiul_timisoara",
       "to": "porr_construct",
-      "label": "4 contracte · 283.9 mil. RON",
+      "label": "4 contracts · 283.9 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_sylc_con_trans",
       "from": "municipiul_timisoara",
       "to": "sylc_con_trans",
-      "label": "4 contracte · 210.7 mil. RON",
+      "label": "4 contracts · 210.7 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_energomontaj",
       "from": "municipiul_timisoara",
       "to": "energomontaj",
-      "label": "2 contracte · 107.6 mil. RON",
+      "label": "2 contracts · 107.6 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_rogera_prest_com",
       "from": "municipiul_timisoara",
       "to": "rogera_prest_com",
-      "label": "16 contracte · 103.7 mil. RON · 2 neg. fără publicare (19.8 mil.)",
+      "label": "16 contracts · 103.7 million RON · 2 neg. without publication (19.8 million)",
       "variant": "security"
     },
     {
       "id": "c_barierra_system_srl",
       "from": "municipiul_timisoara",
       "to": "barierra_system_srl",
-      "label": "9 contracte · 98.4 mil. RON · 1 neg. fără publicare (15.8 mil.)",
+      "label": "9 contracts · 98.4 million RON · 1 neg. without publication (15.8 million)",
       "variant": "security"
     },
     {
       "id": "c_karsan_otomotiv_sanayi_v",
       "from": "municipiul_timisoara",
       "to": "karsan_otomotiv_sanayi_v",
-      "label": "1 contracte · 86.1 mil. RON",
+      "label": "1 contract · 86.1 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_elsaco_electronic_s_r_l",
       "from": "municipiul_timisoara",
       "to": "elsaco_electronic_s_r_l",
-      "label": "1 contracte · 71.0 mil. RON",
+      "label": "1 contract · 71.0 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_rogera",
       "from": "municipiul_timisoara",
       "to": "rogera",
-      "label": "10 contracte · 68.8 mil. RON",
+      "label": "10 contracts · 68.8 million RON",
       "variant": "emphasis"
     },
     {
       "id": "c_coral_impex",
       "from": "municipiul_timisoara",
       "to": "coral_impex",
-      "label": "1 contracte · 67.7 mil. RON",
+      "label": "1 contract · 67.7 million RON",
       "variant": "emphasis"
     },
     {
       "id": "k_rogera_prest_com_rogera",
       "from": "rogera_prest_com",
       "to": "rogera",
-      "label": "10× împreună",
+      "label": "10× together",
       "variant": "dashed"
     },
     {
       "id": "k_rogera_prest_com_barierra_system_srl",
       "from": "rogera_prest_com",
       "to": "barierra_system_srl",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     },
     {
       "id": "k_rogera_barierra_system_srl",
       "from": "rogera",
       "to": "barierra_system_srl",
-      "label": "2× împreună",
+      "label": "2× together",
       "variant": "dashed"
     }
   ]

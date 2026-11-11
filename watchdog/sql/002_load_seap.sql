@@ -1,9 +1,9 @@
 -- =====================================================================
---  Încarcă un lot de date SEAP (JSON produs de connectors/seap_harvest.*)
---  din tabela import_batch în straturile document -> typed -> graph.
+--  Loads a batch of SEAP data (JSON produced by connectors/seap_harvest.*)
+--  from the import_batch table into the document -> typed -> graph layers.
 --
---  Rulare:  psql -v ON_ERROR_STOP=1 -v batch_id=<id> -f sql/002_load_seap.sql
---  Idempotent: rularea repetată pe același lot nu dublează rânduri.
+--  Run:  psql -v ON_ERROR_STOP=1 -v batch_id=<id> -f sql/002_load_seap.sql
+--  Idempotent: re-running on the same batch does not duplicate rows.
 -- =====================================================================
 
 CREATE TABLE IF NOT EXISTS import_batch (
@@ -15,13 +15,13 @@ CREATE TABLE IF NOT EXISTS import_batch (
 
 BEGIN;
 
--- Lotul curent (ultimul dacă nu e dat explicit)
+-- The current batch (the latest one if not given explicitly)
 CREATE TEMP TABLE cur AS
 SELECT payload FROM import_batch
  WHERE id = coalesce(NULLIF(:'batch_id','')::bigint, (SELECT max(id) FROM import_batch WHERE source_id='seap'));
 
 -- ---------------------------------------------------------------
--- 1. DOCUMENTE (raw, cu proveniență)
+-- 1. DOCUMENTS (raw, with provenance)
 -- ---------------------------------------------------------------
 INSERT INTO document (source_id, kind, external_id, url, raw)
 SELECT 'seap', 'direct_acquisition', d->>'code',
@@ -39,9 +39,9 @@ SELECT 'seap', 'award_notice', n->>'caNoticeId',
 ON CONFLICT (source_id, kind, external_id) DO UPDATE SET raw = EXCLUDED.raw, fetched_at = now();
 
 -- ---------------------------------------------------------------
--- 2. ENTITĂȚI
+-- 2. ENTITIES
 -- ---------------------------------------------------------------
--- Autoritatea contractantă
+-- The contracting authority
 CREATE TEMP TABLE auth AS
 SELECT upsert_entity('institution', cur.payload->'authority'->>'name', cur.payload->'authority'->>'cui',
                      (SELECT min(id) FROM document WHERE source_id='seap'),
@@ -49,7 +49,7 @@ SELECT upsert_entity('institution', cur.payload->'authority'->>'name', cur.paylo
                      jsonb_build_object('seap_ca_id', cur.payload->'authority'->>'seapId')) AS id
 FROM cur;
 
--- Furnizori din achiziții directe: câmpul "supplier" are forma "RO 16310091 Q TEST SA" / "22676950 NUME"
+-- Suppliers from direct purchases: the "supplier" field looks like "RO 16310091 Q TEST SA" / "22676950 NAME"
 CREATE TEMP TABLE da_rows AS
 SELECT d, doc.id AS document_id,
        (regexp_match(d->>'supplier', '^\s*(RO\s*)?([0-9]{2,10})\s+(.*)$', 'i')) AS m
@@ -62,7 +62,7 @@ SELECT DISTINCT ON (d->>'code')
        upsert_entity('company', coalesce(m[3], d->>'supplier'), m[2], document_id) AS supplier_id
   FROM da_rows;
 
--- Câștigători din contracte
+-- Winners from contracts
 CREATE TEMP TABLE win_rows AS
 SELECT (c->>'id')::bigint AS contract_id, w, doc.id AS document_id
   FROM cur, jsonb_array_elements(cur.payload->'contracts') c
@@ -78,7 +78,7 @@ SELECT contract_id, w->>'name' AS name_as_published,
   FROM win_rows;
 
 -- ---------------------------------------------------------------
--- 3. TABELE TIPIZATE
+-- 3. TYPED TABLES
 -- ---------------------------------------------------------------
 INSERT INTO seap_direct_acquisition (id, code, document_id, authority_id, supplier_id, name, state, cpv,
                                      published_at, finalized_at, estimated_ron, value_ron)
@@ -109,16 +109,16 @@ SELECT contract_id, entity_id, name_as_published FROM win
 ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------
--- 4. MUCHII ÎN GRAF (cu proveniență)
+-- 4. GRAPH EDGES (with provenance)
 -- ---------------------------------------------------------------
 INSERT INTO edge (src_id, dst_id, relation, document_id, ref, valid_from, amount_ron, attrs)
 SELECT authority_id, supplier_id, 'DIRECT_PURCHASE', document_id, code, finalized_at::date, value_ron,
        jsonb_build_object('code', code, 'cpv', cpv_code, 'name', name, 'state', state)
   FROM seap_direct_acquisition
- WHERE state = 'Oferta acceptata'          -- doar achizițiile efectiv încheiate devin muchii; restul rămân în tabela tipizată
+ WHERE state = 'Oferta acceptata'          -- only purchases actually concluded become edges; the rest stay in the typed table
 ON CONFLICT DO NOTHING;
 
--- Un contract cu N câștigători => N muchii AWARDED_CONTRACT (valoarea întreagă pe fiecare, attrs.n_winners spune că e asociere)
+-- A contract with N winners => N AWARDED_CONTRACT edges (full value on each; attrs.n_winners tells you it is a consortium)
 INSERT INTO edge (src_id, dst_id, relation, document_id, ref, valid_from, amount_ron, attrs)
 SELECT n.authority_id, w.entity_id, 'AWARDED_CONTRACT', n.document_id, c.id::text, c.contract_date, c.value_ron,
        jsonb_build_object('notice_no', n.notice_no, 'contract_no', c.contract_no, 'contract_id', c.id,
@@ -129,7 +129,7 @@ SELECT n.authority_id, w.entity_id, 'AWARDED_CONTRACT', n.document_id, c.id::tex
   JOIN seap_contract_winner w ON w.contract_id = c.id
 ON CONFLICT DO NOTHING;
 
--- Asocieri: firmele care au câștigat împreună același contract
+-- Consortia: companies that won the same contract together
 INSERT INTO edge (src_id, dst_id, relation, document_id, ref, valid_from, attrs)
 SELECT a.entity_id, b.entity_id, 'CONSORTIUM_WITH', n.document_id, c.id::text, c.contract_date,
        jsonb_build_object('contract_id', c.id, 'notice_no', n.notice_no)

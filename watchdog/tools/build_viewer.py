@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Injectează un graph.json în viewer/graph.template.html -> pagină autonomă.
+"""Injects a graph.json into viewer/graph.template.html -> a self-contained page.
   python tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/timisoara.html --title "Watchdog Timișoara"
 """
 import argparse, json, pathlib

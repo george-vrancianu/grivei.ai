@@ -70,16 +70,16 @@ aside h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; 
 
 <div class="app">
   <header>
-    <h1>Watchdog <span id="hdr">· achiziții publice</span></h1>
-    <div class="ctl"><input id="q" type="search" placeholder="caută firmă sau CUI" aria-label="Caută firmă sau CUI"></div>
-    <div class="ctl"><label><input id="f-award" type="checkbox" checked><span class="sw line" style="border-color:var(--auth)"></span>contracte</label>
-      <label><input id="f-da" type="checkbox" checked><span class="sw line" style="border-color:var(--local);opacity:.7"></span>achiziții directe</label>
-      <label><input id="f-cons" type="checkbox" checked><span class="sw line" style="border-color:var(--cons);border-top-style:dashed"></span>asocieri</label></div>
+    <h1>Watchdog <span id="hdr">· public procurement</span></h1>
+    <div class="ctl"><input id="q" type="search" placeholder="search company or CUI" aria-label="Search company or CUI"></div>
+    <div class="ctl"><label><input id="f-award" type="checkbox" checked><span class="sw line" style="border-color:var(--auth)"></span>contracts</label>
+      <label><input id="f-da" type="checkbox" checked><span class="sw line" style="border-color:var(--local);opacity:.7"></span>direct purchases</label>
+      <label><input id="f-cons" type="checkbox" checked><span class="sw line" style="border-color:var(--cons);border-top-style:dashed"></span>consortia</label></div>
     <div class="ctl"><label for="minron">min</label><input id="minron" type="range" min="0" max="7" step="0.1" value="5"><span id="minron-v" style="font-variant-numeric:tabular-nums;min-width:7ch"></span></div>
-    <div class="ctl"><span class="sw" style="background:var(--auth)"></span>autoritate <span class="sw" style="background:var(--local)"></span><span id="home-lbl">județul autorității</span> <span class="sw" style="background:var(--away)"></span>alt județ <span class="sw" style="background:var(--neg)"></span>neg. fără publicare</div>
-    <button id="reset" type="button">Reia vederea</button>
+    <div class="ctl"><span class="sw" style="background:var(--auth)"></span>authority <span class="sw" style="background:var(--local)"></span><span id="home-lbl">authority's county</span> <span class="sw" style="background:var(--away)"></span>other county <span class="sw" style="background:var(--neg)"></span>neg. without publication</div>
+    <button id="reset" type="button">Reset view</button>
   </header>
-  <div id="stage"><svg aria-label="Graful achizițiilor"></svg><div class="hint">clic pe un nod = dosar · dublu clic = doar vecinii · rotiță = zoom</div></div>
+  <div id="stage"><svg aria-label="Procurement graph"></svg><div class="hint">click a node = dossier · double-click = neighbours only · scroll wheel = zoom</div></div>
   <aside id="panel"></aside>
 </div>
 
@@ -88,13 +88,13 @@ aside h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; 
 const DATA = __GRAPH_DATA__;
 const byId = new Map(DATA.nodes.map(n => [n.id, n]));
 const titleCase = s => s.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
-document.getElementById('hdr').textContent = '· ' + (DATA.authority ? titleCase(DATA.authority) : 'toate autoritățile') + ' · achiziții publice ' + (DATA.period || '').replace(/-\d\d-\d\d/g, '');
-const fmt = v => v >= 1e6 ? (v/1e6).toFixed(1).replace('.', ',') + ' mil.' : v >= 1e3 ? Math.round(v/1e3).toLocaleString('ro-RO') + ' mii' : Math.round(v).toLocaleString('ro-RO');
+document.getElementById('hdr').textContent = '· ' + (DATA.authority ? titleCase(DATA.authority) : 'all authorities') + ' · public procurement ' + (DATA.period || '').replace(/-\d\d-\d\d/g, '');
+const fmt = v => v >= 1e6 ? (v/1e6).toFixed(1) + ' million' : v >= 1e3 ? Math.round(v/1e3).toLocaleString('en-US') + ' thousand' : Math.round(v).toLocaleString('en-US');
 const fmtRon = v => fmt(v) + ' RON';
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-// județul "de acasă": cel declarat la export sau, în lipsă, cel mai frecvent printre furnizori
+// the "home" county: the one declared at export or, failing that, the most frequent among suppliers
 const HOME = (DATA.home_county || (() => { const c = {}; DATA.nodes.forEach(n => { if (n.county) c[n.county] = (c[n.county] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || ''; })()).toLowerCase();
-document.getElementById('home-lbl').textContent = HOME ? titleCase(HOME) : 'județul autorității';
+document.getElementById('home-lbl').textContent = HOME ? titleCase(HOME) : 'authority\'s county';
 const colorOf = n => n.kind === 'institution' ? css('--auth') : n.n_neg > 0 ? css('--neg') : (n.county || '').toLowerCase() === HOME ? css('--local') : n.county ? css('--away') : css('--muted');
 const edgeColor = e => e.rel === 'CONSORTIUM_WITH' ? css('--cons') : e.n_neg > 0 ? css('--neg') : e.rel === 'DIRECT_PURCHASE' ? css('--local') : css('--auth');
 const rScale = d3.scaleSqrt().domain([0, d3.max(DATA.nodes, n => n.in_ron) || 1]).range([3, 34]);
@@ -106,7 +106,7 @@ const gl = g.append('g'), gn = g.append('g'), gt = g.append('g');
 const zoom = d3.zoom().scaleExtent([0.15, 6]).on('zoom', ev => g.attr('transform', ev.transform));
 svg.call(zoom).on('dblclick.zoom', null);
 
-let focus = null;        // id-ul nodului pe care e centrată vederea (dublu clic)
+let focus = null;        // id of the node the view is centred on (double-click)
 let selected = null;
 const sim = d3.forceSimulation().force('charge', d3.forceManyBody().strength(-90)).force('collide', d3.forceCollide(n => rScale(n.in_ron) + 4))
   .force('link', d3.forceLink().id(n => n.id).distance(e => e.rel === 'CONSORTIUM_WITH' ? 60 : 90 + 60 * (1 - Math.min(1, e.ron / 1e8)))).alphaDecay(0.03);
@@ -172,22 +172,22 @@ function select(id) {
   const rels = DATA.edges.filter(e => (e.source.id ?? e.source) === id || (e.target.id ?? e.target) === id)
     .map(e => { const otherId = (e.source.id ?? e.source) === id ? (e.target.id ?? e.target) : (e.source.id ?? e.source); return { e, other: byId.get(otherId) }; })
     .sort((a, b) => b.e.ron - a.e.ron);
-  const relName = { AWARDED_CONTRACT: 'contract', DIRECT_PURCHASE: 'achiziție directă', CONSORTIUM_WITH: 'asociere' };
+  const relName = { AWARDED_CONTRACT: 'contract', DIRECT_PURCHASE: 'direct purchase', CONSORTIUM_WITH: 'consortium' };
   const urls = [...new Set(rels.flatMap(r => r.e.urls || []))].slice(0, 8);
   document.getElementById('panel').innerHTML = `
     <h2>${esc(n.name)}</h2>
-    <div class="sub">${n.kind === 'institution' ? 'autoritate contractantă' : 'firmă'}${n.county ? ' · ' + esc(n.county) : ''}${n.city ? ' · ' + esc(n.city) : ''}${n.sme === true ? ' · IMM' : ''}</div>
+    <div class="sub">${n.kind === 'institution' ? 'contracting authority' : 'company'}${n.county ? ' · ' + esc(n.county) : ''}${n.city ? ' · ' + esc(n.city) : ''}${n.sme === true ? ' · SME' : ''}</div>
     <dl class="kv">
       <dt>CUI</dt><dd class="mono">${esc(n.cui || '—')}</dd>
-      ${n.kind !== 'institution' ? `<dt>Atribuit</dt><dd>${fmtRon(n.in_ron)} în ${n.n_in} atribuiri (asocierile la valoare întreagă)</dd>` : ''}
-      ${n.n_neg ? `<dt>Negocieri</dt><dd>${n.n_neg} fără publicare prealabilă</dd>` : ''}
-      ${n.aliases && n.aliases.length > 1 ? `<dt>Apare ca</dt><dd>${n.aliases.map(esc).join(' · ')}</dd>` : ''}
+      ${n.kind !== 'institution' ? `<dt>Awarded</dt><dd>${fmtRon(n.in_ron)} in ${n.n_in} awards (consortia at full value)</dd>` : ''}
+      ${n.n_neg ? `<dt>Negotiations</dt><dd>${n.n_neg} without prior publication</dd>` : ''}
+      ${n.aliases && n.aliases.length > 1 ? `<dt>Appears as</dt><dd>${n.aliases.map(esc).join(' · ')}</dd>` : ''}
     </dl>
-    <h3>Legături (${rels.length})</h3>
-    ${rels.length ? rels.slice(0, 40).map(r => `<div class="rel"><span class="n" data-id="${r.other.id}">${esc(r.other.name)}${r.e.n_neg ? '<span class="tag neg">neg. fără publicare</span>' : ''}</span>
+    <h3>Links (${rels.length})</h3>
+    ${rels.length ? rels.slice(0, 40).map(r => `<div class="rel"><span class="n" data-id="${r.other.id}">${esc(r.other.name)}${r.e.n_neg ? '<span class="tag neg">neg. without publication</span>' : ''}</span>
        <span class="ron">${r.e.ron ? fmtRon(r.e.ron) : ''}</span>
-       <span class="m">${r.e.n} × ${relName[r.e.rel]}${r.e.first ? ' · ' + r.e.first.slice(0, 7) + (r.e.last !== r.e.first ? ' → ' + r.e.last.slice(0, 7) : '') : ''}</span></div>`).join('') : '<p class="empty">nimic peste filtrul curent</p>'}
-    <h3>Documente-sursă (SEAP)</h3>
+       <span class="m">${r.e.n} × ${relName[r.e.rel]}${r.e.first ? ' · ' + r.e.first.slice(0, 7) + (r.e.last !== r.e.first ? ' → ' + r.e.last.slice(0, 7) : '') : ''}</span></div>`).join('') : '<p class="empty">nothing above the current filter</p>'}
+    <h3>Source documents (SEAP)</h3>
     <div class="src">${urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace('https://e-licitatie.ro/pub/', ''))}</a>`).join('<br>') || '<span class="empty">—</span>'}</div>`;
   document.querySelectorAll('#panel .rel .n').forEach(el => el.addEventListener('click', () => select(+el.dataset.id)));
 }
@@ -196,10 +196,10 @@ function home() {
   const top = DATA.nodes.filter(n => n.kind !== 'institution').sort((a, b) => b.in_ron - a.in_ron).slice(0, 15);
   const total = d3.sum(DATA.nodes, n => n.in_ron);
   document.getElementById('panel').innerHTML = `
-    <h2>Cine ia banii</h2>
-    <div class="sub">${DATA.nodes.length} entități · ${DATA.edges.length} legături · ${fmtRon(total)} atribuite · date SEAP ${DATA.generated_at.slice(0, 10)}</div>
-    <p class="empty">Mărimea nodului = valoarea atribuirilor câștigate. Roșu = firmă care a primit cel puțin o negociere fără publicare prealabilă. Linie punctată = au câștigat împreună (asociere). Valorile acordurilor-cadru sunt plafoane, nu plăți.</p>
-    <h3>Top 15 furnizori</h3>
+    <h2>Who gets the money</h2>
+    <div class="sub">${DATA.nodes.length} entities · ${DATA.edges.length} links · ${fmtRon(total)} awarded · SEAP data ${DATA.generated_at.slice(0, 10)}</div>
+    <p class="empty">Node size = value of awards won. Red = company that received at least one negotiated award without prior publication. Dashed line = won together (consortium). Framework agreement values are ceilings, not payments.</p>
+    <h3>Top 15 suppliers</h3>
     <ol class="top">${top.map(n => `<li data-id="${n.id}"><span>${esc(n.name)}</span><span class="ron">${fmtRon(n.in_ron)}</span></li>`).join('')}</ol>`;
   document.querySelectorAll('#panel .top li').forEach(el => el.addEventListener('click', () => select(+el.dataset.id)));
 }

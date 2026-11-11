@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Exportă un sub-graf curat din Postgres în formatul JSON IR al Archify
-(diagram_type "architecture") — pentru "diagrame de caz": ≤ ~15 entități, aranjate
-pe grilă, cu grupuri (boundaries) pentru asocieri și legături etichetate cu bani.
+Exports a clean subgraph from Postgres in Archify's JSON IR format
+(diagram_type "architecture") — for "case diagrams": ≤ ~15 entities laid out
+on a grid, with groups (boundaries) for consortia and links labelled with money.
 
   python tools/export_archify.py --authority "MUNICIPIUL BRASOV" \
       --firms COMPREST "RS ACTIV" RECON FINCODRUM MIRACONS "EURO STRADA" "STRACO HOLDING" \
       --out diagrams/brasov-bloc.architecture.json
-  # sau automat, primele N după bani:
+  # or automatically, the top N by money:
   python tools/export_archify.py --authority "MUNICIPIUL BRASOV" --top 10 --out diagrams/brasov-top10.architecture.json
 
-Apoi, pe mașina cu Archify instalat:
+Then, on the machine with Archify installed:
   node archify/bin/archify.mjs finalize architecture diagrams/brasov-bloc.architecture.json
 
-Nu are dependențe Python; folosește `psql`.
+No Python dependencies; uses `psql`.
 """
 import argparse, json, os, re, subprocess, sys
 from collections import defaultdict
@@ -55,7 +55,11 @@ def strarr(names):
 
 
 def mil(ron):
-    return f"{int(ron)/1e6:.1f} mil."
+    return f"{int(ron)/1e6:.1f} million"
+
+
+def plural(n, word):
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
 
 
 def slug(name, used):
@@ -79,7 +83,7 @@ def main():
 
     auth = q(SQL_ENTITIES % strarr([a.authority]))
     if not auth:
-        sys.exit("autoritatea nu există în entity")
+        sys.exit("authority not found in entity")
     auth_id = int(auth[0][0])
 
     firm_ids = []
@@ -89,13 +93,13 @@ def main():
         firm_ids += [int(r[0]) for r in q(SQL_ENTITIES % strarr(a.firms))]
     firm_ids = list(dict.fromkeys(firm_ids))
     if not firm_ids:
-        sys.exit("nicio firmă selectată (--firms sau --top)")
+        sys.exit("no companies selected (--firms or --top)")
 
     ents = {int(r[0]): r for r in q(f"SELECT id, canonical_name, coalesce(cui,''), coalesce(attrs->>'county',''), kind FROM entity WHERE id = ANY({arr(firm_ids)})")}
     awards = {int(r[0]): r for r in q(SQL_AWARDS % (auth_id, arr(firm_ids)))}
     cons = q(SQL_CONSORTIA % (arr(firm_ids), arr(firm_ids)))
 
-    # clustere = componente conexe pe CONSORTIUM_WITH (așa devin boundaries compacte)
+    # clusters = connected components over CONSORTIUM_WITH (this is how they become compact boundaries)
     parent = {i: i for i in firm_ids}
     def find(x):
         while parent[x] != x:
@@ -112,7 +116,7 @@ def main():
     components, boundaries, connections = [], [], []
     auth_sid = slug(a.authority, used); ids[auth_id] = auth_sid
     components.append({"id": auth_sid, "type": "security", "label": a.authority.title(),
-                       "sublabel": f"CUI {auth[0][2]} · autoritate contractantă", "row": 0, "col": 2})
+                       "sublabel": f"CUI {auth[0][2]} · contracting authority", "row": 0, "col": 2})
 
     row = 1
     for cl in ordered:
@@ -125,26 +129,26 @@ def main():
             local = e[3].lower().startswith("bra")
             sub = f"CUI {e[2]}" + (f" · {e[3]}" if e[3] else "")
             if aw and int(aw[3]):
-                sub += f" · {aw[3]} negocieri fără publicare"
+                sub += f" · {plural(int(aw[3]), 'negotiation')} without publication"
             components.append({"id": sid, "type": "backend" if local else "external",
                                "label": e[1].title() if e[1].isupper() else e[1], "sublabel": sub, "row": r, "col": c})
         if len(cl) > 1:
-            boundaries.append({"kind": "security-group", "label": f"asociere: {len(cl)} firme care câștigă împreună",
+            boundaries.append({"kind": "security-group", "label": f"consortium: {len(cl)} companies winning together",
                                "wraps": [ids[i] for i in cl], "pad": 14})
-        row += (len(cl) + 5) // 6  # rândul următor
+        row += (len(cl) + 5) // 6  # next row
 
     for i in firm_ids:
         aw = awards.get(i)
         if not aw:
             continue
         n, share, neg_n, neg_ron, da_n, da_ron = int(aw[1]), int(aw[2] or 0), int(aw[3]), int(aw[4]), int(aw[5]), int(aw[6])
-        label = f"{n} contracte · {mil(share)} RON"
+        label = f"{plural(n, 'contract')} · {mil(share)} RON"
         if da_n:
-            label = f"{n - da_n} contracte + {da_n} DA · {mil(share)} RON"
+            label = f"{plural(n - da_n, 'contract')} + {da_n} DA · {mil(share)} RON"
         conn = {"id": f"c_{ids[i]}", "from": auth_sid, "to": ids[i], "label": label, "variant": "emphasis"}
         if neg_n:
             conn["variant"] = "security"
-            conn["label"] = f"{label} · {neg_n} neg. fără publicare ({mil(neg_ron)})"
+            conn["label"] = f"{label} · {neg_n} neg. without publication ({mil(neg_ron)})"
         connections.append(conn)
     seen = set()
     for s, d, n in cons:
@@ -154,25 +158,25 @@ def main():
             continue
         seen.add(key)
         connections.append({"id": f"k_{ids[s]}_{ids[d]}", "from": ids[s], "to": ids[d],
-                            "label": f"{n}× împreună", "variant": "dashed"})
+                            "label": f"{n}× together", "variant": "dashed"})
 
     doc = {
         "schema_version": 1, "diagram_type": "architecture",
         "meta": {
-            "title": a.title or f"{a.authority.title()} — rețeaua marilor furnizori",
+            "title": a.title or f"{a.authority.title()} — network of major suppliers",
             "output": re.sub(r"\.architecture\.json$", ".html", a.out),
             "visual_preset": "editorial", "quality_profile": "showcase", "locale": "en",
             "legend": {"mode": "auto", "entries": {
-                "security": {"label": "autoritate contractantă / negociere fără publicare"},
-                "backend": {"label": "firmă din județ"},
-                "external": {"label": "firmă din alt județ"}}},
+                "security": {"label": "contracting authority / negotiation without publication"},
+                "backend": {"label": "company from the same county"},
+                "external": {"label": "company from another county"}}},
         },
         "components": components, "boundaries": boundaries, "connections": connections,
     }
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
-    print(f"scris {a.out}: {len(components)} componente, {len(boundaries)} grupuri, {len(connections)} legături")
+    print(f"wrote {a.out}: {len(components)} components, {len(boundaries)} groups, {len(connections)} connections")
 
 
 if __name__ == "__main__":

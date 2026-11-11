@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Exportă graful (entități + muchii agregate pe perechi) ca JSON pentru viewer-ul interactiv
-(viewer/graph.html). Rulează după ce ai încărcat cel puțin un lot.
+Exports the graph (entities + edges aggregated per pair) as JSON for the interactive viewer
+(viewer/graph.html). Run it after loading at least one batch.
 
   python tools/export_graph.py --authority "MUNICIPIUL TIMISOARA" --out viewer/timisoara.graph.json
-  (fără --authority exportă tot graful)
+  (without --authority it exports the whole graph)
 """
 import argparse, json, os, subprocess, sys
 
@@ -12,7 +12,7 @@ DB = os.environ.get("DATABASE_URL", "postgresql://watchdog:watchdog@localhost/wa
 
 SQL = r"""
 WITH auth AS (SELECT id, canonical_name FROM entity WHERE canonical_name = %(auth)s OR %(auth)s = ''),
-scope AS (  -- entitățile din jurul autorității: ea + tot ce e legat direct de ea
+scope AS (  -- the entities around the authority: itself + everything directly linked to it
   SELECT id FROM auth UNION SELECT dst_id FROM edge WHERE src_id IN (SELECT id FROM auth) UNION SELECT src_id FROM edge WHERE dst_id IN (SELECT id FROM auth)
 ),
 agg AS (
@@ -51,7 +51,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--authority", default="")
-    ap.add_argument("--county", default="", help="județul autorității (colorează firmele locale); gol = dedus din date")
+    ap.add_argument("--county", default="", help="the authority's county (colors local companies); empty = inferred from the data")
     a = ap.parse_args()
     sql = SQL.replace("%(auth)s", "'" + a.authority.replace("'", "''") + "'").replace("%(county)s", "NULLIF('" + a.county.replace("'", "''") + "','')")
     r = subprocess.run(["psql", DB, "-At", "-c", sql], capture_output=True, text=True)
@@ -61,7 +61,7 @@ def main():
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
-    print(f"{a.out}: {len(data['nodes'])} noduri, {len(data['edges'])} muchii agregate")
+    print(f"{a.out}: {len(data['nodes'])} nodes, {len(data['edges'])} aggregated edges")
 
 
 if __name__ == "__main__":

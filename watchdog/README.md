@@ -1,29 +1,29 @@
-# watchdog — MVP achiziții publice
+# watchdog — public procurement MVP
 
-Un graf de entități (instituții, firme, ulterior persoane) construit din surse publice,
-cu proveniență obligatorie pentru fiecare legătură. Prima verticală: achiziții publice (SEAP).
+An entity graph (institutions, companies, later people) built from public sources,
+with mandatory provenance for every link. First vertical: public procurement (SEAP).
 
-Reconstrucție completă într-o comandă (bază goală + loturile din `data/raw/`): `./run_all.sh`.
-Harvester-ul există în două variante echivalente: `connectors/seap_harvest.py` (Python, `pip install -r requirements.txt`)
-și `connectors/seap_harvest.browser.js` (de lipit în consola browserului pe e-licitatie.ro, dacă rulezi de pe o rețea
-fără acces direct). Viewer-ele generate: `viewer/brasov.html`, `viewer/timisoara.html` (le deschizi direct în browser).
+Full rebuild in one command (empty database + the batches in `data/raw/`): `./run_all.sh`.
+The harvester comes in two equivalent variants: `connectors/seap_harvest.py` (Python, `pip install -r requirements.txt`)
+and `connectors/seap_harvest.browser.js` (to paste into the browser console on e-licitatie.ro, if you are running from a network
+without direct access). The generated viewers: `viewer/brasov.html`, `viewer/timisoara.html` (open them directly in a browser).
 
 ```
 watchdog/
-├── run_all.sh              # rebuild de la zero
-├── requirements.txt        # doar `requests` (pentru harvester); restul folosește psql
+├── run_all.sh              # rebuild from scratch
+├── requirements.txt        # only `requests` (for the harvester); everything else uses psql
 ├── sql/
-│   ├── 001_schema.sql      # surse, documente (raw), entități, aliasuri, muchii + tabele tipizate SEAP
-│   ├── 002_load_seap.sql   # transformă un lot JSON SEAP în document -> entity/edge -> tabele tipizate
-│   └── 003_views.sql       # interogările de investigație (praguri, divizare, negocieri, concentrare, asocieri)
+│   ├── 001_schema.sql      # sources, documents (raw), entities, aliases, edges + typed SEAP tables
+│   ├── 002_load_seap.sql   # turns a SEAP JSON batch into document -> entity/edge -> typed tables
+│   └── 003_views.sql       # the investigation queries (thresholds, splitting, negotiations, concentration, consortia)
 ├── connectors/
-│   ├── seap_harvest.py     # descarcă DA + anunțuri de atribuire + contracte pentru o autoritate (necesită `requests`)
-│   └── load_batch.py       # încarcă JSON-ul în Postgres și rulează transformarea (necesită doar `psql`)
-├── data/raw/               # loturile JSON exact cum au venit de la sursă (păstrează-le; sunt proba)
-└── reports/                # rapoartele produse
+│   ├── seap_harvest.py     # downloads DA + award notices + contracts for one authority (needs `requests`)
+│   └── load_batch.py       # loads the JSON into Postgres and runs the transformation (needs only `psql`)
+├── data/raw/               # the JSON batches exactly as they came from the source (keep them; they are the evidence)
+└── reports/                # the reports produced
 ```
 
-## Rulare de la zero
+## Running from scratch
 
 ```bash
 createdb watchdog
@@ -35,58 +35,58 @@ psql $DATABASE_URL -f sql/003_views.sql
 psql $DATABASE_URL -c "SELECT * FROM v_supplier_totals ORDER BY ron_total_share DESC LIMIT 20"
 ```
 
-Pentru o altă instituție schimbi doar `--authority`. Rularea repetată a aceluiași lot nu dublează date.
-Mai multe autorități trăiesc în aceeași bază: firmele comune se unesc automat după CUI, deci graful
-devine inter-orașe (vezi `v_supplier_totals.authority`). Loturi deja descărcate: Brașov, Timișoara (`data/raw/`).
+For another institution you change only `--authority`. Re-running the same batch does not duplicate data.
+Several authorities live in the same database: shared companies are merged automatically by CUI, so the graph
+becomes cross-city (see `v_supplier_totals.authority`). Batches already downloaded: Brașov, Timișoara (`data/raw/`).
 
-Viewer per autoritate:
+Viewer per authority:
 ```bash
 python tools/export_graph.py --authority "MUNICIPIUL TIMISOARA" --county Timis --out viewer/timisoara.graph.json
 python tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/timisoara.html --title "Watchdog Timișoara"
 ```
 
-## Modelul de date, pe scurt
+## The data model, in brief
 
-| Strat | Tabele | Rol |
+| Layer | Tables | Role |
 |---|---|---|
-| Proveniență | `source`, `document`, `import_batch` | ce am primit, de unde, când; `document.raw` e payload-ul neatins |
-| Graf | `entity`, `entity_alias`, `relation_type`, `edge` | nodurile și legăturile; `edge.document_id` e obligatoriu |
-| Tipizat SEAP | `seap_award_notice`, `seap_contract`, `seap_contract_winner`, `seap_direct_acquisition` | datele de domeniu, cu toate câmpurile, pentru interogări precise |
-| Investigație | `v_*`, `neighbours()` | întrebările standard ale unui watchdog |
+| Provenance | `source`, `document`, `import_batch` | what we received, from where, when; `document.raw` is the untouched payload |
+| Graph | `entity`, `entity_alias`, `relation_type`, `edge` | the nodes and links; `edge.document_id` is mandatory |
+| Typed SEAP | `seap_award_notice`, `seap_contract`, `seap_contract_winner`, `seap_direct_acquisition` | the domain data, with all fields, for precise queries |
+| Investigation | `v_*`, `neighbours()` | a watchdog's standard questions |
 
-Rezoluția entităților: firmele se identifică după CUI (`norm_cui`), apoi după `seap_entity_id`, apoi după
-numele normalizat (`norm_company_name`: fără diacritice, fără SC/SRL/SA). Persoanele (de la ONRC/ANI) vor
-avea nevoie de reguli separate — nu există identificator public, deci potrivirea e pe nume + context.
+Entity resolution: companies are identified by CUI (`norm_cui`), then by `seap_entity_id`, then by
+normalized name (`norm_company_name`: no diacritics, no SC/SRL/SA). People (from ONRC/ANI) will
+need separate rules — there is no public identifier, so matching is on name + context.
 
-## Ce urmează (conectori)
+## What's next (connectors)
 
-1. **ONRC** — asociați/administratori pentru fiecare CUI din `entity` → muchii `OWNS_SHARES`, `ADMINISTERS`, apar nodurile `person`.
-2. **Ministerul Finanțelor** — bilanțuri per CUI → `entity.attrs` (cifră de afaceri, angajați) ca să vezi firme mici cu contracte mari.
-3. **ANI** — declarațiile de interese ale consilierilor locali / primar / directori → `HOLDS_OFFICE`, `DECLARED_INTEREST`.
-4. **portal.just.ro** — dosare în care apar firmele/persoanele → `PARTY_IN_CASE`.
+1. **ONRC** — shareholders/directors for every CUI in `entity` → `OWNS_SHARES`, `ADMINISTERS` edges; `person` nodes appear.
+2. **Ministerul Finanțelor** (Ministry of Finance) — balance sheets per CUI → `entity.attrs` (turnover, employees) so you can see small companies with large contracts.
+3. **ANI** — declarations of interests of local councillors / mayor / directors → `HOLDS_OFFICE`, `DECLARED_INTEREST`.
+4. **portal.just.ro** — court cases in which the companies/people appear → `PARTY_IN_CASE`.
 
-Întrebarea-țintă a grafului: drum de lungime ≤ 3 între un decident (`HOLDS_OFFICE` la autoritate) și
-o firmă câștigătoare (`AWARDED_CONTRACT` / `DIRECT_PURCHASE` de la aceeași autoritate).
+The graph's target question: a path of length ≤ 3 between a decision-maker (`HOLDS_OFFICE` at the authority) and
+a winning company (`AWARDED_CONTRACT` / `DIRECT_PURCHASE` from the same authority).
 
-## Note legale / etice
+## Legal / ethical notes
 
-Datele sunt publice, dar numele persoanelor sunt date personale: documentează scopul (interes public,
-jurnalism), nu publica mai mult decât e necesar, păstrează întotdeauna linkul către documentul-sursă.
-Rezultatele interogărilor sunt *semnale*, nu concluzii — fiecare trebuie verificat în documentul original.
+The data is public, but people's names are personal data: document the purpose (public interest,
+journalism), do not publish more than necessary, always keep the link to the source document.
+Query results are *signals*, not conclusions — each one must be verified in the original document.
 
-## Vizualizare
+## Visualization
 
-Două unelte, cu roluri diferite:
+Two tools, with different roles:
 
-- **Explorare** — `tools/export_graph.py` scoate tot graful din Postgres (`viewer/graph.json`), iar
-  `tools/build_viewer.py` îl injectează în `viewer/graph.template.html` → `viewer/graph.html`, o pagină
-  autonomă (D3, force layout): sute de noduri, filtre pe tip de legătură și prag de bani, căutare, dosar
-  per entitate cu linkuri către documentele SEAP. Aici începi o investigație.
-- **Prezentare (Archify)** — `tools/export_archify.py` scoate un sub-graf curat (≤ ~15 entități) în
-  formatul JSON IR al [Archify](https://github.com/tt-a1i/archify) (`diagram_type: architecture`):
-  autoritatea, firmele alese (sau `--top N`), grupurile de asociere ca `boundaries`, legăturile etichetate
-  cu bani și cu negocierile fără publicare. Apoi pe mașina cu Archify:
+- **Exploration** — `tools/export_graph.py` exports the whole graph from Postgres (`viewer/graph.json`), and
+  `tools/build_viewer.py` injects it into `viewer/graph.template.html` → `viewer/graph.html`, a
+  self-contained page (D3, force layout): hundreds of nodes, filters by link type and money threshold, search, a
+  per-entity file with links to the SEAP documents. This is where you start an investigation.
+- **Presentation (Archify)** — `tools/export_archify.py` exports a clean sub-graph (≤ ~15 entities) in
+  the JSON IR format of [Archify](https://github.com/tt-a1i/archify) (`diagram_type: architecture`):
+  the authority, the selected companies (or `--top N`), the consortium groups as `boundaries`, the links labelled
+  with money and with the negotiations without publication. Then, on the machine with Archify:
   `node archify/bin/archify.mjs finalize architecture diagrams/brasov-bloc.architecture.json`.
-  Archify are validatoare stricte de layout (suprapuneri, etichete); e gândit ca agentul să repare
-  diagrama iterativ, deci exportul e un prim draft, nu un rezultat final. Aici termini o investigație:
-  o diagramă curată pentru un articol sau o sesizare.
+  Archify has strict layout validators (overlaps, labels); it is designed for the agent to fix the
+  diagram iteratively, so the export is a first draft, not a final result. This is where you finish an investigation:
+  a clean diagram for an article or a formal complaint.

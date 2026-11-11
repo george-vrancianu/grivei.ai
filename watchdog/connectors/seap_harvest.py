@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
-Conector SEAP (e-licitatie.ro) — descarcă pentru o autoritate contractantă:
-  * achizițiile directe finalizate într-un interval,
-  * anunțurile de atribuire publicate în interval,
-  * contractele (cu câștigători + CUI) atașate fiecărui anunț.
+SEAP connector (e-licitatie.ro) — downloads, for one contracting authority:
+  * the direct purchases completed within a date range,
+  * the award notices published within the range,
+  * the contracts (with winners + CUI) attached to each notice.
 
-Scrie un JSON cu structura {authority, da[], notices[], contracts[], harvested_at}
-pe care îl încarcă apoi connectors/load_batch.py.
+Writes a JSON with the structure {authority, da[], notices[], contracts[], harvested_at},
+which connectors/load_batch.py then loads.
 
-Endpoint-urile sunt cele folosite de interfața publică SEAP (nedocumentate, dar stabile de ani):
+The endpoints are the ones used by the public SEAP interface (undocumented, but stable for years):
   GET  /api-pub/ComboPub/searchContractingAuthorities?filter=<nume>
   POST /api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/
   POST /api-pub/NoticeCommon/GetCANoticeList/
   POST /api-pub/C_PUBLIC_CANotice/GetCANoticeContracts
 
-Exemplu:
+Example:
   python connectors/seap_harvest.py --authority "MUNICIPIUL BRASOV" --from 2024-01-01 --out data/raw/seap_brasov.json
-Necesită doar `requests`. Respectă serverul: ~3 cereri/secundă, pagini de 100.
+Needs only `requests`. Be gentle with the server: ~3 requests/second, pages of 100.
 """
 import argparse, json, sys, time
 from datetime import datetime, date
@@ -25,7 +25,7 @@ import requests
 
 BASE = "https://e-licitatie.ro"
 HDR = {"Content-Type": "application/json", "Accept": "application/json",
-       "User-Agent": "watchdog-research/0.1 (+contact: vezi README)"}
+       "User-Agent": "watchdog-research/0.1 (+contact: see README)"}
 PAUSE = 0.35
 
 
@@ -47,7 +47,7 @@ def find_authority(name):
     exact = [i for i in items if i["text"].split(" ", 1)[1].strip().lower() == name.lower()]
     pick = exact[0] if exact else (items[0] if items else None)
     if not pick:
-        sys.exit(f"Autoritatea '{name}' nu a fost găsită în SEAP")
+        sys.exit(f"Authority '{name}' not found in SEAP")
     cui, _, nm = pick["text"].partition(" ")
     return {"seapId": pick["id"], "cui": cui.replace("RO", "").strip(), "name": nm.strip(), "candidates": [i["text"] for i in items]}
 
@@ -72,7 +72,7 @@ def direct_acquisitions(ca_id, d_from, d_to):
                         "cpv": i["cpvCode"], "pub": i["publicationDate"], "fin": i["finalizationDate"],
                         "supplier": i["supplier"], "ca": i["contractingAuthority"],
                         "est": i["estimatedValueRon"], "val": i["closingValue"]})
-        print(f"  achiziții directe: {len(out)}/{j['total']}", file=sys.stderr)
+        print(f"  direct purchases: {len(out)}/{j['total']}", file=sys.stderr)
         if len(out) >= j["total"] or not j["items"]:
             return out
         p += 1; time.sleep(PAUSE)
@@ -94,7 +94,7 @@ def award_notices(ca_id, d_from, d_to):
                         "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),
                         "cpv": i["cpvCodeAndName"], "value": i["ronContractValue"], "date": i["noticeStateDate"],
                         "isOnline": i["isOnline"], "cur": i["currencyCode"], "est": i["estimatedValueExport"]})
-        print(f"  anunțuri de atribuire: {len(out)}/{j['total']}", file=sys.stderr)
+        print(f"  award notices: {len(out)}/{j['total']}", file=sys.stderr)
         if len(out) >= j["total"] or not j["items"]:
             return out
         p += 1; time.sleep(PAUSE)
@@ -124,30 +124,30 @@ def contracts_for(notice):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--authority", required=True, help='ex. "MUNICIPIUL BRASOV"')
+    ap.add_argument("--authority", required=True, help='e.g. "MUNICIPIUL BRASOV"')
     ap.add_argument("--from", dest="d_from", default="2024-01-01")
     ap.add_argument("--to", dest="d_to", default=date.today().isoformat())
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
     auth = find_authority(a.authority)
-    print(f"Autoritate: {auth['name']} (CUI {auth['cui']}, SEAP id {auth['seapId']})", file=sys.stderr)
+    print(f"Authority: {auth['name']} (CUI {auth['cui']}, SEAP id {auth['seapId']})", file=sys.stderr)
     da = direct_acquisitions(auth["seapId"], a.d_from, a.d_to)
     notices = award_notices(auth["seapId"], a.d_from, a.d_to)
     contracts = []
     for k, n in enumerate(notices, 1):
         try:
             contracts += contracts_for(n)
-        except Exception as e:  # un anunț stricat nu oprește tot lotul
-            print(f"  ! contracte {n['caNoticeId']}: {e}", file=sys.stderr)
+        except Exception as e:  # one broken notice doesn't stop the whole batch
+            print(f"  ! contracts {n['caNoticeId']}: {e}", file=sys.stderr)
         if k % 25 == 0:
-            print(f"  contracte: {k}/{len(notices)} anunțuri", file=sys.stderr)
+            print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
         time.sleep(PAUSE)
     payload = {"authority": {k: auth[k] for k in ("seapId", "cui", "name")}, "da": da, "notices": notices,
                "contracts": contracts, "harvested_at": datetime.utcnow().isoformat() + "Z"}
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
-    print(f"Scris {a.out}: {len(da)} DA, {len(notices)} anunțuri, {len(contracts)} contracte", file=sys.stderr)
+    print(f"Wrote {a.out}: {len(da)} DA, {len(notices)} notices, {len(contracts)} contracts", file=sys.stderr)
 
 
 if __name__ == "__main__":
