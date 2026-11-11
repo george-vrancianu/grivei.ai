@@ -32,6 +32,10 @@ _Avoid_: buyer, institution (when the paying role is meant)
 A contracting authority whose remit is the whole country (ministry, national agency, national company); it sits beside the county map, not inside Bucharest.
 _Avoid_: central authority
 
+**Record**:
+One SEAP document entry in the graph (a direct purchase, a contract award to one winner on one lot, or an award notice), with its own page and source link. A search matches records; what it shows are results.
+_Avoid_: transaction, entry, hit
+
 **Signal**:
 A query result worth verifying in the source documents; never a conclusion or an accusation.
 _Avoid_: finding, red flag, evidence
