@@ -20,8 +20,8 @@ with several winners (consortia) are attributed in the report to each member as 
 ## 1. Concentration of money
 
 The top 3 suppliers account for **35%** of the total value (with equal shares for consortia), the top 10 for **56%**,
-the top 20 for **74%**. Over 90% of the value goes to companies from Brașov (50 companies, 2.26 billion RON),
-followed by Bucharest (30 companies, 612 million) and Ilfov (9 companies, 386 million).
+the top 20 for **74%**. About 60% of the value goes to companies from Brașov (50 companies, 2.26 billion RON),
+followed by Bucharest (16%: 30 companies, 612 million) and Ilfov (10%: 9 companies, 386 million).
 
 | # | Supplier | CUI | Contracts | DA | Total share (million RON) |
 |---|---|---|---|---|---|
