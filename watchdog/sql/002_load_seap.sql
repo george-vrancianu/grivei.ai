@@ -13,6 +13,34 @@ CREATE TABLE IF NOT EXISTS import_batch (
     payload     jsonb NOT NULL
 );
 
+-- Public page of an award notice. The SPA (navigateToView) picks the route from sysNoticeTypeId and
+-- sysNoticeVersionId (1 = legacy form); see docs/research/elicitatie-national-queries.md §1.
+-- Batches harvested before the connector kept the version have no versionId: we assume the current form
+-- (version <> 1). Checked live in Nov 2026: all 380 notices in the Brașov and Timișoara 2024-2026 batches
+-- are version 2.
+-- Type 18 (SCNA) in its current form goes to view-rfq, as the public list does; the SPA also has a
+-- view-snc route, whose page loads the same RFQ_PUBLIC_CANotice data.
+-- Notice types without a known route get no URL rather than a wrong one.
+CREATE OR REPLACE FUNCTION seap_ca_notice_url(type_id int, version_id int, ca_notice_id bigint)
+RETURNS text LANGUAGE sql IMMUTABLE AS $$
+SELECT 'https://e-licitatie.ro/pub/notices/' ||
+       CASE WHEN coalesce(version_id, 2) = 1 THEN
+            CASE type_id WHEN 3  THEN 'ca-notices/view-c/v1/'
+                         WHEN 18 THEN 'ca-notices/view-scn/v1/'
+                         WHEN 13 THEN 'ca-notices/view-rfq/v1/'
+                         WHEN 20 THEN 'ca-notices/view-rfq/v1/'
+                         WHEN 16 THEN 'ca-notices/view-pc/v1/'
+                         WHEN 8  THEN 'ca-notices/view-dc/v1/' END
+       ELSE
+            CASE type_id WHEN 3  THEN 'ca-notices/view-c/'
+                         WHEN 18 THEN 'ca-notices/view-rfq/'   -- sic: the bundle routes current SCNA to view-rfq
+                         WHEN 13 THEN 'ca-notices/view-rfq/'
+                         WHEN 20 THEN 'ca-notices/view-rfq/'
+                         WHEN 16 THEN 'ca-notices-pc/view/'
+                         WHEN 8  THEN 'ca-notices-dc/view/' END
+       END || ca_notice_id
+$$;
+
 BEGIN;
 
 -- The current batch (the latest one if not given explicitly)
@@ -31,12 +59,12 @@ ON CONFLICT (source_id, kind, external_id) DO UPDATE SET raw = EXCLUDED.raw, fet
 
 INSERT INTO document (source_id, kind, external_id, url, raw)
 SELECT 'seap', 'award_notice', n->>'caNoticeId',
-       'https://e-licitatie.ro/pub/notices/ca-notices/view-c/' || (n->>'caNoticeId'),
+       seap_ca_notice_url((n->>'typeId')::int, (n->>'versionId')::int, (n->>'caNoticeId')::bigint),
        n || jsonb_build_object('contracts',
              coalesce((SELECT jsonb_agg(c) FROM jsonb_array_elements(cur.payload->'contracts') c
                         WHERE c->>'caNoticeId' = n->>'caNoticeId'), '[]'::jsonb))
   FROM cur, jsonb_array_elements(cur.payload->'notices') n
-ON CONFLICT (source_id, kind, external_id) DO UPDATE SET raw = EXCLUDED.raw, fetched_at = now();
+ON CONFLICT (source_id, kind, external_id) DO UPDATE SET raw = EXCLUDED.raw, url = EXCLUDED.url, fetched_at = now();
 
 -- ---------------------------------------------------------------
 -- 2. ENTITIES

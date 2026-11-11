@@ -49,6 +49,8 @@ python tools/build_viewer.py --data viewer/timisoara.graph.json --out viewer/tim
 ## Tests
 
 The connector tests live in `tests/`. They stub the HTTP layer and never call e-licitatie.ro.
+The loader tests (`tests/test_load_seap.py`) start a throwaway Postgres cluster in a temp directory
+(`initdb` + `pg_ctl`, private Unix socket) and are skipped when the Postgres server binaries are missing.
 
 ```bash
 cd watchdog

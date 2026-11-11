@@ -90,7 +90,8 @@ def award_notices(ca_id, d_from, d_to):
         t = lambda k: (i.get(k) or {}).get("text")
         for i in j["items"]:
             out.append({"caNoticeId": i["caNoticeId"], "noticeId": i["noticeId"], "procedureId": i["procedureId"],
-                        "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "state": t("sysNoticeState"),
+                        "noticeNo": i["noticeNo"], "typeId": i["sysNoticeTypeId"], "versionId": i["sysNoticeVersionId"],
+                        "state": t("sysNoticeState"),
                         "procState": t("sysProcedureState"), "ca": i["contractingAuthorityNameAndFN"],
                         "title": i["contractTitle"], "contractType": t("sysAcquisitionContractType"),
                         "procType": t("sysProcedureType"), "assignType": t("sysContractAssigmentType"),

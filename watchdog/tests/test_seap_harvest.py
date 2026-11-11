@@ -51,3 +51,22 @@ def test_find_authority_prefers_the_exact_name_match(http):
     ]})
     ca = seap_harvest.find_authority("municipiul brasov")
     assert (ca["seapId"], ca["cui"], ca["name"]) == (3289, "4384206", "MUNICIPIUL BRASOV")
+
+
+def notice_item(**over):
+    """One GetCANoticeList item, as the API returns it (only the fields the connector reads)."""
+    item = {"caNoticeId": 100639197, "noticeId": 1, "procedureId": 2, "noticeNo": "SCNA1134543",
+            "sysNoticeTypeId": 18, "sysNoticeVersionId": 2, "sysNoticeState": None, "sysProcedureState": None,
+            "contractingAuthorityNameAndFN": "X", "contractTitle": "T", "sysAcquisitionContractType": None,
+            "sysProcedureType": None, "sysContractAssigmentType": None, "cpvCodeAndName": "C",
+            "ronContractValue": 1.0, "noticeStateDate": "2025-01-01T00:00:00", "isOnline": True,
+            "currencyCode": "RON", "estimatedValueExport": None}
+    item.update(over)
+    return item
+
+
+def test_award_notices_keep_the_notice_version(http):
+    _, replies = http
+    replies.append({"items": [notice_item(sysNoticeVersionId=1)], "total": 1, "searchTooLong": False})
+    [n] = seap_harvest.award_notices(3289, "2025-01-01", "2025-01-31")
+    assert (n["typeId"], n["versionId"]) == (18, 1)
