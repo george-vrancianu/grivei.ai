@@ -20,7 +20,7 @@ agg AS (
          coalesce(sum(e.amount_ron),0) AS ron,
          min(e.valid_from) AS first_seen, max(e.valid_from) AS last_seen,
          count(*) FILTER (WHERE e.attrs->>'procedure' ILIKE '%fara publicare%') AS n_neg,
-         (array_agg(DISTINCT d.url))[1:5] AS urls
+         (array_agg(DISTINCT d.url) FILTER (WHERE d.url IS NOT NULL))[1:5] AS urls
     FROM edge e JOIN document d ON d.id = e.document_id
    WHERE %(auth)s = '' OR (e.src_id IN (SELECT id FROM scope) AND e.dst_id IN (SELECT id FROM scope))
    GROUP BY 1,2,3

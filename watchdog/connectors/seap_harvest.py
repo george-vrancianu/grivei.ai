@@ -34,7 +34,7 @@ PAGE_SIZE = 1000           # rows per page of the list endpoints
 DA_CAP = 2000              # DirectAcquisition_MaxListItems in the /pub page config
 NOTICE_CAP = 3000          # CaNotice_MaxListItems
 CONTRACTS_TAKE = 1000      # contracts per GetCANoticeContracts page
-RETRIES, RETRY_PAUSE = 3, 5  # retries of a notice's contracts after a transient error; backoff step in seconds
+RETRIES, RETRY_PAUSE = 3, 5  # retries of a request after a transient error; backoff step in seconds
 
 
 def post(path, body):
@@ -65,6 +65,28 @@ def iso(d, end=False):
 
 
 
+def transient(e):
+    """A request error worth retrying: no answer at all (connection, timeout), a server error (5xx), throttling (429)
+    or the 403 api-pub sometimes returns under load. Other HTTP errors would fail the same way again."""
+    if not isinstance(e, requests.HTTPError) or e.response is None:
+        return True
+    s = e.response.status_code
+    return s >= 500 or s in (403, 429)
+
+
+def with_retries(what, call):
+    """`call()`, retried RETRIES times after a transient request error (with a growing pause); any other error, or
+    the last transient one, propagates."""
+    for attempt in range(RETRIES + 1):
+        try:
+            return call()
+        except requests.RequestException as e:
+            if attempt == RETRIES or not transient(e):
+                raise
+            print(f"  ! {what} (attempt {attempt + 1}/{RETRIES + 1}): {e}", file=sys.stderr)
+            time.sleep(RETRY_PAUSE * (attempt + 1))
+
+
 def capped_list(label, fetch, d_from, d_to, cap, key):
     """All raw rows of a capped list endpoint between two days (inclusive), deduped by `key`.
 
@@ -75,12 +97,14 @@ def capped_list(label, fetch, d_from, d_to, cap, key):
     rows = {}
 
     def window(a, b):
-        got, p = 0, 0
+        got, p, seen = 0, 0, set()
         while True:
-            j = fetch(a.isoformat(), b.isoformat(), p)
+            j = with_retries(f"{label} {a}..{b} page {p}", lambda: fetch(a.isoformat(), b.isoformat(), p))
             if j.get("searchTooLong") or j["total"] >= cap:
                 if p:
                     raise RuntimeError(f"{label} {a}..{b}: hit the {cap} cap on page {p}")
+                # On purpose, this also fires for a single day with total == cap and no searchTooLong: that day
+                # may well be complete, but a capped answer looks the same, and we can't split it to tell.
                 if a == b:
                     raise RuntimeError(f"{label} {a}: one day is over the {cap} result cap; cannot split further")
                 mid = a + (b - a) // 2
@@ -90,9 +114,15 @@ def capped_list(label, fetch, d_from, d_to, cap, key):
                 return
             for i in j["items"]:
                 rows[i[key]] = i
+                seen.add(i[key])
             got += len(j["items"])
             print(f"  {label} {a}..{b}: {got}/{j['total']}", file=sys.stderr)
             if got >= j["total"]:
+                # The list is unsorted, so a page may repeat rows of an earlier one: the raw count then reaches
+                # total while some rows were never sent. Only the unique count proves the window is complete.
+                if len(seen) < j["total"]:
+                    raise RuntimeError(f"{label} {a}..{b}: {len(seen)} unique of {j['total']} rows; "
+                                       f"pages repeated rows, the rest were never sent")
                 return
             if not j["items"]:
                 raise RuntimeError(f"{label} {a}..{b}: empty page {p} at {got}, total {j['total']}")
@@ -143,7 +173,8 @@ def award_notices(ca_id, d_from, d_to):
 
 
 def contracts_for(notice):
-    """All the contracts of one award notice, paged with skip/take until `total`."""
+    """All the contracts of one award notice, paged with skip/take until `total`; fails unless `total` distinct
+    contracts came back."""
     items = []
     while True:
         j = post("/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts", {
@@ -155,6 +186,12 @@ def contracts_for(notice):
         page = j.get("items") or []
         items += page
         if len(items) >= j["total"]:
+            # sortOrder is empty, so a page may repeat a contract of an earlier one; then another was never sent.
+            items = list({c["caNoticeContractId"]: c for c in items}.values())
+            unique = len(items)
+            if unique < j["total"]:
+                raise RuntimeError(f"contracts of notice {notice['caNoticeId']}: {unique} unique of {j['total']}; "
+                                   f"pages repeated contracts, the rest were never sent")
             break
         if not page:
             raise RuntimeError(f"contracts of notice {notice['caNoticeId']}: empty page at skip "
@@ -176,30 +213,13 @@ def contracts_for(notice):
     return out
 
 
-def transient(e):
-    """A request error worth retrying: no answer at all (connection, timeout), a server error (5xx), throttling (429)
-    or the 403 api-pub sometimes returns under load. Other HTTP errors would fail the same way again."""
-    if not isinstance(e, requests.HTTPError) or e.response is None:
-        return True
-    s = e.response.status_code
-    return s >= 500 or s in (403, 429)
-
-
 def all_contracts(notices):
     """The contracts of every notice. A transient request error is retried RETRIES times; a notice that still
     fails, or fails deterministically (an empty page, a 4xx), fails the run: a batch missing some notices'
     contracts would be silently truncated."""
     contracts = []
     for k, n in enumerate(notices, 1):
-        for attempt in range(RETRIES + 1):
-            try:
-                contracts += contracts_for(n)
-                break
-            except requests.RequestException as e:
-                if attempt == RETRIES or not transient(e):
-                    raise
-                print(f"  ! contracts {n['caNoticeId']} (attempt {attempt + 1}/{RETRIES + 1}): {e}", file=sys.stderr)
-                time.sleep(RETRY_PAUSE * (attempt + 1))
+        contracts += with_retries(f"contracts {n['caNoticeId']}", lambda: contracts_for(n))
         if k % 25 == 0:
             print(f"  contracts: {k}/{len(notices)} notices", file=sys.stderr)
         time.sleep(PAUSE)

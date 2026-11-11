@@ -115,16 +115,34 @@ def test_direct_acquisitions_raise_when_a_single_day_is_over_the_cap(server):
         seap_harvest.direct_acquisitions(3289, "2024-01-01", "2024-01-02")
 
 
-def test_award_notices_split_at_the_cap_and_dedupe_across_windows(server):
+def test_award_notices_fail_when_a_page_repeats_rows_from_an_earlier_page(server):
+    """The list is unsorted: a later page can repeat rows of an earlier one, so the raw count reaches `total`
+    while some rows were never sent. Counting raw rows would hide the loss behind the dedupe."""
     def answer(d_from, d_to, page, size):
-        if d_from != d_to:  # a total at the cap is suspect even without the flag
-            return {"items": [notice_row(9)] * 1000, "total": 3000, "searchTooLong": False}
-        rows = {"2024-03-01": [notice_row(1), notice_row(2)], "2024-03-02": [notice_row(2), notice_row(3)]}[d_from]
-        return {"items": rows, "total": len(rows), "searchTooLong": False}
+        rows = [notice_row(k) for k in range(1000)] if page == 0 else [notice_row(0)] + [
+            notice_row(k) for k in range(1001, 1500)]
+        return {"items": rows, "total": 1500, "searchTooLong": False}
 
     server(NOTICE_DATES, answer)
-    notices = seap_harvest.award_notices(3289, "2024-03-01", "2024-03-02")
-    assert sorted(n["caNoticeId"] for n in notices) == [1, 2, 3]
+    with pytest.raises(RuntimeError, match="1499 unique of 1500"):
+        seap_harvest.award_notices(3289, "2024-03-01", "2024-03-31")
+
+
+def test_list_fetches_retry_a_transient_error(monkeypatch):
+    monkeypatch.setattr(seap_harvest.time, "sleep", lambda s: None)
+    calls = []
+
+    def post(path, body):
+        calls.append(body["pageIndex"])
+        if len(calls) == 1:
+            r = seap_harvest.requests.Response()
+            r.status_code = 503
+            raise seap_harvest.requests.HTTPError("503 error", response=r)
+        return {"items": [da_row(1)], "total": 1, "searchTooLong": False}
+
+    monkeypatch.setattr(seap_harvest, "post", post)
+    assert [d["id"] for d in seap_harvest.direct_acquisitions(3289, "2024-01-01", "2024-01-31")] == [1]
+    assert calls == [0, 0]
 
 
 def test_award_notices_page_by_1000_until_the_total(server):
@@ -175,6 +193,22 @@ def test_contracts_for_fails_on_an_empty_page_before_total(http, monkeypatch):
     replies += [{"items": [contract(1)], "total": 3}, {"items": [], "total": 3}]
     with pytest.raises(RuntimeError, match="42"):
         seap_harvest.contracts_for({"caNoticeId": 42})
+
+
+def test_contracts_for_fails_when_a_page_repeats_a_contract(http, monkeypatch):
+    """skip/take over an unsorted list: a repeated contract means another one was never sent."""
+    monkeypatch.setattr(seap_harvest, "PAUSE", 0)
+    _, replies = http
+    replies += [{"items": [contract(1), contract(2)], "total": 3}, {"items": [contract(2)], "total": 3}]
+    with pytest.raises(RuntimeError, match="notice 42: 2 unique of 3"):
+        seap_harvest.contracts_for({"caNoticeId": 42})
+
+
+def test_contracts_for_dedupes_a_repeated_contract_when_none_is_missing(http, monkeypatch):
+    monkeypatch.setattr(seap_harvest, "PAUSE", 0)
+    _, replies = http
+    replies += [{"items": [contract(1)], "total": 2}, {"items": [contract(1), contract(2)], "total": 2}]
+    assert [c["id"] for c in seap_harvest.contracts_for({"caNoticeId": 42})] == [1, 2]
 
 
 @pytest.fixture

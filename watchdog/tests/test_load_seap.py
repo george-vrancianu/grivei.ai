@@ -54,9 +54,9 @@ def psql(url, *args):
     return r.stdout
 
 
-def load(db, tmp_path, notices):
+def load(db, tmp_path, notices, contracts=()):
     batch = {"authority": {"name": "MUNICIPIUL TEST", "cui": "1", "seapId": 1},
-             "da": [], "notices": notices, "contracts": []}
+             "da": [], "notices": notices, "contracts": list(contracts)}
     f = tmp_path / "batch.json"
     f.write_text(json.dumps(batch))
     subprocess.run([sys.executable, WATCHDOG / "connectors" / "load_batch.py", "--source", "seap",
@@ -109,3 +109,15 @@ def test_reloading_a_notice_with_its_version_corrects_the_link(db, tmp_path):
     load(db, tmp_path, [notice(920003, 3)])
     load(db, tmp_path, [notice(920003, 3, 1)])
     assert notice_url(db, 920003) == f"{V}ca-notices/view-c/v1/920003"
+
+
+def test_graph_export_drops_the_null_link_of_an_unmapped_notice_type(db, tmp_path):
+    """A notice type with no known page has no URL; the edge's source links must not carry a null."""
+    load(db, tmp_path, [notice(930099, 99, 2), notice(930003, 3, 2)], [
+        {"caNoticeId": n, "id": n, "contractNo": "C", "date": "2025-01-02", "title": "T", "value": 1, "valueRon": 1,
+         "winners": [{"name": "SC FURNIZOR GRAF SRL", "cui": "930000"}]} for n in (930099, 930003)])
+    out = tmp_path / "graph.json"
+    subprocess.run([sys.executable, WATCHDOG / "tools" / "export_graph.py", "--authority", "MUNICIPIUL TEST",
+                    "--out", out], check=True, capture_output=True, env={**os.environ, "DATABASE_URL": db})
+    [edge] = [e for e in json.loads(out.read_text())["edges"] if e["rel"] == "AWARDED_CONTRACT"]
+    assert edge["urls"] == [f"{V}ca-notices/view-c/930003"]

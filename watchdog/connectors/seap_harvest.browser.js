@@ -15,31 +15,41 @@ window.__H = { status: 'running', log: [], da: [], notices: [], contracts: [], c
   // List queries stop at a server-side cap (2,000 DAs, 3,000 notices). Unlike seap_harvest.py, this script does not
   // split the date range: it stops instead of returning a truncated list. Narrow FROM/TO and rerun, or use the .py.
   const checkCap = (what, j, cap) => { if (j.searchTooLong || j.total >= cap) throw new Error(what + ': ' + j.total + ' results hit the ' + cap + ' cap; narrow FROM/TO'); };
+  // Lists come back unsorted, so a page may repeat rows of an earlier one: the raw count then reaches total while
+  // some rows were never sent. Rows are deduped by id, and once paging ends there must be total distinct ids.
+  const checkUnique = (what, unique, total) => { if (unique < total) throw new Error(what + ': ' + unique + ' unique of ' + total + '; pages repeated rows, the rest were never sent'); };
   try {
-    for (let p = 0; ; p++) {
+    for (let p = 0, got = 0, seen = new Set(); ; p++) {
       const j = await post('/api-pub/DirectAcquisitionCommon/GetDirectAcquisitionList/', { pageSize: 1000, pageIndex: p, showOngoingDa: false, cookieContext: null, sysDirectAcquisitionStateId: null, publicationDateStart: null, publicationDateEnd: null, finalizationDateStart: FROM, finalizationDateEnd: TO, cpvCategoryId: null, contractingAuthorityId: CA, supplierId: null, cpvCodeId: null, assignedUserId: null, isOpenForCorrection: null, sysDirectAcquisitionTypeId: null, directAcquisitionName: null, uniqueIdentificationCode: null });
       checkCap('direct purchases', j, 2000);
-      for (const i of j.items) H.da.push({ id: i.directAcquisitionId, code: i.uniqueIdentificationCode, name: i.directAcquisitionName, state: i.sysDirectAcquisitionState?.text, cpv: i.cpvCode, pub: i.publicationDate, fin: i.finalizationDate, supplier: i.supplier, ca: i.contractingAuthority, est: i.estimatedValueRon, val: i.closingValue });
-      if (H.da.length >= j.total) break;
-      if (!j.items.length) throw new Error('direct purchases: empty page ' + p + ' at ' + H.da.length + ', total ' + j.total);
+      for (const i of j.items) { if (seen.has(i.directAcquisitionId)) continue; seen.add(i.directAcquisitionId); H.da.push({ id: i.directAcquisitionId, code: i.uniqueIdentificationCode, name: i.directAcquisitionName, state: i.sysDirectAcquisitionState?.text, cpv: i.cpvCode, pub: i.publicationDate, fin: i.finalizationDate, supplier: i.supplier, ca: i.contractingAuthority, est: i.estimatedValueRon, val: i.closingValue }); }
+      got += j.items.length;
+      if (got >= j.total) { checkUnique('direct purchases', seen.size, j.total); break; }
+      if (!j.items.length) throw new Error('direct purchases: empty page ' + p + ' at ' + got + ', total ' + j.total);
       await sleep(350);
     }
-    for (let p = 0; ; p++) {
+    for (let p = 0, got = 0, seen = new Set(); ; p++) {
       const j = await post('/api-pub/NoticeCommon/GetCANoticeList/', { sysNoticeTypeIds: [], sortProperties: [], pageIndex: p, pageSize: 1000, contractingAuthorityId: CA, startPublicationDate: FROM, endPublicationDate: TO });
       checkCap('award notices', j, 3000);
-      for (const i of j.items) H.notices.push({ caNoticeId: i.caNoticeId, noticeId: i.noticeId, procedureId: i.procedureId, noticeNo: i.noticeNo, typeId: i.sysNoticeTypeId, versionId: i.sysNoticeVersionId, state: i.sysNoticeState?.text, procState: i.sysProcedureState?.text, ca: i.contractingAuthorityNameAndFN, title: i.contractTitle, contractType: i.sysAcquisitionContractType?.text, procType: i.sysProcedureType?.text, assignType: i.sysContractAssigmentType?.text, cpv: i.cpvCodeAndName, value: i.ronContractValue, date: i.noticeStateDate, isOnline: i.isOnline, cur: i.currencyCode, est: i.estimatedValueExport });
-      if (H.notices.length >= j.total) break;
-      if (!j.items.length) throw new Error('award notices: empty page ' + p + ' at ' + H.notices.length + ', total ' + j.total);
+      for (const i of j.items) { if (seen.has(i.caNoticeId)) continue; seen.add(i.caNoticeId); H.notices.push({ caNoticeId: i.caNoticeId, noticeId: i.noticeId, procedureId: i.procedureId, noticeNo: i.noticeNo, typeId: i.sysNoticeTypeId, versionId: i.sysNoticeVersionId, state: i.sysNoticeState?.text, procState: i.sysProcedureState?.text, ca: i.contractingAuthorityNameAndFN, title: i.contractTitle, contractType: i.sysAcquisitionContractType?.text, procType: i.sysProcedureType?.text, assignType: i.sysContractAssigmentType?.text, cpv: i.cpvCodeAndName, value: i.ronContractValue, date: i.noticeStateDate, isOnline: i.isOnline, cur: i.currencyCode, est: i.estimatedValueExport }); }
+      got += j.items.length;
+      if (got >= j.total) { checkUnique('award notices', seen.size, j.total); break; }
+      if (!j.items.length) throw new Error('award notices: empty page ' + p + ' at ' + got + ', total ' + j.total);
       await sleep(350);
     }
-    // All contracts of one notice, paged with skip/take until total; an empty page before total is an error.
+    // All contracts of one notice, paged with skip/take until total and deduped by id; an empty page before total,
+    // or fewer than total distinct contracts once paging ends, is an error.
     const contractsFor = async n => {
       const items = [];
       for (;;) {
         const j = await post('/api-pub/C_PUBLIC_CANotice/GetCANoticeContracts', { caNoticeId: n.caNoticeId, contractNo: null, winnerTitle: null, winnerFiscalNumber: null, contractDate: { from: null, to: null }, contractValue: { from: null, to: null }, contractMinOffer: { from: null, to: null }, contractMaxOffer: { from: null, to: null }, contractTitle: null, lots: null, sortOrder: [], sysContractFrameworkType: {}, skip: items.length, take: 1000 });
         const page = j.items || [];
         items.push(...page);
-        if (items.length >= j.total) return items;
+        if (items.length >= j.total) {
+          const unique = [...new Map(items.map(c => [c.caNoticeContractId, c])).values()];
+          checkUnique('contracts of notice ' + n.caNoticeId, unique.length, j.total);
+          return unique;
+        }
         if (!page.length) throw new Error('contracts of notice ' + n.caNoticeId + ': empty page at skip ' + items.length + ', total ' + j.total);
         await sleep(350);
       }
