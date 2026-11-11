@@ -18,6 +18,10 @@ _Avoid_: scraper, integration
 A shipped increment of the public explorer that makes one more Source explorable, with its own search surface on the shared graph.
 _Avoid_: version, phase
 
+**Data-through date**:
+The date up to which one Source's records of one kind are complete in the graph.
+_Avoid_: last updated, freshness
+
 ### Graph
 
 **Contracting authority**:
