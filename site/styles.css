@@ -185,6 +185,36 @@ ol { padding: 0; list-style: none; }
 .brand strong { font-weight: 600; }
 .brand span { color: var(--muted); }
 
+.topbar__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+}
+
+/* language switcher: plain links, the current language marked with aria-current */
+.lang {
+  display: flex;
+  gap: 4px;
+}
+.lang a {
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.lang a:hover { color: var(--text); }
+.lang a[aria-current="page"] {
+  border-color: var(--line-strong);
+  color: var(--text);
+  font-weight: 600;
+}
+.lang a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .phase {
   display: flex;
   align-items: center;
@@ -319,7 +349,12 @@ h1 {
   font-size: 0.8125rem;
   color: var(--text);
 }
-.path__from { color: var(--accent); }
+/* on narrow cards the labels may wrap: keep the end label right-aligned and never break "decision-maker" at its hyphen */
+.path__ends span:last-child { text-align: right; }
+.path__from {
+  color: var(--accent);
+  white-space: nowrap;
+}
 
 /* ---------- data sources ---------- */
 

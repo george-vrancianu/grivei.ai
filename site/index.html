@@ -1,33 +1,45 @@
 <!doctype html>
-<html lang="ro">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Grivei.ai · watchdog pentru achiziții publice</title>
-  <meta name="description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <title>Grivei.ai · public procurement watchdog</title>
+  <meta name="description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The project is in its research phase.">
   <link rel="canonical" href="https://grivei.ai/">
+  <!-- Language versions. Keep this block identical in both pages. -->
+  <link rel="alternate" hreflang="en" href="https://grivei.ai/">
+  <link rel="alternate" hreflang="ro" href="https://grivei.ai/ro/">
+  <link rel="alternate" hreflang="x-default" href="https://grivei.ai/">
 
   <!-- Social sharing. No og:image yet: a share image is still to be made (see CLAUDE.md). -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Grivei.ai">
-  <meta property="og:locale" content="ro_RO">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ro_RO">
   <meta property="og:url" content="https://grivei.ai/">
-  <meta property="og:title" content="Grivei.ai · watchdog pentru achiziții publice">
-  <meta property="og:description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <meta property="og:title" content="Grivei.ai · public procurement watchdog">
+  <meta property="og:description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The project is in its research phase.">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#0D1014">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
   <!-- Fonts are self-hosted (see @font-face at the top of styles.css). The page makes no third-party requests. -->
   <link rel="stylesheet" href="styles.css">
+  <script src="status.js" defer></script>
 </head>
 <body>
 
   <header class="topbar">
     <div class="wrap topbar__in">
       <p class="brand"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
-      <!-- Project phase. Change the word here when the project leaves research. -->
-      <p class="phase"><span class="phase__dot" aria-hidden="true"></span>stadiu: cercetare</p>
+      <div class="topbar__end">
+        <!-- Project phase. Change the word here when the project leaves research. -->
+        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>phase: research</p>
+        <nav class="lang" aria-label="Language">
+          <a href="./" hreflang="en" lang="en" aria-current="page">EN</a>
+          <a href="ro/" hreflang="ro" lang="ro">RO</a>
+        </nav>
+      </div>
     </div>
   </header>
 
@@ -35,89 +47,89 @@
 
     <section class="wrap hero">
       <div class="hero__text">
-        <p class="eyebrow">achiziții publice · surse publice</p>
-        <h1>Câți pași sunt între cine semnează și cine câștigă?</h1>
-        <p class="lede">Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Fiecare legătură trimite la documentul din care provine.</p>
+        <p class="eyebrow">public procurement · public sources</p>
+        <h1>How many steps between who signs and who wins?</h1>
+        <p class="lede">Grivei.ai builds a graph of institutions and companies, from public sources only. Every link points to the document it comes from.</p>
       </div>
 
       <div class="target">
-        <h2 class="label">întrebarea-țintă</h2>
-        <p class="target__big">≤ 3 pași</p>
+        <h2 class="label">target question</h2>
+        <p class="target__big">≤ 3 steps</p>
         <!-- Decorative: the sentence below says the same thing in words. -->
         <div class="path" aria-hidden="true">
-          <div class="path__steps"><span>pas 1</span><span>pas 2</span><span>pas 3</span></div>
+          <div class="path__steps"><span>step 1</span><span>step 2</span><span>step 3</span></div>
           <div class="path__line">
             <span class="node node--from"></span><span class="edge"></span>
             <span class="node"></span><span class="edge"></span>
             <span class="node"></span><span class="edge"></span>
             <span class="node node--to"></span>
           </div>
-          <div class="path__ends"><span class="path__from">decident</span><span>firmă câștigătoare</span></div>
+          <div class="path__ends"><span class="path__from">decision-maker</span><span>winning company</span></div>
         </div>
-        <p class="target__note">Căutăm drumuri de cel mult trei pași între un decident și o firmă care câștigă contracte de la aceeași instituție.</p>
+        <p class="target__note">We look for paths of at most three steps between a decision-maker and a company that wins contracts from the same institution.</p>
       </div>
     </section>
 
     <section class="wrap">
       <div class="block">
         <div class="block__head">
-          <h2 class="label label--accent">surse de date</h2>
-          <!-- Filled in from the rows below by the script at the end of the page; this text is the no-JS fallback. -->
-          <p class="label" id="sources-summary">1 funcțională · 1 în lucru · 3 urmează</p>
+          <h2 class="label label--accent">data sources</h2>
+          <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
+          <p class="label" id="sources-summary">1 live · 1 in progress · 3 next</p>
         </div>
         <div class="bar" id="sources-bar" aria-hidden="true">
           <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="next"></span>
         </div>
 
         <!--
-          STATUS LIVES HERE. One <li> per data source, in the order they should appear.
-          data-status: "live" (funcțional) · "wip" (în lucru) · "next" (urmează).
+          STATUS LIVES HERE, and in the same list in ro/index.html: change both.
+          data-status: "live" · "wip" (in progress) · "next".
           To change a source's status, change data-status AND the word in <p class="status">.
           Row numbers, the bar above and the summary line update themselves.
         -->
         <ol class="sources" id="sources">
           <li class="source" data-status="live">
             <h3 class="source__name">SEAP</h3>
-            <p class="source__what">Achiziții directe, anunțuri de atribuire, contracte</p>
-            <p class="status">funcțional</p>
+            <p class="source__what">Direct purchases, award notices, contracts</p>
+            <p class="status">live</p>
           </li>
           <li class="source" data-status="wip">
             <h3 class="source__name">ANI</h3>
-            <p class="source__what">Declarații de avere și de interese</p>
-            <p class="status">în lucru</p>
+            <p class="source__what">Asset and interest declarations</p>
+            <p class="status">in progress</p>
           </li>
           <li class="source" data-status="next">
             <h3 class="source__name">ONRC</h3>
-            <p class="source__what">Asociați și administratori de firme</p>
-            <p class="status">urmează</p>
+            <p class="source__what">Company shareholders and directors</p>
+            <p class="status">next</p>
           </li>
           <li class="source" data-status="next">
-            <h3 class="source__name">Ministerul Finanțelor</h3>
-            <p class="source__what">Bilanțuri: cifră de afaceri, număr de angajați</p>
-            <p class="status">urmează</p>
+            <h3 class="source__name">Ministry of Finance</h3>
+            <p class="source__what">Financial statements: turnover, headcount</p>
+            <p class="status">next</p>
           </li>
           <li class="source" data-status="next">
             <h3 class="source__name">portal.just.ro</h3>
-            <p class="source__what">Dosare în care apar firme și persoane</p>
-            <p class="status">urmează</p>
+            <p class="source__what">Court cases involving companies and people</p>
+            <p class="status">next</p>
           </li>
         </ol>
       </div>
     </section>
 
     <section class="wrap rules">
-      <h2 class="sr-only">Cum lucrăm</h2>
+      <h2 class="sr-only">How we work</h2>
       <article class="rule">
-        <h3>Proveniență obligatorie</h3>
-        <p>Nicio legătură nu intră în graf fără documentul-sursă din care provine.</p>
+        <h3>Provenance required</h3>
+        <p>No link enters the graph without the source document it comes from.</p>
       </article>
       <article class="rule">
-        <h3>Semnale, nu concluzii</h3>
-        <p>Rezultatele sunt puncte de plecare. Fiecare se verifică în documentul original.</p>
+        <h3>Signals, not conclusions</h3>
+        <p>Results are starting points. Each one is checked against the original document.</p>
       </article>
       <article class="rule">
-        <h3>Doar cât e necesar</h3>
-        <p>Datele sunt publice, dar numele sunt date personale. Publicăm doar ce servește interesul public.</p>
+        <h3>Only what is needed</h3>
+        <p>The data is public, but names are personal data. We publish only what serves the public interest.</p>
       </article>
     </section>
 
@@ -126,36 +138,10 @@
   <footer class="foot">
     <div class="wrap foot__in">
       <p>grivei.ai</p>
-      <!-- Bump both the datetime attribute and the visible date whenever the status changes. -->
-      <p>actualizat: <time datetime="2026-11-11">11.11.2026</time></p>
+      <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ro/index.html. -->
+      <p>updated: <time datetime="2026-11-11">11 Nov 2026</time></p>
     </div>
   </footer>
-
-  <script>
-    // The source rows are the single source of truth: the bar and the summary are derived from their data-status.
-    (function () {
-      var rows = document.querySelectorAll('#sources .source');
-      var bar = document.getElementById('sources-bar');
-      var summary = document.getElementById('sources-summary');
-      if (!rows.length || !bar || !summary) return;
-
-      var count = { live: 0, wip: 0, next: 0 };
-      bar.textContent = '';
-      rows.forEach(function (row) {
-        var status = row.dataset.status;
-        if (!(status in count)) return;
-        count[status] += 1;
-        var segment = document.createElement('span');
-        segment.dataset.status = status;
-        bar.appendChild(segment);
-      });
-
-      summary.textContent =
-        count.live + (count.live === 1 ? ' funcțională' : ' funcționale') +
-        ' · ' + count.wip + ' în lucru' +
-        ' · ' + count.next + ' urmează';
-    })();
-  </script>
 
 </body>
 </html>

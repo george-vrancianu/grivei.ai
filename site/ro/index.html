@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grivei.ai · watchdog pentru achiziții publice</title>
+  <meta name="description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <link rel="canonical" href="https://grivei.ai/ro/">
+  <!-- Language versions. Keep this block identical in both pages. -->
+  <link rel="alternate" hreflang="en" href="https://grivei.ai/">
+  <link rel="alternate" hreflang="ro" href="https://grivei.ai/ro/">
+  <link rel="alternate" hreflang="x-default" href="https://grivei.ai/">
+
+  <!-- Social sharing. No og:image yet: a share image is still to be made (see CLAUDE.md). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Grivei.ai">
+  <meta property="og:locale" content="ro_RO">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:url" content="https://grivei.ai/ro/">
+  <meta property="og:title" content="Grivei.ai · watchdog pentru achiziții publice">
+  <meta property="og:description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#0D1014">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+  <!-- Fonts are self-hosted (see @font-face at the top of styles.css). The page makes no third-party requests. -->
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../status.js" defer></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap topbar__in">
+      <p class="brand"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
+      <div class="topbar__end">
+        <!-- Project phase. Change the word here when the project leaves research. -->
+        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>stadiu: cercetare</p>
+        <nav class="lang" aria-label="Limbă">
+          <a href="../" hreflang="en" lang="en">EN</a>
+          <a href="./" hreflang="ro" lang="ro" aria-current="page">RO</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="wrap hero">
+      <div class="hero__text">
+        <p class="eyebrow">achiziții publice · surse publice</p>
+        <h1>Câți pași sunt între cine semnează și cine câștigă?</h1>
+        <p class="lede">Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Fiecare legătură trimite la documentul din care provine.</p>
+      </div>
+
+      <div class="target">
+        <h2 class="label">întrebarea-țintă</h2>
+        <p class="target__big">≤ 3 pași</p>
+        <!-- Decorative: the sentence below says the same thing in words. -->
+        <div class="path" aria-hidden="true">
+          <div class="path__steps"><span>pas 1</span><span>pas 2</span><span>pas 3</span></div>
+          <div class="path__line">
+            <span class="node node--from"></span><span class="edge"></span>
+            <span class="node"></span><span class="edge"></span>
+            <span class="node"></span><span class="edge"></span>
+            <span class="node node--to"></span>
+          </div>
+          <div class="path__ends"><span class="path__from">decident</span><span>firmă câștigătoare</span></div>
+        </div>
+        <p class="target__note">Căutăm drumuri de cel mult trei pași între un decident și o firmă care câștigă contracte de la aceeași instituție.</p>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="block">
+        <div class="block__head">
+          <h2 class="label label--accent">surse de date</h2>
+          <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
+          <p class="label" id="sources-summary">1 funcțională · 1 în lucru · 3 urmează</p>
+        </div>
+        <div class="bar" id="sources-bar" aria-hidden="true">
+          <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="next"></span>
+        </div>
+
+        <!--
+          STATUS LIVES HERE, and in the same list in ../index.html: change both.
+          data-status: "live" (funcțional) · "wip" (în lucru) · "next" (urmează).
+          To change a source's status, change data-status AND the word in <p class="status">.
+          Row numbers, the bar above and the summary line update themselves.
+        -->
+        <ol class="sources" id="sources">
+          <li class="source" data-status="live">
+            <h3 class="source__name">SEAP</h3>
+            <p class="source__what">Achiziții directe, anunțuri de atribuire, contracte</p>
+            <p class="status">funcțional</p>
+          </li>
+          <li class="source" data-status="wip">
+            <h3 class="source__name">ANI</h3>
+            <p class="source__what">Declarații de avere și de interese</p>
+            <p class="status">în lucru</p>
+          </li>
+          <li class="source" data-status="next">
+            <h3 class="source__name">ONRC</h3>
+            <p class="source__what">Asociați și administratori de firme</p>
+            <p class="status">urmează</p>
+          </li>
+          <li class="source" data-status="next">
+            <h3 class="source__name">Ministerul Finanțelor</h3>
+            <p class="source__what">Bilanțuri: cifră de afaceri, număr de angajați</p>
+            <p class="status">urmează</p>
+          </li>
+          <li class="source" data-status="next">
+            <h3 class="source__name">portal.just.ro</h3>
+            <p class="source__what">Dosare în care apar firme și persoane</p>
+            <p class="status">urmează</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="wrap rules">
+      <h2 class="sr-only">Cum lucrăm</h2>
+      <article class="rule">
+        <h3>Proveniență obligatorie</h3>
+        <p>Nicio legătură nu intră în graf fără documentul-sursă din care provine.</p>
+      </article>
+      <article class="rule">
+        <h3>Semnale, nu concluzii</h3>
+        <p>Rezultatele sunt puncte de plecare. Fiecare se verifică în documentul original.</p>
+      </article>
+      <article class="rule">
+        <h3>Doar cât e necesar</h3>
+        <p>Datele sunt publice, dar numele sunt date personale. Publicăm doar ce servește interesul public.</p>
+      </article>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__in">
+      <p>grivei.ai</p>
+      <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ../index.html. -->
+      <p>actualizat: <time datetime="2026-11-11">11.11.2026</time></p>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,3 +1,9 @@
+## Language
+
+- **Code, comments, docs and commit messages:** English.
+- **User-facing copy:** the landing page (`site/`) is bilingual, English by default with Romanian at `/ro/`. See `site/CLAUDE.md`.
+- Romanian source data stays as it is (institution names, SEAP fields, document titles); don't translate data, only the prose around it.
+
 ## Agent skills
 
 ### Issue tracker
