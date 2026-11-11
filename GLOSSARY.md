@@ -40,6 +40,10 @@ _Avoid_: last updated, freshness
 A public institution that buys through SEAP; it pays, a supplier receives.
 _Avoid_: buyer, institution (when the paying role is meant)
 
+**UAT**:
+An administrative-territorial unit (commune, town or municipality, or a Bucharest sector), keyed by its SIRUTA code and drawn from ANCPI's polygons; the finest place the map puts a contracting authority. The village ANAF names is stored, not plotted.
+_Avoid_: locality, village (for the plotted unit)
+
 **National authority**:
 A contracting authority whose remit is the whole country (ministry, national agency, national company); it sits beside the county map, not inside Bucharest.
 _Avoid_: central authority
@@ -99,7 +103,7 @@ One way the explorer's map of Romania encodes data; the map shows one lens at a 
 _Avoid_: mode, layer, view
 
 **Money lens**:
-The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier).
+The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier). Zoomed into a county, it colours each UAT the same way.
 
 **Coverage lens**:
 The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. Grey means not harvested, never no spending.
@@ -113,7 +117,7 @@ A period and record kind for which a Source's records are missing or possibly in
 _Avoid_: missing data, hole, outage
 
 **Unplaced authority**:
-A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value.
+A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value. An authority whose county is known but whose UAT isn't is not an unplaced authority; the zoomed county lists it in a row of its own.
 _Avoid_: unknown county, orphan
 
 **Flow lens**:
