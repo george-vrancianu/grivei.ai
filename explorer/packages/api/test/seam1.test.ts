@@ -2008,7 +2008,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     beforeAll(() => {
       const out = rebuild(DB, "archive-signals");
-      expect(out).toContain("signals: OVER_CAP 7, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal
+      expect(out).toContain("signals: OVER_CAP 7, SPLITTING 0, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal; the splitting rule (#75) finds none here (its own fixture is archive-splitting)
     });
 
     const op = async (o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
@@ -2036,6 +2036,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(data.signalRules).toEqual([
         // direct purchases since 2022 (the 2022 Q3 file); 2 of 3 authorities with a direct purchase in 2023 had a Signal; 2024 is the data-through year
         { slug: "OVER_CAP", window: { from: "2022-01-01", to: null }, baseRate: 2 / 3, baseRateYear: 2023, dataThrough: "2024-03-20" },
+        // the splitting rule (#75) reads the same direct purchases and finds no Signal in this fixture (its own is archive-splitting)
+        { slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-03-20" },
         // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
         { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
       ]);
