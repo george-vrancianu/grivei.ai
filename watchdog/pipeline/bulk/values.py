@@ -7,7 +7,7 @@ makes the whole file invalid (nothing is guessed).
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 
 Cell = str | int | float | datetime | date | None
@@ -18,6 +18,71 @@ _THOUSANDS = re.compile(r"^[+-]?\d{1,3}(,\d{3})+(\.\d+)?$")
 _US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?$")
 _ISO_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?)?$")
 EXCEL_EPOCH = date(1899, 12, 30)  # serial 1 = 1900-01-01 once Excel's phantom 1900-02-29 is accounted for
+
+
+class TypedFloat(float):
+    """A numeric XLSX cell with its number format (`#,##0`, `General`...); behaves as the float."""
+
+    number_format: str
+
+    def __new__(cls, value: float, number_format: str = "General"):
+        self = super().__new__(cls, value)
+        self.number_format = number_format
+        return self
+
+
+class TypedDatetime(datetime):
+    """A date-formatted XLSX cell with its number format (`mmm-yy`, `d-mmm`, `mm-dd-yy`...); behaves as the datetime."""
+
+    number_format: str = "General"
+
+    def __new__(cls, *args, number_format: str = "General", **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
+        self.number_format = number_format
+        return self
+
+
+class TypedTime(time):
+    """A time-formatted XLSX cell with its number format; behaves as the time."""
+
+    number_format: str = "General"
+
+    def __new__(cls, *args, number_format: str = "General", **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
+        self.number_format = number_format
+        return self
+
+
+def contract_number(cell: Cell) -> tuple[str, str | None]:
+    """A contract number -> (the text as published, note).
+
+    Excel coerces a typed number such as `1/8858`, `5/21` or `3:00` into a date or a time; the cell then holds a datetime
+    whose number format says how it was displayed, and the published text is recovered from both: `mmm-yy` -> `m/yyyy`,
+    `mm-dd-yy` -> `m/d/yyyy`, `d-mmm` -> `m/d` (the year is the year it was coerced in), `h:mm` -> `h:mm`. Note
+    `excel_typed`. A float is its shortest repr (`222.1` for a published `222.10`: the zero is not recoverable); one of 1e15
+    or more is Excel's scientific mangling of a long number: its digits are gone, note `excel_mangled`. A date whose format
+    is not one of those (or unknown) is `m/d/yyyy` with the note `excel_typed_unknown_format`.
+    """
+    if isinstance(cell, bool):
+        raise ValueError(f"not a contract number: {cell!r}")
+    fmt = str(getattr(cell, "number_format", "General")).lower()
+    if isinstance(cell, datetime):
+        if cell.time() != time(0, 0):
+            raise ValueError(f"not a contract number: {cell!r}")
+        if "yy" in fmt and "d" not in fmt:
+            return f"{cell.month}/{cell.year}", "excel_typed"
+        if "yy" in fmt:
+            return f"{cell.month}/{cell.day}/{cell.year}", "excel_typed"
+        if "d" in fmt and "mmm" in fmt:
+            return f"{cell.month}/{cell.day}", "excel_typed"
+        return f"{cell.month}/{cell.day}/{cell.year}", "excel_typed_unknown_format"
+    if isinstance(cell, time):
+        return f"{cell.hour}:{cell.minute:02d}", "excel_typed"
+    if isinstance(cell, float):
+        if abs(cell) >= 1e15:
+            return repr(cell), "excel_mangled"
+        return text(cell), None
+    return text(cell), None
 
 
 def text(cell: Cell) -> str:

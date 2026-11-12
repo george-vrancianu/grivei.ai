@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Iterable
 
 from .errors import InvalidFile
+from datetime import datetime, time
+
+from . import values
 from .values import Cell
 
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
@@ -160,6 +163,24 @@ def _csv_header_and_rows(handle) -> tuple[Header, Rows]:
     return header, _CsvRows(handle, csv_rows())
 
 
+def _values(row) -> list[Cell]:
+    """A row of cells -> their values. A float, date or time keeps the cell's number format (see `values.Typed`): a contract
+    number Excel coerced (`5/21` -> a date, `1/8858` -> `Jan-8858`) can only be turned back into the published text with it."""
+    out: list[Cell] = []
+    for cell in row:
+        v = cell.value
+        fmt = getattr(cell, "number_format", None) or "General"
+        if isinstance(v, bool) or v is None or not isinstance(v, (float, datetime, time)):
+            out.append(v)
+        elif isinstance(v, float):
+            out.append(values.TypedFloat(v, fmt))
+        elif isinstance(v, datetime):
+            out.append(values.TypedDatetime(v.year, v.month, v.day, v.hour, v.minute, v.second, v.microsecond, number_format=fmt))
+        else:
+            out.append(values.TypedTime(v.hour, v.minute, v.second, v.microsecond, number_format=fmt))
+    return out
+
+
 def _read_xlsx(path: Path) -> tuple[Header, Rows]:
     import zipfile
 
@@ -169,7 +190,7 @@ def _read_xlsx(path: Path) -> tuple[Header, Rows]:
         workbook = load_workbook(path, read_only=True, data_only=True)
         sheet = workbook.worksheets[0]
         sheet.reset_dimensions()  # do not trust the declared size
-        raw = sheet.iter_rows(values_only=True)
+        raw = (_values(row) for row in sheet.iter_rows())
         first = next(raw, None)
     except (zipfile.BadZipFile, KeyError, IndexError, ValueError, OSError) as e:
         raise InvalidFile("not a readable XLSX file", [f"{type(e).__name__}: {e}"]) from None

@@ -255,3 +255,38 @@ def test_the_title_falls_back_to_the_cpv_description_then_the_notice_code(planne
     text = H22.replace("|DENUMIRE_CONTRACT|,", "") + "|AC|,|1|,|R|,|C|,|P|,|F|,|O|,|CN1|,|09/20/2021|,|CAN5|,|01/05/2022|,|1|,|9|,|12/27/2021|,1,1,|A|,|2|\n"
     [r] = parse_text(tmp_path, text)
     assert r.title == "CAN5"
+
+
+# ---- Excel-typed contract numbers (review 1) -----------------------------------------------------------------------------
+
+
+def test_contract_numbers_excel_turned_into_dates_floats_and_times_keep_the_published_code(tmp_path):
+    from datetime import datetime, time
+
+    from openpyxl import Workbook
+
+    # an earlier quarter's CSV: the published texts
+    csv = H22 + "".join(line22("CAN7", number=n, value=str(i)) for i, n in enumerate(["1/8858", "5/21/6006", "3/4", "5/2000", "7:30", "222.10", "9"], 1))
+    csv_codes = {r.code: r for r in parse_text(tmp_path, csv)}
+    assert set(csv_codes) == {f"CAN7~{n}" for n in ["1/8858", "5/21/6006", "3/4", "5/2000", "7:30", "222.10", "9"]}
+
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["Autoritate contractanta", "CUI autoritate contractanta", "Numar anunt initiere", "Data publicare", "Numar anunt atribuire", "Data publicare",
+               "Numar contract", "Valoare contract (RON)", "Ofertant castigator", "CUI ofertant castigator"])
+    for number, fmt in [(datetime(8858, 1, 1), "mmm-yy"), (datetime(6006, 5, 21), "mm-dd-yy"), (datetime(2025, 3, 4), "d-mmm"),
+                        (datetime(2000, 5, 1), "mmm-yy"), (time(7, 30), "h:mm"), (222.1, "General"), (9, "General")]:
+        ws.append(["AC", 1000001, "CN1", datetime(2021, 1, 1), "CAN7", datetime(2025, 1, 2, 13, 0, 48), number, 5, "ALFA", 2000001])
+        ws.cell(ws.max_row, 7).number_format = fmt
+    ws.append(["AC", 1000001, "CN1", datetime(2021, 1, 1), "CAN7", datetime(2025, 1, 2), 1.90473619050271e+34, 5, "ALFA", 2000001])
+    ws.cell(ws.max_row, 7).number_format = "#,##0"
+    path = tmp_path / "q.xlsx"
+    wb.save(path)
+    codes = {r.code: r for r in parse_file("contracte", "2025Q1", path)}
+    assert set(codes) - {"CAN7~1.90473619050271e+34"} == {"CAN7~1/8858", "CAN7~5/21/6006", "CAN7~3/4", "CAN7~5/2000", "CAN7~7:30", "CAN7~222.1", "CAN7~9"}
+    assert not any("00:00:00" in c or " " in c for c in codes)
+    assert "contract_number:excel_typed" in codes["CAN7~1/8858"].notes and "contract_number:excel_typed" in codes["CAN7~7:30"].notes
+    assert "contract_number:excel_mangled" in codes["CAN7~1.90473619050271e+34"].notes
+    assert not [n for n in codes["CAN7~9"].notes if n.startswith("contract_number")]
+    # the typed contracts are the same Records the CSV quarter published (222.10 -> 222.1 is the one known gap)
+    assert (set(codes) & set(csv_codes)) == {f"CAN7~{n}" for n in ["1/8858", "5/21/6006", "3/4", "5/2000", "7:30", "9"]}

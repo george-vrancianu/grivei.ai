@@ -183,7 +183,10 @@ def _build_contract_row(label: str, f: dict[str, values.Cell]) -> ContractRow:
     notice, published = values.text(f.get("notice_code")), values.to_date(f.get("published_on"))
     if not notice or published is None:
         raise ValueError("no award notice code or publication date")
-    number = " ".join(values.text(f.get("contract_number")).split())  # as published; only runs of blanks collapse
+    number, number_note = values.contract_number(f.get("contract_number"))  # an Excel-coerced number is turned back into its text
+    number = " ".join(number.split())  # as published; only runs of blanks collapse
+    if number_note:
+        notes.append(f"contract_number:{number_note}")
     if not number:
         notes.append("contract_number:missing")
     return ContractRow(

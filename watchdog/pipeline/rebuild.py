@@ -111,7 +111,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani,
                        counted_bani, share_bani, authority_cui, supplier_cui, doc)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (r.code, position, len(winners), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
+                (r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
                  r.value_bani, r.value_bani, r.value_bani if len(winners) <= 1 else None, r.authority_cui, w.cui if w else None, doc),
             )
 

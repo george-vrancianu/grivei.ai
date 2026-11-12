@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, TextIO
@@ -61,6 +62,7 @@ class Progress:
         self.state: dict = {
             "version": STATUS_VERSION,
             "pid": os.getpid(),
+            "host": socket.gethostname(),  # in Docker, the container id: a pid means nothing in another container
             "state": "starting",
             "startedAt": _iso(now()),
             "updatedAt": _iso(now()),
@@ -105,14 +107,17 @@ class Progress:
 
     def fail(self, error: BaseException) -> None:
         self.state.update(state="failed", error=f"{type(error).__name__}: {error}".strip(": "))
-        self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units: {self.state['error']}; nothing was loaded, rerun from scratch")
+        try:
+            self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units: {self.state['error']}; nothing was loaded, rerun from scratch")
+        except OSError:  # the status file cannot be written: the real cause must not be replaced by this one
+            pass
 
     # ---- output -----------------------------------------------------------------------------------------------
 
     def _line(self, text: str) -> None:
         line = f"{stamp(self._now())} {text}"
         self.state["last"] = line
-        self._out(line)
+        self._out(line)  # printed before the status file is written: a failing write must not hide the line
         self._write()
 
     def _write(self) -> None:
@@ -138,27 +143,45 @@ def _alive(pid: int) -> bool:
     return True
 
 
-def effective_state(status: dict, alive: Callable[[int], bool] = _alive) -> str:
-    """`running` | `finished` | `failed` | `interrupted` (a `running` file whose process is gone: the rebuild was killed)."""
+def _age(status: dict, now: datetime) -> str:
+    try:
+        then = datetime.strptime(status["updatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError):
+        return "an unknown time"
+    return _duration(max(0.0, (now - then).total_seconds()))
+
+
+def effective_state(status: dict, alive: Callable[[int], bool] = _alive, host: str | None = None) -> str:
+    """`running` | `finished` | `failed` | `interrupted` (a `running` file whose process is gone: the rebuild was killed) |
+    `unknown` (a `running` file written on another host or container: its pid cannot be looked at from here).
+
+    A pid is only judged when the file's `host` is this one (`host` defaults to this machine's name): in Docker every
+    container's python is pid 1, so `status` run in a fresh container would otherwise see a live process for ever.
+    """
     state = status.get("state", "unknown")
-    if state in ("running", "starting") and not alive(int(status.get("pid", 0))):
-        return "interrupted"
+    if state in ("running", "starting"):
+        if status.get("host") != (host if host is not None else socket.gethostname()):
+            return "unknown"
+        if not alive(int(status.get("pid", 0))):
+            return "interrupted"
     return state
 
 
-def describe(status: dict, alive: Callable[[int], bool] = _alive) -> list[str]:
+def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | None = None, now: datetime | None = None) -> list[str]:
     """The lines `pipeline status` prints."""
-    state = effective_state(status, alive)
+    state = effective_state(status, alive, host)
     done, total = status.get("done", 0), status.get("total", 0)
     lines = [
-        f"state: {state}",
+        f"state: {state if state != 'unknown' else 'running? (cannot see the process from here)'}",
         f"units: {done}/{total} done ({status.get('loaded', 0)} loaded, {status.get('skipped', 0)} skipped, {status.get('quarantined', 0)} quarantined)",
         f"records loaded so far: {status.get('records', 0)}",
     ]
-    if state == "running" and status.get("current"):
+    if state in ("running", "unknown") and status.get("current"):
         c = status["current"]
         lines.append(f"now: unit {c['index']}/{total} kind={c['kind']} unit={c['unit']}")
-    lines += [f"started: {status.get('startedAt')}", f"updated: {status.get('updatedAt')} (pid {status.get('pid')})"]
+    lines += [f"started: {status.get('startedAt')}", f"updated: {status.get('updatedAt')} (pid {status.get('pid')} on {status.get('host', 'an unknown host')})"]
+    if state == "unknown":
+        lines.append(f"written by another host or container; last update {_age(status, now or datetime.now(timezone.utc))} ago: a rebuild still going updates it at least once per unit")
     if status.get("last"):
         lines.append(f"last line: {status['last']}")
     if state == "interrupted":

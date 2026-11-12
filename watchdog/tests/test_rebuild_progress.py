@@ -169,3 +169,28 @@ def test_sigterm_ends_the_rebuild_command_like_a_failure(tmp_path):
     assert proc.returncode == 143 and "Traceback" not in err
     assert read_status(status_file)["state"] == "failed" and "rebuild FAILED" in out
     assert effective_state(read_status(status_file)) == "failed"
+
+
+def test_a_running_file_from_another_host_is_not_judged_by_its_pid(run):
+    p, _, _, status_file = run
+    p.start(4, "/archive")
+    p.begin(2, 4, "contracte", "2024Q2")
+    status = read_status(status_file)
+    assert status["host"]
+    # the pid exists here (a fresh container's python is pid 1) but the file is from another host: cannot tell
+    assert effective_state(status, alive=lambda pid: True, host="another-container") == "unknown"
+    assert effective_state(status, alive=lambda pid: False, host="another-container") == "unknown"
+    text = "\n".join(describe(status, alive=lambda pid: True, host="another-container", now=datetime.fromisoformat(status["updatedAt"].replace("Z", "+00:00")) + timedelta(hours=2)))
+    assert "running? (cannot see the process from here)" in text and "last update 2:" in text and "now: unit 2/4" in text
+    # on the same host the pid is judged
+    assert effective_state(status, alive=lambda pid: False, host=status["host"]) == "interrupted"
+    assert effective_state(status, alive=lambda pid: True, host=status["host"]) == "running"
+
+
+def test_a_failing_status_write_does_not_hide_the_failure_line(tmp_path):
+    lines = []
+    p = Progress(tmp_path / "no" / "status.json", out=lines.append)
+    p.state["total"] = 3
+    (tmp_path / "no").write_text("a file where the directory should be")
+    p.fail(RuntimeError("real cause"))  # must not raise OSError over the real cause
+    assert "real cause" in lines[-1]
