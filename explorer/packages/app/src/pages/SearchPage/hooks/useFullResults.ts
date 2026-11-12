@@ -42,7 +42,9 @@ export function useFullResults(request: FullResultsRequest): FullResultsState {
   useEffect(() => {
     const controller = new AbortController();
     fetchPage(client, JSON.parse(key) as FullResultsRequest, controller.signal)
-      .then((results) => setSettled({ key, state: { status: "ready", results } }))
+      .then((results) => {
+        if (!controller.signal.aborted) setSettled({ key, state: { status: "ready", results } }); // a stale answer never lands
+      })
       .catch(() => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
       });
