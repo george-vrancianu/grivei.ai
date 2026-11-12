@@ -411,3 +411,17 @@ def test_the_bulk_wins_whatever_order_the_files_arrive_in_and_a_second_rebuild_i
     swapped = _crawl_dump(other)
     assert [r[:10] for r in swapped[0]] == [r[:10] for r in first[0]]  # same Records, versions and tags (ids differ with the load order)
     assert swapped[2:] == first[2:]
+
+
+def test_the_rebuild_status_file_and_pipeline_status_show_the_data_through_dates(db, tmp_path, capsys):
+    from pipeline import cli
+    from pipeline.progress import Progress, read_status
+
+    archive = _crawl_archive(tmp_path)
+    status_file = tmp_path / "rebuild-progress.json"
+    rebuild(archive, db, Progress(status_file, out=lambda line: None))
+    assert read_status(status_file)["dataThrough"] == {"AWARD_NOTICE": "2026-04-02", "CONTRACT": "2026-04-02"}
+    assert cli.main(["--archive", str(archive.root), "status", "--progress-file", str(status_file)]) == 0
+    out = capsys.readouterr().out
+    assert "data through (as of this rebuild): AWARD_NOTICE 2026-04-02, CONTRACT 2026-04-02" in out
+    assert "crawl cursor: 2026-04-02" in out  # the live cursor, from the archive
