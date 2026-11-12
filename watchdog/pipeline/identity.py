@@ -94,7 +94,7 @@ def name_key_text(name: str) -> str:
 
 
 _LEGAL_FORMS = frozenset(
-    "sc srl sa snc scs sca pfa ii if ltd gmbh spa sas sarl bv ag ood ad eood doo kft zrt llc inc srld sl ab oy as sro se plc nv kg bt uab ou aps vzw".split()
+    "sc ra scm coop srl sa snc scs sca pfa ii if ltd gmbh spa sas sarl bv ag ood ad eood doo kft zrt llc inc srld sl ab oy as sro se plc nv kg bt uab ou aps vzw".split()
 )
 
 
@@ -290,7 +290,12 @@ class Resolver:
                 mismatch = True  # the supplier carries the authority's own CUI: unresolved (ADR 0003)
             elif (anaf_name := self.anaf.get(tax.value)) is not None:
                 differs = bool(spelling) and compare_name(spelling) != anaf_name
-                if differs and len(tax.value) == 6 and _shaped_like_a_person(spelling):
+                if (
+                    differs
+                    and len(tax.value) == 6
+                    and _shaped_like_a_person(spelling)
+                    and not set(compare_name(spelling).split()) & set(anaf_name.split())  # a renamed company shares a word
+                ):
                     return NATURAL_PERSON  # an ID card number ANAF happens to know, under a person's name: never named
                 return Resolved(key=tax.value, identity="CUI", cui=tax.value, differs_from_anaf=differs)
         if spelling and (o := self.overrides.by_name.get(name_key_text(spelling))):
@@ -298,7 +303,7 @@ class Resolver:
         if tax.kind == "foreign_vat" and tax.value:
             return Resolved(key=vat_key(tax.value), identity="NAME_ONLY", foreign_vat_id=tax.value)
         if spelling and name_key_text(spelling) and _is_person(spelling, raw_id, tax.kind, mismatch):
-            return NATURAL_PERSON  # an individual published without a CNP: never named either (ADR 0003)
+            return replace(NATURAL_PERSON, cui_mismatch=True) if mismatch else NATURAL_PERSON  # an individual without a CNP: never named either (ADR 0003); the badge is a Record fact
         if spelling and name_key_text(spelling):
             return Resolved(key=name_key(spelling), identity="NAME_ONLY", cui_mismatch=mismatch)
         return Resolved(key=None, identity=None, cui_mismatch=mismatch)  # no name and no usable id: nobody to link

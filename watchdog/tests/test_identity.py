@@ -245,9 +245,17 @@ def test_a_six_digit_id_anaf_knows_under_another_name_is_a_person_when_the_name_
     assert got.identity == "CUI" and got.differs_from_anaf
 
 
+def test_a_six_digit_id_with_a_name_sharing_a_word_with_anaf_stays_a_renamed_company():
+    anaf = {"100000": compare_name("COMPANIA NATIONALA MONETARIA EXEMPLU")}
+    got = Resolver(anaf).supplier("MONETARIA EXEMPLU", "100000")
+    assert got.identity == "CUI" and got.cui == "100000" and got.differs_from_anaf and not got.natural_person
+    got = Resolver(anaf).supplier("R.A. MONETARIA EXEMPLU", "100000")
+    assert got.identity == "CUI" and not got.natural_person
+
+
 def test_a_person_paid_under_the_authoritys_own_cui_is_a_natural_person():
     got = Resolver(ANAF).supplier("PERSOANA FIZICA A", "1000009", authority_raw_cui="1000009")
-    assert got is NATURAL_PERSON
+    assert got.natural_person and got.cui_mismatch and got.key is None
     got = Resolver(ANAF).supplier("PRIMARIA ORASULUI EXEMPLU", "1000009", authority_raw_cui="1000009")
     assert got.identity == "NAME_ONLY" and got.cui_mismatch
 
