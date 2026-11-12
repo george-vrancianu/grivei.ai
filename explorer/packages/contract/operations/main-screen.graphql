@@ -8,6 +8,7 @@ query MainScreen($filter: RecordFilter!) {
       total { ...TotalFields }
       map { ...MoneyMapFields }
       goTo { ...EntityRef seap { roles } }
+      facets { procedure { value } }
       authorities(limit: 50) { ...EntityResultPageFields }
       suppliers(limit: 50) { ...EntityResultPageFields }
       records(limit: 50) { ...RecordResultFields }
