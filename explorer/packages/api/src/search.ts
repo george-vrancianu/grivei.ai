@@ -1,7 +1,6 @@
 // The search engine's SQL (#68): the RecordFilter as a WHERE over `seap.search` (a pg_search BM25 index, see
 // watchdog/pipeline/search.py), and the cancellable statements the resolvers run. Everything here is built from fixed
 // strings and bound parameters: no input is ever spliced into SQL.
-import { GraphQLError } from "graphql";
 import pg from "pg";
 import { foldTokens } from "./fold.ts";
 
@@ -36,7 +35,6 @@ export interface Where {
   qFolded: string | null;
 }
 
-const notServed = (what: string) => new GraphQLError(`${what} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -78,9 +76,9 @@ export function buildWhere(filter: SearchFilter): Where {
     add(`supplier_key = ${bind(filter.supplier)}`);
   }
   if (filter.uat) add(`authority_uat = ${bind(filter.uat)}`);
-  // has_signals is false on every row until the Signal tickets fill it: the chip works, and matches nothing when true until then
+  // has_signals / signals are filled by the pipeline's Signal step (watchdog/pipeline/signals) before the index is built
   if (filter.hasSignals != null) add(`has_signals = ${bind(filter.hasSignals)}`);
-  if (filter.signal) throw notServed("the Signal filter");
+  if (filter.signal) add(`signals @> ARRAY[${bind(filter.signal)}]::text[]`);
   if (filter.county) {
     // A county, or an off-map tile of the Money lens (#71). The area columns are never null: the county code, or NATIONAL / UNPLACED
     // (authority side) / UNKNOWN_SUPPLIER_COUNTY (supplier side). An area that belongs to the other side of the lens matches nothing:

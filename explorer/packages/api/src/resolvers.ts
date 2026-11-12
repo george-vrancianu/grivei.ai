@@ -5,6 +5,7 @@ import { matchedFieldOf } from "./matched.ts";
 import { foldTokens } from "./fold.ts";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
+import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
@@ -15,12 +16,6 @@ const MAX_SUBSEQUENT = 200;
 // No copy lives here: only data, enums and identifiers.
 
 const MAX_LIMIT = 200; // the SDL: "the server caps limit at 200"
-
-function notServed(what: string): () => never {
-  return () => {
-    throw new GraphQLError(`${what} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
-  };
-}
 
 type Ctx = { signal?: AbortSignal } | undefined;
 
@@ -119,9 +114,11 @@ export function rootValue(store: Store) {
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
       role: async ({ role }: { role: "AUTHORITY" | "SUPPLIER" }) =>
-        (await store.roles(e.key)).includes(role) ? roleObject(store, role, e.key, { entityObject, recordRow, search: (f, other) => searchObject(f, other), moneyMap, withEstimated: (t) => ({ ...zeroTotal(), ...t }) }) : null,
+        (await store.roles(e.key)).includes(role) ? roleObject(store, role, e.key, { entityObject, recordRow, search: (f, other) => searchObject(f, other), moneyMap, withEstimated: (t) => ({ ...zeroTotal(), ...t }), signalObject }) : null,
     }),
   });
+
+  const signalObject = (s: SignalRow) => makeSignal(store, s, { entityObject, recordRow });
 
   function recordRow(r: RecordRow) {
     return {
@@ -147,7 +144,7 @@ export function rootValue(store: Store) {
         share: w.share, // an equal share of the value for each member of a consortium, decided by the rebuild
         entity: w.entity ? entityObject(w.entity) : null,
       })),
-      signals: [],
+      signals: (r.signals ?? []).map(signalObject),
       // Every Record carries its provenance. A crawled Record's public page was built at load time; a bulk Record's is the /source/seap/<code> redirect.
       provenance: {
         source: "SEAP" as const,
@@ -176,17 +173,17 @@ export function rootValue(store: Store) {
    * The Records tab's facet panel (#73): the Total per channel, procedure, year and badge of the set, and the top counterparties.
    * Served only when the set is one entity's (an authority or a supplier in the filter): the national set has no facet panel, and
    * the panel would be a scan of everything. `counterparties` names the side the counterparty facet lists (an entity page knows its own);
-   * the facet offers the alternatives, so the counterparty already picked is dropped from the filter it is computed on. `signal` waits for #74.
+   * the facet offers the alternatives, so the counterparty already picked is dropped from the filter it is computed on.
    */
   function facetsOf(filter: SearchFilter, counterparties: "AUTHORITY" | "SUPPLIER" | null) {
     const scoped = !!(filter.authority || filter.supplier);
-    const rows = (dimension: "channel" | "procedure" | "year" | "badge") => async (_: unknown, ctx: Ctx) =>
+    const rows = (dimension: "channel" | "procedure" | "year" | "badge" | "signal") => async (_: unknown, ctx: Ctx) =>
       scoped ? (await store.searchFacet(dimension, filter, { signal: ctx?.signal })).map((x) => ({ value: x.value, total: { ...zeroTotal(), ...x.total } })) : [];
     return {
       channel: rows("channel"),
       procedure: rows("procedure"),
       year: rows("year"),
-      signal: [],
+      signal: rows("signal"),
       badge: rows("badge"),
       counterparty: async (_: unknown, ctx: Ctx) => {
         if (!scoped || !counterparties) return [];
@@ -198,7 +195,7 @@ export function rootValue(store: Store) {
   }
 
   function searchObject(filter: SearchFilter, counterparties?: "AUTHORITY" | "SUPPLIER") {
-    const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
+    const where = buildWhere(filter); 
     // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
     const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
     const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
@@ -273,7 +270,8 @@ export function rootValue(store: Store) {
         referenceSnapshot: () => store.referenceSnapshot(),
       };
     },
-    signalRules: notServed("signalRules"),
+    signalRules: async () =>
+      (await store.signalRules()).map((r) => ({ slug: r.slug, window: r.window, baseRate: r.baseRate, baseRateYear: r.baseRateYear, dataThrough: r.dataThrough })),
     counties: async () => (await store.counties()).map(county),
     uats: async ({ county: code }: { county: string }) =>
       (await store.uats(code.replace(/^RO-/, ""))).map((u) => ({ siruta: u.siruta, name: u.name, county: county(u.county) })),

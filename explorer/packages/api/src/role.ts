@@ -33,7 +33,7 @@ export function shareOf(part: string, whole: string): number {
 }
 
 /** The facets of the Records tab that are Totals per value. */
-export type FacetDimension = "channel" | "procedure" | "year" | "badge";
+export type FacetDimension = "channel" | "procedure" | "year" | "badge" | "signal";
 
 export interface FacetRow {
   value: string;
@@ -49,7 +49,7 @@ export interface CounterpartyRow {
   viaContract: TotalRow;
   /** At least one of the pair's Records in the set had more than one winner. */
   wonTogether: boolean;
-  /** False until the Signal tickets fill `has_signals`. */
+  /** The pair shares at least one Signal: one of the pair's Records (the entity's with this counterparty) belongs to a Signal. */
   hasSignals: boolean;
 }
 
@@ -182,12 +182,13 @@ export function roleStore(deps: RoleDeps): RoleStore {
     async searchFacet(dimension, filter, { signal } = {}) {
       const w = buildWhere(filter);
       let sql: string;
-      if (dimension === "badge") {
-        // a Record has several badges: one row per (badge, Record). The inner select is what the index serves; the unnest is above it.
-        sql = `SELECT badge AS value, ${totalColumns("")}
-                 FROM (SELECT record_code, badges, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
-                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, badges) r, unnest(badges) AS badge
-                GROUP BY badge ORDER BY coalesce(sum(sh), 0) DESC, badge`;
+      if (dimension === "badge" || dimension === "signal") {
+        // a Record has several badges (or belongs to several Signals' rules): one row per (value, Record). The inner select is what the index serves; the unnest is above it.
+        const column = dimension === "badge" ? "badges" : "signals";
+        sql = `SELECT v AS value, ${totalColumns("")}
+                 FROM (SELECT record_code, ${column}, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, ${column}) r, unnest(${column}) AS v
+                GROUP BY v ORDER BY coalesce(sum(sh), 0) DESC, v`;
       } else {
         const column = { channel: "channel", procedure: "procedure", year: "award_year::text" }[dimension];
         // a Record with no procedure (a direct purchase) is in the channel facet, not in this one

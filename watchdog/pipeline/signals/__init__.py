@@ -81,8 +81,12 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
                     [(n, c) for n, h in enumerate(hits, start=1) for c in h.record_codes])
     for rule in RULES:
         kinds = [data_through[k] for k in rule.KINDS if k in data_through]
-        if not kinds:
-            continue  # the rule has seen no data: no window, no base rate, no methodology row
+        if not kinds:  # a crawled kind with a hole has no data-through: the latest publication the rule has seen stands in
+            cur.execute("SELECT max(published_on) FROM seap.record WHERE kind = ANY(%s)", (list(rule.KINDS),))
+            latest = cur.fetchone()[0]
+            if latest is None:
+                continue  # the rule has seen no data: no window, no base rate, no methodology row
+            kinds = [latest.isoformat()]
         through = date.fromisoformat(min(kinds))
         rate = _base_rate(cur, rule, through)
         if rate is None:

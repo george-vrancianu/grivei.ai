@@ -45,6 +45,7 @@ const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placem
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
 const rolesEdgeArchive = join(watchdog, "tests/fixtures/archive-roles-edge"); // an unlinked winner, a person, a consortium framework agreement (#73)
 const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
+const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
 const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
@@ -118,6 +119,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(moneyMapArchive, join(scratch, "archive-moneymap"), { recursive: true });
     cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
+    cpSync(signalsArchive, join(scratch, "archive-signals"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -155,6 +157,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE rollup_b");
     await admin.query("CREATE DATABASE roles_a");
     await admin.query("CREATE DATABASE roles_edge");
+    await admin.query("CREATE DATABASE signals_a");
   });
 
   afterAll(async () => {
@@ -1183,9 +1186,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect((await searchData({ authority: "1000017" })).filter.authority).toMatchObject({ key: "1000017" });
     });
 
-    it("says plainly that a filter that waits for another ticket is not served yet", async () => {
+    it("serves the Signal filter (#74): this fixture has no Signal, so the rule's set is empty, not an error", async () => {
       const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", signal: "OVER_CAP" } });
-      expect(r.body.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
+      expect(r.body.errors).toBeUndefined();
+      expect((r.body.data as MainScreenQuery).seap.search.total.records).toBe(0);
     });
 
     it("cancels the running statement when the client disconnects", async () => {
@@ -1983,6 +1987,207 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
           expect(group!.members.map((m) => m.share)).toEqual([RON(500_000), RON(500_000)]);
         }
       });
+    });
+  });
+
+  describe("signals (#74): archive-signals -> rebuild -> signalRules, role signals, record.signals, the filters", () => {
+    type Total = { awarded: string; records: number; suspectLeftOut: number; noValue: number; frameworkCeilings: string; estimated: boolean };
+    type Repro = { authority: string | null; supplier: string | null; signal: string | null; cpv: string | null; from: string | null; to: string | null };
+    type Sig = { rule: string; date: string; firstDate: string; recordCount: number; dataThrough: string; authority: { key: string }; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Repro };
+    const DB = "signals_a";
+    const S = "1000017";
+    const COMUNA = "1000009";
+    const CNAIR = "2000031";
+    const ALFA = "2000007";
+    const BETA = "2000015";
+    const GAMMA = "2000023";
+    const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+
+    beforeAll(() => {
+      const out = rebuild(DB, "archive-signals");
+      expect(out).toContain("signals: OVER_CAP 7, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal
+    });
+
+    const op = async (o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
+      const r = await ask(DB, o.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(o.document), r.body.data, variables)).toEqual([]);
+      return r.body.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const roleSignals = async (key: string, role: string, filter: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) =>
+      (await op(entityOverview, { key, role, filter, ...extra })).entity.seap.role.signals as { count: number; rows: Sig[] };
+    const doc = (source: string, variableValues: Record<string, unknown> = {}, rollup = true) => {
+      const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${DB}`)!;
+      return graphql({ schema, source, rootValue: rootValue(postgresStore(pool, { rollup })), variableValues }).then((r) => {
+        expect(r.errors).toBeUndefined();
+        return r.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    };
+    const totalQ = `query($f: RecordFilter!) { seap { search(filter: $f) { total { awarded records suspectLeftOut noValue frameworkCeilings } } } }`;
+    const searchTotal = async (filter: Record<string, unknown>, rollup = true) => (await doc(totalQ, { f: filter }, rollup)).seap.search.total as Total;
+    const key = (s: Sig) => `${s.rule} ${s.authority.key} ${s.date}`;
+    const RON = (n: number) => String(Math.round(n * 100));
+
+    it("serves each rule's window, base rate and data-through through the persisted MethodologyBaseRates (#74)", async () => {
+      const data = await op(methodology, {});
+      expect(data.signalRules).toEqual([
+        // direct purchases since 2022 (the 2022 Q3 file); 2 of 3 authorities with a direct purchase in 2023 had a Signal; 2024 is the data-through year
+        { slug: "OVER_CAP", window: { from: "2022-01-01", to: null }, baseRate: 2 / 3, baseRateYear: 2023, dataThrough: "2024-03-20" },
+        // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
+        { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
+      ]);
+    });
+
+    it("lists an authority's Signals by date or by RON, with the numbers of each rule and no score (#74)", async () => {
+      const byDate = await roleSignals(S, "AUTHORITY", {}, { signalOrder: "DATE_DESC", signalOffset: 0 });
+      expect(byDate.count).toBe(8);
+      expect(byDate.rows.map(key)).toEqual([
+        `NO_PUBLICATION ${S} 2026-03-29`, `NO_PUBLICATION ${S} 2023-03-05`, `NO_PUBLICATION ${S} 2023-02-10`, `OVER_CAP ${S} 2023-02-03`,
+        `OVER_CAP ${S} 2023-01-14`, `OVER_CAP ${S} 2023-01-12`, `OVER_CAP ${S} 2023-01-10`, `NO_PUBLICATION ${S} 2021-04-02`,
+      ]);
+      const byValue = await roleSignals(S, "AUTHORITY", {}, { signalOrder: "VALUE_DESC", signalOffset: 0 });
+      expect(byValue.rows.slice(0, 3).map(key)).toEqual([`OVER_CAP ${S} 2023-01-14`, `NO_PUBLICATION ${S} 2023-03-05`, `NO_PUBLICATION ${S} 2023-02-10`]); // 2,701,199.99 RON, then two of 600,000 (latest first)
+      const page2 = await roleSignals(S, "AUTHORITY", {}, { signalOrder: "DATE_DESC", signalOffset: 6 });
+      expect(page2.count).toBe(8);
+      expect(page2.rows.map(key)).toEqual(byDate.rows.slice(6).map(key));
+
+      const by = new Map(byDate.rows.map((s) => [key(s), s]));
+      // the day's two over-cap direct purchases are one Signal: two suppliers, the largest Record's numbers, reproduced by the authority and the day
+      const cap = by.get(`OVER_CAP ${S} 2023-01-10`)!;
+      expect(cap).toMatchObject({ rule: "OVER_CAP", date: "2023-01-10", firstDate: "2023-01-10", recordCount: 2, dataThrough: "2024-03-20" });
+      expect(cap.suppliers.map((s) => s.key).sort()).toEqual([ALFA, BETA]);
+      expect(cap.numbers).toEqual({ __typename: "OverCapNumbers", value: RON(300_000), cap: RON(270_120), multiple: 1.110618 });
+      expect(cap.reproduce).toEqual({ authority: S, supplier: null, signal: "OVER_CAP", cpv: null, from: "2023-01-10", to: "2023-01-10" });
+      // boundary: exactly the cap, exactly 10x and CPV 70 are no Signal; just above the cap and just below 10x are
+      for (const day of ["2023-01-11", "2023-01-13", "2023-01-15"]) expect(by.has(`OVER_CAP ${S} ${day}`)).toBe(false);
+      expect(by.get(`OVER_CAP ${S} 2023-01-12`)!.numbers).toMatchObject({ value: "27012001", cap: "27012000" });
+      expect(by.get(`OVER_CAP ${S} 2023-01-14`)!.numbers).toMatchObject({ value: "270119999", multiple: 10 });
+      // a natural-person winner: a Signal with no supplier to name
+      expect(by.get(`OVER_CAP ${S} 2023-02-03`)).toMatchObject({ recordCount: 1, suppliers: [] });
+      // no-publication: a consortium (ALFA + BETA) and GAMMA in one Signal of the day; "Negociere" alone, a licitatie and "Procedura simplificata proprie" are not
+      const np = by.get(`NO_PUBLICATION ${S} 2023-02-10`)!;
+      expect(np).toMatchObject({ recordCount: 2, numbers: { __typename: "NoPublicationNumbers", procedure: "Negociere fara publicare prealabila" } });
+      expect(np.suppliers.map((s) => s.key).sort()).toEqual([ALFA, BETA, GAMMA]);
+      expect([...by.keys()].filter((k) => k.startsWith("NO_PUBLICATION")).map((k) => k.split(" ")[2]).sort()).toEqual(["2021-04-02", "2023-02-10", "2023-03-05", "2026-03-29"]);
+      // the backfilled 2021 award notice and the crawled 2026 one (no initiation procedure, no procedureId) are Signals too, with a range of dates
+      expect(by.get(`NO_PUBLICATION ${S} 2026-03-29`)).toMatchObject({ recordCount: 1, firstDate: "2026-03-29", reproduce: { from: "2026-03-29", to: "2026-03-29" } });
+      expect(by.get(`NO_PUBLICATION ${S} 2021-04-02`)).toMatchObject({ recordCount: 1 });
+    });
+
+    it("the year chip keeps a Signal whose Records fall in range; a supplier or rule in the filter keeps the whole Signal (#74)", async () => {
+      expect((await roleSignals(S, "AUTHORITY", { from: "2023-01-01", to: "2023-12-31" })).count).toBe(6);
+      expect((await roleSignals(S, "AUTHORITY", { from: "2021-01-01", to: "2021-12-31" })).rows.map(key)).toEqual([`NO_PUBLICATION ${S} 2021-04-02`]);
+      expect((await roleSignals(S, "AUTHORITY", { signal: "NO_PUBLICATION" })).count).toBe(4);
+      // GAMMA won one of the two Records of the 2023-02-10 Signal: the Signal is kept, whole (recordCount 2)
+      const gamma = await roleSignals(S, "AUTHORITY", { supplier: GAMMA });
+      expect(gamma.rows.map((s) => [key(s), s.recordCount])).toEqual([[`NO_PUBLICATION ${S} 2023-02-10`, 2]]);
+      expect((await roleSignals(S, "AUTHORITY", { from: "2030-01-01" })).count).toBe(0);
+    });
+
+    it("a Signal is on the authority page and on every supplier page its Records touch, consortium members included, and on no natural person's (#74)", async () => {
+      const onAuthority = (await roleSignals(S, "AUTHORITY")).rows;
+      let checked = 0;
+      for (const s of onAuthority) {
+        for (const sup of s.suppliers) {
+          const page = (await roleSignals(sup.key, "SUPPLIER")).rows;
+          expect(page.map((x) => JSON.stringify(x.reproduce)), `${key(s)} on ${sup.key}`).toContain(JSON.stringify(s.reproduce));
+          checked++;
+        }
+      }
+      expect(checked).toBe(9);
+      // the consortium's members each have it, a supplier that won nothing in it does not
+      const gammaPage = (await roleSignals(GAMMA, "SUPPLIER")).rows.map(key);
+      expect(gammaPage).toEqual([`NO_PUBLICATION ${S} 2023-02-10`]); // its CPV 70 rent is exempt
+      expect((await roleSignals(BETA, "SUPPLIER")).rows.map(key)).toContain(`NO_PUBLICATION ${S} 2023-02-10`);
+      expect((await roleSignals(BETA, "SUPPLIER")).rows.map(key)).toContain(`OVER_CAP ${S} 2023-01-10`);
+      expect((await roleSignals(BETA, "SUPPLIER")).rows.map(key)).not.toContain(`OVER_CAP ${S} 2023-01-12`); // ALFA's alone
+      // the natural person has no page: only the Signals' supplier lists could name them, and do not
+      const personal = onAuthority.filter((s) => s.recordCount === 1 && s.suppliers.length === 0).map(key);
+      expect(personal.sort()).toEqual([`NO_PUBLICATION ${S} 2023-03-05`, `OVER_CAP ${S} 2023-02-03`]);
+    });
+
+    it("running a Signal's reproduce filter returns exactly its Records, for every Signal in the fixture (#74)", async () => {
+      const q = `query($k: ID!, $role: Role!) { entity(key: $k) { seap { role(role: $role) { signals(limit: 200) { rows { rule date reproduce { authority supplier signal cpv from to }
+          records(limit: 200) { code } } } } } } }`;
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
+      let signals = 0;
+      for (const [k, role] of [[S, "AUTHORITY"], [COMUNA, "AUTHORITY"], [CNAIR, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [GAMMA, "SUPPLIER"]] as const) {
+        const { entity } = await doc(q, { k, role });
+        for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
+          const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+          const found = (await doc(search, { f: filter })).seap.search.records;
+          expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
+          expect(found.count).toBe(s.records.length);
+          signals++;
+        }
+      }
+      expect(signals).toBeGreaterThanOrEqual(14); // 3 authorities (12 Signals) and the suppliers' pages
+    });
+
+    it("record.signals: a Record lists its Signals with their Records; suspect, at-the-cap and ordinary Records have none (#74)", async () => {
+      const page = async (code: string) => (await op(recordPage, { code })).seap.record;
+      const r = await page("DA98000001");
+      expect(r.signals).toHaveLength(1);
+      expect(r.signals[0]).toMatchObject({ rule: "OVER_CAP", recordCount: 2, date: "2023-01-10", numbers: { __typename: "OverCapNumbers", multiple: 1.110618 } });
+      expect(r.signals[0].records.map((x: { code: string }) => x.code).sort()).toEqual(["DA98000001", "DA98000002"]);
+      expect(r.signals[0].suppliers.map((s: { key: string }) => s.key).sort()).toEqual([ALFA, BETA]);
+      const c = await page("CAN9800001~1"); // a contract of the consortium
+      expect(c.signals.map((s: Sig) => s.rule)).toEqual(["NO_PUBLICATION"]);
+      expect(c.signals[0].numbers).toEqual({ __typename: "NoPublicationNumbers", procedure: "Negociere fara publicare prealabila" });
+      for (const code of ["DA98000005", "DA98000003", "DA98000007", "CAN9800004~1", "CAN9800005~1", "DA98100002"]) expect((await page(code)).signals, code).toEqual([]);
+      // the Records of a list carry their Signals' rules too (the persisted RecordRowFields)
+      const rows = (await doc(`{ seap { search(filter: { authority: "${S}" }) { records(limit: 200, order: DATE_DESC) { rows { record { code signals { rule } } } } } } }`)).seap.search.records.rows;
+      const rules = Object.fromEntries(rows.map((x: { record: { code: string; signals: { rule: string }[] } }) => [x.record.code, x.record.signals.map((s) => s.rule)]));
+      expect(rules["DA98000001"]).toEqual(["OVER_CAP"]);
+      expect(rules["DA98000005"]).toEqual([]);
+      expect(rules["CAN9800001~1"]).toEqual(["NO_PUBLICATION"]);
+    });
+
+    it("the signal and has-Signals filters, the Signal facet and the pair's hasSignals read the Signals (#74)", async () => {
+      const overCap = await searchTotal({ signal: "OVER_CAP" });
+      const noPub = await searchTotal({ signal: "NO_PUBLICATION" });
+      expect([overCap.records, noPub.records]).toEqual([8, 6]);
+      expect(overCap.suspectLeftOut + noPub.suspectLeftOut).toBe(0); // suspect values never join a Signal
+      const withSignals = await searchTotal({ hasSignals: true });
+      const without = await searchTotal({ hasSignals: false });
+      const all = await searchTotal({});
+      expect(withSignals.records).toBe(14);
+      expect(withSignals.records + without.records).toBe(all.records);
+      expect(BigInt(withSignals.awarded) + BigInt(without.awarded)).toBe(BigInt(all.awarded));
+      expect((await searchTotal({ signal: "OVER_CAP", authority: S })).records).toBe(5);
+      // a rule with no Records matches nothing, not everything
+      expect((await searchTotal({ signal: "SPLITTING" })).records).toBe(0);
+      // the facet on an entity's Records tab: its Records per rule
+      const tab = async (key: string, filter: Record<string, unknown>) =>
+        (await op(entityRecords, { key, role: "AUTHORITY", filter, limit: 5, offset: 0 })).entity.seap.role.records as {
+          total: Total; facets: { signal: { value: string; total: Total }[] }; records: { count: number };
+        };
+      const facets = (await tab(S, {})).facets.signal;
+      expect(Object.fromEntries(facets.map((f) => [f.value, f.total.records]))).toEqual({ OVER_CAP: 5, NO_PUBLICATION: 5 });
+      const filtered = await tab(S, { signal: "OVER_CAP" });
+      expect(filtered.total.records).toBe(5);
+      expect(filtered.facets.signal.map((f) => f.value)).toEqual(["OVER_CAP"]);
+      // Counterparty.hasSignals: the pair shares a Signal when one of its Records is in one
+      const cpty = async (key: string) =>
+        Object.fromEntries(((await op(entityRelationships, { key, role: "AUTHORITY", filter: {}, counterparty: null })).entity.seap.role.counterparties.rows as { entity: { key: string } | null; hasSignals: boolean }[])
+          .map((r) => [r.entity?.key ?? "person", r.hasSignals]));
+      expect(await cpty(CNAIR)).toEqual({ [ALFA]: false, [BETA]: true }); // ALFA's 100,000 is under the cap; BETA's 2024 purchase is over it
+      expect(await cpty(S)).toMatchObject({ [ALFA]: true, [BETA]: true, [GAMMA]: true, person: true });
+    });
+
+    it("the rollup agrees with the scan over real Signals (#74)", async () => {
+      for (const filter of [{}, { hasSignals: true }, { hasSignals: false }, { hasSignals: true, channel: "DIRECT_PURCHASE" }, { hasSignals: true, channel: "CONTRACT" },
+        { hasSignals: true, from: "2023-01-01", to: "2023-12-31" }, { hasSignals: false, valueBucket: "UP_TO_270K" }, { hasSignals: true, from: "2021-01-01", to: "2022-12-31" }]) {
+        const rolled = await searchTotal(filter, true);
+        const scanned = await searchTotal(filter, false);
+        expect(rolled, JSON.stringify(filter)).toEqual(scanned);
+      }
+      expect((await searchTotal({ hasSignals: true }, true)).records).toBe(14);
+      // the entity tabs too
+      const tabs = `query($f: RecordFilter!) { seap { search(filter: $f) { authorities(limit: 50) { count rows { entity { key } matched { awarded records } } } suppliers(limit: 50) { count rows { entity { key } matched { awarded records } } } } } }`;
+      for (const filter of [{ hasSignals: true }, { hasSignals: false, channel: "DIRECT_PURCHASE" }]) {
+        expect(await doc(tabs, { f: filter }, true)).toEqual(await doc(tabs, { f: filter }, false));
+      }
     });
   });
 
