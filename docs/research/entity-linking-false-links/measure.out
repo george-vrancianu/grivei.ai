@@ -1,0 +1,55 @@
+## population
+ named    rows  with_dob    regs  persons_name_dob   names
+  True  188666    186739  153448            165634  153874
+ False 3418249   3156812 2625965           2379176 1862308
+
+## named persons
+ named_persons
+        164496
+
+## rule -> share of Named persons whose cluster absorbs another (name,dob) person
+                                 rule  named_persons  share_merged  median_others_if_merged  p99_others
+                        R1 exact name         164496      0.294573                      4.0        75.0
+        R1b name, token order ignored         164496      0.325643                      3.0        82.0
+               R2 name + birth county         156456      0.110357                      1.0         6.0
+        R3 name + company seat county         164496      0.131912                      2.0        10.0
+                 R4 name + birth date         164496      0.000000                      NaN         0.0
+R5 name + birth date + birth locality         164057      0.000000                      NaN         0.0
+
+## pair precision R1 exact name (links from a Named person's role to any other role)
+ links_from_named  false_link_share
+        1396446.0          0.774031
+
+## pair precision R2 name + birth county (links from a Named person's role to any other role)
+ links_from_named  false_link_share
+         359329.0          0.246137
+
+## pair precision R3 name + company seat county (links from a Named person's role to any other role)
+ links_from_named  false_link_share
+         349327.0          0.341508
+
+## R6 name within one company: same name, different birth dates, same registration
+ regs_with_namesake_pair  of_which_named
+                    5808            65.0
+
+## proxy check: (name,dob) persons with >1 birth locality
+ conflicting  all_with_loc  conflicting_named
+       85066       2422145              11149
+
+## sample of conflicting birth localities
+Empty DataFrame
+Columns: [name, locs, juds]
+Index: []
+
+## proxy check: expected same-birthday collisions (birthday model, D = distinct dobs per name-year span ~ 25k)
+ expected_colliding_pairs   persons  share_of_persons_in_collision  max_persons_one_name commonest
+                 203.4242 2438561.0                       0.000167                   419  <redacted>
+
+## split check: (sorted name, dob) persons written in >1 token order
+ split   total
+ 10433 2427997
+
+## split check: Named roles with no birth date (can't be linked by R4)
+ no_dob  total
+   1927 188666
+
