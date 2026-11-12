@@ -3,7 +3,7 @@ import type {
   CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
-  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, RecordPageQuery, RecordPageQueryVariables,
+  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, RecordPageQuery, RecordPageQueryVariables,
   ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "@grivei/contract";
 
@@ -31,3 +31,4 @@ export const FullResultsRecords = operation<FullResultsRecordsQuery, FullResults
 export const RecordPage = operation<RecordPageQuery, RecordPageQueryVariables>("RecordPage");
 export const ZoomedCounty = operation<ZoomedCountyQuery, ZoomedCountyQueryVariables>("ZoomedCounty");
 export const CoveragePage = operation<CoveragePageQuery, CoveragePageQueryVariables>("CoveragePage");
+export const MethodologyBaseRates = operation<MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables>("MethodologyBaseRates");

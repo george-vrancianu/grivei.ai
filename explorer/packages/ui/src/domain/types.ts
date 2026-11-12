@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -98,3 +98,6 @@ export type GapState = ContractGapState;
  * so it is optional and the display shows it only when present.
  */
 export type GapCellData = CoveragePageQuery["coverage"]["grid"][number] & { crawlOnly?: number };
+
+/** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
+export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];

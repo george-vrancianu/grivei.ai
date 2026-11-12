@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { decodeUrlState } from "../urlState/codec.ts";
 import { parsePath } from "../routing/routes.ts";
 import { reproduceFilter, signalReproduceHref } from "./reproduceHref.ts";
-import { methodologyAnchor, signalMethodologyHref, signalSeapHref } from "./signalLinks.ts";
+import { signalAnchor } from "@grivei/ui";
+import { signalMethodologyHref, signalSeapHref } from "./signalLinks.ts";
 
 const authority = { key: "4000001", displayName: "MUNICIPIUL BRAȘOV", identity: "CUI" } as const;
 const base = { date: "2024-07-19", firstDate: "2024-07-01", recordCount: 2, dataThrough: "2024-11-30", authority, suppliers: [] };
@@ -73,7 +74,7 @@ describe("a Signal's reproducing link", () => {
 
 describe("a Signal's methodology and SEAP links", () => {
   it("points at the rule's section of the methodology page under the language's prefix", () => {
-    expect(methodologyAnchor("FRAMEWORK_OVERRUN")).toBe("signal-framework-overrun");
+    expect(signalAnchor("FRAMEWORK_OVERRUN")).toBe("signal-framework-overrun");
     expect(signalMethodologyHref("en", "OVER_CAP")).toBe("/explore/methodology#signal-over-cap");
     expect(signalMethodologyHref("ro", "NO_PUBLICATION")).toBe("/ro/explore/methodology#signal-no-publication");
   });

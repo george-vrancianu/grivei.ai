@@ -1,7 +1,7 @@
 import { CoveragePageLayout, type Locale } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
-import { pathFor } from "../../routing/routes.ts";
+import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow } from "./coveragePage.utils.ts";
 import { useCoveragePage } from "./hooks/useCoveragePage.ts";
@@ -36,7 +36,7 @@ export function CoveragePage({ locale }: CoveragePageProps) {
           : undefined
       }
       locale={locale}
-      methodologyHref={pathFor(locale, { name: "methodology" })}
+      methodologyHref={methodologyHref(locale, "coverageStatuses")}
       onNavigate={(href) => navigate(href, "push")}
       copy={t.coverage}
     />

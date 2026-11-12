@@ -60,7 +60,7 @@ describe("the Coverage page's states", () => {
 
   it("links the rules to the methodology page in the page's language", async () => {
     open("/ro/explore/coverage");
-    expect(await screen.findByRole("link", { name: "Cum se numără cifrele" })).toHaveAttribute("href", "/ro/explore/methodology");
+    expect(await screen.findByRole("link", { name: "Cum se numără cifrele" })).toHaveAttribute("href", "/ro/explore/methodology#coverage-statuses");
   });
 });
 

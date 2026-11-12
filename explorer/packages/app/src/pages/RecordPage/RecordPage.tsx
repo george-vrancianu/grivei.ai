@@ -4,6 +4,7 @@ import { AppLink } from "../../components/AppLink/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor } from "../../routing/routes.ts";
+import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useRecordPage } from "./hooks/useRecordPage.ts";
 
 export interface RecordPageProps {
@@ -48,7 +49,7 @@ export function RecordPage({ locale, code }: RecordPageProps) {
         record={state.record}
         entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
         recordHref={(c) => pathFor(locale, { name: "record", code: c })}
-        methodologyHref={pathFor(locale, { name: "methodology" })}
+        methodologyHref={methodologyHref(locale, "suspectValues")}
         // plain clicks on the page's own links change page without a load; the links keep their real hrefs
         onNavigate={(href) => navigate(href, "push")}
         locale={locale}

@@ -13,3 +13,4 @@ export * from "./SearchBar/index.ts";
 export * from "./SignalBadge/index.ts";
 export * from "./CoverageCell/index.ts";
 export * from "./CoverageGridLegend/index.ts";
+export * from "./SignalRuleBaseRate/index.ts";
