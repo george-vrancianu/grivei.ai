@@ -80,12 +80,16 @@ _Avoid_: spent, spending, paid, payments
 The maximum value of a framework agreement; shown on its record but never summed, because the subsequent contracts awarded under it are counted instead.
 _Avoid_: framework value, contract value (for a framework agreement)
 
+**Subsequent contract**:
+A contract awarded under a framework agreement ("Cu acord cadru subsecvent"). It is summed, and it shows the framework it belongs to: the one that shares its award notice number, with the ceiling and how much of it the subsequent contracts reported so far use. One whose framework is not in the data still counts, and shows no ceiling.
+_Avoid_: call-off, draw-down
+
 **Consortium share**:
 A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
 _Avoid_: split, portion
 
 **Suspect value**:
-An awarded value flagged by a published rule as likely a data-entry error; the record stays shown and searchable but is left out of sums. The source value is never edited.
+An awarded value flagged by a published rule as likely a data-entry error (a direct purchase at ten times its cap or more, a contract of 1 bn RON or more at a hundred times its estimated value or more, or above 50 bn RON with no estimate); the record stays shown and searchable but is left out of sums. The source value is never edited. A blank or zero value is not suspect: it is "no value in SEAP", counted as a record and adding nothing.
 _Avoid_: outlier, error, corrected value
 
 **Signal**:
