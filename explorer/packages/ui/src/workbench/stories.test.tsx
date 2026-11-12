@@ -11,12 +11,15 @@ const modules = import.meta.glob<Record<string, unknown>>("../**/*.stories.{ts,t
 const files = Object.entries(modules);
 
 describe("the workbench stories", () => {
-  it("has a stories file for every atom", () => {
-    const atoms = readdirSync(join(import.meta.dirname, "../atoms"), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name);
-    const withStories = files.map(([path]) => path.split("/").at(-2));
-    expect(atoms.filter((atom) => !withStories.includes(atom))).toEqual([]);
+  it("has a stories file for every atom and domain component", () => {
+    const levels = ["atoms", "domain/atoms", "domain/molecules"];
+    const components = levels.flatMap((level) =>
+      readdirSync(join(import.meta.dirname, "..", level), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => `${level}/${entry.name}`),
+    );
+    const withStories = files.map(([path]) => path.replace(/^\.\.\//, "").split("/").slice(0, -1).join("/"));
+    expect(components.filter((component) => !withStories.includes(component))).toEqual([]);
   });
 
   describe.each(LOCALES)("in %s", (locale) => {
