@@ -2,14 +2,13 @@ import { useMemo } from "react";
 import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { formatMoney } from "../../atoms/MoneyAmount/index.ts";
 import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
 import { CountyTooltip } from "./components/CountyTooltip/index.ts";
 import { OffMapTiles } from "./components/OffMapTiles/index.ts";
 import { SideToggle } from "./components/SideToggle/index.ts";
 import type { MoneyMap } from "../../types.ts";
 import type { CountySide, MapArea, MoneyLensMapCopy } from "./moneyLensMap.types.ts";
-import { moneyMapValues, totalsByCounty } from "./moneyLensMap.utils.ts";
+import { moneyMapValues, moneyValueFormatter, totalsByCounty } from "./moneyLensMap.utils.ts";
 
 export type MoneyLensMapProps = {
   /** The money map of the current search (`seap.search.map`). */
@@ -34,10 +33,7 @@ export type MoneyLensMapProps = {
 export function MoneyLensMap({ map, topology, selected, onSelect, side, onSideChange, locale, copy }: MoneyLensMapProps) {
   const values = useMemo(() => moneyMapValues(map), [map]);
   const totals = useMemo(() => totalsByCounty(map), [map]);
-  const formatValue = (value: number, code?: string) => {
-    const total = code === undefined ? undefined : totals.get(code);
-    return formatMoney(total ? total.awarded : String(Math.round(value)), locale);
-  };
+  const formatValue = useMemo(() => moneyValueFormatter(totals, locale), [totals, locale]);
   const renderTooltip = ({ name, code }: AreaInfo) => <CountyTooltip name={name} total={totals.get(code)} locale={locale} copy={copy} />;
 
   return (

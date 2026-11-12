@@ -14,6 +14,7 @@ import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
+import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
   en: {
@@ -234,6 +235,30 @@ export const sampleCopy = {
             records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
             suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
           },
+        };
+  },
+  zoomedCountyMap: (locale: Locale): ZoomedCountyMapCopy => {
+    const map = sampleCopy.baseMap(locale);
+    return locale === "ro"
+      ? {
+          map: { ...map, mapLabel: "Harta UAT-urilor județului", legendTitle: "Valoare atribuită", noData: "Nicio autoritate nu a cumpărat" },
+          figures: {
+            records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+            suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+          },
+          authorities: (n, f) => roCount(n, f, "autoritate", "autorități"),
+          circleKey: "Mărimea cercului: numărul de autorități",
+          unknownUat: "Județ cunoscut, UAT necunoscut",
+        }
+      : {
+          map: { ...map, mapLabel: "Map of the county's UATs", legendTitle: "Awarded value", noData: "No authority bought anything" },
+          figures: {
+            records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+            suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
+          },
+          authorities: (n, f) => `${f} ${plural(n, "authority", "authorities")}`,
+          circleKey: "Circle size: number of authorities",
+          unknownUat: "County known, UAT unknown",
         };
   },
   total: (locale: Locale): TotalFigureCopy =>

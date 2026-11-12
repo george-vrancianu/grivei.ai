@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment,
+  DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   TotalFieldsFragment,
 } from "@grivei/contract";
@@ -34,3 +34,7 @@ export type EntityHeaderData = EntityHeaderFieldsFragment;
 export type EntityPageRole = Role;
 /** The three tabs of an Entity page; each has its own URL. */
 export type EntityPageView = "overview" | "records" | "relationships";
+/** The zoomed county's UAT map: `seap.search.uatMap(county:)`, authority side only. */
+export type UatMap = ZoomedCountyQuery["seap"]["search"]["uatMap"];
+/** A UAT's SIRUTA code: what a click on the zoomed county emits (the `RecordFilter.uat` value). */
+export type Siruta = string;
