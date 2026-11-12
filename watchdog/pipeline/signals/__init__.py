@@ -57,7 +57,7 @@ def find(cur: psycopg.Cursor) -> list[Hit]:
 def _base_rate(cur: psycopg.Cursor, rule: ModuleType, through: date) -> tuple[int, int, int] | None:
     """(year, authorities with a Signal dated in it, authorities the rule could see in it), or None when the rule has no Records."""
     cur.execute("SELECT DISTINCT extract(year FROM award_date)::int FROM seap.record WHERE kind = ANY(%s) ORDER BY 1", (list(rule.KINDS),))
-    years = [y for (y,) in cur.fetchall()]
+    years = [y for (y,) in cur.fetchall() if y >= getattr(rule, "WINDOW_FROM", date.min).year]  # a year before the rule's window is not one it could see
     if not years:
         return None
     complete = [y for y in years if y < through.year]

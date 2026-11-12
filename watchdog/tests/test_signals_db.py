@@ -141,5 +141,6 @@ def test_framework_overrun_through_a_rebuild_matches_seap_framework_and_floors_i
     for notice, number in (("CAN9700001", signals[3][4]), ("CAN9700007", signals[1][4]), ("CAN9700006", signals[2][4]), ("CAN9700008", signals[0][4])):
         _, ceiling, subsequent, ratio = by_notice[notice]
         assert number == {"ceiling": str(ceiling), "subsequent": str(subsequent), "ratio": ratio}
-    assert q(db, "SELECT window_from FROM seap.signal_rule WHERE slug = 'FRAMEWORK_OVERRUN'") == [(date(2021, 1, 1),)]
+    # the 2020 Records are before the window: the base-rate year is 2023, not the "latest complete year" 2020
+    assert q(db, "SELECT window_from, base_rate_year, base_rate, authorities, with_signal FROM seap.signal_rule WHERE slug = 'FRAMEWORK_OVERRUN'") == [(date(2021, 1, 1), 2023, 1.0, 3, 3)]
     assert q(db, "SELECT DISTINCT notice_code FROM seap.record r JOIN seap.signal_member m ON m.record_code = r.code ORDER BY 1") == [(f"CAN970000{n}",) for n in (1, 6, 7, 8)]
