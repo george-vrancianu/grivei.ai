@@ -31,6 +31,8 @@ class PlacementSummary:
     national: int = 0
     unplaced_authorities: int = 0
     unmatched: list[str] = field(default_factory=list)  # the log lines (all of them also go to the logger)
+    observations: dict = field(default_factory=dict, repr=False)  # what the national-authority rule read, handed on to the MF step (#80)
+    entries: dict = field(default_factory=dict, repr=False)
 
     def line(self) -> str:
         table = "" if self.has_uat_table else " (no UAT table: county only; run `pipeline geo-table`)"
@@ -58,6 +60,7 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
              float(r["lat"]) if r.get("lat") else None, r.get("point_source") or None))
     observations = read_scopes(archive)
     entries = read_classification(data_dir)
+    out.observations, out.entries = observations, entries
     seap_locations = read_locations(archive)
 
     cur.execute("SELECT DISTINCT authority_key FROM seap.record WHERE authority_key IS NOT NULL")

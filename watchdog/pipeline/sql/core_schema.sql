@@ -3,7 +3,7 @@
 -- through entity keys: the CUI, `vat-<id>`, `name-<slug>` or a key the identity override file pins. (The operational
 -- pipeline ledger, which is not rebuilt, lives beside them and is never dropped here.)
 CREATE SCHEMA IF NOT EXISTS core;
-DROP TABLE IF EXISTS core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+DROP TABLE IF EXISTS core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
 
 -- One row per CUI ANAF answered "found" for, from the latest archived answer. Placement (#67) reads the address columns:
 -- they are stored exactly as ANAF sent them (`sdenumire_Localitate`, `scod_JudetAuto`, `scod_Judet`, `scod_Postal`, ...).
@@ -80,4 +80,24 @@ CREATE TABLE core.placement (
     placed_by         text NOT NULL CHECK (placed_by IN ('ANAF', 'SEAP')),
     located_on        timestamptz,                -- when the answer it came from was fetched
     source_path       text                        -- that answer, relative to the archive root
+);
+
+-- The Ministry of Finance's "Lista entitatilor publice" (#80), a Reference source: the Coverage denominator and the county MF puts an entity
+-- in. One snapshot at a time (the latest archived monthly file); rebuilt from the archive. `county_iso` is MF's `Judet` read as a county
+-- (null: the name matched no county, the entity is in no county's M). `national` applies the national-authority rule (same decision as an
+-- authority's placement: award notice, reviewed file) so a ministry MF files under Bucuresti counts in National, not in a county.
+CREATE TABLE core.mf_snapshot (
+    snapshot_date     date PRIMARY KEY,           -- the date the list is "updated as of" (from the resource name or file name)
+    fetched_at        timestamptz NOT NULL,
+    archive_path      text NOT NULL,              -- the file, relative to the archive root
+    entities          integer NOT NULL
+);
+
+CREATE TABLE core.mf_entity (
+    cui               text PRIMARY KEY,           -- normalised: no `RO`, no leading zeros (an authority's entity key)
+    name              text NOT NULL,              -- `Denumire Entitate Publica` as MF wrote it (ASCII)
+    county_iso        text REFERENCES core.county(iso),
+    uat_name          text,                       -- `Denumire UAT pe raza careia isi desfasoara activitatea`, as written
+    national          boolean NOT NULL DEFAULT false,
+    national_by       text NOT NULL DEFAULT 'default'  -- award-notice | file | file-override | default
 );

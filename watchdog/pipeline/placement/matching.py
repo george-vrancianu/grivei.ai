@@ -143,6 +143,8 @@ class Gazetteer:
         self.county_by_iso = {c.iso: c for c in self.counties}
         self.iso_by_jud = {c.siruta_jud: c.iso for c in self.counties}
         self.iso_by_name = {fold(c.name): c.iso for c in self.counties}
+        for c in self.counties:  # SEAP's and MF's pick-lists are plain ASCII: `Dambovita` (`Â` is an `A` there), not the fold's `DIMBOVITA`
+            self.iso_by_name.setdefault(ascii_fold(c.name), c.iso)
         self.uat_by_siruta = {u.siruta: u for u in self.uats}
         self.uats_by_name: dict[tuple[str, str], list[Uat]] = {}
         for u in self.uats:
