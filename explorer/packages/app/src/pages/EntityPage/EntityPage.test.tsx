@@ -1,4 +1,4 @@
-// Seam 3 for the entity pages: the app rendered against the contract's mock responses.
+// Seam 3 for the entity pages: the app rendered against the contract's fixtures (recorded from the API where there are recorded ones).
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,8 @@ import type { GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
+// The tab-navigation tests walk Overview -> Records on one entity: 30000001 is the hand-written fixture whose three tabs all exist (until
+// #87 and #88 record them). Header and Overview behaviour of recorded entities is in EntityPage.overview.test.tsx.
 const SUPPLIER = "/explore/supplier/30000001";
 
 function open(url: string) {
@@ -95,56 +97,55 @@ describe("an entity page", () => {
   });
 
   it("carries the filter from tab to tab", async () => {
-    open("/explore/authority/4000002?from=2021-01-01");
-    await screen.findByRole("heading", { level: 1, name: /COMPANIA NAȚIONALĂ/ });
-    expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("href", "/explore/authority/4000002/records?from=2021-01-01");
-    expect(tabs().getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/explore/authority/4000002?from=2021-01-01");
+    open("/explore/authority/1000017?from=2023-02-01");
+    await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
+    expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("href", "/explore/authority/1000017/records?from=2023-02-01");
+    expect(tabs().getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/explore/authority/1000017?from=2023-02-01");
   });
 
   it("offers the role switch to an entity that both buys and sells, linking to the other role's page", async () => {
-    open("/explore/authority/4000002?from=2021-01-01");
-    await screen.findByRole("heading", { level: 1, name: /COMPANIA NAȚIONALĂ/ });
+    open("/explore/authority/2000031");
+    await screen.findByRole("heading", { level: 1, name: "CNAIR DEMO SA" });
     const nav = screen.getByRole("navigation", { name: "View as" });
     expect(within(nav).getByRole("link", { name: "As authority" })).toHaveAttribute("aria-current", "page");
     const other = within(nav).getByRole("link", { name: "As supplier" });
-    expect(other).toHaveAttribute("href", "/explore/supplier/4000002");
+    expect(other).toHaveAttribute("href", "/explore/supplier/2000031");
 
     await userEvent.setup().click(other);
-    expect(window.location.pathname).toBe("/explore/supplier/4000002");
+    expect(window.location.pathname).toBe("/explore/supplier/2000031");
     expect(await screen.findByRole("navigation", { name: "View as" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "As supplier" })).toHaveAttribute("aria-current", "page");
   });
 
   it("shows no role switch for an entity that only buys", async () => {
-    open("/explore/authority/4000001");
-    await screen.findByRole("heading", { level: 1, name: "MUNICIPIUL BRAȘOV" });
+    open("/explore/authority/1000017");
+    await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
     expect(screen.queryByRole("navigation", { name: "View as" })).not.toBeInTheDocument();
   });
 
   it("says a name-only supplier is identified by name only", async () => {
-    open("/explore/supplier/vat-DE811128135");
-    expect(await screen.findByRole("heading", { level: 1, name: "MEDTECH GMBH" })).toBeInTheDocument();
+    open("/explore/supplier/vat-bg103029862");
+    expect(await screen.findByRole("heading", { level: 1, name: "BALKAN DEMO OOD" })).toBeInTheDocument();
     expect(screen.getByText("Identified by name only")).toBeInTheDocument();
-    expect(screen.getByText("DE811128135")).toBeInTheDocument();
+    expect(screen.getByText("BG103029862")).toBeInTheDocument();
   });
 
   it("shows Unplaced for an authority no Source places", async () => {
-    open("/explore/authority/4000005");
-    await screen.findByRole("heading", { level: 1, name: /ASOCIAȚIA INTERCOMUNITARĂ/ });
+    open("/explore/authority/51000900");
+    await screen.findByRole("heading", { level: 1, name: "ASOCIATIA FARA ADRESA" });
     expect(screen.getByText("Unplaced")).toBeInTheDocument();
   });
 
   it("is in Romanian under /ro/explore/", async () => {
-    open("/ro/explore/authority/4000002?from=2021-01-01");
-    expect(await screen.findByRole("heading", { level: 1, name: /COMPANIA NAȚIONALĂ/ })).toBeInTheDocument();
+    open("/ro/explore/authority/1000017?from=2023-02-01");
+    expect(await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Prezentare generală"]);
-    expect(tabs().getByRole("link", { name: "Înregistrări" })).toHaveAttribute("href", "/ro/explore/authority/4000002/records?from=2021-01-01");
-    expect(screen.getByRole("link", { name: "Ca furnizor" })).toHaveAttribute("href", "/ro/explore/supplier/4000002");
+    expect(tabs().getByRole("link", { name: "Înregistrări" })).toHaveAttribute("href", "/ro/explore/authority/1000017/records?from=2023-02-01");
     expect(await screen.findByRole("list", { name: "Cifre principale" })).toBeInTheDocument();
   });
 
   it("says so when no entity has that key", async () => {
-    open("/explore/supplier/name-does-not-exist");
+    open("/explore/supplier/name-nobody-has-this-key");
     expect(await screen.findByRole("heading", { level: 1, name: "Entity not found" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the main screen" })).toHaveAttribute("href", "/explore/");
   });

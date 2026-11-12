@@ -4,13 +4,13 @@
  * answer with the committed JSON and, with `RECORD_FIXTURES=1`, rewrites it. The app's seam 3 tests ask for exactly these
  * variables, so a case here is also a page a test can open. Same convention as `recordedCases.ts` (#83), in its own file.
  *
- * Two archives: `overview` is `archive-roles` with the name-only suppliers of `archive-roles-names` merged on (an authority,
+ * Three archives: `overview` is `archive-roles` with the name-only suppliers of `archive-roles-names` merged on (an authority,
  * suppliers, an entity with both roles, name-only suppliers); `signals` is `archive-signals` (an authority and a supplier whose
- * Records are in Signals).
+ * Records are in Signals); `moneymap` is the placement world (authorities placed in a county and UAT, a national one, an unplaced one).
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedEntityArchive = "overview" | "signals";
+export type RecordedEntityArchive = "overview" | "signals" | "moneymap";
 
 export interface RecordedEntityCase {
   operation: "EntityOverview";
@@ -31,6 +31,9 @@ export const ENTITY_KEYS = {
   localSupplier: "name-furnizor-local-srl", // no tax id published: name-only
   foreignSupplier: "vat-bg103029862", // a foreign VAT id: name-only
   nobody: "name-nobody-has-this-key",
+  sanpetru: "51000005", // a commune placed in a county and UAT (archive-moneymap)
+  ministry: "51001000", // a national authority
+  unplaced: "51000900", // an authority neither ANAF nor SEAP places
 } as const;
 
 // The page always sends the filter (empty here) and omits the Signals' order and offset unless the URL says so.
@@ -88,18 +91,43 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     variables: page(ENTITY_KEYS.nobody, "SUPPLIER"),
   },
   {
+    operation: "EntityOverview", name: "authority-from-date", archive: "overview", kind: "typical",
+    description: "the authority page with the URL's date filter (from=2023-02-01): every number follows the filter",
+    variables: page(ENTITY_KEYS.hospital, "AUTHORITY", { filter: { from: "2023-02-01" } }),
+  },
+  {
+    operation: "EntityOverview", name: "authority-nothing-in-filter", archive: "overview", kind: "empty",
+    description: "an authority whose filter matches none of its Records (2019): zero totals, no counterparties, procedures or largest Records",
+    variables: page(ENTITY_KEYS.hospital, "AUTHORITY", { filter: { from: "2019-01-01", to: "2019-12-31" } }),
+  },
+  {
+    operation: "EntityOverview", name: "authority-placed-in-uat", archive: "moneymap", kind: "typical",
+    description: "a commune placed in a county and a UAT, with a consortium Record won with a firm of another county",
+    variables: page(ENTITY_KEYS.sanpetru, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "national-authority", archive: "moneymap", kind: "typical",
+    description: "a national authority: no county, placement is national",
+    variables: page(ENTITY_KEYS.ministry, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "unplaced-authority", archive: "moneymap", kind: "typical",
+    description: "an authority no Source places: the header says Unplaced; a natural person among its counterparties",
+    variables: page(ENTITY_KEYS.unplaced, "AUTHORITY"),
+  },
+  {
     operation: "EntityOverview", name: "authority-with-signals", archive: "signals", kind: "typical",
-    description: "an authority with over-cap and no-publication Signals, in the default order (newest first)",
-    variables: page(ENTITY_KEYS.hospital, "AUTHORITY"),
+    description: "an authority with over-cap and no-publication Signals, newest first (?signalOrder=date-desc; the API's default order is the same, but asked with no argument this would collide with the roles archive's page of the same key)",
+    variables: page(ENTITY_KEYS.hospital, "AUTHORITY", { signalOrder: "DATE_DESC" }),
   },
   {
     operation: "EntityOverview", name: "authority-with-signals-by-value", archive: "signals", kind: "typical",
-    description: "the same authority with its Signals ordered by value, as the page asks for with signalOrder in the URL",
+    description: "the same authority with its Signals ordered by value (?signalOrder=value-desc)",
     variables: page(ENTITY_KEYS.hospital, "AUTHORITY", { signalOrder: "VALUE_DESC" }),
   },
   {
     operation: "EntityOverview", name: "supplier-with-signals", archive: "signals", kind: "typical",
-    description: "a supplier whose Records are in Signals: the Signals count and cards on the supplier's page",
-    variables: page(ENTITY_KEYS.alfa, "SUPPLIER"),
+    description: "a supplier whose Records are in Signals: the Signals count on the supplier's page (?signalOrder=date-desc)",
+    variables: page(ENTITY_KEYS.alfa, "SUPPLIER", { signalOrder: "DATE_DESC" }),
   },
 ];

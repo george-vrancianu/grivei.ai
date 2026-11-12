@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
-import { supplierOverview } from "../../../../samples/fixtureData.ts";
+import { manyAliasesOverview as supplierOverview } from "../../../../samples/fixtureData.ts";
 import { AppearsInSeapAs } from "./index.ts";
 
 const show = (aliases: typeof supplierOverview.aliases, locale: "en" | "ro" = "en") =>
@@ -12,16 +12,16 @@ describe("AppearsInSeapAs", () => {
   it("lists each spelling with its Record count and first and last dates", () => {
     show(supplierOverview.aliases);
     const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(3);
-    expect(within(items[0]!).getByText("SC HACHI INVEST S.R.L.")).toBeVisible();
-    expect(within(items[0]!).getByText("41 Records · first seen 3 Feb 2021, last 30 Aug 2023")).toBeVisible();
+    expect(items).toHaveLength(8);
+    expect(within(items[0]!).getByText("CONSTRUCȚII TRANSILVANIA S.A.")).toBeVisible();
+    expect(within(items[0]!).getByText("38 Records · first seen 12 Jan 2021, last 30 Oct 2024")).toBeVisible();
   });
 
   it("flags only the name that differs from ANAF", () => {
     show(supplierOverview.aliases);
     const items = screen.getAllByRole("listitem");
     expect(within(items[0]!).queryByText("Name differs from ANAF")).toBeNull();
-    expect(within(items[2]!).getByText("Name differs from ANAF")).toBeVisible();
+    expect(within(items[3]!).getByText("Name differs from ANAF")).toBeVisible();
   });
 
   it("says 'seen on' for a spelling seen one day only, in the active language", () => {

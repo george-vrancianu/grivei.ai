@@ -2239,13 +2239,1224 @@
     }
   },
   {
-    "name": "authority-with-signals",
+    "name": "authority-from-date",
     "kind": "typical",
-    "description": "an authority with over-cap and no-publication Signals, in the default order (newest first)",
+    "description": "the authority page with the URL's date filter (from=2023-02-01): every number follows the filter",
     "variables": {
       "key": "1000017",
       "role": "AUTHORITY",
+      "filter": {
+        "from": "2023-02-01"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 16,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "172000000",
+              "records": 10,
+              "suspectLeftOut": 1,
+              "noValue": 2,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 4,
+              "topShare": 0.395348837,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "68000000",
+                    "records": 4,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "42500000",
+                    "records": 7,
+                    "suspectLeftOut": 1,
+                    "noValue": 2,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "31500000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000023",
+                    "displayName": "GAMMA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "30000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.069767441,
+            "procedures": [
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "150000000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "10000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "90000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "total": {
+                  "awarded": "60000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "10000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600002~1",
+                "title": "Contract CAN9600002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "90000000",
+                "counted": "90000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600004~1",
+                "title": "Contract CAN9600004 1",
+                "date": "2023-03-02",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600005~1",
+                "title": "Contract CAN9600005 1",
+                "date": "2023-03-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000002",
+                "title": "Achizitie DA96000002",
+                "date": "2023-02-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000003",
+                "title": "Achizitie DA96000003",
+                "date": "2023-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96100001",
+                "title": "Achizitie DA96100001",
+                "date": "2024-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2500000",
+                "counted": "2500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000008",
+                "title": "Achizitie DA96000008",
+                "date": "2023-02-03",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "1500000",
+                "counted": "1500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": null,
+                    "entity": null
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "authority-nothing-in-filter",
+    "kind": "empty",
+    "description": "an authority whose filter matches none of its Records (2019): zero totals, no counterparties, procedures or largest Records",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {
+        "from": "2019-01-01",
+        "to": "2019-12-31"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 16,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "0",
+              "records": 0,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 0,
+              "topShare": null,
+              "rows": []
+            },
+            "directPurchaseShare": 0,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "authority-placed-in-uat",
+    "kind": "typical",
+    "description": "a commune placed in a county and a UAT, with a consortium Record won with a firm of another county",
+    "variables": {
+      "key": "51000005",
+      "role": "AUTHORITY",
       "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000005",
+        "displayName": "COMUNA SANPETRU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880010",
+            "name": "Sânpetru"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000005",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "COMUNA SANPETRU",
+            "records": 2,
+            "first": "2023-02-20",
+            "last": "2023-03-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "200001",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.750001249,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "150001",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000104",
+                    "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "50000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.4999975,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "100001",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": "50001",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                    "share": "50000",
+                    "entity": {
+                      "key": "2000104",
+                      "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "100001",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9800001~1",
+                "title": "Drum comunal",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100001",
+                "counted": "100001",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": "50001",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                    "share": "50000",
+                    "entity": {
+                      "key": "2000104",
+                      "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA94000010",
+                "title": "Achizitie DA94000010",
+                "date": "2023-03-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "national-authority",
+    "kind": "typical",
+    "description": "a national authority: no county, placement is national",
+    "variables": {
+      "key": "51001000",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51001000",
+        "displayName": "MINISTERUL EXEMPLULUI",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": null,
+          "uat": null,
+          "national": true,
+          "placedBy": "ANAF"
+        },
+        "cui": "51001000",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "MINISTERUL EXEMPLULUI",
+            "records": 2,
+            "first": "2023-02-20",
+            "last": "2023-03-18",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "600000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "600000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.166666666,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "500000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9800003~1",
+                "title": "Sistem informatic",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "500000",
+                "counted": "500000",
+                "badges": [],
+                "authority": {
+                  "key": "51001000",
+                  "displayName": "MINISTERUL EXEMPLULUI",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA94000008",
+                "title": "Achizitie DA94000008",
+                "date": "2023-03-18",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51001000",
+                  "displayName": "MINISTERUL EXEMPLULUI",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "unplaced-authority",
+    "kind": "typical",
+    "description": "an authority no Source places: the header says Unplaced; a natural person among its counterparties",
+    "variables": {
+      "key": "51000900",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000900",
+        "displayName": "ASOCIATIA FARA ADRESA",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "51000900",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ASOCIATIA FARA ADRESA",
+            "records": 2,
+            "first": "2023-02-20",
+            "last": "2023-03-24",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "170000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 3,
+              "topShare": 0.588235294,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "100000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000104",
+                    "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "35000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "35000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.588235294,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "70000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "35000",
+                    "entity": null
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                    "share": "35000",
+                    "entity": {
+                      "key": "2000104",
+                      "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "70000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA94000014",
+                "title": "Achizitie DA94000014",
+                "date": "2023-03-24",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000900",
+                  "displayName": "ASOCIATIA FARA ADRESA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800004~1",
+                "title": "Mobilier",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "70000",
+                "counted": "70000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "51000900",
+                  "displayName": "ASOCIATIA FARA ADRESA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "35000",
+                    "entity": null
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                    "share": "35000",
+                    "entity": {
+                      "key": "2000104",
+                      "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "authority-with-signals",
+    "kind": "typical",
+    "description": "an authority with over-cap and no-publication Signals, newest first (?signalOrder=date-desc; the API's default order is the same, but asked with no argument this would collide with the roles archive's page of the same key)",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {},
+      "signalOrder": "DATE_DESC"
     },
     "data": {
       "entity": {
@@ -3062,7 +4273,7 @@
   {
     "name": "authority-with-signals-by-value",
     "kind": "typical",
-    "description": "the same authority with its Signals ordered by value, as the page asks for with signalOrder in the URL",
+    "description": "the same authority with its Signals ordered by value (?signalOrder=value-desc)",
     "variables": {
       "key": "1000017",
       "role": "AUTHORITY",
@@ -3884,11 +5095,12 @@
   {
     "name": "supplier-with-signals",
     "kind": "typical",
-    "description": "a supplier whose Records are in Signals: the Signals count and cards on the supplier's page",
+    "description": "a supplier whose Records are in Signals: the Signals count on the supplier's page (?signalOrder=date-desc)",
     "variables": {
       "key": "2000007",
       "role": "SUPPLIER",
-      "filter": {}
+      "filter": {},
+      "signalOrder": "DATE_DESC"
     },
     "data": {
       "entity": {

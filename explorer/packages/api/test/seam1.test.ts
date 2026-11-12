@@ -2193,12 +2193,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   });
 
 
-  describe("recorded fixtures (#86): archive-roles + archive-roles-names, archive-signals -> rebuild -> the recorded EntityOverview", () => {
+  describe("recorded fixtures (#86): archive-roles + archive-roles-names, archive-signals, archive-moneymap -> rebuild -> the recorded EntityOverview", () => {
     // The app's seam 3 renders the entity pages against these answers, so the two seams stay in step: this block fails when an
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
     const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
-    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b" } as const;
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c" } as const;
 
     beforeAll(async () => {
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
@@ -2207,6 +2207,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
+      rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-entity-recorded")]);
     });
 
     const answer = async (c: RecordedEntityCase) => {
@@ -2227,6 +2228,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
       // through JSON, so undefined and key order do not matter
       expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+    });
+
+    it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
+      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
+      const asked = RECORDED_ENTITY_CASES.map((c) => JSON.stringify(sorted(c.variables)));
+      expect(new Set(asked).size).toBe(asked.length);
     });
 
     it("gives the cases the numbers they are named for", async () => {
@@ -2260,6 +2267,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       for (const name of ["authority-asked-as-supplier", "supplier-asked-as-authority"]) expect(entityOf(name)!.seap.role, name).toBeNull();
       expect(entityOf("authority-asked-as-supplier")!.seap.roles).toEqual(["AUTHORITY"]);
       expect(entityOf("unknown-key")).toBeNull();
+      // the filter narrows every number; a filter that matches nothing leaves zeros, not a missing role
+      expect(role("authority-from-date").total.records).toBeLessThan(role("authority").total.records);
+      expect(role("authority-nothing-in-filter")).toMatchObject({ total: { awarded: "0", records: 0 }, counterparties: { count: 0, topShare: null, rows: [] }, procedures: [], largestRecords: [] });
+      // placement in the header: a county and a UAT, national, or nothing at all
+      expect(entityOf("authority-placed-in-uat")!.placement).toEqual({ county: { code: "RO-BV", name: "Brașov" }, uat: { siruta: "880010", name: "Sânpetru" }, national: false, placedBy: "ANAF" });
+      expect(entityOf("national-authority")!.placement).toMatchObject({ county: null, uat: null, national: true });
+      expect(entityOf("unplaced-authority")!.placement).toBeNull();
+      expect(role("unplaced-authority").counterparties.rows.some((r) => r.naturalPerson && r.entity === null)).toBe(true);
       // Signals: the authority and the supplier see the same Signals of their Records; the order changes with the argument
       const dates = (name: string) => role(name).signals.rows.map((x) => `${x.rule} ${x.date}`);
       expect(role("authority-with-signals").signals.count).toBe(8);

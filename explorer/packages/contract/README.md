@@ -87,3 +87,14 @@ Changes the screens needed beyond the markers:
 - Entity Overview Signals take `signalOrder` and `signalOffset`.
 - Shared fragments `EntityResultPageFields` and `RecordResultFields`; the Entity Records tab also selects `matchedField`.
 - Three full-results operations (one per tab) rather than one with `@include` flags.
+
+## Recorded fixtures
+
+Where an operation has `src/fixtures/recorded/<Operation>.json`, its fixtures are the API's own answers, not hand-written ones: the seam 1 test rebuilds a fixture archive into a throwaway ParadeDB, asks the persisted operation the questions listed in `packages/api/test/recorded*Cases.ts`, validates each answer against the operation and compares it with the committed JSON. Seam 3 (the app's tests) renders against the same JSON, so the two seams stay in step. Same JSON shape as the hand fixtures: `{ name, kind, description, variables, data }`.
+
+```sh
+# after changing the API, the pipeline or a fixture archive: rewrite the JSON, then review the diff and commit it
+cd explorer/packages/api && SEAM1_REQUIRED=1 RECORD_FIXTURES=1 npx vitest run --pool=forks --maxWorkers=2 test/seam1.test.ts -t "recorded fixtures"
+```
+
+`EntityOverview` (#86): `recorded/EntityOverview.json`, loaded by `recorded/entity.ts`; cases in `api/test/recordedEntityCases.ts`, block "recorded fixtures (#86)". Hand-written fixtures stay beside the recorded ones only for states a small archive cannot cheaply produce (220 counterparties, 30 aliases, a deregistered ANAF status, a curated identity).
