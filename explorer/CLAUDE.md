@@ -24,7 +24,7 @@ Place each component at the lowest level that fits:
 
 Components up to templates are **presentational**: they take data through props, typed from the generated GraphQL contract types, and never fetch. Only pages run queries. That is what lets every component be built and mocked on its own in the workbench, before its backend exists.
 
-Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/` and `molecules/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
+Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/`, `molecules/` and `organisms/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
 
 ## One folder per component
 
@@ -59,3 +59,13 @@ Create `hooks/`, `components/` and the utils file only when they have something 
 - **Fixtures.** Stories import mock data from `@grivei/contract/fixtures` (e.g. `fixtures.FullResultsSuppliers`); see `atoms/Table/Table.stories.tsx`. Pass rows through props like the real component will get them.
 - **Every story is tested.** `packages/ui/src/workbench/stories.test.tsx` renders every story file under `packages/ui/src` in both locales through portable stories (jsdom); app stories join by widening its glob.
 - **Lint.** `npm run lint` (part of `check`) rejects `@mui/*` and `@emotion/*` imports outside `packages/ui`; `tooling/lint-boundary.test.ts` proves it.
+
+## The base map (`domain/organisms/BaseMap`)
+
+The shared map every lens builds on (Money, zoomed county, Coverage, Flow). It has no lens logic: a lens passes numbers per area and decides what they mean.
+
+- `topology` (TopoJSON, built at load time, never GraphQL) with features carrying properties `{ code, name }`: `code` is an ISO 3166-2:RO county code or a SIRUTA; `name` is shown as published. Other shapes: pass `readArea`. `object` picks the TopoJSON object (first by default).
+- `values`: `Record<code, number | null>`. Missing, null or non-finite = grey (`NO_DATA_COLOR`, always distinct from the scale). `scale`: `"linear"` or `"log"` (zeros are not log-scaled: they take the lowest colour). `formatValue(value) => string` formats tooltip, area names and legend ends (a lens passes e.g. `formatMoney`).
+- `onSelect(code)` on click, Enter or Space (areas are focusable buttons); `selected` highlights one. `tiles` is a slot beside the map for off-map tiles. `renderTooltip(area)` overrides the tooltip content. `copy: BaseMapCopy` carries every string (`mapLabel`, `legendTitle`, `noData`, `areaLabel`). `width`/`height` set the SVG's coordinate space (it scales to its container); `projection` is `"conic"` (default) or `"mercator"`.
+- Pure helpers (`createColorScale`, `featuresOf`) are exported for lenses that need the same colours elsewhere.
+- Story and test outlines are invented (`domain/samples/geo/`, built by `packages/ui/scripts/build-geo-fixtures.ts`).
