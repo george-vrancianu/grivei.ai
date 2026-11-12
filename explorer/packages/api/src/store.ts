@@ -183,7 +183,7 @@ export function postgresStore(pool: pg.Pool): Store {
       procedure: r.procedure,
       value: r.value,
       counted: r.counted,
-      authority: (r.authority_key && entities.get(r.authority_key)) || fallbackEntity(r.authority_key ?? `name-${r.authority_name}`, r.authority_name, now),
+      authority: (r.authority_key && entities.get(r.authority_key)) || fallbackEntity(r.authority_key ?? `name-${(r.authority_name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unnamed"}`, r.authority_name, now),
       winners: winners.map((w) => ({
         naturalPerson: w.naturalPerson === true,
         name: w.naturalPerson === true ? null : (w.name ?? null),

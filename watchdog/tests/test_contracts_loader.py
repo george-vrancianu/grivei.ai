@@ -237,7 +237,7 @@ def test_quirk_numeric_cuis_dates_and_mangled_cuis_in_the_xlsx(planned):
     assert x25["CAN9000010~21"].authority_cui == "4267117" and x25["CAN9000010~21"].winners[0].cui == "18165761"
     assert x25["CAN9000010~133"].winners[0].cui == "RO 18165761"  # text `RO 18165761`, kept as published
     assert x25["CAN9000010~133"].value_bani == 62183650  # a float cell 621836.5 RON
-    assert x25["CAN9000011~A 7"].winners[0].cui is None and "supplier_cui:scientific_notation" in x25["CAN9000011~A 7"].notes
+    assert x25["CAN9000011~A 7"].winners[0].cui == "1.00761E+12" and "supplier_cui:scientific_notation" in x25["CAN9000011~A 7"].notes
 
 
 def test_framework_columns_are_kept_for_the_counting_rule(planned):

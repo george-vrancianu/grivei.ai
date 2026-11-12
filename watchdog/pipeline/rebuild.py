@@ -101,7 +101,7 @@ def _winner_json(name: str | None, w: Resolved) -> dict:
             "differsFromAnaf": w.differs_from_anaf, "cuiMismatch": w.cui_mismatch}
 
 
-def _identity_badges(authority: Resolved, winners: list[Resolved]) -> list[str]:
+def _identity_badges(winners: list[Resolved]) -> list[str]:
     badges = []
     if any(w.cui_mismatch for w in winners):
         badges.append("CUI_MISMATCH")
@@ -136,7 +136,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 contract_type=r.contract_type, published_on=r.published_on, quarter=r.quarter, award_date=r.award_date,
                 estimated_bani=r.estimated_bani, value_bani=r.value_bani, counted_bani=r.value_bani,
                 load_notes=list(r.notes), winners=Jsonb([_winner_json(n, w) for n, w in resolved]),
-                badges=_identity_badges(authority, [w for _, w in resolved]),
+                badges=_identity_badges([w for _, w in resolved]),
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
                 concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count,
                 source_file_id=source_file_id,
@@ -337,6 +337,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             build_entities(cur, overrides, summary)
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
+            # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
+            cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
+            cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
             cur.execute("ANALYZE seap.record")
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays

@@ -11,8 +11,8 @@ synchronously (no polling) with `{"found": [{"date_generale": {...}, "stare_inac
 "adresa_domiciliu_fiscal": {...}, ...}], "notFound": [1000001]}`.
 
 Archive layout (a unit = one request): `anaf/vat/v9/<first cui>-<count>/<fetch day>/{request.json, response.json, manifest.json}`.
-`request.json` keeps what was asked (the endpoint, the day and the CUI list) so a rebuild knows which CUIs were looked up and
-not found; `response.json` is ANAF's body, byte for byte. The files are written under a temporary name and renamed, and the
+`request.json` keeps what was asked (the endpoint, the day and the CUI list), for audit; a CUI asked but in neither list of the
+response counts as answered, not found; `response.json` is ANAF's body, byte for byte. The files are written under a temporary name and renamed, and the
 manifest last (archive.py), so a batch that died half way is invisible: it is asked again on the next run.
 
 Resuming after a kill needs nothing but running the same command: a CUI already present in an archived response (found or
@@ -34,7 +34,7 @@ from typing import Callable, Iterable, Iterator, Mapping
 import requests
 
 from .archive import Archive, Unit, sha256_of
-from .identity import classify_tax_id, comma_below, compare_name
+from .identity import classify_tax_id, compare_name
 from .progress import _alive, _duration, _iso, effective_state, stamp, write_atomically
 
 log = logging.getLogger("pipeline.anaf")
@@ -174,9 +174,9 @@ def response_cuis(data: Mapping) -> tuple[list[dict], list[int]]:
     return found, [c for c in data.get("notFound", []) if isinstance(c, int)]
 
 
-def read_answers(archive: Archive) -> dict[int, Answer]:
-    """Every CUI ANAF has answered, found or not, with the latest answer winning. A response that cannot be read is skipped."""
-    answers: dict[int, Answer] = {}
+def read_units(archive: Archive) -> Iterator[tuple[Unit, Path, list[dict], list[int]]]:
+    """Walk the archived responses oldest first as `(unit, response path, found entries, not-found CUIs)`. A response that
+    cannot be read is logged and skipped."""
     for unit in anaf_units(archive):
         path = unit.file_path(RESPONSE_FILE)
         try:
@@ -184,11 +184,33 @@ def read_answers(archive: Archive) -> dict[int, Answer]:
         except (OSError, ValueError):
             log.warning("anaf: skipped unreadable response %s", path)
             continue
+        yield unit, path, found, missing
+
+
+def _asked(unit: Unit) -> list[int]:
+    """The CUIs a unit's `request.json` says were asked ([] when it is missing or unreadable)."""
+    try:
+        cuis = json.loads(unit.file_path(REQUEST_FILE).read_bytes()).get("cuis", [])
+    except (OSError, ValueError, AttributeError):
+        return []
+    return [c for c in cuis if isinstance(c, int)]
+
+
+def read_answers(archive: Archive) -> dict[int, Answer]:
+    """Every CUI ANAF has answered, found or not, with the latest answer winning. A CUI that was asked (`request.json`) but is
+    in neither list of the response counts as answered, not found: it is not asked again on every run."""
+    answers: dict[int, Answer] = {}
+    for unit, path, found, missing in read_units(archive):
+        listed = {c for e in found if (c := normalise_cui_int(e["date_generale"].get("cui"))) is not None} | set(missing)
+        for cui in _asked(unit):
+            if cui not in listed:
+                log.warning("anaf: CUI %s was asked in %s and is in neither list: counted as not found", cui, path)
+                answers[cui] = Answer(False, unit.fetched_at, path)
+        for cui in missing:
+            answers[cui] = Answer(False, unit.fetched_at, path)
         for entry in found:
             if (cui := normalise_cui_int(entry["date_generale"].get("cui"))) is not None:
                 answers[cui] = Answer(True, unit.fetched_at, path)
-        for cui in missing:
-            answers[cui] = Answer(False, unit.fetched_at, path)
     return answers
 
 
@@ -304,21 +326,10 @@ def company_of(entry: Mapping, fetched_at: datetime, archive_path: str) -> Compa
     )
 
 
-def display_name(company_name: str) -> str:
-    """ANAF's name with the cedilla letters fixed to comma-below, nothing else (ADR 0003)."""
-    return comma_below(company_name)
-
-
 def iter_companies(archive: Archive) -> Iterator[tuple[Company | None, int | None]]:
     """Walk the archived responses oldest first: `(company, None)` for a found CUI, `(None, cui)` for a not-found one. The
     consumer applies them in order, so the latest answer for a CUI wins."""
-    for unit in anaf_units(archive):
-        path = unit.file_path(RESPONSE_FILE)
-        try:
-            found, missing = response_cuis(json.loads(path.read_bytes()))
-        except (OSError, ValueError):
-            log.warning("anaf: skipped unreadable response %s", path)
-            continue
+    for unit, path, found, missing in read_units(archive):
         rel = str(path.relative_to(archive.root))
         for entry in found:
             company = company_of(entry, unit.fetched_at, rel)

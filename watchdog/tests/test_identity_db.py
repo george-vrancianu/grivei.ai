@@ -19,7 +19,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 ARCHIVE = FIXTURES / "archive-identity"
 OVERRIDES = FIXTURES / "identity-overrides.toml"
 CNPS = ("1990101123456", "2950202123456")
-PEOPLE = ("POPESCU ION FICTIV", "IONESCU MARIA FICTIV")
+PEOPLE = ("POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV")
 
 
 @pytest.fixture
@@ -141,6 +141,19 @@ def test_a_cnp_winner_is_a_natural_person_and_the_record_still_counts_for_its_au
     # within a consortium the person is one winner among three and the others keep their entities, in file order
     [(winners,)] = q(built, "SELECT winners FROM seap.record WHERE code = 'CAN9700001~C-1'")
     assert [(w["key"], w["naturalPerson"], w["name"]) for w in winners] == [("2000007", False, "SANTIERUL TARA DEMO SRL"), (None, True, None), ("vat-bg103029862", False, "BALKAN TRADING OOD")]
+
+
+def test_a_cnp_mangled_into_scientific_notation_is_a_natural_person_with_nothing_kept(built):
+    [(winners, supplier_name, supplier_cui)] = q(built, "SELECT winners, supplier_name, supplier_cui FROM seap.record WHERE code = 'DA93000018'")
+    assert winners == [{"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": False}]
+    assert (supplier_name, supplier_cui) == (None, None)
+    assert q(built, "SELECT supplier_key, supplier_spelling FROM seap.search WHERE record_code = 'DA93000018'") == [(None, None)]
+    assert q(built, "SELECT count(*) FROM core.entity WHERE key = 'name-popescu-x-fictiv'") == [(0,)]
+
+
+def test_the_lookups_behind_entity_roles_are_indexed(built):
+    names = {r[0] for r in q(built, "SELECT indexname FROM pg_indexes WHERE schemaname = 'seap'")}
+    assert {"record_authority_key_idx", "search_supplier_key_idx"} <= names
 
 
 def test_no_cnp_and_no_natural_persons_name_appears_anywhere_in_the_graph(built):

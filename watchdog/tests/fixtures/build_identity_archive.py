@@ -95,6 +95,7 @@ CASES = [
     ("DA93000015", "DRUM CONSTRUCT DEMO SRL", "2000082", COMUNA),  # homonym 2: another CUI, so another entity
     ("DA93000016", "SPITALUL EXEMPLU", "1000017", COMUNA),  # an authority that is also a supplier: one entity, two roles
     ("DA93000017", "SANTIERUL TARA DEMO SRL", "2000007", SPITAL),  # bought by that authority
+    ("DA93000018", "POPESCU X FICTIV", "1.99E+12", COMUNA),  # a CNP Excel mangled into scientific notation: still a natural person
 ]
 
 # ---- SEAP: Contracte 2023 Q1 (pipe CSV): a consortium of a company, a person (CNP) and a foreign firm -------------------------------

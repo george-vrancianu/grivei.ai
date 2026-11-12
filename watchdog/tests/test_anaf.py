@@ -233,6 +233,14 @@ def test_cuis_already_in_an_archived_response_found_or_not_are_skipped(archive):
     assert {c: a.found for c, a in answers.items()} == {1: True, 2: False, 3: True, 4: True, 5: True}
 
 
+def test_a_cui_asked_but_in_neither_list_counts_as_answered_not_found(archive):
+    body = json.dumps({"found": [entry(1)], "notFound": []}).encode()  # ANAF dropped 2 without a notFound
+    archive_batch(archive, [1, 2], date(2026, 11, 12), body, NOW)
+    answers = read_answers(archive)
+    assert {c: a.found for c, a in answers.items()} == {1: True, 2: False}
+    assert pending([1, 2, 3], answers, today=NOW.date()) == [3]
+
+
 def test_a_killed_run_resumes_where_it_stopped_with_no_batch_repeated_and_none_lost(archive):
     def die_on_third(n, body):
         if n == 3:

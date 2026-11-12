@@ -3,7 +3,7 @@
 A winner's tax id as published (`RO 1112975`, `IT08069460015`, `1003600118796`, ...) is classified by `classify_tax_id`:
 
 - `cui`:         a Romanian CUI that passes the check digit (`RO`, whitespace, punctuation, leading zeros stripped);
-- `cnp`:         13 digits. A person's national id: never stored, never shown (the winner is a natural-person supplier);
+- `cnp`:         13 digits (also Excel's `1.73E+12`, or 13 digits among text). A person's national id: never stored, never shown (the winner is a natural-person supplier);
 - `foreign_vat`: a VAT id with a known EU country prefix (`BG103029862`, `ATU18379608`): name-only supplier keyed `vat-<id>`;
 - `other`:       anything else (a number that fails the check digit, 11-12 digits, `-`): the name decides.
 
@@ -23,11 +23,11 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Literal, Mapping
 
-NATURAL_PERSON_LABEL = "Persoană fizică"  # for the user-facing copy; the graph stores no name at all
-
 # EU VAT country prefixes (Greece is EL; Northern Ireland XI); `ATU18379608` is AT + `U` + 8 digits
 _VAT_PREFIXES = frozenset("AT BE BG CY CZ DE DK EE EL ES FI FR HR HU IE IT LT LU LV MT NL PL PT SE SI SK XI GB".split())
 _FOREIGN_VAT = re.compile(r"^([A-Z]{2})([A-Z0-9]{2,14})$")
+_SCI_CNP = re.compile(r"^[1-9](\.\d+)?E\+?12$")
+_SCI_ANY = re.compile(r"^[+-]?\d+(\.\d+)?E[+-]?\d+$")
 _CUI_WEIGHTS = (7, 5, 3, 2, 1, 7, 5, 3, 2)
 
 Kind = Literal["cui", "cnp", "foreign_vat", "other", "none"]
@@ -51,6 +51,11 @@ def cui_check_digit_ok(cui: str) -> bool:
 def classify_tax_id(raw: str | None) -> TaxId:
     if raw is None:
         return TaxId("none")
+    sci = raw.upper().replace(" ", "")
+    if _SCI_CNP.match(sci):  # `1.73E+12`: Excel's mangling of a 13-digit number, so of a CNP
+        return TaxId("cnp")
+    if _SCI_ANY.match(sci):  # any other scientific notation has lost its digits: the name decides
+        return TaxId("other")
     s = re.sub(r"[^0-9A-Z]", "", raw.upper())  # whitespace and punctuation go: `RO 1112975`, `RO16728583,`
     if not s:
         return TaxId("none")
@@ -60,6 +65,8 @@ def classify_tax_id(raw: str | None) -> TaxId:
             return TaxId("cnp")
         cui = digits.lstrip("0")
         return TaxId("cui", cui) if cui_check_digit_ok(cui) else TaxId("other")
+    if re.search(r"(?<!\d)\d{13}(?!\d)", s):  # a CNP among other text (`CNP 1990101123456`)
+        return TaxId("cnp")
     m = _FOREIGN_VAT.match(s)
     if m and m[1] in _VAT_PREFIXES and any(c.isdigit() for c in s):
         return TaxId("foreign_vat", s)
@@ -198,6 +205,8 @@ class Overrides:
             value = entry.get("published_id") or entry.get("name") or ""
             if re.search(r"\d{13}", re.sub(r"\D", "", str(value))) or classify_tax_id(str(value)).kind == "cnp":
                 raise OverrideError(f"{where}: a 13-digit id (CNP) never goes in the graph")
+            if key.isdigit() and entry.get("display_name"):
+                raise OverrideError(f"{where}: display_name is for a pinned name-only key; a CUI's name is ANAF's")
             override = Override(reason, key, entry.get("display_name"))
             if "published_id" in entry:
                 tax = classify_tax_id(str(entry["published_id"]))

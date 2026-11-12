@@ -31,6 +31,8 @@ def test_cui_check_digit_refuses_bad_codes(cui):
         ("1003600118796", "cnp", None), ("RO1003600118796", "cnp", None), ("5 000101 123456", "cnp", None),
         ("BG103029862", "foreign_vat", "BG103029862"), ("IT08069460015", "foreign_vat", "IT08069460015"),
         ("ATU 18379608", "foreign_vat", "ATU18379608"), ("de 123456789", "foreign_vat", "DE123456789"),
+        ("1.73E+12", "cnp", None), ("1.00761E+12", "cnp", None), ("1,99E+12", "other", None), ("1.5E+3", "other", None), ("2.5E+9", "other", None),
+        ("CNP 1990101123456", "cnp", None), ("1.73 E+12", "cnp", None),
         ("-", "none", None), ("", "none", None), (None, "none", None), ("N/A", "other", None), ("XX123", "other", None),
     ],
 )
@@ -175,6 +177,7 @@ def test_an_override_never_splits_a_joint_venture_it_matches_the_whole_name(tmp_
         'reason = "r"\nname = "A"\nkey = "vat-bg1"',  # reserved prefix
         'reason = "r"\npublished_id = "1003600118796"\nkey = "ok-key"',  # a CNP never goes in the graph
         'reason = "r"\nname = "A"\nkey = "ok-key"\nextra = 1',
+        'reason = "r"\nname = "A"\nkey = "2000007"\ndisplay_name = "Other"',  # a CUI's name is ANAF's
     ],
 )
 def test_a_bad_override_entry_is_refused(tmp_path, entry):

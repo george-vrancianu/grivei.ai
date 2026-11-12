@@ -283,10 +283,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   // ---- supplier identity (#66, ADR 0003) ----------------------------------------------------------------------------------
 
   const CNPS = ["1990101123456", "2950202123456", "199010112", "295020212"]; // the fixture's invented CNPs, whole and in part
-  const PEOPLE = ["POPESCU ION FICTIV", "IONESCU MARIA FICTIV"];
+  const PEOPLE = ["POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV"];
   const IDENTITY_CODES = [
     "DA93000001", "DA93000002", "DA93000003", "DA93000004", "DA93000005", "DA93000006", "DA93000007", "DA93000008", "DA93000009", "DA93000010",
-    "DA93000011", "DA93000012", "DA93000013", "DA93000014", "DA93000015", "DA93000016", "DA93000017", "CAN9700001~C-1",
+    "DA93000011", "DA93000012", "DA93000013", "DA93000014", "DA93000015", "DA93000016", "DA93000017", "DA93000018", "CAN9700001~C-1",
   ];
   const identityRecord = async (db: string, code: string) => {
     const variables = { code };
@@ -305,7 +305,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
   it("resolves every identity case through the persisted RecordPage operation (#66)", async () => {
     const out = rebuild("identity_a", "archive-identity", ["--identity-overrides", identityOverrides]);
-    expect(out).toContain("loaded 18 records from 2 file(s)");
+    expect(out).toContain("loaded 19 records from 2 file(s)");
     expect(out).toContain("anaf: 8 CUIs found, 2 not found");
 
     const winner = async (code: string, i = 0) => (await identityRecord("identity_a", code)).winners[i]!;
@@ -388,7 +388,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(text.length).toBeGreaterThan(5000); // the scan has something to scan
     for (const needle of [...CNPS, ...PEOPLE]) expect(text).not.toContain(needle);
     // and the person is not reachable by a made-up key either
-    for (const key of ["name-popescu-ion-fictiv", "1990101123456", "name-ionescu-maria-fictiv"]) expect(await entityPage("identity_a", key)).toBeNull();
+    for (const key of ["name-popescu-ion-fictiv", "name-popescu-x-fictiv", "1990101123456", "name-ionescu-maria-fictiv"]) expect(await entityPage("identity_a", key)).toBeNull();
   });
 
   it("gives identical responses after a second rebuild of the identity archive into a fresh database (#66, ADR 0004)", async () => {

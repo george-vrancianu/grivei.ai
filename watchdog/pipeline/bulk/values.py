@@ -167,8 +167,8 @@ def to_tax_id(cell: Cell) -> tuple[str | None, str | None]:
 
     A numeric XLSX cell (`18308578`, or `18308578.0` from a float) comes out as its digits. Text is stripped and kept
     as written (`RO 1112975`, `IT08069460015`, `ATU 18379608`): a foreign id is no longer turned into a digit string or
-    dropped. A scientific-notation text (`1.00761E+12`: the digits after the sixth are gone) cannot be recovered: no id,
-    note `scientific_notation`. A date or boolean cell is no id, note `unusable`. A blank cell is no id and no note.
+    dropped. A scientific-notation text (`1.00761E+12`: the digits after the sixth are gone) is kept as written with note
+    `scientific_notation`: the digits cannot be recovered, but `classify_tax_id` still reads a 13-digit size (a CNP). A date or boolean cell is no id, note `unusable`. A blank cell is no id and no note.
     """
     if cell is None:
         return None, None
@@ -184,7 +184,7 @@ def to_tax_id(cell: Cell) -> tuple[str | None, str | None]:
     if not s:
         return None, None
     if _SCI.match(s.replace(" ", "")):
-        return None, "scientific_notation"
+        return s, "scientific_notation"
     if m := re.fullmatch(r"(\d+)\.0+", s):  # a number that went through a float: `18308578.0`
         return m[1], None
     return s, None

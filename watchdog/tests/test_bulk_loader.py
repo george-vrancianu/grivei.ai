@@ -198,7 +198,7 @@ def test_quirk_numeric_cuis_in_xlsx_come_out_as_digits(planned):
 def test_quirk_excel_mangled_numbers(planned):
     _, records = planned
     r = records["DAN9100022"]
-    assert r.supplier_cui is None and "supplier_cui:scientific_notation" in r.notes  # digits already lost: no CUI, flagged
+    assert r.supplier_cui == "1.00761E+12" and "supplier_cui:scientific_notation" in r.notes  # digits already lost: kept as written, flagged
     assert r.value_bani == 150000 and "value:scientific_notation" in r.notes  # "1.5E+3" read as written (1,500 RON), flagged
     assert records["DAN9100020"].notes == ()
 
@@ -222,7 +222,7 @@ def test_ambiguous_or_unreadable_money_is_an_error(cell):
 @pytest.mark.parametrize(
     "cell, expected",
     [(18308578, ("18308578", None)), (18308578.0, ("18308578", None)), ("RO 2000002", ("RO 2000002", None)), ("ro46832143", ("ro46832143", None)),
-     ("18308578.0", ("18308578", None)), ("1.00761E+12", (None, "scientific_notation")), ("", (None, None)), (None, (None, None)),
+     ("18308578.0", ("18308578", None)), ("1.00761E+12", ("1.00761E+12", "scientific_notation")), ("", (None, None)), (None, (None, None)),
      ("-", ("-", None)), (1.5, (None, "unusable")), ("12 345", ("12 345", None)),
      # a foreign VAT id and a person's 13 digits are kept as published: pipeline.identity decides what they are (ADR 0003)
      ("BG103029862", ("BG103029862", None)), ("ATU 18379608", ("ATU 18379608", None)), ("1003600118796", ("1003600118796", None))],
