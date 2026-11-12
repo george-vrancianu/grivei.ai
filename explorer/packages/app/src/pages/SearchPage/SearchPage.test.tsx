@@ -92,6 +92,53 @@ describe("the full-results view at /explore/search", () => {
   });
 });
 
+// The recorded answers (seam 1, archive-moneymap): the page asks the API for exactly the state the URL carries.
+describe("the full-results view against the recorded API answers", () => {
+  it("carries the query, the county and the tab from the URL into the request", async () => {
+    openAt("/explore/search?q=comuna&county=RO-BV&tab=records");
+    const { client, sent } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByRole("heading", { name: "Records 5" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Drum comunal" })).toHaveAttribute("href", "/explore/record/CAN9800001~1");
+    expect(sent.at(-1)).toMatchObject({ operation: "FullResultsRecords", variables: { filter: { q: "comuna", county: "RO-BV" }, limit: 50, offset: 0 } });
+  });
+
+  it("orders the Records the way the URL says", async () => {
+    openAt("/explore/search?q=comuna&tab=records&order=date-desc");
+    const { client, sent } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByRole("heading", { name: "Records 8" })).toBeVisible();
+    expect(sent.at(-1)).toMatchObject({ operation: "FullResultsRecords", variables: { filter: { q: "comuna" }, order: "DATE_DESC" } });
+  });
+
+  it("asks for the supplier side when the URL says so, in Romanian too", async () => {
+    openAt("/ro/explore/search?county=RO-BV&countySide=supplier");
+    const { client, sent } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByRole("heading", { name: "Furnizori 1" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "ȘANTIERUL ȚARA DEMO SRL" })).toHaveAttribute("href", "/ro/explore/supplier/2000007");
+    expect(sent.at(-1)).toMatchObject({ operation: "FullResultsSuppliers", variables: { filter: { county: "RO-BV", countySide: "SUPPLIER" } } });
+  });
+
+  it("shows the authorities of a county, and the way back keeps the county and side", async () => {
+    openAt("/explore/search?county=RO-BV&tab=authorities");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByRole("heading", { name: "Authorities 7" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Back to results" })).toHaveAttribute("href", "/explore/?county=RO-BV&tab=authorities");
+  });
+
+  it("says nothing matches, and types a new query into the URL", async () => {
+    openAt("/explore/search?q=zzzzzz");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByText("No suppliers match.")).toBeVisible();
+    await userEvent.setup().clear(screen.getByRole("searchbox"));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(await screen.findByRole("heading", { name: "Suppliers 3" })).toBeVisible();
+  });
+});
+
 const waitForPages = async () => {
   await screen.findByText(/^Showing/);
   return pages();
