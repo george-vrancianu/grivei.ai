@@ -72,6 +72,10 @@ _Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
 A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
 _Avoid_: unknown supplier, unidentified supplier
 
+**Unattached name**:
+An organisation named by a Source without a CUI that no confirmed match attaches to one; it stays as text on its record, with no entity page and no Signals. Only SEAP winners become name-only suppliers.
+_Avoid_: name-only entity, unmatched entity, orphan
+
 **Natural-person supplier**:
 An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", with no entity page, unless the public money they receive reaches the Naming threshold, which makes them a Named person.
 _Avoid_: PFA (when any individual is meant), person (alone)
@@ -81,7 +85,7 @@ A spelling under which an entity was published in a Source, kept with its dates;
 _Avoid_: variant, AKA, old name
 
 **Identity override**:
-A reviewed, reasoned correction to which supplier a record is attached, or to which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
+A reviewed, reasoned correction to which supplier a record is attached, which CUI an organisation name is attached to, or which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
 _Avoid_: manual merge, fix, mapping
 
 **Record**:
@@ -125,7 +129,7 @@ A normalised name plus a full birth date taken from an official publication (ONR
 _Avoid_: person id, fingerprint
 
 **Possible match**:
-Two person records that might be one person (same name and birth date with birthplaces in different counties, or a partial name with the same birth date); never shown publicly, and only an identity override merges them.
+Two person records that might be one person (same name and birth date with birthplaces in different counties, or a partial name with the same birth date), or an organisation name that might be a given CUI without meeting the confirmation rule; never shown publicly, and only an identity override settles it.
 _Avoid_: likely match, probable link, namesake
 
 **Unlinked role holder**:
