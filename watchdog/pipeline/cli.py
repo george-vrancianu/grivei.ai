@@ -30,6 +30,9 @@ def main(argv: list[str] | None = None) -> int:
     st = sub.add_parser("status", help="show how far a running or finished rebuild is (reads its status file)")
     st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="as for rebuild")
 
+    q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
+    q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
+
     f = sub.add_parser("fetch-bulk", help="download one bulk file into the raw archive (no loading)")
     f.add_argument("--url", required=True)
     f.add_argument("--kind", default="da", choices=["da"])
@@ -60,6 +63,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in describe(status):
             print(line)
         return 1 if effective_state(status) in ("failed", "interrupted") else 0
+    if args.verb == "requeue":
+        restored = archive.requeue(args.match)
+        for path in restored:
+            print(f"requeued {path}")
+        print(f"requeued {len(restored)} unit(s); {len(archive.quarantined())} still in quarantine")
+        return 0
     if args.verb == "fetch-bulk":
         print(fetch_bulk_file(archive, url=args.url, kind=args.kind, unit=args.unit, via=args.via))
         return 0

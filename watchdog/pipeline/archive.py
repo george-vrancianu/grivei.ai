@@ -154,6 +154,28 @@ class Archive:
         )
         return dest
 
+    def requeue(self, match: str = "") -> list[Path]:
+        """Move quarantined units back into the archive proper (reason file removed), so the next rebuild reads them again.
+
+        `match` limits it to units whose path or reason text contains it (case-insensitive); empty = all. Returns the
+        restored unit directories. A unit whose place is already taken is left where it is (ArchiveError).
+        """
+        base = self.root / QUARANTINE_DIR
+        restored: list[Path] = []
+        for unit_dir in self.quarantined():
+            reason = unit_dir / REASON
+            haystack = f"{unit_dir.relative_to(base)} {reason.read_text(encoding='utf-8')}".lower()
+            if match.lower() not in haystack:
+                continue
+            dest = self.root / unit_dir.relative_to(base)
+            if dest.exists():
+                raise ArchiveError(f"cannot requeue, already in the archive: {dest}")
+            reason.unlink()
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(unit_dir), str(dest))
+            restored.append(dest)
+        return restored
+
     # ---- reading ------------------------------------------------------------------------------------------
 
     def _unit_dirs(self) -> Iterator[Path]:

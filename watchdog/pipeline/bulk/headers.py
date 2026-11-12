@@ -130,8 +130,28 @@ DA_ERA = Era(
         "supplier_cui": ("CUI_OFERTANT", "CUI ofertant", "CUI ofertant castigator"),
     },
 )
+# DA 2023 T1 (the `.xls` export, checked on the real file): XLSX-style names, `Numar achizite` (sic), no award date column
+# (`Data finalizare` stands in, as in the DAN 2025 era), and extra columns we do not load.
+DA_2023 = Era(
+    "2023Q1",
+    {
+        "code": ("Numar achizite",),
+        "published_on": ("Data publicare",),
+        "authority_name": ("Autoritate contractanta",),
+        "authority_cui": ("CUI autoritate contractanta",),
+        "title": ("Denumire achizitie",),
+        "cpv_code": ("COD CPV",),
+        "cpv_description": ("Denumire CPV",),
+        "contract_type": ("Tip contract",),
+        "awarded_on": ("Data finalizare",),
+        "value": ("Valoare achizitie (RON)",),
+        "supplier_name": ("Ofertant castigator",),
+        "supplier_cui": ("CUI ofertant castigator",),
+    },
+    ignored=("Finantare prin fonduri comunitare?", "Denumire program/ proiect", "Tara ofertant castigator", "Oras ofertant castigator"),
+)
 DA = HeaderTable(
-    (DA_ERA,),
+    (DA_ERA, DA_2023),
     required=frozenset({"code", "published_on", "authority_name", "authority_cui", "title", "cpv_code", "value", "supplier_name", "supplier_cui"}),
 )
 
@@ -152,7 +172,7 @@ DAN_2024 = Era(
         "supplier_name": ("Ofertant",),
         "supplier_cui": ("CUI ofertant",),
     },
-    ignored=("Modalitate desfasurare", "Fonduri comunitare?", "Denumire program"),
+    ignored=("Modalitate desfasurare", "Fonduri comunitare?", "Denumire program", "Modalitate de desfasurare", "Tip de proiect/ program"),  # the last two: the 2023 T1 `.xls`
 )
 DAN_2025 = Era(
     "2025Q1",
@@ -182,9 +202,8 @@ DAN = HeaderTable(
 
 # --- Contracte (CAN / SCNA) and "fara anunt de initiere" award notices (#64) ------------------------------------------
 # One row per lot x winner of a contract. Checked on the real files: 2021 T3 and T4 (CSV, upper-case names), 2022 T1 (pipe
-# CSV) and 2025 T1 and T2 (XLSX). The 2021 T1 and T2, 2022 T2 to T4 and 2023 files are `.xls`, which is not read yet, so
-# their names were not inspected: they fall back to the union of the eras below, and a quarter whose names differ from all
-# of these is quarantined until a spelling is added here.
+# CSV), 2025 T1 and T2 (XLSX) and the `.xls` files of 2021 T1 and T2, 2022 T2 to T4 and 2023 T1. A quarter whose names
+# differ from all of these falls back to the union of the eras below, and is quarantined until a spelling is added here.
 
 _CONTRACT_REQUIRED = frozenset({"notice_code", "published_on", "authority_name", "authority_cui", "contract_number", "value",
                                 "supplier_name", "supplier_cui"})
@@ -257,10 +276,44 @@ CONTRACTE_2025 = Era(
     },
     ignored=("Tip anunt", "Data publicare", "Tip legislatie", "Tip incheiere contract", "Tip criterii de atribuire"),
 )
-CONTRACTE = HeaderTable((CONTRACTE_2021, CONTRACTE_2022, CONTRACTE_2025), required=_CONTRACT_REQUIRED)
+# 2022 T4 `.xls` (checked on the real file): the 2021 layout with mixed-case names (`Catigator`, sic) and no lot column.
+CONTRACTE_2022_Q4 = Era(
+    "2022Q4",
+    {
+        **{k: v for k, v in CONTRACTE_2025.columns.items() if k not in ("lot", "published_on", "supplier_name", "supplier_cui", "authority_cui")},
+        "authority_cui": ("CUI autoritate conractanta",),  # sic
+        "published_on": ("Data anunt atribuire",),
+        "concluded_by": ("Modalitate contractare",),
+        "title": ("Denumire contract",),
+        "value": ("Valoare contract (RON)",),
+        "supplier_name": ("Catigator",),
+        "supplier_cui": ("CUI castigator",),
+        "cpv_code": ("Cod CPV",),
+    },
+    ignored=(
+        "Tara castigator", "Localitate castigator", "Adresa castigator", "Tip anunt", "Tip autoritate contractanta",
+        "Tip activitate autoritate contractanta", "Tip incheiere contract", "Tip criteriu de atribuire", "Cu licitatie electronica?",
+        "Numar oferte", "Cu subcontractare?", "Numar anunt participare", "Data anunt participare", "Valoare estimata", "Moneda",
+        "Cu fonduri comunitare?", "Tip finantare", "Tip legislatie", "Fond european", "Depozite si garantii", "Modalitate finantare",
+    ),
+)
+# 2023 T1 `.xls` (checked on the real file): the 2025 layout in one-`Data` form, `Valoare atribuita (RON)`, no title.
+CONTRACTE_2023 = Era(
+    "2023Q1",
+    {
+        **{k: v for k, v in CONTRACTE_2025.columns.items() if k not in ("published_on", "value")},
+        "published_on": ("Data anunt atribuire",),
+        "value": ("Valoare atribuita (RON)",),
+    },
+    ignored=(
+        "Tip anunt", "Tip legislatie", "Tip autoritate contractanta", "Tip activitate autoritate contractanta", "Tip inchiere contract",
+        "Modalitate de desfasurare", "Cu licitatie electronica?", "Tip criteriu de atribuire", "Data anunt initiere", "Oras ofertant", "Tara ofertant",
+    ),
+)
+CONTRACTE = HeaderTable((CONTRACTE_2021, CONTRACTE_2022, CONTRACTE_2022_Q4, CONTRACTE_2023, CONTRACTE_2025), required=_CONTRACT_REQUIRED)
 
 # "Anunturi de atribuire la proceduri fara anunt de initiere": one row per contract x winner, no lots. Checked on the 2025
-# T1 and T2 XLSX; the earlier files seen are `.xls` (not read yet), so the 2021 to 2024 names are unknown.
+# T1 and T2 XLSX and the 2023 T1 `.xls`; the 2021, 2022 and 2024 names are unknown.
 FARA_ANUNT_2025 = Era(
     "2025Q1",
     {
@@ -282,4 +335,11 @@ FARA_ANUNT_2025 = Era(
     },
     ignored=("Tip anunt", "Tip legislatie", "Criteriu de atribuire"),
 )
-FARA_ANUNT = HeaderTable((FARA_ANUNT_2025,), required=_CONTRACT_REQUIRED)
+# 2023 T1 `.xls` (checked on the real file): `CUI ofertant`, and a few more unloaded columns. The only older file seen.
+FARA_ANUNT_2023 = Era(
+    "2021Q1",
+    {**FARA_ANUNT_2025.columns, "supplier_cui": ("CUI ofertant",)},
+    ignored=FARA_ANUNT_2025.ignored + ("Tip autoritate contractanta", "Tip activitate contractanta", "Criteriul de atribuire",
+                                       "Oras ofertant castigator", "Tara ofertant castigator"),
+)
+FARA_ANUNT = HeaderTable((FARA_ANUNT_2023, FARA_ANUNT_2025), required=_CONTRACT_REQUIRED)
