@@ -39,6 +39,7 @@ const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // ev
 const coverageArchive = join(watchdog, "tests/fixtures/archive-coverage"); // one cell of every Coverage grid state, rebuilt as of 2025-09-20 (#79)
 const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
+const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -98,6 +99,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
+    cpSync(moneyMapArchive, join(scratch, "archive-moneymap"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -125,6 +127,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE coverage_a");
     await admin.query("CREATE DATABASE coverage_b");
     await admin.query("CREATE DATABASE search_a");
+    await admin.query("CREATE DATABASE moneymap_a");
+    await admin.query("CREATE DATABASE moneymap_b");
   });
 
   afterAll(async () => {
@@ -1090,6 +1094,141 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(text.body.data).toBeUndefined();
     expect((await api.respond({ id: "f".repeat(64), variables: EMPTY_FILTER })).status).toBe(400);
   });
+
+  // ---- Money lens aggregations (#71) ----------------------------------------------------------------------------------------
+  // archive-moneymap = the placement fixture (14 authorities, one DA of 1,000 RON each, all won by SANTIERUL TARA DEMO of Brasov:
+  // 7 authorities in Brasov county, 3 in Cluj, 1 in a Bucharest sector, 2 national, 1 unplaced) plus four contracts:
+  //   CAN9800001 Sanpetru (BV) 1,000.01 RON: Santierul (BV) + Cluj Demo Construct (CJ)       shares 50,001 + 50,000 bani
+  //   CAN9800002 Caragiale (CJ)   600 RON: Cluj Demo Construct (CJ) + a Bulgarian firm       shares 30,000 + 30,000
+  //   CAN9800003 the ministry (national) 5,000 RON: Santierul (BV)
+  //   CAN9800004 the unplaced authority  700 RON: a natural person + Cluj Demo Construct     shares 35,000 + 35,000
+  describe("Money lens (#71): archive-moneymap -> rebuild -> map, uatMap and the county filters", () => {
+    type Total = { awarded: string; records: number; suspectLeftOut: number; noValue: number; frameworkCeilings: string; estimated: boolean };
+    type Area = { area: string; name: string; entities: number; total: Total };
+    type Map = { side: string; counties: Area[]; national: Total; unplaced: { authorities: number; total: Total } | null; unknownSupplierCounty: Total | null };
+    const sum = (xs: string[]) => xs.reduce((a, x) => a + BigInt(x), 0n);
+    const main = async (filter: Record<string, unknown>, db = "moneymap_a") => {
+      const variables = { filter };
+      const r = await ask(db, mainScreen.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+      const search = (r.body.data as unknown as { seap: { search: { total: Total; map: Map; records: { count: number; rows: { record: { code: string } }[] } } } }).seap.search;
+      return { ...search, codes: search.records.rows.map((x) => x.record.code).sort() };
+    };
+    const byArea = (m: Map) => Object.fromEntries(m.counties.map((c) => [c.area, [c.total.awarded, c.total.records, c.entities]]));
+
+    beforeAll(() => {
+      rebuild("moneymap_a", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money")]);
+    });
+
+    it("authority side: county totals plus National and Unplaced add up to the set's total; National is not Bucharest (#71)", async () => {
+      const { total, map } = await main({});
+      expect(map.side).toBe("AUTHORITY");
+      expect(total.awarded).toBe("2130001"); // 14 DA x 100,000 bani + 100,001 + 60,000 + 500,000 + 70,000
+      expect(byArea(map)).toEqual({ "RO-B": ["100000", 1, 1], "RO-BV": ["800001", 8, 7], "RO-CJ": ["360000", 4, 3] });
+      expect(map.national).toMatchObject({ awarded: "700000", records: 3 }); // the ministry and the agency, seated in Bucharest sectors, are not in RO-B
+      expect(map.unplaced).toMatchObject({ authorities: 1, total: { awarded: "170000", records: 2 } });
+      expect(map.unknownSupplierCounty).toBeNull();
+      expect(sum([...map.counties.map((c) => c.total.awarded), map.national.awarded, map.unplaced!.total.awarded])).toBe(BigInt(total.awarded));
+      expect(map.counties.reduce((n, c) => n + c.total.records, map.national.records + map.unplaced!.total.records)).toBe(total.records);
+    });
+
+    it("supplier side: a Record is shared by its winners' counties, the shares add up exactly, the rest is the unknown-county bucket (#71)", async () => {
+      const { total, map } = await main({ countySide: "SUPPLIER" });
+      expect(map.side).toBe("SUPPLIER");
+      // CAN9800001's odd bani stay with the first winner (Santierul, Brasov): 50,001 + 50,000
+      expect(byArea(map)).toEqual({ "RO-BV": ["1950001", 16, 1], "RO-CJ": ["115000", 3, 1] });
+      expect(map.unknownSupplierCounty).toMatchObject({ awarded: "65000", records: 2 }); // the Bulgarian firm's and the natural person's shares
+      expect(map.national).toMatchObject({ awarded: "0", records: 0 }); // no National tile on the supplier side, but never null
+      expect(map.unplaced).toBeNull();
+      expect(sum([...map.counties.map((c) => c.total.awarded), map.unknownSupplierCounty!.awarded])).toBe(BigInt(total.awarded));
+    });
+
+    it("gives the same map on the tracer path and on the search path (#71)", async () => {
+      for (const countySide of ["AUTHORITY", "SUPPLIER"]) {
+        const empty = await main({ countySide });
+        const narrowed = await main({ countySide, from: "2000-01-01" }); // a chip that excludes nothing: the search path
+        expect(narrowed.map).toEqual(empty.map);
+        expect(narrowed.total).toEqual(empty.total);
+      }
+    });
+
+    it("a supplier-county filter keeps a consortium with one local winner, once, and counts that winner's share (#71)", async () => {
+      const cj = await main({ county: "RO-CJ", countySide: "SUPPLIER" });
+      // CAN9800002 (Cluj Demo + a Bulgarian firm), CAN9800001 (Santierul + Cluj Demo), CAN9800004 (a person + Cluj Demo)
+      expect(cj.codes).toEqual(["CAN9800001~1", "CAN9800002~1", "CAN9800004~1"]);
+      expect(cj.records.count).toBe(3);
+      expect(cj.total).toMatchObject({ awarded: "115000", records: 3 }); // the Cluj winner's share, not the whole Record
+      expect(byArea(cj.map)).toEqual({ "RO-CJ": ["115000", 3, 1] });
+      const bv = await main({ county: "RO-BV", countySide: "SUPPLIER" });
+      expect(bv.total.records).toBe(16);
+      expect(bv.records.count).toBe(16);
+    });
+
+    it("filters by the areas: a county of the authority, National, Unplaced, unknown supplier county (#71)", async () => {
+      const national = await main({ county: "NATIONAL" });
+      expect(national.total).toMatchObject({ awarded: "700000", records: 3 });
+      const unplaced = await main({ county: "UNPLACED" });
+      expect(unplaced.total).toMatchObject({ awarded: "170000", records: 2 });
+      const bucharest = await main({ county: "RO-B" });
+      expect(bucharest.total).toMatchObject({ awarded: "100000", records: 1 }); // no national authority in Bucharest
+      const unknown = await main({ county: "UNKNOWN_SUPPLIER_COUNTY", countySide: "SUPPLIER" });
+      expect(unknown.codes).toEqual(["CAN9800002~1", "CAN9800004~1"]);
+      expect(unknown.total).toMatchObject({ awarded: "65000", records: 2 });
+      // a county filter on the authority side: its own map keeps the set's shape
+      const bv = await main({ county: "RO-BV" });
+      expect(bv.total).toMatchObject({ awarded: "800001", records: 8 });
+      expect(byArea(bv.map)).toEqual({ "RO-BV": ["800001", 8, 7] });
+      expect(bv.map.national).toMatchObject({ awarded: "0", records: 0 });
+      expect(bv.map.unplaced).toBeNull();
+    });
+
+    it("an area of the other side matches nothing: NATIONAL and UNPLACED on the supplier side, the unknown supplier county on the authority side (#71)", async () => {
+      for (const filter of [{ county: "NATIONAL", countySide: "SUPPLIER" }, { county: "UNPLACED", countySide: "SUPPLIER" }, { county: "UNKNOWN_SUPPLIER_COUNTY", countySide: "AUTHORITY" }, { county: "UNKNOWN_SUPPLIER_COUNTY" }]) {
+        const r = await main(filter);
+        expect(r.total).toMatchObject({ awarded: "0", records: 0 });
+        expect(r.records.count).toBe(0);
+        expect(r.map.counties).toEqual([]);
+        expect(r.map.unplaced).toBeNull();
+        expect(r.map.unknownSupplierCounty).toBeNull();
+      }
+    });
+
+    it("Unplaced is null when no authority is unplaced (#71)", async () => {
+      expect((await main({ county: "RO-BV" })).map.unplaced).toBeNull();
+      expect((await main({ q: "ministerul" })).map.unplaced).toBeNull();
+      expect((await main({})).map.unplaced).not.toBeNull();
+    });
+
+    it("the zoomed county: UAT totals, the unknown-UAT row, Bucharest by sector, nationals excluded (#71)", async () => {
+      const zoom = async (county: string, filter: Record<string, unknown> = {}) => {
+        const variables = { filter, county };
+        const r = await ask("moneymap_a", zoomedCounty.sha256, variables);
+        expect(r.body.errors).toBeUndefined();
+        expect(validateResponse(schema, parse(zoomedCounty.document), r.body.data, variables)).toEqual([]);
+        return (r.body.data as unknown as { seap: { search: { uatMap: { uats: Area[]; unknownUat: Total | null } } } }).seap.search.uatMap;
+      };
+      const bv = await zoom("RO-BV");
+      expect(Object.fromEntries(bv.uats.map((u) => [u.area, [u.name, u.total.awarded, u.total.records, u.entities]]))).toEqual({
+        "880001": ["Brașov", "200000", 2, 2], "880010": ["Sânpetru", "200001", 2, 1], "880030": ["Râșnov", "100000", 1, 1], "880050": ["Ucea", "100000", 1, 1], "880060": ["Șinca Nouă", "100000", 1, 1],
+      });
+      expect(bv.unknownUat).toMatchObject({ awarded: "100000", records: 1 }); // the commune ANAF puts in the county but SIRUTA does not know
+      expect(sum([...bv.uats.map((u) => u.total.awarded), bv.unknownUat!.awarded])).toBe(800001n); // = the county's total on the map
+      const b = await zoom("RO-B");
+      expect(b.uats.map((u) => [u.area, u.name, u.total.awarded])).toEqual([["179169", "Sector 3", "100000"]]);
+      expect(b.unknownUat).toBeNull();
+      expect((await zoom("RO-IS")).uats).toEqual([]);
+      // the filter narrows it too
+      expect((await zoom("RO-BV", { uat: "880010" })).uats.map((u) => u.area)).toEqual(["880010"]);
+      expect((await zoom("RO-CJ", { county: "RO-BV" })).uats).toEqual([]);
+    });
+
+    it("gives identical maps after a second rebuild into a fresh database (#71, ADR 0004)", async () => {
+      rebuild("moneymap_b", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-b")]);
+      for (const countySide of ["AUTHORITY", "SUPPLIER"]) expect((await main({ countySide }, "moneymap_b")).map).toEqual((await main({ countySide })).map);
+    });
+  });
+
 });
 
 async function waitForPostgres(pool: pg.Pool): Promise<void> {

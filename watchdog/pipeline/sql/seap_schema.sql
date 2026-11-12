@@ -142,6 +142,10 @@ CREATE TABLE seap.search (
     authority_cui    text,
     authority_county text,                -- ISO 3166-2:RO, e.g. RO-BV
     authority_uat    text,                -- SIRUTA
+    -- the Money lens areas (#71): never null, so the map groups on one indexed column. A national authority is NATIONAL (not in its seat's county);
+    -- an authority neither ANAF nor SEAP places is UNPLACED; a winner with no county of its own (foreign, unplaced, a natural person, a national entity) is UNKNOWN_SUPPLIER_COUNTY
+    authority_area   text NOT NULL DEFAULT 'UNPLACED',               -- 'RO-BV' | 'NATIONAL' | 'UNPLACED'
+    supplier_area    text NOT NULL DEFAULT 'UNKNOWN_SUPPLIER_COUNTY', -- 'RO-BV' | 'UNKNOWN_SUPPLIER_COUNTY'
     supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
     supplier_key     text,                -- the winner's entity key (core.entity.key); null for a natural person
     supplier_county  text,                -- ISO 3166-2:RO, from the supplier's own placement (null when foreign or unplaced)

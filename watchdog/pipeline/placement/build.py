@@ -111,4 +111,12 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
     cur.execute(
         """UPDATE seap.search s SET supplier_county = 'RO-' || p.county_iso
              FROM core.placement p WHERE p.entity_key = s.supplier_key AND NOT p.national AND p.county_iso IS NOT NULL""")
+    # the Money lens areas (#71): the county when there is one, else NATIONAL / UNPLACED for the authority, UNKNOWN_SUPPLIER_COUNTY for the winner
+    # (the column defaults). A national entity acting as a supplier stays unknown: no county is served for a national entity.
+    cur.execute(
+        """UPDATE seap.search s SET authority_area = CASE WHEN p.national THEN 'NATIONAL' ELSE 'RO-' || p.county_iso END
+             FROM core.placement p WHERE p.entity_key = s.authority_key AND (p.national OR p.county_iso IS NOT NULL)""")
+    cur.execute(
+        """UPDATE seap.search s SET supplier_area = 'RO-' || p.county_iso
+             FROM core.placement p WHERE p.entity_key = s.supplier_key AND NOT p.national AND p.county_iso IS NOT NULL""")
     return out
