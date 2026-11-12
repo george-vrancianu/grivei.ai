@@ -76,6 +76,8 @@ CREATE TABLE seap.record (
     sys_notice_version_id integer,
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
+-- The Coverage lens (#80) reads the distinct authorities of a date window straight from the Records (an index-only scan, not a table scan).
+CREATE INDEX record_award_date_authority_idx ON seap.record (award_date, authority_key);
 
 -- How far the crawl is complete at the time of the rebuild, per Record kind (the last day of the unbroken run of complete days
 -- after the kind's last bulk quarter, derived from the archive; the cursor itself may be further when there are holes): what

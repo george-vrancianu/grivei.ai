@@ -1,4 +1,5 @@
 import { GraphQLError } from "graphql";
+import { coverageStatus } from "./coverage.ts";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { seapLinkUrl } from "./seapLink.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
@@ -147,18 +148,26 @@ export function rootValue(store: Store) {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;
     },
-    // The grid is served (#79); the counties, the unplaced authorities and the reference snapshot are #80's: field-level NOT_IMPLEMENTED until then.
+    // The grid (#79) and the per-county figures (#80) follow the date window: quarters overlapping it, Records dated in it.
     coverage: ({ source, window }: { source: string; window?: { from?: string | null; to?: string | null } | null }) => {
       if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
       const from = window?.from ?? null;
       const to = window?.to ?? null;
+      let cached: Promise<Awaited<ReturnType<typeof store.coverageGrid>>> | undefined; // one read per request even when grid and counties are both selected
+      const grid = () => (cached ??= store.coverageGrid().then((cells) => cells.filter((cell) => overlaps(cell.quarter, from, to))));
       return {
         source: seapSource,
         window: { from, to },
-        grid: async () => (await store.coverageGrid()).filter((cell) => overlaps(cell.quarter, from, to)),
-        counties: notServed("coverage.counties"),
-        unplacedAuthorities: notServed("coverage.unplacedAuthorities"),
-        referenceSnapshot: notServed("coverage.referenceSnapshot"),
+        grid,
+        counties: async () => {
+          const status = coverageStatus(await grid()); // the same for every area: SEAP is harvested nationally (see coverage.ts)
+          return (await store.coverageAreas({ from, to })).map((a) => ({ county: a.area, status, withRecords: a.withRecords, publicEntities: a.publicEntities, otherAuthorities: a.otherAuthorities }));
+        },
+        unplacedAuthorities: async () => {
+          const unplaced = await store.unplacedAuthorities({ from, to });
+          return { authorities: unplaced.authorities, total: { ...zeroTotal(), ...unplaced.total } };
+        },
+        referenceSnapshot: () => store.referenceSnapshot(),
       };
     },
     signalRules: notServed("signalRules"),

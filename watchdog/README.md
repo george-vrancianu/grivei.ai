@@ -99,6 +99,26 @@ nohup python -m pipeline fetch-datagov > ~/grivei-data/fetch.log 2>&1 &
   edited, and the file is fetched again into a new `<day>.2` directory. Failed resources are retried by simply rerunning.
 - Rerunning later (new quarters, re-uploads) is the same command; changed files are archived beside the old ones.
 
+## The MF list of public entities and the Coverage statuses (#80)
+
+The Ministry of Finance's monthly "Lista entităților publice" (dataset `listaentitatipublice` on data.gov.ro, one `.xls` of about 4 MB and 13,500 rows per month) is a Reference source and the Coverage denominator M.
+
+**Operator: fetch it.** Fetch only, nothing is loaded; the same archive as `fetch-datagov`. Run it with the weekly data.gov.ro check (a new monthly file is picked up, the same one is skipped without a download):
+
+```bash
+cd watchdog && . .venv/bin/activate && export PIPELINE_ARCHIVE=~/grivei-data/raw
+nohup python -m pipeline fetch-mf >> ~/grivei-data/fetch-mf.log 2>&1 &
+```
+
+- It asks CKAN for the dataset, reads each resource's snapshot date (`... actualizată la data de 01.11.2026` in the name, else `lista_ep_portal_01112026.xls` in the file name) and fetches only the newest, unchanged, to `<archive>/mf/list/entities/<snapshot date>/<fetched on>/<file>` with a manifest (resource id, URL, last-modified, size). Older snapshots are logged `superseded`; a resource with no readable date is `unclassified` and never archived.
+- Log (`tail -f`): one timestamped line per outcome (`archived` with its size, `unchanged`, `superseded`, `unclassified`, `failed` with the reason), then the summary. Exit code 1 means a failure. Resume = run the same command again: a file already archived with the same marker is skipped; a re-upload is a new dated unit (`<day>.2` on the same day); a download that dies or is not a spreadsheet (an HTML error page) leaves only a `.mf-download-*` scratch file (removed at the next start; a prefix of its own, so a `fetch-datagov` running at the same time never deletes it), never a unit.
+- `rebuild` loads the newest snapshot that parses into `core.mf_entity` (CUI, name, UAT as MF writes them; the county from MF's `Judet`; `national` by the national-authority rule: award notice, then the reviewed file, so a ministry MF files under Bucuresti counts in National) and `core.mf_snapshot` (the date the API serves as `referenceSnapshot`). A newer unit that does not parse is named in the rebuild summary (`mf list: ... skipped ...`) and the older one is used. **Until `national_authorities.csv` (shipped empty) is seeded from the MF list, Bucharest's M and N (RO-B) are inflated**: ministries and national agencies that have no award notice are filed by MF under Bucuresti and count there, not in National (seeding is a follow-up: `national-propose` covers only SEAP authorities). MF writes county names in plain ASCII (`Dambovita`, `Valcea`); the gazetteer reads both that and the accented spelling, and the rebuild line names every `Judet` that is no county with its row count (`mf list: ... 7 without a county (Strainatate: 1, ...)`), so a new spelling shows up there instead of silently emptying a county. Without any unit the denominator is empty (`M = 0`) and the snapshot is null. Tests: `tests/test_mf.py` (HTTP stubbed) and seam 1 "(#80)" on `tests/fixtures/archive-mf/` (rebuilt by `tests/fixtures/build_mf_archive.py`) laid over `archive-placement/`.
+
+**`coverage(source, window)`** (API, `explorer/packages/api/src/{coverage,store,resolvers}.ts`), per county plus National, for the date window (Records by award date; grid quarters that overlap it):
+
+- **N** = MF entities of the area with at least one SEAP Record in the window, **M** = MF entities of the area; both by MF's county, except national authorities, who are in National. **Other authorities** = authorities with a Record in the window that are not on the MF list, by our placement (a national authority is National, a county-placed one is in its county). **Unplaced** = authorities with a Record in the window that `core.placement` has no row for (whether MF lists them or not): their count and the `Total` of their Records.
+- **Status** (never a ratio; N and M do not enter it, so "bought nothing" never reads as "not harvested"): the grid cells overlapping the window are good (`LOADED`), flagged (`KNOWN_GAP`, `POSSIBLY_INCOMPLETE`, `NOT_IN_SOURCE`, `CRAWLED_PROVISIONAL`, and `NOT_YET_LOADED` with rule `AWAITING_BULK_FILE`, the expected lag: the current quarter's bulk file is never published yet, so counting it as a hole would make every county partial in the default window) or missing (`NOT_YET_LOADED` with no rule: a bulk file of that quarter was quarantined). No cell, or every cell `NOT_YET_LOADED`: not harvested. Some cell missing: partial. Else some cell flagged: harvested with known gaps. Else harvested. SEAP is harvested nationally, so all counties and National share the window's status; N of M is what differs.
+
 ## Contracts and award notices: identity, precedence, value
 
 Archived kinds `contracte` (Record kind `CONTRACT`) and `fara-anunt` (`AWARD_NOTICE`), loaded like DA and DAN (header eras in `headers.py`, all or nothing per unit, a failing unit is quarantined, exact duplicate rows dropped). ADR 0002 as amended:
