@@ -229,7 +229,7 @@ def test_winners_are_stored_in_published_order_with_one_search_row_each(db, tmp_
     assert _who(_record(db, "CAN9100002")[5]) == [("CENTRUL TOPMED DEMO", "name-centrul-topmed-demo"), ("ASOCIEREA DEMO", "name-asocierea-demo")]
     with psycopg.connect(db) as c:
         assert c.execute("SELECT winner_position, winners, supplier_cui, counted_bani, share_bani FROM seap.search WHERE record_code = 'CAN9000002~77/2022' ORDER BY 1").fetchall() == [
-            (1, 2, None, 120025, None), (2, 2, None, 120025, None)]  # an equal share of a consortium's value is the counting rule's (#65)
+            (1, 2, None, None, None), (2, 2, None, None, None)]  # a framework ceiling (Cu acord cadru): never summed, so nothing to share (#65)
 
 
 def test_a_contracts_value_counts_once_when_its_lots_agree_and_sums_when_they_differ(db, tmp_path):
@@ -237,7 +237,7 @@ def test_a_contracts_value_counts_once_when_its_lots_agree_and_sums_when_they_di
     shutil.copytree(CONTRACTS, root)
     rebuild(Archive(root), db)
     assert _record(db, "CAN9000001~C-100")[2:4] == (100000, 100000)  # 3 lots of 1,000 RON (and a second winner on lot 1)
-    assert _record(db, "CAN9000002~77/2022")[2:4] == (120025, 120025)  # 500 + 700.25
+    assert _record(db, "CAN9000002~77/2022")[2:4] == (120025, None)  # 500 + 700.25; a framework ceiling is shown and not counted (#65)
     assert _record(db, "CAN9100001")[2] == 3519212 + 28846  # an award notice: its two contracts add
     assert _record(db, "CAN9100002")[2] == 9880000  # one contract, two winners: once
     with psycopg.connect(db) as c:
@@ -309,11 +309,11 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     # a second rebuild dies in the middle of its third file
     real, calls = rebuild_module.load_records, []
 
-    def dying(cur, source_file_id, rows, resolver=None):
+    def dying(cur, source_file_id, rows, resolver=None, estimates=None):
         calls.append(source_file_id)
         if len(calls) == 3:
             raise killed_by
-        real(cur, source_file_id, rows, resolver)
+        real(cur, source_file_id, rows, resolver, estimates)
 
     monkeypatch.setattr(rebuild_module, "load_records", dying)
     with pytest.raises(type(killed_by)):

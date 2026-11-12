@@ -19,7 +19,9 @@ export function useMainScreen(variables: MainScreenQueryVariables = EMPTY): Main
     const controller = new AbortController();
     client
       .query(MainScreen, JSON.parse(key) as MainScreenQueryVariables, { signal: controller.signal })
-      .then((data) => setSettled({ key, state: { status: "ready", data } }))
+      .then((data) => {
+        if (!controller.signal.aborted) setSettled({ key, state: { status: "ready", data } }); // a stale answer never lands
+      })
       .catch(() => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
       });

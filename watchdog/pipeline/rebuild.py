@@ -31,9 +31,11 @@ from psycopg.types.json import Jsonb
 from .anaf import iter_companies
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
+from .counting import Estimate, count
 from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
+from .estimates import read_estimates
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
@@ -49,6 +51,8 @@ class RebuildSummary:
     records: int = 0
     anaf_found: int = 0  # CUIs the archived ANAF answers confirm
     anaf_not_found: int = 0  # CUIs ANAF was asked about and does not know
+    estimates: int = 0  # archived estimated-value answers the counting rule read (`pipeline estimates`)
+    estimates_missing: int = 0  # notices with a Record of 1 bn RON or more and no archived answer yet
     entities: int = 0
     placement: PlacementSummary | None = None
     geo_line: str | None = None  # the TopoJSON step's one line
@@ -58,6 +62,8 @@ class RebuildSummary:
 
     def lines(self) -> list[str]:
         out = [f"loaded {self.records} records from {self.files_loaded} file(s)"]
+        out.append(f"estimates: {self.estimates} archived answers read; {self.estimates_missing} notice(s) of 1 bn RON or more have none yet"
+                   + ("; run `pipeline estimates`, then rebuild again" if self.estimates_missing else ""))
         out.append(f"anaf: {self.anaf_found} CUIs found, {self.anaf_not_found} not found (from the archived answers); {self.entities} entities")
         if self.placement is not None:
             out.append(self.placement.line())
@@ -100,7 +106,7 @@ def _search_doc(r: BulkRecord, authority: Resolved, winners: list[tuple[str | No
 _CONTENT = (
     "kind", "channel", "title", "state", "authority_cui", "authority_key", "authority_name", "supplier_cui", "supplier_name", "cpv_code",
     "cpv_description", "contract_type", "published_on", "quarter", "award_date", "estimated_bani", "value_bani",
-    "counted_bani", "load_notes", "winners", "badges", "notice_code", "contract_numbers", "procedure", "concluded_by",
+    "counted_bani", "ceiling_bani", "suspect", "framework_role", "suspect_rule", "suspect_threshold_bani", "load_notes", "winners", "badges", "notice_code", "contract_numbers", "procedure", "concluded_by",
     "initiation_code", "lot_count", "via", "url", "ca_notice_id", "sys_notice_type_id", "sys_notice_version_id",
 )
 _UPSERT = f"""
@@ -115,12 +121,17 @@ RETURNING (xmax = 0) AS inserted
 """
 
 
-def _winner_json(name: str | None, w: Resolved) -> dict:
-    """What `seap.record.winners` keeps of a winner. A natural person keeps nothing: no name, no key, no id."""
+def _winner_json(name: str | None, w: Resolved, share: int | None = None) -> dict:
+    """What `seap.record.winners` keeps of a winner. A natural person keeps nothing: no name, no key, no id (but a share slot).
+    `share` is the winner's equal share of the value in bani (a string, like every Bani); the key is there only for several winners."""
     if w.natural_person:
-        return {"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": False}
-    return {"name": name, "key": w.key, "identity": w.identity, "naturalPerson": False, "curated": w.curated,
-            "differsFromAnaf": w.differs_from_anaf, "cuiMismatch": w.cui_mismatch}
+        out = {"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": False}
+    else:
+        out = {"name": name, "key": w.key, "identity": w.identity, "naturalPerson": False, "curated": w.curated,
+               "differsFromAnaf": w.differs_from_anaf, "cuiMismatch": w.cui_mismatch}
+    if share is not None:
+        out["share"] = str(share)
+    return out
 
 
 def _identity_badges(winners: list[Resolved]) -> list[str]:
@@ -134,13 +145,15 @@ def _identity_badges(winners: list[Resolved]) -> list[str]:
     return badges
 
 
-def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord], resolver: Resolver | None = None) -> None:
+def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord], resolver: Resolver | None = None,
+                 estimates: dict[str, Estimate] | None = None) -> None:
     """Upsert Records by code. A code that is already there is replaced only by a later publication date, or by the same
     date with different content (the later file wins a tie), so a re-uploaded old file cannot overwrite newer data and the
     same content twice changes nothing. A replacement replaces the whole Record: its lots and winners are the newer
     version's, not a merge. A crawled Record (via CRAWL, #77) is always replaced by a bulk one and never replaces one.
     Authority and winners are resolved to entity keys here (`resolver`: ANAF's answers and the override file); without one
-    nothing is confirmed, so every supplier is name-only."""
+    nothing is confirmed, so every supplier is name-only. What each Record adds to a sum is decided here, once, by the counting
+    rule (counting.py; `estimates` are the archived e-licitatie lookups): the API only sums what is stored."""
     resolver = resolver or Resolver()
     for r in rows:
         winners = r.all_winners
@@ -148,6 +161,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         authority = resolve_authority(r.authority_cui, r.authority_name)
         resolved = [(w.name, resolver.supplier(w.name, w.cui, r.authority_cui)) for w in winners]
         first_name, first = resolved[0] if resolved else (None, None)
+        counted = count(r.kind, r.value_bani, r.award_date, r.contract_type, r.cpv_code, r.concluded_by, r.notice_code, len(winners), estimates)
         cur.execute(
             _UPSERT,
             dict(
@@ -157,9 +171,12 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 supplier_name=first_name if first and not first.natural_person else None,
                 cpv_code=r.cpv_code, cpv_description=r.cpv_description,
                 contract_type=r.contract_type, published_on=r.published_on, quarter=r.quarter, award_date=r.award_date,
-                estimated_bani=r.estimated_bani, value_bani=r.value_bani, counted_bani=r.value_bani,
-                load_notes=list(r.notes), winners=Jsonb([_winner_json(n, w) for n, w in resolved]),
-                badges=_identity_badges([w for _, w in resolved]),
+                estimated_bani=r.estimated_bani, value_bani=counted.value_bani, counted_bani=counted.counted_bani,
+                ceiling_bani=counted.ceiling_bani, suspect=counted.suspect, framework_role=counted.framework_role, suspect_rule=counted.suspect_rule,
+                suspect_threshold_bani=counted.suspect_threshold_bani,
+                load_notes=list(dict.fromkeys((*r.notes, *counted.notes))),
+                winners=Jsonb([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
+                badges=[*counted.badges, *_identity_badges([w for _, w in resolved])],
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
                 concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count, via=r.via, url=r.url,
                 ca_notice_id=r.ca_notice_id, sys_notice_type_id=r.sys_notice_type_id, sys_notice_version_id=r.sys_notice_version_id,
@@ -172,16 +189,16 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         if not replaced[0]:  # a version that replaces another: its search rows go
             cur.execute("DELETE FROM seap.search WHERE record_code = %s", (r.code,))
         doc = _search_doc(r, authority, resolved)
-        # one row per winner; an equal share of a consortium's value is the counting rule's (#65), so only a sole winner has one
+        # one row per winner; share_bani is the winner's equal share of the counted value (counting.split_evenly), a sole winner has it all
         for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
             keyed = w is not None and not w.natural_person
             cur.execute(
                 """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani,
-                       counted_bani, share_bani, authority_cui, supplier_cui, supplier_key, supplier_spelling, supplier_vat,
+                       counted_bani, ceiling_bani, suspect, share_bani, authority_cui, supplier_cui, supplier_key, supplier_spelling, supplier_vat,
                        supplier_curated, supplier_differs, doc)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
-                 r.value_bani, r.value_bani, r.value_bani if len(winners) <= 1 else None, authority.cui,
+                 counted.value_bani, counted.counted_bani, counted.ceiling_bani, counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.cui,
                  w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
                  w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc),
             )
@@ -340,6 +357,31 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
     summary.entities = cur.fetchone()[0]
 
 
+# One row per award notice with a framework or a subsequent Record. A subsequent contract is linked to its framework by the award
+# notice number: in the real Contracte files the subsequent contracts of a framework agreement are published under the same
+# award notice (`Numar anunt atribuire`) as the agreement's own contract(s) (checked on 2022 T1, 2023 T1 and 2025 T2: every
+# subsequent contract's notice also holds at least one "Cu acord cadru" contract). A notice can hold several framework
+# contracts (one per supplier or lot): the agreement is the notice, its ceiling the sum of their ceilings, and the Record
+# shown as "the agreement" the lowest code. A subsequent contract whose notice has no framework Record loaded (the agreement
+# predates the archive, or a quarter is missing) still counts; its link has no agreement and no ceiling.
+_FRAMEWORKS = """
+INSERT INTO seap.framework (notice_code, agreement_code, ceiling_bani, subsequent_bani, subsequent_count, ratio)
+SELECT notice_code,
+       min(code) FILTER (WHERE framework_role = 'CEILING'),
+       sum(ceiling_bani),
+       coalesce(sum(counted_bani) FILTER (WHERE framework_role = 'SUBSEQUENT'), 0),
+       count(*) FILTER (WHERE framework_role = 'SUBSEQUENT'),
+       coalesce(sum(counted_bani) FILTER (WHERE framework_role = 'SUBSEQUENT'), 0)::float8
+         / nullif(sum(ceiling_bani), 0)
+  FROM seap.record WHERE framework_role IS NOT NULL AND notice_code IS NOT NULL GROUP BY notice_code
+"""
+
+
+def build_frameworks(cur: psycopg.Cursor) -> None:
+    """The framework agreements and what their subsequent contracts reported (the counting rule's link, see `_FRAMEWORKS`)."""
+    cur.execute(_FRAMEWORKS)
+
+
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None) -> RebuildSummary:
     summary = RebuildSummary()
@@ -350,6 +392,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             cur.execute(CORE_SQL.read_text(encoding="utf-8"))
             cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
             resolver = Resolver(load_anaf(cur, archive, summary), overrides)
+            estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
+            summary.estimates = len(estimates)
             for o in iter_units(archive, summary, progress):
                 for name, rows in o.files:
                     number += 1
@@ -361,7 +405,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                          sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
                          None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream),
                     )
-                    load_records(cur, number, rows, resolver)
+                    load_records(cur, number, rows, resolver, estimates)
                     summary.files_loaded += 1
                 if progress:
                     progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
@@ -377,6 +421,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
                 if through:
                     cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
+            build_frameworks(cur)
+            cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
+            summary.estimates_missing = cur.fetchone()[0]
             build_entities(cur, overrides, summary)
             summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             cur.execute("SELECT count(*) FROM seap.record")
@@ -386,6 +433,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
             cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
             cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
+            cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
             cur.execute("ANALYZE seap.record")
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays

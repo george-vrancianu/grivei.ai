@@ -34,6 +34,7 @@ const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // ev
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
+const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -89,6 +90,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
     cpSync(placementArchive, join(scratch, "archive-placement"), { recursive: true });
+    cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -111,6 +113,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE identity_b");
     await admin.query("CREATE DATABASE placement_a");
     await admin.query("CREATE DATABASE placement_b");
+    await admin.query("CREATE DATABASE counting_a");
+    await admin.query("CREATE DATABASE counting_b");
   });
 
   afterAll(async () => {
@@ -270,7 +274,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(equal!.winners.map((w) => w.publishedName)).toEqual(["ALFA MOBILA SRL", "GAMMA LEMN SRL"]);
     // two lots of different values add; the winners come in the order of the file, not alphabetically
     const summed = await contractPage("contracts_a", "CAN9000002~77/2022");
-    expect(summed).toMatchObject({ value: "120025", counted: "120025" });
+    expect(summed).toMatchObject({ value: "120025", counted: null, badges: ["FRAMEWORK_CEILING", "CONSORTIUM_SHARE"] }); // a framework ceiling (Cu acord cadru): shown, never counted (#65)
     expect(summed!.winners.map((w) => w.publishedName)).toEqual(["BETA CHIMIE SRL", "ALFA CHIMIE SRL"]);
     // a contract number that holds a slash, from the 2025 XLSX (numeric CUIs, a float amount)
     expect(await contractPage("contracts_a", "CAN9000010~1398514/1")).toMatchObject({
@@ -279,7 +283,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // an award notice, identified by its code: its two contracts add; the second notice has one contract and two winners
     expect(await contractPage("contracts_a", "CAN9100001")).toMatchObject({ kind: "AWARD_NOTICE", value: "3548058", date: "2024-11-11" });
     const notice = await contractPage("contracts_a", "CAN9100002");
-    expect(notice).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000" });
+    expect(notice).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000", counted: "9880000", badges: ["CONSORTIUM_SHARE"] });
+    expect(notice!.winners.map((w) => w.share)).toEqual(["4940000", "4940000"]); // equal shares that sum back to the value (#65)
     expect(notice!.winners.map((w) => w.publishedName)).toEqual(["CENTRUL TOPMED DEMO", "ASOCIEREA DEMO"]);
     // no value in SEAP; and a contract of the quarantined file is not there
     expect(await contractPage("contracts_a", "CAN9000020~36181")).toMatchObject({ value: null, badges: ["NO_VALUE"] });
@@ -675,6 +680,84 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     const counties = JSON.parse(readFileSync(join(scratch, "geo-a", "counties.topo.json"), "utf8"));
     expect(Object.keys(counties.objects)).toEqual(["counties"]);
     expect(counties.objects.counties.geometries.map((g: { properties: { code: string } }) => g.properties.code)).toEqual(["RO-B", "RO-BV", "RO-CJ"]);
+  // ---- the counting rule (#65) ---------------------------------------------------------------------------------------------
+  const BANI = 100n;
+  const bani = (ron: number | bigint) => String(BigInt(ron) * BANI);
+
+  it("sums only counted and reports what it left out in the Total: suspect, no value, framework ceilings (#65)", async () => {
+    const out = rebuild("counting_a", "archive-counting");
+    expect(out).toContain("loaded 29 records from 2 file(s)");
+    expect(out).toContain("estimates: 5 archived answers read; 2 notice(s) of 1 bn RON or more have none yet");
+    const r = await ask("counting_a", mainScreen.sha256);
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY_FILTER)).toEqual([]);
+    // counted: DA 1,350,599 + 2,000,000 + 5,000,000 + 50,000,000; contracts 5,000,000 + 2,500,000 + 700,000 + 300,000 + 500,000 + 1,000 + 2,000;
+    // mega 2 bn + 3 bn + 4 bn + 70 bn. Left out: 4 suspect DA + 3 suspect mega contracts; no value: 2 DA + the blank ceiling; ceilings 10M + 6M + 4M.
+    expect((r.body.data as MainScreenQuery).seap.search.total).toEqual({
+      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false,
+    });
+  });
+
+  it("badges and counts each Record by the one rule: suspect caps of both eras, works, CPV 70, estimates, no value (#65)", async () => {
+    const page = (code: string) => contractPage("counting_a", code);
+    const suspect = (rule: string, threshold: string | null) => ({ badges: ["SUSPECT_VALUE"], counted: null, suspect: { rule, threshold } });
+    expect(await page("DA94000001")).toMatchObject({ value: bani(2_000_000), ...suspect("DIRECT_PURCHASE_10X_CAP", bani(135_060)) });
+    expect(await page("DA94000002")).toMatchObject({ value: bani(1_350_599), counted: bani(1_350_599), badges: [], suspect: null });
+    expect(await page("DA94000003")).toMatchObject(suspect("DIRECT_PURCHASE_10X_CAP", bani(135_060))); // the last day of the old caps
+    expect(await page("DA94000004")).toMatchObject({ counted: bani(2_000_000), suspect: null }); // the first day of the new ones
+    expect(await page("DA94000005")).toMatchObject(suspect("DIRECT_PURCHASE_10X_CAP", bani(270_120))); // exactly 10x
+    expect(await page("DA94000006")).toMatchObject({ counted: bani(5_000_000), suspect: null }); // works (CPV 45)
+    expect(await page("DA94000007")).toMatchObject(suspect("DIRECT_PURCHASE_10X_CAP", bani(900_400)));
+    expect(await page("DA94000008")).toMatchObject({ counted: bani(50_000_000), badges: [], suspect: null }); // CPV 70: never flagged
+    for (const code of ["DA94000009", "DA94000010"]) expect(await page(code)).toMatchObject({ value: null, counted: null, badges: ["NO_VALUE"], suspect: null });
+    expect(await page("CAN9810001~1")).toMatchObject(suspect("CONTRACT_100X_ESTIMATE", bani(10_000_000)));
+    expect(await page("CAN9810002~1")).toMatchObject({ counted: bani(2_000_000_000), suspect: null }); // 1.33x its estimate
+    expect(await page("CAN9810003~1")).toMatchObject(suspect("CONTRACT_100X_ESTIMATE", bani(10_000_000))); // exactly 100x
+    expect(await page("CAN9810004~1")).toMatchObject(suspect("CONTRACT_OVER_50BN", null)); // no estimate, above 50 bn
+    expect(await page("CAN9810005~1")).toMatchObject({ counted: bani(3_000_000_000), suspect: null }); // looked up, no estimate, below 50 bn
+    expect(await page("CAN9810007~1")).toMatchObject({ counted: bani(70_000_000_000), suspect: null }); // never looked up: counted until `pipeline estimates` has run
+  });
+
+  it("shows a framework Record's ceiling, what its subsequent contracts reported and the ratio; a subsequent contract links back (#65)", async () => {
+    const framework = await contractPage("counting_a", "CAN9800001~1");
+    expect(framework).toMatchObject({ value: bani(10_000_000), counted: null, badges: ["FRAMEWORK_CEILING"] });
+    expect(framework!.framework).toMatchObject({ agreement: null, ceiling: bani(10_000_000), subsequentReported: bani(5_000_000), ratio: 0.5 });
+    expect(framework!.framework!.subsequent.map((s) => [s.code, s.counted, s.badges])).toEqual([
+      ["CAN9800001~2", bani(4_000_000), ["SUBSEQUENT_CONTRACT"]], ["CAN9800001~3", bani(1_000_000), ["SUBSEQUENT_CONTRACT"]]]);
+    const sub = await contractPage("counting_a", "CAN9800001~2");
+    expect(sub).toMatchObject({ counted: bani(4_000_000), badges: ["SUBSEQUENT_CONTRACT"] });
+    expect(sub!.framework).toMatchObject({ agreement: { code: "CAN9800001~1" }, ceiling: bani(10_000_000), subsequentReported: bani(5_000_000), ratio: 0.5 });
+    // two framework contracts under one notice: the agreement is the notice, its ceiling the sum
+    expect((await contractPage("counting_a", "CAN9800002~2"))!.framework).toMatchObject({ ceiling: bani(10_000_000), subsequentReported: bani(2_500_000), ratio: 0.25 });
+    expect((await contractPage("counting_a", "CAN9800002~3"))!.framework).toMatchObject({ agreement: { code: "CAN9800002~1" }, ratio: 0.25 });
+    // a blank ceiling has no ratio; a subsequent contract whose framework is not in the archive still counts, with no agreement and no ceiling
+    expect((await contractPage("counting_a", "CAN9800005~1"))!.framework).toMatchObject({ ceiling: null, subsequentReported: bani(500_000), ratio: null });
+    const orphan = await contractPage("counting_a", "CAN9800003~1");
+    expect(orphan).toMatchObject({ counted: bani(700_000), badges: ["SUBSEQUENT_CONTRACT"] });
+    expect(orphan!.framework).toMatchObject({ agreement: null, ceiling: null, subsequentReported: bani(700_000), ratio: null });
+    // standalone: no framework link
+    expect(await contractPage("counting_a", "CAN9800004~1")).toMatchObject({ counted: bani(300_000), badges: [], framework: null });
+  });
+
+  it("counts a consortium once on the authority side and gives each member an equal share that sums back to the value (#65)", async () => {
+    const trio = await contractPage("counting_a", "CAN9800006~1");
+    expect(trio).toMatchObject({ value: "100000", counted: "100000", badges: ["CONSORTIUM_SHARE"] });
+    expect(trio!.winners.map((w) => [w.naturalPerson, w.publishedName, w.share])).toEqual([
+      [false, "ALFA DEMO SRL", "33334"], [true, null, "33333"], [false, "BALKAN TRADING OOD", "33333"]]); // the person takes a slot, and no name
+    expect(trio!.winners.reduce((sum, w) => sum + BigInt(w.share!), 0n)).toBe(BigInt(trio!.value!));
+    // The supplier-side invariant (sum of share_bani = counted_bani per Record) is checked on the tables in tests/test_counting_db.py:
+    // nothing in the API serves a supplier-side Total yet. TODO: assert it here through entity.seap.role(SUPPLIER).total once served.
+  });
+
+  it("gives identical responses after a second rebuild of the counting archive into a fresh database (#65, ADR 0004)", async () => {
+    const codes = ["DA94000001", "DA94000009", "CAN9800001~1", "CAN9800001~2", "CAN9800003~1", "CAN9800006~1", "CAN9810001~1", "CAN9810007~1"];
+    const snapshot = async (db: string) => {
+      const out: unknown[] = [JSON.stringify(await ask(db, mainScreen.sha256))];
+      for (const code of codes) out.push(JSON.stringify(await ask(db, recordPage.sha256, { code })));
+      return out;
+    };
+    rebuild("counting_b", "archive-counting");
+    expect(await snapshot("counting_b")).toEqual(await snapshot("counting_a"));
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {

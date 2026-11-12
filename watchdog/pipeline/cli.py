@@ -21,6 +21,8 @@ from .crawl.backfill import PASSES as BACKFILL_PASSES, BulkIndex, archive_summar
 from .crawl.backfill import FIRST_DAY as BACKFILL_FIRST_DAY, LAST_DAY_2021_22 as BACKFILL_LAST_DAY
 from .crawl.backfill_progress import DEFAULT_BACKFILL_STATUS_NAME, BackfillProgress, describe_backfill
 from .datagov import fetch_datagov
+from .estimates import candidates as estimate_candidates
+from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from . import placement_cli
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
@@ -86,6 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--max-batches", type=int, default=None, help="stop after this many requests (a small trial run)")
     a.add_argument("--endpoint", default=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT), help="the v9 URL (env PIPELINE_ANAF_URL; for a stub, never for the real one)")
 
+    e = sub.add_parser("estimates", help="fetch the estimated value of every notice with a Record of 1 bn RON or more (the counting rule's check) from e-licitatie into the raw archive; resumable")
+    e.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL of the graph a rebuild loaded: it says which notices are candidates (env DATABASE_URL)")
+    e.add_argument("--delay", type=float, default=float(os.environ.get("PIPELINE_CRAWL_DELAY", CRAWL_DELAY)), help=f"seconds between requests (default {CRAWL_DELAY})")
+    e.add_argument("--max-notices", type=int, default=None, help="stop after this many requests (a small trial run)")
+
     q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
     q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
 
@@ -144,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         return _crawl(archive, args)
     if args.verb == "backfill":
         return _backfill(archive, args)
+    if args.verb == "estimates":
+        return _estimates(archive, args)
     if args.verb == "requeue":
         try:
             restored = archive.requeue(args.match)
@@ -235,6 +244,23 @@ def _backfill(archive: Archive, args) -> int:
     crawler = Crawler(archive, make_client(args.delay, progress.note), note=progress.note, kind=BACKFILL_KIND)
     plans = plan_backfill(archive, today=datetime.now(timezone.utc).date(), passes=passes, bulk=bulk)
     return 0 if run_backfill(archive, crawler, plans, progress, bulk=bulk).ok else 1
+
+
+def _estimates(archive: Archive, args) -> int:
+    """Ask e-licitatie for the estimated value of each candidate notice not yet archived (one timestamped line per notice, flushed)."""
+    if not args.db:
+        print("estimates: --db or DATABASE_URL is required (run `rebuild` first: it says which notices are candidates)", file=sys.stderr)
+        return 2
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+    codes = estimate_candidates(args.db)
+    say = lambda line: print(line, flush=True)
+    say(f"{stamp_now()} estimates candidates: {len(codes)} notice(s) with a Record of 1 bn RON or more")
+    try:
+        estimates_lookup(archive, codes, make_client(args.delay, lambda line: say(f"{stamp_now()} {line}")), say, max_notices=args.max_notices)
+    except CrawlError as e:
+        say(f"{stamp_now()} estimates FAILED: {e}; every finished notice is archived, rerun the same command to resume")
+        return 1
+    return 0
 
 
 def _crawl(archive: Archive, args) -> int:
