@@ -1,4 +1,4 @@
-import { ResultTabs, Stack, toResultTab, Typography, type Locale, type ResultTab } from "@grivei/ui";
+import { DEFAULT_RESULT_TAB, ResultTabs, Stack, toResultTab, Typography, type Locale, type ResultTab } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
 import { SearchField } from "../../components/SearchField/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
@@ -29,7 +29,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             records={search.records}
             goTo={search.goTo}
             tab={toResultTab(tab)}
-            onTabChange={(next: ResultTab) => update({ tab: next })}
+            onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
             entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
             recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
             locale={locale}

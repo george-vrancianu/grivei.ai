@@ -66,6 +66,15 @@ describe("the main screen for the empty filter", () => {
     expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: /COMPANIA NAȚIONALĂ/ })).toHaveAttribute("href", "/ro/explore/authority/4000002");
   });
 
+  it("keeps the URL canonical: choosing the default tab (Suppliers) leaves it out of the URL", async () => {
+    openAt("/explore/?tab=records");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    await userEvent.setup().click(await screen.findByRole("tab", { name: /^Suppliers/ }));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");
+  });
+
   it("tells the reader when the data could not be loaded", async () => {
     openAt("/explore/");
     const client = createClient({ fetch: async () => Response.json({ errors: [{ message: "down" }] }, { status: 400 }) });

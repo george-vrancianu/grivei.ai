@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { resultSamples } from "../../samples/fixtureData.ts";
+import { nameOnlyParty, resultSamples } from "../../samples/fixtureData.ts";
 import { GoToCard } from "./index.ts";
 
 const meta = { title: "Domain/GoToCard", component: GoToCard } satisfies Meta<Record<string, unknown>>;
@@ -13,8 +13,8 @@ export const CuiEntity: Story = {
 export const NameOnlyEntity: Story = {
   render: (_a, { globals }) => (
     <GoToCard
-      entity={{ key: "vat-DE811128135", displayName: "MEDTECH GMBH", identity: "NAME_ONLY" }}
-      href="/explore/supplier/vat-DE811128135"
+      entity={nameOnlyParty.entity!}
+      href={`/explore/supplier/${nameOnlyParty.entity!.key}`}
       copy={sampleCopy.goTo(localeOf(globals["locale"]))}
     />
   ),
