@@ -9,6 +9,13 @@ import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
+/** The later Sources (spec story 37): listed so the Coverage lens can grey them as "not harvested"; nothing is loaded from them yet. */
+const PLANNED_SOURCES = [
+  { id: "ONRC" as const, name: "ONRC" },
+  { id: "ANI" as const, name: "ANI" },
+  { id: "MFINANTE" as const, name: "Ministerul Finanțelor" },
+  { id: "JUST" as const, name: "portal.just.ro" },
+].map((source) => ({ ...source, harvested: false, dataThrough: [] }));
 
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
 // The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
@@ -243,7 +250,7 @@ export function rootValue(store: Store) {
   const seapSource = async () => ({ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrough: await store.dataThrough() });
 
   return {
-    sources: async () => [await seapSource()],
+    sources: async () => [await seapSource(), ...PLANNED_SOURCES],
     entity: async ({ key }: { key: string }) => {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;

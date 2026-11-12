@@ -94,7 +94,8 @@ describe("MainScreen for the empty filter", () => {
       ["DA1", "120050", [], 1],
       ["DA2", null, ["NO_VALUE"], 0],
     ]);
-    expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] }]);
+    expect(data.sources[0]).toEqual({ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] });
+    expect(data.sources.slice(1).map((s) => [s.id, s.harvested, s.dataThrough])).toEqual([["ONRC", false, []], ["ANI", false, []], ["MFINANTE", false, []], ["JUST", false, []]]); // the planned Sources (#90)
   });
 
   it("badges crawled Records: provisional until the bulk has the quarter, crawl-only after (#77), next to NO_VALUE", async () => {
