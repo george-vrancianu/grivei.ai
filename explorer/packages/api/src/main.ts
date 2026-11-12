@@ -1,4 +1,4 @@
-// Entry point of the API container: DATABASE_URL, PORT (default 4000).
+// Entry point of the API container: DATABASE_URL, PORT (default 4000), SEAP_BASE_URL (default https://e-licitatie.ro), SEAP_LINK_PUBLIC_BASE (default relative).
 import pg from "pg";
 import { createApi } from "./server.ts";
 import { postgresStore } from "./store.ts";

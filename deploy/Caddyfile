@@ -11,6 +11,11 @@
 		reverse_proxy api:4000
 	}
 
+	# "Check in SEAP": /source/seap/<code> redirects to the public e-licitatie page of a Record (served by the API).
+	handle /source/* {
+		reverse_proxy api:4000
+	}
+
 	# The explorer: one bundle for both languages. Hashed assets are immutable.
 	handle /explore/assets/* {
 		root * /srv/explore

@@ -43,13 +43,12 @@ export interface ParsedCode {
   code: string;
 }
 
-// Strict, no free text: the prefix and digits only. A contract Record's code adds `~<contract number>` (any run of the characters
-// the files use in a number, e.g. `1398514/1` or `54202`), which is dropped before anything goes upstream.
+// Strict: the prefix and digits only. A contract Record's code adds `~<contract number>` (whatever the files print as a number, e.g. `1398514/1`, `9/2026` or `54202 bis`; any text on one line), which is dropped before anything goes upstream.
 const SHAPES: { kind: CodeKind; re: RegExp }[] = [
   { kind: "DAN", re: /^(DAN\d{1,12})$/ },
   { kind: "DA", re: /^(DA\d{1,12})$/ },
-  { kind: "CAN", re: /^(CAN\d{1,12})(?:~[A-Za-z0-9/._-]{1,60})?$/ },
-  { kind: "SCNA", re: /^(SCNA\d{1,12})(?:~[A-Za-z0-9/._-]{1,60})?$/ },
+  { kind: "CAN", re: /^(CAN\d{1,12})(?:~.{1,120})?$/ },
+  { kind: "SCNA", re: /^(SCNA\d{1,12})(?:~.{1,120})?$/ },
 ];
 
 /** The kind of a public code and the code to look up, or null for any shape we do not serve. */
