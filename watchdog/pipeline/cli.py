@@ -9,6 +9,9 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
+from .anaf import ENDPOINT as ANAF_ENDPOINT
+from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
 from .archive import Archive, ArchiveError
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
@@ -19,7 +22,7 @@ from .crawl.backfill import FIRST_DAY as BACKFILL_FIRST_DAY, LAST_DAY_2021_22 as
 from .crawl.backfill_progress import DEFAULT_BACKFILL_STATUS_NAME, BackfillProgress, describe_backfill
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
-from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status
+from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
 
 DEFAULT_ARCHIVE = os.environ.get("PIPELINE_ARCHIVE", "/archive")
@@ -36,6 +39,10 @@ def _day(text: str) -> date:
         raise argparse.ArgumentTypeError(f"not a date YYYY-MM-DD: {text!r}") from None
 
 
+def stamp_now() -> str:
+    return stamp(datetime.now(timezone.utc))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pipeline")
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="raw archive root (env PIPELINE_ARCHIVE)")
@@ -43,13 +50,16 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("rebuild", help="derive the seap schema from the raw archive into the database")
     r.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
+    r.add_argument("--identity-overrides", default=os.environ.get("PIPELINE_IDENTITY_OVERRIDES"),
+                   help="the reviewed identity override file (env PIPELINE_IDENTITY_OVERRIDES; default: pipeline/identity_overrides.toml)")
     r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
 
-    st = sub.add_parser("status", help="show the crawl cursor and data-through dates, and how far a running or finished rebuild and crawl are")
+    st = sub.add_parser("status", help="show the crawl cursor and data-through dates, and how far a running or finished rebuild, crawl and ANAF lookup are")
     st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="the rebuild's status file, as for rebuild")
     st.add_argument("--crawl-progress-file", default=os.environ.get("PIPELINE_CRAWL_PROGRESS_FILE"), help="the crawl's status file, as for crawl")
     st.add_argument("--backfill-progress-file", default=os.environ.get("PIPELINE_BACKFILL_PROGRESS_FILE"), help="the backfill's status file, as for backfill")
+    st.add_argument("--anaf-progress-file", default=os.environ.get("PIPELINE_ANAF_PROGRESS_FILE"), help="the ANAF lookup's status file, as for anaf-lookup")
 
     c = sub.add_parser("crawl", help="crawl e-licitatie award notices (CAN, SCNA) and their contracts, day by day, into the raw archive (no loading)")
     c.add_argument("--from", dest="first", type=_day, help="first day of an explicit range (days already complete are skipped unless --force)")
@@ -67,6 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--status", action="store_true", help="show how far the backfill is (weeks complete per pass, last run) and exit; no requests")
     b.add_argument("--progress-file", default=os.environ.get("PIPELINE_BACKFILL_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_BACKFILL_PROGRESS_FILE; default <archive>/{DEFAULT_BACKFILL_STATUS_NAME})")
+    a = sub.add_parser("anaf-lookup", help="ask ANAF (v9) about every CUI in the raw archive it has not answered yet; archives each response (resumable)")
+    a.add_argument("--progress-file", default=os.environ.get("PIPELINE_ANAF_PROGRESS_FILE"),
+                   help=f"status file `status` reads (env PIPELINE_ANAF_PROGRESS_FILE; default <archive>/{ANAF_STATUS_NAME})")
+    a.add_argument("--recheck-after-days", type=int, default=None, help="also ask again about CUIs whose archived answer is older than this many days")
+    a.add_argument("--max-batches", type=int, default=None, help="stop after this many requests (a small trial run)")
+    a.add_argument("--endpoint", default=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT), help="the v9 URL (env PIPELINE_ANAF_URL; for a stub, never for the real one)")
 
     q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
     q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
@@ -89,8 +105,30 @@ def main(argv: list[str] | None = None) -> int:
         status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
         # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
-        for line in rebuild(archive, args.db, Progress(status_file)).lines():
+        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides).lines():
             print(line, flush=True)
+        return 0
+    if args.verb == "anaf-lookup":
+        status_file = Path(args.progress_file) if args.progress_file else archive.root / ANAF_STATUS_NAME
+        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+        logging.getLogger("pipeline").handlers[:] = [handler]
+        logging.getLogger("pipeline").setLevel(logging.INFO)
+        progress = AnafProgress(status_file)
+
+        def scanned(line: str) -> None:
+            print(f"{stamp_now()} {line}", flush=True)
+            progress.note(line)
+
+        try:
+            cuis = collect_cuis(archive, say=scanned)
+        except BaseException as e:  # incl. SIGTERM: the status file must say it stopped
+            progress.fail(e)
+            raise
+        print(f"{stamp_now()} anaf scan done: {len(cuis)} distinct CUIs in the archive", flush=True)
+        lookup(archive, cuis, AnafClient(endpoint=args.endpoint), progress,
+               recheck_after_days=args.recheck_after_days, max_batches=args.max_batches)
         return 0
     if args.verb == "status":
         return _status(archive, args)
@@ -124,10 +162,11 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _status(archive: Archive, args) -> int:
-    """The rebuild's status (as before) and the crawl's: cursor and data-through dates from the archive, the last run from its status file."""
+    """The rebuild's status (as before), the ANAF lookup's and the crawl's: cursor and data-through dates from the archive, the last run from its status file."""
     status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
     crawl_file = Path(args.crawl_progress_file) if args.crawl_progress_file else archive.root / DEFAULT_CRAWL_STATUS_NAME
-    status, crawl_status = read_status(status_file), read_status(crawl_file)
+    anaf_file = Path(args.anaf_progress_file) if args.anaf_progress_file else archive.root / ANAF_STATUS_NAME
+    status, crawl_status, anaf = read_status(status_file), read_status(crawl_file), read_status(anaf_file)
     days = complete_days(archive)
     code = 0
     if status is None:
@@ -137,6 +176,14 @@ def _status(archive: Archive, args) -> int:
         for line in describe(status):
             print(line)
         code = 1 if effective_state(status) in ("failed", "interrupted") else 0
+    if anaf is not None:
+        print()
+        for line in describe_anaf(anaf):
+            print(line)
+        if effective_state(anaf) in ("failed", "interrupted"):
+            code = 1
+        elif status is None and not (days or crawl_status is not None):
+            code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record
     if days or crawl_status is not None:
         for line in describe_crawl(crawl_status, max(days) if days else None, len(days), through={k: contiguous_through(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()},
                                  missing={k: missing_days(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()}):
@@ -152,7 +199,7 @@ def _status(archive: Archive, args) -> int:
             print(line)
         if backfill_status is not None and effective_state(backfill_status) in ("failed", "interrupted", "aborted"):
             code = 1
-        elif status is None and not (crawl_status is not None and effective_state(crawl_status) in ("failed", "interrupted")):
+        elif not any(x is not None and effective_state(x) in ("failed", "interrupted") for x in (status, anaf, crawl_status)):
             code = 0  # no rebuild yet is not a failure once a backfill is on record
     return code
 

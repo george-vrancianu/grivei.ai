@@ -14,7 +14,7 @@ from pipeline.archive import Archive
 from pipeline.bulk import InvalidFile, parse_file
 from pipeline.bulk.headers import DAN, DA, norm_header, resolve
 from pipeline.bulk.readers import split_pipe_row
-from pipeline.bulk.values import to_bani, to_cui, to_date
+from pipeline.bulk.values import to_bani, to_date, to_tax_id
 from pipeline.rebuild import plan
 
 FIXTURE = Path(__file__).parent / "fixtures" / "archive-bulk"
@@ -183,13 +183,13 @@ def test_quirk_pipe_inside_da_fields(planned):
         split_pipe_row("|a|,|b|", 3)
 
 
-def test_quirk_numeric_cuis_in_xlsx_come_out_as_clean_digits(planned):
+def test_quirk_numeric_cuis_in_xlsx_come_out_as_digits(planned):
     _, records = planned
     assert records["DAN9100020"].authority_cui == "18308578" and records["DAN9100020"].supplier_cui == "12458924"
     assert records["DAN9100021"].authority_cui == "18308578"  # a float cell 18308578.0: no `.0`
-    assert records["DAN9100021"].supplier_cui == "46832143"  # text with the RO prefix
+    assert records["DAN9100021"].supplier_cui == "RO46832143"  # text with the RO prefix: kept as published, identity.py normalises it
     for r in (records["DAN9100020"], records["DAN9100021"]):
-        assert r.authority_cui.isdigit() and r.supplier_cui.isdigit()
+        assert r.authority_cui.isdigit() and r.supplier_cui.removeprefix("RO").isdigit()
     # XLSX dates: a date cell and an Excel serial (45658.6228 = 2025-01-01)
     assert records["DAN9100020"].published_on == date(2025, 1, 1) and records["DAN9100021"].awarded_on == date(2025, 1, 1)
     assert records["DAN9100020"].value_bani == 37313 and records["DAN9100020"].quarter == "2025Q1"
@@ -198,7 +198,7 @@ def test_quirk_numeric_cuis_in_xlsx_come_out_as_clean_digits(planned):
 def test_quirk_excel_mangled_numbers(planned):
     _, records = planned
     r = records["DAN9100022"]
-    assert r.supplier_cui is None and "supplier_cui:scientific_notation" in r.notes  # digits already lost: no CUI, flagged
+    assert r.supplier_cui == "1.00761E+12" and "supplier_cui:scientific_notation" in r.notes  # digits already lost: kept as written, flagged
     assert r.value_bani == 150000 and "value:scientific_notation" in r.notes  # "1.5E+3" read as written (1,500 RON), flagged
     assert records["DAN9100020"].notes == ()
 
@@ -221,12 +221,14 @@ def test_ambiguous_or_unreadable_money_is_an_error(cell):
 
 @pytest.mark.parametrize(
     "cell, expected",
-    [(18308578, ("18308578", None)), (18308578.0, ("18308578", None)), ("RO 2000002", ("2000002", None)), ("ro46832143", ("46832143", None)),
-     ("18308578.0", ("18308578", None)), ("1.00761E+12", (None, "scientific_notation")), ("", (None, None)), (None, (None, None)),
-     ("-", (None, "unusable")), (1.5, (None, "unusable")), ("12 345", ("12345", None))],
+    [(18308578, ("18308578", None)), (18308578.0, ("18308578", None)), ("RO 2000002", ("RO 2000002", None)), ("ro46832143", ("ro46832143", None)),
+     ("18308578.0", ("18308578", None)), ("1.00761E+12", ("1.00761E+12", "scientific_notation")), ("", (None, None)), (None, (None, None)),
+     ("-", ("-", None)), (1.5, (None, "unusable")), ("12 345", ("12 345", None)),
+     # a foreign VAT id and a person's 13 digits are kept as published: pipeline.identity decides what they are (ADR 0003)
+     ("BG103029862", ("BG103029862", None)), ("ATU 18379608", ("ATU 18379608", None)), ("1003600118796", ("1003600118796", None))],
 )
-def test_cui_is_a_clean_digit_string(cell, expected):
-    assert to_cui(cell) == expected
+def test_a_tax_id_is_kept_as_published_not_turned_into_digits(cell, expected):
+    assert to_tax_id(cell) == expected
 
 
 @pytest.mark.parametrize("cell, expected", [("03/28/2022", date(2022, 3, 28)), ("01/02/2024 22:03:37", date(2024, 1, 2)), ("2024-01-02T10:00:00Z", date(2024, 1, 2)), (45658.6, date(2025, 1, 1)), ("", None)])
