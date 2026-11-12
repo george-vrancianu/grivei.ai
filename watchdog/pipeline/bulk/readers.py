@@ -1,32 +1,39 @@
 """File readers: a bulk file -> (header cells, row cells). No interpretation of the columns here.
 
-CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`) and ordinary quoted
-CSV (DAN). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Any other
+CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`; a field may span
+lines) and ordinary quoted CSV (DAN, Contracte 2021). A CSV is read as it is consumed, never whole (a quarter is up to 300 MB). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Any other
 extension (`.xls`, `.ods`) is not supported yet: the file is invalid, hence quarantined with that reason.
 """
 from __future__ import annotations
 
 import csv
-import io
+import itertools
 import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
 from .errors import InvalidFile
+from datetime import datetime, time
+
+from . import values
 from .values import Cell
 
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
+_NUMBER_LIKE = re.compile(r"^\s*[-+0-9.eE]*\s*$")
+MAX_FIELD_LINES = 300  # the most lines one |text| field may span (a real contract title spans 60, mostly blank)
 Header = list[str]
 Rows = Iterable[tuple[int, list[Cell]]]  # may have a close()  # (line or row number in the file, cells)
 
 
-def split_pipe_row(line: str, expected: int | None = None) -> list[str]:
+def split_pipe_row(line: str, expected: int | None = None, numeric_bare: bool = False) -> list[str]:
     """Split one DA line: `|text|` fields (which may hold commas and even `|`) and bare fields, separated by commas.
 
     A `|` followed by `,` or the end of the line closes a field, but a field may itself contain `|,` (the DA quirk), so
     when `expected` (the header's width) is known the split that gives exactly that many fields wins. Without it the
-    first complete split is taken (the header line). A bare (unwrapped) field never holds a `|`. Raises ValueError when there is none.
+    first complete split is taken (the header line). A bare (unwrapped) field never holds a `|`; with `numeric_bare` it must also
+    look like a number (digits, sign, point, exponent) or be blank, which is what the unwrapped columns of the real files are.
+    Raises ValueError when there is none.
     """
     n = len(line)
 
@@ -44,7 +51,7 @@ def split_pipe_row(line: str, expected: int | None = None) -> list[str]:
         else:
             j = line.find(",", i)
             bare = line[i : n if j == -1 else j]
-            if "|" not in bare:  # bare fields are the numeric columns: one holding a `|` is half of a |text| field
+            if "|" not in bare and (not numeric_bare or _NUMBER_LIKE.match(bare)):  # bare fields are the numeric columns: one holding a `|` is half of a |text| field
                 candidates.append((bare, n if j == -1 else j))
         for value, end in candidates:
             if end >= n:
@@ -71,31 +78,75 @@ def read_file(path: Path) -> tuple[Header, Rows]:
     raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv and .xlsx are read"])
 
 
+_EOL = re.compile(r"(\r\n|\n|\r)$")
+
+
+class _CsvRows:
+    """The data rows of an open CSV file, read as they are wanted (a quarter can be 300 MB). `close()` releases the file."""
+
+    def __init__(self, handle, rows):
+        self._handle, self._rows = handle, rows
+
+    def __iter__(self) -> Rows:
+        try:
+            yield from self._rows
+        except UnicodeDecodeError as e:
+            raise InvalidFile("not UTF-8 text", [str(e)]) from None
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        self._handle.close()
+
+
 def _read_csv(path: Path) -> tuple[Header, Rows]:
+    handle = path.open(encoding="utf-8-sig", newline="")  # newline="": a quoted field may hold line breaks; lines keep their terminator
     try:
-        with path.open(encoding="utf-8-sig", newline="") as handle:  # newline="": a quoted field may hold line breaks
-            content = handle.read()
+        return _csv_header_and_rows(handle)
+    except BaseException:
+        handle.close()
+        raise
+
+
+def _csv_header_and_rows(handle) -> tuple[Header, Rows]:
+    try:
+        first = next((ln for ln in handle if ln.strip()), None)
     except UnicodeDecodeError as e:
         raise InvalidFile("not UTF-8 text", [str(e)]) from None
-    if not content.strip():
+    if first is None:
         raise InvalidFile("empty file")
-    if content.lstrip().startswith("|"):
-        lines = [ln for ln in _LINE_BREAK.split(content) if ln.strip()]  # not splitlines(): it also splits on \x0c, \x85, \u2028...
+    if first.lstrip().startswith("|"):
         try:
-            header = split_pipe_row(lines[0])
+            header = split_pipe_row(_EOL.sub("", first))
         except ValueError as e:
             raise InvalidFile("unreadable header line", [str(e)]) from None
+        lines = (_EOL.sub("", ln) for ln in handle)  # split on \r\n, \n and \r only (not splitlines(): it also splits on \x0c, \x85, \u2028...)
 
         def pipe_rows() -> Rows:
-            for number, line in enumerate(lines[1:], start=2):
-                try:
-                    yield number, list(split_pipe_row(line, len(header)))
-                except ValueError as e:
-                    raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
+            # A |text| field may hold a line break (a contract title with a newline): a line that does not split into the
+            # header's width is joined with the next ones, up to MAX_FIELD_LINES, before the file is called invalid.
+            number = 1  # the header was line 1 (blank lines before it are not counted; the reported number is approximate then)
+            for line in lines:
+                number += 1
+                if not line.strip():
+                    continue
+                start, extra = number, 0
+                while True:
+                    try:
+                        # after a join the text has line breaks inside it: only a split whose unwrapped fields are numbers
+                        # is believed (else the commas in the title of a multi-line field fake extra fields)
+                        cells = list(split_pipe_row(line, len(header), numeric_bare=extra > 0))
+                        break
+                    except ValueError as e:
+                        following = next(lines, None) if extra < MAX_FIELD_LINES else None
+                        if following is None:
+                            raise InvalidFile(f"line {start}: {e}", [f"line {start}: {e}"]) from None
+                        line, extra, number = f"{line}\n{following}", extra + 1, number + 1
+                yield start, cells
 
-        return header, pipe_rows()
+        return header, _CsvRows(handle, pipe_rows())
 
-    reader = csv.reader(io.StringIO(content, newline=""))
+    reader = csv.reader(itertools.chain([first], handle))
     try:
         header = next(reader)
     except (StopIteration, csv.Error) as e:
@@ -109,7 +160,25 @@ def _read_csv(path: Path) -> tuple[Header, Rows]:
         except csv.Error as e:
             raise InvalidFile(f"line {reader.line_num}: {e}", [f"line {reader.line_num}: {e}"]) from None
 
-    return header, csv_rows()
+    return header, _CsvRows(handle, csv_rows())
+
+
+def _values(row) -> list[Cell]:
+    """A row of cells -> their values. A float, date or time keeps the cell's number format (see `values.Typed`): a contract
+    number Excel coerced (`5/21` -> a date, `1/8858` -> `Jan-8858`) can only be turned back into the published text with it."""
+    out: list[Cell] = []
+    for cell in row:
+        v = cell.value
+        fmt = getattr(cell, "number_format", None) or "General"
+        if isinstance(v, bool) or v is None or not isinstance(v, (float, datetime, time)):
+            out.append(v)
+        elif isinstance(v, float):
+            out.append(values.TypedFloat(v, fmt))
+        elif isinstance(v, datetime):
+            out.append(values.TypedDatetime(v.year, v.month, v.day, v.hour, v.minute, v.second, v.microsecond, number_format=fmt))
+        else:
+            out.append(values.TypedTime(v.hour, v.minute, v.second, v.microsecond, number_format=fmt))
+    return out
 
 
 def _read_xlsx(path: Path) -> tuple[Header, Rows]:
@@ -121,7 +190,7 @@ def _read_xlsx(path: Path) -> tuple[Header, Rows]:
         workbook = load_workbook(path, read_only=True, data_only=True)
         sheet = workbook.worksheets[0]
         sheet.reset_dimensions()  # do not trust the declared size
-        raw = sheet.iter_rows(values_only=True)
+        raw = (_values(row) for row in sheet.iter_rows())
         first = next(raw, None)
     except (zipfile.BadZipFile, KeyError, IndexError, ValueError, OSError) as e:
         raise InvalidFile("not a readable XLSX file", [f"{type(e).__name__}: {e}"]) from None

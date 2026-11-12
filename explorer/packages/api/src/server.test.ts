@@ -8,12 +8,12 @@ import { createApi } from "./server.ts";
 import type { RecordRow, Store } from "./store.ts";
 
 const row = (over: Partial<RecordRow>): RecordRow => ({
-  code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", value: "120050", counted: "120050",
-  authority: { cui: "1000001", name: "COMUNA EXEMPLU" }, supplier: { cui: "2000001", name: "CURAT SRL" }, ...over,
+  code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", procedure: null, value: "120050", counted: "120050",
+  authority: { cui: "1000001", name: "COMUNA EXEMPLU" }, winners: [{ cui: "2000001", name: "CURAT SRL" }], ...over,
 });
 const store: Store = {
   total: async () => ({ awarded: "420050", records: 2, noValue: 1 }),
-  records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, supplier: null })].slice(0, limit),
+  records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, winners: [] })].slice(0, limit),
   record: async () => null,
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
 };

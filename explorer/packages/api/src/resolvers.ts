@@ -47,15 +47,18 @@ function recordRow(r: RecordRow) {
     date: r.date,
     kind: r.kind,
     channel: r.channel,
-    procedure: null,
+    procedure: r.procedure,
     value: r.value,
     counted: r.counted,
     badges: r.value === null ? ["NO_VALUE"] : [],
     authority: entity(r.authority.cui, r.authority.name),
     // TODO #66: natural persons. A CNP-shaped CUI_OFERTANT must never be stored or served; it should be naturalPerson: true.
-    winners: r.supplier
-      ? [{ naturalPerson: false, publishedName: r.supplier.name, share: null, entity: entity(r.supplier.cui, r.supplier.name) }]
-      : [],
+    winners: r.winners.map((w) => ({
+      naturalPerson: false,
+      publishedName: w.name,
+      share: null, // TODO #65: an equal share of the counted value for each member of a consortium
+      entity: entity(w.cui, w.name ?? w.cui ?? ""),
+    })),
     signals: [],
   };
 }

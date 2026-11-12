@@ -9,6 +9,10 @@ Resolution for a file of kind K in quarter Q: first the era in force at Q; if th
 of every era of K (a rename that landed one quarter early or late still loads). A file fits when every column is a
 known name (an alias or an ignored column) and every required field is present. Nothing else loads: an unknown or
 missing header makes the file invalid, so the caller quarantines it. To support a new spelling, add it here.
+
+A name that appears twice in one header (the 2025 Contracte files have two `Data publicare`: the initiation notice's and
+the award notice's) is told apart by position: the first keeps its name, the second is `<name>#2`, the third `<name>#3`.
+Write those in the tables as such.
 """
 from __future__ import annotations
 
@@ -67,8 +71,12 @@ def _try(era: Era, required: frozenset[str], header: list[str]) -> tuple[list[st
     lookup = era.lookup()
     columns: list[str | None] = []
     unknown: list[str] = []
+    seen: dict[str, int] = {}
     for h in header:
         key = norm_header(h)
+        seen[key] = seen.get(key, 0) + 1
+        if seen[key] > 1:
+            key = f"{key}#{seen[key]}"  # the same name again: told apart by position
         if key in lookup:
             columns.append(lookup[key])
         else:
@@ -170,3 +178,108 @@ DAN = HeaderTable(
     (DAN_2024, DAN_2025),
     required=frozenset({"code", "published_on", "authority_name", "authority_cui", "title", "cpv_code", "value", "supplier_name", "supplier_cui"}),
 )
+
+
+# --- Contracte (CAN / SCNA) and "fara anunt de initiere" award notices (#64) ------------------------------------------
+# One row per lot x winner of a contract. Checked on the real files: 2021 T3 and T4 (CSV, upper-case names), 2022 T1 (pipe
+# CSV) and 2025 T1 and T2 (XLSX). The 2021 T1 and T2, 2022 T2 to T4 and 2023 files are `.xls`, which is not read yet, so
+# their names were not inspected: they fall back to the union of the eras below, and a quarter whose names differ from all
+# of these is quarantined until a spelling is added here.
+
+_CONTRACT_REQUIRED = frozenset({"notice_code", "published_on", "authority_name", "authority_cui", "contract_number", "value",
+                                "supplier_name", "supplier_cui"})
+
+CONTRACTE_2021 = Era(
+    "2021Q3",
+    {
+        "authority_name": ("AUTORITATE_CONTRACTANTA",),
+        "authority_cui": ("AUTORITATE_CONTRACTANTA_CUI",),
+        "procedure": ("TIP_PROCEDURA",),
+        "concluded_by": ("MODALITATE_CONTRACTARE",),  # `Cu acord cadru` / `Cu acord cadru subsecvent` / `Fara acord cadru`
+        "initiation_code": ("NUMAR_ANUNT_PARTICIPARE",),
+        "notice_code": ("NUMAR_ANUNT_ATRIBUIRE",),
+        "published_on": ("DATA_ANUNT_ATRIBUIRE",),
+        "contract_type": ("TIP_CONTRACT",),
+        "contract_number": ("NUMAR_CONTRACT",),
+        "awarded_on": ("DATA_CONTRACT",),
+        "title": ("TITLU_CONTRACT",),
+        "value": ("VALOARE_CONTRACT_RON",),
+        "cpv_code": ("CPV_CODE",),
+        "supplier_name": ("CASTIGATOR",),
+        "supplier_cui": ("CASTIGATOR_CUI",),
+    },
+    ignored=(
+        "CASTIGATOR_TARA", "CASTIGAOR_LOCALITATE", "CASTIGATOR_ADRESA", "TIP_ANUNT", "TIP_AUTORITATE", "TIP__ACTIVITATE_AUTORITATE",
+        "DATA_ANUNT_PARTICIPARE", "TIP_INCHEIERE_CONTRACT", "TIP_CRITERII_ATRIBUIRE", "CU_LICITATIE_ELECTRONICA", "NUMAR_OFERTE",
+        "SUBCONTRACTAT", "CPV_CODE_ID", "VALOARE_ESTIMATA_PARTICIPARE", "MONEDA_VALOARE_ESTIMATA", "FONDURI_COMUNITARE",
+        "TIP_FINANTARE", "TIP_LESIGLATIE", "FOND_EUROPEAN", "DEPOZITE_GARANTII", "MODALITATI_FINANTARE",
+    ),
+)
+CONTRACTE_2022 = Era(
+    "2022Q1",
+    {
+        "authority_name": ("DENUMIRE_AC",),
+        "authority_cui": ("CUI_AC",),
+        "procedure": ("TIP_PROCEDURA",),
+        "concluded_by": ("INCHEIAT_PRIN",),
+        "initiation_code": ("NUMAR_ANUNT_INITIERE",),
+        "notice_code": ("NUMAR_ANUNT_ATRIBUIRE",),
+        "published_on": ("DATA_ANUNT_ATRIBUIRE",),
+        "lot": ("NUMAR_LOT",),
+        "contract_number": ("NUMAR_CONTRACT",),
+        "title": ("DENUMIRE_CONTRACT",),
+        "awarded_on": ("DATA_CONTRACT",),
+        "value": ("VALOARE_CONTRACT_RON",),
+        "supplier_name": ("OFERTANT",),
+        "supplier_cui": ("CUI_OFERTANT",),
+    },
+    ignored=("COD_NUTS", "DENUMIRE_NUTS", "MODALITATE_DESFASURARE", "DATA_ANUNT_INITIERE", "VALOARE_ESTIMATA_RON"),
+)
+CONTRACTE_2025 = Era(
+    "2025Q1",
+    {
+        "authority_name": ("Autoritate contractanta",),
+        "authority_cui": ("CUI autoritate contractanta",),
+        "procedure": ("Tip procedura",),
+        "initiation_code": ("Numar anunt initiere",),
+        "contract_type": ("Tip contract",),
+        "cpv_code": ("Cod CPV",),
+        "cpv_description": ("Denumire CPV",),
+        "lot": ("Numar lot",),
+        "notice_code": ("Numar anunt atribuire",),
+        "published_on": ("Data publicare#2",),  # the second `Data publicare`: the award notice's (the first is the initiation notice's)
+        "awarded_on": ("Data contract",),
+        "contract_number": ("Numar contract",),
+        "concluded_by": ("Incheiat prin",),
+        "value": ("Valoare contract (RON)",),
+        "supplier_name": ("Ofertant castigator",),
+        "supplier_cui": ("CUI ofertant castigator",),
+    },
+    ignored=("Tip anunt", "Data publicare", "Tip legislatie", "Tip incheiere contract", "Tip criterii de atribuire"),
+)
+CONTRACTE = HeaderTable((CONTRACTE_2021, CONTRACTE_2022, CONTRACTE_2025), required=_CONTRACT_REQUIRED)
+
+# "Anunturi de atribuire la proceduri fara anunt de initiere": one row per contract x winner, no lots. Checked on the 2025
+# T1 and T2 XLSX; the earlier files seen are `.xls` (not read yet), so the 2021 to 2024 names are unknown.
+FARA_ANUNT_2025 = Era(
+    "2025Q1",
+    {
+        "authority_name": ("Autoritate contractanta",),
+        "authority_cui": ("CUI autoritate contractanta",),
+        "procedure": ("Tip procedura",),
+        "notice_code": ("Numar anunt atribuire",),
+        "published_on": ("Data publicare",),
+        "concluded_by": ("Incheiat prin",),
+        "contract_type": ("Tip contract",),
+        "cpv_code": ("Cod CPV",),
+        "cpv_description": ("Denumire CPV",),
+        "awarded_on": ("Data contract",),
+        "contract_number": ("Numar contract",),
+        "title": ("Denumire contract",),
+        "value": ("Valoare atribuita (RON)",),
+        "supplier_name": ("Ofertant castigator",),  # the file's header has a trailing space; norm_header strips it
+        "supplier_cui": ("CUI ofertant castigator",),
+    },
+    ignored=("Tip anunt", "Tip legislatie", "Criteriu de atribuire"),
+)
+FARA_ANUNT = HeaderTable((FARA_ANUNT_2025,), required=_CONTRACT_REQUIRED)
