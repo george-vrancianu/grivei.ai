@@ -221,6 +221,8 @@ def _backfill(archive: Archive, args) -> int:
     progress = BackfillProgress(status_file)  # lines go to stdout, flushed one by one: a nohup log is current
     signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))  # a kill ends like any failure: status file says so, complete weeks stay
     passes = BACKFILL_PASSES if args.passes == "all" else (args.passes,)
+    if BACKFILL_PASSES[1] in passes:
+        progress.note("backfill reading the 2023+ bulk files (a few minutes)")
     bulk = BulkIndex.read(archive, lambda text: progress.note(text)) if BACKFILL_PASSES[1] in passes else None
     crawler = Crawler(archive, make_client(args.delay, progress.note), note=progress.note, kind=BACKFILL_KIND)
     plans = plan_backfill(archive, today=datetime.now(timezone.utc).date(), passes=passes, bulk=bulk)

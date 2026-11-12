@@ -392,6 +392,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(await backfillRecord("CAN9400009")).toBeNull();
 
     // 2023-today pass: the bulk (fetched after the backfill) has the same identity with another value and wins; the one it lacks survives
+    // (Pass 2 only lists a week once its bulk is archived, so a Record is superseded only when a bulk file is fetched or re-uploaded later: not a selection bug.)
     expect(await backfillRecord("CAN9300001~B-1")).toMatchObject({
       kind: "CONTRACT", value: "15000000", counted: "15000000", badges: [], provenance: { kind: "BULK", via: "Contracte 2023 - T1", url: null },
     });

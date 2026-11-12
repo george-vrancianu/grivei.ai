@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import socket
-from datetime import date, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, TextIO
 
@@ -108,6 +108,10 @@ class BackfillProgress:
         self._todo -= 1
         self.state.update(current=None, failures=[*self.state["failures"], {"pass": week.pass_name, "week": week.label, "error": str(error)}][-50:])
         self._line(f"backfill week {week.label} {week.first}..{week.last} FAILED: {error}; the week stays incomplete (archived files are kept), rerun to resume")
+
+    def paused(self, failures: int, seconds: float) -> None:
+        until = (self._now() + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self._line(f"backfill paused: {failures} weeks failed in a row, the service looks down; retrying at {until} (in {_duration(seconds)})")
 
     def finish(self, aborted: str | None = None) -> None:
         t = {k: sum(p[k] for p in self.state["passes"].values()) for k in COUNTERS}

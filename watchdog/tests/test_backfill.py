@@ -16,7 +16,7 @@ from pipeline import cli
 from pipeline.archive import Archive
 from pipeline.crawl import EliClient, complete_days, cursor
 from pipeline.crawl.backfill import (
-    MAX_CONSECUTIVE_FAILURES, PASS_2021_22, PASS_2023_TODAY, BulkIndex, PassPlan, Week, archive_summary, complete_weeks, plan_backfill,
+    MAX_CONSECUTIVE_FAILURES, PAUSES, PASS_2021_22, PASS_2023_TODAY, BulkIndex, PassPlan, Week, archive_summary, complete_weeks, plan_backfill,
     run_backfill, week_windows,
 )
 from pipeline.crawl.backfill_progress import BackfillProgress, describe_backfill
@@ -60,7 +60,7 @@ def backfill(archive, eli, clock, *, passes=(PASS_2021_22,), only=None, bulk=Non
             plan.done = [w for w in plan.done if keep(w)]
             plan.todo = [w for w in plan.todo if keep(w)]
             plan.waiting = {w: why for w, why in plan.waiting.items() if keep(w)}
-    summary = run_backfill(archive, crawler, plans, progress, bulk=bulk)
+    summary = run_backfill(archive, crawler, plans, progress, bulk=bulk, sleep=clock.sleep)
     return summary, lines, progress
 
 
@@ -194,13 +194,24 @@ def test_a_failing_week_is_recorded_and_the_run_goes_on_then_a_rerun_retries_it(
     assert summary.ok and len(complete_weeks(archive)) == 2 and contracted(again) == [11]
 
 
-def test_the_run_stops_after_repeated_failures_in_a_row(archive, clock):
+def test_the_run_pauses_when_the_service_looks_down_then_aborts_if_it_stays_down(archive, clock):
     eli = FakeEli()
-    eli.fail = {n: requests.ConnectionError("down") for n in range(1, 400)}
+    eli.fail = {n: requests.ConnectionError("down") for n in range(1, 4000)}
     summary, lines, _ = backfill(archive, eli, clock)
-    assert summary.aborted and len(summary.failed) == MAX_CONSECUTIVE_FAILURES and complete_weeks(archive) == {}
+    assert summary.aborted and len(summary.failed) == MAX_CONSECUTIVE_FAILURES * (len(PAUSES) + 1) and complete_weeks(archive) == {}
+    assert [s for s in clock.slept if s >= 600] == list(PAUSES)  # growing pauses, nothing slept for real
+    assert sum("backfill paused" in l and "service looks down" in l and "retrying at" in l for l in lines) == len(PAUSES)
     assert "ABORTED" in lines[-1]
     assert json.loads((archive.root / "backfill-progress.json").read_text())["state"] == "aborted"
+
+
+def test_a_pause_ends_the_outage_and_the_run_completes_the_next_weeks(archive, clock):
+    eli = FakeEli()
+    eli.fail = {n: requests.ConnectionError("down") for n in range(1, MAX_CONSECUTIVE_FAILURES * 4 + 1)}  # 4 requests per failing week: the first 5 weeks
+    summary, lines, _ = backfill(archive, eli, clock, only=(D("2021-03-29"), D("2021-05-16")))  # 7 weeks
+    assert [s for s in clock.slept if s >= 600] == [PAUSES[0]]
+    assert summary.aborted is None and len(summary.failed) == MAX_CONSECUTIVE_FAILURES and summary.crawled == 2
+    assert len(complete_weeks(archive)) == 2
 
 
 # ---- the 2023 -> today pass --------------------------------------------------------------------------------------------------

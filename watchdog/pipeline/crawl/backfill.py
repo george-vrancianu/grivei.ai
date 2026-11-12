@@ -16,14 +16,18 @@ manifest for exactly the planned window; a rerun skips complete weeks, and an in
 archived is reused (written as temp + rename, so a partial file never counts), only the missing requests are sent. State lives
 in the archive, so it survives a rebuild; the progress file (backfill_progress.py) is only the last run's account.
 
-Failures: a failing week stays incomplete (nothing is skipped silently) and the run goes on with the next week; after
-MAX_CONSECUTIVE_FAILURES weeks in a row it stops (the service is probably down). A rerun retries the failed weeks.
+Failures: a failing week stays incomplete (nothing is skipped silently) and the run goes on with the next week. After
+MAX_CONSECUTIVE_FAILURES weeks in a row the service looks down: the run pauses (PAUSES, growing, seconds) and tries again, and
+only gives up once it has paused for all of them and the next streak fails too. The first week that succeeds resets the streak
+and the pauses. A rerun retries the failed weeks.
 """
 from __future__ import annotations
 
 import re
+import json
+import time
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from typing import Callable
 
 from ..archive import Archive
@@ -40,6 +44,7 @@ LAST_DAY_2021_22 = date(2022, 12, 31)
 FIRST_DAY_2023 = date(2023, 1, 1)
 BULK_KINDS = ("contracte", "fara-anunt")  # the bulk files a Record of the crawled kinds can be in (CONTRACT, AWARD_NOTICE)
 MAX_CONSECUTIVE_FAILURES = 5
+PAUSES = (600, 1200, 2400)  # seconds slept, in turn, when a streak of failures says the service is down
 
 
 # ---- weeks ------------------------------------------------------------------------------------------------------
@@ -119,8 +124,6 @@ def archive_summary(archive: Archive) -> dict[str, dict]:
 
 def backfilled_codes(archive: Archive) -> set[str]:
     """The award notice codes the 2021-22 backfill holds: the kept list rows of its complete weeks (read from the archived list pages)."""
-    import json
-
     codes: set[str] = set()
     for (name, unit), block in complete_weeks(archive).items():
         if name != PASS_2021_22:
@@ -248,11 +251,11 @@ def procedure_is_null(row: dict) -> bool:
 
 
 def run_backfill(archive: Archive, crawler: Crawler, plans: list[PassPlan], progress: BackfillProgress, *,
-                 bulk: BulkIndex | None = None) -> BackfillSummary:
+                 bulk: BulkIndex | None = None, sleep: Callable[[float], None] = time.sleep) -> BackfillSummary:
     """Crawl the planned weeks, pass by pass. A failing week is recorded and the run goes on; see the module docstring."""
     summary = BackfillSummary(plans)
     progress.start(plans, archive.root)
-    consecutive = 0
+    consecutive = pauses = 0
     pass2_keep: Callable[[dict], bool] | None = None  # built once, when the first week of that pass starts
     try:
         for plan in plans:
@@ -279,11 +282,16 @@ def run_backfill(archive: Archive, crawler: Crawler, plans: list[PassPlan], prog
                     summary.failed.append(week)
                     consecutive += 1
                     if consecutive >= MAX_CONSECUTIVE_FAILURES:
-                        summary.aborted = f"{consecutive} weeks failed in a row; the service looks down. Complete weeks are kept: rerun later to resume"
-                        progress.finish(summary.aborted)
-                        return summary
+                        if pauses >= len(PAUSES):
+                            summary.aborted = f"{consecutive} weeks failed in a row after {pauses} pauses; the service looks down. Complete weeks are kept: rerun later to resume"
+                            progress.finish(summary.aborted)
+                            return summary
+                        progress.paused(consecutive, PAUSES[pauses])
+                        sleep(PAUSES[pauses])
+                        pauses += 1
+                        consecutive = 0
                     continue
-                consecutive = 0
+                consecutive = pauses = 0
                 progress.week_done(week, result)
                 summary.crawled += 1
     except BaseException as e:  # a signal or a bug: the status file says so, then it propagates
