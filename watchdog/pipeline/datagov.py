@@ -5,14 +5,22 @@ names are stable and known (research: `achizitii-publice-2021` ... `-2026`), so 
 without a dataset yet (the current one early in the year) is reported, not an error.
 
 Each resource is classified from its name (fallback and cross-check: the file name in its URL) into a record kind and a
-quarter unit; see `classify`. What cannot be classified, or whose name and URL disagree (the research found a DAN resource
-that points at the "fără anunț" file), is skipped and reported so a new naming quirk is visible.
+quarter unit; see `classify`. Names are matched case-insensitively and without diacritics; the quarter is `T1`..`T4`,
+`TI`..`TIV` (with or without a space) or `Q1`..`Q4`, and the year is the name's, or the dataset's when the name has none.
+
+Conflict rule: when the name and the URL's file name each say a kind and the kinds differ (the research found a DAN
+resource that points at the "fără anunț" file; another "fără anunț" resource points at initiation notices), NEITHER wins:
+the resource is not archived and is reported on its own `conflict` line. Archiving a file under the wrong kind would feed
+the loader the wrong columns; a conflict is for the operator to look at. A name with no kind falls back to the URL's.
+Known kinds we do not want (DPS invitations, contract/initiation notices, modifications) are logged `out-of-scope`. What
+cannot be classified at all is `unclassified`, so a new naming quirk is visible.
 
 Change detection: the manifest's `origin` records the resource id, URL, `last_modified`, `size` and `hash` the API gave.
 A resource whose latest archived unit has the same id and the same marker is unchanged (skipped, no download). Anything
 else (a changed marker, or a new resource id for a quarter already archived) is archived as a NEW dated unit beside the
 old ones, which are never touched; a re-upload on the same UTC day goes to `<day>.2`. If a quarter has several resources of
-one kind (CSV and XLS both, before mid-2024) only the preferred format is fetched, CSV first.
+one kind (CSV and XLS both, before mid-2024) only the preferred format is fetched: CSV, then XLSX, then XLS (the API's
+`format`, else the extension of the URL or of the name); the others are logged `superseded` and never archived as units.
 
 This module only fetches. It never loads: `rebuild` is a separate step, so files are in the archive before any load.
 """
@@ -61,6 +69,7 @@ class FetchSummary:
     unchanged: list[Item] = field(default_factory=list)
     ignored: list[Item] = field(default_factory=list)  # known kinds we do not fetch (initiere, modificare, SAD, other format)
     unclassified: list[Item] = field(default_factory=list)
+    conflicts: list[Item] = field(default_factory=list)  # name and URL disagree on the kind: not archived
     failed: list[Item] = field(default_factory=list)
     missing_datasets: list[str] = field(default_factory=list)
 
@@ -70,12 +79,12 @@ class FetchSummary:
         return [i.path for i in self.archived if i.path]
 
     def counts(self) -> dict[str, int]:
-        return {k: len(getattr(self, k)) for k in ("archived", "unchanged", "ignored", "unclassified", "failed")}
+        return {k: len(getattr(self, k)) for k in ("archived", "unchanged", "ignored", "unclassified", "conflicts", "failed")}
 
     def lines(self) -> list[str]:
         out = [f"{k}: {n}" for k, n in self.counts().items()]
         out += [f"  archived: {i.kind} {i.unit}: {i.path}" for i in self.archived]
-        for title, items in (("unclassified", self.unclassified), ("failed", self.failed)):
+        for title, items in (("unclassified", self.unclassified), ("conflict", self.conflicts), ("failed", self.failed)):
             out += [f"  {title}: {i.dataset} / {i.name!r} ({i.kind or '?'} {i.unit or '?'}): {i.reason}" for i in items]
         for name in self.missing_datasets:
             out.append(f"  no dataset yet: {name}")
@@ -99,9 +108,9 @@ def _kind(text: str) -> tuple[str | None, str | None]:
         return "fara-anunt", None
     if "modificare" in t:
         return None, "contract modifications"
-    if "initiere" in t:
+    if re.search(r"\bini?tiere\b", t):  # 'Anunturi de intiere publicate' (sic) is real: contract notices
         return None, "initiation notices"
-    if re.search(r"\binvitat\w* sad\b|\bsad\b", t):
+    if re.search(r"\bsad\b|\bdps\b|sistem\w* de achizitii dinamic", t):
         return None, "DPS invitations"
     if re.search(r"achizitii? directe?|achizitie directa|cumpar\w* direct", t):
         return "da", None
@@ -110,11 +119,15 @@ def _kind(text: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+ROMAN = {"1": 1, "2": 2, "3": 3, "4": 4, "i": 1, "ii": 2, "iii": 3, "iv": 4}
+
+
 def _quarter(text: str) -> tuple[int | None, int | None]:
     t = _plain(text)
-    q = re.search(r"\b[tq]([1-4])\b|\btrimestrul? ([1-4])\b", t)
+    q = re.search(r"\b[tq] ?([1-4]|iv|iii|ii|i)\b|\btrimestrul? ([1-4])\b", t)
     y = re.search(r"\b(20[0-3]\d)\b", t)
-    return (int(next(g for g in q.groups() if g)) if q else None, int(y.group(1)) if y else None)
+    number = ROMAN.get(next((g for g in q.groups() if g), ""), None) if q else None
+    return (number, int(y.group(1)) if y else None)
 
 
 def classify(resource: dict, dataset_year: int) -> tuple[tuple[str, str] | None, str]:
@@ -125,12 +138,12 @@ def classify(resource: dict, dataset_year: int) -> tuple[tuple[str, str] | None,
     kinds = [_kind(x) for x in (name, filename)]
     wanted = {k[0] for k in kinds if k[0]}
     if len(wanted) > 1:
-        return None, f"name and URL disagree on the kind ({sorted(wanted)})"
+        return None, f"conflict: name and URL disagree on the kind ({sorted(wanted)})"
     ignored = [k[1] for k in kinds if k[1]]
     if not wanted:
         return None, f"ignored: {ignored[0]}" if ignored else "unrecognised resource name"
     if ignored:  # e.g. name says DA, file says modification
-        return None, f"name and URL disagree on the kind ({sorted(wanted)} vs {ignored[0]})"
+        return None, f"conflict: name and URL disagree on the kind ({sorted(wanted)} vs {ignored[0]})"
     quarters = [_quarter(x) for x in (name, filename)]
     qs = {q for q, _ in quarters if q}
     if len(qs) != 1:
@@ -181,12 +194,18 @@ def _origin(dataset: dict, resource: dict) -> dict:
 
 def _format_rank(resource: dict) -> int:
     fmt = (resource.get("format") or "").lower().lstrip(".")
+    if fmt not in FORMAT_PREFERENCE:  # no usable `format`: the extension of the file or of the name
+        for text in (urlparse(resource.get("url") or "").path, resource.get("name") or ""):
+            ext = posixpath.splitext(unquote(text).strip().lower())[1].lstrip(".")
+            if ext in FORMAT_PREFERENCE:
+                fmt = ext
+                break
     return FORMAT_PREFERENCE.index(fmt) if fmt in FORMAT_PREFERENCE else len(FORMAT_PREFERENCE)
 
 
 def _say(status: str, item: Item, detail: str = "") -> None:
     """One log line per resource: `<status> <kind> <unit> <dataset> <resource name>: <detail>`."""
-    level = logging.WARNING if status in ("failed", "unclassified") else logging.INFO
+    level = logging.WARNING if status in ("failed", "unclassified", "conflict") else logging.INFO
     log.log(level, "%-11s %s %s [%s] %r%s", status, item.kind or "?", item.unit or "?", item.dataset, item.name,
             f": {detail}" if detail else "")
 
@@ -255,10 +274,10 @@ def fetch_datagov(
                 what, why = None, f"unreadable resource: {error}"
             item = Item(dataset=name, resource_id=resource.get("id"), name=(resource.get("name") or "").strip())
             if what is None:
-                bucket = summary.ignored if why.startswith("ignored:") else summary.unclassified
-                bucket.append(replace(item, reason=why.removeprefix("ignored: ")))
-                if bucket is summary.unclassified:
-                    _say("unclassified", bucket[-1], why)
+                status = "out-of-scope" if why.startswith("ignored:") else "conflict" if why.startswith("conflict:") else "unclassified"
+                bucket = {"out-of-scope": summary.ignored, "conflict": summary.conflicts}.get(status, summary.unclassified)
+                bucket.append(replace(item, reason=why.removeprefix("ignored: ").removeprefix("conflict: ")))
+                _say(status, bucket[-1], bucket[-1].reason)
             elif not resource.get("url"):
                 summary.unclassified.append(replace(item, kind=what[0], unit=what[1], reason="resource has no URL"))
                 _say("unclassified", summary.unclassified[-1], "resource has no URL")
@@ -275,6 +294,7 @@ def fetch_datagov(
                     reason="an older resource of the same file is skipped" if same
                     else f"another format of the same file is fetched ({candidates[0].get('format')})",
                 ))
+                _say("superseded", summary.ignored[-1], summary.ignored[-1].reason)
             resource = candidates[0]
             origin = _origin(dataset, resource)
             item = Item(dataset=name, resource_id=resource["id"], name=origin["resourceName"], kind=kind, unit=unit)

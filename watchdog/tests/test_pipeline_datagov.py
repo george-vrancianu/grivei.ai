@@ -118,7 +118,7 @@ def test_every_wanted_file_is_archived_unchanged_with_a_manifest_naming_its_reso
     }
     assert (archive.root / "seap/bulk/fara-anunt/2026Q1/2026-11-01/raport-fara-anunt-t1-2026.xlsx").is_file()
     assert len(archive.units()) == 4 and sorted(summary.touched) == sorted(u.path for u in archive.units())
-    assert summary.counts() == {"archived": 4, "unchanged": 0, "ignored": 0, "unclassified": 0, "failed": 0}
+    assert summary.counts() == {"archived": 4, "unchanged": 0, "ignored": 0, "unclassified": 0, "conflicts": 0, "failed": 0}
 
 
 def test_unwanted_kinds_are_ignored_and_unrecognisable_ones_are_reported_not_fatal(net, archive):
@@ -147,7 +147,8 @@ def test_a_resource_whose_name_and_url_disagree_is_not_archived_under_either_kin
         resource("r-bad", "Notificări de atribuire la cumpărarea directă 2026 - T2", "raport-fara-anunt-t2-2026.xlsx"),
     )
     summary = run(archive)
-    assert summary.archived == [] and [u.resource_id for u in summary.unclassified] == ["r-bad"]
+    assert summary.archived == [] and summary.unclassified == []
+    assert [u.resource_id for u in summary.conflicts] == ["r-bad"]
     assert net.downloads() == []
 
 
@@ -385,3 +386,54 @@ def test_a_file_is_never_visible_under_its_final_name_until_complete(archive, mo
     monkeypatch.setattr(arch.os, "replace", spy)
     archive.write_unit(source="seap", stream="bulk", kind="da", unit="2026Q1", fetched_at=DAY1, files={"f.csv": b"abc"})
     assert seen[0][0].endswith("f.csv.part") and seen[0][1].endswith("f.csv") and seen[0][2] is False
+
+
+# ---- real-data naming (ticket 62b) --------------------------------------------------------------------------
+
+def test_out_of_scope_and_conflict_resources_get_their_own_log_lines(net, archive, caplog):
+    serve(
+        net,
+        resource("r-dps", "Invitatii de depunere oferta la sistemul de achizitii dinamic TII 2026", "dps.csv"),
+        resource("r-init", "Anunturi de intiere publicate TII 2026", "init.csv"),
+        resource("r-bad", "Notificări de atribuire la cumpărarea directa TII 2026", "raport-fara-anunt-tii-2026.csv"),
+        resource("r-new", "Ceva nou TII 2026", "ceva.csv"),
+    )
+    with caplog.at_level("INFO", logger="pipeline.datagov"):
+        summary = run(archive)
+    lines = [r.getMessage() for r in caplog.records]
+    assert sum(l.startswith("out-of-scope") for l in lines) == 2
+    assert sum(l.startswith("conflict") for l in lines) == 1 and sum(l.startswith("unclassified") for l in lines) == 1
+    assert summary.archived == [] and net.downloads() == []
+
+
+def test_roman_quarters_and_a_name_without_a_year_are_archived_and_csv_beats_xls_without_a_format_field(net, archive):
+    a = resource("r-a", "Achizitii Directe T IV 2026.csv", "a.csv", fmt="")
+    b = resource("r-b", "Achizitii Directe T IV 2026.xls", "a.xls", fmt="")
+    c = resource("r-c", "Contracte TIII", "c.csv")
+    d = resource("r-d", "Notificari de atribuire TII 2026", "d.csv")
+    serve(net, b, a, c, d)
+    summary = run(archive)
+    assert sorted((i.kind, i.unit, i.resource_id) for i in summary.archived) == [
+        ("contracte", "2026Q3", "r-c"), ("da", "2026Q4", "r-a"), ("dan", "2026Q2", "r-d"),
+    ]
+    assert [i.resource_id for i in summary.ignored] == ["r-b"]  # one unit per quarter and kind
+
+
+def test_rerun_over_an_archive_of_the_real_first_run_skips_them_and_adds_only_new_quarters(net, archive):
+    old = [
+        resource("r-c1", "Contracte publicate T 1 - 2026", "c1.csv"),
+        resource("r-da1", "Achizitii directe T 1 - 2026", "da1.csv"),
+        resource("r-dan1", "Notificări de atribuire T 1 - 2026", "dan1.csv"),
+        resource("r-fa1", "Anunțuri de atribuire la proceduri fără anunț de inițiere T 1 - 2026", "fa1.csv"),
+    ]
+    serve(net, *old)
+    first = run(archive)
+    assert len(first.archived) == 4
+    before = sorted(u.path for u in archive.units())
+    new = resource("r-da2", "Achizitii directe TII 2026", "da2.csv")
+    serve(net, *old, new)
+    net.requests.clear()
+    second = run(archive, now=DAY2)
+    assert [(i.kind, i.unit) for i in second.archived] == [("da", "2026Q2")]
+    assert len(second.unchanged) == 4 and len(net.downloads()) == 1
+    assert before == sorted(u.path for u in archive.units() if u.path in before)  # nothing re-archived under a new unit
