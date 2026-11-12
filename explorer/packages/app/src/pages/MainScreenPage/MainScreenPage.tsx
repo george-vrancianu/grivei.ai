@@ -21,7 +21,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
       {state.status === "ready" && (
         <>
-          <TotalSummary total={state.data.seap.search.total} copy={{ total: t.main.total, records: t.records.countSuffix }} locale={locale} />
+          <TotalSummary total={state.data.seap.search.total} copy={{ total: t.main.total, records: t.total.records }} locale={locale} />
           <RecordsList page={state.data.seap.search.records} copy={t.records} locale={locale} />
         </>
       )}

@@ -18,7 +18,6 @@ export const en: Copy = {
     heading: "Records",
     empty: "No Records yet.",
     noValue: "no value",
-    countSuffix: "Records",
     columns: { code: "Code", title: "Title", authority: "Authority", supplier: "Supplier", date: "Date", value: "Value" },
   },
   pages: {

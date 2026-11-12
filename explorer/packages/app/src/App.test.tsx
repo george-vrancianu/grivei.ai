@@ -34,7 +34,7 @@ describe("the main screen for the empty filter", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explorează cheltuielile publice" })).toBeInTheDocument();
     expect(await screen.findByTestId("total-awarded")).toHaveTextContent("86.000.000.000 RON");
-    expect(screen.getByTestId("total-records")).toHaveTextContent("410.000 Înregistrări");
+    expect(screen.getByTestId("total-records")).toHaveTextContent("410.000 de înregistrări");
 
     const table = screen.getByRole("table", { name: "Înregistrări" });
     expect(within(table).getByRole("columnheader", { name: "Furnizor" })).toBeInTheDocument();

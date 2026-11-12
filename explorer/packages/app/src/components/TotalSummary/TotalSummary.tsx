@@ -3,7 +3,7 @@ import { Card, CardContent, MoneyAmount, Stack, Typography, type Locale } from "
 
 export interface TotalSummaryProps {
   total: TotalFieldsFragment;
-  copy: { total: string; records: string };
+  copy: { total: string; records: (n: number, formatted: string) => string };
   locale: Locale;
 }
 
@@ -20,7 +20,7 @@ export function TotalSummary({ total, copy, locale }: TotalSummaryProps) {
             <MoneyAmount bani={total.awarded} locale={locale} />
           </Typography>
           <Typography variant="body2" data-testid="total-records">
-            {total.records.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} {copy.records}
+            {copy.records(total.records, total.records.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB"))}
           </Typography>
         </Stack>
       </CardContent>

@@ -11,9 +11,9 @@ const national = fixtures.MainScreen.find((f) => f.name === "empty-search-nation
 
 export const National: Story = {
   // copy and locale follow the toolbar's language in `render`; the args only satisfy the types
-  args: { total: national, copy: { total: catalogue.en.main.total, records: catalogue.en.records.countSuffix }, locale: "en" },
+  args: { total: national, copy: { total: catalogue.en.main.total, records: catalogue.en.total.records }, locale: "en" },
   render: (_args, { globals }) => {
     const locale = globals["locale"] === "ro" ? "ro" : "en";
-    return <TotalSummary total={national} copy={{ total: catalogue[locale].main.total, records: catalogue[locale].records.countSuffix }} locale={locale} />;
+    return <TotalSummary total={national} copy={{ total: catalogue[locale].main.total, records: catalogue[locale].total.records }} locale={locale} />;
   },
 };

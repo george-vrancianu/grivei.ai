@@ -22,7 +22,6 @@ export interface Copy {
     heading: string;
     empty: string;
     noValue: string;
-    countSuffix: string;
     columns: { code: string; title: string; authority: string; supplier: string; date: string; value: string };
   };
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */

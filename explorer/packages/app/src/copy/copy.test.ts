@@ -60,3 +60,16 @@ describe("the copy catalogue", () => {
     expect(text).not.toMatch(/[şŞţŢ]/);
   });
 });
+
+describe("Romanian counts", () => {
+  const f = (n: number) => catalogue.ro.total.records(n, String(n));
+  it("uses the singular for 1, plain plural for 0 and 2..19 mod 100, and 'de' otherwise", () => {
+    expect([0, 1, 5, 19, 20, 101, 119, 120, 410000].map(f)).toEqual([
+      "0 înregistrări", "1 înregistrare", "5 înregistrări", "19 înregistrări", "20 de înregistrări", "101 înregistrări", "119 înregistrări", "120 de înregistrări", "410000 de înregistrări",
+    ]);
+  });
+  it("puts 'de' before the noun phrase for the other counts too", () => {
+    expect(catalogue.ro.total.suspectLeftOut(20, "20")).toBe("20 de valori suspecte excluse");
+    expect(catalogue.ro.total.noValue(3, "3")).toBe("3 înregistrări fără valoare");
+  });
+});

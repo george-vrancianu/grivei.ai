@@ -1,6 +1,11 @@
 import type { Copy } from "./types.ts";
 
-const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
+/** Romanian count phrase: singular for 1, plural for 0 and 2..19 (mod 100), "de" + plural otherwise (20 de, 120 de; 101 and 5 take none). */
+export const roCount = (n: number, formatted: string, one: string, other: string): string => {
+  if (n === 1) return `${formatted} ${one}`;
+  const r = n % 100;
+  return n === 0 || (r >= 1 && r <= 19) ? `${formatted} ${other}` : `${formatted} de ${other}`;
+};
 
 const entityLink: Copy["entityLink"] = {
   nameOnly: { label: "doar denumire", explanation: "Identificat doar după denumirea publicată (fără CUI). Cifrele pot amesteca entități omonime." },
@@ -18,7 +23,6 @@ export const ro: Copy = {
     heading: "Înregistrări",
     empty: "Nicio înregistrare încă.",
     noValue: "fără valoare",
-    countSuffix: "Înregistrări",
     columns: { code: "Cod", title: "Titlu", authority: "Autoritate", supplier: "Furnizor", date: "Data", value: "Valoare" },
   },
   pages: {
@@ -47,10 +51,10 @@ export const ro: Copy = {
   party: { naturalPerson: "Persoană fizică", entityLink },
   dataThrough: { through: "date până la" },
   total: {
-    records: (n, f) => `${f} ${plural(n, "înregistrare", "înregistrări")}`,
-    suspectLeftOut: (n, f) => `${f} ${plural(n, "valoare suspectă exclusă", "valori suspecte excluse")}`,
-    noValue: (n, f) => `${f} ${plural(n, "înregistrare fără valoare", "înregistrări fără valoare")}`,
-    frameworkCeilings: (amount) => `Plafoane de acorduri-cadru nenumărate: ${amount}`,
+    records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+    suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+    noValue: (n, f) => roCount(n, f, "înregistrare fără valoare", "înregistrări fără valoare"),
+    frameworkCeilings: (amount) => `Plafoane de acorduri-cadru neincluse: ${amount}`,
     methodology: "Cum se calculează acest total",
   },
 };

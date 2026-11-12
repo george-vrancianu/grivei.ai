@@ -1,4 +1,4 @@
-import { RECORD_FILTER_URL, URL_ONLY_KEYS, type RecordFilter, type UrlEncoding, type UrlKeySpec } from "@grivei/contract";
+import { RECORD_FILTER_URL, URL_ONLY_KEYS, type RecordFilter, type RecordOrder, type SignalOrder, type UrlEncoding, type UrlKeySpec } from "@grivei/contract";
 
 /**
  * The URL search state: the `RecordFilter` plus what shapes the view without changing the matching set.
@@ -11,9 +11,9 @@ export interface UrlState {
   /** 1-based page of the open list; 1 is the default and is left out of the URL. */
   page?: number;
   /** `RecordOrder` of a Records list, e.g. `VALUE_DESC`. */
-  order?: string;
+  order?: RecordOrder;
   /** `SignalOrder` of the Signals list. */
-  signalOrder?: string;
+  signalOrder?: SignalOrder;
 }
 
 export const EMPTY_URL_STATE: UrlState = { filter: {} };
@@ -77,9 +77,9 @@ export function decodeUrlState(search: string): UrlState {
   const page = params.get(URL_ONLY_KEYS.page);
   if (page !== null && /^[1-9]\d*$/.test(page) && Number(page) > 1) state.page = Number(page);
   const order = params.get(URL_ONLY_KEYS.order);
-  if (order !== null) state.order = enumFromUrl(order) ?? undefined;
+  if (order !== null) state.order = (enumFromUrl(order) ?? undefined) as RecordOrder | undefined;
   const signalOrder = params.get(URL_ONLY_KEYS.signalOrder);
-  if (signalOrder !== null) state.signalOrder = enumFromUrl(signalOrder) ?? undefined;
+  if (signalOrder !== null) state.signalOrder = (enumFromUrl(signalOrder) ?? undefined) as SignalOrder | undefined;
   if (state.order === undefined) delete state.order;
   if (state.signalOrder === undefined) delete state.signalOrder;
   return state;
