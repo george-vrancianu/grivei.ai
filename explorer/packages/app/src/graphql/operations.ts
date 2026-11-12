@@ -3,7 +3,7 @@ import type {
   EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
-  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables,
+  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, RecordPageQuery, RecordPageQueryVariables,
 } from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
@@ -27,3 +27,4 @@ export const EntityRelationships = operation<EntityRelationshipsQuery, EntityRel
 export const FullResultsAuthorities = operation<FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables>("FullResultsAuthorities");
 export const FullResultsSuppliers = operation<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables>("FullResultsSuppliers");
 export const FullResultsRecords = operation<FullResultsRecordsQuery, FullResultsRecordsQueryVariables>("FullResultsRecords");
+export const RecordPage = operation<RecordPageQuery, RecordPageQueryVariables>("RecordPage");

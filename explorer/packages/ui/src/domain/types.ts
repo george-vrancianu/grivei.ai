@@ -1,7 +1,7 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
   CoverageLensQuery, EntityRecordsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
-  EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
+  EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   TotalFieldsFragment,
 } from "@grivei/contract";
 
@@ -51,3 +51,8 @@ export type SourceInfo = CoverageLens["sources"][number];
 export type RecordsTabData = NonNullable<NonNullable<EntityRecordsQuery["entity"]>["seap"]["role"]>["records"];
 /** The Records tab's facet counts. */
 export type RecordFacetData = RecordsTabData["facets"];
+
+/** A Record as its page shows it (`RecordPage`'s `seap.record`, never null here). */
+export type RecordPageData = NonNullable<RecordPageQuery["seap"]["record"]>;
+/** A Signal a Record belongs to, with the Records it consists of. */
+export type RecordSignal = RecordPageData["signals"][number];
