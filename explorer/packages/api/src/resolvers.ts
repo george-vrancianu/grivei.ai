@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import type { Store, RecordRow, RecordOrderKey } from "./store.ts";
+import type { Store, RecordRow, RecordDetail, RecordOrderKey } from "./store.ts";
 
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
 // The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
@@ -60,6 +60,18 @@ function recordRow(r: RecordRow) {
   };
 }
 
+function recordPage(r: RecordDetail) {
+  return {
+    ...recordRow(r),
+    contractType: r.contractType,
+    cpv: r.cpv,
+    // TODO: `url` is the Source's public page for the Record, served by the /source/seap/<code> redirect (not built yet).
+    provenance: { source: "SEAP" as const, url: null, via: r.provenance.via, kind: "BULK" as const, fetchedAt: r.provenance.fetchedAt },
+    suspect: null,
+    framework: null,
+  };
+}
+
 export function rootValue(store: Store) {
   const total = async () => {
     const t = await store.total();
@@ -77,7 +89,10 @@ export function rootValue(store: Store) {
     counties: notServed("counties"),
     uats: notServed("uats"),
     seap: () => ({
-      record: notServed("seap.record"),
+      record: async ({ code }: { code: string }) => {
+        const found = await store.record(code);
+        return found ? recordPage(found) : null;
+      },
       search: ({ filter }: { filter: Filter }) => {
         assertEmptyFilter(filter);
         return {
