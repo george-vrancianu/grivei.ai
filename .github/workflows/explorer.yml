@@ -4,11 +4,19 @@ on:
   pull_request:
     paths:
       - "explorer/**"
+      - "site/**"
+      - "watchdog/**"
+      - "compose.yaml"
+      - "deploy/**"
       - ".github/workflows/explorer.yml"
   push:
     branches: [main]
     paths:
       - "explorer/**"
+      - "site/**"
+      - "watchdog/**"
+      - "compose.yaml"
+      - "deploy/**"
 
 jobs:
   check:
@@ -26,7 +34,41 @@ jobs:
       - run: npm ci
       # lint (incl. the "only packages/ui imports MUI" rule), then per package: the contract's
       # generated files are up to date, typecheck, every operation validates against the schema,
-      # every fixture matches its operation; the UI library's atom and story tests; tooling tests.
+      # every fixture matches its operation; the UI library's atom and story tests; the API's tests (persisted-only);
+      # the app against the contract fixtures (seam 3); tooling tests (lint boundary, landing-page links).
+      # Seam 1 skips itself here (no pipeline Python on this job): it has its own job below.
       - run: npm run check
       # the component workbench builds statically (the story render tests already ran above).
       - run: npm run storybook:build
+
+  # Seam 1: the miniature raw archive -> `pipeline rebuild` -> the persisted query through the API, in a throwaway ParadeDB
+  # container (the runner has Docker). Also the pipeline's own pytest (seam 2: the fetch with HTTP stubbed).
+  seam1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: explorer/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r watchdog/requirements-dev.txt
+      - run: pytest -q
+        working-directory: watchdog
+      - run: npm ci
+        working-directory: explorer
+      - run: npx vitest run test/seam1.test.ts --pool=forks --maxWorkers=1
+        working-directory: explorer/packages/api
+        env:
+          PIPELINE_PYTHON: python
+
+  # The Compose project is valid and every image builds (nothing is started).
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --profile pipeline config -q
+      - run: docker compose --profile pipeline build

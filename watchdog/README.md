@@ -22,6 +22,7 @@ watchdog/
 ├── connectors/
 │   ├── seap_harvest.py     # downloads DA + award notices + contracts for one authority (needs `requests`)
 │   └── load_batch.py       # loads the JSON into Postgres and runs the transformation (needs only `psql`)
+├── pipeline/               # the explorer's pipeline (raw archive, `rebuild`; see deploy/README.md): `python -m pipeline`
 ├── tests/                  # pytest: harvester (HTTP stubbed) and loader (throwaway Postgres)
 ├── data/raw/               # the JSON batches exactly as they came from the source (keep them; they are the evidence)
 └── reports/                # the reports produced
@@ -61,6 +62,15 @@ python -m venv .venv              # or: uv venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
 ```
+
+## The pipeline (explorer)
+
+`pipeline/` is the explorer's pipeline, grown out of this Connector (ADR 0004): `archive.py` is the raw archive (files unchanged under a
+dated path, a manifest per unit written last, a quarantine area with a reason file), `fetch.py` downloads a bulk file into it,
+`da_bulk.py` parses a direct-purchase bulk file, `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`).
+Run it with `python -m pipeline --archive <dir> rebuild --db <url>`; Docker and the full runbook are in `../deploy/README.md`.
+Its tests (`tests/test_pipeline_archive.py`, with the miniature archive in `tests/fixtures/archive/`) need no database; the
+archive -> rebuild -> GraphQL test is in `explorer/packages/api/test/seam1.test.ts`. The legacy JSON-batch loader above is unchanged.
 
 ## The data model, in brief
 
