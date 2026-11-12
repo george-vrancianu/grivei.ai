@@ -1,0 +1,12 @@
+{
+  "endpoint": "https://e-licitatie.ro/api-pub/NoticeCommon/GetCANoticeList/",
+  "body": {
+    "sysNoticeTypeIds": [],
+    "sortProperties": [],
+    "pageIndex": 0,
+    "pageSize": 10,
+    "number": "CAN9810001",
+    "startPublicationDate": null,
+    "endPublicationDate": null
+  }
+}
