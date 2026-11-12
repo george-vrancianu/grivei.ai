@@ -4,6 +4,7 @@ import { loadSchema } from "@grivei/contract/node";
 import { loadPersistedQueries, type PersistedQuery } from "./persisted.ts";
 import { rootValue } from "./resolvers.ts";
 import type { Store } from "./store.ts";
+import { codeFromPath, createSeapLink, type SeapLink } from "./seapLink.ts";
 
 export interface ApiResponse {
   status: number;
@@ -27,7 +28,8 @@ export interface Api {
  * The API answers persisted queries only: the client sends `{ "id": <sha256 of the document>, "variables": {...} }`.
  * Anything carrying query text, or an id that is not on the contract's allowlist, is refused with HTTP 400.
  */
-export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): Api {
+export function createApi(store: Store, schema: GraphQLSchema = loadSchema(), options: { seapLink?: SeapLink } = {}): Api {
+  const seapLink = options.seapLink ?? createSeapLink();
   const queries = loadPersistedQueries(schema);
   const root = rootValue(store);
 
@@ -76,6 +78,15 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
         });
         try {
           if (req.method === "GET" && req.url === "/healthz") return send(200, { ok: true });
+          // "Check in SEAP": GET /source/seap/<code> redirects to the public page (seapLink.ts); no GraphQL involved
+          const sourceCode = req.method === "GET" || req.method === "HEAD" ? codeFromPath((req.url ?? "").split("?")[0]!) : undefined;
+          if (sourceCode !== undefined) {
+            const r = sourceCode === null ? { status: 404 as const, body: "Unknown code.\n" } : await seapLink.resolve(sourceCode);
+            if (gone.signal.aborted) return;
+            if (r.status === 302) res.writeHead(302, { location: r.location, "cache-control": "no-store" }).end();
+            else res.writeHead(r.status, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" }).end(req.method === "HEAD" ? undefined : r.body);
+            return;
+          }
           if (req.method !== "POST" || !req.url?.startsWith("/graphql")) {
             return send(404, { errors: [{ message: "POST /graphql", extensions: { code: "NOT_FOUND" } }] });
           }

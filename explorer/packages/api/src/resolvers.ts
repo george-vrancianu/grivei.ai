@@ -1,5 +1,6 @@
 import { GraphQLError } from "graphql";
 import { buildWhere, type SearchFilter } from "./search.ts";
+import { seapLinkUrl } from "./seapLink.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
@@ -38,8 +39,6 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
     ...recordRow(r),
     contractType: r.contractType,
     cpv: r.cpv,
-    // `url`: a crawled Record's public page was built at load time; a bulk Record's is the /source/seap/<code> redirect's job (not built yet).
-    provenance: { source: "SEAP" as const, url: r.provenance.url, via: r.provenance.via, kind: r.provenance.kind, fetchedAt: r.provenance.fetchedAt },
     // the link to its framework agreement (the counting rule): set for an agreement's own contract and for a contract awarded under one
     framework: r.frameworkRole
       ? async () => {
@@ -108,6 +107,14 @@ export function rootValue(store: Store) {
         entity: w.entity ? entityObject(w.entity) : null,
       })),
       signals: [],
+      // Every Record carries its provenance. A crawled Record's public page was built at load time; a bulk Record's is the /source/seap/<code> redirect.
+      provenance: {
+        source: "SEAP" as const,
+        kind: r.provenance.kind,
+        via: r.provenance.via,
+        fetchedAt: r.provenance.fetchedAt,
+        url: r.provenance.url ?? (r.provenance.kind === "BULK" ? seapLinkUrl(r.code) : null),
+      },
     };
   }
 
