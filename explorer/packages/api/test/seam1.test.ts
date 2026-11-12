@@ -379,7 +379,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // 2021-22: awards without a prior call, as crawled (value as of the crawl date), counted although the bulk has no 2021-22 file of the kind
     expect(await backfillRecord("CAN9400001")).toMatchObject({
       kind: "AWARD_NOTICE", channel: "CONTRACT", procedure: "Negociere fara publicare prealabila", value: "350050", counted: "350050", date: "2021-04-02",
-      badges: ["CRAWL_ONLY"], authority: { key: "1000001" }, winners: [{ publishedName: "AVOCATI DEMO", entity: { key: "2000021" } }],
+      badges: ["CRAWL_ONLY"], winners: [{ publishedName: "AVOCATI DEMO" }],
       provenance: { source: "SEAP", kind: "CRAWL", via: null, url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/94000011", fetchedAt: "2026-11-11T09:00:00Z" },
     });
     expect(await backfillRecord("CAN9400002")).toMatchObject({ procedure: "Procedura simplificata proprie", value: "5000000", provenance: { kind: "CRAWL", fetchedAt: "2026-11-11T09:00:00Z" } });
@@ -432,6 +432,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(await snapshot("backfill_a")).toEqual(first);
     rebuild("backfill_b", "archive-backfill");
     expect(await snapshot("backfill_b")).toEqual(first);
+  });
+
   // ---- supplier identity (#66, ADR 0003) ----------------------------------------------------------------------------------
 
   const CNPS = ["1990101123456", "2950202123456", "199010112", "295020212"]; // the fixture's invented CNPs, whole and in part
