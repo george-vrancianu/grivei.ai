@@ -2,7 +2,7 @@ import type { RecordFilter } from "@grivei/contract";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { TextField } from "../../../../../atoms/TextField/index.ts";
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
 import { yearOf, yearOptions } from "../../filterChips.utils.ts";
 
 export interface YearRangeProps {

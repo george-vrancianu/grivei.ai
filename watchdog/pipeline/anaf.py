@@ -215,17 +215,37 @@ def read_answers(archive: Archive) -> dict[int, Answer]:
 
 
 def collect_cuis(archive: Archive, say: Callable[[str], None] | None = None) -> set[int]:
-    """Every CUI that passes the check digit in the archive's SEAP bulk files: contracting authorities and winners.
+    """Every CUI that passes the check digit in the archive's SEAP bulk files and crawled days: contracting authorities and winners.
 
     Reads each file the way a rebuild does (so it sees the same values) but never quarantines: a unit that does not validate
     is skipped here and handled by the next rebuild. A foreign VAT id, a CNP and anything failing the check digit is not asked."""
     from .bulk import KINDS, InvalidFile, parse_file_stats
+    from .crawl import KIND as CRAWL_KIND
+    from .crawl.records import parse_unit as parse_crawl_unit
 
-    units = [u for u in archive.units() if u.source == "seap" and u.stream == "bulk" and u.kind in KINDS]
+    units = [
+        u for u in archive.units()
+        if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind == CRAWL_KIND))
+    ]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     cuis: set[int] = set()
     seen: set[tuple[str, str]] = set()
     for index, unit in enumerate(units, start=1):
+        if unit.stream == "crawl":  # a day has no single file and the rebuild does not dedup it either
+            try:
+                day = [r for rs in parse_crawl_unit(unit).records.values() for r in rs]
+            except InvalidFile as e:
+                if say:
+                    say(f"anaf scan unit {index}/{len(units)} kind={unit.kind} unit={unit.unit} skipped ({e.reason})")
+                continue
+            before = len(cuis)
+            for r in day:
+                for raw in (r.authority_cui, *(w.cui for w in r.all_winners)):
+                    if (cui := asked_cui(raw)) is not None:
+                        cuis.add(cui)
+            if say:
+                say(f"anaf scan unit {index}/{len(units)} kind={unit.kind} unit={unit.unit} records={len(day)} new_cuis={len(cuis) - before}")
+            continue
         for name in unit.files:
             path = unit.file_path(name)
             key = (unit.kind, sha256_of(path))

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { pick } from "../../../../../workbench/index.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { pick } from "../../../workbench/index.ts";
 import { ToggleChip } from "./index.ts";
 
-const meta = { title: "Domain/FilterChips/ToggleChip" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/ToggleChip" } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

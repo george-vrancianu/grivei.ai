@@ -1,6 +1,6 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
-import { ToggleChip } from "../ToggleChip/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
+import { ToggleChip } from "../../../ToggleChip/index.ts";
 
 export interface SignalsChipProps {
   /** The filter's `hasSignals`: only `true` shows as pressed; `false` is the active-chip row's business. */

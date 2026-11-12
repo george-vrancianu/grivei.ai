@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, EntityRecordsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   TotalFieldsFragment,
 } from "@grivei/contract";
@@ -46,3 +46,8 @@ export type CountyCoverage = CoverageLens["coverage"]["counties"][number];
 export type CoverageStatus = ContractCoverageStatus;
 /** A Source as the lens lists it: id, name (source data), whether it is harvested yet. */
 export type SourceInfo = CoverageLens["sources"][number];
+
+/** What the Records tab shows (`EntityRecords`): the filtered `total`, the `facets` and one page of Records. */
+export type RecordsTabData = NonNullable<NonNullable<EntityRecordsQuery["entity"]>["seap"]["role"]>["records"];
+/** The Records tab's facet counts. */
+export type RecordFacetData = RecordsTabData["facets"];

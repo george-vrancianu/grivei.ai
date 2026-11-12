@@ -405,3 +405,23 @@ def test_the_command_scans_asks_archives_and_reports(identity_archive, tmp_path,
 )
 def test_status_of_gives_one_word_for_the_badge(state, inactive, expected):
     assert status_of({"date_generale": {"stare_inregistrare": state}, "stare_inactiv": {"statusInactivi": inactive}}) == expected
+
+
+def test_the_cuis_asked_include_those_of_crawled_days(tmp_path):
+    """A supplier first seen in the nightly crawl (published as `RO <cui>`, in no bulk file) must reach ANAF (#66 + #77)."""
+    from pipeline.crawl.unitdir import UnitWriter
+
+    now = datetime(2026, 11, 12, 9, 0, tzinfo=timezone.utc)
+    archive = Archive(tmp_path / "crawl-only")
+    w = UnitWriter.open(archive, "2026-10-01", now)
+    notice = {"caNoticeId": 1, "noticeNo": "CAN1", "procedureId": 7, "sysNoticeTypeId": 3, "sysNoticeVersionId": 2,
+              "noticeStateDate": "2026-10-01T10:00:00+03:00", "contractTitle": "Titlu", "contractingAuthorityNameAndFN": "1000009 - AUTORITATE EXEMPLU"}
+    contract = {"caNoticeContractId": 1, "contractNo": "C1", "contractDate": "2026-09-28T00:00:00+03:00", "defaultCurrencyContractValue": 100,
+                "winners": [{"name": "FIRMA SRL", "fiscalNumber": "RO 2000007"}, {"name": "ALTA SRL", "fiscalNumber": "2000001"}]}
+    w.put("notices-2026-10-01_2026-10-01-p0000.json", json.dumps({"items": [notice], "total": 1, "searchTooLong": False}).encode())
+    w.put("contracts-1-s00000.json", json.dumps({"items": [contract], "total": 1}).encode())
+    w.commit(now, "u", {})
+    cuis = collect_cuis(archive)
+    assert 2000007 in cuis  # the winner, with its RO prefix
+    assert 1000009 in cuis  # the authority
+    assert 2000001 not in cuis  # fails the check digit

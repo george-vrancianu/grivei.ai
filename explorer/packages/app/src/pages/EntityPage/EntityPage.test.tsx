@@ -48,7 +48,7 @@ describe("an entity page", () => {
 
     await userEvent.setup().click(tabs().getByRole("link", { name: "Records" }));
     expect(window.location.pathname).toBe(`${SUPPLIER}/records`);
-    expect(await screen.findByText("The Records tab is not built yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
   });
 
@@ -73,10 +73,10 @@ describe("an entity page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
     expect(screen.getByRole("status")).toHaveTextContent("Loading");
-    expect(screen.queryByText("The Records tab is not built yet.")).toBeNull();
+    expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
 
     release();
-    expect(await screen.findByText("The Records tab is not built yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(screen.queryByRole("status")).toBeNull();
   });
 

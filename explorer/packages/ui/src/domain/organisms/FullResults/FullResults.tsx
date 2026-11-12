@@ -9,7 +9,7 @@ import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.
 import type { EntityRef, EntityResultPage, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
 import { followLink } from "../../utils/followLink.ts";
 import type { ResultTab } from "../ResultTabs/index.ts";
-import { PageNav, type PageNavCopy } from "./components/PageNav/index.ts";
+import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
 import { PageNotice } from "./components/PageNotice/index.ts";
 import { ResultsSummary } from "./components/ResultsSummary/index.ts";
 import { DEFAULT_PAGE_SIZE, pageCount, pageRange } from "./fullResults.utils.ts";
