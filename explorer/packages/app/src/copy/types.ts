@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -51,7 +51,18 @@ export interface Copy {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
     notFound: { title: string; body: string };
-    tabBody: { overview: string; relationships: string };
+    tabBody: { relationships: string };
+    /** The Overview tab: every section's strings. The total, party, Record row and badge copy come from the catalogue's own `total`, `party`, `results` and `badges`. */
+    overview: {
+      headline: Omit<EntityOverviewCopy["headline"], "totalFigure">;
+      signals: EntityOverviewCopy["signals"];
+      counterparties: Omit<EntityOverviewCopy["counterparties"], "party">;
+      procedures: EntityOverviewCopy["procedures"];
+      consortia: Omit<EntityOverviewCopy["consortia"], "party">;
+      frameworks: EntityOverviewCopy["frameworks"];
+      largest: Omit<EntityOverviewCopy["largest"], "recordRow">;
+      aliases: Omit<EntityOverviewCopy["aliases"], "badges">;
+    };
     /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
     recordsNoRole: { authority: string; supplier: string };
     /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */

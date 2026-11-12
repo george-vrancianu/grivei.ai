@@ -200,8 +200,30 @@ export const ro: Copy = {
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     tabBody: {
-      overview: "Prezentarea generală nu este construită încă.",
       relationships: "Fila Relații nu este construită încă.",
+    },
+    overview: {
+      headline: {
+        label: "Cifre principale", total: "Total atribuit", counterparties: "Contraparți", topShare: (p) => `Cea mai mare deține ${p} din total`,
+        directPurchase: "Pondere prin achiziție directă", signals: "Semnale",
+      },
+      signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate." },
+      counterparties: { heading: "Contraparți", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`, empty: "Nicio contraparte în această selecție." },
+      procedures: { heading: "Tipuri de procedură", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
+      consortia: {
+        heading: "Asocieri", convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP.",
+        share: (amount) => `parte egală ${amount}`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+      },
+      frameworks: {
+        heading: "Acorduri-cadru",
+        line: (n, f, ceilings, reported) => `${f} ${n === 1 ? "acord-cadru" : "acorduri-cadru"}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+        none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
+      },
+      largest: { heading: "Cele mai mari înregistrări", note: "Doar înregistrările numărate: valorile suspecte și plafoanele acordurilor-cadru nu apar aici.", empty: "Nicio înregistrare numărată în această selecție." },
+      aliases: {
+        heading: "Apare în SEAP ca", intro: "Fiecare denumire sub care SEAP a publicat această entitate.",
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), range: (a, b) => `prima oară ${a}, ultima oară ${b}`, singleDay: (d) => `doar la ${d}`,
+      },
     },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
