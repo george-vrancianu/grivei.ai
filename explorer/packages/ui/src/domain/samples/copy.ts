@@ -25,6 +25,7 @@ import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
+import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
@@ -655,6 +656,7 @@ const signalCard: Record<Locale, SignalCardCopy> = {
 
 export const sampleCopy = {
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
+  signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,

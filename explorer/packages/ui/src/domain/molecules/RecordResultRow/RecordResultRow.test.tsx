@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord } from "../../samples/fixtureData.ts";
+import { consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
 import type { RecordResult } from "../../types.ts";
 import { RecordResultRow } from "./index.ts";
 
@@ -15,6 +15,34 @@ function renderRow(row: RecordResult, locale: "en" | "ro" = "en") {
     locale,
   );
 }
+
+describe("RecordResultRow Signal badges", () => {
+  const row = overCapSignalRecords.records.rows[0]!;
+  const badges = (locale: "en" | "ro") => ({ href: (s: { reproduce: { authority: string | null } }) => `/explore/authority/${s.reproduce.authority}/records?signal=over-cap`, copy: sampleCopy.signalBadge(locale) });
+  const renderWith = (locale: "en" | "ro", signalBadges?: ReturnType<typeof badges>) =>
+    renderInUi(
+      <ul>
+        <RecordResultRow row={row} recordHref="/explore/record/x" entityHref={entityHref} locale={locale} copy={sampleCopy.recordRow(locale)} signalBadges={signalBadges} />
+      </ul>,
+      locale,
+    );
+
+  it("shows a compact badge for the Signal a Record is in, linking to the Signal's Records, in English and Romanian", () => {
+    expect(row.record.signals).toHaveLength(1);
+    renderWith("en", badges("en"));
+    expect(screen.getByRole("link", { name: "Over cap, 10 Jan 2023" })).toHaveAttribute("href", "/explore/authority/1000017/records?signal=over-cap");
+  });
+
+  it("says it in Romanian too", () => {
+    renderWith("ro", badges("ro"));
+    expect(screen.getByRole("link", { name: /^Peste plafon, / })).toBeVisible();
+  });
+
+  it("shows no badge when the row is given no Signal wiring", () => {
+    renderWith("en");
+    expect(screen.queryByRole("link", { name: /Over cap/ })).toBeNull();
+  });
+});
 
 describe("RecordResultRow", () => {
   it("links the title to the Record page and shows value, date and authority", () => {

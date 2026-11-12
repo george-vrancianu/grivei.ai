@@ -5,6 +5,8 @@ import {
   noValuePage, provisionalPage, crawlOnlyPage, cuiMismatchPage, curatedPage, frameworkOverrunPage, nameDiffersPage, noPublicPage, splittingPage, subsequentPage, suspectDirectPage, suspectNoEstimatePage, suspectOverEstimatePage,
 } from "../../samples/fixtureData.ts";
 import type { RecordPageData } from "../../types.ts";
+import { SignalCard } from "../SignalCard/index.ts";
+import { ruleSlug } from "../../samples/signals.ts";
 import { RecordDetail } from "./index.ts";
 
 const meta = { title: "Domain/RecordDetail", component: RecordDetail } satisfies Meta<Record<string, unknown>>;
@@ -12,7 +14,7 @@ export default meta;
 type Story = StoryObj;
 
 const detail =
-  (record: RecordPageData): Story["render"] =>
+  (record: RecordPageData, withCards = false): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
     return (
@@ -23,6 +25,21 @@ const detail =
         methodologyHref="/explore/methodology"
         locale={locale}
         copy={sampleCopy.recordDetail(locale)}
+        renderSignalCard={
+          withCards
+            ? (signal) => (
+                <SignalCard
+                  signal={signal}
+                  reproduceHref={`/explore/authority/${signal.reproduce.authority}/records?signal=${ruleSlug(signal.rule)}`}
+                  methodologyHref={`/explore/methodology#signal-${ruleSlug(signal.rule)}`}
+                  seapHref={signal.recordCount === 1 ? `/source/seap/${record.code}` : null}
+                  entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
+                  locale={locale}
+                  copy={sampleCopy.signalCard(locale)}
+                />
+              )
+            : undefined
+        }
       />
     );
   };
@@ -53,8 +70,10 @@ export const NoValue: Story = { render: detail(noValuePage) };
 export const NaturalPersonWinner: Story = { render: detail(naturalPersonPage) };
 /** A Record inside a splitting Signal that lists its Records. */
 export const InSplittingSignal: Story = { render: detail(splittingPage) };
-/** A framework whose subsequent contracts exceed its ceiling (112.4%), with the framework-overrun Signal. */
+/** A framework whose subsequent contracts exceed its ceiling (125%), with the framework-overrun Signal. */
 export const FrameworkOverrun: Story = { render: detail(frameworkOverrunPage) };
+/** The same Record with the Signal as a card (the app's wiring): the four-part wording, the links, then the Signal's Records. */
+export const FrameworkOverrunWithSignalCard: Story = { render: detail(frameworkOverrunPage, true) };
 /** Crawled, in a quarter the bulk has not reached: provisional, linked to its e-licitatie page. */
 export const Provisional: Story = { render: detail(provisionalPage) };
 /** Crawled and not in the bulk: crawl-only. */

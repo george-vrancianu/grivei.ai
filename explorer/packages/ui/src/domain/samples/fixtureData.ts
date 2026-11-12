@@ -102,15 +102,20 @@ export const fullResultsEstimatedAuthorities = named(fixtures.FullResultsAuthori
 /** Eight Records with every Record state (from the FullResultsRecords fixtures); the fixture counts 11 in all. */
 export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by-value").data.seap.search.records;
 
+// A Record row inside Signals (recorded from archive-signals: the two direct purchases of one over-cap Signal, and one inside a splitting Signal).
+/** The rows of the Records tab for one over-cap Signal's reproducing filter: each Record carries the Signal it is in. */
+export const overCapSignalRecords = named(fixtures.EntityRecords, "over-cap-1000017-2023-01-10-2023-01-10").data.entity!.seap.role!.records;
+export const splittingSignalRecords = named(fixtures.EntityRecords, "splitting-1000017-2023-03-01-2023-04-08-2000023").data.entity!.seap.role!.records;
+
 // The Records tab's data (`EntityRecords` fixtures: the `records(filter)` result of an entity's role).
 const recordsOf = (name: string): RecordsTabData => named(fixtures.EntityRecords, name).data.entity!.seap.role!.records;
 const filterOf = (name: string): RecordFilter => named(fixtures.EntityRecords, name).variables.filter;
-// Recorded from the API (seam 1, `recorded/EntityRecords.json`) except the splitting Signal and the estimated total, which stay hand-written.
+// Recorded from the API (seam 1, `recorded/EntityRecords.json`, `recorded/signals/`) except the estimated total, which stays hand-written.
 /** A supplier's tab with no filter: facets with authorities as the counterparties. */
 export const supplierRecords = recordsOf("supplier");
-/** The same tab after choosing the Splitting facet (hand-written: no recorded archive has a splitting Signal yet). */
-export const supplierSplittingRecords = recordsOf("supplier-signal-splitting");
-export const supplierSplittingFilter = filterOf("supplier-signal-splitting");
+/** A supplier's tab after choosing the Splitting facet (recorded from archive-splitting: its two splitting Signals, five Records). */
+export const supplierSplittingRecords = recordsOf("supplier-with-splitting-facet");
+export const supplierSplittingFilter = filterOf("supplier-with-splitting-facet");
 /** A year, the channel and one authority on at once. */
 export const supplierSeveralFacetsRecords = recordsOf("supplier-several-facets");
 export const supplierSeveralFacetsFilter = filterOf("supplier-several-facets");
@@ -155,10 +160,10 @@ export const suspectNoEstimatePage = recordPage("contract-suspect-no-estimate");
 export const noValuePage = recordPage("direct-purchase-no-value");
 /** A natural-person winner: never named, never linked (recorded). */
 export const naturalPersonPage = recordPage("natural-person-winner");
-/** A Record inside a splitting Signal (hand: rule #75 is not recorded yet). */
+/** A Record inside a splitting Signal (recorded). */
 export const splittingPage = recordPage("splitting-signal");
-/** A framework whose subsequent contracts exceed its ceiling, with the framework-overrun Signal (hand: rule #76 is not recorded yet). */
-export const frameworkOverrunPage = recordPage("framework-overrun-signal");
+/** A framework whose subsequent contracts exceed its ceiling (125%), with the framework-overrun Signal (recorded from archive-framework-overrun). */
+export const frameworkOverrunPage = recordPage("framework-overrun-ceiling");
 /** A crawled contract in a quarter the bulk has not reached: provisional, linked to its e-licitatie page (recorded). */
 export const provisionalPage = recordPage("crawled-provisional");
 /** A crawled Record the bulk does not have: crawl-only (recorded). */
