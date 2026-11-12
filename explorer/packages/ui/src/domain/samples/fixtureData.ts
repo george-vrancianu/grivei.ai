@@ -1,7 +1,8 @@
 // Story and test data drawn from the contract's mock fixtures, so the domain atoms are
 // shown with the same invented world every screen uses. Nothing here ships in the app.
 import { fixtures } from "@grivei/contract/fixtures";
-import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData } from "../types.ts";
+import type { RecordFilter } from "@grivei/contract";
+import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordsTabData } from "../types.ts";
 
 function named<T extends { name: string }>(set: readonly T[], name: string): T {
   const found = set.find((fixture) => fixture.name === name);
@@ -96,3 +97,24 @@ export const fullResultsAuthorityRows = named(fixtures.FullResultsAuthorities, "
 export const fullResultsEstimatedAuthorities = named(fixtures.FullResultsAuthorities, "extreme-estimated").data.seap.search.authorities;
 /** Eight Records with every Record state (from the FullResultsRecords fixtures); the fixture counts 11 in all. */
 export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by-value").data.seap.search.records;
+
+// The Records tab's data (`EntityRecords` fixtures: the `records(filter)` result of an entity's role).
+const recordsOf = (name: string): RecordsTabData => named(fixtures.EntityRecords, name).data.entity!.seap.role!.records;
+const filterOf = (name: string): RecordFilter => named(fixtures.EntityRecords, name).variables.filter;
+/** A supplier's tab with no filter: facets with an authority as the counterparty. */
+export const supplierRecords = recordsOf("supplier-default-page");
+/** The same tab after choosing the Splitting facet. */
+export const supplierSplittingRecords = recordsOf("supplier-signal-splitting");
+export const supplierSplittingFilter = filterOf("supplier-signal-splitting");
+/** A year, the channel, a Signal and one authority on at once. */
+export const supplierSeveralFacetsRecords = recordsOf("supplier-several-facets");
+export const supplierSeveralFacetsFilter = filterOf("supplier-several-facets");
+/** A facet that matches nothing: zero total, no facets, no rows. */
+export const supplierNoMatches = recordsOf("supplier-contract-no-matches");
+export const supplierNoMatchesFilter = filterOf("supplier-contract-no-matches");
+/** An authority's tab with no filter: facets with suppliers as the counterparties. */
+export const authorityRecords = recordsOf("authority-default-page");
+export const authorityOneSupplierRecords = recordsOf("authority-one-supplier");
+export const authorityOneSupplierFilter = filterOf("authority-one-supplier");
+/** A huge set: estimated total and counts, many pages. */
+export const authorityEstimatedRecords = recordsOf("authority-estimated-total");

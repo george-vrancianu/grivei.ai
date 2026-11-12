@@ -1,10 +1,10 @@
-import { Link } from "../../../../../atoms/Link/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { Locale } from "../../../../../theme/index.ts";
-import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import { followLink } from "../../../../utils/followLink.ts";
-import { pageItems } from "../../fullResults.utils.ts";
+import { Link } from "../../../atoms/Link/index.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { followLink } from "../../utils/followLink.ts";
+import { pageItems } from "./pageNav.utils.ts";
 
 export interface PageNavCopy {
   /** The navigation landmark's accessible name. */

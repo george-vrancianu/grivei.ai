@@ -4,7 +4,7 @@ import { Chip } from "../../../../../atoms/Chip/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
 import type { ActiveChip } from "../../filterChips.utils.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
 
 export interface ActiveChipsProps {
   chips: readonly ActiveChip[];

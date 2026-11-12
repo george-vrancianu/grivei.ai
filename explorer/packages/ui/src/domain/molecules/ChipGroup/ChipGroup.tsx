@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
-import { Box } from "../../../../../atoms/Box/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
 
 export interface ChipGroupProps {
   label: string;

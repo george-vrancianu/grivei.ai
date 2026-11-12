@@ -1,8 +1,8 @@
 import type { BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
 import { RECORD_BADGES } from "../../../../atoms/BadgeChip/index.ts";
 import type { RecordBadge } from "../../../../types.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
-import { ToggleChip } from "../ToggleChip/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
+import { ToggleChip } from "../../../ToggleChip/index.ts";
 
 export interface BadgeChipsProps {
   label: string;

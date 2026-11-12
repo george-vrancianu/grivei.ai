@@ -1,5 +1,5 @@
-import { Chip } from "../../../../../atoms/Chip/index.ts";
-import { Tooltip } from "../../../../../atoms/Tooltip/index.ts";
+import { Chip } from "../../../atoms/Chip/index.ts";
+import { Tooltip } from "../../../atoms/Tooltip/index.ts";
 
 export interface ToggleChipProps {
   label: string;
