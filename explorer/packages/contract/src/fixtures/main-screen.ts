@@ -89,7 +89,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
             national: zeroTotal,
             unknownSupplierCounty: total({ awarded: ron(300_000), records: 1 }),
           }),
-          goTo: w.hachi,
+          goTo: { ...w.hachi, seap: { roles: ["SUPPLIER"] } },
           authorities: { count: 1, countEstimated: false, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
           suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
           records: { count: 5, rows: [{ record: w.rDirect, matchedField: { field: "CUI", text: "30000001", highlights: [[0, 8]] } }] },

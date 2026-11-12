@@ -1,16 +1,17 @@
-import { Stack, Typography, type Locale } from "@grivei/ui";
+import { DEFAULT_RESULT_TAB, ResultTabs, Stack, toResultTab, Typography, type Locale, type ResultTab } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
-import { RecordsList } from "../../components/RecordsList/index.ts";
 import { SearchField } from "../../components/SearchField/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
+import { pathFor } from "../../routing/routes.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 
-/** `/explore/` and `/ro/explore/`: the Total and the Records for the filter in the URL. */
+/** `/explore/` and `/ro/explore/`: the Total and the result tabs for the filter in the URL. */
 export function MainScreenPage({ locale }: { locale: Locale }) {
   const t = useCopy();
-  const { filter, setFilter } = useUrlState();
+  const { filter, tab, update, setFilter } = useUrlState();
   const state = useMainScreen({ filter });
+  const search = state.status === "ready" ? state.data.seap.search : null;
   return (
     <Stack component="main" spacing={3} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h4" component="h1">
@@ -19,10 +20,21 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       <SearchField copy={t.searchField} value={filter.q ?? ""} onChange={(q) => setFilter({ q })} />
       {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}
       {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
-      {state.status === "ready" && (
+      {search && (
         <>
-          <TotalSummary total={state.data.seap.search.total} copy={{ total: t.main.total, records: t.total.records }} locale={locale} />
-          <RecordsList page={state.data.seap.search.records} copy={t.records} locale={locale} />
+          <TotalSummary total={search.total} copy={{ total: t.main.total, records: t.total.records }} locale={locale} />
+          <ResultTabs
+            authorities={search.authorities}
+            suppliers={search.suppliers}
+            records={search.records}
+            goTo={search.goTo}
+            tab={toResultTab(tab)}
+            onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
+            entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
+            recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
+            locale={locale}
+            copy={t.results}
+          />
         </>
       )}
     </Stack>
