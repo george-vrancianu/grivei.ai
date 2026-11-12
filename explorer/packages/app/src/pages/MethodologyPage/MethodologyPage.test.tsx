@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { createClient } from "../../graphql/client.ts";
-import { allMethodologyAnchors as pageAnchors, methodologyHref } from "../../methodology/methodologyLinks.ts";
+import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { signalMethodologyHref } from "../../signals/signalLinks.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
@@ -164,7 +164,7 @@ describe("every methodology link the app builds lands on an anchor of the page",
         expect(ANCHORS).toContain(anchorOf(signalMethodologyHref(locale, rule)));
       }
     }
-    expect(pageAnchors(SIGNAL_RULES)).toEqual(ANCHORS);
+    expect(allMethodologyAnchors(SIGNAL_RULES)).toEqual(ANCHORS);
   });
 
   async function screenLinks(url: string, ready: () => Promise<unknown>): Promise<string[]> {

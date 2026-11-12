@@ -330,8 +330,8 @@ export const ro: Copy = {
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
     },
   },
-  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
   methodology: methodologyRo,
+  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
   signalCard: {
     rules: {
       OVER_CAP: {

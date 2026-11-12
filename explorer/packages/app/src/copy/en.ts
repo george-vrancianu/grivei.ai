@@ -325,8 +325,8 @@ export const en: Copy = {
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
     },
   },
-  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
   methodology: methodologyEn,
+  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
   signalCard: {
     rules: {
       OVER_CAP: {

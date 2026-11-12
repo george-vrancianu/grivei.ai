@@ -4,7 +4,7 @@ import type { MethodologyPageCopy } from "@grivei/ui";
 export const methodologyEn: MethodologyPageCopy = {
   title: "About the numbers",
   intro:
-    "Every number in the explorer comes from SEAP, Romania's public procurement system, and is counted by one rule everywhere: totals, the map, rankings, the Flow lens and Signals. This page says what that rule is. The figures in the Signal sections are recomputed every time the data is loaded.",
+    "Every Record and every amount in the explorer comes from SEAP, Romania's public procurement system, and is counted by one rule everywhere: totals, the map, rankings, the Flow lens and Signals. This page says what that rule is. The figures in the Signal sections are recomputed every time the data is loaded.",
   contents: "On this page",
   sections: {
     awardedValue: {
@@ -20,7 +20,7 @@ export const methodologyEn: MethodologyPageCopy = {
       paragraphs: [
         "A framework agreement (\"Cu acord cadru\") sets a ceiling: the most that can be awarded under it. The ceiling is shown on its Record but never added to a total, because the contracts awarded under it are counted instead.",
         "A contract awarded under a framework (\"Cu acord cadru subsecvent\") is a subsequent contract and is counted. It shows the framework it belongs to: the one that shares its award notice number, with the ceiling and how much of it the subsequent contracts reported so far use. A subsequent contract whose framework is not in the data still counts and shows no ceiling. A contract \"Fără acord cadru\" is counted as usual.",
-        "Several framework contracts under one award notice form one agreement, and its ceiling is their sum. Records read from SEAP's site this quarter do not say whether they sit under a framework, so they are counted as ordinary contracts. A framework with no value published has no ceiling to compare with.",
+        "Several framework contracts under one award notice form one agreement, and its ceiling is their sum. Records read from SEAP's site (this quarter's and the 2021–22 backfill) do not say whether they sit under a framework, so they are counted as ordinary contracts. A framework with no value published has no ceiling to compare with.",
       ],
     },
     consortiumShares: {
@@ -56,8 +56,8 @@ export const methodologyEn: MethodologyPageCopy = {
     backfilledValues: {
       heading: "Values of backfilled 2021–22 Records",
       paragraphs: [
-        "For 2023 onwards the explorer reads SEAP's published bulk files. For 2021 and 2022 it reads the contracts awarded by negotiation without prior publication, and a few other procedures, from e-licitatie itself, in a one-off crawl.",
-        "That crawl returns the current value of a notice, so a notice modified since its award shows its modified value. The values of these Records are \"as of crawl\", not strictly the value at award, and each carries its crawl date in its provenance. They are counted in totals like any other Record, and badged \"Not in bulk data\".",
+        "Direct purchases, contracts and award notices from 2021 onwards come from SEAP's published bulk files. Those files leave out the 2021 and 2022 contracts awarded by negotiation without prior publication, and a few other procedures; the explorer reads those from e-licitatie itself, in a one-off crawl, together with the few later notices missing from the bulk files.",
+        "That crawl returns the current value of a notice, so a notice modified since its award shows its modified value. The values of these backfilled Records are \"as of crawl\", not strictly the value at award, and each carries its crawl date in its provenance. They are counted in totals like any other Record, and badged \"Not in bulk data\".",
         "Records read from SEAP this quarter, before the bulk files exist, are badged \"Provisional\" and may change when the official data arrives.",
       ],
     },
