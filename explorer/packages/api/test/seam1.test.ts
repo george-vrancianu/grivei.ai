@@ -42,6 +42,7 @@ const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
 const mfArchive = join(watchdog, "tests/fixtures/archive-mf"); // the MF list slice for the placement world (#80); copied onto archive-placement
 const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placement fixture's 2023 Q1 has a DA file only: the other three kinds are hand-entered gaps
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
+const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
 const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
@@ -71,6 +72,8 @@ const recordPage = allowlist.operations.find((o) => o.name === "RecordPage")!;
 const fullSuppliers = allowlist.operations.find((o) => o.name === "FullResultsSuppliers")!;
 const entityOverview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
 const coveragePage = allowlist.operations.find((o) => o.name === "CoveragePage")!;
+const entityRecords = allowlist.operations.find((o) => o.name === "EntityRecords")!;
+const entityRelationships = allowlist.operations.find((o) => o.name === "EntityRelationships")!;
 const zoomedCounty = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
 // The authorities of the placement fixture (watchdog/tests/fixtures/build_placement_archive.py): CUIs with valid check digits, invented.
 const P = {
@@ -110,6 +113,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
     cpSync(moneyMapArchive, join(scratch, "archive-moneymap"), { recursive: true });
+    cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -144,6 +148,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE moneymap_b");
     await admin.query("CREATE DATABASE rollup_a");
     await admin.query("CREATE DATABASE rollup_b");
+    await admin.query("CREATE DATABASE roles_a");
   });
 
   afterAll(async () => {
@@ -1522,6 +1527,315 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("gives identical maps after a second rebuild into a fresh database (#71, ADR 0004)", async () => {
       rebuild("moneymap_b", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-b")]);
       for (const countySide of ["AUTHORITY", "SUPPLIER"]) expect((await main({ countySide }, "moneymap_b")).map).toEqual((await main({ countySide })).map);
+    });
+  });
+
+
+  describe("entity roles (#73): archive-roles -> rebuild -> EntityOverview, EntityRecords, EntityRelationships", () => {
+    type Total = { awarded: string; records: number; suspectLeftOut: number; noValue: number; frameworkCeilings: string; estimated: boolean };
+    type Cpty = { entity: { key: string } | null; naturalPerson: boolean; total: Total; viaDirectPurchase: Total; viaContract: Total; wonTogether: boolean; hasSignals: boolean };
+    type Role = {
+      role: string;
+      total: Total;
+      counterparties: { count: number; topShare: number | null; rows: Cpty[] };
+      directPurchaseShare: number;
+      procedures: { value: string; total: Total }[];
+      consortia: { members: { entity: { key: string } | null; publishedName: string | null; naturalPerson: boolean; share: string | null }[]; total: Total }[];
+      frameworks: { count: number; ceilings: string; subsequentReported: string };
+      largestRecords: { code: string; provenance: { url: string | null; fetchedAt: string } }[];
+      signals: { count: number; rows: unknown[] };
+    };
+    const S = "1000017"; // SPITALUL EXEMPLU: an authority
+    const COMUNA = "1000009";
+    const CNAIR = "2000031"; // both roles
+    const ALFA = "2000007"; // a supplier
+    const BETA = "2000015";
+    const GAMMA = "2000023";
+    const RON = (n: number) => String(n * 100);
+    const DB = "roles_a";
+
+    const ask1 = async (op: { name: string; sha256: string; document: string }, variables: Record<string, unknown>) => {
+      const r = await ask(DB, op.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as unknown as { entity: { seap: { role: Record<string, unknown> | null; roles: string[] } } | null }).entity!.seap;
+    };
+    const overview = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await ask1(entityOverview, { key, role, filter })).role as unknown as Role;
+    type RecordsRole = { records: { total: Total; facets: Record<string, { value: string; total: Total }[]> & { counterparty: { entity: { key: string }; matched: Total }[] }; records: { rows: { record: { code: string; provenance: { url: string | null } } }[] } } };
+    const recordsTab = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await ask1(entityRecords, { key, role, filter, limit: 100, offset: 0 })).role as unknown as RecordsRole;
+    type RelRole = { counterparties: Role["counterparties"]; timeline: { month: string; total: Total }[]; flow: { side: string; counties: unknown[]; unplaced: { authorities: number; total: Total } | null; unknownSupplierCounty: Total | null; national: Total } };
+    const relationships = async (key: string, role: string, filter: Record<string, unknown> = {}, counterparty: string | null = null) =>
+      (await ask1(entityRelationships, { key, role, filter, counterparty })).role as unknown as RelRole;
+    const searchTotal = async (filter: Record<string, unknown>) => {
+      const variables = { filter };
+      const r = await ask(DB, mainScreen.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      return (r.body.data as unknown as { seap: { search: { total: Total; records: { count: number } } } }).seap.search;
+    };
+    const money = (t: Total) => [t.awarded, t.records];
+    const sum = (xs: string[]) => xs.reduce((a, x) => a + BigInt(x), 0n);
+
+    beforeAll(() => {
+      rebuild(DB, "archive-roles");
+    });
+
+    it("an entity that never held the role has no such role: null (#73)", async () => {
+      const r = await ask1(entityOverview, { key: ALFA, role: "AUTHORITY", filter: {} });
+      expect(r.roles).toEqual(["SUPPLIER"]);
+      expect(r.role).toBeNull();
+      expect((await ask1(entityOverview, { key: S, role: "SUPPLIER", filter: {} })).role).toBeNull();
+      expect((await ask1(entityOverview, { key: CNAIR, role: "AUTHORITY", filter: {} })).roles).toEqual(["AUTHORITY", "SUPPLIER"]);
+    });
+
+    it("total: an authority sums its counted Records once, leaving out the suspect, the blank and the ceiling (#73)", async () => {
+      const t = (await overview(S, "AUTHORITY")).total;
+      // direct purchases 240,000 RON + contracts 5,000,000 (two subsequent) + 900,000 + 600,000 + 100,000 + 2,000,000
+      expect(t).toMatchObject({ awarded: RON(8_840_000), records: 16, suspectLeftOut: 1, noValue: 2, frameworkCeilings: RON(10_000_000), estimated: false });
+    });
+
+    it("total: a supplier sums its own share of each Record, a consortium once per Record with an equal share (#73)", async () => {
+      const t = (await overview(ALFA, "SUPPLIER")).total;
+      // 215,000 of direct purchases, 5,000,000 of subsequent contracts, 300,000 + 350,000 + 50,000 of three consortium thirds and halves
+      expect(t).toMatchObject({ awarded: RON(5_915_000), records: 13, suspectLeftOut: 1, noValue: 2, frameworkCeilings: RON(10_000_000) });
+    });
+
+    it("total: an entity with both roles has one total per role (#73)", async () => {
+      expect((await overview(CNAIR, "SUPPLIER")).total).toMatchObject({ awarded: RON(2_020_000), records: 2 }); // the hospital's DA and contract
+      expect((await overview(CNAIR, "AUTHORITY")).total).toMatchObject({ awarded: RON(340_000), records: 2 }); // it buys from ALFA and BETA
+    });
+
+    it("counterparties: an authority's suppliers ranked by money; all natural persons are ONE row without an entity; counts and top share (#73)", async () => {
+      const c = (await overview(S, "AUTHORITY")).counterparties;
+      expect(c.count).toBe(5);
+      expect(c.rows.map((r) => [r.entity?.key ?? null, r.naturalPerson, r.total.awarded])).toEqual([
+        [ALFA, false, RON(5_525_000)], [CNAIR, false, RON(2_020_000)], [BETA, false, RON(680_000)], [null, true, RON(315_000)], [GAMMA, false, RON(300_000)],
+      ]);
+      expect(c.topShare).toBeCloseTo(5_525_000 / 8_840_000, 9);
+      expect(sum(c.rows.map((r) => r.total.awarded))).toBe(8_840_000n * 100n); // the counterparties add up to the role total on the authority side
+      expect(JSON.stringify(c)).not.toContain("IONESCU"); // a person is never named
+    });
+
+    it("counterparties: a supplier's authorities, the channel split and who it won together with (#73)", async () => {
+      const c = (await relationships(ALFA, "SUPPLIER")).counterparties;
+      expect(c.rows.map((r) => [r.entity!.key, r.total.awarded, r.viaDirectPurchase.awarded, r.viaContract.awarded, r.wonTogether])).toEqual([
+        [S, RON(5_525_000), RON(175_000), RON(5_350_000), true], // CAN9600002 and CAN9600005 were won with others
+        [COMUNA, RON(350_000), "0", RON(350_000), true],
+        [CNAIR, RON(40_000), RON(40_000), "0", false],
+      ]);
+      expect(c.rows[0]!.viaDirectPurchase.records + c.rows[0]!.viaContract.records).toBe(c.rows[0]!.total.records);
+      expect(c.rows.every((r) => !r.hasSignals && !r.naturalPerson)).toBe(true);
+      expect(sum(c.rows.map((r) => r.total.awarded))).toBe(5_915_000n * 100n);
+      expect(c.topShare).toBeCloseTo(5_525_000 / 5_915_000, 9);
+    });
+
+    it("counterparties: both roles of CNAIR, and the blank/suspect Records show as left out on the counterparty (#73)", async () => {
+      const asAuthority = (await relationships(CNAIR, "AUTHORITY")).counterparties;
+      expect(asAuthority.rows.map((r) => [r.entity!.key, r.total.awarded])).toEqual([[BETA, RON(300_000)], [ALFA, RON(40_000)]]);
+      const alfaAtHospital = (await relationships(S, "AUTHORITY")).counterparties.rows[0]!;
+      expect(alfaAtHospital.total).toMatchObject({ suspectLeftOut: 1, noValue: 2 });
+    });
+
+    it("directPurchaseShare: direct purchases over everything awarded, 0 when nothing was awarded (#73)", async () => {
+      expect((await overview(S, "AUTHORITY")).directPurchaseShare).toBeCloseTo(240_000 / 8_840_000, 9);
+      expect((await overview(ALFA, "SUPPLIER")).directPurchaseShare).toBeCloseTo(215_000 / 5_915_000, 9);
+      expect((await overview(CNAIR, "AUTHORITY")).directPurchaseShare).toBeCloseTo(40_000 / 340_000, 8);
+      expect((await overview(S, "AUTHORITY", { channel: "CONTRACT" })).directPurchaseShare).toBe(0);
+      expect((await overview(S, "AUTHORITY", { to: "2000-01-01" })).directPurchaseShare).toBe(0); // nothing in the window
+    });
+
+    it("procedures: the Total per published procedure, direct purchases (no procedure) apart (#73)", async () => {
+      const p = (await overview(S, "AUTHORITY")).procedures;
+      expect(p.map((x) => [x.value, x.total.awarded, x.total.records, x.total.noValue])).toEqual([
+        ["Licitatie deschisa", RON(7_100_000), 5, 0], ["Negociere", RON(1_500_000), 3, 1],
+      ]);
+      expect((await overview(ALFA, "SUPPLIER")).procedures.map((x) => [x.value, x.total.awarded])).toEqual([["Licitatie deschisa", RON(5_400_000)], ["Negociere", RON(300_000)]]);
+      expect((await overview(CNAIR, "AUTHORITY")).procedures.map((x) => x.value)).toEqual(["Licitatie deschisa"]);
+    });
+
+    it("consortia: Records with several winners grouped by member set, ranked by money, a person without an entity (#73)", async () => {
+      const keys = (c: Role["consortia"][number]) => c.members.map((m) => m.entity?.key ?? "person");
+      const hospital = (await overview(S, "AUTHORITY")).consortia;
+      expect(hospital.map((c) => [keys(c), c.total.awarded, c.total.records])).toEqual([
+        [[ALFA, BETA, GAMMA], RON(900_000), 1], [[BETA, "person"], RON(600_000), 1], [[ALFA, BETA], RON(100_000), 1],
+      ]);
+      const person = hospital[1]!.members.find((m) => m.naturalPerson)!;
+      expect(person).toMatchObject({ entity: null, publishedName: null, share: RON(300_000) });
+      expect(hospital[0]!.members.map((m) => m.share)).toEqual([RON(300_000), RON(300_000), RON(300_000)]);
+      // the supplier's page: the same groups, but only its own Records; {ALFA, BETA} is two Records now (the commune's and the hospital's)
+      const alfa = (await overview(ALFA, "SUPPLIER")).consortia;
+      expect(alfa.map((c) => [keys(c), c.total.awarded, c.total.records])).toEqual([[[ALFA, BETA, GAMMA], RON(900_000), 1], [[ALFA, BETA], RON(800_000), 2]]);
+      expect(alfa[1]!.members.map((m) => m.share)).toEqual([RON(400_000), RON(400_000)]); // each member's equal shares summed over the group's Records
+      expect((await overview(CNAIR, "SUPPLIER")).consortia).toEqual([]);
+    });
+
+    it("consortia: a limit of 1 keeps the biggest group (#73)", async () => {
+      const one = await adhoc(DB, `query($k: ID!) { entity(key: $k) { seap { role(role: AUTHORITY) { consortia(limit: 1) { total { awarded } } counterparties(limit: 2) { count rows { naturalPerson } } largestRecords(limit: 1) { code } } } } }`, { k: S });
+      const role = (one as unknown as { entity: { seap: { role: { consortia: { total: Total }[]; counterparties: { count: number; rows: unknown[] }; largestRecords: unknown[] } } } }).entity.seap.role;
+      expect(role.consortia.map((c) => c.total.awarded)).toEqual([RON(900_000)]);
+      expect(role.counterparties.rows.length).toBe(2);
+      expect(role.counterparties.count).toBe(5); // the count is of all, not of the page
+      expect(role.largestRecords.length).toBe(1);
+    });
+
+    it("frameworks: how many agreements, their ceilings, and what the subsequent contracts under them reported (#73)", async () => {
+      expect((await overview(S, "AUTHORITY")).frameworks).toEqual({ count: 1, ceilings: RON(10_000_000), subsequentReported: RON(5_000_000) });
+      expect((await overview(ALFA, "SUPPLIER")).frameworks).toEqual({ count: 1, ceilings: RON(10_000_000), subsequentReported: RON(5_000_000) });
+      expect((await overview(BETA, "SUPPLIER")).frameworks).toEqual({ count: 0, ceilings: "0", subsequentReported: "0" });
+      expect((await overview(CNAIR, "AUTHORITY")).frameworks).toEqual({ count: 0, ceilings: "0", subsequentReported: "0" });
+    });
+
+    it("largestRecords: the largest counted Records, with provenance; the ceiling, the suspect and the blank are not among them (#73)", async () => {
+      const codes = async (key: string, role: string, filter = {}) => (await overview(key, role, filter)).largestRecords.map((r) => r.code);
+      expect((await codes(S, "AUTHORITY")).slice(0, 4)).toEqual(["CAN9600001~2", "CAN9600006~1", "CAN9600001~3", "CAN9600002~1"]);
+      expect(await codes(S, "AUTHORITY")).not.toContain("CAN9600001~1"); // the 10,000,000 ceiling
+      expect(await codes(S, "AUTHORITY")).not.toContain("DA96000005"); // suspect
+      expect(await codes(S, "AUTHORITY")).not.toContain("DA96000004"); // blank
+      expect((await codes(ALFA, "SUPPLIER")).slice(0, 3)).toEqual(["CAN9600001~2", "CAN9600001~3", "CAN9600003~1"]); // ranked by ALFA's own share
+    });
+
+    it("largestRecords and records carry provenance like every other path: the file it came from and the SEAP link (#73, #72)", async () => {
+      const data = (await adhoc(DB, `query($k: ID!) { entity(key: $k) { seap { role(role: AUTHORITY) {
+          largestRecords(limit: 2) { code provenance { source kind via url fetchedAt } }
+          records(filter: {}) { records(limit: 100) { rows { record { code provenance { source kind via url fetchedAt } } } } } } } } }`, { k: S })) as unknown as {
+        entity: { seap: { role: { largestRecords: { code: string; provenance: Record<string, string> }[]; records: { records: { rows: { record: { code: string; provenance: Record<string, string> } }[] } } } } };
+      };
+      const role = data.entity.seap.role;
+      expect(role.largestRecords[0]!.provenance).toMatchObject({ source: "SEAP", kind: "BULK", via: "Contracte 2023 - T1" });
+      expect(role.largestRecords[0]!.provenance.url).toMatch(/\/source\/seap\/CAN9600001~2$/);
+      expect(role.largestRecords[0]!.provenance.fetchedAt).toMatch(/^\d{4}-\d\d-\d\dT/);
+      expect(role.records.records.rows.length).toBe(16);
+      for (const { record } of role.records.records.rows) expect(record.provenance).toMatchObject({ source: "SEAP", kind: "BULK" });
+      for (const { record } of role.records.records.rows) expect(record.provenance.url).toMatch(/\/source\/seap\/(DA|CAN)/);
+    });
+
+    it("signals: an empty page until the Signal model exists (#73, #74)", async () => {
+      expect((await overview(S, "AUTHORITY")).signals).toEqual({ count: 0, rows: [] });
+    });
+
+    it("records: the scoped search, with its facets; the other side's counterparties offered as the counterparty facet (#73)", async () => {
+      const r = await recordsTab(S, "AUTHORITY");
+      expect(r.records.total).toMatchObject({ awarded: RON(8_840_000), records: 16 });
+      expect(r.records.records.rows.length).toBe(16);
+      expect(r.records.facets.channel!.map((x) => [x.value, x.total.awarded, x.total.records])).toEqual([["CONTRACT", RON(8_600_000), 8], ["DIRECT_PURCHASE", RON(240_000), 8]]);
+      expect(r.records.facets.year!.map((x) => [x.value, x.total.awarded]).sort()).toEqual([["2023", RON(8_815_000)], ["2024", RON(25_000)]]);
+      expect(r.records.facets.procedure!.map((x) => x.value).sort()).toEqual(["Licitatie deschisa", "Negociere"]);
+      const badge = Object.fromEntries(r.records.facets.badge!.map((x) => [x.value, x.total.records]));
+      expect(badge).toMatchObject({ SUSPECT_VALUE: 1, NO_VALUE: 2, FRAMEWORK_CEILING: 1, SUBSEQUENT_CONTRACT: 2 });
+      expect(r.records.facets.signal).toEqual([]);
+      expect(r.records.facets.counterparty!.map((x) => x.entity.key)).toEqual([ALFA, CNAIR, BETA, GAMMA]); // suppliers, ranked; the person has no entity
+    });
+
+    it("records: a supplier's own Records and the authorities offered as counterparties, also with one picked (#73)", async () => {
+      const r = await recordsTab(ALFA, "SUPPLIER");
+      expect(r.records.records.rows.length).toBe(13);
+      expect(r.records.facets.counterparty!.map((x) => x.entity.key)).toEqual([S, COMUNA, CNAIR]);
+      const picked = await recordsTab(ALFA, "SUPPLIER", { authority: COMUNA });
+      expect(picked.records.total).toMatchObject({ awarded: RON(350_000), records: 1 });
+      expect(picked.records.facets.counterparty!.map((x) => x.entity.key)).toEqual([S, COMUNA, CNAIR]); // the alternatives stay on offer
+    });
+
+    it("records: an entity that does not hold the role has none (#73)", async () => {
+      expect((await ask1(entityRecords, { key: ALFA, role: "AUTHORITY", filter: {}, limit: 10, offset: 0 })).role).toBeNull();
+    });
+
+    it("timeline: the Total per month, oldest first, optionally for one counterparty (#73)", async () => {
+      const t = (await relationships(S, "AUTHORITY")).timeline;
+      expect(t.map((m) => [m.month, m.total.awarded, m.total.records])).toEqual([
+        ["2023-01", RON(7_120_000), 6], ["2023-02", RON(995_000), 4], ["2023-03", RON(700_000), 5], ["2024-01", RON(25_000), 1],
+      ]);
+      expect(sum(t.map((m) => m.total.awarded))).toBe(8_840_000n * 100n);
+      const beta = (await relationships(S, "AUTHORITY", {}, BETA)).timeline;
+      expect(beta.map((m) => [m.month, m.total.awarded, m.total.records])).toEqual([["2023-02", RON(330_000), 2], ["2023-03", RON(350_000), 2]]);
+      const alfaAt = (await relationships(ALFA, "SUPPLIER", {}, COMUNA)).timeline;
+      expect(alfaAt.map((m) => [m.month, m.total.awarded])).toEqual([["2023-02", RON(350_000)]]);
+      expect((await relationships(S, "AUTHORITY", {}, "9999999")).timeline).toEqual([]); // a key that is not a counterparty
+    });
+
+    it("flow: drawn on the counterparty's side, off-map buckets included (#73)", async () => {
+      const supplier = (await relationships(ALFA, "SUPPLIER")).flow;
+      expect(supplier.side).toBe("AUTHORITY");
+      // CNAIR is placed (ANAF knows its county); the hospital and the commune are not, so they are the Unplaced tile and CNAIR's 40,000 sits in its county
+      expect(supplier.unplaced).toMatchObject({ authorities: 2, total: { awarded: RON(5_875_000), records: 12 } });
+      expect(supplier.counties).toMatchObject([{ total: { awarded: RON(40_000), records: 1 }, entities: 1 }]);
+      const authority = (await relationships(S, "AUTHORITY")).flow;
+      expect(authority.side).toBe("SUPPLIER");
+      // the natural person's shares have no county; the companies ANAF places in a county are on the map
+      expect(authority.unknownSupplierCounty).toMatchObject({ awarded: RON(315_000), records: 2 });
+      expect(authority.unplaced).toBeNull();
+      expect(sum([...authority.counties.map((c) => (c as { total: Total }).total.awarded), authority.unknownSupplierCounty!.awarded])).toBe(8_840_000n * 100n);
+    });
+
+    it("every field follows the filter: a channel, a year range and a text query narrow each of them (#73)", async () => {
+      const contracts = await overview(S, "AUTHORITY", { channel: "CONTRACT" });
+      expect(contracts.total).toMatchObject({ awarded: RON(8_600_000), records: 8 });
+      expect(contracts.counterparties.rows.map((r) => r.entity?.key ?? null)).toEqual([ALFA, CNAIR, BETA, GAMMA, null]); // the natural person ties with GAMMA at 300,000: ties by key, a person last
+      const split = (await relationships(S, "AUTHORITY", { channel: "CONTRACT" })).counterparties.rows;
+      expect(split.every((r) => r.viaDirectPurchase.awarded === "0" && r.viaDirectPurchase.records === 0)).toBe(true);
+      expect(split.find((r) => r.entity?.key === ALFA)!.viaContract.awarded).toBe(RON(5_350_000));
+      expect(contracts.procedures.map((p) => p.total.awarded)).toEqual([RON(7_100_000), RON(1_500_000)]);
+      expect(contracts.consortia.length).toBe(3);
+      expect(contracts.frameworks.count).toBe(1);
+      const y24 = await overview(S, "AUTHORITY", { from: "2024-01-01", to: "2024-12-31" });
+      expect(y24.total).toMatchObject({ awarded: RON(25_000), records: 1, frameworkCeilings: "0" });
+      expect(y24.counterparties.rows.map((r) => r.entity?.key)).toEqual([ALFA]);
+      expect(y24.consortia).toEqual([]);
+      expect(y24.frameworks.count).toBe(0);
+      expect(y24.procedures).toEqual([]);
+      expect(y24.largestRecords.map((r) => r.code)).toEqual(["DA96100001"]);
+      expect((await relationships(S, "AUTHORITY", { from: "2024-01-01" })).timeline.map((m) => m.month)).toEqual(["2024-01"]);
+      expect((await relationships(S, "AUTHORITY", { channel: "DIRECT_PURCHASE" })).flow.unknownSupplierCounty).toMatchObject({ awarded: RON(15_000), records: 1 });
+      const q = await recordsTab(S, "AUTHORITY", { q: "consortium" });
+      expect(q.records.total.records).toBe(0); // nothing in this fixture is about that
+      const narrow = await recordsTab(S, "AUTHORITY", { to: "2023-01-31" });
+      expect(narrow.records.total).toMatchObject({ awarded: RON(7_120_000), records: 6 });
+      expect(narrow.records.facets.year!.map((x) => x.value)).toEqual(["2023"]);
+      // the supplier side
+      const alfa = await overview(ALFA, "SUPPLIER", { channel: "CONTRACT" });
+      expect(alfa.total).toMatchObject({ awarded: RON(5_700_000), records: 7 });
+      expect(alfa.consortia.map((c) => c.total.awarded)).toEqual([RON(900_000), RON(800_000)]);
+    });
+
+    it("role totals equal the entity-scoped search totals for the same filter, empty, channel, year range, text and area (#73)", async () => {
+      const filters: Record<string, unknown>[] = [
+        {}, { channel: "DIRECT_PURCHASE" }, { channel: "CONTRACT" }, { from: "2023-02-01", to: "2023-12-31" }, { q: "demo" }, { q: "achizitie da96" },
+        { county: "UNPLACED" }, { badges: ["CONSORTIUM_SHARE"] }, { valueBucket: "UP_TO_10K" }, { procedure: ["Negociere"] },
+      ];
+      for (const [key, role] of [[S, "AUTHORITY"], [COMUNA, "AUTHORITY"], [CNAIR, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [CNAIR, "SUPPLIER"]] as const) {
+        for (const filter of filters) {
+          const scoped = { ...filter, [role === "AUTHORITY" ? "authority" : "supplier"]: key };
+          const search = await searchTotal(scoped);
+          const asRole = await overview(key, role, filter);
+          const fields = (t: Total) => [t.awarded, t.records, t.suspectLeftOut, t.noValue, t.frameworkCeilings];
+          expect(fields(asRole.total), `${role} ${key} ${JSON.stringify(filter)}`).toEqual(fields(search.total));
+          const records = await recordsTab(key, role, filter);
+          expect(fields(records.records.total), `records ${role} ${key} ${JSON.stringify(filter)}`).toEqual(fields(search.total));
+          expect(records.records.records.rows.length).toBe(search.total.records);
+          // the authority side: the counterparties add up to the role's total (a Record has one authority, and the suppliers' shares add up to its counted value)
+          const rel = await relationships(key, role, filter);
+          if (rel.counterparties.rows.length === rel.counterparties.count) expect(sum(rel.counterparties.rows.map((r) => r.total.awarded)).toString()).toBe(search.total.awarded);
+          expect(sum(rel.timeline.map((m) => m.total.awarded)).toString()).toBe(search.total.awarded);
+          expect(rel.timeline.reduce((n, m) => n + m.total.records, 0)).toBe(search.total.records);
+        }
+      }
+    });
+
+    it("role totals equal the search totals under a counterparty filter too (#73)", async () => {
+      for (const [key, role, other] of [[S, "AUTHORITY", "supplier"], [ALFA, "SUPPLIER", "authority"]] as const) {
+        const counterparty = role === "AUTHORITY" ? BETA : S;
+        const filter = { [other]: counterparty };
+        const scoped = { ...filter, [role === "AUTHORITY" ? "authority" : "supplier"]: key };
+        const search = await searchTotal(scoped);
+        expect(money((await overview(key, role, filter)).total)).toEqual(money(search.total));
+        expect(search.total.records).toBeGreaterThan(0);
+      }
+    });
+
+    it("the facets split the role total exactly: channel and year Totals add up to it (#73)", async () => {
+      const r = await recordsTab(S, "AUTHORITY");
+      expect(sum(r.records.facets.channel!.map((x) => x.total.awarded))).toBe(BigInt(r.records.total.awarded));
+      expect(sum(r.records.facets.year!.map((x) => x.total.awarded))).toBe(BigInt(r.records.total.awarded));
     });
   });
 
