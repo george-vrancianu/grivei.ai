@@ -1,0 +1,5 @@
+# Quarters of a record kind that the Source itself lacks, kept by hand. Shown on the Coverage grid as a known gap, the reason verbatim
+# (so write it for readers, in the language of the Source's own data: Romanian is fine). Columns: quarter (2025-Q2), kind (DA, DAN,
+# CONTRACT, AWARD_NOTICE), reason. A line starting with # is a comment. A gap here overrides whatever the rebuild computes for the cell.
+quarter,kind,reason
+2025-Q2,DAN,"Fișierul data.gov.ro pentru notificările de atribuire directă din trimestrul 2 din 2025 a fost încărcat greșit (alt conținut decât cel anunțat) și a rămas gol; raportat la sursă."

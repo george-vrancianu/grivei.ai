@@ -19,6 +19,14 @@ function notServed(what: string): () => never {
 
 type Ctx = { signal?: AbortSignal } | undefined;
 
+/** Does the quarter (`2024-Q4`) overlap the window (open ends allowed; `Date`s are `YYYY-MM-DD`, which sort as text)? */
+function overlaps(quarter: string, from: string | null, to: string | null): boolean {
+  const [year, q] = quarter.split("-Q") as [string, string];
+  const first = `${year}-${String(3 * Number(q) - 2).padStart(2, "0")}-01`;
+  const last = `${year}-${String(3 * Number(q)).padStart(2, "0")}-${Number(q) === 1 || Number(q) === 4 ? "31" : "30"}`;
+  return (from === null || last >= from) && (to === null || first <= to);
+}
+
 const zeroTotal = () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false });
 
 // The order of the RecordBadge enum.
@@ -103,15 +111,28 @@ export function rootValue(store: Store) {
     };
   }
 
+  const seapSource = async () => ({ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrough: await store.dataThrough() });
+
   return {
-    sources: async () => [
-      { id: "SEAP", name: "SEAP", harvested: true, dataThrough: await store.dataThrough() },
-    ],
+    sources: async () => [await seapSource()],
     entity: async ({ key }: { key: string }) => {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;
     },
-    coverage: notServed("coverage"),
+    // The grid is served (#79); the counties, the unplaced authorities and the reference snapshot are #80's: field-level NOT_IMPLEMENTED until then.
+    coverage: ({ source, window }: { source: string; window?: { from?: string | null; to?: string | null } | null }) => {
+      if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
+      const from = window?.from ?? null;
+      const to = window?.to ?? null;
+      return {
+        source: seapSource,
+        window: { from, to },
+        grid: async () => (await store.coverageGrid()).filter((cell) => overlaps(cell.quarter, from, to)),
+        counties: notServed("coverage.counties"),
+        unplacedAuthorities: notServed("coverage.unplacedAuthorities"),
+        referenceSnapshot: notServed("coverage.referenceSnapshot"),
+      };
+    },
     signalRules: notServed("signalRules"),
     counties: notServed("counties"),
     uats: notServed("uats"),
