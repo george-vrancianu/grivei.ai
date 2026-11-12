@@ -11,8 +11,8 @@ export const COVERAGE_SOURCE_ID = "SEAP";
 /** Grey: not harvested. The fill of a not-harvested county and the outline of a planned Source's mark. */
 export const PLANNED_MARK_COLOR = "#757575";
 
-/** A county with no coverage row: its own near-white fill (never grey, which means not harvested), dashed in the legend. */
-export const NO_STATUS_COLOR = "#fafafa";
+/** A county with no coverage row: a pale sand fill, visible against the white outlines and the page (never grey, which means not harvested). */
+export const NO_STATUS_COLOR = "#e9dfc9";
 
 /** The marks' look, shared by the map's marks and the legend's swatches. */
 export const MARK_OUTLINE = "#1b2a41";
@@ -31,7 +31,6 @@ export const COVERAGE_COLORS: Record<CoverageStatus, string> = {
   PARTIAL: "#f0c75e",
   NOT_HARVESTED: PLANNED_MARK_COLOR,
 };
-
 
 /** Every status, in the legend's order (most to least covered). */
 export const COVERAGE_STATUSES: readonly CoverageStatus[] = ["HARVESTED", "HARVESTED_WITH_KNOWN_GAPS", "PARTIAL", "NOT_HARVESTED"];

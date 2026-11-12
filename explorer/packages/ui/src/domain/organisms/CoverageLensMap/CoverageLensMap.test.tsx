@@ -45,6 +45,9 @@ describe("CoverageLensMap", () => {
     expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
     expect(fillOf("RO-GL")).toBe(NO_STATUS_COLOR);
     expect(Object.values(COVERAGE_COLORS)).not.toContain(NO_STATUS_COLOR);
+    // visible against the white county outlines and the page backgrounds (#ffffff, #f7f8fa)
+    expect(["#ffffff", "#f7f8fa", "#fafafa"]).not.toContain(NO_STATUS_COLOR);
+    expect(NO_STATUS_COLOR).toBe("#e9dfc9");
   });
 
   it("fills not harvested with the grey of the planned Sources' marks", () => {

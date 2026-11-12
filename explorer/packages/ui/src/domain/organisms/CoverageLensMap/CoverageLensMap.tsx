@@ -9,7 +9,7 @@ import { CoverageTiles } from "./components/CoverageTiles/index.ts";
 import { CoverageTooltip } from "./components/CoverageTooltip/index.ts";
 import { SourceMarks } from "./components/SourceMarks/index.ts";
 import type { CoverageLensMapCopy } from "./coverageLensMap.types.ts";
-import { COVERAGE_COLORS, NO_STATUS_COLOR, coverageByCounty, sinceText, summaryParts, coverageSource, COVERAGE_SOURCE_ID } from "./coverageLensMap.utils.ts";
+import { COVERAGE_COLORS, COVERAGE_SOURCE_ID, NO_STATUS_COLOR, coverageByCounty, coverageSource, sinceText, summaryParts } from "./coverageLensMap.utils.ts";
 
 export type CoverageLensMapProps = {
   /** The Coverage lens's data (`CoverageLens` query): the Sources and the SEAP coverage of the date window. */

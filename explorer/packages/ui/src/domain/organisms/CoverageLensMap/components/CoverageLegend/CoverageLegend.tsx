@@ -29,7 +29,7 @@ export function CoverageLegend({ sources, copy }: CoverageLegendProps) {
           </Box>
         ))}
         <Box component="li" data-status="none" sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-          <Box aria-hidden sx={{ ...swatch, backgroundColor: NO_STATUS_COLOR, border: `1px dashed ${MARK_OUTLINE}` }} />
+          <Box aria-hidden sx={{ ...swatch, backgroundColor: NO_STATUS_COLOR }} />
           <Typography variant="caption">{copy.noStatus}</Typography>
         </Box>
       </Box>
