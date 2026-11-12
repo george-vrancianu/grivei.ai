@@ -29,7 +29,7 @@ describe("the filter chips on the main screen", () => {
     await opened("/explore/?from=2023-01-01&to=2024-12-31&channel=direct-purchase&valueBucket=up-to-270k&hasSignals=true&procedure=Achizi%C8%9Bie%20direct%C4%83&badges=no-value&badges=suspect-value");
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    for (const name of ["Direct purchase", "Up to 270,120 RON", "Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
+    for (const name of ["Direct purchase", "135,060–270,120 RON", "Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
       expect(within(chips()).getByRole("button", { name, pressed: true })).toBeVisible();
     }
     const active = within(screen.getByRole("group", { name: "Active filters" }));
@@ -74,7 +74,7 @@ describe("the filter chips on the main screen", () => {
   it("round-trips every chip field: URL -> chips -> URL", async () => {
     await opened("/explore/?channel=contract&county=RO-BV&q=pod");
     const user = userEvent.setup();
-    await user.click(within(chips()).getByRole("button", { name: "Up to 9,004,000 RON" }));
+    await user.click(within(chips()).getByRole("button", { name: "900,400–9,004,000 RON" }));
     await user.click(within(chips()).getByRole("button", { name: "No value" }));
     await waitFor(() => expect(filterInUrl()).toEqual({ channel: "CONTRACT", county: "RO-BV", q: "pod", valueBucket: "UP_TO_9M", badges: ["NO_VALUE"] }));
   });

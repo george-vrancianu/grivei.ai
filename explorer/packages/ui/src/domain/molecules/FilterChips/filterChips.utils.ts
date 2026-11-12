@@ -9,10 +9,10 @@ export type ChipField = (typeof CHIP_FIELDS)[number];
 /** The first year the data covers (spec default: SEAP bulk data from 2021). */
 export const FIRST_YEAR = 2021;
 
-/** `filter` with `patch` applied; a field set to undefined, null or an empty list is removed (never left as `[]`). */
+/** `filter` with `patch` applied; a patched field set to undefined, null or an empty list is removed (never left as `[]`); fields outside the patch are left as given. */
 export function withFields(filter: RecordFilter, patch: RecordFilter): RecordFilter {
   const next: Record<string, unknown> = { ...filter, ...patch };
-  for (const key of Object.keys(next)) {
+  for (const key of Object.keys(patch)) {
     const value = next[key];
     if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) delete next[key];
   }

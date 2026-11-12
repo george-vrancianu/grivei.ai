@@ -31,10 +31,10 @@ describe("FilterChips: what the reader sees", () => {
     setup({ from: "2023-01-01", to: "2024-12-31", channel: "CONTRACT", valueBucket: "UP_TO_900K", hasSignals: true, procedure: ["Licitație deschisă"], badges: ["NO_VALUE"] });
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    for (const name of ["Contract", "Up to 900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
+    for (const name of ["Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
       expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
     }
-    for (const name of ["From 2023", "Until 2024", "Contract", "Up to 900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
+    for (const name of ["From 2023", "Until 2024", "Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
       expect(active().getByRole("button", { name: `Remove ${name}` })).toBeVisible();
     }
   });
@@ -110,8 +110,8 @@ describe("FilterChips: each chip emits the whole next filter", () => {
   });
 
   it.each([
-    ["Up to 10,000 RON", "UP_TO_10K"], ["Up to 135,060 RON", "UP_TO_135K"], ["Up to 270,120 RON", "UP_TO_270K"], ["Up to 900,400 RON", "UP_TO_900K"],
-    ["Up to 9,004,000 RON", "UP_TO_9M"], ["Up to 1 bn RON", "UP_TO_1B"], ["Over 1 bn RON", "OVER_1B"],
+    ["Up to 10,000 RON", "UP_TO_10K"], ["10,000–135,060 RON", "UP_TO_135K"], ["135,060–270,120 RON", "UP_TO_270K"], ["270,120–900,400 RON", "UP_TO_900K"],
+    ["900,400–9,004,000 RON", "UP_TO_9M"], ["9,004,000 RON–1 bn RON", "UP_TO_1B"], ["Over 1 bn RON", "OVER_1B"],
   ])("the %s chip sets valueBucket %s", async (name, bucket) => {
     const onChange = setup(OTHERS);
     await userEvent.click(screen.getByRole("button", { name }));
@@ -120,7 +120,7 @@ describe("FilterChips: each chip emits the whole next filter", () => {
 
   it("choosing the active value bucket again unsets it", async () => {
     const onChange = setup({ ...OTHERS, valueBucket: "UP_TO_9M" });
-    await userEvent.click(within(screen.getByRole("group", { name: "Value" })).getByRole("button", { name: "Up to 9,004,000 RON" }));
+    await userEvent.click(within(screen.getByRole("group", { name: "Value" })).getByRole("button", { name: "900,400–9,004,000 RON" }));
     expect(onChange).toHaveBeenLastCalledWith(OTHERS);
   });
 
@@ -184,7 +184,7 @@ describe("FilterChips: the active chips' remove actions", () => {
     ["From 2023", () => without("from")],
     ["Until 2024", () => without("to")],
     ["Contract", () => without("channel")],
-    ["Up to 270,120 RON", () => without("valueBucket")],
+    ["135,060–270,120 RON", () => without("valueBucket")],
     ["Has Signals", () => without("hasSignals")],
     ["Achiziție directă", () => ({ ...FULL, procedure: ["Licitație deschisă"] })],
     ["Licitație deschisă", () => ({ ...FULL, procedure: ["Achiziție directă"] })],

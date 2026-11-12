@@ -22,7 +22,6 @@ export const WithExplanation: Story = {
       label={pick(globals["locale"], { en: "No value", ro: "Fără valoare" })}
       description={pick(globals["locale"], { en: "SEAP publishes no value for this Record.", ro: "SEAP nu publică nicio valoare pentru această înregistrare." })}
       pressed={false}
-      tone="default"
       onToggle={() => {}}
     />
   ),

@@ -19,6 +19,10 @@ const text: ActiveChipText = {
 };
 
 describe("filter helpers", () => {
+  it("withFields leaves fields outside the patch as given, even null", () => {
+    expect(withFields({ q: "a", countySide: null } as RecordFilter, { channel: "CONTRACT" })).toEqual({ q: "a", countySide: null, channel: "CONTRACT" });
+  });
+
   it("withFields drops unset values and empty lists, never leaving []", () => {
     expect(withFields({ q: "a", procedure: ["x"] }, { procedure: [], channel: undefined, hasSignals: null })).toEqual({ q: "a" });
     expect("procedure" in withFields({ procedure: ["x"] }, { procedure: [] })).toBe(false);
@@ -100,7 +104,7 @@ describe("activeChips", () => {
     };
     const chips = activeChips(filter, text, "en");
     expect(chips.map((chip) => chip.label)).toEqual([
-      "Until 2024", "Contract", "Up to 270,120 RON", "Without Signals", "Licitație deschisă", "Achiziție directă", "No value", "Suspect value",
+      "Until 2024", "Contract", "135,060–270,120 RON", "Without Signals", "Licitație deschisă", "Achiziție directă", "No value", "Suspect value",
     ]);
     const base: RecordFilter = { ...filter };
     expect(chips[3]!.remove(base)).not.toHaveProperty("hasSignals");

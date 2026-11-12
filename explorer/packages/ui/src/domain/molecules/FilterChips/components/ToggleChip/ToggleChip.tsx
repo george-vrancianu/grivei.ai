@@ -7,11 +7,10 @@ export interface ToggleChipProps {
   onToggle: () => void;
   /** Shown as a tooltip and read as the chip's description (a badge's caveat). */
   description?: string;
-  tone?: "default" | "primary" | "info" | "warning";
 }
 
 /** A filter chip that is on or off: a button with `aria-pressed`, filled when on, outlined when off. */
-export function ToggleChip({ label, pressed, onToggle, description, tone = "primary" }: ToggleChipProps) {
+export function ToggleChip({ label, pressed, onToggle, description }: ToggleChipProps) {
   const chip = (
     <Chip
       size="small"
@@ -20,7 +19,7 @@ export function ToggleChip({ label, pressed, onToggle, description, tone = "prim
       aria-pressed={pressed}
       onClick={onToggle}
       variant={pressed ? "filled" : "outlined"}
-      {...(tone === "default" ? {} : { color: tone })}
+      color="primary"
     />
   );
   return description ? (

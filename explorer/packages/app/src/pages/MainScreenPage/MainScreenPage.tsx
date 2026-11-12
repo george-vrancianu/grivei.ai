@@ -13,7 +13,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const { filter, tab, update, setFilter } = useUrlState();
   const state = useMainScreen({ filter });
   const search = state.status === "ready" ? state.data.seap.search : null;
-  const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null);
+  const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   return (
     <Stack component="main" spacing={3} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h4" component="h1">

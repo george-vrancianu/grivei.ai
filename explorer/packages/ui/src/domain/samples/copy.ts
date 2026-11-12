@@ -13,7 +13,7 @@ import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts"
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
-import type { FilterChipsCopy } from "../organisms/FilterChips/index.ts";
+import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
@@ -191,11 +191,11 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
         group: "Valoare",
         options: {
           UP_TO_10K: "Până la 10.000 RON",
-          UP_TO_135K: "Până la 135.060 RON",
-          UP_TO_270K: "Până la 270.120 RON",
-          UP_TO_900K: "Până la 900.400 RON",
-          UP_TO_9M: "Până la 9.004.000 RON",
-          UP_TO_1B: "Până la 1 mld. RON",
+          UP_TO_135K: "10.000–135.060 RON",
+          UP_TO_270K: "135.060–270.120 RON",
+          UP_TO_900K: "270.120–900.400 RON",
+          UP_TO_9M: "900.400–9.004.000 RON",
+          UP_TO_1B: "9.004.000 RON–1 mld. RON",
           OVER_1B: "Peste 1 mld. RON",
         },
       },
@@ -219,11 +219,11 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
         group: "Value",
         options: {
           UP_TO_10K: "Up to 10,000 RON",
-          UP_TO_135K: "Up to 135,060 RON",
-          UP_TO_270K: "Up to 270,120 RON",
-          UP_TO_900K: "Up to 900,400 RON",
-          UP_TO_9M: "Up to 9,004,000 RON",
-          UP_TO_1B: "Up to 1 bn RON",
+          UP_TO_135K: "10,000–135,060 RON",
+          UP_TO_270K: "135,060–270,120 RON",
+          UP_TO_900K: "270,120–900,400 RON",
+          UP_TO_9M: "900,400–9,004,000 RON",
+          UP_TO_1B: "9,004,000 RON–1 bn RON",
           OVER_1B: "Over 1 bn RON",
         },
       },

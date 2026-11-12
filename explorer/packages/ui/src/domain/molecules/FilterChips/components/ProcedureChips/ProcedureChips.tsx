@@ -1,4 +1,5 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
+import { Typography } from "../../../../../atoms/Typography/index.ts";
 import { ChipGroup } from "../ChipGroup/index.ts";
 import { ToggleChip } from "../ToggleChip/index.ts";
 
@@ -15,7 +16,9 @@ export function ProcedureChips({ procedures, selected, onToggle, copy }: Procedu
   return (
     <ChipGroup label={copy.group}>
       {procedures.length === 0 ? (
-        <span>{copy.empty}</span>
+        <Typography variant="body2" color="text.secondary">
+          {copy.empty}
+        </Typography>
       ) : (
         procedures.map((name) => <ToggleChip key={name} label={name} pressed={(selected ?? []).includes(name)} onToggle={() => onToggle(name)} />)
       )}
