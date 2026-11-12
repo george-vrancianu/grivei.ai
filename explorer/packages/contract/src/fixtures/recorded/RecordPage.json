@@ -1,0 +1,2122 @@
+[
+  {
+    "name": "direct-purchase-counted",
+    "kind": "typical",
+    "description": "a direct purchase just under 10x the cap: value as published = counted value, no badge, and the over-cap Signal that lists it",
+    "variables": {
+      "code": "DA94000002"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA94000002",
+          "title": "Achizitie DA94000002",
+          "date": "2022-05-10",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "135059900",
+          "counted": "135059900",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-santierul-demo-srl",
+                "displayName": "SANTIERUL DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA94000002",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "OVER_CAP",
+              "date": "2022-05-10",
+              "firstDate": "2022-05-10",
+              "recordCount": 1,
+              "dataThrough": "2023-03-20",
+              "authority": {
+                "key": "1000009",
+                "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "name-santierul-demo-srl",
+                  "displayName": "SANTIERUL DEMO SRL",
+                  "identity": "NAME_ONLY"
+                }
+              ],
+              "numbers": {
+                "__typename": "OverCapNumbers",
+                "value": "135059900",
+                "cap": "13506000",
+                "multiple": 9.999993
+              },
+              "reproduce": {
+                "authority": "1000009",
+                "supplier": null,
+                "signal": "OVER_CAP",
+                "cpv": null,
+                "from": "2022-05-10",
+                "to": "2022-05-10"
+              },
+              "records": [
+                {
+                  "code": "DA94000002",
+                  "title": "Achizitie DA94000002",
+                  "date": "2022-05-10",
+                  "value": "135059900",
+                  "counted": "135059900",
+                  "badges": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "direct-purchase-suspect",
+    "kind": "extreme",
+    "description": "a direct purchase at 10x the cap or more: shown, flagged by the 10x-cap rule with its threshold, left out of sums",
+    "variables": {
+      "code": "DA94000001"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA94000001",
+          "title": "Achizitie DA94000001",
+          "date": "2022-05-10",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "200000000",
+          "counted": null,
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-santierul-demo-srl",
+                "displayName": "SANTIERUL DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [
+            "SUSPECT_VALUE"
+          ],
+          "suspect": {
+            "rule": "DIRECT_PURCHASE_10X_CAP",
+            "threshold": "13506000"
+          },
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA94000001",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "direct-purchase-no-value",
+    "kind": "typical",
+    "description": "a direct purchase with no value in SEAP: the no-value badge, nothing counted",
+    "variables": {
+      "code": "DA94000009"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA94000009",
+          "title": "Achizitie DA94000009",
+          "date": "2023-01-18",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": null,
+          "counted": null,
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-santierul-demo-srl",
+                "displayName": "SANTIERUL DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [
+            "NO_VALUE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA94000009",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "contract-suspect-over-estimate",
+    "kind": "extreme",
+    "description": "a contract of 1 bn RON or more at 100x its e-licitatie estimate: shown, flagged, left out of sums",
+    "variables": {
+      "code": "CAN9810001~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9810001~1",
+          "title": "Contract CAN9810001 1",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "120000000000",
+          "counted": null,
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-alfa-demo-srl",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "SUSPECT_VALUE"
+          ],
+          "suspect": {
+            "rule": "CONTRACT_100X_ESTIMATE",
+            "threshold": "1000000000"
+          },
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9810001~1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "contract-suspect-no-estimate",
+    "kind": "extreme",
+    "description": "a contract above 50 bn RON with no estimate: shown, flagged, left out of sums",
+    "variables": {
+      "code": "CAN9810004~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9810004~1",
+          "title": "Contract CAN9810004 1",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "6000000000000",
+          "counted": null,
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "BETA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-beta-demo-srl",
+                "displayName": "BETA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "SUSPECT_VALUE"
+          ],
+          "suspect": {
+            "rule": "CONTRACT_OVER_50BN",
+            "threshold": null
+          },
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9810004~1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-agreement",
+    "kind": "typical",
+    "description": "a framework agreement: ceiling not counted, what its subsequent contracts reported, the ratio, the subsequent contracts listed",
+    "variables": {
+      "code": "CAN9800001~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9800001~1",
+          "title": "Contract CAN9800001 1",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "1000000000",
+          "counted": null,
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-alfa-demo-srl",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9800001~1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "1000000000",
+            "subsequentReported": "500000000",
+            "ratio": 0.5,
+            "agreement": null,
+            "subsequent": [
+              {
+                "code": "CAN9800001~2",
+                "title": "Contract CAN9800001 2",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "400000000",
+                "counted": "400000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-alfa-demo-srl",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800001~3",
+                "title": "Contract CAN9800001 3",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-alfa-demo-srl",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "subsequent-contract",
+    "kind": "typical",
+    "description": "a subsequent contract pointing back to its framework agreement",
+    "variables": {
+      "code": "CAN9800001~2"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9800001~2",
+          "title": "Contract CAN9800001 2",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "400000000",
+          "counted": "400000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-alfa-demo-srl",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "SUBSEQUENT_CONTRACT"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9800001~2",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "1000000000",
+            "subsequentReported": "500000000",
+            "ratio": 0.5,
+            "agreement": {
+              "code": "CAN9800001~1",
+              "title": "Contract CAN9800001 1"
+            },
+            "subsequent": [
+              {
+                "code": "CAN9800001~2",
+                "title": "Contract CAN9800001 2",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "400000000",
+                "counted": "400000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-alfa-demo-srl",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800001~3",
+                "title": "Contract CAN9800001 3",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-alfa-demo-srl",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-blank-ceiling",
+    "kind": "extreme",
+    "description": "a subsequent contract of a framework with a blank ceiling: reported value, no ceiling, no ratio",
+    "variables": {
+      "code": "CAN9800005~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9800005~1",
+          "title": "Contract CAN9800005 1",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": null,
+          "counted": null,
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-alfa-demo-srl",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING",
+            "NO_VALUE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9800005~1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": null,
+            "subsequentReported": "50000000",
+            "ratio": null,
+            "agreement": null,
+            "subsequent": [
+              {
+                "code": "CAN9800005~2",
+                "title": "Contract CAN9800005 2",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-alfa-demo-srl",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "consortium-with-natural-person",
+    "kind": "typical",
+    "description": "a consortium of three, a natural person among them: full value once, an equal share each (a convention), the person unnamed and unlinked",
+    "variables": {
+      "code": "CAN9800006~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9800006~1",
+          "title": "Contract CAN9800006 1",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": "33334",
+              "entity": {
+                "key": "name-alfa-demo-srl",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            },
+            {
+              "naturalPerson": true,
+              "publishedName": null,
+              "share": "33333",
+              "entity": null
+            },
+            {
+              "naturalPerson": false,
+              "publishedName": "BALKAN TRADING OOD",
+              "share": "33333",
+              "entity": {
+                "key": "vat-bg103029862",
+                "displayName": "BALKAN TRADING OOD",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "CONSORTIUM_SHARE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9800006~1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "not-found",
+    "kind": "empty",
+    "description": "no Record under that code",
+    "variables": {
+      "code": "CAN0000000"
+    },
+    "data": {
+      "seap": {
+        "record": null
+      }
+    }
+  },
+  {
+    "name": "contract-single-winner",
+    "kind": "typical",
+    "description": "a contract that recurs in a later quarter: one Record carrying the newer notice version, one winner",
+    "variables": {
+      "code": "CAN9000003~5"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9000003~5",
+          "title": "Combustibil (actualizat)",
+          "date": "2021-12-27",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "15000",
+          "counted": "15000",
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "PETROL NOU SA",
+              "share": null,
+              "entity": {
+                "key": "name-petrol-nou-sa",
+                "displayName": "PETROL NOU SA",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9000003~5",
+            "via": "Contracte 2022 - T2",
+            "kind": "BULK",
+            "fetchedAt": "2022-09-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "contract-code-with-slash",
+    "kind": "typical",
+    "description": "a subsequent contract whose number holds a slash: the code is encoded in the URL and in the redirect link; its framework agreement and ratio",
+    "variables": {
+      "code": "CAN9000010~1398514/1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9000010~1398514/1",
+          "title": "Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)",
+          "date": "2025-01-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": "Servicii",
+          "value": "28963700",
+          "counted": "28963700",
+          "authority": {
+            "key": "4267117",
+            "displayName": "MUNICIPIUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "UTI FACILITY SA",
+              "share": null,
+              "entity": {
+                "key": "name-uti-facility-sa",
+                "displayName": "UTI FACILITY SA",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "50720000-8",
+            "description": "Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)"
+          },
+          "badges": [
+            "SUBSEQUENT_CONTRACT"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9000010~1398514%2F1",
+            "via": "Contracte 2025 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2025-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "283324100",
+            "subsequentReported": "91147350",
+            "ratio": 0.3217070132756091,
+            "agreement": {
+              "code": "CAN9000010~21",
+              "title": "Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)"
+            },
+            "subsequent": [
+              {
+                "code": "CAN9000010~133",
+                "title": "Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)",
+                "date": "2025-01-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "62183650",
+                "counted": "62183650",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "4267117",
+                  "displayName": "MUNICIPIUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "UTI FACILITY SA",
+                    "share": null,
+                    "entity": {
+                      "key": "name-uti-facility-sa",
+                      "displayName": "UTI FACILITY SA",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9000010~1398514/1",
+                "title": "Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)",
+                "date": "2025-01-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "28963700",
+                "counted": "28963700",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "4267117",
+                  "displayName": "MUNICIPIUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "UTI FACILITY SA",
+                    "share": null,
+                    "entity": {
+                      "key": "name-uti-facility-sa",
+                      "displayName": "UTI FACILITY SA",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-consortium",
+    "kind": "typical",
+    "description": "a framework contract won by two firms: a ceiling (not counted) and the consortium marker together",
+    "variables": {
+      "code": "CAN9000002~77/2022"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9000002~77/2022",
+          "title": "Reactivi laborator",
+          "date": "2021-12-27",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "120025",
+          "counted": null,
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "BETA CHIMIE SRL",
+              "share": "60013",
+              "entity": {
+                "key": "name-beta-chimie-srl",
+                "displayName": "BETA CHIMIE SRL",
+                "identity": "NAME_ONLY"
+              }
+            },
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA CHIMIE SRL",
+              "share": "60012",
+              "entity": {
+                "key": "name-alfa-chimie-srl",
+                "displayName": "ALFA CHIMIE SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING",
+            "CONSORTIUM_SHARE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9000002~77%2F2022",
+            "via": "Contracte 2022 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2022-06-15T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "120025",
+            "subsequentReported": "0",
+            "ratio": 0,
+            "agreement": null,
+            "subsequent": []
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "award-notice-consortium",
+    "kind": "typical",
+    "description": "an award notice (not a contract): one Record for the notice, two winners sharing it equally",
+    "variables": {
+      "code": "CAN9100002"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9100002",
+          "title": "Servicii medicale lot 9",
+          "date": "2024-11-11",
+          "kind": "AWARD_NOTICE",
+          "channel": "CONTRACT",
+          "procedure": "Norme proprii (Anexa 2B)",
+          "contractType": "Servicii",
+          "value": "9880000",
+          "counted": "9880000",
+          "authority": {
+            "key": "13641538",
+            "displayName": "CENTRUL MEDICAL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "CENTRUL TOPMED DEMO",
+              "share": "4940000",
+              "entity": {
+                "key": "name-centrul-topmed-demo",
+                "displayName": "CENTRUL TOPMED DEMO",
+                "identity": "NAME_ONLY"
+              }
+            },
+            {
+              "naturalPerson": false,
+              "publishedName": "ASOCIEREA DEMO",
+              "share": "4940000",
+              "entity": {
+                "key": "name-asocierea-demo",
+                "displayName": "ASOCIEREA DEMO",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "85147000-1",
+            "description": "Servicii de medicina muncii (Rev.2)"
+          },
+          "badges": [
+            "CONSORTIUM_SHARE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9100002",
+            "via": "Anunturi de atribuire la proceduri fara anunt de initiere T1 2025",
+            "kind": "BULK",
+            "fetchedAt": "2025-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "direct-purchase-pipe-title",
+    "kind": "typical",
+    "description": "a direct purchase loaded from a pipe-shaped CSV: the title holds a pipe, provenance names the bulk file",
+    "variables": {
+      "code": "DA91000002"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA91000002",
+          "title": "Tub PVC 3|4 toli",
+          "date": "2022-03-29",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "30000",
+          "counted": "30000",
+          "authority": {
+            "key": "name-scoala-gimnaziala-exemplu",
+            "displayName": "SCOALA GIMNAZIALA EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "CURAT EXEMPLU SRL",
+              "share": null,
+              "entity": {
+                "key": "name-curat-exemplu-srl",
+                "displayName": "CURAT EXEMPLU SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA91000002",
+            "via": "Achizitii directe 2022 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2022-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "direct-purchase-notice",
+    "kind": "typical",
+    "description": "a direct-purchase award notice (DAN): its own kind, the redirect goes to the award-notice page",
+    "variables": {
+      "code": "DAN9100001"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DAN9100001",
+          "title": "SERVICII VULCANIZARE",
+          "date": "2024-01-02",
+          "kind": "DAN",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": "Servicii",
+          "value": "508900",
+          "counted": "508900",
+          "authority": {
+            "key": "name-comuna-exemplu-primaria-exemplu",
+            "displayName": "COMUNA EXEMPLU (PRIMARIA EXEMPLU)",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "S.C. BODIMPEX S.R.L.",
+              "share": null,
+              "entity": {
+                "key": "name-sc-bodimpex-srl",
+                "displayName": "S.C. BODIMPEX S.R.L.",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "50112200-5",
+            "description": "Servicii de intretinere a automobilelor (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DAN9100001",
+            "via": "Notificari de atribuire la cumpararea directa T I 2024",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "natural-person-winner",
+    "kind": "typical",
+    "description": "a winner published with a CNP: a natural person, never named, never linked",
+    "variables": {
+      "code": "DA93000008"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA93000008",
+          "title": "Achizitie DA93000008",
+          "date": "2023-03-17",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": true,
+              "publishedName": null,
+              "share": null,
+              "entity": null
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA93000008",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "cui-mismatch",
+    "kind": "typical",
+    "description": "a supplier CUI equal to the authority's: unresolved, with the CUI-mismatch badge",
+    "variables": {
+      "code": "DA93000009"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA93000009",
+          "title": "Achizitie DA93000009",
+          "date": "2023-03-18",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "PRIMARIA COMUNA EXEMPLU",
+              "share": null,
+              "entity": {
+                "key": "name-primaria-comuna-exemplu",
+                "displayName": "PRIMARIA COMUNA EXEMPLU",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [
+            "CUI_MISMATCH"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA93000009",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "name-differs-from-anaf",
+    "kind": "typical",
+    "description": "the supplier is spelled as ANAF's old name: resolved by CUI, with the name-differs badge",
+    "variables": {
+      "code": "DA93000003"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA93000003",
+          "title": "Achizitie DA93000003",
+          "date": "2023-03-12",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "TARA VECHE CONSTRUCT SA",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [
+            "NAME_DIFFERS_FROM_ANAF"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA93000003",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "identity-curated",
+    "kind": "typical",
+    "description": "a wrong CUI mapped by the override file to the entity it really is: curated and name-differs badges",
+    "variables": {
+      "code": "DA93000013"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA93000013",
+          "title": "Achizitie DA93000013",
+          "date": "2023-03-22",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "DESTINATAR GRESIT SRL",
+              "share": null,
+              "entity": {
+                "key": "2000066",
+                "displayName": "DESTINATAR DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [
+            "NAME_DIFFERS_FROM_ANAF",
+            "IDENTITY_CURATED"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA93000013",
+            "via": "Achizitii directe 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "consortium-name-only-members",
+    "kind": "typical",
+    "description": "a consortium of a CUI firm, a natural person and a foreign firm known by its VAT id",
+    "variables": {
+      "code": "CAN9700001~C-1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9700001~C-1",
+          "title": "Reabilitare corp B",
+          "date": "2023-02-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "50000000",
+          "counted": "50000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": "16666667",
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            },
+            {
+              "naturalPerson": true,
+              "publishedName": null,
+              "share": "16666667",
+              "entity": null
+            },
+            {
+              "naturalPerson": false,
+              "publishedName": "BALKAN TRADING OOD",
+              "share": "16666666",
+              "entity": {
+                "key": "vat-bg103029862",
+                "displayName": "BALKAN TRADING OOD",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "CONSORTIUM_SHARE"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9700001~C-1",
+            "via": "Contracte 2023 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "bulk-over-crawl",
+    "kind": "typical",
+    "description": "a contract the bulk has, crawled too: the bulk version stands, no badge, the redirect link",
+    "variables": {
+      "code": "CAN9200001~C-1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9200001~C-1",
+          "title": "Servicii de curatenie",
+          "date": "2026-02-01",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "15000000",
+          "counted": "15000000",
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "CURAT NOU SRL",
+              "share": null,
+              "entity": {
+                "key": "name-curat-nou-srl",
+                "displayName": "CURAT NOU SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9200001~C-1",
+            "via": "Contracte 2026 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-10T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "crawl-only",
+    "kind": "typical",
+    "description": "a crawled contract the bulk does not have (in a quarter it covers): crawl-only badge, crawl provenance, the e-licitatie page",
+    "variables": {
+      "code": "CAN9200002~C-7"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9200002~C-7",
+          "title": "Servicii de curățenie",
+          "date": "2026-02-02",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": "Servicii",
+          "value": "2000050",
+          "counted": "2000050",
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "DRUMURI DEMO SA",
+              "share": null,
+              "entity": {
+                "key": "name-drumuri-demo-sa",
+                "displayName": "DRUMURI DEMO SA",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "90910000-9",
+            "description": "Servicii de curatenie (Rev.2)"
+          },
+          "badges": [
+            "CRAWL_ONLY"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000012",
+            "via": null,
+            "kind": "CRAWL",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "crawled-provisional",
+    "kind": "typical",
+    "description": "a crawled contract in a quarter the bulk has not reached: provisional badge, the re-crawled version",
+    "variables": {
+      "code": "CAN9200003~9/2026"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9200003~9/2026",
+          "title": "Servicii de curățenie",
+          "date": "2026-03-30",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": "Servicii",
+          "value": "8000000",
+          "counted": "8000000",
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "CONSTRUCT DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-construct-demo-srl",
+                "displayName": "CONSTRUCT DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "90910000-9",
+            "description": "Servicii de curatenie (Rev.2)"
+          },
+          "badges": [
+            "CRAWLED_PROVISIONAL"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013",
+            "via": null,
+            "kind": "CRAWL",
+            "fetchedAt": "2026-11-12T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "crawled-request-for-quotation",
+    "kind": "typical",
+    "description": "a crawled simplified award notice: provisional, linked to the RFQ page",
+    "variables": {
+      "code": "SCNA9200004~S-1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "SCNA9200004~S-1",
+          "title": "Servicii de curățenie",
+          "date": "2026-03-31",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": "Furnizare",
+          "value": "300025",
+          "counted": "300025",
+          "authority": {
+            "key": "name-spitalul-exemplu",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "NAME_ONLY"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "PAPETARIE DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "name-papetarie-demo-srl",
+                "displayName": "PAPETARIE DEMO SRL",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "90910000-9",
+            "description": "Servicii de curatenie (Rev.2)"
+          },
+          "badges": [
+            "CRAWLED_PROVISIONAL"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "https://e-licitatie.ro/pub/notices/ca-notices/view-rfq/92000014",
+            "via": null,
+            "kind": "CRAWL",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "over-cap-signal",
+    "kind": "typical",
+    "description": "a direct purchase above the cap: the over-cap Signal with its two Records and its numbers",
+    "variables": {
+      "code": "DA98000001"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA98000001",
+          "title": "Achizitie DA98000001",
+          "date": "2023-01-10",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "30000000",
+          "counted": "30000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Cod 30197000-6"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA98000001",
+            "via": "Achizitii directe t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "OVER_CAP",
+              "date": "2023-01-10",
+              "firstDate": "2023-01-10",
+              "recordCount": 2,
+              "dataThrough": "2024-03-20",
+              "authority": {
+                "key": "1000017",
+                "displayName": "SPITALUL EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI"
+                },
+                {
+                  "key": "2000015",
+                  "displayName": "BETA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "OverCapNumbers",
+                "value": "30000000",
+                "cap": "27012000",
+                "multiple": 1.110618
+              },
+              "reproduce": {
+                "authority": "1000017",
+                "supplier": null,
+                "signal": "OVER_CAP",
+                "cpv": null,
+                "from": "2023-01-10",
+                "to": "2023-01-10"
+              },
+              "records": [
+                {
+                  "code": "DA98000001",
+                  "title": "Achizitie DA98000001",
+                  "date": "2023-01-10",
+                  "value": "30000000",
+                  "counted": "30000000",
+                  "badges": []
+                },
+                {
+                  "code": "DA98000002",
+                  "title": "Achizitie DA98000002",
+                  "date": "2023-01-10",
+                  "value": "28000000",
+                  "counted": "28000000",
+                  "badges": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "signal-natural-person",
+    "kind": "typical",
+    "description": "an over-cap Signal whose only winner is a natural person: no name, no link",
+    "variables": {
+      "code": "DA98000010"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA98000010",
+          "title": "Achizitie DA98000010",
+          "date": "2023-02-03",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "40000000",
+          "counted": "40000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": true,
+              "publishedName": null,
+              "share": null,
+              "entity": null
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Cod 30197000-6"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA98000010",
+            "via": "Achizitii directe t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "OVER_CAP",
+              "date": "2023-02-03",
+              "firstDate": "2023-02-03",
+              "recordCount": 1,
+              "dataThrough": "2024-03-20",
+              "authority": {
+                "key": "1000017",
+                "displayName": "SPITALUL EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [],
+              "numbers": {
+                "__typename": "OverCapNumbers",
+                "value": "40000000",
+                "cap": "27012000",
+                "multiple": 1.480823
+              },
+              "reproduce": {
+                "authority": "1000017",
+                "supplier": null,
+                "signal": "OVER_CAP",
+                "cpv": null,
+                "from": "2023-02-03",
+                "to": "2023-02-03"
+              },
+              "records": [
+                {
+                  "code": "DA98000010",
+                  "title": "Achizitie DA98000010",
+                  "date": "2023-02-03",
+                  "value": "40000000",
+                  "counted": "40000000",
+                  "badges": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "splitting-signal",
+    "kind": "typical",
+    "description": "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records",
+    "variables": {
+      "code": "DA97000005"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA97000005",
+          "title": "Achizitie DA97000005",
+          "date": "2023-03-01",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "15000000",
+          "counted": "15000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "GAMMA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000023",
+                "displayName": "GAMMA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Cod 30197000-6"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA97000005",
+            "via": "Achizitii directe t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-11-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "SPLITTING",
+              "date": "2023-04-08",
+              "firstDate": "2023-03-01",
+              "recordCount": 3,
+              "dataThrough": "2023-09-10",
+              "authority": {
+                "key": "1000017",
+                "displayName": "SPITALUL EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000023",
+                  "displayName": "GAMMA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "SplittingNumbers",
+                "purchases": 3,
+                "sum": "45000000",
+                "cap": "27012000",
+                "cpvGroup": "301",
+                "from": "2023-03-01",
+                "to": "2023-04-08"
+              },
+              "reproduce": {
+                "authority": "1000017",
+                "supplier": "2000023",
+                "signal": "SPLITTING",
+                "cpv": "301",
+                "from": "2023-03-01",
+                "to": "2023-04-08"
+              },
+              "records": [
+                {
+                  "code": "DA97000007",
+                  "title": "Achizitie DA97000007",
+                  "date": "2023-04-08",
+                  "value": "15000000",
+                  "counted": "15000000",
+                  "badges": []
+                },
+                {
+                  "code": "DA97000006",
+                  "title": "Achizitie DA97000006",
+                  "date": "2023-03-20",
+                  "value": "15000000",
+                  "counted": "15000000",
+                  "badges": []
+                },
+                {
+                  "code": "DA97000005",
+                  "title": "Achizitie DA97000005",
+                  "date": "2023-03-01",
+                  "value": "15000000",
+                  "counted": "15000000",
+                  "badges": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "no-publication-signal",
+    "kind": "typical",
+    "description": "a backfilled award notice negotiated without prior publication: the no-publication Signal, crawl-only badge and provenance",
+    "variables": {
+      "code": "CAN9400001"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9400001",
+          "title": "Servicii juridice urgente",
+          "date": "2021-04-02",
+          "kind": "AWARD_NOTICE",
+          "channel": "CONTRACT",
+          "procedure": "Negociere fara publicare prealabila",
+          "contractType": "Servicii",
+          "value": "350050",
+          "counted": "350050",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "AVOCATI DEMO",
+              "share": null,
+              "entity": {
+                "key": "name-avocati-demo",
+                "displayName": "AVOCATI DEMO",
+                "identity": "NAME_ONLY"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "90910000-9",
+            "description": "Servicii de curatenie (Rev.2)"
+          },
+          "badges": [
+            "CRAWL_ONLY"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "https://e-licitatie.ro/pub/notices/ca-notices/view-c/94000011",
+            "via": null,
+            "kind": "CRAWL",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "NO_PUBLICATION",
+              "date": "2021-04-02",
+              "firstDate": "2021-04-02",
+              "recordCount": 1,
+              "dataThrough": "2024-02-01",
+              "authority": {
+                "key": "1000017",
+                "displayName": "SPITALUL EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "name-avocati-demo",
+                  "displayName": "AVOCATI DEMO",
+                  "identity": "NAME_ONLY"
+                }
+              ],
+              "numbers": {
+                "__typename": "NoPublicationNumbers",
+                "procedure": "Negociere fara publicare prealabila"
+              },
+              "reproduce": {
+                "authority": "1000017",
+                "supplier": null,
+                "signal": "NO_PUBLICATION",
+                "cpv": null,
+                "from": "2021-04-02",
+                "to": "2021-04-02"
+              },
+              "records": [
+                {
+                  "code": "CAN9400001",
+                  "title": "Servicii juridice urgente",
+                  "date": "2021-04-02",
+                  "value": "350050",
+                  "counted": "350050",
+                  "badges": [
+                    "CRAWL_ONLY"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

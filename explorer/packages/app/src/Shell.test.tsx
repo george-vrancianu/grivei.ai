@@ -61,18 +61,18 @@ describe("every route renders its placeholder in both languages", () => {
 
 describe("the EN/RO switch", () => {
   it("keeps the route and its query string, both ways", async () => {
-    openAt("/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
+    openAt("/explore/record/CAN9800006~1?q=pod&signal=splitting&page=2&tab=records");
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
-    expect(screen.getByTestId("language-switch")).toHaveAttribute("href", "/ro/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
+    expect(screen.getByTestId("language-switch")).toHaveAttribute("href", "/ro/explore/record/CAN9800006~1?q=pod&signal=splitting&page=2&tab=records");
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.en.language.switchLabel }));
-    expect(here()).toBe("/ro/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
-    expect(await screen.findByRole("heading", { level: 1, name: "Reabilitare pod peste râul Olt" })).toBeInTheDocument();
+    expect(here()).toBe("/ro/explore/record/CAN9800006~1?q=pod&signal=splitting&page=2&tab=records");
+    expect(await screen.findByRole("heading", { level: 1, name: "Contract CAN9800006 1" })).toBeInTheDocument();
     expect(screen.getByText("Valoare publicată")).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("ro");
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.ro.language.switchLabel }));
-    expect(here()).toBe("/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
+    expect(here()).toBe("/explore/record/CAN9800006~1?q=pod&signal=splitting&page=2&tab=records");
     expect(await screen.findByText("Value as published")).toBeInTheDocument();
   });
 
