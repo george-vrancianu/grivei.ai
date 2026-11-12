@@ -40,14 +40,20 @@ CREATE TABLE seap.record (
     quarter          text NOT NULL,       -- from published_on: '2024Q2'
     award_date       date NOT NULL,
     estimated_bani   bigint,
-    value_bani       bigint,              -- null = no value in SEAP
-    counted_bani     bigint,              -- null = not summed (no value; later: suspect, framework ceiling)
+    value_bani       bigint,              -- null = no value in SEAP (blank or zero)
+    -- The counting rule (#65, pipeline/counting.py), decided once at load: what the Record adds to a sum. Null = not summed
+    -- (no value, a suspect value or a framework ceiling); else = value_bani. Every Total sums this column and nothing else.
+    counted_bani     bigint,
+    framework_role   text CHECK (framework_role IN ('CEILING', 'SUBSEQUENT')),  -- `Incheiat prin`: Cu acord cadru | ... subsecvent
+    suspect_rule     text CHECK (suspect_rule IN ('DIRECT_PURCHASE_10X_CAP', 'CONTRACT_100X_ESTIMATE', 'CONTRACT_OVER_50BN')),
+    suspect_threshold_bani bigint,        -- the cap in force, or the estimated value (null for CONTRACT_OVER_50BN)
     load_notes       text[] NOT NULL DEFAULT '{}',  -- quirks seen on load, e.g. 'supplier_cui:scientific_notation'
     -- Winners in their published (file row) order: [{"name", "key", "identity", "naturalPerson", "curated", "differsFromAnaf",
-    -- "cuiMismatch"}, ...]. A DA or DAN has its one supplier. `key` joins core.entity; a natural person has no key and no
+    -- "cuiMismatch", "share"}, ...]; `share` is the winner's equal share of the value in bani (a string), only when there are several. A DA or DAN has its one supplier. `key` joins core.entity; a natural person has no key and no
     -- name, and the published id (a CNP) is never stored (ADR 0003). supplier_cui / supplier_name above are the first winner.
     winners          jsonb NOT NULL DEFAULT '[]',
-    -- Identity badges (ADR 0003): CUI_MISMATCH, NAME_DIFFERS_FROM_ANAF, IDENTITY_CURATED.
+    -- Badges the rebuild sets: the counting rule's (FRAMEWORK_CEILING, SUBSEQUENT_CONTRACT, CONSORTIUM_SHARE, SUSPECT_VALUE,
+    -- NO_VALUE) and the identity ones (ADR 0003: CUI_MISMATCH, NAME_DIFFERS_FROM_ANAF, IDENTITY_CURATED). They double as filter chips.
     badges           text[] NOT NULL DEFAULT '{}',
     -- Contracts and award notices (null / empty for DA and DAN). Kept for the counting rule (#65): the framework
     -- column and the award notice a subsequent contract links to its framework by.
@@ -79,6 +85,18 @@ CREATE TABLE seap.crawl_state (
     PRIMARY KEY (stream, kind)
 );
 
+-- Framework agreements (#65), one row per award notice that has a framework or subsequent Record: how much of the ceiling the
+-- subsequent contracts reported so far use. Filled at the end of the rebuild from seap.record (framework_role, notice_code):
+-- a subsequent contract links to its framework by the award notice number it shares with the framework's own contract(s).
+CREATE TABLE seap.framework (
+    notice_code      text PRIMARY KEY,
+    agreement_code   text REFERENCES seap.record(code),  -- the framework Record shown as "the agreement" (lowest code); null when the framework is not loaded
+    ceiling_bani     bigint,              -- sum of the notice's framework ceilings that have a value and are not suspect; null when none does
+    subsequent_bani  bigint NOT NULL,     -- sum of the notice's subsequent contracts' counted values
+    subsequent_count integer NOT NULL,
+    ratio            double precision     -- subsequent_bani / ceiling_bani; null when the ceiling is blank
+);
+
 -- TODO (search-engine ticket): nothing reads this table yet; the tracer API serves seap.record. It is filled on every
 -- rebuild so the search engine starts from real rows.
 -- The search table: one row per Record x winner. The tracer fills the columns the empty-filter Total and Records list
@@ -91,8 +109,8 @@ CREATE TABLE seap.search (
     award_date       date NOT NULL,
     award_year       integer NOT NULL,
     value_bani       bigint,
-    counted_bani     bigint,
-    share_bani       bigint,
+    counted_bani     bigint,              -- the Record's counted value (null: not summed); the authority side sums it once per Record
+    share_bani       bigint,              -- this winner's equal share of counted_bani (a sole winner has all of it); the supplier side sums it
     authority_cui    text,
     supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
     supplier_key     text,                -- the winner's entity key (core.entity.key); null for a natural person
