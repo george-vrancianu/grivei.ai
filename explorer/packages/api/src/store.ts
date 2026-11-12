@@ -5,12 +5,20 @@ export interface RecordRow {
   code: string;
   title: string;
   date: string;
-  kind: "DA";
+  kind: "DA" | "DAN";
   channel: "DIRECT_PURCHASE";
   value: string | null;
   counted: string | null;
   authority: { cui: string | null; name: string };
   supplier: { cui: string | null; name: string } | null;
+}
+
+/** One Record for its page: the list row plus what only the page shows. */
+export interface RecordDetail extends RecordRow {
+  contractType: string | null;
+  cpv: { code: string; description: string } | null;
+  /** The loaded file it came from, as the Source titles it, and when we fetched it (ISO, UTC). */
+  provenance: { via: string | null; fetchedAt: string };
 }
 
 export interface TotalRow {
@@ -24,6 +32,8 @@ export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 export interface Store {
   total(): Promise<TotalRow>;
   records(page: { limit: number; offset: number; order: RecordOrderKey }): Promise<RecordRow[]>;
+  /** A Record by its public code (DA, DAN), or null. */
+  record(code: string): Promise<RecordDetail | null>;
   /** Per SEAP record kind, the latest publication date loaded. */
   dataThrough(): Promise<{ kind: string; date: string }[]>;
 }
@@ -64,6 +74,32 @@ export function postgresStore(pool: pg.Pool): Store {
         authority: { cui: r.authority_cui, name: r.authority_name },
         supplier: r.supplier_name || r.supplier_cui ? { cui: r.supplier_cui, name: r.supplier_name } : null,
       }));
+    },
+    async record(code) {
+      const { rows } = await pool.query(
+        `SELECT r.code, r.title, r.award_date::text AS date, r.kind, r.channel, r.value_bani::text AS value,
+                r.counted_bani::text AS counted, r.authority_cui, r.authority_name, r.supplier_cui, r.supplier_name,
+                r.contract_type, r.cpv_code, r.cpv_description, f.via,
+                to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+           FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = $1`,
+        [code],
+      );
+      const r = rows[0];
+      if (!r) return null;
+      return {
+        code: r.code,
+        title: r.title,
+        date: r.date,
+        kind: r.kind,
+        channel: r.channel,
+        value: r.value,
+        counted: r.counted,
+        authority: { cui: r.authority_cui, name: r.authority_name },
+        supplier: r.supplier_name || r.supplier_cui ? { cui: r.supplier_cui, name: r.supplier_name } : null,
+        contractType: r.contract_type,
+        cpv: r.cpv_code ? { code: r.cpv_code, description: r.cpv_description ?? "" } : null,
+        provenance: { via: r.via, fetchedAt: r.fetched_at },
+      };
     },
     async dataThrough() {
       const { rows } = await pool.query(

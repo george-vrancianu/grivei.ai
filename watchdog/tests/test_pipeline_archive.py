@@ -10,7 +10,7 @@ import pytest
 
 from pipeline import fetch
 from pipeline.archive import Archive, ArchiveError
-from pipeline.da_bulk import InvalidFile, parse_da_file
+from pipeline.bulk import InvalidFile, parse_file
 from pipeline.rebuild import plan
 
 FIXTURE = Path(__file__).parent / "fixtures" / "archive"
@@ -95,7 +95,7 @@ def test_a_unit_without_a_manifest_or_with_a_changed_file_is_not_complete(copy_o
 
 def test_the_fixture_file_parses_with_dedup_blank_value_and_cui_cleanup(copy_of_fixture):
     [unit] = [u for u in copy_of_fixture.units() if u.unit == "2022Q1"]
-    rows = {r.code: r for r in parse_da_file(unit.file_path(unit.files[0]))}
+    rows = {r.code: r for r in parse_file("da", unit.unit, unit.file_path(unit.files[0]))}
     assert sorted(rows) == ["DA90000001", "DA90000002", "DA90000003", "DA90000004"]  # the duplicate row is dropped
     assert rows["DA90000001"].value_bani == 120050 and rows["DA90000001"].authority_name.endswith("JUDETUL TEST)")
     assert rows["DA90000001"].awarded_on.isoformat() == "2022-03-30"  # MM/DD/YYYY
@@ -114,7 +114,7 @@ def test_a_file_with_wrong_headers_is_invalid(tmp_path, text, why):
     f = tmp_path / "x.csv"
     f.write_text(text)
     with pytest.raises(InvalidFile, match=why):
-        parse_da_file(f)
+        parse_file("da", "2022Q1", f)
 
 
 def test_a_ragged_row_rejects_the_whole_file(tmp_path):
@@ -122,7 +122,7 @@ def test_a_ragged_row_rejects_the_whole_file(tmp_path):
     f = tmp_path / "x.csv"
     f.write_text(good + "|DA1|,|01/01/2022|\n", encoding="utf-8")
     with pytest.raises(InvalidFile, match="line 7"):
-        parse_da_file(f)
+        parse_file("da", "2022Q1", f)
 
 
 def test_planning_a_rebuild_quarantines_a_failing_unit_with_a_reason_and_loads_the_rest(copy_of_fixture):
