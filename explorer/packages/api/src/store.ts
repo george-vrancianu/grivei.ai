@@ -1,6 +1,7 @@
 import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
 import { rollupPlan, rollupWhere } from "./rollup.ts";
+import { roleStore, type RoleStore } from "./role.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
 export interface EntityRow {
@@ -186,7 +187,7 @@ export interface SearchOptions {
 
 export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 
-export interface Store {
+export interface Store extends RoleStore {
   total(): Promise<TotalRow>;
   records(page: { limit: number; offset: number; order: RecordOrderKey }): Promise<RecordRow[]>;
   /** A Record by its public code (DA, DAN, `<award notice>~<contract number>`, award notice), or null. */
@@ -509,6 +510,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   };
 
   return {
+    ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
     searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
       const plan = rollup ? rollupPlan(filter) : null;
