@@ -40,7 +40,9 @@ from .crawl.records import parse_unit as parse_crawl_unit
 from .estimates import read_estimates
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
+from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
+from .rollup import build_rollup
 from .search import create_index, value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
@@ -59,6 +61,8 @@ class RebuildSummary:
     estimates: int = 0  # archived estimated-value answers the counting rule read (`pipeline estimates`)
     estimates_missing: int = 0  # notices with a Record of 1 bn RON or more and no archived answer yet
     entities: int = 0
+    placement: PlacementSummary | None = None
+    geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
     quarantined: list[Path] = field(default_factory=list)
@@ -69,6 +73,10 @@ class RebuildSummary:
         out.append(f"estimates: {self.estimates} archived answers read; {self.estimates_missing} notice(s) of 1 bn RON or more have none yet"
                    + ("; run `pipeline estimates`, then rebuild again" if self.estimates_missing else ""))
         out.append(f"anaf: {self.anaf_found} CUIs found, {self.anaf_not_found} not found (from the archived answers); {self.entities} entities")
+        if self.placement is not None:
+            out.append(self.placement.line())
+        if self.geo_line:
+            out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
         out += self.coverage
         out += [f"quarantined: {p}" for p in self.quarantined]
@@ -380,6 +388,7 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 
 
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
+            placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
             today: date | None = None, known_gaps_path: Path | str | None = None) -> RebuildSummary:
     """`today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
     summary = RebuildSummary()
@@ -432,6 +441,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
             summary.estimates_missing = cur.fetchone()[0]
             build_entities(cur, overrides, summary)
+            summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             summary.coverage = flagged_cells(build_coverage(cur, archive, today, bulk_rows, known_gaps_path))
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
@@ -442,16 +452,24 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
             cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
             cur.execute("ANALYZE seap.record")
+            build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
             create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
         if progress:
             progress.fail(e)
         raise
+    if progress:  # the load is committed (VACUUM is not graph work, so an interrupt there is not a failed load): `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
+        progress.finish(summary.records, data_through)
     try:
         vacuum(db_url)  # cannot run inside the transaction above: right after the commit
     except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
         log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
-    if progress:
-        progress.finish(summary.records, data_through)
+    # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
+    from .geo.topo import build_topojson
+
+    try:
+        summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
+    except Exception as e:  # the graph is loaded; the outlines can be rebuilt on their own with `pipeline geo-topojson`
+        summary.geo_line = f"geo: TopoJSON failed ({type(e).__name__}: {e}); the graph is loaded, rerun `pipeline geo-topojson`"
     return summary

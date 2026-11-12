@@ -16,6 +16,14 @@
 		reverse_proxy api:4000
 	}
 
+	# County and UAT outlines: static TopoJSON written by `pipeline rebuild` (never through GraphQL). Same origin, so no CORS.
+	handle /geo/* {
+		root * /srv/geo
+		uri strip_prefix /geo
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
 	# The explorer: one bundle for both languages. Hashed assets are immutable.
 	handle /explore/assets/* {
 		root * /srv/explore

@@ -10,7 +10,7 @@
  * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -22,6 +22,7 @@ import type { EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, R
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
+import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,8 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
+const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
 const coverageArchive = join(watchdog, "tests/fixtures/archive-coverage"); // one cell of every Coverage grid state, rebuilt as of 2025-09-20 (#79)
 const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
@@ -64,6 +67,12 @@ const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
 const recordPage = allowlist.operations.find((o) => o.name === "RecordPage")!;
 const fullSuppliers = allowlist.operations.find((o) => o.name === "FullResultsSuppliers")!;
 const entityOverview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
+const zoomedCounty = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
+// The authorities of the placement fixture (watchdog/tests/fixtures/build_placement_archive.py): CUIs with valid check digits, invented.
+const P = {
+  sanpetru: "51000005", caragiale: "51000102", apahida: "51000200", rasnov: "51000307", sinca: "51000404", brasov: "51000501", bucharest3: "51000609",
+  unmatched: "51000706", seap: "51000803", unplaced: "51000900", ministry: "51001000", agency: "51001108", dsp: "51001205", huedin: "51001302",
+} as const;
 const schema = loadSchema();
 const EMPTY_FILTER = { filter: {} };
 
@@ -86,6 +95,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(crawlArchive, join(scratch, "archive-crawl"), { recursive: true });
     cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
+    cpSync(placementArchive, join(scratch, "archive-placement"), { recursive: true });
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
@@ -109,11 +119,15 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE backfill_b");
     await admin.query("CREATE DATABASE identity_a");
     await admin.query("CREATE DATABASE identity_b");
+    await admin.query("CREATE DATABASE placement_a");
+    await admin.query("CREATE DATABASE placement_b");
     await admin.query("CREATE DATABASE counting_a");
     await admin.query("CREATE DATABASE counting_b");
     await admin.query("CREATE DATABASE coverage_a");
     await admin.query("CREATE DATABASE coverage_b");
     await admin.query("CREATE DATABASE search_a");
+    await admin.query("CREATE DATABASE rollup_a");
+    await admin.query("CREATE DATABASE rollup_b");
   });
 
   afterAll(async () => {
@@ -573,6 +587,137 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(await snapshot("identity_b")).toEqual(await snapshot("identity_a"));
   });
 
+  // ---- placement (#67) ------------------------------------------------------------------------------------------------------
+  const placementRebuild = (db: string, geo: string) =>
+    rebuild(db, "archive-placement", ["--placement-data", placementData, "--geo-dir", join(scratch, geo)]);
+  /** A query the persisted operations do not carry (`locality`, `counties`): run in-process against the same resolvers, not through the HTTP door. */
+  interface Placed {
+    county: { code: string; name: string } | null;
+    uat: { siruta: string; name: string; county: { code: string } } | null;
+    locality: string | null;
+    national: boolean;
+    placedBy: string;
+  }
+  interface AdhocData {
+    entity: { placement: Placed | null };
+    counties: { code: string; name: string }[];
+  }
+  const adhoc = async (db: string, source: string, variableValues?: Record<string, unknown>) => {
+    await ask(db, mainScreen.sha256); // makes the database's pool
+    const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${db}`)!;
+    const r = await graphql({ schema, source, rootValue: rootValue(postgresStore(pool)), variableValues });
+    expect(r.errors).toBeUndefined();
+    return r.data as unknown as AdhocData;
+  };
+  const placementOf = async (db: string, key: string) =>
+    (await adhoc(db, `query($k: ID!) { entity(key: $k) { placement { county { code name } uat { siruta name county { code } } locality national placedBy } } }`, { k: key })).entity.placement as Placed | null;
+  const BV = { code: "RO-BV", name: "Brașov" };
+
+  it("places authorities by commune, village, town, municipality and Bucharest sector, and via SEAP with the postal-code tiebreak (#67)", async () => {
+    const out = placementRebuild("placement_a", "geo-a");
+    expect(out).toContain("placement: ");
+    expect(out).toContain("geo: 3 county outlines and 15 UAT outlines");
+    // a commune; and a village of the commune: the village SIRUTA is stored (`locality`), the UAT is what is plotted
+    expect(await placementOf("placement_a", P.apahida)).toEqual({ county: { code: "RO-CJ", name: "Cluj" }, uat: { siruta: "990020", name: "Apahida", county: { code: "RO-CJ" } }, locality: null, national: false, placedBy: "ANAF" });
+    expect(await placementOf("placement_a", P.sanpetru)).toEqual({ county: BV, uat: { siruta: "880010", name: "Sânpetru", county: { code: "RO-BV" } }, locality: "880011", national: false, placedBy: "ANAF" });
+    // a town (Î for Â), a municipality, comma-below against cedilla, initials
+    expect((await placementOf("placement_a", P.rasnov))?.uat).toMatchObject({ siruta: "880030", name: "Râșnov" });
+    expect((await placementOf("placement_a", P.brasov))?.uat).toMatchObject({ siruta: "880001", name: "Brașov" });
+    expect((await placementOf("placement_a", P.sinca))?.uat).toMatchObject({ siruta: "880060", name: "Șinca Nouă" });
+    expect((await placementOf("placement_a", P.caragiale))?.uat).toMatchObject({ siruta: "990010", name: "I. L. Caragiale" });
+    // a Bucharest sector
+    expect(await placementOf("placement_a", P.bucharest3)).toEqual({ county: { code: "RO-B", name: "București" }, uat: { siruta: "179169", name: "Sector 3", county: { code: "RO-B" } }, locality: null, national: false, placedBy: "ANAF" });
+    // a CUI ANAF misses: SEAP's entity view says `Sanpetru`, Brasov; the postal code 507301 picks the village of Ucea, not the commune
+    expect(await placementOf("placement_a", P.seap)).toEqual({ county: BV, uat: { siruta: "880050", name: "Ucea", county: { code: "RO-BV" } }, locality: "880052", national: false, placedBy: "SEAP" });
+    // the same persisted operation the app uses, valid for the contract
+    const variables = { key: P.sanpetru, role: "AUTHORITY" as const };
+    const r = await ask("placement_a", entityOverview.sha256, variables);
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(entityOverview.document), r.body.data, variables)).toEqual([]);
+    expect((r.body.data as EntityOverviewQuery).entity!.placement).toEqual({ county: BV, uat: { siruta: "880010", name: "Sânpetru" }, national: false, placedBy: "ANAF" });
+    // a supplier ANAF places is placed too
+    expect((await placementOf("placement_a", "2000007"))?.uat).toMatchObject({ siruta: "880001" });
+  });
+
+  it("keeps the county when the UAT does not match, and leaves an authority neither source places unplaced (#67)", async () => {
+    expect(await placementOf("placement_a", P.unmatched)).toEqual({ county: BV, uat: null, locality: null, national: false, placedBy: "ANAF" });
+    expect(await placementOf("placement_a", P.unplaced)).toBeNull();
+    expect((await entityPage("placement_a", P.unplaced, "AUTHORITY"))!.placement).toBeNull();
+  });
+
+  it("flags a national authority from the award notice or the reviewed file and does not place it in Bucharest (#67)", async () => {
+    // both have their seat in a Bucharest sector; neither is served a county or a UAT
+    for (const key of [P.ministry, P.agency]) {
+      expect(await placementOf("placement_a", key)).toEqual({ county: null, uat: null, locality: null, national: true, placedBy: "ANAF" });
+      expect((await entityPage("placement_a", key, "AUTHORITY"))!.placement).toEqual({ county: null, uat: null, national: true, placedBy: "ANAF" });
+    }
+    // a county unit whose notice says "central" and "deconcentrated": no file line needed, it plots in its own county
+    expect(await placementOf("placement_a", P.dsp)).toMatchObject({ county: BV, uat: { siruta: "880001" }, national: false });
+    // a town whose notice wrongly says central: the reviewed file overrides it
+    expect(await placementOf("placement_a", P.huedin)).toMatchObject({ national: false, uat: { name: "Huedin" } });
+    // a local authority's notice says local
+    expect((await placementOf("placement_a", P.brasov))?.national).toBe(false);
+  });
+
+  it("serves counties, and the UATs of a county: Bucharest's are its six sectors (#67)", async () => {
+    const { counties } = await adhoc("placement_a", "{ counties { code name } }");
+    expect(counties).toHaveLength(42);
+    expect(counties[0]).toEqual({ code: "RO-AB", name: "Alba" });
+    expect(counties).toContainEqual({ code: "RO-B", name: "București" });
+    expect(counties.map((c: { code: string }) => c.code)).toEqual([...counties.map((c: { code: string }) => c.code)].sort());
+    const zoom = async (county: string) => {
+      const variables = { filter: {}, county };
+      const r = await ask("placement_a", zoomedCounty.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(zoomedCounty.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as { uats: { siruta: string; name: string; county: { code: string; name: string } }[] }).uats;
+    };
+    const sectors = await zoom("RO-B");
+    expect(sectors.map((u) => [u.siruta, u.name])).toEqual([["179141", "Sector 1"], ["179150", "Sector 2"], ["179169", "Sector 3"], ["179178", "Sector 4"], ["179187", "Sector 5"], ["179196", "Sector 6"]]);
+    expect(sectors.every((u) => u.county.code === "RO-B" && u.county.name === "București")).toBe(true);
+    expect((await zoom("RO-BV")).map((u) => u.name)).toEqual(["Brașov", "Râșnov", "Șinca Nouă", "Sânpetru", "Ucea"]);
+    expect(await zoom("RO-IS")).toEqual([]); // a county with no UAT in this fixture's table
+  });
+
+  it("filters the main screen by the county and the UAT of the authority's placement (#67)", async () => {
+    const keys = async (filter: Record<string, unknown>) => {
+      const r = await ask("placement_a", mainScreen.sha256, { filter });
+      expect(r.status).toBe(200);
+      const rows = (r.body.data as MainScreenQuery).seap.search.records.rows;
+      return { total: (r.body.data as MainScreenQuery).seap.search.total.records, authorities: new Set(rows.map((x) => x.record.authority.key)) };
+    };
+    const bv = await keys({ county: "RO-BV" });
+    expect(bv.total).toBeGreaterThan(0);
+    expect(bv.authorities.has(P.sanpetru)).toBe(true);
+    expect(bv.authorities.has(P.caragiale)).toBe(false); // Cluj
+    expect(bv.authorities.has(P.unplaced)).toBe(false);
+    const uat = await keys({ uat: "880010" });
+    expect(uat.total).toBeGreaterThan(0);
+    expect([...uat.authorities]).toEqual([P.sanpetru]);
+    // a national authority seated in a Bucharest sector is not counted in Bucharest
+    const b = await keys({ county: "RO-B" });
+    expect(b.authorities.has(P.bucharest3)).toBe(true);
+    for (const key of [P.ministry, P.agency]) expect(b.authorities.has(key)).toBe(false);
+  });
+
+  it("gives identical placements and identical TopoJSON after a second rebuild into a fresh database (#67, ADR 0004)", async () => {
+    const keys = Object.values(P);
+    const snapshot = async (db: string) => ({
+      placements: await Promise.all(keys.map((k) => placementOf(db, k))),
+      counties: (await adhoc(db, "{ counties { code name } }")).counties,
+      zoom: JSON.stringify((await ask(db, zoomedCounty.sha256, { filter: {}, county: "RO-BV" })).body),
+    });
+    placementRebuild("placement_b", "geo-b");
+    expect(await snapshot("placement_b")).toEqual(await snapshot("placement_a"));
+    const files = (dir: string) => readdirSync(join(scratch, dir), { recursive: true }).map(String).filter((f) => f.endsWith(".json")).sort();
+    expect(files("geo-a")).toEqual(["counties.topo.json", "index.json", "uats/RO-B.topo.json", "uats/RO-BV.topo.json", "uats/RO-CJ.topo.json"]);
+    expect(files("geo-b")).toEqual(files("geo-a"));
+    for (const f of files("geo-a")) expect(readFileSync(join(scratch, "geo-b", f))).toEqual(readFileSync(join(scratch, "geo-a", f)));
+    const counties = JSON.parse(readFileSync(join(scratch, "geo-a", "counties.topo.json"), "utf8"));
+    expect(Object.keys(counties.objects)).toEqual(["counties"]);
+    expect(counties.objects.counties.geometries.map((g: { properties: { code: string } }) => g.properties.code)).toEqual(["RO-B", "RO-BV", "RO-CJ"]);
+  });
+
   // ---- the counting rule (#65) ---------------------------------------------------------------------------------------------
   const BANI = 100n;
   const bani = (ron: number | bigint) => String(BigInt(ron) * BANI);
@@ -716,7 +861,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   // Every Record in every response that returns Records carries its provenance (#72). No persisted operation selects `provenance` on
   // a list row, so the lists are asked through the real resolvers with an ad-hoc document that does.
   const adhocPools = new Map<string, pg.Pool>();
-  const adhoc = async (db: string, source: string, variableValues: Record<string, unknown> = {}) => {
+  const adhocRecords = async (db: string, source: string, variableValues: Record<string, unknown> = {}) => {
     let pool = adhocPools.get(db);
     if (!pool) {
       pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
@@ -749,11 +894,11 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     for (const [db, kinds] of [
       ["bulk_a", ["BULK"]], ["contracts_a", ["BULK"]], ["counting_a", ["BULK"]], ["identity_a", ["BULK"]], ["crawl_a", ["BULK", "CRAWL"]], ["backfill_a", ["BULK", "CRAWL"]],
     ] as const) {
-      const codes = ((await adhoc(db, `{ seap { search(filter: {}) { records(limit: 200, offset: 0, order: DATE_DESC) { rows { record { code } } } } } }`)).seap.search.records.rows as { record: { code: string } }[]).map((r) => r.record.code);
+      const codes = ((await adhocRecords(db, `{ seap { search(filter: {}) { records(limit: 200, offset: 0, order: DATE_DESC) { rows { record { code } } } } } }`)).seap.search.records.rows as { record: { code: string } }[]).map((r) => r.record.code);
       expect(codes.length, `${db} has Records`).toBeGreaterThan(0);
-      const records = recordsIn(await adhoc(db, LISTS, { code: codes[0] }));
+      const records = recordsIn(await adhocRecords(db, LISTS, { code: codes[0] }));
       // the list, plus each Record's page with its framework agreement and subsequent contracts
-      for (const code of codes) records.push(...recordsIn(await adhoc(db, LISTS, { code })));
+      for (const code of codes) records.push(...recordsIn(await adhocRecords(db, LISTS, { code })));
       for (const { code, provenance: p } of records) {
         expect(p.source, `${db} ${code}`).toBe("SEAP");
         expect(p.fetchedAt, `${db} ${code}`).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
@@ -884,7 +1029,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("estimates the distinct counts above the exact limit, and flags it", async () => {
       const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
       pools.push(pool);
-      const hll = createApi(postgresStore(pool, { exactGroupLimit: 3 }), schema); // 7 suppliers is above 3 "groups"
+      const hll = createApi(postgresStore(pool, { exactGroupLimit: 3, rollup: false }), schema); // 7 suppliers is above 3 "groups"
       const variables = { filter: {} };
       const r = await hll.respond({ id: mainScreen.sha256, variables });
       expect(r.body.errors).toBeUndefined();
@@ -899,7 +1044,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("pages the estimated path too: exactly `limit` rows, no overlap, the same order as the exact path", async () => {
       const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
       pools.push(pool);
-      const hll = postgresStore(pool, { exactGroupLimit: 1 }); // every side is above 1 "group": the terms-aggregation path
+      const hll = postgresStore(pool, { exactGroupLimit: 1, rollup: false }); // every side is above 1 "group": the terms-aggregation path
       const exact = postgresStore(pool);
       const filter = {} as Parameters<typeof hll.searchEntities>[1];
       for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
@@ -935,7 +1080,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
 
     it("says plainly that a filter that waits for another ticket is not served yet", async () => {
-      const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", hasSignals: true } });
+      const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", signal: "OVER_CAP" } });
       expect(r.body.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
     });
 
@@ -995,6 +1140,137 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         await locker.query("ROLLBACK").catch(() => undefined);
         await locker.end().catch(() => undefined);
       }
+    });
+  });
+
+  describe("filter chips, rollup and result cache (#70)", () => {
+    type Filter = Record<string, unknown>;
+    type Search = MainScreenQuery["seap"]["search"];
+    const YEAR_2023 = { from: "2023-01-01", to: "2023-12-31" };
+    const answer = async (api: ReturnType<typeof createApi>, filter: Filter): Promise<Search> => {
+      const variables = { filter };
+      const r = await api.respond({ id: mainScreen.sha256, variables });
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as MainScreenQuery).seap.search;
+    };
+    const codes = (d: Search) => d.records.rows.map((r) => r.record.code);
+
+    let pool: pg.Pool;
+    let rolled: ReturnType<typeof createApi>; // empty and chips-only states from the rollup
+    let scanned: ReturnType<typeof createApi>; // the same store with the rollup off: the full scan
+
+    beforeAll(() => {
+      rebuild("rollup_a", "archive-search");
+      pool = new pg.Pool({ connectionString: `${baseUrl}/rollup_a`, max: 3 });
+      pools.push(pool);
+      rolled = createApi(postgresStore(pool), schema);
+      scanned = createApi(postgresStore(pool, { rollup: false }), schema);
+    });
+
+    it("narrows the set with each chip", async () => {
+      const total = async (filter: Filter) => (await answer(rolled, filter)).total.records;
+      expect(await total({})).toBe(13);
+      expect(await total({ channel: "CONTRACT" })).toBe(2);
+      expect(await total({ channel: "DIRECT_PURCHASE" })).toBe(11);
+      expect(await total({ from: "2022-01-01", to: "2022-12-31" })).toBe(1); // award year
+      expect(await total(YEAR_2023)).toBe(12);
+      expect(await total({ from: "2023-02-05" })).toBeLessThan(12); // a date that is not a year edge: the scan serves it
+      expect(await total({ to: "2022-12-31" })).toBe(1);
+      expect(await total({ valueBucket: "UP_TO_10K" })).toBe(4);
+      expect(await total({ valueBucket: "UP_TO_135K" })).toBe(7); // 135,060 RON exactly is in it; the Record with no value is in none
+      expect(await total({ valueBucket: "UP_TO_270K" })).toBe(1);
+      expect(await total({ valueBucket: "OVER_1B" })).toBe(0);
+      expect(await total({ procedure: ["Negociere"] })).toBe(1);
+      expect(await total({ procedure: ["Negociere", "Licitatie deschisa"] })).toBe(2);
+      expect(await total({ badges: ["NO_VALUE"] })).toBe(1);
+      expect(await total({ badges: ["CONSORTIUM_SHARE"] })).toBe(2);
+      // combined chips narrow further, and the entity tabs follow the set
+      const both = await answer(rolled, { channel: "DIRECT_PURCHASE", valueBucket: "UP_TO_10K" });
+      expect(codes(both)).toEqual(["DA95000002", "DA95000007"]);
+      expect(both.suppliers.rows.map((r) => r.entity.key)).toEqual(["name-papetarie-alfa-sa", "name-zapada-demo-srl"]);
+    });
+
+    it("wires has-Signals to the has_signals column (false everywhere until Signals exist)", async () => {
+      expect((await answer(rolled, { hasSignals: true })).total.records).toBe(0);
+      expect((await answer(rolled, { hasSignals: false })).total.records).toBe(13);
+      expect((await answer(scanned, { hasSignals: true, q: "deszapezire" })).total.records).toBe(0);
+      await pool.query("UPDATE seap.search SET has_signals = true WHERE record_code = 'DA95000002'"); // what a Signals load will do
+      try {
+        expect(codes(await answer(scanned, { hasSignals: true }))).toEqual(["DA95000002"]);
+      } finally {
+        await pool.query("UPDATE seap.search SET has_signals = false");
+      }
+    });
+
+    it("answers the empty and chips-only states from the rollup exactly as the full scan does", async () => {
+      const filters: Filter[] = [
+        {}, { q: "SRL" }, { channel: "CONTRACT" }, { channel: "DIRECT_PURCHASE" }, YEAR_2023, { from: "2022-01-01" }, { to: "2022-12-31" },
+        { valueBucket: "UP_TO_10K" }, { valueBucket: "UP_TO_135K" }, { valueBucket: "UP_TO_270K" }, { valueBucket: "OVER_1B" }, { hasSignals: false }, { hasSignals: true },
+        { channel: "CONTRACT", valueBucket: "UP_TO_10K", ...YEAR_2023 }, { channel: "DIRECT_PURCHASE", hasSignals: false, from: "2022-01-01", to: "2023-12-31" },
+        { procedure: ["Negociere"] }, { badges: ["NO_VALUE"] }, { from: "2023-02-05", channel: "DIRECT_PURCHASE" },
+      ];
+      for (const filter of filters) expect(await answer(rolled, filter), JSON.stringify(filter)).toEqual(await answer(scanned, filter));
+      // the Records tab pages and counts the same too
+      const page = (api: ReturnType<typeof createApi>) => api.respond({ id: fullSuppliers.sha256, variables: { filter: { channel: "DIRECT_PURCHASE" }, limit: 2, offset: 2 } });
+      expect(await page(rolled)).toEqual(await page(scanned));
+    });
+
+    it("really reads the rollup for those states, and the scan for a text query", async () => {
+      await pool.query("UPDATE seap.rollup_cube SET records = records * 2");
+      await pool.query("UPDATE seap.rollup_entity SET records = records * 2");
+      try {
+        const empty = await answer(rolled, {});
+        expect(empty.total.records).toBe(26); // not the 13 of the table: served from the (tampered) cube
+        expect(empty.authorities.rows[0]!.matched.records).toBe(2 * (await answer(scanned, {})).authorities.rows[0]!.matched.records);
+        expect((await answer(scanned, {})).total.records).toBe(13);
+        expect((await answer(rolled, { q: "desz" })).total.records).toBe(3); // a text query never reads the rollup
+        expect((await answer(rolled, { procedure: ["Negociere"] })).total.records).toBe(1); // nor does a chip that is not a dimension
+      } finally {
+        await pool.query("UPDATE seap.rollup_cube SET records = records / 2");
+        await pool.query("UPDATE seap.rollup_entity SET records = records / 2");
+      }
+    });
+
+    it("gives equal filters one cache key: sorted chips, folded query, defaults filled", () => {
+      const a = canonicalFilter({ q: "  Șantier S.R.L. ", badges: ["NO_VALUE", "CUI_MISMATCH", "NO_VALUE"], procedure: ["b", "a"] });
+      const b = canonicalFilter({ q: "santier", badges: ["CUI_MISMATCH", "NO_VALUE"], procedure: ["a", "b"], countySide: "AUTHORITY", channel: null });
+      expect(a).toBe(b);
+      expect(canonicalFilter({ hasSignals: false })).not.toBe(canonicalFilter({}));
+      expect(canonicalFilter({ q: "srl" })).toBe(canonicalFilter({}));
+    });
+
+    it("caches by the normalised filter, warms every 2-character prefix, and a load flushes it and rebuilds the rollup", async () => {
+      rebuild("rollup_b", "archive-search");
+      const p = new pg.Pool({ connectionString: `${baseUrl}/rollup_b`, max: 3 });
+      pools.push(p);
+      const cache = cachedStore(postgresStore(p), p, { autoWarm: false });
+      const api = createApi(cache, schema);
+      const first = await answer(api, { q: "Șantier" });
+      expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
+      const misses = cache.stats().misses;
+      expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
+      expect(cache.stats()).toMatchObject({ misses, hits: 4 });
+
+      const report = await cache.warm();
+      expect(report).toMatchObject({ failed: 0 });
+      expect(report.prefixes).toBeGreaterThan(20);
+      const before = cache.stats();
+      const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 4 });
+      expect(de.total.records).toBeGreaterThan(0);
+      const empty = await answer(api, {});
+      expect(empty.total.records).toBe(13);
+
+      rebuild("rollup_b", "archive-counting"); // a second load with different data into the same database
+      await cache.sync(); // lookups reuse a generation read for up to a second; sync() reads fresh
+      const after = await answer(api, {});
+      expect(cache.stats().flushes).toBe(1);
+      const { rows } = await p.query("SELECT count(*)::int AS n FROM seap.record");
+      expect(after.total.records).toBe(rows[0].n);
+      expect(after.total.records).not.toBe(13);
+      expect(await answer(api, { q: "De" })).not.toEqual(de); // not served from the old generation
+      expect(after).toEqual(await answer(createApi(postgresStore(p, { rollup: false }), schema), {})); // and the rebuilt rollup agrees with the scan
     });
   });
 

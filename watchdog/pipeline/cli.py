@@ -24,6 +24,7 @@ from .datagov import fetch_datagov
 from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
+from . import placement_cli
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
 
@@ -56,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="the reviewed identity override file (env PIPELINE_IDENTITY_OVERRIDES; default: pipeline/identity_overrides.toml)")
     r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
+    placement_cli.add_rebuild_args(r)
 
     r.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; default: today, UTC; for tests)")
     r.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV for the Coverage grid (env PIPELINE_KNOWN_GAPS; default: pipeline/coverage/known_gaps.csv)")
@@ -106,15 +108,21 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--since-year", type=int, default=2021, help="first dataset year (achizitii-publice-YYYY), default 2021")
     g.add_argument("--delay", type=float, default=1.0, help="seconds between requests to data.gov.ro, default 1")
 
+    placement_cli.add_parsers(sub)
+
     args = parser.parse_args(argv)
     archive = Archive(args.archive)
+    if (code := placement_cli.run(archive, args)) is not None:
+        return code
     if args.verb == "rebuild":
         if not args.db:
             parser.error("--db or DATABASE_URL is required")
         status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
         # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
-        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, today=args.today, known_gaps_path=args.known_gaps).lines():
+        placement_cli.log_to_stderr()  # the placement step logs every authority it could not match
+        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
+                            geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps).lines():
             print(line, flush=True)
         return 0
     if args.verb == "anaf-lookup":

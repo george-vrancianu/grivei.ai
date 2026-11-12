@@ -60,6 +60,9 @@ services:
     mem_limit: 2g
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      # the county and UAT TopoJSON `pipeline rebuild` writes (PIPELINE_GEO_DIR below), served at /geo/ (#67)
+      - ${GRIVEI_GEO_DIR:-./geo}:/srv/geo:ro
     depends_on:
       api:
         condition: service_healthy
@@ -77,8 +80,10 @@ services:
     environment:
       DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
       PIPELINE_ARCHIVE: /archive
+      PIPELINE_GEO_DIR: /geo
     volumes:
       - ${GRIVEI_ARCHIVE_DIR:-./archive}:/archive
+      - ${GRIVEI_GEO_DIR:-./geo}:/geo
     depends_on:
       db:
         condition: service_healthy

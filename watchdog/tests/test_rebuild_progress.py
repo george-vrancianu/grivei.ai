@@ -100,6 +100,14 @@ def test_a_failure_is_reported_and_says_to_rerun_from_scratch(run):
     assert s["state"] == "failed" and s["error"] == "RuntimeError: connection lost"
 
 
+def test_a_failure_after_the_load_finished_does_not_overwrite_the_finished_state(run):
+    p, _, _, status_file = run
+    p.start(1, "/archive")
+    p.finish(5)
+    p.fail(KeyboardInterrupt())
+    assert json.loads(status_file.read_text())["state"] == "finished"
+
+
 def test_status_says_whether_a_rebuild_is_running_finished_or_was_killed(run):
     p, clock, lines, status_file = run
     p.start(4, "/archive")

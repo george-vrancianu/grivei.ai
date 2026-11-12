@@ -1,7 +1,7 @@
 import { GraphQLError } from "graphql";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { seapLinkUrl } from "./seapLink.ts";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, EntityHit } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
 
@@ -19,6 +19,27 @@ function notServed(what: string): () => never {
 }
 
 type Ctx = { signal?: AbortSignal } | undefined;
+
+/** A county as the contract names it: ISO 3166-2:RO with the `RO-` prefix (`RO-BV`, `RO-B`). */
+const county = (c: CountyRow) => ({ code: `RO-${c.iso}`, name: c.name });
+
+/**
+ * Placement (#67). A national authority is flagged and placed nowhere on the map: its seat (Bucharest, as a rule) is stored in the
+ * core but not served as a county, a UAT or a locality, so no client can pile it onto Bucharest. Everyone else: the county, the UAT
+ * when one matched (else null: "county known, UAT unknown") and the village SIRUTA when a source named one.
+ */
+const placementObject = (p: PlacementRow | null | undefined) => {
+  if (!p) return null;
+  if (p.national) return { county: null, uat: null, locality: null, national: true, placedBy: p.placedBy };
+  const c = p.countyIso && p.countyName ? { iso: p.countyIso, name: p.countyName } : null;
+  return {
+    county: c ? county(c) : null,
+    uat: c && p.uat ? { siruta: p.uat.siruta, name: p.uat.name, county: county(c) } : null,
+    locality: p.villageSiruta,
+    national: false,
+    placedBy: p.placedBy,
+  };
+};
 
 /** Does the quarter (`2024-Q4`) overlap the window (open ends allowed; `Date`s are `YYYY-MM-DD`, which sort as text)? */
 function overlaps(quarter: string, from: string | null, to: string | null): boolean {
@@ -58,7 +79,7 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
 }
 
 export function rootValue(store: Store) {
-  /** An Entity of the shared core (ADR 0003). Placement and the role aggregates belong to later tickets (#67, #73): null for now. */
+  /** An Entity of the shared core (ADR 0003). The role aggregates belong to a later ticket (#73): null for now. */
   const entityObject = (e: EntityRow) => ({
     __typename: "Entity" as const,
     key: e.key,
@@ -68,7 +89,7 @@ export function rootValue(store: Store) {
     foreignVatId: e.foreignVatId,
     anafStatus: e.anafStatus,
     identityCurated: e.identityCurated,
-    placement: null,
+    placement: placementObject(e.placement),
     provenance: [
       {
         source: e.provenance.source,
@@ -141,8 +162,9 @@ export function rootValue(store: Store) {
       };
     },
     signalRules: notServed("signalRules"),
-    counties: notServed("counties"),
-    uats: notServed("uats"),
+    counties: async () => (await store.counties()).map(county),
+    uats: async ({ county: code }: { county: string }) =>
+      (await store.uats(code.replace(/^RO-/, ""))).map((u) => ({ siruta: u.siruta, name: u.name, county: county(u.county) })),
     seap: () => ({
       record: async ({ code }: { code: string }) => {
         const found = await store.record(code);
@@ -150,8 +172,8 @@ export function rootValue(store: Store) {
       },
       search: ({ filter }: { filter: SearchFilter }) => {
         const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
-        // The empty filter is the tracer's path (a rollup will serve it); anything narrower runs on the search index.
-        const total = (_: unknown, ctx: Ctx) => (where.empty ? store.total() : store.searchTotal(filter, { signal: ctx?.signal })).then((t) => ({ ...zeroTotal(), ...t }));
+        // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
+        const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
         const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
           const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
           return {
@@ -179,7 +201,7 @@ export function rootValue(store: Store) {
           records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
             const page = { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order };
             const { count, rows } = where.empty
-              ? { count: (await store.total()).records, rows: await store.records(page) }
+              ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
               : await store.searchRecords(filter, page, { signal: ctx?.signal });
             return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: null })) };
           },

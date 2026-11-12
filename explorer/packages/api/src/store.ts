@@ -1,5 +1,6 @@
 import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
+import { rollupPlan, rollupWhere } from "./rollup.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
 export interface EntityRow {
@@ -13,6 +14,32 @@ export interface EntityRow {
   identityCurated: boolean;
   /** ANAF (the Reference source) when it has the CUI, else SEAP. `via` is the SEAP file for a SEAP-named entity. */
   provenance: { source: "ANAF" | "SEAP"; via: string | null; fetchedAt: string };
+  /** Where it sits (core.placement, #67); null/absent when no source places it. */
+  placement?: PlacementRow | null;
+}
+
+/** core.placement joined to its county and UAT names. A national authority keeps its seat here; the API serves none of it. */
+export interface PlacementRow {
+  countyIso: string | null;
+  countyName: string | null;
+  uat: { siruta: string; name: string } | null;
+  /** The village's SIRUTA when ANAF or SEAP named one: stored, not plotted. */
+  villageSiruta: string | null;
+  national: boolean;
+  placedBy: "ANAF" | "SEAP";
+}
+
+/** A county of core.county: ISO 3166-2:RO without `RO-` (Bucharest is `B`) and its Romanian name. */
+export interface CountyRow {
+  iso: string;
+  name: string;
+}
+
+/** A UAT of core.uat (Bucharest's UATs are its six sectors). */
+export interface UatRow {
+  siruta: string;
+  name: string;
+  county: CountyRow;
 }
 
 /** A spelling an entity was published under (core.alias). */
@@ -145,6 +172,10 @@ export interface Store {
   aliases(key: string): Promise<AliasRow[]>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
   roles(key: string): Promise<("AUTHORITY" | "SUPPLIER")[]>;
+  /** Every county, by ISO code. */
+  counties(): Promise<CountyRow[]>;
+  /** The UATs of a county (ISO code without `RO-`), by folded name; Bucharest's are its six sectors. */
+  uats(countyIso: string): Promise<UatRow[]>;
 }
 
 // Fixed strings, never built from input. Ties break on the public code so a page is stable.
@@ -196,6 +227,17 @@ interface RawEntity {
   fetched_at: string;
 }
 
+interface RawPlacement {
+  entity_key: string;
+  county_iso: string | null;
+  county_name: string | null;
+  uat_siruta: string | null;
+  uat_name: string | null;
+  village_siruta: string | null;
+  national: boolean;
+  placed_by: "ANAF" | "SEAP";
+}
+
 const ENTITY_COLUMNS = `key, identity, cui, foreign_vat_id, display_name, anaf_status, identity_curated, provenance_source, provenance_via,
   to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at`;
 
@@ -238,6 +280,8 @@ const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, pr
 export interface PostgresStoreOptions {
   /** Distinct-entity counts are exact up to this many groups and a HyperLogLog estimate above (pg_search's group cap is 65,000). */
   exactGroupLimit?: number;
+  /** Serve the empty and chips-only states from the rollup (default). `false` forces the full scan: the tests compare the two. */
+  rollup?: boolean;
 }
 
 const SEARCH_ORDER: Record<RecordOrderKey, string> = {
@@ -252,12 +296,32 @@ const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as con
 /** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
 const AGG_BUCKET_CAP = 65_000;
 
-export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: PostgresStoreOptions = {}): Store {
+export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
     const { rows } = await pool.query(`SELECT ${ENTITY_COLUMNS} FROM core.entity WHERE key = ANY($1)`, [keys]);
-    return new Map((rows as RawEntity[]).map((r) => [r.key, toEntity(r)]));
+    const entities = new Map((rows as RawEntity[]).map((r) => [r.key, toEntity(r)]));
+    const placed = await pool.query(
+      `SELECT p.entity_key, p.county_iso, c.name AS county_name, p.uat_siruta, u.name AS uat_name, p.village_siruta, p.national, p.placed_by
+         FROM core.placement p LEFT JOIN core.county c ON c.iso = p.county_iso LEFT JOIN core.uat u ON u.siruta = p.uat_siruta
+        WHERE p.entity_key = ANY($1)`,
+      [keys],
+    );
+    for (const p of placed.rows as RawPlacement[]) {
+      const entity = entities.get(p.entity_key);
+      if (entity) {
+        entity.placement = {
+          countyIso: p.county_iso,
+          countyName: p.county_name,
+          uat: p.uat_siruta && p.uat_name ? { siruta: p.uat_siruta, name: p.uat_name } : null,
+          villageSiruta: p.village_siruta,
+          national: p.national,
+          placedBy: p.placed_by,
+        };
+      }
+    }
+    return entities;
   }
 
   /** Attach authority and winner entities to raw Record rows (one entity query for the whole page). */
@@ -317,8 +381,20 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
     awarded: r.awarded, records: r.records, suspectLeftOut: r.suspect_left_out, noValue: r.no_value, frameworkCeilings: r.framework_ceilings,
   });
 
-  return {
-    async searchTotal(filter, { signal } = {}) {
+  const searchTotal: Store["searchTotal"] = async (filter, { signal } = {}) => {
+      const plan = rollup ? rollupPlan(filter) : null;
+      if (plan) {
+        const params: unknown[] = [];
+        const where = rollupWhere(plan, params);
+        const r = await cancellableQuery<Parameters<typeof totalOf>[0]>(
+          pool, signal,
+          `SELECT coalesce(sum(awarded), 0)::text AS awarded, coalesce(sum(records), 0)::int AS records, coalesce(sum(suspect_left_out), 0)::int AS suspect_left_out,
+                  coalesce(sum(no_value), 0)::int AS no_value, coalesce(sum(framework_ceilings), 0)::text AS framework_ceilings
+             FROM seap.rollup_cube WHERE ${where}`,
+          params,
+        );
+        return totalOf(r.rows[0]!);
+      }
       const w = buildWhere(filter);
       // Matched RON = the winners' shares that matched. A Record counts once: on its first winner's row, or, when the filter
       // restricts the winners (it can then match on several rows, or not on the first), once per Record after grouping.
@@ -333,8 +409,30 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
                   coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
              FROM seap.search WHERE ${w.sql}`;
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
-    },
+  };
+
+  return {
+    searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
+      const plan = rollup ? rollupPlan(filter) : null;
+      if (plan) {
+        // the rollup holds every entity's numbers per chip cell: one exact GROUP BY, ordered as the scan orders (matched RON, then key)
+        const params: unknown[] = [side];
+        const where = rollupWhere(plan, params);
+        type Row = Parameters<typeof totalOf>[0] & { key: string; n: number };
+        const sql = `SELECT entity_key AS key, coalesce(sum(awarded), 0)::text AS awarded, sum(records)::int AS records, sum(suspect_left_out)::int AS suspect_left_out,
+                            sum(no_value)::int AS no_value, coalesce(sum(framework_ceilings), 0)::text AS framework_ceilings, count(*) OVER ()::int AS n
+                       FROM seap.rollup_entity WHERE side = $1 AND ${where}
+                      GROUP BY entity_key ORDER BY sum(awarded) DESC NULLS LAST, entity_key LIMIT ${limit} OFFSET ${offset}`;
+        const r = await cancellableQuery<Row>(pool, signal, sql, params);
+        let count = r.rows[0]?.n ?? 0;
+        if (!r.rows.length && offset > 0) {
+          count = (await cancellableQuery<{ n: number }>(pool, signal, `SELECT count(DISTINCT entity_key)::int AS n FROM seap.rollup_entity WHERE side = $1 AND ${where}`, params)).rows[0]!.n;
+        }
+        const entities = await entitiesOf(r.rows.map((x) => x.key));
+        const now = new Date().toISOString();
+        return { count, estimated: false, rows: r.rows.map((x) => ({ entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now), matched: totalOf(x) })) };
+      }
       const w = buildWhere(filter);
       const key = SIDE_KEY[side];
       // 1. how many distinct entities: a HyperLogLog estimate, cheap and inside the index
@@ -405,8 +503,12 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
     },
     async searchRecords(filter, { limit, offset, order }, { signal } = {}) {
       const w = buildWhere(filter);
-      // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record
-      const count = (
+      // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record.
+      // A chips-only count comes from the rollup; the page itself is always the Top-K query on the index (a Record page is not a rollup).
+      const plan = rollup ? rollupPlan(filter) : null;
+      const count = plan
+        ? (await searchTotal(filter, { signal })).records
+        : (
         await cancellableQuery<{ n: number }>(
           pool, signal,
           w.winnerSide
@@ -518,6 +620,18 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
         [key],
       );
       return rows;
+    },
+    async counties() {
+      const { rows } = await pool.query(`SELECT iso, name FROM core.county ORDER BY iso`);
+      return rows as CountyRow[];
+    },
+    async uats(countyIso) {
+      const { rows } = await pool.query(
+        `SELECT u.siruta, u.name, c.iso, c.name AS county_name FROM core.uat u JOIN core.county c ON c.iso = u.county_iso
+          WHERE u.county_iso = $1 ORDER BY u.name_folded, u.siruta`,
+        [countyIso],
+      );
+      return rows.map((r) => ({ siruta: r.siruta, name: r.name, county: { iso: r.iso, name: r.county_name } }));
     },
     async roles(key) {
       const { rows } = await pool.query(
