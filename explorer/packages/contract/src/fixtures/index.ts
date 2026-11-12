@@ -6,12 +6,14 @@ import { entityOverviewHand, entityRecords, entityRelationships } from "./entity
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
 import { mainScreenHand } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
-import { recordPage } from "./record-page.ts";
+import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
+import { recordedRecordPage } from "./recorded/record.ts";
 import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
+export { recordedRecordPage } from "./recorded/record.ts";
 export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords, recordedZoomedCounty } from "./recorded/index.ts";
 
 /**
@@ -28,7 +30,7 @@ export const fixtures = {
   EntityOverview: [...recordedEntityOverview, ...entityOverviewHand],
   EntityRecords: entityRecords,
   EntityRelationships: entityRelationships,
-  RecordPage: recordPage,
+  RecordPage: [...recordedRecordPage, ...recordPageHand],
   CoverageLens: coverageLens,
   CoveragePage: coveragePage,
   MethodologyBaseRates: methodologyBaseRates,
