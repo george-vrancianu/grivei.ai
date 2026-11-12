@@ -444,6 +444,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         if progress:
             progress.fail(e)
         raise
+    if progress:  # the load is committed (VACUUM is not graph work, so an interrupt there is not a failed load): `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
+        progress.finish(summary.records, data_through)
     try:
         vacuum(db_url)  # cannot run inside the transaction above: right after the commit
     except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
@@ -451,8 +453,6 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 
-    if progress:  # the load is done: `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
-        progress.finish(summary.records, data_through)
     try:
         summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
     except Exception as e:  # the graph is loaded; the outlines can be rebuilt on their own with `pipeline geo-topojson`

@@ -671,6 +671,27 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(await zoom("RO-IS")).toEqual([]); // a county with no UAT in this fixture's table
   });
 
+  it("filters the main screen by the county and the UAT of the authority's placement (#67)", async () => {
+    const keys = async (filter: Record<string, unknown>) => {
+      const r = await ask("placement_a", mainScreen.sha256, { filter });
+      expect(r.status).toBe(200);
+      const rows = (r.body.data as MainScreenQuery).seap.search.records.rows;
+      return { total: (r.body.data as MainScreenQuery).seap.search.total.records, authorities: new Set(rows.map((x) => x.record.authority.key)) };
+    };
+    const bv = await keys({ county: "RO-BV" });
+    expect(bv.total).toBeGreaterThan(0);
+    expect(bv.authorities.has(P.sanpetru)).toBe(true);
+    expect(bv.authorities.has(P.caragiale)).toBe(false); // Cluj
+    expect(bv.authorities.has(P.unplaced)).toBe(false);
+    const uat = await keys({ uat: "880010" });
+    expect(uat.total).toBeGreaterThan(0);
+    expect([...uat.authorities]).toEqual([P.sanpetru]);
+    // a national authority seated in a Bucharest sector is not counted in Bucharest
+    const b = await keys({ county: "RO-B" });
+    expect(b.authorities.has(P.bucharest3)).toBe(true);
+    for (const key of [P.ministry, P.agency]) expect(b.authorities.has(key)).toBe(false);
+  });
+
   it("gives identical placements and identical TopoJSON after a second rebuild into a fresh database (#67, ADR 0004)", async () => {
     const keys = Object.values(P);
     const snapshot = async (db: string) => ({

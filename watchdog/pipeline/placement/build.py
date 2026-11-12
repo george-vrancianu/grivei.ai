@@ -103,4 +103,12 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
         cur.executemany(
             """INSERT INTO core.placement (entity_key, county_iso, uat_siruta, village_siruta, sector, national, national_by, placed_by, located_on, source_path)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", rows[i:i + 1000])
+    # the search rows carry the county (ISO 3166-2:RO, `RO-BV`) and the UAT for the county/UAT filter; this runs before the pg_search index is built.
+    # A national authority stays NULL (never counted in Bucharest); a supplier takes its county from its own placement
+    cur.execute(
+        """UPDATE seap.search s SET authority_county = 'RO-' || p.county_iso, authority_uat = p.uat_siruta
+             FROM core.placement p WHERE p.entity_key = s.authority_key AND NOT p.national AND p.county_iso IS NOT NULL""")
+    cur.execute(
+        """UPDATE seap.search s SET supplier_county = 'RO-' || p.county_iso
+             FROM core.placement p WHERE p.entity_key = s.supplier_key AND NOT p.national AND p.county_iso IS NOT NULL""")
     return out

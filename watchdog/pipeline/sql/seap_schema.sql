@@ -123,14 +123,14 @@ CREATE TABLE seap.search (
     ceiling_bani     bigint,              -- as on seap.record (once per Record: sum over winner_position = 1 on the authority side)
     suspect          boolean NOT NULL DEFAULT false,  -- as on seap.record
     share_bani       bigint,              -- this winner's equal share of counted_bani (a sole winner has all of it); the supplier side sums it
-    -- placement (#67 fills the county and UAT columns; null until a Source places the entity)
+    -- placement (#67 fills these from core.placement in the rebuild; null when the entity is unplaced or a national authority)
     authority_key    text,                -- the authority's entity key
     authority_cui    text,
     authority_county text,                -- ISO 3166-2:RO, e.g. RO-BV
     authority_uat    text,                -- SIRUTA
     supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
     supplier_key     text,                -- the winner's entity key (core.entity.key); null for a natural person
-    supplier_county  text,
+    supplier_county  text,                -- ISO 3166-2:RO, from the supplier's own placement (null when foreign or unplaced)
     supplier_spelling text,               -- the winner's name as published on this Record; null for a natural person
     supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
     supplier_curated boolean NOT NULL DEFAULT false,

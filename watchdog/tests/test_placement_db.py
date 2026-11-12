@@ -107,3 +107,21 @@ def test_without_a_uat_table_only_the_county_is_placed(db, archive, tmp_path):
     assert p[CUI["sanpetru"]][:3] == ("BV", None, None)
     assert "no UAT table" in summary.placement.line()
     assert "no UAT table" in summary.geo_line
+
+
+def test_the_search_rows_carry_their_authority_s_county_and_uat(built):
+    """The county/UAT search filter reads seap.search; a national authority is never counted in a county (#67)."""
+    url, _ = built
+    with psycopg.connect(url) as c:
+        rows = c.execute("SELECT authority_key, authority_county, authority_uat, supplier_key, supplier_county FROM seap.search").fetchall()
+    by_authority = {r[0]: (r[1], r[2]) for r in rows}
+    assert by_authority[CUI["sanpetru"]] == ("RO-BV", "880010")
+    assert by_authority[CUI["bucharest3"]] == ("RO-B", "179169")
+    assert by_authority[CUI["unmatched"]] == ("RO-BV", None)  # county known, UAT not
+    for key, (county, uat) in by_authority.items():
+        p = placements(url).get(key)
+        if p is None or p[4]:  # unplaced or national: NULL
+            assert (county, uat) == (None, None), key
+    suppliers = {r[3]: r[4] for r in rows if r[3]}
+    assert suppliers.get("2000007") == "RO-BV"  # a placed supplier
+    assert all(v is None or v.startswith("RO-") for v in suppliers.values())
