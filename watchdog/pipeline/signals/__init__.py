@@ -18,7 +18,7 @@ type if they are not there yet (the API maps `numbers` jsonb to that type by slu
 The base rate (story 80) is the fraction of contracting authorities, among those the rule could see (an authority with at least one
 Record of the rule's kinds in the year), that have at least one Signal of the rule dated in `baseRateYear`: the latest calendar year
 before the data-through year that the rule has Records for (a complete year), else the latest year it has. The window starts on 1 January
-of the first year the rule has Records for (never before the rule's optional `WINDOW_FROM`, e.g. framework-overrun's 2021-01-01) and is open at the end (`dataThrough` says how far the data goes).
+of the first year the rule has Records for (never before the rule's optional `WINDOW_FROM`, e.g. framework-overrun's 2021-01-01; the base rate works in whole years, so a floor should be a 1 January) and is open at the end (`dataThrough` says how far the data goes).
 """
 from __future__ import annotations
 

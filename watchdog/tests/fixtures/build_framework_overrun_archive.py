@@ -3,21 +3,23 @@
     .venv/bin/python tests/fixtures/build_framework_overrun_archive.py
 
 Contracte only (2022 pipe CSV; a 2020 Q4 file for the pre-2021 case). Every name, code and CUI is invented (the roles fixture's entities; ANAF
-confirms the suppliers). A framework is an award notice: its framework contract(s) ("Cu acord cadru") and its call-offs ("Cu acord cadru
+confirms the suppliers). A framework is an award notice: its framework contract(s) ("Cu acord cadru") and its subsequent contracts ("Cu acord cadru
 subsecvent") share the notice number. Amounts in RON; S = SPITALUL EXEMPLU, C = COMUNA EXEMPLU, N = CNAIR DEMO SA.
 
-  CAN9700001  S, ALFA   ceiling 1,000,000 on 2023-01-10; call-offs 600,000 (02-01), 400,000 (02-15), 200,000 (03-05), 50,000 (03-20)
-                        crossing: 1,200,000 > 1,100,000 on 2023-03-05; the 03-20 call-off comes after it: ratio 1.25, 4 Records
-  CAN9700002  S, BETA   ceiling 1,000,000 on 2023-01-12; ONE call-off of exactly 1,100,000 (02-20): exactly 110%, no Signal
-  CAN9700003  C, ALFA   ceiling 1,000,000 on 2023-01-15; call-offs 600,000 and 300,000: 90%, no Signal
-  CAN9700004  C, ALFA   a BLANK ceiling on 2023-01-20; call-off 5,000,000 (02-10): no ceiling, never triggers
-  CAN9700005  N, ALFA   ceiling 1,000,000 on 2020-11-10 (the 2020 Q4 file); call-offs 1,500,000 in 2023: a pre-2021 framework, no Signal
-  CAN9700006  N         two ceilings (ALFA 600,000 on 2023-01-05, BETA 400,000 on 2023-01-08) summed to 1,000,000; call-offs BETA 700,000 (02-01)
+  CAN9700001  S, ALFA   ceiling 1,000,000 on 2023-01-10; subsequent contracts 600,000 (02-01), 400,000 (02-15), 200,000 (03-05), 50,000 (03-20)
+                        crossing: 1,200,000 > 1,100,000 on 2023-03-05; the 03-20 subsequent contract comes after it: ratio 1.25, 4 Records
+  CAN9700002  S, BETA   ceiling 1,000,000 on 2023-01-12; ONE subsequent contract of exactly 1,100,000 (02-20): exactly 110%, no Signal
+  CAN9700003  C, ALFA   ceiling 1,000,000 on 2023-01-15; subsequent contracts 600,000 and 300,000: 90%, no Signal
+  CAN9700004  C, ALFA   a BLANK ceiling on 2023-01-20; subsequent contract 5,000,000 (02-10): no ceiling, never triggers
+  CAN9700005  N, ALFA   ceiling 1,000,000 on 2020-11-10 (the 2020 Q4 file); subsequent contracts 1,500,000 in 2023: a pre-2021 framework, no Signal
+  CAN9700006  N         two ceilings (ALFA 600,000 on 2023-01-05, BETA 400,000 on 2023-01-08) summed to 1,000,000; subsequent contracts BETA 700,000 (02-01)
                         and GAMMA 500,000 (02-20) cross at 1,200,000 on 02-20: three suppliers, so the filter has no supplier
-  CAN9700007  S, BETA   ceiling 1,000,000 on 2023-01-15; call-off 1,200,000 on 02-20: a second Signal of S overlapping CAN9700001's dates; the supplier
+  CAN9700007  S, BETA   ceiling 1,000,000 on 2023-01-15; subsequent contract 1,200,000 on 02-20: a second Signal of S overlapping CAN9700001's dates; the supplier
                         key (BETA / ALFA) is what tells their filters apart, so they do not collide
-  CAN9700008  C, GAMMA  ceiling 500,000 on 2023-01-02; call-offs 300,000 (01-25) and 270,000 (02-05): 114% on 02-05; the one with a consortium
-                        (ALFA and GAMMA) call-off
+  CAN9700008  C, GAMMA  ceiling 500,000 on 2023-01-02; subsequent contracts 300,000 (01-25) and 270,000 (02-05): 114% on 02-05; the one with a consortium
+                        (ALFA and GAMMA) subsequent contract
+  CAN9700009  N, ALFA   ceiling 1,000,000 on 2023-01-03, concluded by N; its only subsequent contract (1,200,000 on 03-01) is signed by ANOTHER authority (C)
+                        under the same notice: it counts (as in seap.framework), the Signal is N's, dated 03-01, its one Record the ceiling
 """
 from __future__ import annotations
 
@@ -74,8 +76,10 @@ def build() -> None:
         *contract("CAN9700008", "1", C, "Licitatie deschisa", FW, "2023-01-02", 500_000, GAMMA),
         *contract("CAN9700008", "2", C, "Licitatie deschisa", SUB, "2023-01-25", 300_000, GAMMA),
         *contract("CAN9700008", "3", C, "Licitatie deschisa", SUB, "2023-02-05", 270_000, ALFA, GAMMA),
+        *contract("CAN9700009", "1", N, "Licitatie deschisa", FW, "2023-01-03", 1_000_000, ALFA),
+        *contract("CAN9700009", "2", C, "Licitatie deschisa", SUB, "2023-03-01", 1_200_000, ALFA),
     ], "t1-2023")
-    # a framework awarded in 2020: its ceiling is in an older file than its call-offs (CAN9700005 above)
+    # a framework awarded in 2020: its ceiling is in an older file than its subsequent contracts (CAN9700005 above)
     contracte("2020Q4", at(2021, 3, 20), [*contract("CAN9700005", "1", N, "Licitatie deschisa", FW, "2020-11-10", 1_000_000, ALFA)], "t4-2020")
 
     companies = [ALFA, BETA, GAMMA, CNAIR]

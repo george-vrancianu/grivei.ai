@@ -3,23 +3,29 @@
 - A framework is an award notice (the counting rule's link, `notice_code`; `seap.framework` is one row per such notice). The rule reads the
   stored columns of the notice's Records, it never re-derives the counting rule: ceiling = sum of the non-suspect `ceiling_bani` of the
   notice's CEILING Records (the same sum as `rebuild._FRAMEWORKS`), subsequent = sum of the `counted_bani` of its SUBSEQUENT Records.
-  The sums are made here from the rows already streamed (the members come from the same rows) instead of reading `seap.framework`; the
-  seam 1 test checks they equal `seap.framework`'s ratio.
+  The sums are made here from the rows already streamed (the members come from the same rows) instead of reading `seap.framework`, and
+  they cover every authority's Records of the notice, as `seap.framework` does, so the Signal's numbers equal its row (the seam 1 / DB
+  tests check it, with a notice whose subsequent contracts are signed by another authority).
 - Only frameworks awarded from 2021: the framework's award date is the earliest award date (ADR 0002 fallback already in `award_date`) of
-  its ceiling Records, and it must be on or after 2021-01-01. A pre-2021 framework never triggers, whatever its call-offs' dates.
+  its CEILING Records (every one, a blank or suspect value included), and it must be on or after 2021-01-01. A pre-2021 framework never triggers, whatever its subsequent contracts' dates.
 - A blank ceiling never triggers: no CEILING Record with a non-suspect value (a null or suspect value, or no CEILING Record loaded for the
   notice) means no ceiling. A suspect value, ceiling or subsequent, is left out of the sums and of the members.
 - Threshold: strictly more than 110% (exactly 110% is no Signal), in integer bani: `running * 10 > ceiling * 11`, no floats.
-- Crossing: the subsequent contracts in award-date then code order; the first whose running sum is above 110% is the crossing call-off.
-  The Signal is dated by it (its `date` = the latest of its members' award dates, which is the crossing call-off's unless a ceiling
+- Crossing: the subsequent contracts in award-date then code order; the first whose running sum is above 110% is the crossing subsequent contract.
+  The Signal is dated by it (its `date` = the latest of its members' award dates, which is the crossing subsequent contract's unless a ceiling
   Record is dated later: ADR 0002, a Signal is dated by its latest Record); `firstDate` = the framework's award date.
-- Members: the notice's non-suspect ceiling Records and its counted subsequent contracts up to and including the crossing call-off.
-  Call-offs after the crossing are not members (the Signal is a snapshot of the moment it crossed), but `numbers` describe the framework
-  as reported to the data-through date, as the Record page and `seap.framework` do: `ceiling`, `subsequent` (every counted call-off
+- Members: the notice's non-suspect ceiling Records and its counted subsequent contracts up to and including the crossing subsequent contract.
+  Subsequent contracts after the crossing are not members (the Signal is a snapshot of the moment it crossed), but `numbers` describe the framework
+  as reported to the data-through date, as the Record page and `seap.framework` do: `ceiling`, `subsequent` (every counted subsequent contract
   reported) and `ratio` = subsequent / ceiling. Reader-facing consequence: the Records listed under a Signal can add up to less than
   `numbers.subsequent`; the rest are on the framework's own page.
-- Authority: the authority of the notice's lowest-code ceiling Record. A notice has one authority in the files; if one were ever to
-  hold Records of several, only the Records of that authority are read (so the Signal's `reproduce` stays a single-authority filter).
+- Authority: the Signal belongs to ONE authority, that of the notice's lowest-code non-suspect ceiling Record (the framework's
+  concluder). Other authorities may sign subsequent contracts under the same notice (joint purchasing): they count in the sums and in
+  the crossing (the notice is the unit, as in `seap.framework`; ignoring them could miss an overrun), but only the concluder's own
+  ceiling Records and subsequent contracts up to the crossing one are members, so `reproduce` (which filters by authority) stays exact.
+  If another authority's subsequent contract is the one that crosses, the Signal is still dated by it (`date` = the crossing day) while
+  `reproduce.to` is the last member's day: the date range ends before the Signal's date. Several concluding authorities on one notice
+  (several ceiling Records of different authorities): all their ceilings are summed, the lowest-code one names the authority.
 - One Signal per framework (notice); nothing is merged across frameworks. Suppliers are every winner of the members, natural persons left out.
 - Exactness of `reproduce` (`authority`, `signal`, [`supplier`], [`cpv`], `from`, `to`): there is no notice key in `RecordFilter`, so the
   filter is made as narrow as the existing keys allow: `supplier` only when every member has exactly that one keyed winner, `cpv` = the
@@ -74,7 +80,7 @@ def _reproduce(authority: str, rows: list[Row]) -> dict:
     """The narrowest `RecordFilterValue` the existing keys allow (see the module docstring)."""
     days = [r["award_date"] for r in rows]
     filt: dict = {"authority": authority, "signal": SLUG}
-    keyed = [{w["key"] for w in r.get("winners") or () if w.get("key") and not w.get("naturalPerson")} for r in rows]
+    keyed = [set(supplier_keys([r])) for r in rows]
     everyone = [len(r.get("winners") or ()) for r in rows]
     if all(len(k) == 1 and n == 1 for k, n in zip(keyed, everyone)) and len(set().union(*keyed)) == 1:
         filt["supplier"] = next(iter(keyed[0]))
@@ -87,28 +93,31 @@ def _reproduce(authority: str, rows: list[Row]) -> dict:
 
 def _framework(notice: Iterable[Row]) -> tuple[Hit, list[Member]] | None:
     rows = list(notice)
-    ceilings = sorted((r for r in rows if r.get("framework_role") == "CEILING" and not r.get("suspect") and _bani(r, "ceiling_bani") > 0), key=lambda r: str(r["code"]))
-    if not ceilings or not ceilings[0].get("authority_key"):
+    every_ceiling = [r for r in rows if r.get("framework_role") == "CEILING"]
+    valid = sorted((r for r in every_ceiling if not r.get("suspect") and _bani(r, "ceiling_bani") > 0), key=lambda r: str(r["code"]))
+    if not valid or not valid[0].get("authority_key"):
         return None  # a blank ceiling (or no authority to name) never triggers
-    authority = str(ceilings[0]["authority_key"])
-    ceilings = [r for r in ceilings if r.get("authority_key") == authority]
-    first = min(r["award_date"] for r in ceilings)  # type: ignore[type-var]
+    authority = str(valid[0]["authority_key"])
+    first = min(r["award_date"] for r in every_ceiling)  # the framework's date: every ceiling Record, blank or suspect included  # type: ignore[type-var]
     if first < FROM:
         return None
-    ceiling = sum(_bani(r, "ceiling_bani") for r in ceilings)
-    offs = sorted((r for r in rows if r.get("framework_role") == "SUBSEQUENT" and not r.get("suspect") and _bani(r, "counted_bani") > 0 and r.get("authority_key") == authority),
-                  key=lambda r: (r["award_date"], str(r["code"])))  # type: ignore[arg-type,return-value]
-    total, running, crossing = sum(_bani(r, "counted_bani") for r in offs), 0, None
-    for n, r in enumerate(offs):
+    ceiling = sum(_bani(r, "ceiling_bani") for r in valid)  # all authorities, as seap.framework
+    counted = sorted((r for r in rows if r.get("framework_role") == "SUBSEQUENT" and not r.get("suspect") and _bani(r, "counted_bani") > 0),
+                     key=lambda r: (r["award_date"], str(r["code"])))  # type: ignore[arg-type,return-value]
+    total, running, crossing = sum(_bani(r, "counted_bani") for r in counted), 0, None
+    for r in counted:
         running += _bani(r, "counted_bani")
         if running * 10 > ceiling * 11:
-            crossing = n
+            crossing = r
             break
     if crossing is None:
         return None
-    members = sorted([*ceilings, *offs[:crossing + 1]], key=lambda r: (r["award_date"], str(r["code"])))  # type: ignore[arg-type,return-value]
+    key = (crossing["award_date"], str(crossing["code"]))
+    own_ceilings = [r for r in valid if r.get("authority_key") == authority]
+    own = [r for r in counted if r.get("authority_key") == authority and (r["award_date"], str(r["code"])) <= key]  # type: ignore[operator]
+    members = sorted([*own_ceilings, *own], key=lambda r: (r["award_date"], str(r["code"])))  # type: ignore[arg-type,return-value]
     hit = Hit(
-        rule=SLUG, authority_key=authority, first_date=first, date=max(r["award_date"] for r in members),  # type: ignore[type-var,arg-type]
+        rule=SLUG, authority_key=authority, first_date=first, date=max(crossing["award_date"], *(r["award_date"] for r in members)),  # type: ignore[type-var,arg-type]
         record_codes=tuple(str(r["code"]) for r in members), value_bani=sum(_bani(r, "counted_bani") for r in members), supplier_keys=supplier_keys(members),
         numbers={"ceiling": str(ceiling), "subsequent": str(total), "ratio": total / ceiling}, reproduce=_reproduce(authority, members),
     )
@@ -116,7 +125,10 @@ def _framework(notice: Iterable[Row]) -> tuple[Hit, list[Member]] | None:
 
 
 def matches(filt: dict, member: Member) -> bool:
-    """Whether the search would return `member` for the Signal filter `filt` (authority is the caller's check, `signal` is every member's)."""
+    """Whether the search would return `member` for the Signal filter `filt` (authority is the caller's check, `signal` is every member's).
+
+    Mirrors `explorer/packages/api/src/search.ts` `buildWhere`: from/to on `award_date`, `cpv` an anchored prefix of the raw literal, `supplier`
+    per winner row. Keep the two in step."""
     return (filt["from"] <= member.day.isoformat() <= filt["to"] and member.cpv.startswith(filt.get("cpv", ""))
             and ("supplier" not in filt or filt["supplier"] in member.suppliers))
 
