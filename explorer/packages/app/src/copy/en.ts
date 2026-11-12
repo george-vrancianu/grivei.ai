@@ -138,8 +138,21 @@ export const en: Copy = {
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     tabBody: {
       overview: "The Overview is not built yet.",
-      records: "The Records tab is not built yet.",
       relationships: "The Relationships tab is not built yet.",
+    },
+    recordsTab: {
+      heading: "Records",
+      facets: {
+        label: "Filter by facet",
+        groups: {
+          signal: "Signal", channel: "Channel", procedure: "Procedure", year: "Award year",
+          counterpartyOfAuthority: "Supplier", counterpartyOfSupplier: "Contracting authority", badge: "Badges",
+        },
+        option: (label, count) => `${label} (${count})`,
+        counterpartyKey: (key) => `Counterparty ${key}`,
+        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      },
+      empty: { text: "No Records match these filters.", clear: "Clear filters" },
     },
   },
 };

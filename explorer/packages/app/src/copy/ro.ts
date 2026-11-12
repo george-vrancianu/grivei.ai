@@ -143,8 +143,21 @@ export const ro: Copy = {
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     tabBody: {
       overview: "Prezentarea generală nu este construită încă.",
-      records: "Fila Înregistrări nu este construită încă.",
       relationships: "Fila Relații nu este construită încă.",
+    },
+    recordsTab: {
+      heading: "Înregistrări",
+      facets: {
+        label: "Filtre pe fațete",
+        groups: {
+          signal: "Semnal", channel: "Canal", procedure: "Procedură", year: "Anul atribuirii",
+          counterpartyOfAuthority: "Furnizor", counterpartyOfSupplier: "Autoritate contractantă", badge: "Insigne",
+        },
+        option: (label, count) => `${label} (${count})`,
+        counterpartyKey: (key) => `Contraparte ${key}`,
+        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      },
+      empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
     },
   },
 };
