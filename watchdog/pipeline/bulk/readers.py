@@ -12,13 +12,17 @@ import itertools
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from .errors import InvalidFile
 from datetime import datetime, time
 
 from . import values
 from .values import Cell
+
+if TYPE_CHECKING:
+    from xlrd.book import Book
+    from xlrd.sheet import Cell as XlsCell, Sheet
 
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
 _NUMBER_LIKE = re.compile(r"^\s*[-+0-9.eE]*\s*$")
@@ -243,7 +247,7 @@ def _fit(number: int, cells: list[Cell], width: int) -> list[Cell] | None:
     return cells[:width] + [None] * (width - len(cells))
 
 
-def _xls_cell(book, cell) -> Cell:
+def _xls_cell(book: Book, cell: XlsCell) -> Cell:
     """An xlrd cell -> a value, typed like the `.xlsx` path (`_values`): the number format is kept for floats, dates and times."""
     import xlrd
 
@@ -284,31 +288,31 @@ class _XlsRows:
     sheets, each repeating its title row, if any, and the header). Sheets are loaded one at a time and released.
     Row numbers count on across sheets. `close()` releases the workbook."""
 
-    def __init__(self, book) -> None:
+    def __init__(self, book: Book) -> None:
         self._book = book
-        self.header, self._first_start = self._header_of(0)
+        sheet = book.sheet_by_index(0)
+        try:
+            self.header, _ = self._header_of(sheet)
+        finally:
+            book.unload_sheet(0)
         self._width = len(self.header)
 
-    def _cells(self, sheet, r: int) -> list[Cell]:
+    def _cells(self, sheet: Sheet, r: int) -> list[Cell]:
         return [_xls_cell(self._book, c) for c in sheet.row(r)]
 
-    def _header_of(self, index: int) -> tuple[Header, int]:
-        """(header, index of its row) of sheet `index`: the first row, or the second when the first is a lone title cell."""
-        sheet = self._book.sheet_by_index(index)
-        try:
-            if sheet.nrows == 0:
-                raise InvalidFile("empty file")
-            first = self._cells(sheet, 0)
-            filled = [c for c in first if not _blank(c)]
-            start = 0
-            if len(filled) == 1 and sheet.nrows > 1 and sum(not _blank(c) for c in self._cells(sheet, 1)) > 1:
-                first, start = self._cells(sheet, 1), 1  # `Raport Contracte publicate ...` above the header (2023 files)
-            width = len(first)
-            while width and _blank(first[width - 1]):
-                width -= 1
-            return [str(c).strip() if c is not None else "" for c in first[:width]], start
-        finally:
-            self._book.unload_sheet(index)
+    def _header_of(self, sheet: Sheet) -> tuple[Header, int]:
+        """(header, index of its row) of `sheet`: the first row, or the second when the first is a lone title cell."""
+        if sheet.nrows == 0:
+            raise InvalidFile("empty file")
+        first = self._cells(sheet, 0)
+        filled = [c for c in first if not _blank(c)]
+        start = 0
+        if len(filled) == 1 and sheet.nrows > 1 and sum(not _blank(c) for c in self._cells(sheet, 1)) > 1:
+            first, start = self._cells(sheet, 1), 1  # `Raport Contracte publicate ...` above the header (2023 files)
+        width = len(first)
+        while width and _blank(first[width - 1]):
+            width -= 1
+        return [str(c).strip() if c is not None else "" for c in first[:width]], start
 
     def __iter__(self) -> Rows:
         return self._rows()
@@ -320,18 +324,19 @@ class _XlsRows:
         width, number = self._width, 1
         try:
             for index in range(self._book.nsheets):
-                if index and self._book.sheet_by_index(index).nrows == 0:
-                    continue  # a blank trailing sheet
-                header, start = self._header_of(index) if index else (self.header, self._first_start)
-                if index and header != self.header:
-                    raise InvalidFile(f"sheet {index + 1}: header differs from sheet 1", [f"sheet {index + 1}: header differs from sheet 1"])
                 sheet = self._book.sheet_by_index(index)
-                sheet = self._book.sheet_by_index(index)
-                for r in range(start + 1, sheet.nrows):
-                    number += 1
-                    fitted = _fit(number, self._cells(sheet, r), width)
-                    if fitted is not None:
-                        yield number, fitted
-                self._book.unload_sheet(index)
+                try:
+                    if index and sheet.nrows == 0:
+                        continue  # a blank trailing sheet
+                    header, start = self._header_of(sheet)
+                    if index and header != self.header:
+                        raise InvalidFile(f"sheet {index + 1}: header differs from sheet 1", [f"sheet {index + 1}: header differs from sheet 1"])
+                    for r in range(start + 1, sheet.nrows):
+                        number += 1
+                        fitted = _fit(number, self._cells(sheet, r), width)
+                        if fitted is not None:
+                            yield number, fitted
+                finally:
+                    self._book.unload_sheet(index)
         finally:
             self.close()

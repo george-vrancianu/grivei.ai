@@ -8,7 +8,7 @@ import signal
 import sys
 from pathlib import Path
 
-from .archive import Archive
+from .archive import Archive, ArchiveError
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status
@@ -64,7 +64,11 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 1 if effective_state(status) in ("failed", "interrupted") else 0
     if args.verb == "requeue":
-        restored = archive.requeue(args.match)
+        try:
+            restored = archive.requeue(args.match)
+        except ArchiveError as e:
+            print(str(e), file=sys.stderr)
+            return 1
         for path in restored:
             print(f"requeued {path}")
         print(f"requeued {len(restored)} unit(s); {len(archive.quarantined())} still in quarantine")

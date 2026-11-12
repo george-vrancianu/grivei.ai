@@ -139,3 +139,35 @@ def test_requeue_moves_quarantined_units_back_so_a_rebuild_reads_them_again(tmp_
     assert [u.unit for u in archive.units()] == [unit.unit]
     assert len(archive.quarantined()) == 1
     assert main(["--archive", str(archive.root), "requeue"]) == 0 and len(archive.units()) == 2 and not archive.quarantined()
+
+
+def test_contracte_2022q4_keeps_the_initiation_code():
+    from pipeline.bulk.headers import CONTRACTE, resolve
+
+    header = REAL_HEADERS["contracte 2022Q4"].split("|")
+    columns = resolve(CONTRACTE, "contracte", "2022Q4", header)
+    assert columns[header.index("Numar anunt participare")] == "initiation_code"
+
+
+def test_requeue_checks_every_place_first_and_loses_nothing(tmp_path, capsys):
+    from datetime import timezone
+
+    from pipeline.archive import Archive, ArchiveError
+    from pipeline.cli import main
+
+    archive = Archive(tmp_path / "a")
+    for quarter in ("2023Q1", "2023Q2"):
+        archive.write_unit(source="seap", stream="bulk", kind="contracte", unit=quarter, fetched_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                           files={f"{quarter}.xls": quarter.encode()}, via="t", url="https://x/")
+    [first, second] = archive.units()
+    quarantined_first = archive.quarantine(first, "unsupported file format .xls")
+    archive.quarantine(second, "unsupported file format .xls")
+    # the place of the first unit is taken again (same unit and day fetched anew)
+    archive.write_unit(source="seap", stream="bulk", kind="contracte", unit=first.unit, fetched_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                       files={"x.xls": b"new"}, via="t", url="https://x/")
+    with pytest.raises(ArchiveError):
+        archive.requeue()
+    assert len(archive.quarantined()) == 2 and [u.unit for u in archive.units()] == [first.unit]  # nothing moved, no reason file lost
+    assert main(["--archive", str(archive.root), "requeue"]) == 1
+    assert "cannot requeue" in capsys.readouterr().err
+    assert quarantined_first.exists()

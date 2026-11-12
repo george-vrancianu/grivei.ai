@@ -158,21 +158,22 @@ class Archive:
         """Move quarantined units back into the archive proper (reason file removed), so the next rebuild reads them again.
 
         `match` limits it to units whose path or reason text contains it (case-insensitive); empty = all. Returns the
-        restored unit directories. A unit whose place is already taken is left where it is (ArchiveError).
+        restored unit directories. If any place is already taken, nothing is moved (ArchiveError).
         """
         base = self.root / QUARANTINE_DIR
-        restored: list[Path] = []
+        chosen: list[tuple[Path, Path]] = []
         for unit_dir in self.quarantined():
-            reason = unit_dir / REASON
-            haystack = f"{unit_dir.relative_to(base)} {reason.read_text(encoding='utf-8')}".lower()
-            if match.lower() not in haystack:
-                continue
-            dest = self.root / unit_dir.relative_to(base)
-            if dest.exists():
-                raise ArchiveError(f"cannot requeue, already in the archive: {dest}")
-            reason.unlink()
+            haystack = f"{unit_dir.relative_to(base)} {(unit_dir / REASON).read_text(encoding='utf-8')}".lower()
+            if match.lower() in haystack:
+                chosen.append((unit_dir, self.root / unit_dir.relative_to(base)))
+        taken = [str(dest) for _, dest in chosen if dest.exists()]
+        if taken:  # all or nothing: check every place before anything moves
+            raise ArchiveError(f"cannot requeue, already in the archive: {', '.join(taken)}")
+        restored: list[Path] = []
+        for unit_dir, dest in chosen:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(unit_dir), str(dest))
+            shutil.move(str(unit_dir), str(dest))  # move first: a failure leaves the unit quarantined with its reason
+            (dest / REASON).unlink()
             restored.append(dest)
         return restored
 

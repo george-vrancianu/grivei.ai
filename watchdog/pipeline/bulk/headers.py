@@ -172,7 +172,7 @@ DAN_2024 = Era(
         "supplier_name": ("Ofertant",),
         "supplier_cui": ("CUI ofertant",),
     },
-    ignored=("Modalitate desfasurare", "Fonduri comunitare?", "Denumire program", "Modalitate de desfasurare", "Tip de proiect/ program"),  # the last two: the 2023 T1 `.xls`
+    ignored=("Modalitate desfasurare", "Fonduri comunitare?", "Denumire program"),
 )
 DAN_2025 = Era(
     "2025Q1",
@@ -194,8 +194,14 @@ DAN_2025 = Era(
     },
     ignored=("Finantare prin fonduri comunitare?", "Tipul de proiect/ program"),
 )
+# 2023 T1 `.xls` (checked on the real file): the 2025 layout with `Ofertant` / `CUI ofertant` and `Modalitate de desfasurare`.
+DAN_2023 = Era(
+    "2023Q1",
+    {**DAN_2025.columns, "supplier_name": ("Ofertant",), "supplier_cui": ("CUI ofertant",)},
+    ignored=DAN_2025.ignored + ("Modalitate de desfasurare", "Tip de proiect/ program"),
+)
 DAN = HeaderTable(
-    (DAN_2024, DAN_2025),
+    (DAN_2023, DAN_2024, DAN_2025),
     required=frozenset({"code", "published_on", "authority_name", "authority_cui", "title", "cpv_code", "value", "supplier_name", "supplier_cui"}),
 )
 
@@ -276,24 +282,30 @@ CONTRACTE_2025 = Era(
     },
     ignored=("Tip anunt", "Data publicare", "Tip legislatie", "Tip incheiere contract", "Tip criterii de atribuire"),
 )
-# 2022 T4 `.xls` (checked on the real file): the 2021 layout with mixed-case names (`Catigator`, sic) and no lot column.
+# 2022 T4 `.xls` (checked on the real file): the 2021 layout in mixed-case names (`Catigator`, sic), no lot column.
 CONTRACTE_2022_Q4 = Era(
     "2022Q4",
     {
-        **{k: v for k, v in CONTRACTE_2025.columns.items() if k not in ("lot", "published_on", "supplier_name", "supplier_cui", "authority_cui")},
+        "authority_name": ("Autoritate contractanta",),
         "authority_cui": ("CUI autoritate conractanta",),  # sic
-        "published_on": ("Data anunt atribuire",),
+        "procedure": ("Tip procedura",),
         "concluded_by": ("Modalitate contractare",),
+        "initiation_code": ("Numar anunt participare",),
+        "notice_code": ("Numar anunt atribuire",),
+        "published_on": ("Data anunt atribuire",),
+        "contract_type": ("Tip contract",),
+        "contract_number": ("Numar contract",),
+        "awarded_on": ("Data contract",),
         "title": ("Denumire contract",),
         "value": ("Valoare contract (RON)",),
+        "cpv_code": ("Cod CPV",),
         "supplier_name": ("Catigator",),
         "supplier_cui": ("CUI castigator",),
-        "cpv_code": ("Cod CPV",),
     },
     ignored=(
         "Tara castigator", "Localitate castigator", "Adresa castigator", "Tip anunt", "Tip autoritate contractanta",
         "Tip activitate autoritate contractanta", "Tip incheiere contract", "Tip criteriu de atribuire", "Cu licitatie electronica?",
-        "Numar oferte", "Cu subcontractare?", "Numar anunt participare", "Data anunt participare", "Valoare estimata", "Moneda",
+        "Numar oferte", "Cu subcontractare?", "Data anunt participare", "Valoare estimata", "Moneda",
         "Cu fonduri comunitare?", "Tip finantare", "Tip legislatie", "Fond european", "Depozite si garantii", "Modalitate finantare",
     ),
 )
@@ -337,7 +349,7 @@ FARA_ANUNT_2025 = Era(
 )
 # 2023 T1 `.xls` (checked on the real file): `CUI ofertant`, and a few more unloaded columns. The only older file seen.
 FARA_ANUNT_2023 = Era(
-    "2021Q1",
+    "2023Q1",
     {**FARA_ANUNT_2025.columns, "supplier_cui": ("CUI ofertant",)},
     ignored=FARA_ANUNT_2025.ignored + ("Tip autoritate contractanta", "Tip activitate contractanta", "Criteriul de atribuire",
                                        "Oras ofertant castigator", "Tara ofertant castigator"),
