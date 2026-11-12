@@ -106,6 +106,48 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     }) },
   },
   {
+    name: "authority-typical", kind: "typical",
+    description: "an authority placed in a county and UAT, no filter: the entity page's default Overview for an authority",
+    variables: { key: "4000001", role: "AUTHORITY", filter: {} },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      ...emptyOverview("AUTHORITY"),
+      total: total({ awarded: ron(2_800_000), records: 40 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.hachi, naturalPerson: false, total: total({ awarded: ron(2_800_000), records: 40 }) }] },
+      largestRecords: [w.rDirect],
+    }) },
+  },
+  {
+    name: "both-roles-supplier-side", kind: "typical",
+    description: "the entity that buys and sells, read as a supplier (no filter): the role switch's other side",
+    variables: { key: "4000002", role: "SUPPLIER", filter: {} },
+    data: { entity: withSeap(w.cnairHeader, {
+      ...emptyOverview("SUPPLIER"),
+      total: total({ awarded: ron(1_500_000), records: 3 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(1_500_000), records: 3 }) }] },
+    }) },
+  },
+  {
+    name: "name-only-supplier-no-filter", kind: "typical",
+    description: "the name-only foreign supplier read with an empty filter, as the page asks for it",
+    variables: { key: "vat-DE811128135", role: "SUPPLIER", filter: {} },
+    data: { entity: withSeap(w.foreignFirmHeader, {
+      ...emptyOverview("SUPPLIER"),
+      total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }) }] },
+    }) },
+  },
+  {
+    name: "unplaced-authority", kind: "empty",
+    description: "an authority neither ANAF nor SEAP places in a county (Unplaced), with no Records in the filter",
+    variables: { key: "4000005", role: "AUTHORITY", filter: {} },
+    data: { entity: withSeap(w.autoritateNeplasataHeader, emptyOverview("AUTHORITY")) },
+  },
+  {
+    name: "unknown-key-no-filter", kind: "empty", description: "no entity under that key, asked with an empty filter as the page does",
+    variables: { key: "name-does-not-exist", role: "SUPPLIER", filter: {} },
+    data: { entity: null },
+  },
+  {
     name: "role-without-records-in-filter", kind: "empty",
     description: "the entity exists, but the side-panel filter matches none of its Records: zero totals, no counterparties, no Signals",
     variables: { key: "4000001", role: "AUTHORITY", filter: { from: "2019-01-01", to: "2019-12-31" } },
@@ -159,6 +201,19 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
     }) },
   },
   {
+    name: "supplier-default-page", kind: "typical",
+    description: "a supplier's Records tab opened without a filter: the first page of Records, default order",
+    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: {} },
+    data: { entity: withSeap(w.hachiHeader, {
+      role: "SUPPLIER" as Role,
+      records: {
+        total: total({ awarded: ron(590_000), records: 3 }),
+        facets: facetsFull,
+        records: { count: 3, rows: [w.rDirect, w.rSplit2, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+      },
+    }) },
+  },
+  {
     name: "no-matches", kind: "empty",
     description: "filters that match nothing: zero total, empty facets, no rows",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "zzzzzz", hasSignals: true } },
@@ -203,6 +258,20 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
         { month: "2024-02", total: zeroTotal },
         { month: "2024-07", total: total({ awarded: ron(290_000), records: 2 }) },
       ],
+      flow: flowOfSupplier,
+    }) },
+  },
+  {
+    name: "supplier-default-view", kind: "typical",
+    description: "a supplier's Relationships tab opened without a filter or a picked counterparty",
+    variables: { key: "30000001", role: "SUPPLIER", filter: {} },
+    data: { entity: withSeap(w.hachiHeader, {
+      role: "SUPPLIER" as Role,
+      counterparties: {
+        count: 1, topShare: 1,
+        rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(2_800_000), records: 40 }), viaDirectPurchase: total({ awarded: ron(2_000_000), records: 38 }), viaContract: total({ awarded: ron(800_000), records: 2 }), wonTogether: false, hasSignals: true }],
+      } satisfies RelCounterparties,
+      timeline: [{ month: "2024-01", total: total({ awarded: ron(300_000), records: 1 }) }],
       flow: flowOfSupplier,
     }) },
   },

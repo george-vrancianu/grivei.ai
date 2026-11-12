@@ -1,7 +1,7 @@
 // Story and test data drawn from the contract's mock fixtures, so the domain atoms are
 // shown with the same invented world every screen uses. Nothing here ships in the app.
 import { fixtures } from "@grivei/contract/fixtures";
-import type { Party, Total, EntityRef, DataThrough, RecordBadge } from "../types.ts";
+import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData } from "../types.ts";
 
 function named<T extends { name: string }>(set: readonly T[], name: string): T {
   const found = set.find((fixture) => fixture.name === name);
@@ -44,3 +44,23 @@ export const authoritiesExact = variety.authorities;
 export const dataThroughSeap: DataThrough[] = named(fixtures.MainScreen, "typical-text-county").data.sources[0]!.dataThrough;
 
 export const allBadges: RecordBadge[] = [...new Set(recordRows.flatMap((record) => record.badges))];
+
+// Entity page headers: the same fixtures the app's entity pages are tested with.
+type EntityHeaderFixtureSet = readonly { name: string; data: { entity: EntityHeaderData | null } }[];
+function headerOf(set: EntityHeaderFixtureSet, name: string): EntityHeaderData {
+  const entity = named(set, name).data.entity;
+  if (!entity) throw new Error(`Fixture ${name} has no entity`);
+  return entity;
+}
+/** An authority placed in a county and UAT. */
+export const authorityHeader = headerOf(fixtures.EntityOverview, "authority-typical");
+/** A supplier with CUI, aliases and ANAF provenance. */
+export const supplierHeader = headerOf(fixtures.EntityOverview, "supplier-typical");
+/** Buys and sells: roles has both, national placement, identity curated. */
+export const bothRolesHeader = headerOf(fixtures.EntityOverview, "both-roles-supplier-side");
+/** A foreign supplier identified by VAT id, not placed, with SEAP as its source. */
+export const nameOnlySupplierHeader = headerOf(fixtures.EntityOverview, "name-only-supplier-no-filter");
+/** A deregistered supplier (ANAF status RADIERE). */
+export const deregisteredHeader = headerOf(fixtures.EntityOverview, "deregistered-supplier-extreme-concentration");
+/** An authority neither ANAF nor SEAP places in a county. */
+export const unplacedAuthorityHeader = headerOf(fixtures.EntityOverview, "unplaced-authority");
