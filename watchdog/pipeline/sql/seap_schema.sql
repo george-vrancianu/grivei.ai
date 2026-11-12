@@ -87,6 +87,20 @@ CREATE TABLE seap.crawl_state (
     PRIMARY KEY (stream, kind)
 );
 
+-- The Coverage grid (#79): one row per (quarter, record kind) from 2021 Q1 to the quarter of the rebuild's day, computed at the end of
+-- every rebuild (pipeline/coverage/grid.py holds the states and their precedence). `quarter` is the contract's `2024-Q4`; state and rule
+-- are the contract's GapState and GapRule; `note` is the hand-entered gap's reason, verbatim (null otherwise).
+CREATE TABLE seap.coverage_cell (
+    quarter       text NOT NULL,
+    kind          text NOT NULL CHECK (kind IN ('DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE')),
+    state         text NOT NULL CHECK (state IN ('LOADED', 'KNOWN_GAP', 'POSSIBLY_INCOMPLETE', 'NOT_IN_SOURCE', 'CRAWLED_PROVISIONAL', 'NOT_YET_LOADED')),
+    rule          text CHECK (rule IN ('AWAITING_BULK_FILE', 'NO_PRIOR_CALL_BEFORE_BACKFILL', 'COUNT_BELOW_NEIGHBOURS', 'HAND_ENTERED')),
+    note          text,
+    records       integer NOT NULL,
+    data_through  date,
+    PRIMARY KEY (quarter, kind)
+);
+
 -- Framework agreements (#65), one row per award notice that has a framework or subsequent Record: how much of the ceiling the
 -- subsequent contracts reported so far use. Filled at the end of the rebuild from seap.record (framework_role, notice_code):
 -- a subsequent contract links to its framework by the award notice number it shares with the framework's own contract(s).

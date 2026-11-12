@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "contracte",
+  "unit": "2025Q2",
+  "fetchedAt": "2025-07-10T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-contracte-t2-2025.csv",
+  "via": "Contracte 2025 - T2",
+  "files": [
+    {
+      "name": "raport-contracte-t2-2025.csv",
+      "sha256": "2373af2696425abd1d24cacd522aeb50fc755672794ef90daa812c06c8a3035d",
+      "bytes": 3678
+    }
+  ]
+}

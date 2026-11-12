@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "da",
+  "unit": "2022Q2",
+  "fetchedAt": "2022-09-15T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-achizitii-directe-t2-2022.csv",
+  "via": "Achizitii directe 2022 - T2",
+  "files": [
+    {
+      "name": "raport-achizitii-directe-t2-2022.csv",
+      "sha256": "5c53d2f9f2f76ea53c7040221d61645ed918fdcea8022c2640340e8041fa3086",
+      "bytes": 41
+    }
+  ]
+}

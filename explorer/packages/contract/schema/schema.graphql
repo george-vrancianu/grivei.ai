@@ -608,7 +608,11 @@ type GapCell {
 
 enum GapRule { AWAITING_BULK_FILE NO_PRIOR_CALL_BEFORE_BACKFILL COUNT_BELOW_NEIGHBOURS HAND_ENTERED }
 
-enum GapState { LOADED KNOWN_GAP POSSIBLY_INCOMPLETE NOT_IN_SOURCE CRAWLED_PROVISIONAL }
+"""
+A grid cell's state. NOT_YET_LOADED: the bulk file for this quarter and kind is not in the graph yet, either because it has not been
+published (rule AWAITING_BULK_FILE) or because the pipeline set it aside (no rule, no note: the reason is never shown).
+"""
+enum GapState { LOADED KNOWN_GAP POSSIBLY_INCOMPLETE NOT_IN_SOURCE CRAWLED_PROVISIONAL NOT_YET_LOADED }
 
 scalar Date
 scalar DateTime

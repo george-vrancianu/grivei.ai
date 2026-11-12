@@ -118,7 +118,11 @@ _Avoid_: coverage %, completeness score
 
 **Known gap**:
 A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page.
+Cells of the Coverage grid carry one of the states loaded, possibly incomplete (the published rule), known gap (entered by hand), not in source, crawled provisional or not yet loaded; "known gap" as a grid state means the hand-entered kind only.
 _Avoid_: missing data, hole, outage
+
+**Not yet loaded**:
+A Coverage grid cell whose bulk file is not in the graph yet: not published (the current quarter), or set aside; the reader is never told which. Records that exist for it (crawled, backfilled) are still counted.
 
 **Unplaced authority**:
 A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value. An authority whose county is known but whose UAT isn't is not an unplaced authority; the zoomed county lists it in a row of its own.

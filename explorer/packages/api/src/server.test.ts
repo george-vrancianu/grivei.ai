@@ -2,9 +2,10 @@ import type { AddressInfo } from "node:net";
 import { afterAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import { parse } from "graphql";
+import { graphql, parse } from "graphql";
 import type { MainScreenQuery } from "@grivei/contract";
 import { createApi } from "./server.ts";
+import { rootValue } from "./resolvers.ts";
 import type { EntityRow, RecordRow, Store } from "./store.ts";
 
 const entity = (key: string, displayName: string, over: Partial<EntityRow> = {}): EntityRow => ({
@@ -23,6 +24,7 @@ const store: Store = {
   framework: async () => null,
   subsequent: async () => [],
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
+  coverageGrid: async () => [],
   searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
   searchRecords: async () => ({ count: 0, rows: [] }),
@@ -140,5 +142,37 @@ describe("over HTTP", () => {
     expect((await post("not json")).status).toBe(400);
     expect((await fetch(`${await url()}/graphql`)).status).toBe(404);
     expect((await fetch(`${await url()}/healthz`)).status).toBe(200);
+  });
+});
+
+describe("Coverage grid (#79)", () => {
+  const cell = (quarter: string, kind = "DA") => ({ quarter, kind, state: "LOADED", rule: null, note: null, records: 1, dataThrough: null });
+  const grid = [cell("2021-Q1"), cell("2021-Q4"), cell("2022-Q1"), cell("2022-Q2", "DAN")];
+  const ask = async (variables: Record<string, unknown>, source = "SEAP") => {
+    const r = await graphql({
+      schema, rootValue: rootValue({ ...store, coverageGrid: async () => grid }), variableValues: variables,
+      source: `query($w: DateRange) { coverage(source: ${source}, window: $w) { source { id } window { from to } grid { quarter kind state rule note records dataThrough } } }`,
+    });
+    return r;
+  };
+  const quarters = (r: Awaited<ReturnType<typeof ask>>) => (r.data as { coverage: { grid: { quarter: string }[] } }).coverage.grid.map((c) => c.quarter);
+
+  it("serves the whole grid when there is no window", async () => {
+    const r = await ask({});
+    expect(r.errors).toBeUndefined();
+    expect(quarters(r)).toEqual(["2021-Q1", "2021-Q4", "2022-Q1", "2022-Q2"]);
+    expect((r.data as { coverage: { source: { id: string }; window: object } }).coverage).toMatchObject({ source: { id: "SEAP" }, window: { from: null, to: null } });
+  });
+
+  it("keeps the quarters that overlap the window, ends included", async () => {
+    expect(quarters(await ask({ w: { from: "2021-12-31", to: "2022-04-01" } }))).toEqual(["2021-Q4", "2022-Q1", "2022-Q2"]);
+    expect(quarters(await ask({ w: { from: "2021-04-01", to: "2021-09-30" } }))).toEqual([]);
+    expect(quarters(await ask({ w: { from: "2022-01-01" } }))).toEqual(["2022-Q1", "2022-Q2"]);
+    expect(quarters(await ask({ w: { to: "2021-03-31" } }))).toEqual(["2021-Q1"]);
+  });
+
+  it("leaves the counties, the unplaced authorities and the snapshot to #80 (NOT_IMPLEMENTED at the field)", async () => {
+    const r = await graphql({ schema, rootValue: rootValue({ ...store, coverageGrid: async () => grid }), source: "{ coverage(source: SEAP) { counties { status } } }" });
+    expect(r.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
   });
 });

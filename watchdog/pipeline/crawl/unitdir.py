@@ -111,6 +111,11 @@ def _run_start(archive: Archive, days: set[date], bulk_kind: str | None) -> date
     return end + timedelta(days=1) if end else (min(days) if days else None)
 
 
+def crawl_run_start(archive: Archive, bulk_kind: str | None = None, kind: str = KIND) -> date | None:
+    """Public `_run_start`: the first day of the unbroken run `contiguous_through` measures (None when nothing was crawled and no bulk exists)."""
+    return _run_start(archive, set(complete_days(archive, kind)), bulk_kind)
+
+
 def contiguous_through(archive: Archive, kind: str = KIND, bulk_kind: str | None = None) -> date | None:
     """The last day of the unbroken run of complete days that starts where the bulk of `bulk_kind` ends (else at the first complete
     day), or None when that first day is not complete: what is complete in the archive. The cursor (the maximum) is for

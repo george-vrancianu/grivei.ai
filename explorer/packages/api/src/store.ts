@@ -77,6 +77,17 @@ export interface TotalRow {
   frameworkCeilings: string;
 }
 
+/** One cell of the Coverage grid, as the rebuild stored it. `quarter` is `2024-Q4`; state and rule are the contract's GapState and GapRule. */
+export interface GapCellRow {
+  quarter: string;
+  kind: string;
+  state: string;
+  rule: string | null;
+  note: string | null;
+  records: number;
+  dataThrough: string | null;
+}
+
 /** A framework agreement as seen from one of its Records: the notice's ceiling and what its subsequent contracts reported so far. */
 export interface FrameworkRow {
   /** The award notice the subsequent contracts and the agreement's own contracts share. */
@@ -121,6 +132,8 @@ export interface Store {
   subsequent(noticeCode: string, page: { limit: number; offset: number }): Promise<RecordRow[]>;
   /** Per SEAP record kind, the latest publication date loaded; for the crawled kinds (CONTRACT, AWARD_NOTICE) at least the crawl cursor. */
   dataThrough(): Promise<{ kind: string; date: string }[]>;
+  /** The SEAP Coverage grid the last rebuild stored (`seap.coverage_cell`), oldest quarter first, kinds in contract order. */
+  coverageGrid(): Promise<GapCellRow[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
   /** An entity tab ranked by matched RON (ties by key), top `limit` from `offset`. */
@@ -505,6 +518,13 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
          ) x GROUP BY kind ORDER BY kind`,
       );
       return rows;
+    },
+    async coverageGrid() {
+      const { rows } = await pool.query(
+        `SELECT quarter, kind, state, rule, note, records, data_through::text AS "dataThrough" FROM seap.coverage_cell
+          ORDER BY quarter, array_position(ARRAY['DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE'], kind)`,
+      );
+      return rows as GapCellRow[];
     },
     async entity(key) {
       return (await entitiesOf([key])).get(key) ?? null;
