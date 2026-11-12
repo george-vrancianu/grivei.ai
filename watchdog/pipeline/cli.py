@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import sys
 
@@ -43,6 +44,10 @@ def main(argv: list[str] | None = None) -> int:
         print(fetch_bulk_file(archive, url=args.url, kind=args.kind, unit=args.unit, via=args.via))
         return 0
     if args.verb == "fetch-datagov":
+        handler = logging.StreamHandler(sys.stderr)  # flushes every record: a nohup log is current line by line
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+        logging.getLogger("pipeline").handlers[:] = [handler]  # replace, so repeated calls never stack handlers
+        logging.getLogger("pipeline").setLevel(logging.INFO)
         summary = fetch_datagov(archive, since_year=args.since_year, delay=args.delay)
         for line in summary.lines():
             print(line)

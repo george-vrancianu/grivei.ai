@@ -115,10 +115,12 @@ class Archive:
                 raise ArchiveError(f"bad file name: {name!r}")
             data = files[name]
             dest = target / name
+            partial = target / (name + ".part")  # never under the final name until complete
             if isinstance(data, Path):
-                shutil.copyfile(data, dest)
+                shutil.copyfile(data, partial)
             else:
-                dest.write_bytes(data)
+                partial.write_bytes(data)
+            os.replace(partial, dest)
             entries.append({"name": name, "sha256": sha256_of(dest), "bytes": dest.stat().st_size})
         manifest = {
             "version": MANIFEST_VERSION,

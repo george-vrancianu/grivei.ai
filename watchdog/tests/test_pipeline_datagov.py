@@ -319,3 +319,69 @@ def test_a_corrected_csv_listed_beside_the_old_one_is_fetched_whatever_the_api_o
         assert [x.resource_id for x in summary.archived] == ["r-da1-new"]
         [ignored] = summary.ignored
         assert ignored.resource_id == "r-da1" and "older resource" in ignored.reason
+
+
+# ---- operator run: progress log and resume after a kill -------------------------------------------------------
+
+def test_each_resource_gets_one_log_line_with_its_outcome(net, archive, caplog):
+    q2 = resource("r-da2", "Achiziții directe 2026 - T2", "raport-achizitii-directe-t2-2026.csv")
+    serve(net, da_q1(), q2, resource("r-new", "Ceva nou 2026 - T1", "ceva.csv"))
+    net.broken.add(q2["url"])
+    with caplog.at_level("INFO", logger="pipeline.datagov"):
+        run(archive)
+        run(archive, now=DAY2)
+    lines = [r.getMessage() for r in caplog.records]
+    assert any(l.startswith("archived") and "da 2026Q1" in l and "bytes" in l for l in lines)
+    assert any(l.startswith("failed") and "da 2026Q2" in l and "connection reset" in l for l in lines)
+    assert any(l.startswith("unclassified") and "Ceva nou" in l for l in lines)
+    assert any(l.startswith("unchanged") and "da 2026Q1" in l for l in lines)
+
+
+def test_the_cli_logs_progress_to_stderr_with_timestamps(net, tmp_path, capsys, monkeypatch):
+    serve(net, da_q1())
+    import logging
+    try:
+        cli.main(["--archive", str(tmp_path / "a"), "fetch-datagov", "--since-year", "2026", "--delay", "0"])
+        err = capsys.readouterr().err
+    finally:
+        logging.getLogger("pipeline").handlers.clear()
+    assert "archived" in err and "da 2026Q1" in err and err[:2] == "20"
+
+
+def test_a_unit_directory_left_without_its_manifest_does_not_block_the_rerun(net, archive):
+    serve(net, da_q1())
+    run(archive)
+    # simulate a kill mid-copy: the directory of a later fetch exists with a partial file and no manifest
+    stuck = archive.root / "seap/bulk/da/2026Q1/2026-11-08"
+    stuck.mkdir()
+    (stuck / "raport-achizitii-directe-t1-2026.csv.part").write_bytes(b"body-")
+    (archive.root / ".download-abc").write_bytes(b"xx")
+    net.packages["achizitii-publice-2026"] = package(2026, da_q1(modified="2026-05-01T07:00:00.000000"))
+    summary = run(archive, now=DAY2)  # DAY2 is the stuck directory's day
+    assert [a.resource_id for a in summary.archived] == ["r-da1"] and summary.failed == []
+    assert not list(archive.root.glob(".download-*"))
+    assert stuck in archive.incomplete()  # ignored by a rebuild, left untouched
+    assert len(archive.units()) == 2
+
+
+def test_an_interrupted_first_download_is_redone_on_restart(net, archive):
+    serve(net, da_q1())
+    d = archive.root / "seap/bulk/da/2026Q1/2026-11-01"
+    d.mkdir(parents=True)
+    (d / "raport-achizitii-directe-t1-2026.csv.part").write_bytes(b"bo")
+    summary = run(archive)
+    assert [a.resource_id for a in summary.archived] == ["r-da1"]
+    assert [u.path.name for u in archive.units()] == ["2026-11-01.2"]
+    assert [a.resource_id for a in run(archive, now=DAY2).unchanged] == ["r-da1"]  # and a further restart skips it
+
+
+def test_a_file_is_never_visible_under_its_final_name_until_complete(archive, monkeypatch):
+    from pipeline import archive as arch
+    seen = []
+    real = arch.os.replace
+    def spy(a, b):
+        seen.append((str(a), str(b), __import__("pathlib").Path(b).exists()))
+        return real(a, b)
+    monkeypatch.setattr(arch.os, "replace", spy)
+    archive.write_unit(source="seap", stream="bulk", kind="da", unit="2026Q1", fetched_at=DAY1, files={"f.csv": b"abc"})
+    assert seen[0][0].endswith("f.csv.part") and seen[0][1].endswith("f.csv") and seen[0][2] is False

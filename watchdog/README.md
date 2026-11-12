@@ -76,6 +76,26 @@ Run the loader with `python -m pipeline --archive <dir> rebuild --db <url>`; Doc
 Its tests (`tests/test_pipeline_archive.py`, `tests/test_pipeline_datagov.py`, with the miniature archive in `tests/fixtures/archive/`) need no database; the
 archive -> rebuild -> GraphQL test is in `explorer/packages/api/test/seam1.test.ts`. The legacy JSON-batch loader above is unchanged.
 
+## Operator: fetch for real
+
+Downloads ADR's quarterly SEAP exports (2021 to now) from data.gov.ro into a raw archive kept outside the repo. Fetch only, nothing is loaded.
+Size and duration are not measured; expect several GB and tens of minutes to hours (about a second of politeness delay per request).
+
+```bash
+cd watchdog
+python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+export PIPELINE_ARCHIVE=~/grivei-data/raw && mkdir -p "$PIPELINE_ARCHIVE"
+nohup python -m pipeline fetch-datagov > ~/grivei-data/fetch.log 2>&1 &
+```
+
+- Progress: `tail -f ~/grivei-data/fetch.log`. One timestamped line per resource (`archived` with its size, `unchanged`, `unclassified`,
+  `failed` with the reason), then the summary (`archived: N ...`). Exit code 1 means at least one failure. `du -sh $PIPELINE_ARCHIVE` shows the size.
+- Resume: kill it if you must (`pkill -f 'pipeline fetch-datagov'`) and run the same command again (append with `>>` to keep the log).
+  Everything already archived is skipped without a download. A download cut short leaves only a `.download-*` scratch file (removed on the
+  next start) or, at worst, a `*.part` file in a unit directory without a manifest; that directory is ignored by `rebuild` and never
+  edited, and the file is fetched again into a new `<day>.2` directory. Failed resources are retried by simply rerunning.
+- Rerunning later (new quarters, re-uploads) is the same command; changed files are archived beside the old ones.
+
 ## The data model, in brief
 
 | Layer | Tables | Role |

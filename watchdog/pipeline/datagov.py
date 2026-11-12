@@ -19,6 +19,7 @@ This module only fetches. It never loads: `rebuild` is a separate step, so files
 from __future__ import annotations
 
 import json
+import logging
 import posixpath
 import re
 import time
@@ -37,6 +38,7 @@ CKAN = "https://data.gov.ro/api/3/action/package_show?id="
 DATASET = "achizitii-publice-{year}"
 SYSTEM = "data.gov.ro"
 FORMAT_PREFERENCE = ("csv", "xlsx", "xls")  # anything else after these
+log = logging.getLogger("pipeline.datagov")
 MARKER = ("url", "lastModified", "size", "hash")
 
 
@@ -182,6 +184,19 @@ def _format_rank(resource: dict) -> int:
     return FORMAT_PREFERENCE.index(fmt) if fmt in FORMAT_PREFERENCE else len(FORMAT_PREFERENCE)
 
 
+def _say(status: str, item: Item, detail: str = "") -> None:
+    """One log line per resource: `<status> <kind> <unit> <dataset> <resource name>: <detail>`."""
+    level = logging.WARNING if status in ("failed", "unclassified") else logging.INFO
+    log.log(level, "%-11s %s %s [%s] %r%s", status, item.kind or "?", item.unit or "?", item.dataset, item.name,
+            f": {detail}" if detail else "")
+
+
+def _remove_stale_downloads(archive: Archive) -> None:
+    """A killed run can leave `.download-*` scratch files beside the archive; they are never complete files."""
+    for stale in archive.root.glob(".download-*") if archive.root.is_dir() else []:
+        stale.unlink(missing_ok=True)
+
+
 # ---- the run ------------------------------------------------------------------------------------------------
 
 def fetch_datagov(
@@ -195,6 +210,7 @@ def fetch_datagov(
     """Discover, classify and fetch; return what happened. One failure never stops the rest."""
     now = now or datetime.now(timezone.utc)
     summary = FetchSummary()
+    _remove_stale_downloads(archive)
     markers = _latest_markers(archive)
     first_request = True
 
@@ -211,6 +227,7 @@ def fetch_datagov(
             response = requests.get(CKAN + name, timeout=timeout, headers={"User-Agent": USER_AGENT})
             if response.status_code == 404:
                 summary.missing_datasets.append(name)
+                log.info("no dataset yet: %s", name)
                 continue
             response.raise_for_status()
             body = response.json()
@@ -220,6 +237,7 @@ def fetch_datagov(
             resources = dataset["resources"]
         except Exception as error:  # noqa: BLE001 - report and carry on with the other years
             summary.failed.append(Item(dataset=name, reason=f"dataset request failed: {error}"))
+            _say("failed", summary.failed[-1], summary.failed[-1].reason)
             continue
 
         chosen: dict[tuple[str, str], list[dict]] = {}
@@ -229,6 +247,7 @@ def fetch_datagov(
                     dataset=name, name=str(resource.get("name") or "").strip() if isinstance(resource, dict) else None,
                     reason="resource has no id" if isinstance(resource, dict) else "entry is not a resource",
                 ))
+                _say("unclassified", summary.unclassified[-1], summary.unclassified[-1].reason)
                 continue
             try:
                 what, why = classify(resource, year)
@@ -238,8 +257,11 @@ def fetch_datagov(
             if what is None:
                 bucket = summary.ignored if why.startswith("ignored:") else summary.unclassified
                 bucket.append(replace(item, reason=why.removeprefix("ignored: ")))
+                if bucket is summary.unclassified:
+                    _say("unclassified", bucket[-1], why)
             elif not resource.get("url"):
                 summary.unclassified.append(replace(item, kind=what[0], unit=what[1], reason="resource has no URL"))
+                _say("unclassified", summary.unclassified[-1], "resource has no URL")
             else:
                 chosen.setdefault(what, []).append(resource)
 
@@ -259,6 +281,7 @@ def fetch_datagov(
             known = markers.get(resource["id"])
             if known and all(known.get(k) == origin[k] for k in MARKER):
                 summary.unchanged.append(item)
+                _say("unchanged", item, "already archived, same marker")
                 continue
             pause()
             try:
@@ -268,6 +291,9 @@ def fetch_datagov(
                 )
             except Exception as error:  # noqa: BLE001 - fetch_bulk_file leaves no unit behind on failure
                 summary.failed.append(replace(item, reason=str(error) or type(error).__name__))
+                _say("failed", summary.failed[-1], summary.failed[-1].reason)
                 continue
             summary.archived.append(replace(item, path=where))
+            size = sum(f.stat().st_size for f in where.iterdir() if f.name != MANIFEST)
+            _say("archived", item, f"{size} bytes -> {where}")
     return summary
