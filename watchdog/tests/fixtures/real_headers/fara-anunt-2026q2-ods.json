@@ -1,0 +1,96 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Tip anunt",
+  "Tip procedura",
+  "Numar anunt atribuire",
+  "Data publicare",
+  "Tip legislatie",
+  "Incheiat prin",
+  "Tip contract",
+  "Criteriu de atribuire",
+  "Cod CPV",
+  "Denumire CPV",
+  "Data contract",
+  "Numar contract",
+  "Denumire contract",
+  "Valoare atribuita (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "Inspectoratul de Jandarmi Judetean Sibiu",
+   4240995.0,
+   "Anunt de atribuire",
+   "Negociere fara publicare prealabila",
+   "CAN1165304",
+   {
+    "date": "2026-04-01T08:22:29"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Fara acord cadru",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "09310000-5",
+   "Electricitate (Rev.2)",
+   {
+    "date": "2026-03-05T00:00:00"
+   },
+   4061240.0,
+   "Contract subsecvent nr. 3 furnizare energie electrică perioada 01.04.2026-30.04.2026",
+   8252.59,
+   "ELECTRICA FURNIZARE",
+   "RO 28909028"
+  ],
+  [
+   "PARCHETUL DE PE LANGA INALTA CURTE DE CASATIE SI JUSTITIE",
+   4364748.0,
+   "Anunt de atribuire",
+   "Norme proprii (Anexa 2B)",
+   "CAN1155198",
+   {
+    "date": "2026-04-01T08:29:10"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Fara acord cadru",
+   "Servicii",
+   "Cel mai bun raport calitate – pret",
+   "55100000-1",
+   "Servicii hoteliere (Rev.2)",
+   {
+    "date": "2025-09-16T00:00:00"
+   },
+   15119.0,
+   "Achiziţiei serviciilor  specifice necesare în cadrul componentei nr.3 finanţată în cadrul Programului de cooperare elveţiano- român (a doua contribuţie)",
+   1793235.5,
+   "POINT ADVERTISING GRUP",
+   "RO13668509"
+  ],
+  [
+   "Inspectoratul de Jandarmi Judetean Sibiu",
+   4240995.0,
+   "Anunt de atribuire",
+   "Negociere fara publicare prealabila",
+   "CAN1165306",
+   {
+    "date": "2026-04-01T08:42:24"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Fara acord cadru",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "09123000-7",
+   "Gaze naturale (Rev.2)",
+   {
+    "date": "2026-02-18T00:00:00"
+   },
+   4061187.0,
+   "Contract subsecvent nr 3 furnizare gaze naturale 01.03-31.03.2026",
+   14814.43,
+   "NOVA POWER & GAS S.A.",
+   "RO 18680651"
+  ]
+ ]
+}

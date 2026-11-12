@@ -1,0 +1,80 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Numar achizitie directa",
+  "Data publicare",
+  "Denumire achizitie",
+  "Cod CPV",
+  "Denumire CPV",
+  "Tip contract",
+  "Finantare prin fonduri comunitare?",
+  "Denumire program",
+  "Data finalizare",
+  "Valoare achizitie (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "COMUNA DRAGOMIRESTI",
+   4226494.0,
+   "DA40116337",
+   {
+    "date": "2026-04-01T05:50:49"
+   },
+   "PIESE INTRETINERE AUTOGREDER XCMG",
+   "34913000-0",
+   "Diverse piese de schimb (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T11:41:55"
+   },
+   1245.8,
+   "COSTA UTILAJE",
+   30043763.0
+  ],
+  [
+   "Institutul National de Diabet, Nutritie si Boli Metabolice \"N. C. Paulescu\"",
+   4204151.0,
+   "DA40116338",
+   {
+    "date": "2026-04-01T06:13:56"
+   },
+   "ceapa verde",
+   "03221113-1",
+   "Ceapa (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T11:42:51"
+   },
+   80.0,
+   "PERSOANA FIZICA F INTREPRINDERE FAMILIALA",
+   24085454.0
+  ],
+  [
+   "Institutul National de Diabet, Nutritie si Boli Metabolice \"N. C. Paulescu\"",
+   4204151.0,
+   "DA40116339",
+   {
+    "date": "2026-04-01T06:14:43"
+   },
+   "usturoi verde",
+   "03000000-1",
+   "Produse agricole, de ferma, de pescuit, de silvicultura si produse conexe (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T11:42:45"
+   },
+   40.0,
+   "PERSOANA FIZICA F INTREPRINDERE FAMILIALA",
+   24085454.0
+  ]
+ ]
+}

@@ -7,6 +7,8 @@ makes the whole file invalid (nothing is guessed).
 from __future__ import annotations
 
 import re
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -15,9 +17,20 @@ Cell = str | int | float | datetime | date | None
 _SCI = re.compile(r"^[+-]?\d+(\.\d+)?[eE][+-]?\d+$")
 _PLAIN = re.compile(r"^[+-]?\d+(\.\d+)?$")
 _THOUSANDS = re.compile(r"^[+-]?\d{1,3}(,\d{3})+(\.\d+)?$")
-_US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?$")
+_US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?: ?[AaPp][Mm])?)?$")
 _ISO_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?)?$")
+_DAY_FIRST: ContextVar[bool] = ContextVar("day_first", default=False)
 EXCEL_EPOCH = date(1899, 12, 30)  # serial 1 = 1900-01-01 once Excel's phantom 1900-02-29 is accounted for
+
+
+@contextmanager
+def day_first(flag: bool):
+    """Inside the block a `a/b/YYYY` text date is `DD/MM/YYYY` (the DA 2021 CSV files, see `headers.Era.day_first`) instead of `MM/DD/YYYY`."""
+    token = _DAY_FIRST.set(flag)
+    try:
+        yield
+    finally:
+        _DAY_FIRST.reset(token)
 
 
 class TypedFloat(float):
@@ -101,7 +114,7 @@ def text(cell: Cell) -> str:
 def to_date(cell: Cell) -> date | None:
     """A date or timestamp -> its calendar date, as written (the Source's local time; no zone conversion).
 
-    Strings: `MM/DD/YYYY` with an optional time (the DA and DAN bulk shape; a day above 12 proves it is month-first), or
+    Strings: `MM/DD/YYYY` with an optional time, 24-hour or with AM/PM (the DA and DAN bulk shape; a day above 12 proves it is month-first; `DD/MM/YYYY` inside `day_first(True)`), or
     ISO `YYYY-MM-DD`. XLSX: a date cell, or an Excel serial number. Anything else is an error, never a guess.
     """
     if cell is None:
@@ -120,7 +133,7 @@ def to_date(cell: Cell) -> date | None:
     if not s:
         return None
     if m := _US_DATE.match(s):
-        return date(int(m[3]), int(m[1]), int(m[2]))
+        return date(int(m[3]), int(m[2]), int(m[1])) if _DAY_FIRST.get() else date(int(m[3]), int(m[1]), int(m[2]))
     if m := _ISO_DATE.match(s):
         return date(int(m[1]), int(m[2]), int(m[3]))
     raise ValueError(f"not a MM/DD/YYYY date: {s!r}")
