@@ -1,0 +1,126 @@
+[
+  {
+    "name": "has-signals-chip",
+    "kind": "typical",
+    "description": "the suppliers tab, full view, with the chip on",
+    "variables": {
+      "filter": {
+        "hasSignals": true
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "654832100",
+            "records": 14,
+            "suspectLeftOut": 0,
+            "noValue": 1,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "suppliers": {
+            "count": 4,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "447132000",
+                  "records": 6,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "2000015",
+                  "displayName": "BETA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "97350050",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "2000023",
+                  "displayName": "GAMMA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "10000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "name-avocati-demo",
+                  "displayName": "AVOCATI DEMO",
+                  "identity": "NAME_ONLY",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "350050",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+]

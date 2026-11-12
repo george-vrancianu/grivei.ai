@@ -8587,7 +8587,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-14",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "270119999",
+                            "cap": "27012000",
+                            "multiple": 10
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-14",
+                            "to": "2023-01-14"
+                          }
                         }
                       ]
                     },
@@ -8619,7 +8634,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-03-05",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-03-05",
+                            "to": "2023-03-05"
+                          }
                         }
                       ]
                     },
@@ -8667,7 +8695,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-02-10",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-02-10",
+                            "to": "2023-02-10"
+                          }
                         }
                       ]
                     },
@@ -8731,7 +8772,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-02-03",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "40000000",
+                            "cap": "27012000",
+                            "multiple": 1.480823
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-02-03",
+                            "to": "2023-02-03"
+                          }
                         }
                       ]
                     },
@@ -8767,7 +8823,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-10",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "30000000",
+                            "cap": "27012000",
+                            "multiple": 1.110618
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-10",
+                            "to": "2023-01-10"
+                          }
                         }
                       ]
                     },
@@ -8803,7 +8874,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-10",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "30000000",
+                            "cap": "27012000",
+                            "multiple": 1.110618
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-10",
+                            "to": "2023-01-10"
+                          }
                         }
                       ]
                     },
@@ -8839,7 +8925,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-12",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "27012001",
+                            "cap": "27012000",
+                            "multiple": 1
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-12",
+                            "to": "2023-01-12"
+                          }
                         }
                       ]
                     },
@@ -8907,7 +9008,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-02-10",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-02-10",
+                            "to": "2023-02-10"
+                          }
                         }
                       ]
                     },
@@ -9012,7 +9126,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2026-03-29",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2026-03-29",
+                            "to": "2026-03-29"
+                          }
                         }
                       ]
                     },
@@ -9050,7 +9177,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2021-04-02",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2021-04-02",
+                            "to": "2021-04-02"
+                          }
                         }
                       ]
                     },
@@ -9229,7 +9369,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-14",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "270119999",
+                            "cap": "27012000",
+                            "multiple": 10
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-14",
+                            "to": "2023-01-14"
+                          }
                         }
                       ]
                     },
@@ -9261,7 +9416,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-02-03",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "40000000",
+                            "cap": "27012000",
+                            "multiple": 1.480823
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-02-03",
+                            "to": "2023-02-03"
+                          }
                         }
                       ]
                     },
@@ -9297,7 +9467,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-10",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "30000000",
+                            "cap": "27012000",
+                            "multiple": 1.110618
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-10",
+                            "to": "2023-01-10"
+                          }
                         }
                       ]
                     },
@@ -9333,7 +9518,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-10",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "30000000",
+                            "cap": "27012000",
+                            "multiple": 1.110618
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-10",
+                            "to": "2023-01-10"
+                          }
                         }
                       ]
                     },
@@ -9369,7 +9569,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-12",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "27012001",
+                            "cap": "27012000",
+                            "multiple": 1
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-12",
+                            "to": "2023-01-12"
+                          }
                         }
                       ]
                     },
@@ -9653,7 +9868,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-03-05",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-03-05",
+                            "to": "2023-03-05"
+                          }
                         }
                       ]
                     },
@@ -9701,7 +9929,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-02-10",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-02-10",
+                            "to": "2023-02-10"
+                          }
                         }
                       ]
                     },
@@ -9737,7 +9978,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2023-02-10",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2023-02-10",
+                            "to": "2023-02-10"
+                          }
                         }
                       ]
                     },
@@ -9776,7 +10030,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2026-03-29",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2026-03-29",
+                            "to": "2026-03-29"
+                          }
                         }
                       ]
                     },
@@ -9814,7 +10081,20 @@
                       ],
                       "signals": [
                         {
-                          "rule": "NO_PUBLICATION"
+                          "rule": "NO_PUBLICATION",
+                          "date": "2021-04-02",
+                          "numbers": {
+                            "__typename": "NoPublicationNumbers",
+                            "procedure": "Negociere fara publicare prealabila"
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "NO_PUBLICATION",
+                            "cpv": null,
+                            "from": "2021-04-02",
+                            "to": "2021-04-02"
+                          }
                         }
                       ]
                     },
@@ -10001,7 +10281,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-14",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "270119999",
+                            "cap": "27012000",
+                            "multiple": 10
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-14",
+                            "to": "2023-01-14"
+                          }
                         }
                       ]
                     },
@@ -10037,7 +10332,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-02-02",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "95000000",
+                            "cap": "90040000",
+                            "multiple": 1.055087
+                          },
+                          "reproduce": {
+                            "authority": "1000009",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-02-02",
+                            "to": "2023-02-02"
+                          }
                         }
                       ]
                     },
@@ -10073,7 +10383,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-10",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "30000000",
+                            "cap": "27012000",
+                            "multiple": 1.110618
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-10",
+                            "to": "2023-01-10"
+                          }
                         }
                       ]
                     },
@@ -10109,7 +10434,22 @@
                       ],
                       "signals": [
                         {
-                          "rule": "OVER_CAP"
+                          "rule": "OVER_CAP",
+                          "date": "2023-01-12",
+                          "numbers": {
+                            "__typename": "OverCapNumbers",
+                            "value": "27012001",
+                            "cap": "27012000",
+                            "multiple": 1
+                          },
+                          "reproduce": {
+                            "authority": "1000017",
+                            "supplier": null,
+                            "signal": "OVER_CAP",
+                            "cpv": null,
+                            "from": "2023-01-12",
+                            "to": "2023-01-12"
+                          }
                         }
                       ]
                     },

@@ -1,11 +1,8 @@
 // The hand-written RecordPage fixtures: only the states a recorded run cannot produce yet. Every other Record page is the API's own
 // answer (`recorded/RecordPage.json`, recorded by seam 1, ticket #85). Kept by hand and why:
-//  - `framework-overrun-signal`: a framework whose subsequent contracts exceed its ceiling (ratio over 100%) with the framework-overrun
-//    Signal: that rule is #76 (in progress), and no archive holds an overrun yet.
 //  - `no-public-page`: a Record with no `provenance.url` (a code the redirect cannot resolve: RFQA, PCA, ...): the fixture archives hold none
 //    of those codes, so it is the recorded crawled-provisional answer under another code, with the URL taken away.
-// (A Record inside a splitting Signal, rule #75, is recorded from archive-splitting.) When #76 lands, record the overrun from its
-// archive and delete the hand fixture.
+// (Records inside a splitting or a framework-overrun Signal are recorded: archive-splitting by #85, archive-framework-overrun by #89.)
 import type {
   RecordPageQuery, RecordPageQueryVariables, RecordRowFieldsFragment, SignalFieldsFragment,
 } from "../generated/operations.ts";
@@ -44,12 +41,6 @@ const fx = (name: string, kind: "typical" | "empty" | "extreme", description: st
 });
 
 export const recordPageHand: RecordFixtures = [
-  fx("framework-overrun-signal", "typical", "a framework agreement whose subsequent contracts exceed its ceiling (112.4%), with the framework-overrun Signal (rule #76, not in the pipeline yet)", "CAN1160100",
-    page(w.rFrameworkCeiling, {
-      contractType: "Lucrări",
-      framework: { ceiling: ron(100_000_000), subsequentReported: ron(112_400_000), ratio: 1.124, agreement: null, subsequent: [w.rSubsequent] },
-      signals: [signal(w.sFrameworkOverrun, [w.rFrameworkCeiling, w.rSubsequent])],
-    })),
   fx("no-public-page", "extreme", "a Record whose code the redirect cannot resolve (RFQA ...): no URL, so the page says there is no stable public page (the recorded crawled-provisional answer under another code)", "RFQA9100077",
     noPublicPage()),
 ];
