@@ -38,21 +38,21 @@ describe("the Records tab", () => {
     show(supplierRecords, "supplier");
     expect(screen.getByRole("complementary", { name: "Filter by facet" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Records" })).toBeVisible();
-    expect(screen.getByText("3 Records")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Deszăpezire străzi, sezon rece 2023-2024" })).toHaveAttribute("href", "/explore/record/DA12345678");
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getByText("13 Records")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Contract CAN9600001 1" })).toHaveAttribute("href", "/explore/record/CAN9600001~1");
+    expect(screen.getAllByRole("listitem")).toHaveLength(13);
   });
 
   it("shows the filtered total and rows it is given, not the unfiltered ones", () => {
     show(supplierSplittingRecords, "supplier", { signal: "SPLITTING" });
     expect(screen.getByText("2 Records")).toBeVisible();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.queryByRole("link", { name: "Deszăpezire străzi, sezon rece 2023-2024" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Contract CAN9600001 1" })).toBeNull();
   });
 
   it("marks every active facet when several are on", () => {
     show(supplierSeveralFacetsRecords, "supplier", supplierSeveralFacetsFilter);
-    for (const name of [/^Direct purchase/, /^Splitting/, /^2024/, /^MUNICIPIUL BRAȘOV/]) expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
+    for (const name of [/^Contract/, /^2023/, /^SPITALUL EXEMPLU/]) expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
   });
 
   it("shows an estimated total with ≈", () => {

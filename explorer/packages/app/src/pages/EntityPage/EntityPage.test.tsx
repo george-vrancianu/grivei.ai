@@ -1,5 +1,5 @@
 // Seam 3 for the entity pages: the app rendered against the contract's fixtures (recorded from the API where there are recorded ones).
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
@@ -8,9 +8,10 @@ import type { GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
-// The tab-navigation tests walk Overview -> Records on one entity: 30000001 is the hand-written fixture whose Records tab exists (until #87
-// records it); the Relationships tab walks recorded ALFA (2000007). Header and Overview behaviour of recorded entities is in EntityPage.overview.test.tsx.
-const SUPPLIER = "/explore/supplier/30000001";
+// The tab-navigation tests walk the tabs of ALFA DEMO SRL, whose tabs are all recorded. Header and Overview behaviour of recorded entities is in
+// EntityPage.overview.test.tsx, the Records tab's in EntityPage.records.test.tsx, the Relationships tab's in EntityPage.relationships.test.tsx.
+const SUPPLIER = "/explore/supplier/2000007";
+const NAME = "ALFA DEMO SRL";
 
 function open(url: string) {
   openAt(url);
@@ -24,19 +25,19 @@ const currentTab = () => tabs().getAllByRole("link").filter((l) => l.getAttribut
 describe("an entity page", () => {
   it("opens a supplier on the Overview tab, with its header", async () => {
     const sent = open(SUPPLIER);
-    expect(await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
-    expect(screen.getByText("30000001")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
+    expect(screen.getByText("2000007")).toBeInTheDocument();
     expect(currentTab()).toEqual(["Overview"]);
     expect(await screen.findByRole("list", { name: "Headline numbers" })).toBeInTheDocument();
     expect(sent.map((s) => s.operation)).toEqual(["EntityOverview"]);
-    expect(sent[0]).toMatchObject({ variables: { key: "30000001", role: "SUPPLIER", filter: {} } });
+    expect(sent[0]).toMatchObject({ variables: { key: "2000007", role: "SUPPLIER", filter: {} } });
   });
 
   it.each([
-    ["/records", "Records", "EntityRecords"],
-  ])("opens the %s URL on its own tab, running that tab's operation", async (suffix, name, operation) => {
-    const sent = open(`${SUPPLIER}${suffix}`);
-    expect(await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
+    [SUPPLIER, "/records", "Records", "EntityRecords", NAME],
+  ])("opens %s%s on its own tab, running that tab's operation", async (base, suffix, name, operation, heading) => {
+    const sent = open(`${base}${suffix}`);
+    expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
     expect(currentTab()).toEqual([name]);
     expect(sent.map((s) => s.operation)).toEqual([operation]);
   });
@@ -50,12 +51,12 @@ describe("an entity page", () => {
 
   it("gives each tab its own URL and follows a click without a page load", async () => {
     open(SUPPLIER);
-    await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." });
+    await screen.findByRole("heading", { level: 1, name: NAME });
     expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("href", `${SUPPLIER}/records`);
     expect(tabs().getByRole("link", { name: "Relationships" })).toHaveAttribute("href", `${SUPPLIER}/relationships`);
 
     await userEvent.setup().click(tabs().getByRole("link", { name: "Records" }));
-    expect(window.location.pathname).toBe(`${SUPPLIER}/records`);
+    await waitFor(() => expect(window.location.pathname).toBe(`${SUPPLIER}/records`));
     expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
   });
@@ -73,12 +74,12 @@ describe("an entity page", () => {
       },
     };
     render(<App client={slow} />);
-    await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." });
+    await screen.findByRole("heading", { level: 1, name: NAME });
 
     held = true;
     const user = userEvent.setup();
     await user.click(tabs().getByRole("link", { name: "Records" }));
-    expect(screen.getByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
     expect(screen.getByRole("status")).toHaveTextContent("Loading");
     expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
@@ -90,7 +91,7 @@ describe("an entity page", () => {
 
   it("reaches every tab link with the Tab key", async () => {
     open(SUPPLIER);
-    await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." });
+    await screen.findByRole("heading", { level: 1, name: NAME });
     const user = userEvent.setup();
     const reached: (string | null)[] = [];
     for (let i = 0; i < 20 && reached.length < 3; i++) {

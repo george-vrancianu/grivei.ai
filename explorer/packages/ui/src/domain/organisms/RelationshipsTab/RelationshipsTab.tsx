@@ -6,7 +6,7 @@ import type { Locale } from "../../../theme/index.ts";
 import type {
   CounterpartyRecordsData, EntityRef, EntityRole, RecordResult, RelationshipsCounterparties, RelationshipsTimeline,
 } from "../../types.ts";
-import { counterpartyRole } from "../RecordsTab/recordsTab.utils.ts";
+import { counterpartyRole } from "../EntityOverview/entityOverview.utils.ts";
 import { CounterpartyGraph } from "./components/CounterpartyGraph/index.ts";
 import { CounterpartyPanel } from "./components/CounterpartyPanel/index.ts";
 import { GraphLegend } from "./components/GraphLegend/index.ts";
