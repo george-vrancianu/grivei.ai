@@ -252,6 +252,10 @@ def test_a_crawled_natural_persons_record_replaced_by_its_bulk_version_leaves_no
     bulk = root / "seap/bulk/contracte/2026Q1/2026-11-10"
     _retarget(bulk, "raport-contracte-t1-2026.csv",
               lambda b: b.replace(b"|CURAT NOU SRL|,|2000011|", f"|{bulk_winner}|,|{bulk_cui}|".encode()))
+    # fetched AFTER the crawl day (units load oldest fetch first): the crawl version loads first, then the bulk one replaces it
+    bulk = bulk.rename(bulk.parent / "2026-11-12")
+    manifest = bulk / "manifest.json"
+    manifest.write_text(manifest.read_text().replace("2026-11-10T09:00:00Z", "2026-11-12T09:00:00Z"))
     rebuild(Archive(root), db)
     assert q(db, "SELECT via FROM seap.record WHERE code = 'CAN9200001~C-1'") == [("BULK",)]
     assert _withheld(db, "CAN9200001~C-1") == expected

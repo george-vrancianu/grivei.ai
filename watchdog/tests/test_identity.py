@@ -349,9 +349,9 @@ def test_a_cnp_inside_a_natural_persons_name_is_never_kept_in_the_withheld_name(
     assert not re.search(r"\d{6}", got or "")
 
 
-@pytest.mark.parametrize("name", ["MARIA BAU", "ION LAB", "ANA MARIA BAU"])
+@pytest.mark.parametrize("name", ["MARIA BAU", "ION LAB", "ANA MARIA BAU", "ION MARKET", "ANNA STORE", "PIERRE TOUR"])
 def test_a_real_surname_that_is_also_a_foreign_word_is_a_person_not_a_company(name):
-    """`BAU` and `LAB` are surnames: with no id the name decides, and reading them as a company would publish the person by name."""
+    """`BAU`, `LAB`, `MARKET`, `STORE` and `TOUR` are surnames: with no id the name decides, and reading them as a company would publish the person by name."""
     assert Resolver(ANAF).supplier(name, None) is NATURAL_PERSON
 
 

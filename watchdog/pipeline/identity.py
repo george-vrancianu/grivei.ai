@@ -113,8 +113,8 @@ _ORG_WORDS = frozenset(
 _COMPANY_WORDS = frozenset(
     """construct constructii constructia impex prodcom comimpex com prod serv servicii invest instal instalatii tehnic tehnica
     exim comert distributie farmacia farmacie medical pharma farma agro auto logistic logistica proiect proiectare expert
-    turism travel tour tours energy energie electric electro petrol gaz metal hidro termo soft tech data info net clinica
-    laborator dental optica print tipografia mobila studio market magazin shop store office computers computer""".split()
+    turism travel tours energy energie electric electro petrol gaz metal hidro termo soft tech data info net clinica
+    laborator dental optica print tipografia mobila studio magazin shop office computers computer""".split()
     # foreign industry words: a two-word foreign company name rarely carries a legal form in SEAP's supplier column
     + """technologies technology technik technique techniques tecnologie tecnologia tecnologias industries industry industrie
     industria industrial manufacturing construction constructions costruzioni construcciones impianti ingenieria
