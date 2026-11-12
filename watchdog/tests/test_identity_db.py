@@ -217,3 +217,58 @@ def test_a_bad_override_file_stops_the_rebuild_before_it_touches_the_database(db
     with pytest.raises(OverrideError):
         rebuild(archive, db, overrides_path=bad)
     assert q(db, "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('seap', 'core')") == [(0,)]
+
+
+# ---- a replaced Record leaves no stale name in `withheld` ------------------------------------------------------------------
+
+def _withheld(url, code):
+    return q(url, "SELECT winner_position, name, had_cnp FROM withheld.natural_person_name WHERE record_code = %s ORDER BY 1", code)
+
+
+def _retarget(unit_dir, name, edit):
+    """Rewrites one file of an archived unit and keeps its manifest honest (the archive checks sha256 and size)."""
+    import hashlib
+    import json
+
+    path = unit_dir / name
+    path.write_bytes(edit(path.read_bytes()))
+    manifest = json.loads((unit_dir / "manifest.json").read_text())
+    for entry in manifest["files"]:
+        if entry["name"] == name:
+            entry["sha256"], entry["bytes"] = hashlib.sha256(path.read_bytes()).hexdigest(), path.stat().st_size
+    (unit_dir / "manifest.json").write_text(json.dumps(manifest))
+
+
+@pytest.mark.parametrize("bulk_winner, bulk_cui, expected", [
+    ("IONESCU MARIA FICTIV", "2950202123456", [(1, "IONESCU MARIA FICTIV", True)]),  # the bulk version is a person too: only its row remains
+    ("CURAT NOU SRL", "2000011", []),  # the bulk version is a company: no row remains
+])
+def test_a_crawled_natural_persons_record_replaced_by_its_bulk_version_leaves_no_stale_withheld_row(db, tmp_path, bulk_winner, bulk_cui, expected):
+    root = tmp_path / "archive-crawl"
+    shutil.copytree(FIXTURES / "archive-crawl", root)
+    crawl = root / "seap/crawl/award-notices/2026-02-10/2026-11-11"
+    _retarget(crawl, "contracts-92000011-s00000.json",
+              lambda b: b.replace(b'"name":"CURAT NOU SRL","fiscalNumber":"2000011"', b'"name":"POPESCU ION FICTIV","fiscalNumber":"1990101123456"'))
+    bulk = root / "seap/bulk/contracte/2026Q1/2026-11-10"
+    _retarget(bulk, "raport-contracte-t1-2026.csv",
+              lambda b: b.replace(b"|CURAT NOU SRL|,|2000011|", f"|{bulk_winner}|,|{bulk_cui}|".encode()))
+    rebuild(Archive(root), db)
+    assert q(db, "SELECT via FROM seap.record WHERE code = 'CAN9200001~C-1'") == [("BULK",)]
+    assert _withheld(db, "CAN9200001~C-1") == expected
+    assert q(db, "SELECT count(*) FROM withheld.natural_person_name WHERE name LIKE '%%POPESCU ION%%'") == [(0,)]  # the crawl version's name is gone
+
+
+def test_a_natural_person_winner_replaced_by_a_company_winner_leaves_no_stale_withheld_row(db, tmp_path):
+    from test_bulk_loader_db import _write
+    from test_contracts_loader import H22, line22
+
+    t = lambda m, d: datetime(2022, m, d, 9, tzinfo=timezone.utc)
+    a = Archive(tmp_path / "a")
+    _write(a, "contracte", "2022Q1", t(6, 1), H22 + line22(published="05/01/2022", supplier="POPESCU ION FICTIV", cui="1990101123456"))
+    rebuild(a, db)
+    assert _withheld(db, "CAN1~C1") == [(1, "POPESCU ION FICTIV", True)]
+    _write(a, "contracte", "2022Q1", t(7, 1), H22 + line22(published="06/01/2022", supplier="BETA SRL", cui="2000002"), name="g.csv")  # republished later
+    rebuild(a, db)
+    assert q(db, "SELECT winners->0->>'name' FROM seap.record WHERE code = 'CAN1~C1'") == [("BETA SRL",)]
+    assert _withheld(db, "CAN1~C1") == []
+    assert q(db, "SELECT count(*) FROM withheld.natural_person_name") == [(0,)]

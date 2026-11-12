@@ -117,8 +117,8 @@ _COMPANY_WORDS = frozenset(
     laborator dental optica print tipografia mobila studio market magazin shop store office computers computer""".split()
     # foreign industry words: a two-word foreign company name rarely carries a legal form in SEAP's supplier column
     + """technologies technology technik technique techniques tecnologie tecnologia tecnologias industries industry industrie
-    industria industrial manufacturing construction constructions costruzioni construcciones bau impianti ingenieria
-    ingegneria engineers medizintechnik elektro elektrotechnik pharmaceuticals pharmaceutical laboratories laboratory labs lab
+    industria industrial manufacturing construction constructions costruzioni construcciones impianti ingenieria
+    ingegneria engineers medizintechnik elektro elektrotechnik pharmaceuticals pharmaceutical laboratories laboratory labs
     diagnostics diagnostic healthcare scientific instruments equipment machinery maschinenbau chemicals chemical security
     defence defense aerospace aviation automation automotive telecom telecommunications logistics shipping energia
     products produkte prodotti supply supplies partners enterprises ventures sistemi sistemas servicios servizi
@@ -155,7 +155,7 @@ def shares_a_word(spelling: str, anaf_name: str) -> bool:
     return bool(words(compare_name(spelling)) & words(anaf_name))
 
 
-_ID_RUN = re.compile(r"\d(?:[\s./-]*\d){5,}|\d(?:[.,]\d+)?E\+?\d+", re.IGNORECASE)
+_ID_RUN = re.compile(r"\d(?:[.,]\d+)?E\+?\d+|\d(?:[\s./-]*\d){5,}", re.IGNORECASE)  # scientific notation first: `1.90010E+12` is one number
 
 
 def withheld_name(name: str | None) -> str | None:

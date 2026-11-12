@@ -141,7 +141,6 @@ def test_the_search_rows_carry_the_money_lens_areas(built):
     assert {r[3] for r in rows if r[2] == "2000007"} == {"RO-BV"}
 
 
-
 # The graph queries `authority-scope` and `seap-entities` used before they read the raw archive: the archive's answer must equal
 # what these return on the graph rebuilt from the same archive.
 _SCOPE_FROM_GRAPH = """

@@ -169,7 +169,7 @@ Check (after the seed, or after the rebuild when there was one): `ls geo/countie
 nohup docker compose run --rm -T --no-deps pipeline backfill >> ~/grivei-data/backfill.log 2>&1 &
 docker compose run --rm -T --no-deps pipeline backfill --status                    # weeks complete per pass, no request sent
 # when it has finished:
-$P anaf-lookup && $P rebuild                                                        # the backfilled units bring new CUIs; ANAF first (it reads the archive's units), then the load
+$P anaf-lookup && $P authority-scope && $P seap-entities && $P rebuild               # the backfilled units bring new CUIs; the lookups first (they read the archive's units: authorities seen only in the backfill need the national flag and the placement fallback), then the load
 ```
 
 Expected: 6 to 10 hours (105 weeks, about 30,000 contract requests at 0.35 s minimum gap; estimate from the ticket), light CPU and memory. Resume: rerun the same command (complete weeks are skipped,
