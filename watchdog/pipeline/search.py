@@ -44,6 +44,7 @@ CREATE INDEX search_bm25 ON seap.search USING paradedb (
     (badges::pdb.literal), (procedure::pdb.literal), (cpv_code::pdb.literal),
     counted_bani, ceiling_bani, suspect, share_bani,
     (authority_key::pdb.literal), (authority_county::pdb.literal), (authority_uat::pdb.literal),
+    (authority_area::pdb.literal), (supplier_area::pdb.literal),
     (supplier_key::pdb.literal), (supplier_county::pdb.literal)
 )"""
 

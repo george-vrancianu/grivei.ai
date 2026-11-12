@@ -195,14 +195,26 @@ export function rootValue(store: Store) {
         return {
           filter: { qFolded: where.qFolded, authority: () => echo(filter.authority), supplier: () => echo(filter.supplier) },
           total,
-          map: async () => ({
-            side: filter.countySide ?? "AUTHORITY",
-            counties: [],
-            national: zeroTotal(),
-            unplaced: null,
-            unknownSupplierCounty: null,
-          }),
-          uatMap: () => ({ uats: [], unknownUat: null }),
+          map: async (_: unknown, ctx: Ctx) => {
+            const side = filter.countySide ?? "AUTHORITY";
+            const [m, counties] = await Promise.all([store.searchMap(side, filter, { signal: ctx?.signal }), store.counties()]);
+            const names = new Map(counties.map((c) => [`RO-${c.iso}`, c.name]));
+            return {
+              side,
+              counties: m.counties.map((c) => ({ area: c.area, name: names.get(c.area) ?? c.area, total: { ...zeroTotal(), ...c.total }, entities: c.entities })),
+              national: { ...zeroTotal(), ...m.national },
+              unplaced: m.unplaced ? { authorities: m.unplaced.authorities, total: { ...zeroTotal(), ...m.unplaced.total } } : null,
+              unknownSupplierCounty: m.unknownSupplierCounty ? { ...zeroTotal(), ...m.unknownSupplierCounty } : null,
+            };
+          },
+          // the zoomed county is authority-side (UATs place authorities), whatever the filter's `countySide`
+          uatMap: async ({ county: code }: { county: string }, ctx: Ctx) => {
+            const m = await store.searchUatMap(code, filter, { signal: ctx?.signal });
+            return {
+              uats: m.uats.map((u) => ({ area: u.area, name: u.name, total: { ...zeroTotal(), ...u.total }, entities: u.entities })),
+              unknownUat: m.unknownUat ? { ...zeroTotal(), ...m.unknownUat } : null,
+            };
+          },
           authorities: entityPage("AUTHORITY"),
           suppliers: entityPage("SUPPLIER"),
           goTo: null,

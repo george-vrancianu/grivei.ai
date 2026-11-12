@@ -106,12 +106,17 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
         cur.executemany(
             """INSERT INTO core.placement (entity_key, county_iso, uat_siruta, village_siruta, sector, national, national_by, placed_by, located_on, source_path)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", rows[i:i + 1000])
-    # the search rows carry the county (ISO 3166-2:RO, `RO-BV`) and the UAT for the county/UAT filter; this runs before the pg_search index is built.
-    # A national authority stays NULL (never counted in Bucharest); a supplier takes its county from its own placement
+    # the search rows carry the county (ISO 3166-2:RO, `RO-BV`), the UAT for the county/UAT filter and the Money lens area (#71); this runs before the
+    # pg_search index is built. A national authority keeps a NULL county/UAT (never counted in Bucharest) but its area is NATIONAL; an authority with
+    # no county and not national keeps the column defaults (UNPLACED); a supplier takes its county from its own placement. A national entity acting as a
+    # supplier stays UNKNOWN_SUPPLIER_COUNTY (the default): no county is served for a national entity.
     cur.execute(
-        """UPDATE seap.search s SET authority_county = 'RO-' || p.county_iso, authority_uat = p.uat_siruta
-             FROM core.placement p WHERE p.entity_key = s.authority_key AND NOT p.national AND p.county_iso IS NOT NULL""")
+        """UPDATE seap.search s SET
+                  authority_county = CASE WHEN p.national THEN NULL ELSE 'RO-' || p.county_iso END,
+                  authority_uat = CASE WHEN p.national THEN NULL ELSE p.uat_siruta END,
+                  authority_area = CASE WHEN p.national THEN 'NATIONAL' ELSE 'RO-' || p.county_iso END
+             FROM core.placement p WHERE p.entity_key = s.authority_key AND (p.national OR p.county_iso IS NOT NULL)""")
     cur.execute(
-        """UPDATE seap.search s SET supplier_county = 'RO-' || p.county_iso
+        """UPDATE seap.search s SET supplier_county = 'RO-' || p.county_iso, supplier_area = 'RO-' || p.county_iso
              FROM core.placement p WHERE p.entity_key = s.supplier_key AND NOT p.national AND p.county_iso IS NOT NULL""")
     return out

@@ -1,5 +1,5 @@
 import pg from "pg";
-import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
+import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
 import { rollupPlan, rollupWhere } from "./rollup.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
@@ -151,6 +151,32 @@ export interface EntityPage {
   rows: EntityHit[];
 }
 
+/** One area of the Money lens: its Total and the distinct entities behind it on the lens's side. */
+export interface AreaRow {
+  /** A county code (`RO-BV`), or a UAT's SIRUTA on the zoomed county. */
+  area: string;
+  total: TotalRow;
+  entities: number;
+}
+
+/** The Money lens of a matching set: every group of the lens's side, the off-map ones apart. Groups with no Record are absent. */
+export interface MoneyMapRow {
+  /** Counties with Records, by code. */
+  counties: AreaRow[];
+  /** Authorities flagged national (authority side); zero on the supplier side. */
+  national: TotalRow;
+  /** Authority side: authorities no source places, and what they account for; null when none match. */
+  unplaced: { authorities: number; total: TotalRow } | null;
+  /** Supplier side: winners with no county of their own; null when none match. */
+  unknownSupplierCounty: TotalRow | null;
+}
+
+/** The zoomed county: its UATs with Records (name from the UAT table) and the Records of authorities with a county but no UAT. */
+export interface UatMapRow {
+  uats: (AreaRow & { name: string })[];
+  unknownUat: TotalRow | null;
+}
+
 /** Options every search statement takes: `signal` aborts (the client disconnected) and cancels the running statement on the server. */
 export interface SearchOptions {
   signal?: AbortSignal;
@@ -179,6 +205,10 @@ export interface Store {
   referenceSnapshot(): Promise<string | null>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
+  /** The Money lens of the matching set, on the side the filter's `countySide` names (the filter is not narrowed by the lens). */
+  searchMap(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, options?: SearchOptions): Promise<MoneyMapRow>;
+  /** The zoomed county (ISO code with `RO-`): the matching set's authority side, by UAT. */
+  searchUatMap(county: string, filter: SearchFilter, options?: SearchOptions): Promise<UatMapRow>;
   /** An entity tab ranked by matched RON (ties by key), top `limit` from `offset`. */
   searchEntities(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, page: { limit: number; offset: number }, options?: SearchOptions): Promise<EntityPage>;
   /** The Records tab: each matching Record once. */
@@ -297,6 +327,11 @@ const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, pr
   authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status,
   via AS record_via, url, source_file_id`;
 
+/** The area key of the authorities with a county but no UAT (their `authority_uat` is null). */
+const NO_UAT = "";
+
+const zeroTotalRow = (): TotalRow => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" });
+
 export interface PostgresStoreOptions {
   /** Distinct-entity counts are exact up to this many groups and a HyperLogLog estimate above (pg_search's group cap is 65,000). */
   exactGroupLimit?: number;
@@ -395,6 +430,38 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         url: r.url,
       },
     }));
+  }
+
+  /**
+   * One Total and one distinct-entity count per value of `areaCol`. The counting rule is not applied here, only summed (see searchTotal):
+   * - authority side, winners not restricted: every matching row's share sums to the Record's counted value, the Record is counted on its first row;
+   * - otherwise (the supplier side, or the filter restricts the winners): each (area, Record) once, with the shares of the winners that matched.
+   *   A Record whose winners sit in two counties therefore adds a share to each; the shares were split exactly at the rebuild (the odd bani to the first winner).
+   *   So on the supplier side a Record's `records` count is per county touched (the counts can sum to more than the set's total; the awarded shares are exact),
+   *   and a framework agreement shows its whole ceiling in every county its winners touch (`max(ceiling_bani)` per area and Record; ceilings are shown, never summed).
+   */
+  async function areaTotals(w: Where, areaCol: string, entityCol: string, grouped: boolean, signal: AbortSignal | undefined): Promise<AreaRow[]> {
+    const area = areaCol === "authority_uat" ? `coalesce(${areaCol}, '${NO_UAT}')` : areaCol;
+    const totals = await cancellableQuery<{ area: string; awarded: string; records: number; suspect_left_out: number; no_value: number; framework_ceilings: string }>(
+      pool, signal,
+      grouped
+        ? `SELECT area, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records, (count(*) FILTER (WHERE suspect))::int AS suspect_left_out,
+                  (count(*) FILTER (WHERE no_value))::int AS no_value, coalesce(sum(ceil), 0)::text AS framework_ceilings
+             FROM (SELECT ${area} AS area, record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                     FROM seap.search WHERE ${w.sql} GROUP BY ${area}, record_code) g
+            GROUP BY area ORDER BY area`
+        : `SELECT ${area} AS area, coalesce(sum(share_bani), 0)::text AS awarded, (count(*) FILTER (WHERE winner_position = 1))::int AS records,
+                  (count(*) FILTER (WHERE winner_position = 1 AND suspect))::int AS suspect_left_out,
+                  (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int AS no_value,
+                  coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
+             FROM seap.search WHERE ${w.sql} GROUP BY ${area} ORDER BY area`,
+      w.params,
+    );
+    const entities = await cancellableQuery<{ area: string; n: number }>(
+      pool, signal, `SELECT ${area} AS area, count(DISTINCT ${entityCol})::int AS n FROM seap.search WHERE ${w.sql} GROUP BY ${area}`, w.params,
+    );
+    const n = new Map(entities.rows.map((r) => [r.area, r.n]));
+    return totals.rows.map((r) => ({ area: r.area, total: totalOf(r), entities: n.get(r.area) ?? 0 }));
   }
 
   const totalOf = (r: { awarded: string; records: number; suspect_left_out: number; no_value: number; framework_ceilings: string }): TotalRow => ({
@@ -549,6 +616,35 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       const { rows } = await pool.query(`SELECT ${RECORD_COLUMNS} FROM seap.record WHERE code = ANY($1)`, [wanted]);
       const byCode = new Map((await rowsOf(rows as RawRecord[])).map((r) => [r.code, r]));
       return { count, rows: wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r) };
+    },
+    async searchMap(side, filter, { signal } = {}) {
+      const w = buildWhere(filter);
+      const rows = await areaTotals(w, side === "AUTHORITY" ? "authority_area" : "supplier_area", side === "AUTHORITY" ? "authority_key" : "supplier_key", side === "SUPPLIER" || w.winnerSide, signal);
+      const off = new Map(rows.map((r) => [r.area, r]));
+      const unplaced = off.get("UNPLACED");
+      return {
+        counties: rows.filter((r) => /^RO-/.test(r.area)),
+        national: off.get("NATIONAL")?.total ?? zeroTotalRow(),
+        unplaced: side === "AUTHORITY" && unplaced ? { authorities: unplaced.entities, total: unplaced.total } : null,
+        unknownSupplierCounty: side === "SUPPLIER" ? (off.get("UNKNOWN_SUPPLIER_COUNTY")?.total ?? null) : null,
+      };
+    },
+    async searchUatMap(county, filter, { signal } = {}) {
+      const w = buildWhere(filter);
+      w.params.push(county);
+      w.sql += ` AND authority_county = $${w.params.length}`;
+      // the zoomed county is the authority side (UATs place authorities); a Record counts once, even when the filter restricts the winners
+      const rows = await areaTotals(w, "authority_uat", "authority_key", w.winnerSide, signal);
+      const known = rows.filter((r) => r.area !== NO_UAT);
+      const names = new Map<string, string>();
+      if (known.length) {
+        const found = await pool.query(`SELECT siruta, name FROM core.uat WHERE siruta = ANY($1)`, [known.map((r) => r.area)]);
+        for (const u of found.rows) names.set(u.siruta, u.name);
+      }
+      return {
+        uats: known.map((r) => ({ ...r, name: names.get(r.area) ?? r.area })),
+        unknownUat: rows.find((r) => r.area === NO_UAT)?.total ?? null,
+      };
     },
     async total() {
       const { rows } = await pool.query(
