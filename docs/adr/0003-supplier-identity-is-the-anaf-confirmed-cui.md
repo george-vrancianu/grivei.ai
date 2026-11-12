@@ -26,3 +26,7 @@ The display-name rule applies to every entity in either role, not only to suppli
 ## Amended 2026-11-12: natural-person suppliers above the Naming threshold are named
 
 ADR 0009: a natural-person supplier whose public money reaches the Naming threshold becomes a Named person, with a name and an entity page, once that posture's Go-live conditions are met. Below the threshold nothing changes. CNPs are still never stored or shown.
+
+## Amended 2026-11-13: people follow the same rule
+
+ADR 0011 carries this rule over to people. A person is confirmed only by name plus a full birth date from an official publication, never by name. The identity override file also holds person splits and merges.
