@@ -69,7 +69,7 @@ A spelling under which an entity was published in a Source, kept with its dates;
 _Avoid_: variant, AKA, old name
 
 **Identity override**:
-A reviewed, reasoned correction to which supplier a record is attached; the entity page shows it as curated. It never splits a joint venture into its members.
+A reviewed, reasoned correction to which supplier a record is attached, or to which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
 _Avoid_: manual merge, fix, mapping
 
 **Record**:
@@ -107,6 +107,18 @@ _Avoid_: Signal type, check, test
 **Named person**:
 A person Grivei.ai shows by name: someone with a role in an official register (administrator, legal representative, associate or shareholder) in an organisation that receives public money in the graph, an official acting in their role, or an individual whose own public money reaches the Naming threshold. Everyone else in a Source stays unnamed.
 _Avoid_: PEP, subject, person of interest
+
+**Person key**:
+A normalised name plus a full birth date taken from an official publication (ONRC, cdep.ro); two person records are the same person only when their person keys match. A name alone, or a name with a county, is never a person key.
+_Avoid_: person id, fingerprint
+
+**Possible match**:
+Two person records that might be one person (same name and birth date with birthplaces in different counties, or a partial name with the same birth date); never shown publicly, and only an identity override merges them.
+_Avoid_: likely match, probable link, namesake
+
+**Unlinked role holder**:
+A Named person with a register role but no birth date; named on that organisation's page only, with no person page and no link to anyone.
+_Avoid_: unknown person, anonymous administrator
 
 **Naming threshold**:
 The total public money an individual must receive directly (as a natural-person supplier or a fund recipient) before they are named.
