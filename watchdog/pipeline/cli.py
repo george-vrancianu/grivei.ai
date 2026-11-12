@@ -12,8 +12,11 @@ from pathlib import Path
 from .archive import Archive, ArchiveError
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
-from .crawl.unitdir import CRAWLED_KINDS, contiguous_through, missing_days
+from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through, missing_days
 from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME, describe_crawl
+from .crawl.backfill import PASSES as BACKFILL_PASSES, BulkIndex, archive_summary, plan_backfill, run_backfill, week_windows
+from .crawl.backfill import FIRST_DAY as BACKFILL_FIRST_DAY, LAST_DAY_2021_22 as BACKFILL_LAST_DAY
+from .crawl.backfill_progress import DEFAULT_BACKFILL_STATUS_NAME, BackfillProgress, describe_backfill
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status
@@ -46,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     st = sub.add_parser("status", help="show the crawl cursor and data-through dates, and how far a running or finished rebuild and crawl are")
     st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="the rebuild's status file, as for rebuild")
     st.add_argument("--crawl-progress-file", default=os.environ.get("PIPELINE_CRAWL_PROGRESS_FILE"), help="the crawl's status file, as for crawl")
+    st.add_argument("--backfill-progress-file", default=os.environ.get("PIPELINE_BACKFILL_PROGRESS_FILE"), help="the backfill's status file, as for backfill")
 
     c = sub.add_parser("crawl", help="crawl e-licitatie award notices (CAN, SCNA) and their contracts, day by day, into the raw archive (no loading)")
     c.add_argument("--from", dest="first", type=_day, help="first day of an explicit range (days already complete are skipped unless --force)")
@@ -56,6 +60,13 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--force", action="store_true", help="fetch complete days of the range again")
     c.add_argument("--progress-file", default=os.environ.get("PIPELINE_CRAWL_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_CRAWL_PROGRESS_FILE; default <archive>/{DEFAULT_CRAWL_STATUS_NAME})")
+
+    b = sub.add_parser("backfill", help="one-off, resumable backfill (#78): 2021-22 awards without a prior call, and 2023-today notices missing from the bulk, into the raw archive (no loading)")
+    b.add_argument("--pass", dest="passes", choices=[*BACKFILL_PASSES, "all"], default="all", help="which pass to run (default: both, in order)")
+    b.add_argument("--delay", type=float, default=float(os.environ.get("PIPELINE_CRAWL_DELAY", CRAWL_DELAY)), help=f"seconds between requests (env PIPELINE_CRAWL_DELAY, default {CRAWL_DELAY})")
+    b.add_argument("--status", action="store_true", help="show how far the backfill is (weeks complete per pass, last run) and exit; no requests")
+    b.add_argument("--progress-file", default=os.environ.get("PIPELINE_BACKFILL_PROGRESS_FILE"),
+                   help=f"status file `status` reads (env PIPELINE_BACKFILL_PROGRESS_FILE; default <archive>/{DEFAULT_BACKFILL_STATUS_NAME})")
 
     q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
     q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
@@ -85,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
         return _status(archive, args)
     if args.verb == "crawl":
         return _crawl(archive, args)
+    if args.verb == "backfill":
+        return _backfill(archive, args)
     if args.verb == "requeue":
         try:
             restored = archive.requeue(args.match)
@@ -132,7 +145,39 @@ def _status(archive: Archive, args) -> int:
             code = 1
         elif status is None:
             code = 0  # no rebuild yet is not a failure once a crawl is on record
+    held = archive_summary(archive)
+    backfill_status = read_status(Path(args.backfill_progress_file) if args.backfill_progress_file else archive.root / DEFAULT_BACKFILL_STATUS_NAME)
+    if held or backfill_status is not None:  # the backfill (#78) has its own unit kind and cursor, so it is listed apart from the crawl's
+        for line in describe_backfill(backfill_status, held, _backfill_totals(backfill_status)):
+            print(line)
+        if backfill_status is not None and effective_state(backfill_status) in ("failed", "interrupted", "aborted"):
+            code = 1
+        elif status is None and not (crawl_status is not None and effective_state(crawl_status) in ("failed", "interrupted")):
+            code = 0  # no rebuild yet is not a failure once a backfill is on record
     return code
+
+
+def _backfill_totals(status: dict | None) -> dict[str, int]:
+    """Weeks per pass: the 2021-22 pass is fixed; the 2023-today one is what the last run planned (it depends on today and on the bulk)."""
+    totals = {name: c["total"] for name, c in ((status or {}).get("passes") or {}).items()}
+    totals[BACKFILL_PASSES[0]] = len(week_windows(BACKFILL_FIRST_DAY, BACKFILL_LAST_DAY))
+    return totals
+
+
+def _backfill(archive: Archive, args) -> int:
+    status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_BACKFILL_STATUS_NAME
+    if args.status:
+        status = read_status(status_file)
+        for line in describe_backfill(status, archive_summary(archive), _backfill_totals(status)):
+            print(line)
+        return 1 if status is not None and effective_state(status) in ("failed", "interrupted", "aborted") else 0
+    progress = BackfillProgress(status_file)  # lines go to stdout, flushed one by one: a nohup log is current
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))  # a kill ends like any failure: status file says so, complete weeks stay
+    passes = BACKFILL_PASSES if args.passes == "all" else (args.passes,)
+    bulk = BulkIndex.read(archive, lambda text: progress.note(text)) if BACKFILL_PASSES[1] in passes else None
+    crawler = Crawler(archive, make_client(args.delay, progress.note), note=progress.note, kind=BACKFILL_KIND)
+    plans = plan_backfill(archive, today=datetime.now(timezone.utc).date(), passes=passes, bulk=bulk)
+    return 0 if run_backfill(archive, crawler, plans, progress, bulk=bulk).ok else 1
 
 
 def _crawl(archive: Archive, args) -> int:

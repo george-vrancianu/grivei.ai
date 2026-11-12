@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "fara-anunt",
+  "unit": "2023Q1",
+  "fetchedAt": "2026-11-12T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/fara-anunt-t1-2023.xlsx",
+  "via": "Anunturi fara anunt de initiere T1 2023",
+  "files": [
+    {
+      "name": "fara-anunt-t1-2023.xlsx",
+      "sha256": "93520d026d4a0f1677925170ea1a55c19b4098edee12b3af1d8c06dd0737d6eb",
+      "bytes": 5371
+    }
+  ]
+}

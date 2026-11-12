@@ -2,7 +2,7 @@
 
 `client.py` talks to the network, `core.py` crawls one unit, `unitdir.py` writes it to the archive (manifest last) and
 derives the cursor, `run.py` plans and runs `pipeline crawl`, `progress.py` is its log and status file, `records.py` turns
-an archived unit into Records at rebuild time.
+an archived unit into Records at rebuild time. `backfill.py` (#78) is the one-off backfill built on the same core.
 """
 from .client import CrawlError, EliClient
 from .core import Crawler, keep_all

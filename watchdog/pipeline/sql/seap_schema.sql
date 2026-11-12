@@ -15,7 +15,7 @@ CREATE TABLE seap.source_file (
     url         text,
     fetched_at  timestamptz NOT NULL,     -- from the archive manifest
     row_count   integer NOT NULL,
-    stream      text NOT NULL DEFAULT 'bulk'  -- 'bulk' (a published file) | 'crawl' (a crawled day, #77; `unit` is the day, via and url are null)
+    stream      text NOT NULL DEFAULT 'bulk'  -- 'bulk' (a published file) | 'crawl' (a crawled day, #77; `unit` is the day, via and url are null) | 'backfill' (a backfilled week, #78; `unit` is its first day)
 );
 
 -- The Record. DA and DAN identity = the public code; a CONTRACT is `<award notice code>~<contract number>` (e.g.

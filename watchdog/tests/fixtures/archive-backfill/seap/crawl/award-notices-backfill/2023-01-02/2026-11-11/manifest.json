@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "crawl",
+  "kind": "award-notices-backfill",
+  "unit": "2023-01-02",
+  "fetchedAt": "2026-11-11T09:00:00Z",
+  "url": "https://e-licitatie.ro/api-pub/NoticeCommon/GetCANoticeList/",
+  "via": "backfill",
+  "files": [
+    {
+      "name": "contracts-93000011-s00000.json",
+      "sha256": "3f3b27a8e76e38829206c7afb083533a6f2d307d5a172d79161b363595923822",
+      "bytes": 520
+    },
+    {
+      "name": "contracts-93000012-s00000.json",
+      "sha256": "e1cbcb92f52bc90b89d3647ddbd92b570b2de879393b166df17b5ab9bf6a356d",
+      "bytes": 522
+    },
+    {
+      "name": "notices-2023-01-02_2023-01-08-p0000.json",
+      "sha256": "94660af7609643bc7061ffd44034d6a5316f8b92686ce6fdec4ceff57331c08b",
+      "bytes": 2895
+    }
+  ],
+  "crawl": {
+    "window": [
+      "2023-01-02",
+      "2023-01-08"
+    ],
+    "notices": 4,
+    "kept": 2,
+    "listPages": 1,
+    "contractPages": 2,
+    "contracts": 2,
+    "keep": "missing_from_bulk_and_backfill",
+    "pass": "2023-today",
+    "week": "2023-W01"
+  }
+}
