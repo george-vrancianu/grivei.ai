@@ -1,5 +1,4 @@
 import { scaleBand, scaleLinear } from "d3-scale";
-import type { Locale } from "../../../theme/index.ts";
 import type { Bani, RelationshipsCounterparty, RelationshipsTimeline } from "../../types.ts";
 
 /** The graph's drawing box, in SVG units (it scales to the container). */
@@ -18,6 +17,11 @@ export const CONTRACT_COLOR = "#2f5d9e";
 export const DIRECT_PURCHASE_COLOR = "#0f766e";
 export const SIGNAL_RING_COLOR = "#ea580c";
 export const CENTRE_COLOR = "#1f2937";
+/** The selected node's outline, and the keyboard focus ring (a mark selection never uses: a separate ring around the node). */
+export const SELECTED_STROKE = "#111827";
+export const FOCUS_COLOR = "#7c3aed";
+/** Legend marks that stand for no channel in particular. */
+export const NEUTRAL_MARK_COLOR = "#6b7280";
 /** The dash pattern of a won-together edge. */
 export const WON_TOGETHER_DASH = "6 4";
 /** The timeline's overall bars and the picked counterparty's bars drawn over them. */
@@ -55,8 +59,8 @@ export function dominantChannel(row: Pick<RelationshipsCounterparty, "viaContrac
 export const channelColor = (channel: Channel): string => (channel === "contract" ? CONTRACT_COLOR : DIRECT_PURCHASE_COLOR);
 
 /**
- * What a node can be picked by: the counterparty's Entity key. A natural person or an unlinked winner has no Entity (ADR 0003: no page,
- * no name), so there is no key to filter Records or the timeline by and its node is not pickable.
+ * What a node can be picked by: the counterparty's Entity key. A natural person (ADR 0003: no page, no name) or the unidentified group (a winner nobody could link, a Record
+ * with no winner, an unknown authority) has no Entity, so there is no key to filter Records or the timeline by and its node is not pickable.
  */
 export function counterpartyKey(row: Pick<RelationshipsCounterparty, "entity" | "naturalPerson">): string | null {
   return row.naturalPerson ? null : (row.entity?.key ?? null);
@@ -87,14 +91,6 @@ export function layoutNodes(rows: readonly RelationshipsCounterparty[]): GraphNo
       channel: dominantChannel(row),
     };
   });
-}
-
-/** "2024-01" as a short month and year in the page's language (UTC, so no time zone moves it). Unparseable input is returned as is. */
-export function formatMonth(month: string, locale: Locale): string {
-  const match = /^(\d{4})-(\d{2})$/.exec(month);
-  if (!match) return month;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
-  return new Intl.DateTimeFormat(locale, { month: "short", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
 export interface TimelineBar {

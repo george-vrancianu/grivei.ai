@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, MAX_NODE_RADIUS, MIN_NODE_RADIUS, channelColor, counterpartyKey, dominantChannel, formatMonth, layoutNodes, maxAwarded,
+  CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, MAX_NODE_RADIUS, MIN_NODE_RADIUS, channelColor, counterpartyKey, dominantChannel, layoutNodes, maxAwarded,
   nodeRadius, share, timelineBars,
 } from "./relationshipsTab.utils.ts";
+import {
+  authorityTypicalPickedDirectTimeline, authorityTypicalPickedTimeline, authorityTypicalRelationships, supplierPickedRelationships,
+} from "../../samples/fixtureData.ts";
 import type { RelationshipsCounterparty, RelationshipsTimeline, Total } from "../../types.ts";
 
 const total = (awarded: string, records = 1): Total => ({
@@ -75,14 +78,6 @@ describe("layoutNodes", () => {
   it("is empty for no rows", () => expect(layoutNodes([])).toEqual([]));
 });
 
-describe("formatMonth", () => {
-  it("formats in the page's language", () => {
-    expect(formatMonth("2024-01", "en")).toMatch(/Jan.*2024/);
-    expect(formatMonth("2024-01", "ro")).toMatch(/ian.*2024/i);
-  });
-  it("keeps what it cannot read", () => expect(formatMonth("soon", "en")).toBe("soon"));
-});
-
 describe("timelineBars", () => {
   const overall: RelationshipsTimeline = [
     { month: "2024-02", total: total("200") }, { month: "2024-01", total: total("400") }, { month: "2024-03", total: total("0") },
@@ -106,4 +101,24 @@ describe("timelineBars", () => {
     expect(bars.map((b) => b.month)).toContain("2024-04");
   });
   it("is empty for an empty series", () => expect(timelineBars([], null, 300, 100)).toEqual([]));
+});
+
+describe("the stories' timelines", () => {
+  const sum = (series: RelationshipsTimeline) => series.reduce((acc, p) => acc + BigInt(p.total.awarded), 0n);
+  const never = (overall: RelationshipsTimeline, picked: RelationshipsTimeline) => {
+    const all = new Map(overall.map((p) => [p.month, BigInt(p.total.awarded)]));
+    for (const p of picked) expect(BigInt(p.total.awarded)).toBeLessThanOrEqual(all.get(p.month) ?? 0n);
+  };
+  it("never draw a picked month taller than the overall month it belongs to", () => {
+    never(authorityTypicalRelationships.timeline, authorityTypicalPickedTimeline);
+    never(authorityTypicalRelationships.timeline, authorityTypicalPickedDirectTimeline);
+  });
+  it("sum, overall, to about the shown rows over the top share", () => {
+    const { counterparties, timeline } = authorityTypicalRelationships;
+    const shown = counterparties.rows.reduce((acc, r) => acc + BigInt(r.total.awarded), 0n);
+    expect(Number(sum(timeline)) * counterparties.topShare! / Number(shown)).toBeCloseTo(1, 3);
+  });
+  it("of a supplier with one authority add up to that authority's row", () => {
+    expect(sum(supplierPickedRelationships.timeline)).toBe(BigInt(supplierPickedRelationships.counterparties.rows[0]!.total.awarded));
+  });
 });

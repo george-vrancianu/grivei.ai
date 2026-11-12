@@ -31,7 +31,10 @@ export interface RelationshipsTabProps {
   /** The picked counterparty's Entity key, or null. The tab holds no selection: the caller keeps it (the URL) and `onSelect` asks to change it. */
   selected: string | null;
   onSelect: (key: string | null) => void;
-  /** Records with the picked counterparty (`EntityRecords` with it in the filter); null while they have not arrived or when nothing is picked. */
+  /**
+   * Records with the picked counterparty (`EntityRecords` with it in the filter, counterparty facet included); null while they have not arrived
+   * or when nothing is picked. A counterparty beyond the graph's rows is named from its facet.
+   */
   sidePanel: CounterpartyRecordsData | null;
   sidePanelLoading?: boolean;
   /** Paging of the side panel's Records, when they span several pages. */
@@ -57,8 +60,10 @@ export function RelationshipsTab({
 }: RelationshipsTabProps) {
   const rows = counterparties.rows;
   const pickedRow = selected === null ? null : (rows.find((row) => row.entity?.key === selected && !row.naturalPerson) ?? null);
-  // A key that is not among the shown rows (beyond the top 30) still has a panel: its name is the key until the caller knows more.
-  const picked: EntityRef | null = selected === null ? null : (pickedRow?.entity ?? { key: selected, displayName: selected, identity: "CUI" });
+  // A key beyond the shown rows (the top 30) is named by the panel's own Records: the counterparty facet carries its Entity. Until they
+  // arrive it has no name (none is invented), and the panel shows its loading state.
+  const picked: EntityRef | null =
+    selected === null ? null : (pickedRow?.entity ?? sidePanel?.facets.counterparty.find((facet) => facet.entity?.key === selected)?.entity ?? null);
   return (
     <Stack spacing={2}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
@@ -83,6 +88,7 @@ export function RelationshipsTab({
           />
         </Stack>
         <CounterpartyPanel
+          picked={selected !== null}
           counterparty={picked}
           records={sidePanel}
           loading={sidePanelLoading}

@@ -1,7 +1,7 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { GraphLegendCopy } from "../../relationshipsTab.types.ts";
-import { CENTRE_COLOR, CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, SIGNAL_RING_COLOR, WON_TOGETHER_DASH } from "../../relationshipsTab.utils.ts";
+import { CENTRE_COLOR, CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, NEUTRAL_MARK_COLOR, SIGNAL_RING_COLOR, WON_TOGETHER_DASH } from "../../relationshipsTab.utils.ts";
 
 export interface GraphLegendProps {
   copy: GraphLegendCopy;
@@ -30,21 +30,21 @@ export function GraphLegend({ copy, hasWonTogether, hasSignals }: GraphLegendPro
         </Box>
         <Box component="li" data-legend="size" sx={item}>
           <Box component="svg" aria-hidden width={28} height={22} sx={icon}>
-            <circle cx={7} cy={14} r={4} fill="#6b7280" />
-            <circle cx={19} cy={11} r={9} fill="#6b7280" />
+            <circle cx={7} cy={14} r={4} fill={NEUTRAL_MARK_COLOR} />
+            <circle cx={19} cy={11} r={9} fill={NEUTRAL_MARK_COLOR} />
           </Box>
           <Typography variant="caption">{copy.size}</Typography>
         </Box>
         <Box component="li" data-legend="contract" sx={item}>{edge(CONTRACT_COLOR)}<Typography variant="caption">{copy.contract}</Typography></Box>
         <Box component="li" data-legend="direct-purchase" sx={item}>{edge(DIRECT_PURCHASE_COLOR)}<Typography variant="caption">{copy.directPurchase}</Typography></Box>
         {hasWonTogether && (
-          <Box component="li" data-legend="won-together" sx={item}>{edge("#6b7280", WON_TOGETHER_DASH)}<Typography variant="caption">{copy.wonTogether}</Typography></Box>
+          <Box component="li" data-legend="won-together" sx={item}>{edge(NEUTRAL_MARK_COLOR, WON_TOGETHER_DASH)}<Typography variant="caption">{copy.wonTogether}</Typography></Box>
         )}
         {hasSignals && (
           <Box component="li" data-legend="signals" sx={item}>
             <Box component="svg" aria-hidden width={28} height={24} sx={icon}>
               <circle cx={14} cy={12} r={10} fill="none" stroke={SIGNAL_RING_COLOR} strokeWidth={3} />
-              <circle cx={14} cy={12} r={5} fill="#6b7280" />
+              <circle cx={14} cy={12} r={5} fill={NEUTRAL_MARK_COLOR} />
             </Box>
             <Typography variant="caption">{copy.signals}</Typography>
           </Box>

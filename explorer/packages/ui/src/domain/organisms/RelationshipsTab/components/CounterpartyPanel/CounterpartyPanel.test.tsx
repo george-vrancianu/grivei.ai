@@ -9,13 +9,13 @@ import { CounterpartyPanel, type CounterpartyPanelProps } from "./index.ts";
 const copy = sampleCopy.relationshipsTab("en");
 const counterparty = { key: "30000001", displayName: "HACHI INVEST S.R.L.", identity: "CUI" as const };
 const base: CounterpartyPanelProps = {
-  counterparty, records: authorityDirectSupplierPanel, loading: false, counterpartyRole: "supplier", onClose: vi.fn(),
+  picked: true, counterparty, records: authorityDirectSupplierPanel, loading: false, counterpartyRole: "supplier", onClose: vi.fn(),
   entityHref: (entity, role) => `/explore/${role}/${entity.key}`, recordHref: (record) => `/explore/record/${record.code}`, locale: "en", copy,
 };
 
 describe("CounterpartyPanel", () => {
   it("is a hint while nothing is picked", () => {
-    renderInUi(<CounterpartyPanel {...base} counterparty={null} records={null} />);
+    renderInUi(<CounterpartyPanel {...base} picked={false} counterparty={null} records={null} />);
     expect(screen.getByText(copy.panel.hint)).toBeVisible();
     expect(screen.queryByRole("button")).toBeNull();
   });

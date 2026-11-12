@@ -448,15 +448,15 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
     ? {
         ...base,
         heading: "Relații",
-        recordCount: (_n, formatted) => `${formatted} înregistrări`,
-        channels: { contract: "contracte", directPurchase: "achiziții directe" },
+        recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         graph: {
           label: "Graful principalelor contrapărți",
           naturalPerson: "Persoană fizică",
+          unknown: "Contraparte neidentificată",
           node: (p) =>
             `${p.name}, ${p.amount}, ${p.records}; ${p.contract} prin contracte, ${p.directPurchase} prin achiziții directe` +
             `${p.wonTogether ? "; câștigat împreună" : ""}${p.hasSignals ? "; are Semnale" : ""}${p.selected ? "; ales" : ""}`,
-          more: (_n, formatted) => `încă ${formatted} contrapărți`,
+          more: (n, f) => `încă ${roCount(n, f, "contraparte", "contrapărți")}`,
           empty: "Nicio contraparte pentru filtrele alese.",
           consortiumNote:
             "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
@@ -478,10 +478,10 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
         ...base,
         heading: "Relationships",
         recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
-        channels: { contract: "contracts", directPurchase: "direct purchases" },
         graph: {
           label: "Graph of the top counterparties",
           naturalPerson: "Persoană fizică",
+          unknown: "Unidentified counterparty",
           node: (p) =>
             `${p.name}, ${p.amount}, ${p.records}; ${p.contract} via contracts, ${p.directPurchase} via direct purchases` +
             `${p.wonTogether ? "; won together" : ""}${p.hasSignals ? "; has Signals" : ""}${p.selected ? "; picked" : ""}`,

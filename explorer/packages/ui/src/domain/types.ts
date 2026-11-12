@@ -58,8 +58,11 @@ export type RelationshipsCounterparties = NonNullable<NonNullable<EntityRelation
 export type RelationshipsCounterparty = RelationshipsCounterparties["rows"][number];
 /** The tab's monthly timeline (`timeline`): one Total per month, "YYYY-MM". */
 export type RelationshipsTimeline = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["timeline"];
-/** The Records with the picked counterparty: the `total` and `records` of an `EntityRecords` result filtered to that counterparty. */
-export type CounterpartyRecordsData = Pick<RecordsTabData, "total" | "records">;
+/**
+ * The Records with the picked counterparty: the `total`, `records` and `facets` of an `EntityRecords` result filtered to that counterparty.
+ * The counterparty facet names it when it is beyond the graph's top rows.
+ */
+export type CounterpartyRecordsData = Pick<RecordsTabData, "total" | "records" | "facets">;
 
 /** A Record as its page shows it (`RecordPage`'s `seap.record`, never null here). */
 export type RecordPageData = NonNullable<RecordPageQuery["seap"]["record"]>;

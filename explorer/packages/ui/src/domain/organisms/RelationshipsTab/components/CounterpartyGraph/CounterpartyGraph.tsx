@@ -7,7 +7,7 @@ import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import type { EntityRef, RelationshipsCounterparties } from "../../../../types.ts";
 import type { CounterpartyGraphCopy, RelationshipsTabCopy } from "../../relationshipsTab.types.ts";
 import {
-  CENTRE_COLOR, CENTRE_RADIUS, GRAPH_HEIGHT, GRAPH_WIDTH, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
+  CENTRE_COLOR, CENTRE_RADIUS, FOCUS_COLOR, GRAPH_HEIGHT, GRAPH_WIDTH, SELECTED_STROKE, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
 } from "../../relationshipsTab.utils.ts";
 
 export interface CounterpartyGraphProps {
@@ -18,7 +18,7 @@ export interface CounterpartyGraphProps {
   selected: string | null;
   onSelect: (key: string | null) => void;
   locale: Locale;
-  copy: Pick<RelationshipsTabCopy, "recordCount" | "channels"> & { graph: CounterpartyGraphCopy };
+  copy: Pick<RelationshipsTabCopy, "recordCount"> & { graph: CounterpartyGraphCopy };
 }
 
 const MAX_LABEL = 22;
@@ -36,7 +36,8 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
     return <Typography color="text.secondary">{copy.graph.empty}</Typography>;
   }
   const money = (bani: string) => formatMoney(bani, locale);
-  const nameOf = (node: GraphNode) => (node.row.naturalPerson || !node.row.entity ? copy.graph.naturalPerson : node.row.entity.displayName);
+  // No Entity is either a natural person (ADR 0003) or the unidentified group (money nobody could link to an Entity): never call the latter a person.
+  const nameOf = (node: GraphNode) => (node.row.entity && !node.row.naturalPerson ? node.row.entity.displayName : node.row.naturalPerson ? copy.graph.naturalPerson : copy.graph.unknown);
   const nameParts = (node: GraphNode, isSelected: boolean) => ({
     name: nameOf(node),
     amount: money(node.row.total.awarded),
@@ -63,7 +64,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
         role="group"
         aria-label={copy.graph.label}
         viewBox={`${-GRAPH_WIDTH / 2} ${-GRAPH_HEIGHT / 2} ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
-        sx={{ width: "100%", height: "auto", maxHeight: 520, display: "block", "& [role=button]": { cursor: "pointer" }, "& [role=button]:focus-visible": { outline: "none" }, "& [role=button]:focus-visible circle.focus": { stroke: "#111827", strokeWidth: 3 } }}
+        sx={{ width: "100%", height: "auto", maxHeight: 520, display: "block", "& [role=button]": { cursor: "pointer" }, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none" }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" } }}
       >
         {nodes.map((node, i) => (
           <line
@@ -99,7 +100,9 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
             >
               <title>{label}</title>
               {node.row.hasSignals && <circle r={node.r + 5} fill="none" stroke={SIGNAL_RING_COLOR} strokeWidth={3} data-ring />}
-              <circle className="focus" r={node.r} fill={channelColor(node.channel)} fillOpacity={isSelected ? 1 : 0.7} stroke={isSelected ? "#111827" : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 1.5} data-radius={node.r} />
+              {/* A ring outside the node and its Signal ring, shown on keyboard focus only: selection (fill and stroke) never draws it. */}
+              {pickable && <circle r={node.r + 9} fill="none" stroke={FOCUS_COLOR} strokeWidth={3} strokeDasharray="2 3" data-focus-ring />}
+              <circle r={node.r} fill={channelColor(node.channel)} fillOpacity={isSelected ? 1 : 0.7} stroke={isSelected ? SELECTED_STROKE : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 1.5} data-radius={node.r} />
               <text y={node.r + (node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" aria-hidden="true">{shorten(nameOf(node))}</text>
             </g>
           );

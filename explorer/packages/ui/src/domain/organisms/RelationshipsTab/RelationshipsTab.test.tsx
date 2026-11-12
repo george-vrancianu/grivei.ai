@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import {
-  authorityPickedPanel, authorityTypicalPickedTimeline, authorityTypicalRelationships, consortiumHeavyRelationships, emptyRelationships,
+  authorityDirectSupplierPanel, authorityPickedPanel, authorityTypicalPickedTimeline, authorityTypicalRelationships, consortiumHeavyRelationships, emptyRelationships,
   naturalPersonRelationships, oneCounterpartyRelationships,
 } from "../../samples/fixtureData.ts";
 import { RelationshipsTab, type RelationshipsTabProps } from "./index.ts";
@@ -42,7 +42,7 @@ describe("RelationshipsTab", () => {
   it("shows the heading, a node per counterparty and the 'more' line", () => {
     renderInUi(<Harness />);
     expect(screen.getByRole("heading", { name: "Relationships" })).toBeVisible();
-    // Seven rows, six of them with an Entity: pickable buttons. The seventh is a natural person.
+    // Eight rows, six of them with an Entity: pickable buttons. The others are a natural person and the unidentified group.
     expect(screen.getAllByRole("button").filter((el) => el.hasAttribute("aria-pressed"))).toHaveLength(6);
     expect(screen.getByText("5 more counterparties")).toBeVisible();
   });
@@ -107,6 +107,13 @@ describe("RelationshipsTab", () => {
     expect(screen.getByText(copy.panel.hint)).toBeVisible();
   });
 
+  it("draws a keyboard focus ring on every pickable node, apart from the selection's own stroke", () => {
+    const { container } = renderInUi(<Harness initial="30000002" />);
+    expect(container.querySelectorAll("circle[data-focus-ring]")).toHaveLength(6);
+    expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).toHaveAttribute("stroke", "#111827");
+    expect(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')).toHaveAttribute("stroke", "#7c3aed");
+  });
+
   it("is picked from the keyboard with Enter and with Space", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
@@ -131,7 +138,33 @@ describe("RelationshipsTab", () => {
   it("shows a loading state while the picked counterparty's Records are on their way", () => {
     renderInUi(<RelationshipsTab {...common} selected="30000002" onSelect={vi.fn()} sidePanel={null} sidePanelLoading />);
     expect(screen.getByRole("status")).toHaveTextContent("Loading Records");
+    expect(screen.getByRole("complementary", { name: copy.panel.label })).toHaveAttribute("aria-busy", "true");
     expect(within(screen.getByRole("heading", { name: /Records with/ })).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toBeVisible();
+  });
+
+  it("labels money with no Entity that is not a natural person as unidentified, never as a person, and does not make it pickable", () => {
+    const { container } = renderInUi(<Harness />);
+    const unknown = screen.getByRole("img", { name: /^Unidentified counterparty, RON\s24,000/ });
+    expect(unknown).toBeVisible();
+    expect(screen.getByRole("img", { name: /^Persoană fizică, RON\s36,000/ })).toBeVisible();
+    expect(unknown).not.toHaveAttribute("tabindex");
+    expect(container.querySelectorAll('[role="img"][data-node="person"]')).toHaveLength(2);
+  });
+
+  it("names a picked counterparty beyond the shown rows from the panel's counterparty facet, without inventing an identity", () => {
+    renderInUi(<RelationshipsTab {...common} selected="30000001-beyond" onSelect={vi.fn()} sidePanel={{
+      ...authorityDirectSupplierPanel,
+      facets: { ...authorityDirectSupplierPanel.facets, counterparty: [{ entity: { key: "30000001-beyond", displayName: "NAME-ONLY FIRM", identity: "NAME_ONLY" }, matched: authorityDirectSupplierPanel.total }] },
+    }} />);
+    expect(within(screen.getByRole("heading", { name: /Records with/ })).getByText("NAME-ONLY FIRM")).toBeVisible();
+  });
+
+  it("shows no name, and invents none, for a picked key beyond the rows until its Records arrive", () => {
+    renderInUi(<RelationshipsTab {...common} selected="99999999" onSelect={vi.fn()} sidePanel={null} sidePanelLoading />);
+    const heading = screen.getByRole("heading", { name: /Records with/ });
+    expect(within(heading).queryByRole("link")).toBeNull();
+    expect(heading).not.toHaveTextContent("99999999");
+    expect(screen.getByRole("status")).toBeVisible();
   });
 
   it("gives a counterparty the other role's page", () => {
@@ -159,10 +192,12 @@ describe("RelationshipsTab", () => {
       <RelationshipsTab {...common} entity={rel.entity} role="supplier" counterparties={rel.counterparties} timeline={rel.timeline} selected={null} onSelect={vi.fn()} sidePanel={null} />,
     );
     const dashed = [...container.querySelectorAll("[data-edge]")].filter((edge) => edge.getAttribute("stroke-dasharray"));
-    expect(dashed).toHaveLength(7);
+    expect(dashed).toHaveLength(6);
     expect(screen.getByText(/split equally among its members, by convention/)).toBeVisible();
     expect(screen.getByText("Dashed line: won together")).toBeVisible();
-    expect(screen.getByRole("button", { name: /DRUMARII UNIȚI S\.R\.L\..*won together/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /MUNICIPIUL BRAȘOV.*won together/ })).toBeVisible();
+    // A supplier's counterparties are authorities: no supplier or partner is a node.
+    expect(screen.queryByRole("button", { name: /ASOCIEREA|GEOTEHNICA/ })).toBeNull();
   });
 
   it("shows no consortium note and no 'more' line for one plain counterparty", () => {

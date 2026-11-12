@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "../../../atoms/Button/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
-  authorityDirectSupplierPanel, authorityPickedPanel, authorityTypicalPickedTimeline, authorityTypicalRelationships, consortiumHeavyRelationships,
+  authorityDirectSupplierPanel, authorityPickedPanel, authorityTypicalPickedDirectTimeline, authorityTypicalPickedTimeline, authorityTypicalRelationships, consortiumHeavyRelationships,
   emptyRelationships, naturalPersonRelationships, oneCounterpartyRelationships, supplierPickedPanel, supplierPickedRelationships,
 } from "../../samples/fixtureData.ts";
 import type { CounterpartyRecordsData, EntityRole, RelationshipsTimeline } from "../../types.ts";
@@ -51,10 +51,10 @@ const render =
 
 const typicalPicked = {
   "30000002": { panel: authorityPickedPanel, timeline: authorityTypicalPickedTimeline },
-  "30000001": { panel: authorityDirectSupplierPanel, timeline: [{ month: "2024-01", total: authorityDirectSupplierPanel.total }] },
+  "30000001": { panel: authorityDirectSupplierPanel, timeline: authorityTypicalPickedDirectTimeline },
 } satisfies Record<string, Picked>;
 
-/** An authority with seven of twelve counterparties: blue edges for contracts, green for direct purchases, one Signal ring, a natural person. Click a node. */
+/** An authority with eight of thirteen counterparties: blue edges for contracts, green for direct purchases, one Signal ring, a natural person and an unidentified group. Click a node. */
 export const TypicalEntity: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", picked: typicalPicked, flow: true }) };
 /** A counterparty picked: the side panel lists its Records and the timeline marks its months over the overall bars. */
 export const PickedCounterparty: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", picked: typicalPicked, initial: "30000002" }) };
@@ -62,7 +62,7 @@ export const PickedCounterparty: Story = { render: render({ data: authorityTypic
 export const PickedDirectPurchaseSupplier: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", picked: typicalPicked, initial: "30000001" }) };
 /** An entity with a single counterparty: a graph of one node. */
 export const SingleCounterparty: Story = { render: render({ data: oneCounterpartyRelationships, role: "authority" }) };
-/** A supplier that mostly wins in consortia: many dashed (won together) edges and the equal-split convention note. */
+/** A supplier that mostly wins in consortia: its authorities with many dashed (won together) edges, and the equal-split convention note. */
 export const ConsortiumHeavySupplier: Story = { render: render({ data: consortiumHeavyRelationships, role: "supplier" }) };
 /** A supplier page with its largest authority picked. */
 export const SupplierPickedAuthority: Story = {

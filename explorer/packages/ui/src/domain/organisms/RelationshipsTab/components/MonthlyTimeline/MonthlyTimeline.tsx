@@ -9,7 +9,8 @@ import type { Locale } from "../../../../../theme/index.ts";
 import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
 import type { RelationshipsTimeline } from "../../../../types.ts";
 import type { MonthlyTimelineCopy } from "../../relationshipsTab.types.ts";
-import { TIMELINE_COLOR, TIMELINE_PICKED_COLOR, formatMonth, timelineBars } from "../../relationshipsTab.utils.ts";
+import { TIMELINE_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
+import { formatMonth } from "../../../../utils/formatDate.ts";
 
 export interface MonthlyTimelineProps {
   /** The entity's months in the filter. */

@@ -13,7 +13,9 @@ import type { CounterpartyRecordsData, EntityRef, EntityRole, RecordResult } fro
 import type { RelationshipsTabCopy } from "../../relationshipsTab.types.ts";
 
 export interface CounterpartyPanelProps {
-  /** The picked counterparty, or null when nothing is picked. */
+  /** Whether a counterparty is picked; false shows the hint. */
+  picked: boolean;
+  /** The picked counterparty, or null while its name is not known yet (it is beyond the graph's rows and its Records have not arrived). */
   counterparty: EntityRef | null;
   /** Records with it (`EntityRecords` with the counterparty in the filter); null while they have not arrived. */
   records: CounterpartyRecordsData | null;
@@ -32,10 +34,10 @@ export interface CounterpartyPanelProps {
 
 /** The side panel: every Record with the picked counterparty, or a hint while nothing is picked. */
 export function CounterpartyPanel({
-  counterparty, records, loading, counterpartyRole, onClose, paging, onNavigate, entityHref, recordHref, locale, copy,
+  picked, counterparty, records, loading, counterpartyRole, onClose, paging, onNavigate, entityHref, recordHref, locale, copy,
 }: CounterpartyPanelProps) {
   const { panel } = copy;
-  if (counterparty === null) {
+  if (!picked) {
     return (
       <Box component="aside" aria-label={panel.label}>
         <Typography color="text.secondary">{panel.hint}</Typography>
@@ -48,7 +50,7 @@ export function CounterpartyPanel({
       <Stack spacing={1.5}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
           <Typography variant="h6" component="h3">
-            {panel.heading} <EntityLink entity={counterparty} href={entityHref(counterparty, counterpartyRole)} copy={copy.entityLink} />
+            {panel.heading}{counterparty && <> <EntityLink entity={counterparty} href={entityHref(counterparty, counterpartyRole)} copy={copy.entityLink} /></>}
           </Typography>
           <Button size="small" onClick={onClose}>{panel.close}</Button>
         </Box>

@@ -20,6 +20,8 @@ export interface CounterpartyGraphCopy {
   label: string;
   /** The natural person's label: never a name (ADR 0003). */
   naturalPerson: string;
+  /** The label for money with no Entity that is not a natural person (a winner nobody could link, a Record with no winner, an unknown authority). */
+  unknown: string;
   /** A node's accessible name and hover text, in full: name, money, Records, the channel split and the markers. */
   node: (parts: NodeNameParts) => string;
   /** "N more counterparties", for a graph that shows the top rows of a longer list. */
@@ -77,8 +79,6 @@ export interface RelationshipsTabCopy {
   legend: GraphLegendCopy;
   timeline: MonthlyTimelineCopy;
   panel: CounterpartyPanelCopy;
-  /** The channel names, for node names and tooltips. */
-  channels: { contract: string; directPurchase: string };
   entityLink: EntityLinkCopy;
   recordRow: RecordResultRowCopy;
   pagination: PageNavCopy;
