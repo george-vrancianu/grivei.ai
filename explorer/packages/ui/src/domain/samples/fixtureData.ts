@@ -2,7 +2,7 @@
 // shown with the same invented world every screen uses. Nothing here ships in the app.
 import { fixtures } from "@grivei/contract/fixtures";
 import type { RecordFilter } from "@grivei/contract";
-import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordsTabData } from "../types.ts";
+import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordPageData, RecordsTabData } from "../types.ts";
 
 function named<T extends { name: string }>(set: readonly T[], name: string): T {
   const found = set.find((fixture) => fixture.name === name);
@@ -118,3 +118,42 @@ export const authorityOneSupplierRecords = recordsOf("authority-one-supplier");
 export const authorityOneSupplierFilter = filterOf("authority-one-supplier");
 /** A huge set: estimated total and counts, many pages. */
 export const authorityEstimatedRecords = recordsOf("authority-estimated-total");
+
+// ---- the Record page (`RecordPage` fixtures) ----------------------------------------------------------------
+
+function recordPage(name: string): RecordPageData {
+  const found = fixtures.RecordPage.find((fixture) => fixture.name === name)?.data.seap.record;
+  if (!found) throw new Error(`No RecordPage fixture named ${name} with a Record`);
+  return found;
+}
+/** A direct purchase above the cap, with its over-cap Signal. */
+export const directPurchaseRecord = recordPage("direct-purchase-over-cap");
+/** A contract (single winner, no caveats): the plain case. */
+export const contractRecord = recordPage("contract-single-winner");
+/** A consortium of two CUI entities: the full value and each member's equal share. */
+export const consortiumPage = recordPage("consortium-contract");
+/** A consortium of a foreign firm and a name-only association. */
+export const consortiumNameOnlyPage = recordPage("consortium-name-only");
+/** A framework agreement: ceiling, subsequent contracts reported so far (over the ceiling) and one subsequent contract listed. */
+export const frameworkPage = recordPage("framework-ceiling");
+/** A subsequent contract, pointing back to its framework. */
+export const subsequentPage = recordPage("subsequent-contract");
+/** A framework whose ceiling is blank: no ratio. */
+export const blankCeilingPage = recordPage("framework-blank-ceiling");
+/** A suspect value under each rule. */
+export const suspectDirectPage = recordPage("suspect-value");
+export const suspectOverEstimatePage = recordPage("suspect-contract-over-estimate");
+export const suspectNoEstimatePage = recordPage("suspect-contract-no-estimate");
+/** A Record with no value in SEAP and a no-publication Signal. */
+export const noValuePage = recordPage("no-value");
+/** A natural-person winner: never named, never linked. */
+export const naturalPersonPage = recordPage("natural-person-winner");
+/** A Record inside a splitting Signal. */
+export const splittingPage = recordPage("splitting-signal");
+/** Crawled provisional, no stable public URL, five badges. */
+export const provisionalPage = recordPage("provisional-and-mismatch");
+/** Every badge there is, for the story and test that show each explanation. */
+export const everyBadgePage: RecordPageData = {
+  ...provisionalPage,
+  badges: ["FRAMEWORK_CEILING", "SUBSEQUENT_CONTRACT", "CONSORTIUM_SHARE", "SUSPECT_VALUE", "NO_VALUE", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWLED_PROVISIONAL", "CRAWL_ONLY"],
+};

@@ -3,6 +3,7 @@ import { AppLink } from "./components/AppLink/index.ts";
 import { EntityPage } from "./pages/EntityPage/index.ts";
 import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
 import { PlaceholderPage } from "./pages/PlaceholderPage/index.ts";
+import { RecordPage } from "./pages/RecordPage/index.ts";
 import { SearchPage } from "./pages/SearchPage/index.ts";
 import { useLocation } from "./routing/location.tsx";
 import { pathFor } from "./routing/routes.ts";
@@ -20,7 +21,7 @@ export function Routes() {
     case "entity":
       return <EntityPage locale={locale} entity={route.entity} entityKey={route.key} view={route.view} />;
     case "record":
-      return <PlaceholderPage title={t.pages.record.title} body={body} detail={route.code} />;
+      return <RecordPage locale={locale} code={route.code} />;
     case "coverage":
       return <PlaceholderPage title={t.pages.coverage.title} body={body} />;
     case "methodology":

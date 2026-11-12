@@ -21,7 +21,125 @@ import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/ind
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
+import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
+
+const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
+  en: {
+    heading: {
+      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
+      facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+    },
+    value: {
+      published: "Value as published",
+      counted: "Counted value",
+      noValue: "No value in SEAP",
+      notCounted: {
+        suspect: "Not counted: the published value breaks a counting rule",
+        frameworkCeiling: "Not counted: a framework ceiling is not money awarded; its subsequent contracts are counted instead",
+        noValue: "Nothing to count: SEAP publishes no value",
+        other: "Not counted",
+      },
+    },
+    parties: {
+      authority: "Contracting authority",
+      winners: "Winners",
+      share: (amount) => `equal share ${amount}`,
+      convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
+    },
+    suspect: {
+      heading: "Suspect value rule",
+      rules: {
+        DIRECT_PURCHASE_10X_CAP: (t) => `The published value is at least ten times the cap in force for a direct purchase of this date and type${t ? ` (${t})` : ""}.`,
+        CONTRACT_100X_ESTIMATE: (t) => `The published value is 1 bn RON or more, and at least a hundred times the estimated value in e-licitatie${t ? ` (${t})` : ""}.`,
+        CONTRACT_OVER_50BN: () => "The published value is above 50 bn RON and e-licitatie gives no estimated value.",
+      },
+      leftOut: "The value is shown as published and left out of totals.",
+      methodology: "How values are counted",
+    },
+    framework: {
+      heading: "Framework agreement",
+      line: (ceiling, reported, percent) => `Ceiling ${ceiling}; subsequent contracts reported so far ${reported} (${percent})`,
+      lineBlankCeiling: (reported) => `Ceiling not published; subsequent contracts reported so far ${reported}`,
+      agreement: "Awarded under the framework agreement",
+      subsequentHeading: "Subsequent contracts",
+    },
+    badges: { heading: "Badges and what they mean" },
+    signals: {
+      heading: "Signals this Record belongs to",
+      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      date: (when) => `dated ${when}`,
+      records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
+    },
+    provenance: {
+      heading: "Provenance",
+      source: "Source",
+      via: "File or notice",
+      kind: "How we got it",
+      kinds: { BULK: "Published bulk file", CRAWL: "Read from the Source's own site", API: "Read from the Source's API" },
+      fetchedAt: "Fetched",
+      checkIn: (source) => `Check in ${source}`,
+      noPublicPage: (source) => `${source} has no stable public page for this Record yet.`,
+    },
+  },
+  ro: {
+    heading: {
+      kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
+      facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+    },
+    value: {
+      published: "Valoare publicată",
+      counted: "Valoare luată în calcul",
+      noValue: "Nicio valoare în SEAP",
+      notCounted: {
+        suspect: "Nu se ia în calcul: valoarea publicată încalcă o regulă de calcul",
+        frameworkCeiling: "Nu se ia în calcul: plafonul unui acord-cadru nu este bani atribuiți; se iau în calcul contractele subsecvente",
+        noValue: "Nu e nimic de luat în calcul: SEAP nu publică nicio valoare",
+        other: "Nu se ia în calcul",
+      },
+    },
+    parties: {
+      authority: "Autoritate contractantă",
+      winners: "Câștigători",
+      share: (amount) => `parte egală ${amount}`,
+      convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
+    },
+    suspect: {
+      heading: "Regula valorii suspecte",
+      rules: {
+        DIRECT_PURCHASE_10X_CAP: (t) => `Valoarea publicată este de cel puțin zece ori plafonul în vigoare pentru o achiziție directă de această dată și de acest tip${t ? ` (${t})` : ""}.`,
+        CONTRACT_100X_ESTIMATE: (t) => `Valoarea publicată este de cel puțin 1 miliard RON și de cel puțin o sută de ori valoarea estimată din e-licitatie${t ? ` (${t})` : ""}.`,
+        CONTRACT_OVER_50BN: () => "Valoarea publicată depășește 50 de miliarde RON, iar e-licitatie nu indică o valoare estimată.",
+      },
+      leftOut: "Valoarea este afișată așa cum a fost publicată și este lăsată în afara totalurilor.",
+      methodology: "Cum se calculează valorile",
+    },
+    framework: {
+      heading: "Acord-cadru",
+      line: (ceiling, reported, percent) => `Plafon ${ceiling}; contracte subsecvente raportate până acum ${reported} (${percent})`,
+      lineBlankCeiling: (reported) => `Plafon nepublicat; contracte subsecvente raportate până acum ${reported}`,
+      agreement: "Atribuit în baza acordului-cadru",
+      subsequentHeading: "Contracte subsecvente",
+    },
+    badges: { heading: "Insigne și semnificația lor" },
+    signals: {
+      heading: "Semnalele din care face parte această înregistrare",
+      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      date: (when) => `din ${when}`,
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+    },
+    provenance: {
+      heading: "Proveniență",
+      source: "Sursă",
+      via: "Fișier sau anunț",
+      kind: "Cum l-am obținut",
+      kinds: { BULK: "Fișier public în masă", CRAWL: "Citit de pe site-ul Sursei", API: "Citit din API-ul Sursei" },
+      fetchedAt: "Preluat la",
+      checkIn: (source) => `Verifică în ${source}`,
+      noPublicPage: (source) => `${source} nu are încă o pagină publică stabilă pentru această înregistrare.`,
+    },
+  },
+};
 
 const badges: Record<Locale, BadgeCopy> = {
   en: {
@@ -342,6 +460,7 @@ export const sampleCopy = {
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
   entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
+  recordDetail: (locale: Locale): RecordDetailCopy => ({ ...recordDetail[locale], recordRow: recordRow(locale) }),
   entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
   mainScreenLayout: (locale: Locale): MainScreenLayoutCopy => mainScreenLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>

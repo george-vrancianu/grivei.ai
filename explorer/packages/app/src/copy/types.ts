@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -44,6 +44,8 @@ export interface Copy {
   party: PartyNameCopy;
   dataThrough: DataThroughDateCopy;
   total: TotalFigureCopy;
+  /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */
+  recordPage: Omit<RecordDetailCopy, "recordRow"> & { notFound: { title: string; body: (code: string) => string } };
   /** The Entity pages: the layout's tab names, the header, and what each tab's body says until its ticket fills it. */
   entityPage: {
     layout: EntityPageLayoutCopy;

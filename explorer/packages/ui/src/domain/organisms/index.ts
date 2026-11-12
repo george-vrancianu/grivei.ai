@@ -7,3 +7,4 @@ export * from "./CoverageLensMap/index.ts";
 export * from "./FullResults/index.ts";
 export * from "./RecordsTab/index.ts";
 export * from "./FlowLensMap/index.ts";
+export * from "./RecordDetail/index.ts";
