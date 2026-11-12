@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, MainScreenLayoutCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -22,6 +22,8 @@ export interface Copy {
   searchField: { label: string; placeholder: string };
   /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */
   results: ResultTabsCopy;
+  /** The full-results view at `/explore/search`: the rows come from `results` (same row copy as the tabs), the rest is here. */
+  fullResults: Omit<FullResultsCopy, "entityRow" | "recordRow">;
   /** The filter chips bar under the search field. */
   filterChips: FilterChipsCopy;
   /** The main screen template: lens toggle and region names. */

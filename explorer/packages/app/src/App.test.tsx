@@ -66,6 +66,22 @@ describe("the main screen for the empty filter", () => {
     expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: /COMPANIA NAȚIONALĂ/ })).toHaveAttribute("href", "/ro/explore/authority/4000002");
   });
 
+  it("links \"show all\" to the full-results view of the open tab, carrying the language", async () => {
+    openAt("/ro/explore/?tab=authorities");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    await screen.findByRole("tab", { name: /^Autorități/ });
+    expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: "Arată toate cele 5.100" })).toHaveAttribute("href", "/ro/explore/search?tab=authorities");
+  });
+
+  it("links \"show all\" for the default tab without a tab in the URL", async () => {
+    openAt("/explore/");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    await screen.findByRole("tab", { name: /^Suppliers/ });
+    expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: "Show all 41,000" })).toHaveAttribute("href", "/explore/search");
+  });
+
   it("keeps the URL canonical: choosing the default tab (Suppliers) leaves it out of the URL", async () => {
     openAt("/explore/?tab=records");
     const { client } = fixtureClient();

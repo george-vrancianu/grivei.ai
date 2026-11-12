@@ -62,6 +62,15 @@ export const ro: Copy = {
       party: { naturalPerson: "Persoană fizică", entityLink },
     },
   },
+  fullResults: {
+    heading: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
+    showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
+    empty: { authorities: "Nicio autoritate nu corespunde.", suppliers: "Niciun furnizor nu corespunde.", records: "Nicio înregistrare nu corespunde." },
+    outOfRange: (_pages, formatted) => `Această pagină este după ultima: sunt doar ${formatted} pagini.`,
+    firstPage: "Mergi la pagina 1",
+    back: "Înapoi la rezultate",
+    pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
+  },
   mainScreenLayout: {
     lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
     regions: { search: "Căutare", map: "Harta", results: "Rezultate" },

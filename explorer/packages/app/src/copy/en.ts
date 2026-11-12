@@ -57,6 +57,15 @@ export const en: Copy = {
       party: { naturalPerson: "Persoană fizică", entityLink },
     },
   },
+  fullResults: {
+    heading: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
+    showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
+    empty: { authorities: "No authorities match.", suppliers: "No suppliers match.", records: "No Records match." },
+    outOfRange: (_pages, formatted) => `This page is past the end: there are only ${formatted} pages.`,
+    firstPage: "Go to page 1",
+    back: "Back to results",
+    pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
+  },
   mainScreenLayout: {
     lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
     regions: { search: "Search", map: "Map", results: "Results" },
