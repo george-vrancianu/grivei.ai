@@ -447,14 +447,17 @@ const relRow = (
   viaContract: contract === 0 ? zeroTotal : total({ awarded: ron(contract), records: contractRecords }),
   wonTogether: o.wonTogether ?? false, hasSignals: o.hasSignals ?? false,
 });
-const consortiumPartner1 = entityRef("30000011", "ASOCIEREA PODURI TRANSILVANIA");
-const consortiumPartner2 = entityRef("30000012", "ENERGO MONTAJ S.R.L.");
+// Invented authorities for the consortium-heavy supplier's graph (a supplier's counterparties are authorities).
+const authorityClujNapoca = entityRef("4000011", "MUNICIPIUL CLUJ-NAPOCA");
+const authorityJudetSibiu = entityRef("4000012", "CONSILIUL JUDEȚEAN SIBIU");
+const authoritySinaia = entityRef("4000013", "ORAȘUL SINAIA");
+const authorityBragadiru = entityRef("4000014", "COMUNA BRAGADIRU");
+const authorityScoala = entityRef("4000015", "ȘCOALA GIMNAZIALĂ NR. 1 TÂRGU MUREȘ");
 const consortiumPartner3 = entityRef("30000013", "GEOTEHNICA PROIECT S.A.");
-const consortiumPartner4 = entityRef("30000014", "AGREGATE MUREȘ S.R.L.");
 const electro = entityRef("30000010", "ELECTRO SERV S.R.L.");
 const verde = entityRef("30000015", "VERDE URBAN S.R.L.");
 const typicalCounterparties: RelCounterparties = {
-  count: 12, topShare: 0.81,
+  count: 13, topShare: 0.81,
   rows: [
     relRow(w.constructii, 0, 0, 12_800_000, 1),
     relRow(w.drumarii, 300_000, 3, 3_100_000, 2, { hasSignals: true }),
@@ -463,12 +466,18 @@ const typicalCounterparties: RelCounterparties = {
     relRow(verde, 120_000, 2, 100_000, 1),
     relRow(consortiumPartner3, 0, 0, 64_000, 1),
     { ...relRow(w.hachi, 36_000, 1, 0, 0), entity: null, naturalPerson: true },
+    // The unidentified group: money no Entity could be linked to. It is not a natural person.
+    { ...relRow(w.hachi, 24_000, 1, 0, 0), entity: null },
   ],
 };
-const typicalTimeline = [
-  ["2023-07", 95_000, 1], ["2023-08", 0, 0], ["2023-09", 230_000, 3], ["2023-10", 410_000, 4], ["2023-11", 12_900_000, 3], ["2023-12", 120_000, 2],
-  ["2024-01", 308_400, 3], ["2024-02", 8_400, 1], ["2024-03", 3_100_000, 2], ["2024-04", 36_000, 1], ["2024-05", 0, 0], ["2024-06", 36_000, 1],
-].map(([month, amount, records]) => ({ month: month as string, total: amount === 0 ? zeroTotal : total({ awarded: ron(amount as number), records: records as number }) }));
+// The overall months: every shown row's money in its months, plus the five counterparties not shown (about 19% of the money, topShare 0.81).
+const monthly = (rows: [string, number, number][]) =>
+  rows.map(([month, amount, records]) => ({ month, total: amount === 0 ? zeroTotal : total({ awarded: ron(amount), records }) }));
+const typicalTimeline = monthly([
+  ["2023-07", 95_000, 1], ["2023-09", 300_000, 3], ["2023-10", 410_000, 6], ["2023-11", 12_800_000, 1], ["2023-12", 120_000, 2],
+  ["2024-01", 300_000, 1], ["2024-02", 2_008_400, 3], ["2024-03", 3_100_000, 2], ["2024-04", 124_000, 2], ["2024-05", 64_000, 1],
+  ["2024-06", 2_058_600, 4], ["2024-07", 290_000, 2],
+]);
 
 export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRelationshipsQueryVariables> = [
   {
@@ -534,7 +543,7 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
   },
   {
     name: "authority-typical-view", kind: "typical",
-    description: "an authority's Relationships tab: seven top counterparties of twelve (contract, direct purchase and mixed, a Signal ring, a natural person), a monthly timeline",
+    description: "an authority's Relationships tab: eight top counterparties of thirteen (contract, direct purchase and mixed, a Signal ring, a natural person, an unidentified group), a monthly timeline",
     variables: { key: "4000001", role: "AUTHORITY", filter: {} },
     data: { entity: withSeap(w.primariaBrasovHeader, { role: "AUTHORITY" as Role, counterparties: typicalCounterparties, timeline: typicalTimeline, flow: moneyMap({ side: "SUPPLIER" }) }) },
   },
@@ -549,6 +558,16 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
     }) },
   },
   {
+    name: "authority-typical-picked-direct", kind: "typical",
+    description: "the same tab with the direct-purchase supplier picked: its months (a part of 2024-01, 2024-02 and 2024-07 of the overall timeline)",
+    variables: { key: "4000001", role: "AUTHORITY", filter: {}, counterparty: "30000001" },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role, counterparties: typicalCounterparties,
+      timeline: monthly([["2024-01", 300_000, 1], ["2024-02", 8_400, 1], ["2024-07", 290_000, 2]]),
+      flow: moneyMap({ side: "SUPPLIER" }),
+    }) },
+  },
+  {
     name: "supplier-picked-authority", kind: "typical",
     description: "a supplier's Relationships tab with its largest authority picked: that authority's months only",
     variables: { key: "30000001", role: "SUPPLIER", filter: {}, counterparty: "4000001" },
@@ -556,7 +575,7 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
       role: "SUPPLIER" as Role,
       counterparties: { count: 1, topShare: 1, rows: [relRow(w.primariaBrasov, 598_400, 4, 0, 0, { hasSignals: true })] },
       timeline: [
-        { month: "2024-01", total: total({ awarded: ron(308_400), records: 2 }) },
+        { month: "2024-01", total: total({ awarded: ron(300_000), records: 1 }) },
         { month: "2024-02", total: total({ awarded: ron(8_400), records: 1 }) },
         { month: "2024-07", total: total({ awarded: ron(290_000), records: 2 }) },
       ],
@@ -576,30 +595,26 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
   },
   {
     name: "supplier-consortium-heavy", kind: "extreme",
-    description: "a supplier that mostly bids in consortia: two authorities and six partners it won together with (wonTogether), one a name-only association",
+    description: "a supplier that mostly wins in consortia: eight authorities, six of them with Records that had several winners (wonTogether); its co-winners are the Overview's consortia, not nodes here",
     variables: { key: "30000002", role: "SUPPLIER", filter: {} },
     data: { entity: withSeap(entityHeader(w.constructiiRow, { seap: { roles: ["SUPPLIER"] } }), {
       role: "SUPPLIER" as Role,
       counterparties: {
-        count: 9, topShare: 0.58,
+        count: 8, topShare: 1,
         rows: [
-          relRow(w.drumuriNationale, 0, 0, 15_000_000, 1, { hasSignals: true }),
-          relRow(w.primariaBrasov, 0, 0, 12_800_000, 1),
-          relRow(w.drumarii, 0, 0, 15_000_000, 1, { wonTogether: true }),
-          relRow(consortiumPartner1, 0, 0, 9_000_000, 2, { wonTogether: true }),
-          relRow(consortiumPartner2, 0, 0, 6_500_000, 2, { wonTogether: true }),
-          relRow(consortiumPartner3, 0, 0, 4_200_000, 1, { wonTogether: true }),
-          relRow(w.asociere, 0, 0, 2_250_000, 1, { wonTogether: true }),
-          relRow(consortiumPartner4, 0, 0, 1_100_000, 1, { wonTogether: true }),
-          relRow(w.hachi, 0, 0, 650_000, 1, { wonTogether: true }),
+          relRow(w.drumuriNationale, 0, 0, 15_000_000, 1, { hasSignals: true, wonTogether: true }),
+          relRow(w.primariaBrasov, 0, 0, 12_800_000, 1, { wonTogether: true }),
+          relRow(authorityClujNapoca, 0, 0, 9_000_000, 2, { wonTogether: true }),
+          relRow(authorityJudetSibiu, 0, 0, 6_500_000, 2, { wonTogether: true }),
+          relRow(authoritySinaia, 0, 0, 4_200_000, 1, { wonTogether: true }),
+          relRow(authorityScoala, 0, 0, 2_250_000, 1),
+          relRow(authorityBragadiru, 0, 0, 1_100_000, 1, { wonTogether: true }),
+          relRow(w.spitalSibiu, 0, 0, 650_000, 1),
         ],
       } satisfies RelCounterparties,
-      timeline: [
-        { month: "2023-11", total: total({ awarded: ron(12_800_000), records: 1 }) },
-        { month: "2024-02", total: total({ awarded: ron(4_500_000), records: 2 }) },
-        { month: "2024-05", total: total({ awarded: ron(30_000_000), records: 2 }) },
-        { month: "2024-11", total: total({ awarded: ron(650_000), records: 1 }) },
-      ],
+      timeline: monthly([
+        ["2023-11", 12_800_000, 1], ["2024-02", 3_350_000, 2], ["2024-05", 24_000_000, 3], ["2024-08", 10_700_000, 3], ["2024-11", 650_000, 1],
+      ]),
       flow: moneyMap({ side: "AUTHORITY", counties: [{ area: "RO-BV", name: "Brașov", entities: 1, total: total({ awarded: ron(12_800_000), records: 1 }) }], national: total({ awarded: ron(15_000_000), records: 1 }) }),
     }) },
   },

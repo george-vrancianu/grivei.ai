@@ -189,13 +189,15 @@ function relationships(name: string): RelationshipsSample {
   return { entity, counterparties: role.counterparties, timeline: role.timeline };
 }
 const panelOf = (name: string): CounterpartyRecordsData => {
-  const { total, records } = recordsOf(name);
-  return { total, records };
+  const { total, records, facets } = recordsOf(name);
+  return { total, records, facets };
 };
-/** An authority with seven counterparties shown of twelve: contracts, direct purchases, a mix, a Signal ring and a natural person. */
+/** An authority with eight counterparties shown of thirteen: contracts, direct purchases, a mix, a Signal ring, a natural person and an unidentified group. */
 export const authorityTypicalRelationships = relationships("authority-typical-view");
 /** The same tab with the contract supplier picked: its months. */
 export const authorityTypicalPickedTimeline = named(fixtures.EntityRelationships, "authority-typical-picked").data.entity!.seap.role!.timeline;
+/** The direct-purchase supplier picked: its months, a part of the overall ones. */
+export const authorityTypicalPickedDirectTimeline = named(fixtures.EntityRelationships, "authority-typical-picked-direct").data.entity!.seap.role!.timeline;
 /** Records with that contract supplier (authority 4000001, supplier 30000002). */
 export const authorityPickedPanel = panelOf("authority-one-supplier-contract");
 /** Records with the direct-purchase supplier (authority 4000001, supplier 30000001): four Records. */
