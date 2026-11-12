@@ -2,6 +2,7 @@ import { Link } from "../../../../../atoms/Link/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import { pageItems } from "../../fullResults.utils.ts";
 
@@ -26,14 +27,15 @@ export interface PageNavProps {
 
 /** Previous and next links with the page numbers between: real links, so every page can be cited and opened without JavaScript. */
 export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: PageNavProps) {
-  const format = new Intl.NumberFormat(locale);
+  const format = (n: number) => formatCount(n, false, locale);
   const step = (target: number, text: string, enabled: boolean) =>
     enabled ? (
       <Link href={pageHref(target)} onClick={followLink(pageHref(target), onNavigate)} rel={target < page ? "prev" : "next"}>
         {text}
       </Link>
     ) : (
-      <Typography component="span" color="text.disabled" aria-disabled="true">
+      // Nothing to follow: the edge is clear from the page links, so no stray "Previous" for a screen reader.
+      <Typography component="span" color="text.disabled" aria-hidden="true">
         {text}
       </Typography>
     );
@@ -51,12 +53,12 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
               key={item}
               href={pageHref(item)}
               onClick={followLink(pageHref(item), onNavigate)}
-              aria-label={copy.page(format.format(item))}
+              aria-label={copy.page(format(item))}
               aria-current={item === page ? "page" : undefined}
               underline={item === page ? "none" : "always"}
               sx={item === page ? { fontWeight: "bold" } : undefined}
             >
-              {format.format(item)}
+              {format(item)}
             </Link>
           ),
         )}
