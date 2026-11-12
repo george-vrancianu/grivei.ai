@@ -11,7 +11,7 @@ const formatValue = (value: number) => `${value} RON`;
 const values = { "RO-BV": 100, "RO-CJ": 1000, "RO-TM": 0 };
 
 function setup(props: Partial<BaseMapProps> = {}) {
-  return render(<BaseMap topology={countiesTopology} values={values} formatValue={formatValue} copy={copy} {...props} />);
+  return render(<BaseMap topology={countiesTopology} values={values} formatValue={formatValue} copy={copy} onSelect={() => {}} {...props} />);
 }
 
 describe("BaseMap", () => {
@@ -83,6 +83,62 @@ describe("BaseMap", () => {
     const lowest = createColorScale("log", [100, 1000]).color(0);
     expect(screen.getByRole("button", { name: "Timiș: 0 RON" })).toHaveAttribute("fill", lowest);
     expect(screen.getByRole("button", { name: "Brașov: 100 RON" })).toHaveAttribute("fill", lowest);
+  });
+
+  it("shows areas as images, not buttons, when nothing can be selected", () => {
+    setup({ onSelect: undefined, selected: "RO-CJ" });
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    const area = screen.getByRole("img", { name: "Cluj: 1000 RON" });
+    expect(area).not.toHaveAttribute("aria-pressed");
+  });
+
+  it("starts the linear legend at zero, so colour tracks absolute size", () => {
+    setup({ values: { "RO-BV": 300, "RO-CJ": 310 } });
+    const legend = screen.getByRole("region", { name: "Contracted value" });
+    expect(within(legend).getByText("0 RON")).toBeVisible();
+    const near = screen.getByRole("button", { name: "Brașov: 300 RON" }).getAttribute("fill");
+    expect(near).not.toBe(createColorScale("linear", [0, 310]).color(0));
+  });
+
+  it("marks the log legend's low end as 'up to' when zeros take the lowest colour", () => {
+    setup({ scale: "log" });
+    const legend = screen.getByRole("region", { name: "Contracted value" });
+    expect(within(legend).getByText("up to 100 RON")).toBeVisible();
+  });
+
+  it("tells formatValue which area it formats, so a lens can use an exact amount", () => {
+    const exact: Record<string, string> = { "RO-CJ": "1000,00 RON exact" };
+    setup({ formatValue: (value, code) => (code ? (exact[code] ?? `${value} RON`) : `${value} RON`) });
+    expect(screen.getByRole("button", { name: "Cluj: 1000,00 RON exact" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Brașov: 100 RON" })).toBeVisible();
+    const legend = screen.getByRole("region", { name: "Contracted value" });
+    expect(within(legend).getByText("1000,00 RON exact")).toBeVisible();
+  });
+
+  it("lets a lens colour areas itself (categorical fill) and supply its own legend", () => {
+    setup({
+      colorOf: (code) => (code === "RO-CJ" ? "#2e7d32" : code === "RO-BV" ? "#f9a825" : null),
+      legend: <p>Harvested / partial</p>,
+    });
+    expect(screen.getByRole("button", { name: "Cluj: 1000 RON" })).toHaveAttribute("fill", "#2e7d32");
+    expect(screen.getByRole("button", { name: "Brașov: 100 RON" })).toHaveAttribute("fill", "#f9a825");
+    expect(screen.getByRole("button", { name: "Suceava: No data" })).toHaveAttribute("fill", NO_DATA_COLOR);
+    expect(screen.getByText("Harvested / partial")).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Contracted value" })).not.toBeInTheDocument();
+  });
+
+  it("draws overlay marks at projected area centres, without taking pointer events", () => {
+    const seen: { width: number; height: number; codes: string[]; projected: boolean }[] = [];
+    setup({
+      renderOverlay: ({ centroids, project, width, height }) => {
+        seen.push({ width, height, codes: [...centroids.keys()], projected: project([25, 46]) !== null });
+        return [...centroids].map(([code, [x, y]]) => <circle key={code} data-testid="mark" cx={x} cy={y} r={3} />);
+      },
+    });
+    expect(screen.getAllByTestId("mark")).toHaveLength(9);
+    expect(screen.getAllByTestId("mark")[0]!.parentElement).toHaveAttribute("pointer-events", "none");
+    expect(seen[0]).toMatchObject({ width: 640, height: 420, projected: true });
+    expect(seen[0]!.codes).toContain("RO-CJ");
   });
 
   it("highlights the selected area", () => {
