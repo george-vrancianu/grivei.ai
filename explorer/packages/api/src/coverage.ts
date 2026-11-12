@@ -6,11 +6,12 @@
  *   cells that overlap the window, by their state:
  *     good     LOADED
  *     flagged  KNOWN_GAP, POSSIBLY_INCOMPLETE (a published rule or a hand-entered reason), NOT_IN_SOURCE (the Source itself lacks it),
- *              CRAWLED_PROVISIONAL (crawled, awaiting the bulk file)
- *     missing  NOT_YET_LOADED (nothing of that quarter and kind is in the graph)
+ *              CRAWLED_PROVISIONAL (crawled, awaiting the bulk file), and NOT_YET_LOADED with rule AWAITING_BULK_FILE (the expected lag:
+ *              the quarter's bulk file is not published yet, so the current quarter's cells are always like this)
+ *     missing  NOT_YET_LOADED with no rule (a bulk file of it was quarantined: a real hole)
  *
- *   no cell in the window, or every cell missing  -> NOT_HARVESTED
- *   some cell missing                              -> PARTIAL
+ *   no cell in the window, or every cell NOT_YET_LOADED (whatever its rule)  -> NOT_HARVESTED
+ *   some cell missing                                                          -> PARTIAL
  *   else some cell flagged                         -> HARVESTED_WITH_KNOWN_GAPS
  *   else                                           -> HARVESTED
  *
@@ -22,8 +23,9 @@ export type CoverageStatus = "HARVESTED" | "HARVESTED_WITH_KNOWN_GAPS" | "PARTIA
 
 const FLAGGED = new Set(["KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL"]);
 
-export function coverageStatus(cells: { state: string }[]): CoverageStatus {
+export function coverageStatus(cells: { state: string; rule?: string | null }[]): CoverageStatus {
   if (cells.length === 0 || cells.every((c) => c.state === "NOT_YET_LOADED")) return "NOT_HARVESTED";
-  if (cells.some((c) => c.state === "NOT_YET_LOADED")) return "PARTIAL";
-  return cells.some((c) => FLAGGED.has(c.state)) ? "HARVESTED_WITH_KNOWN_GAPS" : "HARVESTED";
+  const awaiting = (c: { state: string; rule?: string | null }) => c.state === "NOT_YET_LOADED" && c.rule === "AWAITING_BULK_FILE";
+  if (cells.some((c) => c.state === "NOT_YET_LOADED" && !awaiting(c))) return "PARTIAL";
+  return cells.some((c) => FLAGGED.has(c.state) || awaiting(c)) ? "HARVESTED_WITH_KNOWN_GAPS" : "HARVESTED";
 }

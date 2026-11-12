@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -49,12 +50,17 @@ class MfSummary:
     national: int = 0
     no_county: int = 0
     duplicates: int = 0
+    unmatched: Counter = field(default_factory=Counter)  # `Judet` values that are no county (non-national rows), with their rows
     skipped: list[str] = field(default_factory=list)  # newer units that did not parse
+
+    def _unmatched_text(self) -> str:
+        top = self.unmatched.most_common(5)
+        return " (" + ", ".join(f"{name or '(blank)'}: {n}" for name, n in top) + (", ..." if len(self.unmatched) > len(top) else "") + ")" if top else ""
 
     def line(self) -> str:
         if self.snapshot is None:
             return "mf list: none archived (run `pipeline fetch-mf`): the Coverage denominator is empty" + "".join(f"; skipped {s}" for s in self.skipped)
-        return (f"mf list: snapshot {self.snapshot}, {self.entities} public entities, {self.national} national, {self.no_county} without a county"
+        return (f"mf list: snapshot {self.snapshot}, {self.entities} public entities, {self.national} national, {self.no_county} without a county{self._unmatched_text()}"
                 + (f", {self.duplicates} repeated CUIs dropped" if self.duplicates else "") + "".join(f"; skipped {s}" for s in self.skipped))
 
 
@@ -100,13 +106,16 @@ def read_list(path: Path) -> list[MfRow]:
     return out
 
 
-def snapshot_of(unit: Unit) -> date:
-    return date.fromisoformat(unit.unit)
+def snapshot_of(unit: Unit) -> date | None:
+    try:
+        return date.fromisoformat(unit.unit)
+    except ValueError:
+        return None
 
 
 def latest_units(archive: Archive) -> list[Unit]:
     """The MF units, newest snapshot first, then newest fetch first."""
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND)]
+    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND) and snapshot_of(u) is not None]  # a stray directory is no snapshot
     return sorted(units, key=lambda u: (u.unit, u.fetched_at, str(u.path)), reverse=True)
 
 
@@ -122,7 +131,9 @@ def classify(rows: list[MfRow], gaz: Gazetteer, observations: Mapping[str, Obser
         national, by = decide(r.cui, observations.get(r.cui), entries)
         summary.entities += 1
         summary.national += national
-        summary.no_county += county is None and not national
+        if county is None and not national:
+            summary.no_county += 1
+            summary.unmatched[r.county] += 1
         out.append((r.cui, r.name, county, r.uat or None, national, by))
     return out, summary
 
@@ -151,6 +162,6 @@ def build_mf(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None 
                     (summary.snapshot, unit.fetched_at, str((unit.path / name).relative_to(archive.root)), summary.entities))
         cur.executemany("INSERT INTO core.mf_entity (cui, name, county_iso, uat_name, national, national_by) VALUES (%s, %s, %s, %s, %s, %s)", data)
         if summary.no_county:
-            log.warning("mf list: %d entities have a Judet that is no county; they count in no county's M", summary.no_county)
+            log.warning("mf list: %d entities have a Judet that is no county; they count in no county's M: %s", summary.no_county, dict(summary.unmatched.most_common(10)))
         return summary
     return MfSummary(skipped=skipped)

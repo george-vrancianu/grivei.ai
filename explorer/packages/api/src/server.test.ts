@@ -198,6 +198,7 @@ describe("Coverage grid (#79)", () => {
 
 describe("Coverage status (#80): derived from the grid cells of the window", () => {
   const cells = (...states: string[]) => states.map((state) => ({ state }));
+  const awaiting = { state: "NOT_YET_LOADED", rule: "AWAITING_BULK_FILE" };
   it("is not harvested when the window holds no cell, or every cell is not yet loaded", () => {
     expect(coverageStatus([])).toBe("NOT_HARVESTED");
     expect(coverageStatus(cells("NOT_YET_LOADED", "NOT_YET_LOADED"))).toBe("NOT_HARVESTED");
@@ -205,6 +206,11 @@ describe("Coverage status (#80): derived from the grid cells of the window", () 
   it("is partial when any cell is not yet loaded beside cells that are", () => {
     expect(coverageStatus(cells("LOADED", "NOT_YET_LOADED"))).toBe("PARTIAL");
     expect(coverageStatus(cells("KNOWN_GAP", "LOADED", "NOT_YET_LOADED"))).toBe("PARTIAL"); // missing wins over flagged
+  });
+  it("counts the expected lag (not yet loaded, awaiting the bulk file) as a known gap, not as a hole: the current quarter does not make every county partial", () => {
+    expect(coverageStatus([{ state: "LOADED" }, awaiting])).toBe("HARVESTED_WITH_KNOWN_GAPS");
+    expect(coverageStatus([{ state: "LOADED" }, awaiting, { state: "NOT_YET_LOADED", rule: null }])).toBe("PARTIAL"); // a quarantined or unknown hole still is
+    expect(coverageStatus([awaiting, awaiting])).toBe("NOT_HARVESTED"); // nothing loaded at all
   });
   it("is harvested with known gaps when every cell has data but one is flagged, whatever the flag", () => {
     for (const state of ["KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL"]) expect(coverageStatus(cells("LOADED", state))).toBe("HARVESTED_WITH_KNOWN_GAPS");

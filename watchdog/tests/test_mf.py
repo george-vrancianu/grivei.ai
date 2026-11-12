@@ -113,7 +113,7 @@ def test_a_download_that_is_not_a_spreadsheet_or_dies_leaves_nothing_and_is_retr
     archive = Archive(tmp_path / "a")
     summary = mf_fetch.fetch_mf(archive, now=NOW1, http=Net(NOV, bodies={NOV["url"]: b"<html>error page</html>"}))
     assert summary.archived == [] and "not a spreadsheet" in summary.failed[0]
-    assert archive.units() == [] and not list(archive.root.glob(".download-*")) and not (archive.root / "mf").exists()
+    assert archive.units() == [] and not list(archive.root.glob(".*download-*")) and not (archive.root / "mf").exists()
     assert mf_fetch.fetch_mf(archive, now=NOW1, http=Net(NOV)).archived == ["2026-11-01"]  # the rerun is the resume
 
 
@@ -144,7 +144,7 @@ def fixture_path():
 
 def test_the_fixture_slice_reads_with_normalised_cuis_and_the_county_as_written():
     rows = read_list(fixture_path())
-    assert len(rows) == 16
+    assert len(rows) == 18
     assert rows[0].county == "Brasov" and rows[0].name == "MUNICIPIUL BRASOV" and rows[0].uat == "Municipiul Brasov"
     assert all(r.cui.isdigit() and not r.cui.startswith("0") for r in rows)
 
@@ -173,5 +173,26 @@ def test_classification_puts_a_national_authority_in_no_county_and_counts_the_re
     data, summary = classify(rows, gaz, {}, {ministry.cui: Entry(ministry.cui, True, False, "", "fixture")})
     by_cui = {d[0]: d for d in data}
     assert by_cui[ministry.cui][2:] == ("B", "Sectorul 1 al Municipiului Bucuresti", True, "file")  # MF's county is kept; `national` is what moves it
-    assert summary.entities == 15 and summary.duplicates == 1 and summary.national == 1
-    assert summary.no_county == 5  # Cluj is not in this two-county gazetteer (4 entities) and the foreign mission (1)
+    assert summary.entities == 17 and summary.duplicates == 1 and summary.national == 1
+    assert summary.no_county == 7  # Cluj is not in this two-county gazetteer (4), Dambovita and Valcea (2, no such counties here) and the foreign mission (1)
+
+
+def test_county_of_name_reads_mfs_ascii_spelling_of_the_a_circumflex_counties():
+    gaz = Gazetteer(counties=[County("DB", "15", "Dâmbovița"), County("VL", "38", "Vâlcea"), County("BN", "6", "Bistrița-Năsăud")])
+    # MF writes plain ASCII: `Â` is an `A` there, while the gazetteer's own fold turns it into `I`
+    assert gaz.county_of_name("Dambovita") == "DB" and gaz.county_of_name("Valcea") == "VL" and gaz.county_of_name("Bistrita Nasaud") == "BN"
+    assert gaz.county_of_name("Dâmbovița") == "DB" and gaz.county_of_name("Judetul Valcea") == "VL"
+
+
+def test_the_fixture_list_has_dambovita_and_valcea_rows_that_land_in_their_counties():
+    gaz = Gazetteer(counties=[County("DB", "15", "Dâmbovița"), County("VL", "38", "Vâlcea")])
+    data, _ = classify(read_list(fixture_path()), gaz, {}, {})
+    assert {d[2] for d in data if d[1].endswith("DEMO DB") or d[1].endswith("DEMO VL")} == {"DB", "VL"}
+
+
+def test_the_summary_names_the_judet_values_that_are_no_county():
+    gaz = Gazetteer(counties=[County("BV", "8", "Brașov")])
+    _, summary = classify(read_list(fixture_path()), gaz, {}, {})
+    assert "Strainatate" in summary.unmatched
+    summary.snapshot = date(2026, 11, 1)
+    assert "Strainatate: 1" in summary.line()

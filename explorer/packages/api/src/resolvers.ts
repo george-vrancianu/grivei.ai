@@ -146,7 +146,8 @@ export function rootValue(store: Store) {
       if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
       const from = window?.from ?? null;
       const to = window?.to ?? null;
-      const grid = async () => (await store.coverageGrid()).filter((cell) => overlaps(cell.quarter, from, to));
+      let cached: Promise<Awaited<ReturnType<typeof store.coverageGrid>>> | undefined; // one read per request even when grid and counties are both selected
+      const grid = () => (cached ??= store.coverageGrid().then((cells) => cells.filter((cell) => overlaps(cell.quarter, from, to))));
       return {
         source: seapSource,
         window: { from, to },

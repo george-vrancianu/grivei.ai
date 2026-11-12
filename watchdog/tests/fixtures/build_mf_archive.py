@@ -13,6 +13,7 @@ What the slice shows (CUIs are the placement fixture's, plus invented MF-only on
   and one entity with none: M 4, N 3. Huedin is not on the list: an "other authority" of Cluj.
 - Bucuresti: sector 3's city hall (M 1, N 1); the ministry and the agency are filed under Bucuresti too but are national authorities
   (award notice, reviewed file): they count in NATIONAL, as does an MF-only national entity (a file line the test adds).
+- Dambovita and Valcea (MF's ASCII spelling of the two `Â` counties): one entity each, M 1, N 0.
 - A row whose Judet is no county (`Strainatate`) and a repeated CIF: kept out of every county's M.
 """
 from __future__ import annotations
@@ -54,6 +55,8 @@ ROWS = [
     ("Bucuresti", CUI["ministry"], "MINISTERUL EXEMPLULUI", "Sectorul 1 al Municipiului Bucuresti"),
     ("Bucuresti", CUI["agency"], "AGENTIA NATIONALA DEMO", "Sectorul 2 al Municipiului Bucuresti"),
     ("Bucuresti", MF_ONLY["national_only"], "INSTITUTUL NATIONAL FICTIV", "Sectorul 1 al Municipiului Bucuresti"),
+    ("Dambovita", make_cui(5100200), "COMUNA FICTIVA DEMO DB", "Comuna Fictiva"),  # MF's ASCII `Dambovita` (the gazetteer's own fold is `DIMBOVITA`)
+    ("Valcea", make_cui(5100210), "COMUNA FICTIVA DEMO VL", "Comuna Fictiva"),
     ("Strainatate", make_cui(5100190), "MISIUNEA FICTIVA DIN STRAINATATE", ""),
     ("Brasov", CUI["brasov"], "MUNICIPIUL BRASOV (repeated row)", "Municipiul Brasov"),  # a repeated CIF: dropped
 ]

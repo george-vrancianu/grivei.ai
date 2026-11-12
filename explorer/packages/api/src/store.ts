@@ -287,6 +287,9 @@ interface RawRecord {
   crawl_status: RecordRow["crawlStatus"];
 }
 
+/** The date window of the Coverage figures ($1 = from, $2 = to, either may be null): Records by `award_date`, as search does. One place for the "follows the date chip" contract. */
+const WINDOW_SQL = "($1::date IS NULL OR award_date >= $1::date) AND ($2::date IS NULL OR award_date <= $2::date)";
+
 const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, procedure, value_bani::text AS value, counted_bani::text AS counted,
   authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status`;
 
@@ -609,7 +612,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       const { rows } = await pool.query(
         `WITH rec AS (
            SELECT DISTINCT authority_key FROM seap.record
-            WHERE authority_key IS NOT NULL AND ($1::date IS NULL OR award_date >= $1::date) AND ($2::date IS NULL OR award_date <= $2::date)),
+            WHERE authority_key IS NOT NULL AND ${WINDOW_SQL}),
          areas AS (SELECT 'RO-' || iso AS area, 0 AS grp, iso AS ord FROM core.county UNION ALL SELECT 'NATIONAL', 1, ''),
          mf AS (
            SELECT CASE WHEN e.national THEN 'NATIONAL' WHEN e.county_iso IS NOT NULL THEN 'RO-' || e.county_iso END AS area, (r.authority_key IS NOT NULL) AS has
@@ -632,7 +635,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
                 (count(*) FILTER (WHERE r.suspect))::int AS suspect_left_out, (count(*) FILTER (WHERE r.value_bani IS NULL))::int AS no_value,
                 coalesce(sum(r.ceiling_bani), 0)::text AS framework_ceilings
            FROM seap.record r
-          WHERE r.authority_key IS NOT NULL AND ($1::date IS NULL OR r.award_date >= $1::date) AND ($2::date IS NULL OR r.award_date <= $2::date)
+          WHERE r.authority_key IS NOT NULL AND ${WINDOW_SQL.replaceAll("award_date", "r.award_date")}
             AND NOT EXISTS (SELECT 1 FROM core.placement p WHERE p.entity_key = r.authority_key)`,
         [from, to],
       );

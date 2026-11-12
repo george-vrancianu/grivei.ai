@@ -888,7 +888,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
   it("serves N of M and the other authorities per county, with national entities in National, and the MF snapshot date (#80)", async () => {
     const out = mfRebuild("mf_a");
-    expect(out).toContain("mf list: snapshot 2026-11-01, 15 public entities, 3 national, 1 without a county, 1 repeated CUIs dropped");
+    expect(out).toContain("mf list: snapshot 2026-11-01, 17 public entities, 3 national, 1 without a county (Strainatate: 1), 1 repeated CUIs dropped");
     const c = await coverageOf("mf_a");
     expect(c.referenceSnapshot).toBe("2026-11-01");
     expect(c.counties).toHaveLength(43); // 42 counties and National
@@ -901,17 +901,21 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // National: the ministry (award notice), the agency (reviewed file) and an MF-only institute (reviewed file, no Record)
     expect(figures(c, "NATIONAL")).toMatchObject({ n: 2, m: 3, other: 0 });
     expect(figures(c, "RO-AB")).toMatchObject({ n: 0, m: 0, other: 0 }); // a county with nothing on the list
+    // MF writes plain ASCII (`Dambovita`, `Valcea`); the gazetteer's own fold would read them as no county, so M would be 0 for both
+    expect(figures(c, "RO-DB")).toMatchObject({ n: 0, m: 1, other: 0 });
+    expect(figures(c, "RO-VL")).toMatchObject({ n: 0, m: 1, other: 0 });
     // the foreign-mission row (Judet `Strainatate`) and the repeated CIF are in no M
-    expect(c.counties.reduce((sum, x) => sum + x.publicEntities, 0)).toBe(14);
+    expect(c.counties.reduce((sum, x) => sum + x.publicEntities, 0)).toBe(16);
     // the unplaced authority: no source places it (MF's county does not), its Record is its Total
     expect(c.unplacedAuthorities).toMatchObject({ authorities: 1, total: { awarded: "100000", records: 1 } });
   });
 
   it("derives the status from the grid cells of the window and narrows N and the other authorities with it (#80)", async () => {
-    // 2023 Q1 holds a DA file and three hand-entered gaps: harvested with known gaps. Wider windows reach quarters with nothing loaded: partial.
+    // 2023 Q1 holds a DA file and three hand-entered gaps: harvested with known gaps. Wider windows reach quarters with nothing loaded yet (awaiting the bulk file, the expected lag): still known gaps, not partial; a
+    // partial window needs a quarantined hole, which the status unit tests cover.
     expect(figures(await coverageOf("mf_a", { from: "2023-01-01", to: "2023-03-31" }), "RO-BV")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 4, m: 6, other: 3 });
-    expect((await coverageOf("mf_a", { from: "2023-01-01", to: "2023-06-30" })).counties[0]!.status).toBe("PARTIAL");
-    expect((await coverageOf("mf_a")).counties.every((x) => x.status === "PARTIAL")).toBe(true); // 2021 Q1 .. 2023 Q3, one file loaded
+    expect((await coverageOf("mf_a", { from: "2023-01-01", to: "2023-06-30" })).counties[0]!.status).toBe("HARVESTED_WITH_KNOWN_GAPS");
+    expect((await coverageOf("mf_a")).counties.every((x) => x.status === "HARVESTED_WITH_KNOWN_GAPS")).toBe(true); // 2021 Q1 .. 2023 Q3, one file loaded
     // after the file's quarter nothing is loaded, before the grid starts there is no cell: not harvested, and N is zero because no Record is dated there
     for (const window of [{ from: "2023-07-01", to: "2023-09-20" }, { to: "2020-12-31" }]) {
       const c = await coverageOf("mf_a", window);

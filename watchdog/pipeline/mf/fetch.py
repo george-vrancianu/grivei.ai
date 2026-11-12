@@ -7,12 +7,13 @@ archived. Only the NEWEST snapshot is fetched; older ones are logged `superseded
 
 Layout: `<archive>/mf/list/entities/<snapshot date>/<fetched on>/<file as fetched>` + manifest (resource id, URL, last_modified, size, hash).
 Change detection and resume are the datagov connector's: a resource id with the same marker is `unchanged` (no download); a changed
-marker (a re-upload) is archived as a new dated unit beside the old one; a failed run leaves nothing but a `.download-*` scratch file
+marker (a re-upload) is archived as a new dated unit beside the old one; a failed run leaves nothing but a `.mf-download-*` scratch file
 (removed at the next start) and is retried by running the same command again. A downloaded file that is not a spreadsheet (an HTML error
 page) is a failure, not an archive entry.
 """
 from __future__ import annotations
 
+import json
 import logging
 import posixpath
 import re
@@ -74,8 +75,6 @@ def _origin(dataset: dict, resource: dict) -> dict:
 
 def _archived_origins(archive: Archive) -> dict[str, dict]:
     """resource id -> origin of its latest archived fetch (manifests only)."""
-    import json
-
     latest: dict[str, tuple[str, dict]] = {}
     for path in sorted((archive.root / SOURCE / STREAM / KIND).glob(f"*/*/{MANIFEST}")):
         try:
@@ -92,7 +91,7 @@ def fetch_mf(archive: Archive, *, now: datetime | None = None, timeout: float = 
     """Find the newest snapshot, fetch it unless it is archived with the same marker. `http` is `requests.get` (tests pass a stub)."""
     now = now or datetime.now(timezone.utc)
     summary = MfFetchSummary()
-    for stale in archive.root.glob(".download-*") if archive.root.is_dir() else []:
+    for stale in archive.root.glob(".mf-download-*") if archive.root.is_dir() else []:
         stale.unlink(missing_ok=True)  # a killed run's scratch file
     try:
         response = http(CKAN + DATASET, timeout=timeout, headers={"User-Agent": USER_AGENT})
@@ -136,7 +135,7 @@ def fetch_mf(archive: Archive, *, now: datetime | None = None, timeout: float = 
     try:
         got = http(resource["url"], stream=True, timeout=timeout, headers={"User-Agent": USER_AGENT})
         got.raise_for_status()
-        with tempfile.NamedTemporaryFile(dir=archive.root, prefix=".download-", delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(dir=archive.root, prefix=".mf-download-", delete=False) as tmp:
             tmp_path = Path(tmp.name)
             for chunk in got.iter_content(chunk_size=1 << 20):
                 tmp.write(chunk)
