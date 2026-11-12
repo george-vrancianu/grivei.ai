@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -40,7 +40,6 @@ export interface Copy {
     notFound: { title: string; back: string };
     search: { title: string };
     record: { title: string };
-    coverage: { title: string };
     methodology: { title: string };
   };
   /** Badge labels and explanations (they double as filter chips). */
@@ -83,6 +82,8 @@ export interface Copy {
   };
   /** The Signal card and its compact form: the wording of every rule (label, sentence, lawful explanations), the links and the date. Neutral by test: no accusation, in either language. */
   signalCard: SignalCardCopy;
+  /** The Coverage page (`/explore/coverage`): every section, the grid's words and the compact grid's link text. */
+  coverage: CoveragePageLayoutCopy;
   /** The methodology page ("About the numbers"). */
   methodology: MethodologyPageCopy;
 }
