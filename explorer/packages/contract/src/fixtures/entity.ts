@@ -129,14 +129,6 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
   },
 ];
 
-const facetsFull = {
-  channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
-  procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(290_000), records: 2 }) }],
-  year: [{ value: "2024", total: total({ awarded: ron(290_000), records: 2 }) }],
-  signal: [{ value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) }],
-  badge: [],
-  counterparty: [{ entity: w.hachi, matched: total({ awarded: ron(290_000), records: 2 }) }],
-};
 const facetsOfSupplier = {
   channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(590_000), records: 3 }) }],
   procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(590_000), records: 3 }) }],
