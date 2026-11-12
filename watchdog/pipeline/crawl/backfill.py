@@ -23,8 +23,8 @@ and the pauses. A rerun retries the failed weeks.
 """
 from __future__ import annotations
 
-import re
 import json
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import date, timedelta
