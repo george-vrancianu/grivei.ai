@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -52,6 +52,8 @@ export type RecordsTabData = NonNullable<NonNullable<EntityRecordsQuery["entity"
 /** The Records tab's facet counts. */
 export type RecordFacetData = RecordsTabData["facets"];
 
+/** What the Relationships tab shows (`EntityRelationships`' `seap.role`): the counterparties, the overall timeline and the Flow lens. */
+export type RelationshipsData = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>;
 /** What the Relationships tab's graph shows (`EntityRelationships`): the role's `counterparties` (the top 30 by money, with their count and top share). */
 export type RelationshipsCounterparties = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["counterparties"];
 /** One counterparty of the graph: the Entity (null for a natural person or an unlinked winner), its money by channel and its markers. */
@@ -83,3 +85,5 @@ export type EntityAliases = EntityHeaderData["aliases"];
 /** A Signal as `SignalFields` selects it: rule, dates, count, authority, suppliers, rule-specific numbers and the filter that reproduces it. */
 export type SignalData = SignalFieldsFragment;
 export type SignalRule = SignalRuleSlug;
+/** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
+export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];

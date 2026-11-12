@@ -18,7 +18,7 @@ export interface AppProps {
 }
 
 function Shell() {
-  const { locale, pathname, search } = useLocation();
+  const { locale, pathname, search, hash } = useLocation();
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
@@ -27,7 +27,7 @@ function Shell() {
     <UiProvider locale={locale}>
       <AppShell
         copy={catalogue[locale]}
-        switchTo={{ locale: other, href: switchLocalePath(pathname, search, other) }}
+        switchTo={{ locale: other, href: switchLocalePath(pathname, search, other, hash) }}
         links={{
           explore: pathFor(locale, { name: "main" }),
           search: pathFor(locale, { name: "search" }),

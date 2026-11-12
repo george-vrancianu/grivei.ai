@@ -16,6 +16,8 @@ export interface UrlState {
   signalOrder?: SignalOrder;
   /** The main screen's map lens as written (`coverage`); the default, `money`, is left out of the URL. */
   lens?: string;
+  /** The Entity key picked on an Entity page's Relationships tab. */
+  counterparty?: string;
 }
 
 export const EMPTY_URL_STATE: UrlState = { filter: {} };
@@ -87,6 +89,8 @@ export function decodeUrlState(search: string): UrlState {
   if (signalOrder !== null) state.signalOrder = (enumFromUrl(signalOrder) ?? undefined) as SignalOrder | undefined;
   const lens = params.get(URL_ONLY_KEYS.lens);
   if (lens !== null && SLUG.test(lens) && lens !== DEFAULT_LENS) state.lens = lens;
+  const counterparty = params.get(URL_ONLY_KEYS.counterparty);
+  if (counterparty !== null && PATTERNS.key.test(counterparty)) state.counterparty = counterparty;
   if (state.order === undefined) delete state.order;
   if (state.signalOrder === undefined) delete state.signalOrder;
   return state;
@@ -94,7 +98,7 @@ export function decodeUrlState(search: string): UrlState {
 
 /**
  * URL state into a query string with a leading `?` ("" when there is nothing to say). Keys come out in one canonical
- * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens); unset fields and the
+ * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens, counterparty); unset fields and the
  * default `countySide` are left out.
  */
 export function encodeUrlState(state: UrlState): string {
@@ -113,6 +117,7 @@ export function encodeUrlState(state: UrlState): string {
   if (state.order) params.set(URL_ONLY_KEYS.order, enumToUrl(state.order));
   if (state.signalOrder) params.set(URL_ONLY_KEYS.signalOrder, enumToUrl(state.signalOrder));
   if (state.lens && state.lens !== DEFAULT_LENS) params.set(URL_ONLY_KEYS.lens, state.lens);
+  if (state.counterparty) params.set(URL_ONLY_KEYS.counterparty, state.counterparty);
   const text = params.toString();
   return text === "" ? "" : `?${text}`;
 }

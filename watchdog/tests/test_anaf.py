@@ -14,7 +14,7 @@ import requests
 from pipeline import archive as archive_module
 from pipeline import cli
 from pipeline.anaf import (
-    ENDPOINT, AnafClient, AnafError, AnafProgress, archive_batch, collect_cuis, describe_anaf, lookup, pending, read_answers, status_of,
+    ENDPOINT, AnafClient, AnafError, AnafProgress, AnafUnavailable, archive_batch, asked_cui, collect_cuis, describe_anaf, lookup, pending, read_answers, status_of,
 )
 from pipeline.archive import Archive
 from pipeline.progress import read_status
@@ -169,6 +169,52 @@ def test_a_refused_request_is_not_retried(archive):
     with pytest.raises(AnafError, match="refused"):
         run(archive, [1], bad)
     assert len(bad.requests) == 1
+
+
+def test_a_404_with_a_normal_answer_body_is_an_answer_archived_like_a_200(archive):
+    # ANAF v9 answers HTTP 404 with a valid body when none of the CUIs in the request is found (checked by hand, 2026-11)
+    body = b'{"found":[],"notFound":[123456789]}'
+    none_found = Fake(script=lambda n, b: (404, body))
+    summary = run(archive, [123456789], none_found)
+    assert len(none_found.requests) == 1 and summary.not_found == 1
+    unit = archive.units()[0]
+    assert unit.file_path("response.json").read_bytes() == body
+    assert {c: a.found for c, a in read_answers(archive).items()} == {123456789: False}
+
+
+def test_a_404_without_an_answer_body_stays_a_failure(archive):
+    for body in (b"", b"<html>Not Found</html>", b'{"message": "no such path"}'):
+        gone = Fake(script=lambda n, b, body=body: (404, body))
+        with pytest.raises(AnafUnavailable):
+            run(archive, [1], gone)
+        assert len(gone.requests) == 7 and archive.units() == []
+
+
+def test_a_cui_with_more_than_8_digits_is_never_asked():
+    assert asked_cui("RO 54760") == 54760 and asked_cui("1112975") == 1112975  # check digits ok, <= 8 digits
+    assert asked_cui("123456789") is None  # 9 digits (passes the check digit): ANAF knows none of these
+    assert asked_cui("9581659572") is None  # 10 digits
+
+
+def test_a_failing_batch_does_not_stop_the_lookup_and_its_cuis_stay_pending(archive):
+    def second_batch_down(n, body):
+        if body[0]["cui"] == 1100:
+            return 503, b""
+
+    flaky = Fake(script=second_batch_down)
+    summary = run(archive, range(1000, 1300), flaky)
+    assert (summary.batches, summary.failed_batches) == (2, 1)
+    assert sorted(read_answers(archive)) == list(range(1000, 1100)) + list(range(1200, 1300))
+    again = Fake()
+    run(archive, range(1000, 1300), again)
+    assert [e["cui"] for _, b in again.requests for e in b] == list(range(1100, 1200))
+
+
+def test_the_lookup_stops_when_anaf_stays_down_for_several_batches_in_a_row(archive):
+    dead = Fake(script=lambda n, b: (503, b""))
+    with pytest.raises(AnafUnavailable):
+        run(archive, range(1000, 2000), dead)
+    assert len(dead.requests) == 3 * 7  # three batches, seven attempts each, then it gives up
 
 
 # ---- archiving ---------------------------------------------------------------------------------------------------------
@@ -336,8 +382,8 @@ def test_a_failed_lookup_says_so_and_says_how_to_resume(archive, tmp_path):
     lines, status_file = [], tmp_path / "anaf-progress.json"
     dead = Fake(script=lambda n, body: (503, b"") if n > 1 else None)
     with pytest.raises(AnafError):
-        run(archive, range(1000, 1300), dead, AnafProgress(status_file, out=lines.append))
-    assert re.search(r"anaf FAILED after 1/3 batches: AnafUnavailable: giving up after 7 attempts: HTTP 503; every finished batch is archived, rerun the same command to resume", lines[-1])
+        run(archive, range(1000, 1500), dead, AnafProgress(status_file, out=lines.append))
+    assert re.search(r"anaf FAILED after 1/5 batches: AnafUnavailable: giving up after 7 attempts: HTTP 503; every finished batch is archived, rerun the same command to resume", lines[-1])
     s = read_status(status_file)
     assert s["state"] == "failed" and "HTTP 503" in s["error"]
     assert any("rerun" in line for line in describe_anaf(s))
@@ -442,3 +488,17 @@ def test_the_cuis_asked_include_those_only_a_backfill_week_holds(tmp_path):
     w.put("contracts-1-s00000.json", json.dumps({"items": [contract], "total": 1}).encode())
     w.commit(now, "u", {})
     assert collect_cuis(archive) >= {1000009, 2000007}
+
+
+def test_the_anaf_step_with_a_skipped_batch_succeeds_with_a_warning_and_a_rerun_asks_only_for_the_rest(identity_archive, monkeypatch):
+    from pipeline.refresh.steps import Impl
+    cuis = sorted(collect_cuis(identity_archive))
+    assert cuis
+    monkeypatch.setattr("pipeline.refresh.steps.collect_cuis", lambda archive, say=None: set(cuis) | set(range(1_000_000, 1_000_250)))
+    down = Fake(script=lambda n, b: (503, b"") if b[0]["cui"] == 1_000_100 else None)
+    impl = Impl(identity_archive, print, None, None, None, lambda: down.client(), lambda: None)
+    result = impl.anaf()
+    assert result.counts["batches"] == 2 and "1 batch(es) skipped" in result.warnings[0]
+    again = Fake()
+    Impl(identity_archive, print, None, None, None, lambda: again.client(), lambda: None).anaf()
+    assert [e["cui"] for _, b in again.requests for e in b] == list(range(1_000_100, 1_000_200))

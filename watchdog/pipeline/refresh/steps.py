@@ -58,7 +58,8 @@ class Impl:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")
         cuis = collect_cuis(self.archive, say=progress.note)
         summary = lookup(self.archive, cuis, self.anaf_client(), progress, recheck_after_days=RECHECK_ANAF_AFTER_DAYS)
-        return StepResult({"cuis": summary.cuis, "found": summary.found, "notFound": summary.not_found, "batches": summary.batches})
+        warnings = [f"anaf: {summary.failed_batches} batch(es) skipped after every retry failed, {summary.failed_cuis} CUIs still pending"] if summary.failed_batches else []
+        return StepResult({"cuis": summary.cuis, "found": summary.found, "notFound": summary.not_found, "batches": summary.batches}, [], warnings)
 
     def load(self) -> StepResult:
         summary = self.load_fn()

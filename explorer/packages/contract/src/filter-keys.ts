@@ -50,6 +50,7 @@ export const RECORD_FILTER_URL = {
  * which page of it, and how its rows are sorted (`order`: RecordOrder on Records lists;
  * `signalOrder`: SignalOrder on the entity Overview). They shape the view, not the
  * matching set, but a citation must reproduce them. Signal paging is not citable.
- * `lens` is the main screen's map lens (`money`, the default and left out, or `coverage`).
+ * `lens` is the main screen's map lens (`money`, the default and left out, or `coverage`), or the Relationships tab's (`flow`).
+ * `counterparty` is the Entity key picked on the Relationships tab (it is not a filter: the graph keeps showing every counterparty).
  */
-export const URL_ONLY_KEYS = { tab: "tab", page: "page", order: "order", signalOrder: "signalOrder", lens: "lens" } as const;
+export const URL_ONLY_KEYS = { tab: "tab", page: "page", order: "order", signalOrder: "signalOrder", lens: "lens", counterparty: "counterparty" } as const;

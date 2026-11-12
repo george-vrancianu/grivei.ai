@@ -128,8 +128,14 @@ class AnafClient:
                 status, answer = self.post(self.endpoint, body, self.timeout)
                 if status == 429 or status >= 500:
                     raise Transient(f"HTTP {status}")
+                if status == 404:  # ANAF answers 404 with a normal body when none of the CUIs asked is found
+                    try:
+                        parse_answer(answer)
+                    except Transient:
+                        raise Transient("HTTP 404") from None
+                    return answer
                 if status != 200:
-                    if 400 <= status < 500 and status not in (403, 404, 408):
+                    if 400 <= status < 500 and status not in (403, 408):
                         raise AnafError(f"ANAF refused the request: HTTP {status}")
                     raise Transient(f"HTTP {status}")
                 parse_answer(answer)
@@ -166,10 +172,14 @@ def normalise_cui_int(value: object) -> int | None:
     return int(digits) if digits.isdigit() and 0 < int(digits) < 10**10 else None
 
 
+MAX_ASKED_DIGITS = 8  # real Romanian CUIs have at most 8 digits today; 9 and 10 digit numbers that pass the check digit are typos
+
+
 def asked_cui(raw: object) -> int | None:
-    """A published tax id -> the CUI to ask ANAF about: only a Romanian CUI that passes the check digit."""
+    """A published tax id -> the CUI to ask ANAF about: only a Romanian CUI that passes the check digit and has at most 8 digits
+    (longer ones pass the check digit by chance, ANAF knows none, and a batch of them used to come back as an HTTP 404)."""
     tax = classify_tax_id(None if raw is None else str(raw))
-    return int(tax.value) if tax.kind == "cui" and tax.value else None
+    return int(tax.value) if tax.kind == "cui" and tax.value and len(tax.value) <= MAX_ASKED_DIGITS else None
 
 
 def response_cuis(data: Mapping) -> tuple[list[dict], list[int]]:
@@ -402,11 +412,16 @@ class AnafProgress:
         s.update(batchesDone=index, cuisDone=s["cuisDone"] + cuis, found=s["found"] + found, notFound=s["notFound"] + not_found)
         self._line(f"anaf batch {index}/{total} cuis={cuis} found={found} notfound={not_found} archived={archived}")
 
+    def batch_failed(self, index: int, total: int, cuis: int, error: BaseException) -> None:
+        self.state["batchesFailed"] = self.state.get("batchesFailed", 0) + 1
+        self._line(f"anaf batch {index}/{total} cuis={cuis} SKIPPED ({error}); its CUIs stay pending for the next run")
+
     def finish(self) -> None:
         s = self.state
         s["state"] = "finished"
         took = _duration((self._now() - self._started).total_seconds())
-        self._line(f"anaf done batches={s['batchesDone']} cuis={s['cuisDone']} found={s['found']} notfound={s['notFound']} in {took}")
+        skipped = f" skipped_batches={s['batchesFailed']}" if s.get("batchesFailed") else ""
+        self._line(f"anaf done batches={s['batchesDone']}{skipped} cuis={s['cuisDone']} found={s['found']} notfound={s['notFound']} in {took}")
 
     def fail(self, error: BaseException) -> None:
         s = self.state
@@ -456,6 +471,8 @@ class LookupSummary:
     cuis: int = 0
     found: int = 0
     not_found: int = 0
+    failed_batches: int = 0  # batches ANAF stayed unavailable for; their CUIs are not archived, so still pending
+    failed_cuis: int = 0
     archived: list[Path] = field(default_factory=list)
 
 
@@ -468,8 +485,11 @@ def lookup(
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     recheck_after_days: int | None = None,
     max_batches: int | None = None,
+    max_consecutive_failures: int = 3,
 ) -> LookupSummary:
-    """Ask ANAF for the CUIs the archive has no answer for yet, archiving every response before the next request."""
+    """Ask ANAF for the CUIs the archive has no answer for yet, archiving every response before the next request. A batch ANAF
+    stays unavailable for (every retry failed) is logged and skipped, its CUIs stay pending for the next run; after
+    `max_consecutive_failures` such batches in a row ANAF is taken to be down and the lookup stops with the error."""
     today = now().date()
     answers = read_answers(archive)
     wanted = sorted(set(cuis))
@@ -480,10 +500,23 @@ def lookup(
     summary = LookupSummary()
     if progress:
         progress.start(sum(len(g) for g in groups), len(groups), len(wanted) - len(todo), archive.root)
+    consecutive = 0
     try:
         for index, group in enumerate(groups, start=1):
             day = now().date()
-            body = client.query(group, day)
+            try:
+                body = client.query(group, day)
+            except AnafUnavailable as e:
+                summary.failed_batches += 1
+                summary.failed_cuis += len(group)
+                consecutive += 1
+                log.warning("anaf batch %d/%d skipped, its %d CUIs stay pending: %s", index, len(groups), len(group), e)
+                if progress:
+                    progress.batch_failed(index, len(groups), len(group), e)
+                if consecutive >= max_consecutive_failures or (index == len(groups) and not summary.batches):
+                    raise  # ANAF looks down: three in a row, or nothing at all answered in this run
+                continue
+            consecutive = 0
             found, missing = response_cuis(json.loads(body))
             path = archive_batch(archive, group, day, body, now(), client.endpoint)
             summary.batches += 1
