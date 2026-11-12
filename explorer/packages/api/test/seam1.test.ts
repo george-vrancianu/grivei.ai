@@ -132,6 +132,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(mfArchive, join(scratch, "archive-mf"), { recursive: true }); // merges: the MF unit lands beside the placement world's units
     cpSync(placementData, join(scratch, "mf-data"), { recursive: true });
     appendFileSync(join(scratch, "mf-data/national_authorities.csv"), `${M.nationalOnly},true,false,INSTITUTUL NATIONAL FICTIV,"fictional: an MF-only national institute"\n`);
+    // The default for every rebuild that passes no --placement-data: the fixture's reviewed files without a UAT table, so placement
+    // is by county only. Never the checked-in national tables (pipeline/placement/data): this seam's answers must not move with them.
+    cpSync(placementData, join(scratch, "county-only-data"), { recursive: true });
+    for (const f of ["uats.csv", "villages.csv", "table-sources.json"]) rmSync(join(scratch, "county-only-data", f));
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
@@ -195,9 +199,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   });
 
   // --in-place: the default is the switchover (#82), which terminates the sessions of the live database; this seam keeps one pool per database and rebuilds under it
+  // PIPELINE_PLACEMENT_DATA pins the placement tables to the fixture's county-only directory; an explicit --placement-data in `extra` wins
   const rebuild = (db: string, archive = "archive", extra: string[] = []) => {
     const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`, "--in-place", ...extra], {
-      cwd: watchdog, encoding: "utf8",
+      cwd: watchdog, encoding: "utf8", env: { ...process.env, PIPELINE_PLACEMENT_DATA: join(scratch, "county-only-data") },
     });
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
     return r.stdout;
