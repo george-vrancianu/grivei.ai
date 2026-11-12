@@ -1,14 +1,17 @@
 // Seam 3: Signals on the entity pages, rendered from the API's recorded answers (recorded/signals/ and #86's archive-signals Overview): the Overview's
 // Signal cards, the Records tab's Signal facet and row badges, the Relationships tab's rings. EN and /ro/.
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { forbiddenWords } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
+import { createClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { openAt } from "../../testing/openAt.ts";
 import { overviewNamed, overviewsWithSignals, overviewUrl } from "../../testing/signalRecordings.ts";
 import { fixtures } from "@grivei/contract/fixtures";
+import allowlist from "@grivei/contract/persisted-queries.json";
 import { signalMethodologyHref } from "../../signals/signalLinks.ts";
 import { signalReproduceHref } from "../../signals/reproduceHref.ts";
 
@@ -173,5 +176,44 @@ describe("the Relationships tab's rings", () => {
     const ro = await screen.findByRole("group", { name: "Graful principalelor contrapărți" });
     expect(within(ro).getByRole("button", { name: /^SPITALUL EXEMPLU.*are Semnale/ })).toBeVisible();
     expect(ro.querySelectorAll("[data-ring]").length).toBe(1); // the both-roles entity bought from BETA outside every Signal
+  });
+});
+
+describe("the Overview's Signal pages", () => {
+  // no recorded archive has more than 20 Signals for one entity, so the answer is the recorded one with a larger count
+  const manySignals = () => {
+    const recorded = overviewNamed("authority-with-signals");
+    const sent: { variables: Record<string, unknown> }[] = [];
+    const client = createClient({
+      fetch: async (_url, init) => {
+        const { id, variables } = JSON.parse(String(init?.body)) as { id: string; variables: Record<string, unknown> };
+        expect(allowlist.operations.find((o) => o.sha256 === id)?.name).toBe("EntityOverview");
+        sent.push({ variables });
+        const role = recorded.data.entity!.seap.role!;
+        return Response.json({ data: { entity: { ...recorded.data.entity!, seap: { ...recorded.data.entity!.seap, role: { ...role, signals: { ...role.signals, count: 45 } } } } } });
+      },
+    });
+    return { client, sent };
+  };
+
+  it("links the pages under the cards and asks the next 20 when one is opened", async () => {
+    openAt("/explore/authority/1000017");
+    const { client, sent } = manySignals();
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByRole("heading", { name: "Signals (45)" });
+    expect(sent[0]!.variables).not.toHaveProperty("signalOffset");
+    const pages = within(screen.getByRole("navigation", { name: "Signal pages" }));
+    expect(pages.getByRole("link", { name: "Page 3" })).toHaveAttribute("href", "/explore/authority/1000017?page=3");
+    await userEvent.setup().click(pages.getByRole("link", { name: "Page 2" }));
+    await waitFor(() => expect(sent.at(-1)!.variables).toMatchObject({ signalOffset: 20 }));
+    expect(window.location.search).toBe("?page=2");
+  });
+
+  it("says it in Romanian and asks the third page's offset", async () => {
+    openAt("/ro/explore/authority/1000017?page=3");
+    const { client, sent } = manySignals();
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    expect(await screen.findByRole("navigation", { name: "Paginile Semnalelor" })).toBeVisible();
+    expect(sent[0]!.variables).toMatchObject({ signalOffset: 40 });
   });
 });

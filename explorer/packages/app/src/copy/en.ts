@@ -349,6 +349,7 @@ export const en: Copy = {
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, range: (a, b) => `first seen ${a}, last ${b}`, singleDay: (d) => `seen on ${d} only`,
       },
     },
+    signalPages: { label: "Signal pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",

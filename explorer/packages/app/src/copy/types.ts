@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -77,6 +77,8 @@ export interface Copy {
     };
     /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
     recordsNoRole: { authority: string; supplier: string };
+    /** The page links under the Overview's Signals when they run over one page. */
+    signalPages: PageNavCopy;
     /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
     recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & { facets: Omit<RecordsTabCopy["facets"], "badges" | "channels"> };
   };

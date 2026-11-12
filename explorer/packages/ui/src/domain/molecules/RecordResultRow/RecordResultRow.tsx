@@ -2,6 +2,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { signalKeys } from "../../utils/signalKey.ts";
 import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
 import { SignalBadge, type SignalBadgeCopy } from "../SignalBadge/index.ts";
 import { MatchedLine, type MatchedLineCopy } from "./components/MatchedLine/index.ts";
@@ -35,6 +36,7 @@ export interface RecordResultRowProps {
  */
 export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges }: RecordResultRowProps) {
   const { record, matchedField } = row;
+  const keys = signalKeys(record.signals);
   return (
     <Stack spacing={0.5} component="li" sx={{ py: 1.5 }}>
       <Typography component="div" variant="subtitle1">
@@ -43,8 +45,8 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       <RecordValueLine record={record} locale={locale} copy={copy} />
       {signalBadges && record.signals.length > 0 && (
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-          {record.signals.map((signal) => (
-            <SignalBadge key={`${signal.rule}-${signal.date}-${signal.reproduce.from ?? ""}-${signal.reproduce.supplier ?? ""}-${signal.reproduce.cpv ?? ""}`} signal={signal} href={signalBadges.href(signal)} onNavigate={signalBadges.onNavigate} locale={locale} copy={signalBadges.copy} />
+          {record.signals.map((signal, i) => (
+            <SignalBadge key={keys[i]} signal={signal} href={signalBadges.href(signal)} onNavigate={signalBadges.onNavigate} locale={locale} copy={signalBadges.copy} />
           ))}
         </Stack>
       )}

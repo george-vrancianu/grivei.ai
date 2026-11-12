@@ -3056,7 +3056,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
       return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
     };
-    /** What the Records tab asks when a Signal's reproducing link is opened: the authority's page with the Signal's grouping as the filter, 100 a page, no order. */
+    /** What the Records tab asks when a Signal's reproducing link is opened: the authority's page with the Signal's grouping as the filter, 100 a page, no order. The case names built here are the recording names; the ui samples (`fixtureData.ts` overCapSignalRecords, splittingSignalRecords) pick recordings by them, so changing the scheme means changing those names. */
     const reproduceCase = (s: SignalFieldsFragment, archive: RecordedSignalCase["archive"]): Case => {
       const { authority, signal, supplier, cpv, from, to } = s.reproduce;
       const filter = Object.fromEntries(Object.entries({ signal, supplier, cpv, from, to }).filter(([, v]) => v !== null && v !== undefined));

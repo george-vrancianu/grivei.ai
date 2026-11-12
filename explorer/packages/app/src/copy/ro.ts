@@ -354,6 +354,7 @@ export const ro: Copy = {
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), range: (a, b) => `prima oară ${a}, ultima oară ${b}`, singleDay: (d) => `doar la ${d}`,
       },
     },
+    signalPages: { label: "Paginile Semnalelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",

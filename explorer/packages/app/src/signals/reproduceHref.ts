@@ -26,3 +26,12 @@ export function signalReproduceHref(locale: Locale, signal: { authority: { key: 
   const key = String(signal.reproduce.authority ?? signal.authority.key);
   return recordsHref(locale, "authority", key, { filter: reproduceFilter(signal.reproduce) });
 }
+
+/**
+ * The same URL for a Record row's badge, which knows the Signal's `reproduce` but not its authority entity. Every rule sets `reproduce.authority`,
+ * so a Signal without one is the API breaking its contract: say so rather than build `/explore/authority//records`.
+ */
+export function badgeReproduceHref(locale: Locale, reproduce: SignalData["reproduce"]): string {
+  if (!reproduce.authority) throw new Error("a Signal's reproduce filter always names its authority");
+  return signalReproduceHref(locale, { authority: { key: reproduce.authority }, reproduce });
+}

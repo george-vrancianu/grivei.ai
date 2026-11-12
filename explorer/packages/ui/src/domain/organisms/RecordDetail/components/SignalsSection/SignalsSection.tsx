@@ -6,6 +6,7 @@ import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordSignal } from "../../../../types.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
+import { SignalList } from "../../../SignalList/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
@@ -40,9 +41,11 @@ export function SignalsSection({ signals, recordHref, onNavigate, renderCard, lo
       <Typography variant="h6" component="h2">
         {copy.heading}
       </Typography>
-      <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", rowGap: 1.5 }}>
-        {signals.map((signal) => (
-          <li key={`${signal.rule}-${signal.date}-${signal.authority.key}-${signal.suppliers.map((s) => s.key).join(",")}`}>
+      <SignalList
+        signals={signals}
+        locale={locale}
+        renderItem={(signal) => (
+          <>
             {renderCard ? (
               renderCard(signal)
             ) : (
@@ -64,9 +67,9 @@ export function SignalsSection({ signals, recordHref, onNavigate, renderCard, lo
                 </li>
               ))}
             </Box>
-          </li>
-        ))}
-      </Box>
+          </>
+        )}
+      />
     </Stack>
   );
 }

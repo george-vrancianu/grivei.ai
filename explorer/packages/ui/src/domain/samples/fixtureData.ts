@@ -104,6 +104,8 @@ export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by
 
 // A Record row inside Signals (recorded from archive-signals: the two direct purchases of one over-cap Signal, and one inside a splitting Signal).
 /** The rows of the Records tab for one over-cap Signal's reproducing filter: each Record carries the Signal it is in. */
+/** The Signals of the hospital authority's Overview, recorded: no publication and over cap, newest first (the SignalList story's rows). */
+export const recordedOverviewSignals = named(fixtures.EntityOverview, "authority-with-signals").data.entity!.seap.role!.signals.rows;
 export const overCapSignalRecords = named(fixtures.EntityRecords, "over-cap-1000017-2023-01-10-2023-01-10").data.entity!.seap.role!.records;
 export const splittingSignalRecords = named(fixtures.EntityRecords, "splitting-1000017-2023-03-01-2023-04-08-2000023").data.entity!.seap.role!.records;
 
