@@ -6,6 +6,8 @@ import type { EntityLinkCopy } from "../atoms/EntityLink/index.ts";
 import type { DataThroughDateCopy } from "../atoms/DataThroughDate/index.ts";
 import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
 import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
+import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
+import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
@@ -49,6 +51,48 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
     nameOnly: { label: "doar denumire", explanation: "Identificat doar după denumirea publicată (fără CUI). Cifrele pot amesteca entități omonime." },
     identityCurated: { label: "verificat manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
   },
+};
+
+const entityHeader: Record<Locale, EntityHeaderCopy> = {
+  en: {
+    identity: {
+      cui: "CUI",
+      foreignVatId: "Foreign VAT ID",
+      nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
+      identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+    },
+    anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
+    placement: {
+      label: "Location",
+      national: "National",
+      unplaced: { label: "Unplaced", explanation: "Neither ANAF nor SEAP places this entity in a county." },
+      placedBy: (source) => `placed by ${source}`,
+    },
+    source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
+    roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+  },
+  ro: {
+    identity: {
+      cui: "CUI",
+      foreignVatId: "Cod TVA străin",
+      nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
+      identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
+    },
+    anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
+    placement: {
+      label: "Locație",
+      national: "Național",
+      unplaced: { label: "Neplasată", explanation: "Nici ANAF, nici SEAP nu plasează această entitate într-un județ." },
+      placedBy: (source) => `plasată de ${source}`,
+    },
+    source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
+    roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+  },
+};
+
+const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
+  en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
 };
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
@@ -144,6 +188,8 @@ export const sampleCopy = {
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
+  entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
+  entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>
     locale === "ro"
       ? {
