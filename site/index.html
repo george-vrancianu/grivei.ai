@@ -76,15 +76,16 @@
         <div class="block__head">
           <h2 class="label label--accent">data sources</h2>
           <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
-          <p class="label" id="sources-summary">1 live · 1 in progress · 3 next</p>
+          <p class="label" id="sources-summary">1 live · 3 next · 1 skipped</p>
         </div>
         <div class="bar" id="sources-bar" aria-hidden="true">
-          <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="next"></span>
+          <span data-status="live"></span><span data-status="next"></span><span data-status="next"></span><span data-status="next"></span><span data-status="skipped"></span>
         </div>
 
         <!--
           STATUS LIVES HERE, and in the same list in ro/index.html: change both.
-          data-status: "live" · "wip" (in progress) · "next".
+          data-status: "live" · "wip" (in progress) · "next" · "skipped".
+          A skipped source goes last and explains why in <p class="source__note">.
           To change a source's status, change data-status AND the word in <p class="status">.
           Row numbers, the bar above and the summary line update themselves.
         -->
@@ -94,14 +95,9 @@
             <p class="source__what">Direct purchases, award notices, contracts</p>
             <p class="status">live</p>
           </li>
-          <li class="source" data-status="wip">
-            <h3 class="source__name">ANI</h3>
-            <p class="source__what">Asset and interest declarations</p>
-            <p class="status">in progress</p>
-          </li>
           <li class="source" data-status="next">
             <h3 class="source__name">ONRC</h3>
-            <p class="source__what">Company shareholders and directors</p>
+            <p class="source__what">Company directors, status and activity codes</p>
             <p class="status">next</p>
           </li>
           <li class="source" data-status="next">
@@ -113,6 +109,12 @@
             <h3 class="source__name">portal.just.ro</h3>
             <p class="source__what">Court cases involving companies and people</p>
             <p class="status">next</p>
+          </li>
+          <li class="source" data-status="skipped">
+            <h3 class="source__name">ANI</h3>
+            <p class="source__what">Asset and interest declarations</p>
+            <p class="status">skipped</p>
+            <p class="source__note">The Constitutional Court ruled that publishing these declarations online breaches the right to private life (<a href="https://www.ccr.ro/wp-content/uploads/2025/06/Decizie_297_2025.pdf">Decision 297/2025</a>, 29 May 2025). Law 180/2026, in force since 31 August 2026, keeps full declarations confidential.</p>
           </li>
         </ol>
       </div>
@@ -140,7 +142,7 @@
     <div class="wrap foot__in">
       <p>grivei.ai</p>
       <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ro/index.html. -->
-      <p>updated: <time datetime="2026-11-11">11 Nov 2026</time></p>
+      <p>updated: <time datetime="2026-11-12">12 Nov 2026</time></p>
     </div>
   </footer>
 

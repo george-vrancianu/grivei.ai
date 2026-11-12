@@ -22,3 +22,7 @@ A SEAP supplier is one entity per CUI, and a CUI counts only when it passes the 
 ## Amended 2026-11-12: contracting authorities take ANAF's name too
 
 The display-name rule applies to every entity in either role, not only to suppliers. A contracting authority shows ANAF's current name with comma-below diacritics, or its most frequent SEAP spelling when ANAF has no entry. Its SEAP spellings are listed under "Appears in SEAP as".
+
+## Amended 2026-11-12: natural-person suppliers above the Naming threshold are named
+
+ADR 0009: a natural-person supplier whose public money reaches the Naming threshold becomes a Named person, with a name and an entity page, once that posture's Go-live conditions are met. Below the threshold nothing changes. CNPs are still never stored or shown.

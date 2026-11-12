@@ -7,7 +7,7 @@ A public-money watchdog: Romanian public sources joined into one graph of instit
 ### Sources and ingestion
 
 **Source**:
-A public registry Grivei.ai draws data from (SEAP, ANI, ONRC, Ministerul Finanțelor, portal.just.ro, ANAF).
+A public registry Grivei.ai draws data from (SEAP, ONRC, Ministerul Finanțelor, portal.just.ro, ANAF).
 _Avoid_: directory, public directory, database
 
 **Reference source**:
@@ -61,7 +61,7 @@ A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), ide
 _Avoid_: unknown supplier, unidentified supplier
 
 **Natural-person supplier**:
-An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", never named, never given an entity page.
+An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", with no entity page, unless the public money they receive reaches the Naming threshold, which makes them a Named person.
 _Avoid_: PFA (when any individual is meant), person (alone)
 
 **Alias**:
@@ -103,6 +103,14 @@ _Avoid_: finding, red flag, evidence, risk score
 **Signal rule**:
 One published rule that produces Signals (for example, possible splitting of direct purchases); each has its own section on the methodology page with its time window and how often it fires nationally.
 _Avoid_: Signal type, check, test
+
+**Named person**:
+A person Grivei.ai shows by name: someone with a role in an official register (administrator, legal representative, associate or shareholder) in an organisation that receives public money in the graph, an official acting in their role, or an individual whose own public money reaches the Naming threshold. Everyone else in a Source stays unnamed.
+_Avoid_: PEP, subject, person of interest
+
+**Naming threshold**:
+The total public money an individual must receive directly (as a natural-person supplier or a fund recipient) before they are named.
+_Avoid_: cutoff, limit
 
 ### Explorer
 

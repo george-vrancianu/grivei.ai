@@ -28,12 +28,12 @@ Decided in [Release recipe: the repeatable steps for adding a Source](https://gi
 
 - **Generic:** the ANAF-confirmed CUI as the key for organisations, name-only entities when that fails, aliases never merging, and the identity override file (ADR 0003).
 - **Source-supplied:** an identity ADR in ADR 0003's pattern: how the Source's subjects map onto existing entity keys, and what stays separate.
-- **Gate:** a Source whose subjects are people (ANI, parties on portal.just.ro) is blocked on the entity-linking map. Person-level data is out of scope until that map lands.
+- **People:** a Source whose subjects are people (ONRC administrators, AEP donors, parties on portal.just.ro) follows this recipe like any other. Its Go-live waits on the legal posture for person-level data and the entity-linking policy (ADR 0008).
 - **SEAP:** ADR 0003, [Supplier identity](https://github.com/george-vrancianu/grivei.ai/issues/22).
 
 ## 4. Reference sources
 
-- A **Reference source** (ANAF, MF's Lista entităților publice, ANCPI, Wikidata/SIRUTA, INS) gets a Connector and a place in the Raw archive, but no search surface and never a Release of its own. It joins through the first Release that needs it.
+- A **Reference source** (ANAF, MF's Lista entităților publice, ANCPI, Wikidata, INS's SIRUTA) gets a Connector and a place in the Raw archive, but no search surface and never a Release of its own. It joins through the first Release that needs it.
 - **SEAP:** brought in ANAF (placement, identity), Wikidata and ANCPI (points, outlines), and MF's list (the coverage denominator).
 
 ## 5. Search surface

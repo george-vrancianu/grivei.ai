@@ -6,7 +6,7 @@ Grivei.ai is a public-money watchdog. It takes large public databases and uses a
 
 ## Status
 
-Research phase. The first source, public procurement from SEAP, is harvested and loaded into the graph; asset and interest declarations (ANI) are in progress. Results so far are signals to verify in the source documents, not conclusions.
+Research phase. The first source, public procurement from SEAP, is harvested and loaded into the graph. Which Sources come next is being mapped; person-level Sources wait on an entity-linking policy. Results so far are signals to verify in the source documents, not conclusions.
 
 ## What's here
 
