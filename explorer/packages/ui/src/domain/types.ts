@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   TotalFieldsFragment,
 } from "@grivei/contract";
@@ -38,3 +38,11 @@ export type EntityPageView = "overview" | "records" | "relationships";
 export type UatMap = ZoomedCountyQuery["seap"]["search"]["uatMap"];
 /** A UAT's SIRUTA code: what a click on the zoomed county emits (the `RecordFilter.uat` value). */
 export type Siruta = string;
+/** The Coverage lens's data: `CoverageLens` (the `sources` list plus the SEAP `coverage` of the date window). */
+export type CoverageLens = CoverageLensQuery;
+/** One county's (or NATIONAL's) coverage row. */
+export type CountyCoverage = CoverageLens["coverage"]["counties"][number];
+/** How much of a county the harvest covers: HARVESTED, HARVESTED_WITH_KNOWN_GAPS, PARTIAL or NOT_HARVESTED. A category, never a ratio. */
+export type CoverageStatus = ContractCoverageStatus;
+/** A Source as the lens lists it: id, name (source data), whether it is harvested yet. */
+export type SourceInfo = CoverageLens["sources"][number];

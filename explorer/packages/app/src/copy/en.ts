@@ -57,6 +57,10 @@ export const en: Copy = {
       party: { naturalPerson: "Persoană fizică", entityLink },
     },
   },
+  mainScreenLayout: {
+    lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
+    regions: { search: "Search", map: "Map", results: "Results" },
+  },
   filterChips: {
     label: "Filters",
     year: { group: "Award year", from: "From year", to: "To year", any: "Any" },

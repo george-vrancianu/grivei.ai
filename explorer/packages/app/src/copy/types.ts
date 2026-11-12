@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, MainScreenLayoutCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -24,6 +24,8 @@ export interface Copy {
   results: ResultTabsCopy;
   /** The filter chips bar under the search field. */
   filterChips: FilterChipsCopy;
+  /** The main screen template: lens toggle and region names. */
+  mainScreenLayout: MainScreenLayoutCopy;
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */
   pages: {
     placeholder: string;

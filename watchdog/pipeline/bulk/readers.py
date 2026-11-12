@@ -1,8 +1,9 @@
 """File readers: a bulk file -> (header cells, row cells). No interpretation of the columns here.
 
 CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`; a field may span
-lines) and ordinary quoted CSV (DAN, Contracte 2021). A CSV is read as it is consumed, never whole (a quarter is up to 300 MB). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Any other
-extension (`.xls`, `.ods`) is not supported yet: the file is invalid, hence quarantined with that reason.
+lines) and ordinary quoted CSV (DAN, Contracte 2021). A CSV is read as it is consumed, never whole (a quarter is up to 300 MB). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Legacy XLS (BIFF, 2021
+to 2023) is read with xlrd the same way (see `_read_xls`: every sheet, an optional title row, typed cells). Any other
+extension (`.ods`) is not supported: the file is invalid, hence quarantined with that reason.
 """
 from __future__ import annotations
 
@@ -11,13 +12,17 @@ import itertools
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from .errors import InvalidFile
 from datetime import datetime, time
 
 from . import values
 from .values import Cell
+
+if TYPE_CHECKING:
+    from xlrd.book import Book
+    from xlrd.sheet import Cell as XlsCell, Sheet
 
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
 _NUMBER_LIKE = re.compile(r"^\s*[-+0-9.eE]*\s*$")
@@ -75,7 +80,9 @@ def read_file(path: Path) -> tuple[Header, Rows]:
         return _read_csv(path)
     if suffix == ".xlsx":
         return _read_xlsx(path)
-    raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv and .xlsx are read"])
+    if suffix == ".xls":
+        return _read_xls(path)
+    raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv, .xlsx and .xls are read"])
 
 
 _EOL = re.compile(r"(\r\n|\n|\r)$")
@@ -220,12 +227,116 @@ class _XlsxRows:
         width = self._width
         try:
             for number, row in enumerate(self._raw, start=2):
-                cells = list(row)
-                if all(c is None or (isinstance(c, str) and not c.strip()) for c in cells):
-                    continue
-                extra = cells[width:]
-                if any(c is not None and not (isinstance(c, str) and not c.strip()) for c in extra):
-                    raise InvalidFile(f"row {number}: {len(cells)} cells, header has {width}", [f"row {number}: wider than the header"])
-                yield number, cells[:width] + [None] * (width - len(cells))
+                fitted = _fit(number, list(row), width)
+                if fitted is not None:
+                    yield number, fitted
+        finally:
+            self.close()
+
+
+def _blank(c) -> bool:
+    return c is None or (isinstance(c, str) and not c.strip())
+
+
+def _fit(number: int, cells: list[Cell], width: int) -> list[Cell] | None:
+    """A data row cut or padded to the header's width; None for a blank row; a non-blank cell beyond the header is invalid."""
+    if all(_blank(c) for c in cells):
+        return None
+    if any(not _blank(c) for c in cells[width:]):
+        raise InvalidFile(f"row {number}: {len(cells)} cells, header has {width}", [f"row {number}: wider than the header"])
+    return cells[:width] + [None] * (width - len(cells))
+
+
+def _xls_cell(book: Book, cell: XlsCell) -> Cell:
+    """An xlrd cell -> a value, typed like the `.xlsx` path (`_values`): the number format is kept for floats, dates and times."""
+    import xlrd
+
+    kind, v = cell.ctype, cell.value
+    if kind in (xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK, xlrd.XL_CELL_ERROR):
+        return None
+    if kind == xlrd.XL_CELL_TEXT:
+        return v
+    if kind == xlrd.XL_CELL_BOOLEAN:
+        return bool(v)
+    fmt = book.format_map[book.xf_list[cell.xf_index].format_key].format_str or "General"
+    if kind == xlrd.XL_CELL_DATE:
+        year, month, day, hour, minute, second = xlrd.xldate_as_tuple(v, book.datemode)
+        if v < 1:  # a time of day
+            return values.TypedTime(hour, minute, second, number_format=fmt)
+        return values.TypedDatetime(year, month, day, hour, minute, second, number_format=fmt)
+    return values.TypedFloat(v, fmt)
+
+
+def _read_xls(path: Path) -> tuple[Header, Rows]:
+    import xlrd
+
+    try:
+        book = xlrd.open_workbook(str(path), formatting_info=True, on_demand=True)
+    except Exception as e:  # xlrd raises assorted errors (XLRDError, struct.error, AssertionError...) on a bad file
+        raise InvalidFile("not a readable XLS file", [f"{type(e).__name__}: {e}"]) from None
+    try:
+        rows = _XlsRows(book)
+        header = rows.header
+    except BaseException:
+        book.release_resources()
+        raise
+    return header, rows
+
+
+class _XlsRows:
+    """The data rows of every sheet of a legacy workbook, one after the other (an export past 65 536 rows spills onto more
+    sheets, each repeating its title row, if any, and the header). Sheets are loaded one at a time and released.
+    Row numbers count on across sheets. `close()` releases the workbook."""
+
+    def __init__(self, book: Book) -> None:
+        self._book = book
+        sheet = book.sheet_by_index(0)
+        try:
+            self.header, _ = self._header_of(sheet)
+        finally:
+            book.unload_sheet(0)
+        self._width = len(self.header)
+
+    def _cells(self, sheet: Sheet, r: int) -> list[Cell]:
+        return [_xls_cell(self._book, c) for c in sheet.row(r)]
+
+    def _header_of(self, sheet: Sheet) -> tuple[Header, int]:
+        """(header, index of its row) of `sheet`: the first row, or the second when the first is a lone title cell."""
+        if sheet.nrows == 0:
+            raise InvalidFile("empty file")
+        first = self._cells(sheet, 0)
+        filled = [c for c in first if not _blank(c)]
+        start = 0
+        if len(filled) == 1 and sheet.nrows > 1 and sum(not _blank(c) for c in self._cells(sheet, 1)) > 1:
+            first, start = self._cells(sheet, 1), 1  # `Raport Contracte publicate ...` above the header (2023 files)
+        width = len(first)
+        while width and _blank(first[width - 1]):
+            width -= 1
+        return [str(c).strip() if c is not None else "" for c in first[:width]], start
+
+    def __iter__(self) -> Rows:
+        return self._rows()
+
+    def close(self) -> None:
+        self._book.release_resources()
+
+    def _rows(self) -> Rows:
+        width, number = self._width, 1
+        try:
+            for index in range(self._book.nsheets):
+                sheet = self._book.sheet_by_index(index)
+                try:
+                    if index and sheet.nrows == 0:
+                        continue  # a blank trailing sheet
+                    header, start = self._header_of(sheet)
+                    if index and header != self.header:
+                        raise InvalidFile(f"sheet {index + 1}: header differs from sheet 1", [f"sheet {index + 1}: header differs from sheet 1"])
+                    for r in range(start + 1, sheet.nrows):
+                        number += 1
+                        fitted = _fit(number, self._cells(sheet, r), width)
+                        if fitted is not None:
+                            yield number, fitted
+                finally:
+                    self._book.unload_sheet(index)
         finally:
             self.close()

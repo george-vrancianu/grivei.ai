@@ -12,7 +12,7 @@ from pathlib import Path
 from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
 from .anaf import ENDPOINT as ANAF_ENDPOINT
 from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
-from .archive import Archive
+from .archive import Archive, ArchiveError
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
@@ -47,6 +47,9 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--recheck-after-days", type=int, default=None, help="also ask again about CUIs whose archived answer is older than this many days")
     a.add_argument("--max-batches", type=int, default=None, help="stop after this many requests (a small trial run)")
     a.add_argument("--endpoint", default=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT), help="the v9 URL (env PIPELINE_ANAF_URL; for a stub, never for the real one)")
+
+    q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
+    q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
 
     f = sub.add_parser("fetch-bulk", help="download one bulk file into the raw archive (no loading)")
     f.add_argument("--url", required=True)
@@ -112,6 +115,16 @@ def main(argv: list[str] | None = None) -> int:
                 print(line)
             code = max(code, 1 if effective_state(anaf) in ("failed", "interrupted") else 0)
         return code
+    if args.verb == "requeue":
+        try:
+            restored = archive.requeue(args.match)
+        except ArchiveError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        for path in restored:
+            print(f"requeued {path}")
+        print(f"requeued {len(restored)} unit(s); {len(archive.quarantined())} still in quarantine")
+        return 0
     if args.verb == "fetch-bulk":
         print(fetch_bulk_file(archive, url=args.url, kind=args.kind, unit=args.unit, via=args.via))
         return 0

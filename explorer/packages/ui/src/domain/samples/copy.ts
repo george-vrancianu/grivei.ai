@@ -8,6 +8,7 @@ import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
 import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
 import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
+import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
@@ -15,6 +16,7 @@ import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts"
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
+import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
@@ -95,6 +97,17 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
   en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
   ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+};
+
+const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
+  en: {
+    lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
+    regions: { search: "Search", map: "Map", results: "Results" },
+  },
+  ro: {
+    lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
+    regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
+  },
 };
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
@@ -254,6 +267,7 @@ export const sampleCopy = {
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
   entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
   entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
+  mainScreenLayout: (locale: Locale): MainScreenLayoutCopy => mainScreenLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>
     locale === "ro"
       ? {
@@ -298,6 +312,63 @@ export const sampleCopy = {
             records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
             suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
           },
+        };
+  },
+  coverageLensMap: (locale: Locale): CoverageLensMapCopy => {
+    const map = sampleCopy.baseMap(locale);
+    const tiles = sampleCopy.moneyLensMap(locale).tiles;
+    const { heading, national, unplaced, unplacedAuthorities, records, suspectLeftOut } = tiles;
+    return locale === "ro"
+      ? {
+          map: { ...map, mapLabel: "Harta acoperirii pe județe", legendTitle: "Acoperire" },
+          status: {
+            HARVESTED: "Colectat",
+            HARVESTED_WITH_KNOWN_GAPS: "Colectat, cu lacune cunoscute",
+            PARTIAL: "Parțial",
+            NOT_HARVESTED: "Necolectat",
+          },
+          noStatus: "Fără stare de acoperire",
+          marks: {
+            title: "Un semn pentru fiecare Sursă",
+            harvested: (source) => `${source}: culoarea arată starea județului`,
+            notHarvested: (source) => `${source}: necolectată`,
+            plannedLegend: (sources) => `Necolectate încă: ${sources}`,
+          },
+          tooltip: {
+            summary: (p) => {
+              const entities = `${p.withRecordsText} din ${roCount(p.publicEntities, p.publicEntitiesText, "entitate publică", "entități publice")} ${p.withRecords === 1 ? "are" : "au"} înregistrări ${p.source} începând cu ${p.since}`;
+              const k = p.otherAuthorities;
+              const others = roCount(k, p.otherAuthoritiesText, "altă autoritate contractantă", "alte autorități contractante");
+              return k > 0 ? `${entities}, plus ${others}` : entities;
+            },
+            boughtNothingNote: "O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic.",
+          },
+          tiles: { heading, national, unplaced, unplacedAuthorities, records, suspectLeftOut },
+        }
+      : {
+          map: { ...map, mapLabel: "Coverage map by county", legendTitle: "Coverage" },
+          status: {
+            HARVESTED: "Harvested",
+            HARVESTED_WITH_KNOWN_GAPS: "Harvested, with known gaps",
+            PARTIAL: "Partial",
+            NOT_HARVESTED: "Not harvested",
+          },
+          noStatus: "No coverage status",
+          marks: {
+            title: "One mark per Source",
+            harvested: (source) => `${source}: coloured by the county's status`,
+            notHarvested: (source) => `${source}: not harvested`,
+            plannedLegend: (sources) => `Not harvested yet: ${sources}`,
+          },
+          tooltip: {
+            summary: (p) => {
+              const entities = `${p.withRecordsText} of ${p.publicEntitiesText} public ${plural(p.publicEntities, "entity", "entities")} ${p.withRecords === 1 ? "has" : "have"} ${p.source} records since ${p.since}`;
+              const k = p.otherAuthorities;
+              return k > 0 ? `${entities}, plus ${p.otherAuthoritiesText} other contracting ${plural(k, "authority", "authorities")}` : entities;
+            },
+            boughtNothingNote: "An entity without records may simply have bought nothing.",
+          },
+          tiles: { heading, national, unplaced, unplacedAuthorities, records, suspectLeftOut },
         };
   },
   zoomedCountyMap: (locale: Locale): ZoomedCountyMapCopy => {
