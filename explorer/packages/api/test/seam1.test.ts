@@ -680,6 +680,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     const counties = JSON.parse(readFileSync(join(scratch, "geo-a", "counties.topo.json"), "utf8"));
     expect(Object.keys(counties.objects)).toEqual(["counties"]);
     expect(counties.objects.counties.geometries.map((g: { properties: { code: string } }) => g.properties.code)).toEqual(["RO-B", "RO-BV", "RO-CJ"]);
+  });
+
   // ---- the counting rule (#65) ---------------------------------------------------------------------------------------------
   const BANI = 100n;
   const bani = (ron: number | bigint) => String(BigInt(ron) * BANI);
