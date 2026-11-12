@@ -321,14 +321,15 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
-  it("reports a data-through date per record kind, the crawled kinds from the crawl cursor (#77)", async () => {
+  it("reports a data-through date per record kind, the crawled kinds up to the first hole in the crawl (#77)", async () => {
     rebuild("crawl_a", "archive-crawl");
     const main = await ask("crawl_a", mainScreen.sha256);
     expect(validateResponse(schema, parse(mainScreen.document), main.body.data, EMPTY_FILTER)).toEqual([]);
-    // the cursor is 2026-04-02, the last day with a complete manifest: an empty day counts, the unfinished 2026-04-03 does not
+    // the cursor is 2026-04-02, but 2026-02-10 is followed by a hole (02-11..03-31 never crawled): complete only through 2026-02-10;
+    // the crawled Records' own dates (up to 04-01) do not hide the hole, and the unfinished 2026-04-03 does not count
     expect((main.body.data as MainScreenQuery).sources).toEqual([{
       id: "SEAP", name: "SEAP", harvested: true,
-      dataThrough: [{ kind: "AWARD_NOTICE", date: "2026-04-02" }, { kind: "CONTRACT", date: "2026-04-02" }],
+      dataThrough: [{ kind: "AWARD_NOTICE", date: "2026-02-10" }, { kind: "CONTRACT", date: "2026-02-10" }],
     }]);
     // and a bulk-only archive keeps reporting its latest publication date, as before
     const bulkOnly = await ask("bulk_a", mainScreen.sha256);

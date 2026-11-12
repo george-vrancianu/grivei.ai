@@ -79,6 +79,24 @@ def cursor(archive: Archive, kind: str = KIND) -> date | None:
     return max(days) if days else None
 
 
+def contiguous_through(archive: Archive, kind: str = KIND) -> date | None:
+    """The last day of the unbroken run of complete days that starts at the first complete day: what is complete in the archive.
+    The cursor (the maximum) is for planning; this is the honest "crawled through" date when there are holes below it."""
+    days = complete_days(archive, kind)
+    if not days:
+        return None
+    day = min(days)
+    while day + timedelta(days=1) in days:
+        day += timedelta(days=1)
+    return day
+
+
+def missing_days(archive: Archive, kind: str = KIND) -> list[date]:
+    """The days without a complete fetch between the first complete day and the cursor."""
+    days = complete_days(archive, kind)
+    return [d for d in days_between(min(days), max(days)) if d not in days] if days else []
+
+
 class UnitWriter:
     """Writes one crawl unit. `open` resumes an incomplete fetch directory of the unit, or starts a new one."""
 
@@ -99,7 +117,7 @@ class UnitWriter:
         directory, n = base / name, 1
         while directory.exists():  # a second complete fetch on the same UTC day
             n += 1
-            directory = base / f"{name}.{n}"
+            directory = base / f"{name}.{n:02d}"  # zero-padded: names sort in fetch order past .9
         directory.mkdir(parents=True)
         return cls(archive, unit, directory, kind)
 

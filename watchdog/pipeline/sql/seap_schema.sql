@@ -65,8 +65,8 @@ CREATE TABLE seap.record (
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
 
--- The crawl cursor at the time of the rebuild (the last crawl day with a complete manifest, derived from the archive):
--- what `sources` reports as the data-through date of the crawled kinds.
+-- How far the crawl is complete at the time of the rebuild (the last day of the unbroken run of complete days, derived from
+-- the archive; the cursor itself may be further when there are holes): what `sources` reports as the data-through date of the crawled kinds.
 CREATE TABLE seap.crawl_state (
     stream  text PRIMARY KEY,   -- the crawl kind in the archive, e.g. 'award-notices'
     through date NOT NULL

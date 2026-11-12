@@ -117,7 +117,7 @@ export function postgresStore(pool: pg.Pool): Store {
       const { rows } = await pool.query(
         // the same definition as pipeline/rebuild.py DATA_THROUGH_SQL (`pipeline status`): the crawled kinds are at least as far as the crawl cursor
         `SELECT kind, max(d)::text AS date FROM (
-           SELECT kind, max(published_on) AS d FROM seap.record GROUP BY kind
+           SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
            UNION ALL
            SELECT k.kind, s.through FROM seap.crawl_state s CROSS JOIN (VALUES ('CONTRACT'), ('AWARD_NOTICE')) AS k(kind)
          ) x GROUP BY kind ORDER BY kind`,

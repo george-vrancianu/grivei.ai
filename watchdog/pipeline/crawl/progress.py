@@ -73,6 +73,11 @@ class CrawlProgress:
         self.state.update(done=self.state["done"] + 1, skipped=self.state["skipped"] + 1)
         self._line(f"crawl day {day} skipped ({why})")
 
+    def recrawl_failed(self, day: date, error: BaseException) -> None:
+        s = self.state
+        s.update(done=s["done"] + 1, current=None, recrawlFailed=[*s.get("recrawlFailed", []), day.isoformat()])
+        self._line(f"crawl day {day} re-crawl FAILED: {error}; the earlier fetch stands")
+
     def finish(self, cursor: date | None) -> None:
         s = self.state
         s.update(state="finished", cursor=_d(cursor), current=None)
@@ -107,14 +112,17 @@ def _d(day: date | None) -> str | None:
 
 
 def describe_crawl(status: dict | None, cursor: date | None, complete: int, alive: Callable[[int], bool] | None = None, host: str | None = None,
-                   now: datetime | None = None) -> list[str]:
+                   now: datetime | None = None, through: date | None = None, missing: list[date] | None = None) -> list[str]:
     """The crawl lines of `pipeline status`: the cursor and data-through dates (derived from the archive, live), then the last run."""
     from ..progress import _age, _alive, effective_state  # local: progress.py imports this module's siblings only for helpers
 
     lines = [
         f"crawl cursor: {cursor or 'none yet'} (the last day with a complete manifest; {complete} complete day(s) in the archive)",
-        f"crawled data through: {cursor or 'none'} (award notices and contracts: CONTRACT, AWARD_NOTICE)",
+        f"crawled through (archive, not yet rebuilt): {(through or cursor) or 'none'} (award notices and contracts: CONTRACT, AWARD_NOTICE)",
     ]
+    if missing:
+        shown = ", ".join(str(d) for d in missing[:10]) + (f" and {len(missing) - 10} more" if len(missing) > 10 else "")
+        lines.append(f"missing day(s) below the cursor: {shown} (rerun with --from/--to to fill them)")
     if status is None:
         return lines + ["crawl run: none recorded"]
     state = effective_state(status, alive or _alive, host)

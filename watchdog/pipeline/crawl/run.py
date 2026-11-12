@@ -9,7 +9,8 @@ last quarter whose Contracte bulk file is archived: the quarters the bulk has no
 An explicit range (`--from` / `--to`, the reusable core #78 calls): every day in it, complete days skipped unless `force`.
 
 The run stops at the first day that fails (`CrawlError`, or a signal): a later day is never completed past a hole, so the
-cursor (the last complete day) never skips a day by itself.
+cursor (the last complete day) never skips a day by itself. The exception is the re-crawl of a day that is already complete:
+its failure is logged and the earlier fetch stands, the run goes on to the next day (and still ends not ok, exit 1).
 """
 from __future__ import annotations
 
@@ -44,13 +45,14 @@ class RunSummary:
     crawled: list[date] = field(default_factory=list)
     skipped: list[date] = field(default_factory=list)
     failed: date | None = None
+    recrawl_failed: list[date] = field(default_factory=list)
     error: str | None = None
     notices: int = 0
     contracts: int = 0
 
     @property
     def ok(self) -> bool:
-        return self.failed is None
+        return self.failed is None and not self.recrawl_failed
 
 
 def last_bulk_quarter_end(archive: Archive, kind: str = "contracte") -> date | None:
@@ -83,8 +85,8 @@ def plan_run(archive: Archive, *, today: date, first: date | None = None, last: 
         if first is None:
             raise CrawlError("--to needs --from")
         last = last or today - timedelta(days=1)
-        if last > today:
-            raise CrawlError(f"--to {last} is in the future")
+        if last >= today:
+            raise CrawlError(f"--to {last} is not over yet (the last day to crawl is yesterday, {today - timedelta(days=1)})")
         if first > last:
             raise CrawlError(f"--from {first} is after --to {last}")
         return RunPlan(days_between(first, last), frozenset(), c, first, last, force)
@@ -107,6 +109,7 @@ def run_crawl(archive: Archive, crawler: Crawler, plan: RunPlan, progress: Crawl
     trailing_from = min(plan.recrawl) if plan.recrawl else None
     progress.start(plan.first, plan.last, len(plan.days), plan.cursor, trailing_from, archive.root)
     done = complete_days(archive)  # read once (a listing of the whole archive); this run keeps it current as it goes
+    day = None
     try:
         for day in plan.days:
             fetched = done.get(day)
@@ -120,7 +123,14 @@ def run_crawl(archive: Archive, crawler: Crawler, plan: RunPlan, progress: Crawl
                     summary.skipped.append(day)
                     continue
             progress.day_begin(day)
-            result = crawler.crawl_unit(day.isoformat(), day, day)
+            try:
+                result = crawler.crawl_unit(day.isoformat(), day, day)
+            except CrawlError as e:
+                if fetched is None:
+                    raise
+                progress.recrawl_failed(day, e)  # already complete: the earlier fetch stands and the new days still matter
+                summary.recrawl_failed.append(day)
+                continue
             progress.day_done(day, result.notices, result.list_pages, result.contracts, result.path, result.resumed)
             done[day] = now()
             summary.crawled.append(day)

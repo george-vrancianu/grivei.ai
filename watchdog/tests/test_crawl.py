@@ -434,7 +434,7 @@ def test_the_first_run_starts_the_day_after_the_last_bulk_quarter_or_where_it_is
     plan = plan_run(archive, today=D("2026-11-12"))
     assert plan.days[0] == D("2025-07-01") and plan.days[-1] == D("2026-11-11") and not plan.recrawl
     assert plan_run(archive, today=D("2026-11-12"), start=D("2026-11-01")).days[0] == D("2026-11-01")
-    with pytest.raises(CrawlError, match="future"):
+    with pytest.raises(CrawlError, match="not over"):
         plan_run(archive, today=D("2026-11-12"), first=D("2026-11-01"), last=D("2026-11-13"))
 
 
@@ -480,7 +480,7 @@ def test_pipeline_status_shows_the_crawl_cursor_and_the_last_run(archive, clock,
     out = capsys.readouterr().out
     assert "no rebuild status" in out
     assert "crawl cursor: 2026-10-02" in out and "2 complete day(s)" in out
-    assert "crawled data through: 2026-10-02" in out and "CONTRACT, AWARD_NOTICE" in out
+    assert "crawled through (archive, not yet rebuilt): 2026-10-02" in out and "CONTRACT, AWARD_NOTICE" in out
     assert "crawl run: " in out and "days 2/2 (2 crawled, 0 skipped)" in out
 
 
@@ -511,3 +511,60 @@ def test_the_crawl_command_exits_nonzero_when_a_day_fails_and_2_without_a_start(
     assert "crawl FAILED day 2026-10-01" in capsys.readouterr().out
     assert cli.main(["--archive", str(archive.root), "crawl"]) == 2
     assert "--start" in capsys.readouterr().err
+
+
+# ---- review round 1 ----------------------------------------------------------------------------------------------------------
+
+
+def test_a_failed_re_crawl_of_a_complete_trailing_day_does_not_block_the_new_days(archive, clock):
+    days = [f"2026-10-{d:02d}" for d in range(1, 9)]
+    eli = eli_for(days)
+    clock.moment = datetime(2026, 10, 6, 3, 0, tzinfo=timezone.utc)
+    crawler, _ = make(archive, eli, clock)
+    crawl_days(archive, crawler, clock, D("2026-10-01"), D("2026-10-05"))
+    clock.moment = datetime(2026, 10, 8, 3, 0, tzinfo=timezone.utc)
+    n = len(eli.calls)
+    eli.fail = {n + k: 500 for k in range(1, 6)}  # the first trailing day (the 3rd) fails for good
+    plan = plan_run(archive, today=clock.now().date())
+    lines = []
+    progress = CrawlProgress(None, out=lines.append, now=clock.now)
+    summary = run_crawl(archive, crawler, plan, progress, now=clock.now)
+    assert [d.isoformat() for d in summary.recrawl_failed] == ["2026-10-03"] and not summary.ok and summary.failed is None
+    assert [d.isoformat() for d in summary.crawled] == ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07"]
+    assert cursor(archive) == D("2026-10-07")  # the new days moved the cursor
+    assert any("crawl day 2026-10-03 re-crawl FAILED" in line and "the earlier fetch stands" in line for line in lines)
+
+
+def test_a_failed_new_day_still_stops_the_run(archive, clock):
+    eli = eli_for(["2026-10-01", "2026-10-02", "2026-10-03"])
+    eli.fail = {n: 500 for n in range(1, 6)}
+    crawler, _ = make(archive, eli, clock)
+    summary, _, _ = crawl_days(archive, crawler, clock, D("2026-10-01"), D("2026-10-03"))
+    assert summary.failed == D("2026-10-01") and not summary.crawled
+
+
+def test_the_data_through_stops_at_the_first_hole(archive, clock, capsys):
+    eli = eli_for([f"2026-10-{d:02d}" for d in range(1, 8)])
+    crawler, _ = make(archive, eli, clock)
+    for a, b in (("2026-10-01", "2026-10-02"), ("2026-10-05", "2026-10-06")):  # 3rd and 4th are missing
+        crawl_days(archive, crawler, clock, D(a), D(b))
+    assert cursor(archive) == D("2026-10-06")
+    assert unitdir.contiguous_through(archive) == D("2026-10-02")
+    assert unitdir.missing_days(archive) == [D("2026-10-03"), D("2026-10-04")]
+    assert cli.main(["--archive", str(archive.root), "status"]) in (0, 1)
+    out = capsys.readouterr().out
+    assert "crawled through (archive, not yet rebuilt): 2026-10-02" in out and "missing day(s) below the cursor: 2026-10-03, 2026-10-04" in out
+
+
+def test_a_later_fetch_directory_suffix_sorts_after_an_earlier_one(archive, clock):
+    eli = eli_for(["2026-10-01"])
+    crawler, _ = make(archive, eli, clock)
+    for _ in range(11):
+        crawler.crawl_unit("2026-10-01", D("2026-10-01"), D("2026-10-01"))
+    names = [d.name for d, _ in unitdir.fetches(archive, "2026-10-01")]
+    assert names == sorted(names) and names[-1].endswith(".11") and names[1].endswith(".02")
+
+
+def test_to_today_is_refused(archive, clock):
+    with pytest.raises(CrawlError, match="not over"):
+        plan_run(archive, today=D("2026-11-12"), first=D("2026-11-01"), last=D("2026-11-12"))

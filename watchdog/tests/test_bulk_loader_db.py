@@ -380,13 +380,18 @@ def test_a_bulk_record_supersedes_the_crawled_one_and_the_survivors_are_tagged(d
                          ).fetchone() == ("bulk", "Contracte 2026 - T1", datetime(2026, 11, 10, 9, tzinfo=timezone.utc))
         assert c.execute("SELECT f.stream, f.via, f.fetched_at FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = 'CAN9200003~9/2026'"
                          ).fetchone() == ("crawl", None, datetime(2026, 11, 12, 9, tzinfo=timezone.utc))
-        assert c.execute("SELECT * FROM seap.crawl_state").fetchall() == [("award-notices", date(2026, 4, 2))]  # the cursor: the empty day counts
+        assert c.execute("SELECT * FROM seap.crawl_state").fetchall() == [("award-notices", date(2026, 2, 10))]  # complete up to the 10th of February; 2026-02-11..03-31 were never crawled, so the later days are past a hole
 
 
 def test_data_through_per_record_kind_takes_the_crawl_cursor_for_the_crawled_kinds(db, tmp_path):
     from pipeline.rebuild import DATA_THROUGH_SQL
 
-    rebuild(_crawl_archive(tmp_path), db)
+    archive = _crawl_archive(tmp_path)
+    rebuild(archive, db)
+    with psycopg.connect(db) as c:  # 2026-02-10 stands alone, a hole follows: the crawled days past it do not count
+        assert dict(c.execute(DATA_THROUGH_SQL).fetchall()) == {"CONTRACT": "2026-02-10", "AWARD_NOTICE": "2026-02-10"}
+    shutil.rmtree(archive.root / "seap/crawl/award-notices/2026-02-10")  # now 04-01 and 04-02 are the unbroken run
+    rebuild(archive, db)
     with psycopg.connect(db) as c:
         assert dict(c.execute(DATA_THROUGH_SQL).fetchall()) == {"CONTRACT": "2026-04-02", "AWARD_NOTICE": "2026-04-02"}
 
@@ -420,8 +425,8 @@ def test_the_rebuild_status_file_and_pipeline_status_show_the_data_through_dates
     archive = _crawl_archive(tmp_path)
     status_file = tmp_path / "rebuild-progress.json"
     rebuild(archive, db, Progress(status_file, out=lambda line: None))
-    assert read_status(status_file)["dataThrough"] == {"AWARD_NOTICE": "2026-04-02", "CONTRACT": "2026-04-02"}
+    assert read_status(status_file)["dataThrough"] == {"AWARD_NOTICE": "2026-02-10", "CONTRACT": "2026-02-10"}  # a hole after the 10th of February
     assert cli.main(["--archive", str(archive.root), "status", "--progress-file", str(status_file)]) == 0
     out = capsys.readouterr().out
-    assert "data through (as of this rebuild): AWARD_NOTICE 2026-04-02, CONTRACT 2026-04-02" in out
+    assert "data through (as of this rebuild): AWARD_NOTICE 2026-02-10, CONTRACT 2026-02-10" in out
     assert "crawl cursor: 2026-04-02" in out  # the live cursor, from the archive
