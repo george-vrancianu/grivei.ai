@@ -174,7 +174,12 @@ const facetsOfAuthority = {
 const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
 const noFacets = { channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] };
 
-export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
+/**
+ * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`):
+ * a splitting Signal (#75's archive is not recorded yet), an estimated total (> 65,000 Records) and its second page (offset 100). The
+ * three counterparty-picked ones belong to the Relationships tab's side panel (#88 records them).
+ */
+export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
   {
     name: "signal-reproduction", kind: "typical",
     description: "the Records-tab filter a splitting Signal reproduces: authority + supplier + signal + CPV + dates; facets and a counterparty list",
@@ -192,32 +197,6 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
     }) },
   },
   {
-    name: "record-states", kind: "typical",
-    description: "supplier Records tab with a suspect value, a no-value Record, a consortium share, a framework ceiling and a natural-person winner",
-    variables: { key: "30000003", role: "SUPPLIER", limit: 100, offset: 0, order: "VALUE_DESC", filter: { badges: ["SUSPECT_VALUE", "NO_VALUE"], channel: "CONTRACT", valueBucket: "UP_TO_1B" } },
-    data: { entity: withSeap(w.drumariiHeader, {
-      role: "SUPPLIER" as Role,
-      records: {
-        total: total({ awarded: ron(24_300_000), records: 5, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
-        facets: { ...facetsFull, badge: [{ value: "SUSPECT_VALUE", total: total({ awarded: "0", records: 1, suspectLeftOut: 1 }) }, { value: "NO_VALUE", total: total({ awarded: "0", records: 1, noValue: 1 }) }] },
-        records: { count: 5, rows: [w.rFrameworkCeiling, w.rConsortium, w.rSuspect, w.rNoValue, w.rNaturalPerson].map((record) => ({ record, matchedField: null })) },
-      },
-    }) },
-  },
-  {
-    name: "supplier-default-page", kind: "typical",
-    description: "a supplier's Records tab opened without a filter: the first page of Records, default order",
-    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: {} },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      records: {
-        total: total({ awarded: ron(590_000), records: 3 }),
-        facets: facetsOfSupplier,
-        records: { count: 3, rows: [w.rDirect, w.rSplit2, w.rSplit1].map((record) => ({ record, matchedField: null })) },
-      },
-    }) },
-  },
-  {
     name: "supplier-signal-splitting", kind: "typical",
     description: "a supplier's Records tab after the Splitting facet: the total and the rows follow the filter",
     variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { signal: "SPLITTING" } },
@@ -228,54 +207,6 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
         facets: { ...facetsOfSupplier, signal: [facetsOfSupplier.signal[0]!], channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
           counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(290_000), records: 2 }) }] },
         records: rowsOf(w.rSplit2, w.rSplit1),
-      },
-    }) },
-  },
-  {
-    name: "supplier-several-facets", kind: "typical",
-    description: "a supplier's Records tab with a year, the channel, a Signal and one authority on: the filter the panel builds by several choices",
-    variables: {
-      key: "30000001", role: "SUPPLIER", limit: 100, offset: 0,
-      filter: { from: "2024-01-01", to: "2024-12-31", channel: "DIRECT_PURCHASE", signal: "SPLITTING", authority: "4000001" },
-    },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      records: {
-        total: total({ awarded: ron(290_000), records: 2 }),
-        facets: {
-          channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
-          procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(290_000), records: 2 }) }],
-          year: [{ value: "2024", total: total({ awarded: ron(290_000), records: 2 }) }],
-          signal: [{ value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) }],
-          badge: [],
-          counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(290_000), records: 2 }) }],
-        },
-        records: rowsOf(w.rSplit2, w.rSplit1),
-      },
-    }) },
-  },
-  {
-    name: "supplier-contract-no-matches", kind: "empty",
-    description: "a supplier with no Records won through a Contract: the Contract facet is on and matches nothing (zero total, empty facets)",
-    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { channel: "CONTRACT" } },
-    data: { entity: withSeap(w.hachiHeader, { role: "SUPPLIER" as Role, records: { total: zeroTotal, facets: noFacets, records: { count: 0, rows: [] } } }) },
-  },
-  {
-    name: "authority-read-as-supplier", kind: "empty",
-    description: "an authority-only entity opened on a supplier's Records tab: the entity exists but has no supplier role (seap.role is null)",
-    variables: { key: "4000001", role: "SUPPLIER", limit: 100, offset: 0, filter: {} },
-    data: { entity: withSeap(w.primariaBrasovHeader, null) },
-  },
-  {
-    name: "authority-default-page", kind: "typical",
-    description: "an authority's Records tab opened without a filter: facets with suppliers as the counterparties",
-    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: {} },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
-      role: "AUTHORITY" as Role,
-      records: {
-        total: total({ awarded: ron(13_493_400), records: 6 }),
-        facets: facetsOfAuthority,
-        records: rowsOf(w.rContract, w.rDirect, w.rSplit1, w.rSplit2, w.rMismatch, w.rDirectSmall),
       },
     }) },
   },
@@ -309,10 +240,20 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
     }) },
   },
   {
-    name: "no-matches", kind: "empty",
-    description: "filters that match nothing: zero total, empty facets, no rows",
-    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "zzzzzz", hasSignals: true } },
-    data: { entity: withSeap(w.primariaBrasovHeader, { role: "AUTHORITY" as Role, records: { total: zeroTotal, facets: noFacets, records: { count: 0, rows: [] } } }) },
+    name: "authority-estimated-total-page-2", kind: "extreme",
+    description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 2 of many (offset 100)",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 100, filter: { to: "2030-12-31" } },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
+        facets: {
+          ...facetsOfAuthority,
+          channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
+        },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+      },
+    }) },
   },
   {
     name: "supplier-one-authority", kind: "typical",
@@ -339,11 +280,6 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
         records: rowsOf(w.rContract),
       },
     }) },
-  },
-  {
-    name: "unknown-key", kind: "empty", description: "no entity under that key",
-    variables: { key: "0", role: "AUTHORITY", limit: 100, offset: 0, filter: {} },
-    data: { entity: null },
   },
 ];
 

@@ -105,22 +105,25 @@ export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by
 // The Records tab's data (`EntityRecords` fixtures: the `records(filter)` result of an entity's role).
 const recordsOf = (name: string): RecordsTabData => named(fixtures.EntityRecords, name).data.entity!.seap.role!.records;
 const filterOf = (name: string): RecordFilter => named(fixtures.EntityRecords, name).variables.filter;
+// Recorded from the API (seam 1, `recorded/EntityRecords.json`) except the splitting Signal and the estimated total, which stay hand-written.
 /** A supplier's tab with no filter: facets with an authority as the counterparty. */
-export const supplierRecords = recordsOf("supplier-default-page");
-/** The same tab after choosing the Splitting facet. */
+export const supplierRecords = recordsOf("supplier");
+/** The same tab after choosing the Splitting facet (hand-written: no recorded archive has a splitting Signal yet). */
 export const supplierSplittingRecords = recordsOf("supplier-signal-splitting");
 export const supplierSplittingFilter = filterOf("supplier-signal-splitting");
 /** A year, the channel, a Signal and one authority on at once. */
 export const supplierSeveralFacetsRecords = recordsOf("supplier-several-facets");
 export const supplierSeveralFacetsFilter = filterOf("supplier-several-facets");
 /** A facet that matches nothing: zero total, no facets, no rows. */
-export const supplierNoMatches = recordsOf("supplier-contract-no-matches");
-export const supplierNoMatchesFilter = filterOf("supplier-contract-no-matches");
+export const supplierNoMatches = recordsOf("supplier-nothing-in-filter");
+export const supplierNoMatchesFilter = filterOf("supplier-nothing-in-filter");
 /** An authority's tab with no filter: facets with suppliers as the counterparties. */
-export const authorityRecords = recordsOf("authority-default-page");
-export const authorityOneSupplierRecords = recordsOf("authority-one-supplier");
-export const authorityOneSupplierFilter = filterOf("authority-one-supplier");
-/** A huge set: estimated total and counts, many pages. */
+export const authorityRecords = recordsOf("authority");
+/** An authority whose Records are in Signals: the Signal facet lists each rule (recorded, asked with `order: VALUE_DESC`). */
+export const authorityWithSignalsRecords = recordsOf("authority-with-signals");
+export const authorityOneSupplierRecords = recordsOf("authority-counterparty");
+export const authorityOneSupplierFilter = filterOf("authority-counterparty");
+/** A huge set: estimated total and counts, many pages (hand-written: an estimate needs more than 65,000 Records). */
 export const authorityEstimatedRecords = recordsOf("authority-estimated-total");
 
 // ---- the Record page (`RecordPage` fixtures) ----------------------------------------------------------------
