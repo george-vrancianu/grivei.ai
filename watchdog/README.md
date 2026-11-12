@@ -438,7 +438,7 @@ Where an authority sits (and any ANAF-known entity): a county (ISO 3166-2:RO, Bu
 
 **National authorities** (`placement/scope.py`): `scope = national` comes from SEAP's `legalBuyerType` / `caType` on an award notice of the authority (one notice per authority), else from the reviewed file `pipeline/placement/data/national_authorities.csv` (`cui,national,override,name,reason`). The notice is read by an explicit mapping (`_verdict`), not by substrings: **national** = `legalBuyerType` "Autoritate guvernamentala centrala" (`cga`) or `caType` "Minister sau orice alta autoritate nationala sau federala" / "Agentie/birou national"; **not national** = a text naming a deconcentrated service ("Serviciul public deconcentrat"), or a regional or local authority (this wins over "central"); **unknown, the file decides** = bodies governed by public law or public undertakings "controlled by" a central authority (`body-pl-cga`: universities, hospitals, institutes), even when the caType names a ministry; a central legal type with a public-law caType is unknown too; and any text not listed. The texts are unverified against real notices: check the mapping on a handful before the first national run (`authority-scope`, then read the `legalBuyerType` / `caType` in the archived `notice.json` files). The notice flag wins over the file unless the line says `override=true` (use it for an authority the notice gets wrong). With neither, an authority is not national. A national authority keeps its seat in `core.placement` but the API serves no county, UAT or locality for it, so it is never piled onto Bucharest. `python -m pipeline national-propose --db URL` prints CSV lines for authorities with no flag and no line whose name looks national (`MINISTERUL ...`, `AGENTIA NATIONALA ...`): a proposal to review, never applied by itself.
 
-**Operator order** (once, then after each new load; the lookups need a rebuilt graph, like `estimates`):
+**Operator order** (once, then when the archive has new authorities). The two lookups read the raw archive (bulk files and crawled days, as a rebuild reads them; `anaf.archived_records`), never a graph, so they run before the one load: `authority-scope` takes one award notice per authority with a Contracte or award-notice Record (a crawled notice's internal id first, else the latest notice number), and `seap-entities` takes the archive's authority CUIs that the archived ANAF answers do not confirm (the latest answer per CUI wins, as in a rebuild) and refuses to start before `anaf-lookup` has archived any answer. Both archive every answer and skip what is archived on a rerun:
 
 ```bash
 cd watchdog && . .venv/bin/activate                        # uv pip install -r requirements.txt (shapely is new)
@@ -448,11 +448,12 @@ python -m pipeline geo-fetch                               # INS SIRUTA (data.go
 python -m pipeline geo-fetch --only siruta --siruta-dataset siruta_s2-2026   # a new SIRUTA semester is a new dataset id
 # 2. the checked-in tables, generated from those snapshots; review the diff and commit pipeline/placement/data/{uats,villages}.csv, table-sources.json
 python -m pipeline geo-table
-# 3. rebuild, then the two small lookups (each archives every answer; resumable; ~3 requests/s), then rebuild again
+# 3. ANAF, then the two small lookups (each archives every answer; resumable; ~3 requests/s), then the one load
+python -m pipeline anaf-lookup
+python -m pipeline authority-scope                         # one award notice per authority: legalBuyerType / caType
+python -m pipeline seap-entities                           # authority CUIs the archived ANAF answers do not confirm
 python -m pipeline rebuild --db "$DATABASE_URL"
-python -m pipeline authority-scope --db "$DATABASE_URL"   # one award notice per authority: legalBuyerType / caType
-python -m pipeline seap-entities --db "$DATABASE_URL"     # authority CUIs ANAF did not answer
-python -m pipeline rebuild --db "$DATABASE_URL"
+# 4. only after a hand edit of national_authorities.csv (`national-propose` reads the loaded graph): rebuild again
 ```
 
 `geo-table` needs the three snapshots and `shapely`, and writes into the checkout's `pipeline/placement/data` by default: run it from the checkout's venv as above, not with `docker compose run` (that directory is in the image and is lost when the container exits). It writes `uats.csv` (one row per UAT and per sector: siruta, county ISO, JUD, TIP, display name, folded name, lon, lat, point source), `villages.csv` (NIV=3 rows: siruta, parent UAT, name, folded name, CODP) and `table-sources.json` (snapshot paths and sha256, attribution). A Wikidata point is accepted only inside the ANCPI polygon with the same SIRUTA; otherwise the polygon's point on surface (`ancpi_pos`). It stops if `counties.csv` disagrees with SIRUTA's county rows. Without `uats.csv` a rebuild places by county only and says so (`no UAT table`); with it, the UATs of `core.uat` come from it. Attribution (CC BY 4.0): "SIRUTA: INS", "Limite UAT: ANCPI"; Wikidata is CC0.

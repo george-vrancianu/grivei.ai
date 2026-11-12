@@ -1,6 +1,7 @@
 """SEAP's entity views as the fallback for CUIs ANAF does not know (#67).
 
-`pipeline seap-entities` asks e-licitatie about every authority CUI of the loaded graph that has no ANAF answer:
+`pipeline seap-entities` asks e-licitatie about every authority CUI in the raw archive's SEAP files that the archived ANAF answers
+do not confirm (no graph needed: it runs after `anaf-lookup` and before the one national load):
 `POST /api-pub/Entity/getSUEntityByCIF/` (body: the CUI as a JSON string), and, when that names an entity but carries no city,
 `GET /api-pub/Entity/getCAEntityView/{entityId}`. Both answers are archived unchanged (`lookup.py`). The view has an ASCII `city`
 from SEAP's own pick-list, `county` (ASCII), `country` and an `address` string with `Sector: n` and `Cod postal: 507190`.
@@ -16,10 +17,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Mapping
 
-import psycopg
-
 from ..archive import Archive
 from ..crawl.client import CrawlError
+from ..identity import resolve_authority
 from . import lookup
 
 KIND = "entity-location"
@@ -27,18 +27,32 @@ BY_CIF_PATH = "/api-pub/Entity/getSUEntityByCIF/"
 VIEW_PATH = "/api-pub/Entity/getCAEntityView/{id}"
 BY_CIF_FILE, VIEW_FILE = "by-cif.json", "view.json"
 
-CANDIDATES_SQL = """
-SELECT DISTINCT r.authority_cui FROM seap.record r
- WHERE r.authority_key ~ '^[0-9]+$' AND r.authority_cui IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM core.anaf_company a WHERE a.cui = r.authority_key)
- ORDER BY 1"""
 
 
-def candidates(db_url: str) -> list[str]:
-    """Authority CUIs of the loaded graph that ANAF did not answer (a rebuild must have run)."""
-    with psycopg.connect(db_url) as conn, conn.cursor() as cur:
-        cur.execute(CANDIDATES_SQL)
-        return [row[0] for row in cur.fetchall()]
+class NoAnafAnswers(Exception):
+    """The archive holds no ANAF answer: every authority would look unknown to ANAF. Run `pipeline anaf-lookup` first."""
+
+
+def candidates(archive: Archive, say: Callable[[str], None] | None = None) -> list[str]:
+    """Authority CUIs in the raw archive's SEAP files (bulk and crawled, as a rebuild reads them) that pass the check digit and that
+    the archived ANAF answers do not confirm (the latest answer per CUI wins, as in a rebuild's `core.anaf_company`). In CUI order.
+    Raises NoAnafAnswers when the archive has no ANAF answer at all."""
+    from ..anaf import archived_records, confirmed_cuis
+
+    confirmed = confirmed_cuis(archive)
+    if confirmed is None:
+        raise NoAnafAnswers("no archived ANAF answer: run `pipeline anaf-lookup` first, or every authority is asked about")
+    out: set[str] = set()
+    for index, total, unit, records, skipped in archived_records(archive):
+        if records is None:
+            if say:
+                say(f"seap-entities scan unit {index}/{total} kind={unit.kind} unit={unit.unit} skipped ({skipped})")
+            continue
+        for r in records:
+            authority = resolve_authority(r.authority_cui, r.authority_name)
+            if authority.identity == "CUI" and authority.cui and authority.cui not in confirmed:
+                out.add(authority.cui)
+    return sorted(out)
 
 
 @dataclass(frozen=True)

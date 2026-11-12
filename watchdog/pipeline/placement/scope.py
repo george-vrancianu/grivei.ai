@@ -4,8 +4,9 @@ Two inputs, and one rule between them:
 
 1. The award notice (SEAP): an authority with an award notice has `legalBuyerType` (eForms, e.g. "Autoritate guvernamentala
    centrala") and `caType` (e.g. "Minister sau orice alta autoritate nationala sau federala") on the notice detail.
-   `pipeline authority-scope` fetches ONE award notice per authority (the crawled Record's internal id when the graph has one,
-   else the id from the notice list filtered by the notice number) and archives the answers unchanged (`lookup.py`).
+   `pipeline authority-scope` fetches ONE award notice per authority (the crawled Record's internal id when the archive has one,
+   else the id from the notice list filtered by the notice number) and archives the answers unchanged (`lookup.py`). The authorities
+   come from the raw archive (`candidates`), never from a loaded graph, so the lookup runs before the one national load.
    `classify_notice` reads them at rebuild with an explicit mapping (`_verdict`): national if a field names a central government
    authority (`legalBuyerType`) or a national authority (`caType`); NOT national if either names a deconcentrated service or a
    regional or local authority (this wins over "central"); unknown (the file decides) for bodies governed by public law or public
@@ -29,10 +30,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
 
-import psycopg
-
 from ..archive import Archive
 from ..crawl.client import CrawlError
+from ..identity import resolve_authority
 from . import lookup
 from .matching import fold
 from .tables import DEFAULT_DATA_DIR, read_csv
@@ -43,11 +43,6 @@ NOTICE_PATH = "/api-pub/C_PUBLIC_CANotice/get/{id}"
 LIST_FILE, NOTICE_FILE = "list.json", "notice.json"
 CLASSIFICATION_FILE = "national_authorities.csv"
 
-CANDIDATES_SQL = """
-SELECT DISTINCT ON (authority_cui) authority_cui, ca_notice_id::text, notice_code FROM seap.record
- WHERE kind IN ('CONTRACT', 'AWARD_NOTICE') AND authority_key ~ '^[0-9]+$' AND authority_cui IS NOT NULL
-   AND (ca_notice_id IS NOT NULL OR notice_code IS NOT NULL)
- ORDER BY authority_cui, (ca_notice_id IS NULL), published_on DESC, code"""
 
 
 @dataclass(frozen=True)
@@ -57,11 +52,28 @@ class Candidate:
     notice_code: str | None
 
 
-def candidates(db_url: str) -> list[Candidate]:
-    """One award notice per authority of the loaded graph (a rebuild must have run)."""
-    with psycopg.connect(db_url) as conn, conn.cursor() as cur:
-        cur.execute(CANDIDATES_SQL)
-        return [Candidate(*row) for row in cur.fetchall()]
+def candidates(archive: Archive, say: Callable[[str], None] | None = None) -> list[Candidate]:
+    """One award notice per authority, read from the raw archive's contracts and award notices (bulk files and crawled days, as a
+    rebuild reads them; no graph needed). An authority counts when its CUI passes the check digit (a rebuild keys it on that CUI).
+    Its notice: one with the internal id (a crawled Record's) first, else the latest published, ties by Record code. In CUI order."""
+    from ..anaf import archived_records
+
+    best: dict[str, tuple[tuple, Candidate]] = {}
+    for index, total, unit, records, skipped in archived_records(archive):
+        if records is None:
+            if say:
+                say(f"authority-scope scan unit {index}/{total} kind={unit.kind} unit={unit.unit} skipped ({skipped})")
+            continue
+        for r in records:
+            if r.kind not in ("CONTRACT", "AWARD_NOTICE") or not (r.ca_notice_id is not None or r.notice_code):
+                continue
+            authority = resolve_authority(r.authority_cui, r.authority_name)
+            if authority.identity != "CUI" or not authority.cui:
+                continue
+            rank = (r.ca_notice_id is None, -r.published_on.toordinal(), r.code)
+            if authority.cui not in best or rank < best[authority.cui][0]:
+                best[authority.cui] = (rank, Candidate(authority.cui, None if r.ca_notice_id is None else str(r.ca_notice_id), r.notice_code))
+    return [best[cui][1] for cui in sorted(best)]
 
 
 # ---- reading a notice ------------------------------------------------------------------------------------------------
