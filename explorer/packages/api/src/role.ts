@@ -125,10 +125,10 @@ function totalFrom(r: Record<string, unknown>, prefix = ""): TotalRow {
  * ceiling. A Record counts once per group, which is what makes the groups' numbers add up to the set's Total (the authority side:
  * the shares of all winners are the counted value; the supplier side: only the entity's own share matched).
  */
-function perRecord(groupSql: string, whereSql: string, extra = ""): string {
+function perRecord(groupSql: string, whereSql: string, extra = "", table = "seap.search"): string {
   return `SELECT ${groupSql} AS g, record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value,
                  max(ceiling_bani) AS ceil, max(channel) AS channel, max(winners) AS winners, bool_or(has_signals) AS has_signals ${extra}
-            FROM seap.search WHERE ${whereSql} GROUP BY ${groupSql}, record_code`;
+            FROM ${table} WHERE ${whereSql} GROUP BY ${groupSql}, record_code`;
 }
 
 export function roleStore(deps: RoleDeps): RoleStore {
@@ -138,27 +138,38 @@ export function roleStore(deps: RoleDeps): RoleStore {
   return {
     async roleCounterparties(side, filter, { limit }, { signal } = {}) {
       const w = buildWhere(filter);
-      // the counterparty's key: the supplier on an authority's page, the authority on a supplier's. Natural persons (no key) are one group.
-      const key = side === "AUTHORITY" ? "supplier_key" : "authority_key";
+      // The counterparty's key: the supplier on an authority's page, the authority on a supplier's. A row with no key is either a natural
+      // person (all of them one group, `#person`; the winner's `naturalPerson` flag on the Record says so) or a winner nobody could link,
+      // or a Record with no winner (`#unknown`): those are NOT natural persons.
+      const gk =
+        side === "AUTHORITY"
+          ? `CASE WHEN s.supplier_key IS NOT NULL THEN s.supplier_key
+                  WHEN coalesce((SELECT (r.winners -> (s.winner_position - 1) ->> 'naturalPerson')::boolean FROM seap.record r WHERE r.code = s.record_code), false) THEN '#person'
+                  ELSE '#unknown' END`
+          : `coalesce(s.authority_key, '#unknown')`;
+      const table = `(SELECT s.*, ${gk} AS gk FROM seap.search s WHERE ${w.sql}) t`;
+      const asked = Math.max(limit, 1); // a page of 0 still has to say how many there are
       const rows = (
-        await cancellableQuery<Record<string, unknown> & { key: string | null; n: number; won_together: boolean; has_signals: boolean }>(
+        await cancellableQuery<Record<string, unknown> & { key: string; n: number; won_together: boolean; has_signals: boolean }>(
           pool, signal,
           `SELECT g AS key, ${totalColumns("")}, ${totalColumns("dp_", "channel = 'DIRECT_PURCHASE'")}, ${totalColumns("c_", "channel = 'CONTRACT'")},
                   bool_or(winners > 1) AS won_together, bool_or(has_signals) AS has_signals, count(*) OVER ()::int AS n
-             FROM (${perRecord(key, w.sql)}) r
-            GROUP BY g ORDER BY coalesce(sum(sh), 0) DESC, g NULLS LAST LIMIT ${limit}`,
+             FROM (${perRecord("gk", "true", "", table)}) r
+            GROUP BY g ORDER BY coalesce(sum(sh), 0) DESC, (g LIKE '#%'), g LIMIT ${asked}`,
           w.params,
         )
       ).rows;
       const count = rows[0]?.n ?? 0;
-      const keys = rows.map((r) => r.key).filter((k): k is string => k !== null);
+      const page = rows.slice(0, limit);
+      const isKey = (k: string) => !k.startsWith("#");
+      const keys = page.map((r) => r.key).filter(isKey);
       const entities = await entitiesOf(keys);
       const now = new Date().toISOString();
       return {
         count,
-        rows: rows.map((r) => ({
-          entity: r.key === null ? null : (entities.get(r.key) ?? fallbackEntity(r.key, null, now)),
-          naturalPerson: r.key === null,
+        rows: page.map((r) => ({
+          entity: isKey(r.key) ? (entities.get(r.key) ?? fallbackEntity(r.key, null, now)) : null,
+          naturalPerson: r.key === "#person",
           total: totalFrom(r),
           viaDirectPurchase: totalFrom(r, "dp_"),
           viaContract: totalFrom(r, "c_"),
@@ -216,7 +227,9 @@ export function roleStore(deps: RoleDeps): RoleStore {
       const w = buildWhere(filter);
       // The Records of the set with more than one winner, grouped by who won them (the sorted member keys; natural persons have no key, they are `#person`).
       // The group's money is the Records' whole counted value on both sides, so one consortium reads the same on the authority's and the supplier's page.
-      const members = `(SELECT string_agg(coalesce(x->>'key', '#person'), ',' ORDER BY coalesce(x->>'key', '#person')) FROM jsonb_array_elements(r.winners) x)`;
+      // (a natural person is `#person`; a winner nobody could link is `#unknown`: the two are different members)
+      const memberKey = `CASE WHEN coalesce((x->>'naturalPerson')::boolean, false) THEN '#person' ELSE coalesce(x->>'key', '#unknown') END`;
+      const members = `(SELECT string_agg(${memberKey}, ',' ORDER BY ${memberKey}) FROM jsonb_array_elements(r.winners) x)`;
       const groups = await cancellableQuery<Record<string, unknown> & { sig: string }>(
         pool, signal,
         `WITH m AS (SELECT record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil,
@@ -236,10 +249,11 @@ export function roleStore(deps: RoleDeps): RoleStore {
               x AS (SELECT c.sig, c.code, e.val, e.ord,
                            CASE WHEN coalesce((e.val->>'naturalPerson')::boolean, false)
                                 THEN '#person' || row_number() OVER (PARTITION BY c.code, coalesce((e.val->>'naturalPerson')::boolean, false) ORDER BY e.ord)
-                                ELSE e.val->>'key' END AS mid
+                                ELSE coalesce(e.val->>'key', '#unknown' || e.ord) END AS mid
                       FROM c CROSS JOIN LATERAL jsonb_array_elements(c.winners) WITH ORDINALITY AS e(val, ord))
-         SELECT sig, mid, (array_agg(val ORDER BY code))[1] AS val, sum((val->>'share')::bigint)::text AS share
-           FROM x WHERE sig = ANY($${w.params.length + 1}::text[]) GROUP BY sig, mid ORDER BY sig, min(ord), mid`,
+         SELECT x.sig, x.mid, (array_agg(x.val ORDER BY x.code))[1] AS val, sum(s.share_bani)::text AS share
+           FROM x LEFT JOIN seap.search s ON s.record_code = x.code AND s.winner_position = x.ord
+          WHERE x.sig = ANY($${w.params.length + 1}::text[]) GROUP BY x.sig, x.mid ORDER BY x.sig, min(x.ord), x.mid`,
         [...w.params, groups.rows.map((g) => g.sig)],
       );
       const keys = [...new Set(found.rows.map((r) => r.val.key).filter((k): k is string => !!k))];
@@ -269,7 +283,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
       );
       const wanted = codes.rows.map((r) => r.record_code);
       if (!wanted.length) return [];
-      const { rows } = await pool.query(`SELECT ${deps.recordColumns} FROM seap.record WHERE code = ANY($1)`, [wanted]);
+      const { rows } = await cancellableQuery<Record<string, unknown>>(pool, signal, `SELECT ${deps.recordColumns} FROM seap.record WHERE code = ANY($1)`, [wanted]);
       const byCode = new Map((await rowsOf(rows)).map((r) => [r.code, r]));
       return wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r);
     },

@@ -126,6 +126,37 @@ def build() -> None:
     archive_batch(a, [int(cui) for _, cui in companies], date(2026, 11, 2), anaf_response(entries, []), at(2026, 11, 2, 8))
 
 
+OUT_EDGE = Path(__file__).parent / "archive-roles-edge"
+NOBODY = ("", "")  # a winner published with neither a name nor an id: nobody to link, and not a natural person
+
+
+def build_edge() -> None:
+    """`archive-roles-edge/`: what the main archive leaves out, on the commune (1000009) and ALFA / BETA (ANAF confirms them).
+
+      DA97000001  commune -> nobody (no name, no id)  1,000 RON   (an unlinked winner: NOT a natural person)
+      DA97000002  commune -> a natural person         2,000 RON
+      CAN9700001  commune, consortium ALFA + BETA: framework ceiling 4,000,000 (a ceiling: counted nowhere) and one subsequent contract of 1,000,000
+    """
+    if OUT_EDGE.exists():
+        shutil.rmtree(OUT_EDGE)
+    a = Archive(OUT_EDGE)
+    das = [da("DA97000001", "2023-01-10", "1000", COMUNA, NOBODY), da("DA97000002", "2023-01-11", "2000", COMUNA, PERSON)]
+    a.write_unit(source="seap", stream="bulk", kind="da", unit="2023Q1", fetched_at=at(2023, 6, 15),
+                 files={"raport-achizitii-directe-t1-2023.csv": ("\n".join([DA_HEADER, *das]) + "\n").encode()},
+                 via="Achizitii directe 2023 - T1", url="https://data.gov.ro/fixture/raport-achizitii-directe-t1-2023.csv")
+    rows = [
+        *contract("CAN9700001", "1", COMUNA, OPEN, FW, "2023-02-01", 4_000_000, ALFA, BETA),
+        *contract("CAN9700001", "2", COMUNA, OPEN, SUB, "2023-02-01", 1_000_000, ALFA, BETA),
+    ]
+    a.write_unit(source="seap", stream="bulk", kind="contracte", unit="2023Q1", fetched_at=at(2023, 6, 20),
+                 files={"raport-contracte-t1-2023.csv": ("\n".join([H22, *rows]) + "\n").encode()},
+                 via="Contracte 2023 - T1", url="https://data.gov.ro/fixture/raport-contracte-t1-2023.csv")
+    companies = [ALFA, BETA]
+    entries = [anaf_entry(int(cui), name) for name, cui in companies]
+    archive_batch(a, [int(cui) for _, cui in companies], date(2026, 11, 2), anaf_response(entries, []), at(2026, 11, 2, 8))
+
+
 if __name__ == "__main__":
     build()
-    print(f"wrote {OUT}")
+    build_edge()
+    print(f"wrote {OUT} and {OUT_EDGE}")
