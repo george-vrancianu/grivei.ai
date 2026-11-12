@@ -46,13 +46,13 @@ export interface MonthlyTimelineCopy {
   heading: string;
   /** The chart's accessible name. */
   label: string;
-  /** Legend: the whole entity's months, and the picked counterparty's (given its name). */
+  /** Legend: the whole entity's months, and the picked counterparty's (given its name, or null while the name is not known yet). */
   overall: string;
-  picked: (name: string) => string;
+  picked: (name: string | null) => string;
   /** Sentence for no months at all. */
   empty: string;
   /** The text alternative: a table of the same months. */
-  table: { caption: string; month: string; amount: string; picked: (name: string) => string };
+  table: { caption: string; month: string; amount: string; picked: (name: string | null) => string };
 }
 
 export interface CounterpartyPanelCopy {

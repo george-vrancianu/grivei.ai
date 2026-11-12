@@ -615,7 +615,14 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
       timeline: monthly([
         ["2023-11", 12_800_000, 1], ["2024-02", 3_350_000, 2], ["2024-05", 24_000_000, 3], ["2024-08", 10_700_000, 3], ["2024-11", 650_000, 1],
       ]),
-      flow: moneyMap({ side: "AUTHORITY", counties: [{ area: "RO-BV", name: "Brașov", entities: 1, total: total({ awarded: ron(12_800_000), records: 1 }) }], national: total({ awarded: ron(15_000_000), records: 1 }) }),
+      flow: moneyMap({ side: "AUTHORITY", counties: [
+        { area: "RO-BV", name: "Brașov", entities: 1, total: total({ awarded: ron(12_800_000), records: 1 }) },
+        { area: "RO-CJ", name: "Cluj", entities: 1, total: total({ awarded: ron(9_000_000), records: 2 }) },
+        { area: "RO-SB", name: "Sibiu", entities: 2, total: total({ awarded: ron(7_150_000), records: 3 }) },
+        { area: "RO-PH", name: "Prahova", entities: 1, total: total({ awarded: ron(4_200_000), records: 1 }) },
+        { area: "RO-MS", name: "Mureș", entities: 1, total: total({ awarded: ron(2_250_000), records: 1 }) },
+        { area: "RO-IF", name: "Ilfov", entities: 1, total: total({ awarded: ron(1_100_000), records: 1 }) },
+      ], national: total({ awarded: ron(15_000_000), records: 1 }) }),
     }) },
   },
   {

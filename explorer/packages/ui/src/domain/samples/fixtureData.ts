@@ -189,8 +189,8 @@ function relationships(name: string): RelationshipsSample {
   return { entity, counterparties: role.counterparties, timeline: role.timeline };
 }
 const panelOf = (name: string): CounterpartyRecordsData => {
-  const { total, records, facets } = recordsOf(name);
-  return { total, records, facets };
+  const { total, records } = recordsOf(name);
+  return { total, records };
 };
 /** An authority with eight counterparties shown of thirteen: contracts, direct purchases, a mix, a Signal ring, a natural person and an unidentified group. */
 export const authorityTypicalRelationships = relationships("authority-typical-view");

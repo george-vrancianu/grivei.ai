@@ -466,8 +466,8 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
           directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
         },
         timeline: {
-          heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name, empty: "Nicio lună în filtrele alese.",
-          table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name },
+          heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
           label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
@@ -495,8 +495,8 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
           directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
         },
         timeline: {
-          heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name, empty: "No months for the chosen filters.",
-          table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name },
+          heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
           label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",

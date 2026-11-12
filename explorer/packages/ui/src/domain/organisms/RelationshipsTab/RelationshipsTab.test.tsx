@@ -148,15 +148,30 @@ describe("RelationshipsTab", () => {
     expect(unknown).toBeVisible();
     expect(screen.getByRole("img", { name: /^Persoană fizică, RON\s36,000/ })).toBeVisible();
     expect(unknown).not.toHaveAttribute("tabindex");
-    expect(container.querySelectorAll('[role="img"][data-node="person"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[role="img"][data-node="person"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[role="img"][data-node="unknown"]')).toHaveLength(1);
   });
 
-  it("names a picked counterparty beyond the shown rows from the panel's counterparty facet, without inventing an identity", () => {
-    renderInUi(<RelationshipsTab {...common} selected="30000001-beyond" onSelect={vi.fn()} sidePanel={{
-      ...authorityDirectSupplierPanel,
-      facets: { ...authorityDirectSupplierPanel.facets, counterparty: [{ entity: { key: "30000001-beyond", displayName: "NAME-ONLY FIRM", identity: "NAME_ONLY" }, matched: authorityDirectSupplierPanel.total }] },
-    }} />);
+  it("names a picked counterparty beyond the shown rows from the panel's Records, without inventing an identity", () => {
+    const beyond = { key: "30000001-beyond", displayName: "NAME-ONLY FIRM", identity: "NAME_ONLY" as const };
+    const rows = authorityDirectSupplierPanel.records.rows.map(({ record, ...rest }) => ({
+      ...rest, record: { ...record, winners: [{ naturalPerson: false, publishedName: "NAME-ONLY FIRM SRL", share: null, entity: beyond }] },
+    }));
+    renderInUi(<RelationshipsTab {...common} selected={beyond.key} onSelect={vi.fn()} sidePanel={{ ...authorityDirectSupplierPanel, records: { ...authorityDirectSupplierPanel.records, rows } }} />);
     expect(within(screen.getByRole("heading", { name: /Records with/ })).getByText("NAME-ONLY FIRM")).toBeVisible();
+  });
+
+  it("names a picked authority beyond the shown rows from the Records' authority on a supplier's page", () => {
+    const authority = { key: "4000999", displayName: "COMUNA BEYOND", identity: "NAME_ONLY" as const };
+    const rows = authorityDirectSupplierPanel.records.rows.map(({ record, ...rest }) => ({ ...rest, record: { ...record, authority } }));
+    renderInUi(<RelationshipsTab {...common} role="supplier" selected={authority.key} onSelect={vi.fn()} sidePanel={{ ...authorityDirectSupplierPanel, records: { ...authorityDirectSupplierPanel.records, rows } }} />);
+    expect(within(screen.getByRole("heading", { name: /Records with/ })).getByText("COMUNA BEYOND")).toBeVisible();
+  });
+
+  it("highlights the timeline of a pick whose name is not known yet, under a neutral label", () => {
+    const { container } = renderInUi(<RelationshipsTab {...common} selected="99999999" onSelect={vi.fn()} sidePanel={null} sidePanelLoading selectedTimeline={authorityTypicalPickedTimeline} />);
+    expect(container.querySelectorAll('rect[data-series="picked"]').length).toBeGreaterThan(0);
+    expect(screen.getByRole("table")).toHaveTextContent("Picked counterparty");
   });
 
   it("shows no name, and invents none, for a picked key beyond the rows until its Records arrive", () => {

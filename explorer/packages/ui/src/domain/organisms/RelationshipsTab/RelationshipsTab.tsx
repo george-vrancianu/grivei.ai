@@ -32,8 +32,8 @@ export interface RelationshipsTabProps {
   selected: string | null;
   onSelect: (key: string | null) => void;
   /**
-   * Records with the picked counterparty (`EntityRecords` with it in the filter, counterparty facet included); null while they have not arrived
-   * or when nothing is picked. A counterparty beyond the graph's rows is named from its facet.
+   * Records with the picked counterparty (`EntityRecords` with it in the filter); null while they have not arrived or when nothing is picked.
+   * A counterparty beyond the graph's rows is named from these Records (their `authority`, or a winner's Entity).
    */
   sidePanel: CounterpartyRecordsData | null;
   sidePanelLoading?: boolean;
@@ -48,6 +48,16 @@ export interface RelationshipsTabProps {
   copy: RelationshipsTabCopy;
 }
 
+/** The Entity with this key among the Records' authorities and winners: every Record with a counterparty carries it. */
+const entityInRecords = (sidePanel: CounterpartyRecordsData | null, key: string): EntityRef | null => {
+  for (const { record } of sidePanel?.records.rows ?? []) {
+    if (record.authority.key === key) return record.authority;
+    const winner = record.winners.find((party) => party.entity?.key === key);
+    if (winner?.entity) return winner.entity;
+  }
+  return null;
+};
+
 const otherRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
 
 /**
@@ -60,10 +70,9 @@ export function RelationshipsTab({
 }: RelationshipsTabProps) {
   const rows = counterparties.rows;
   const pickedRow = selected === null ? null : (rows.find((row) => row.entity?.key === selected && !row.naturalPerson) ?? null);
-  // A key beyond the shown rows (the top 30) is named by the panel's own Records: the counterparty facet carries its Entity. Until they
-  // arrive it has no name (none is invented), and the panel shows its loading state.
-  const picked: EntityRef | null =
-    selected === null ? null : (pickedRow?.entity ?? sidePanel?.facets.counterparty.find((facet) => facet.entity?.key === selected)?.entity ?? null);
+  // A key beyond the shown rows (the top 30) is named by the panel's own Records. Until they arrive it has no name (none is invented), and
+  // the panel shows its loading state.
+  const picked: EntityRef | null = selected === null ? null : (pickedRow?.entity ?? entityInRecords(sidePanel, selected));
   return (
     <Stack spacing={2}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
@@ -81,7 +90,7 @@ export function RelationshipsTab({
           )}
           <MonthlyTimeline
             timeline={timeline}
-            pickedTimeline={picked ? selectedTimeline : null}
+            pickedTimeline={selected !== null ? selectedTimeline : null}
             pickedName={picked?.displayName ?? null}
             locale={locale}
             copy={copy.timeline}

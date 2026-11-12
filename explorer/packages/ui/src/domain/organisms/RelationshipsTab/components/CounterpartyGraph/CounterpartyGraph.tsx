@@ -22,6 +22,8 @@ export interface CounterpartyGraphProps {
 }
 
 const MAX_LABEL = 22;
+/** A pickable node's label sits below its keyboard focus ring (r + 9, 3px stroke) and the Signal ring inside it. */
+const LABEL_BELOW_FOCUS_RING = 24;
 const shorten = (text: string) => (text.length > MAX_LABEL ? `${text.slice(0, MAX_LABEL - 1)}…` : text);
 
 /**
@@ -38,6 +40,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
   const money = (bani: string) => formatMoney(bani, locale);
   // No Entity is either a natural person (ADR 0003) or the unidentified group (money nobody could link to an Entity): never call the latter a person.
   const nameOf = (node: GraphNode) => (node.row.entity && !node.row.naturalPerson ? node.row.entity.displayName : node.row.naturalPerson ? copy.graph.naturalPerson : copy.graph.unknown);
+  const kindOf = (node: GraphNode) => (node.row.naturalPerson ? "person" : "unknown");
   const nameParts = (node: GraphNode, isSelected: boolean) => ({
     name: nameOf(node),
     amount: money(node.row.total.awarded),
@@ -69,7 +72,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
         {nodes.map((node, i) => (
           <line
             key={`edge-${i}`}
-            data-edge={node.key ?? `person-${i}`}
+            data-edge={node.key ?? `${kindOf(node)}-${i}`}
             data-channel={node.channel}
             data-won-together={node.row.wonTogether}
             x1={0} y1={0} x2={node.x} y2={node.y}
@@ -87,7 +90,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
           const pickable = node.key !== null;
           return (
             <g
-              key={node.key ?? `person-${i}`}
+              key={node.key ?? `${kindOf(node)}-${i}`}
               role={pickable ? "button" : "img"}
               aria-label={label}
               aria-pressed={pickable ? isSelected : undefined}
@@ -95,7 +98,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
               onClick={pickable ? () => pick(node) : undefined}
               onKeyDown={pickable ? onKeyDown(node) : undefined}
               transform={`translate(${node.x} ${node.y})`}
-              data-node={node.key ?? "person"}
+              data-node={node.key ?? kindOf(node)}
               data-selected={isSelected}
             >
               <title>{label}</title>
@@ -103,7 +106,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
               {/* A ring outside the node and its Signal ring, shown on keyboard focus only: selection (fill and stroke) never draws it. */}
               {pickable && <circle r={node.r + 9} fill="none" stroke={FOCUS_COLOR} strokeWidth={3} strokeDasharray="2 3" data-focus-ring />}
               <circle r={node.r} fill={channelColor(node.channel)} fillOpacity={isSelected ? 1 : 0.7} stroke={isSelected ? SELECTED_STROKE : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 1.5} data-radius={node.r} />
-              <text y={node.r + (node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" aria-hidden="true">{shorten(nameOf(node))}</text>
+              <text y={node.r + (pickable ? LABEL_BELOW_FOCUS_RING : node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" aria-hidden="true">{shorten(nameOf(node))}</text>
             </g>
           );
         })}

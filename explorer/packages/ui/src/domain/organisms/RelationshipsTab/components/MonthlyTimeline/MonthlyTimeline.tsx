@@ -17,7 +17,7 @@ export interface MonthlyTimelineProps {
   timeline: RelationshipsTimeline;
   /** The picked counterparty's months (`timeline(counterparty:)`), drawn over the overall bars; null when nothing is picked or it has not arrived. */
   pickedTimeline: RelationshipsTimeline | null;
-  /** The picked counterparty's name, for the legend and the table. */
+  /** The picked counterparty's name, for the legend and the table; null while it is not known (the series is still drawn, under a neutral label). */
   pickedName: string | null;
   locale: Locale;
   copy: MonthlyTimelineCopy;
@@ -36,7 +36,7 @@ const swatch = { width: 12, height: 12, borderRadius: 0.5, flex: "none" } as con
  */
 export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, locale, copy }: MonthlyTimelineProps) {
   const bars = timelineBars(timeline, pickedTimeline, WIDTH, HEIGHT);
-  const picked = pickedTimeline !== null && pickedName !== null;
+  const picked = pickedTimeline !== null;
   const pickedByMonth = new Map((pickedTimeline ?? []).map((point) => [point.month, point.total.awarded]));
   const overallByMonth = new Map(timeline.map((point) => [point.month, point.total.awarded]));
   // Label about a dozen months however many there are.
