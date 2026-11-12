@@ -1,5 +1,5 @@
 // Seam 3: the app shell against the contract's mock responses. Every route, both languages, the language switch, the URL state.
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App.tsx";
@@ -94,8 +94,9 @@ describe("the URL state in the app", () => {
     openAt("/explore/search");
     render(<App client={fixtureClient().client} />);
     const before = window.history.length;
-    await userEvent.type(screen.getByRole("searchbox", { name: catalogue.en.searchField.label }), "pod");
-    expect(here()).toBe("/explore/search?q=pod");
+    await userEvent.type(screen.getByRole("searchbox", { name: catalogue.en.searchBar.label }), "pod");
+    expect(here()).toBe("/explore/search"); // not yet: the search waits for typing to pause
+    await waitFor(() => expect(here()).toBe("/explore/search?q=pod"));
     expect(window.history.length).toBe(before);
     expect(screen.getByRole("searchbox")).toHaveValue("pod");
   });
@@ -104,7 +105,7 @@ describe("the URL state in the app", () => {
     openAt("/explore/search?q=pod&cpv=301");
     render(<App client={fixtureClient().client} />);
     await userEvent.clear(screen.getByRole("searchbox"));
-    expect(here()).toBe("/explore/search?cpv=301");
+    await waitFor(() => expect(here()).toBe("/explore/search?cpv=301"));
   });
 
   it("follows a link as a new history entry (only URL-state updates replace)", async () => {

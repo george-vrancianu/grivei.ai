@@ -9,3 +9,4 @@ export * from "./RecordResultList/index.ts";
 export * from "./PageNav/index.ts";
 export * from "./ToggleChip/index.ts";
 export * from "./ChipGroup/index.ts";
+export * from "./SearchBar/index.ts";

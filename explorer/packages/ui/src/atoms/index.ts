@@ -5,6 +5,7 @@ export * from "./CardActions/index.ts";
 export * from "./CardContent/index.ts";
 export * from "./CardHeader/index.ts";
 export * from "./Chip/index.ts";
+export * from "./CircularProgress/index.ts";
 export * from "./Grid/index.ts";
 export * from "./IconButton/index.ts";
 export * from "./Link/index.ts";

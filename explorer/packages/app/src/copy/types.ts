@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -19,7 +19,8 @@ export interface Copy {
   };
   status: { loading: string; failed: string };
   main: { title: string; total: string };
-  searchField: { label: string; placeholder: string };
+  /** The search bar on the main screen and the full-results view. */
+  searchBar: SearchBarCopy;
   /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */
   results: ResultTabsCopy;
   /** The full-results view at `/explore/search`: the tab names, empty sentences and rows come from `results` (same copy as the tabs), the rest is here. */

@@ -31,7 +31,7 @@ export const ro: Copy = {
   language: { switchTo: "English", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
   main: { title: "Explorează cheltuielile publice", total: "Total atribuit" },
-  searchField: { label: "Căutare", placeholder: "Autoritate, furnizor, CUI, titlu…" },
+  searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
   results: {
     label: "Rezultate",
     tabs: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },

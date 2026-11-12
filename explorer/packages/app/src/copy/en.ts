@@ -26,7 +26,7 @@ export const en: Copy = {
   language: { switchTo: "Română", switchLabel: "Romanian version of this page" },
   status: { loading: "Loading…", failed: "The data could not be loaded." },
   main: { title: "Explore public spending", total: "Total awarded" },
-  searchField: { label: "Search", placeholder: "Authority, supplier, CUI, title…" },
+  searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   results: {
     label: "Results",
     tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
