@@ -11,14 +11,14 @@ describe("the main screen for the empty filter", () => {
     render(<App path="/explore/" client={client} />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explore public spending" })).toBeInTheDocument();
-    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("RON 86,000,000,000.00");
+    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("RON 86,000,000,000");
     expect(screen.getByTestId("total-records")).toHaveTextContent("410,000 Records");
 
     const table = screen.getByRole("table", { name: "Records" });
     expect(within(table).getByRole("columnheader", { name: "Supplier" })).toBeInTheDocument();
     const row = within(table).getByRole("row", { name: /CAN1170001/ });
     expect(row).toHaveTextContent("Reabilitare pod peste râul Olt"); // source data, as published
-    expect(row).toHaveTextContent("RON 30,000,000.00");
+    expect(row).toHaveTextContent("RON 30,000,000");
 
     // it asked for the empty filter, by persisted id
     expect(sent).toHaveLength(1);
@@ -30,7 +30,7 @@ describe("the main screen for the empty filter", () => {
     render(<App path="/ro/explore/" client={client} />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explorează cheltuielile publice" })).toBeInTheDocument();
-    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("86.000.000.000,00 RON");
+    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("86.000.000.000 RON");
     expect(screen.getByTestId("total-records")).toHaveTextContent("410.000 Înregistrări");
 
     const table = screen.getByRole("table", { name: "Înregistrări" });

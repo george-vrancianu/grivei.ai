@@ -52,6 +52,7 @@ function recordRow(r: RecordRow) {
     counted: r.counted,
     badges: r.value === null ? ["NO_VALUE"] : [],
     authority: entity(r.authority.cui, r.authority.name),
+    // TODO #66: natural persons. A CNP-shaped CUI_OFERTANT must never be stored or served; it should be naturalPerson: true.
     winners: r.supplier
       ? [{ naturalPerson: false, publishedName: r.supplier.name, share: null, entity: entity(r.supplier.cui, r.supplier.name) }]
       : [],

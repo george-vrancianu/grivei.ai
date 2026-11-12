@@ -7,10 +7,10 @@
  *
  * It starts ONE throwaway ParadeDB container (named `pp37-seam1-*`, 3 GB cap, removed at the end and on process exit)
  * and rebuilds into two fresh databases inside it. Skipped, with the reason printed, when Docker or the pipeline's
- * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE.
+ * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -39,11 +39,13 @@ function readImagePin(): string {
 
 function skipReason(): string | null {
   if (spawnSync("docker", ["info"], { stdio: "ignore" }).status !== 0) return "Docker is not available";
-  if (!existsSync(python)) return `no pipeline Python at ${python} (set PIPELINE_PYTHON)`;
-  if (spawnSync(python, ["-c", "import psycopg"], { stdio: "ignore" }).status !== 0) return "pipeline Python lacks psycopg";
+  // run the interpreter (not existsSync): PIPELINE_PYTHON may be a bare command name such as `python`
+  if (spawnSync(python, ["-c", "import psycopg"], { stdio: "ignore" }).status !== 0) return `pipeline Python (${python}) is missing or lacks psycopg (set PIPELINE_PYTHON)`;
   return null;
 }
 const reason = skipReason();
+// SEAM1_REQUIRED=1 (the CI seam-1 job): a skip is a failure, never a silent green.
+if (reason && process.env.SEAM1_REQUIRED) throw new Error(`seam 1 is required but cannot run: ${reason}`);
 if (reason) console.warn(`seam 1 skipped: ${reason}`);
 
 const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;

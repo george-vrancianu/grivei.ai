@@ -1,9 +1,8 @@
 import type { RecordResultFieldsFragment } from "@grivei/contract";
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, type Locale,
+  MoneyAmount, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, type Locale,
 } from "@grivei/ui";
 import type { Copy } from "../../copy.ts";
-import { formatBani } from "../../money.ts";
 
 export interface RecordsListProps {
   page: RecordResultFieldsFragment;
@@ -41,7 +40,7 @@ export function RecordsList({ page, copy, locale }: RecordsListProps) {
                   <TableCell>{record.authority.displayName}</TableCell>
                   <TableCell>{record.winners.map((w) => w.publishedName).filter(Boolean).join(", ")}</TableCell>
                   <TableCell>{record.date}</TableCell>
-                  <TableCell align="right">{record.value === null ? copy.noValue : formatBani(record.value, locale)}</TableCell>
+                  <TableCell align="right">{record.value === null ? copy.noValue : <MoneyAmount bani={record.value} locale={locale} />}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

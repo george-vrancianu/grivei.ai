@@ -39,6 +39,8 @@ CREATE TABLE seap.record (
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
 
+-- TODO (search-engine ticket): nothing reads this table yet; the tracer API serves seap.record. It is filled on every
+-- rebuild so the search engine starts from real rows.
 -- The search table: one row per Record x winner. The tracer fills the columns the empty-filter Total and Records list
 -- need and the folded text document; the chip, placement and pg_search columns arrive with the search engine.
 CREATE TABLE seap.search (

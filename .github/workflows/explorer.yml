@@ -63,7 +63,8 @@ jobs:
       - run: npx vitest run test/seam1.test.ts --pool=forks --maxWorkers=1
         working-directory: explorer/packages/api
         env:
-          PIPELINE_PYTHON: python
+          PIPELINE_PYTHON: ${{ env.pythonLocation }}/bin/python
+          SEAM1_REQUIRED: "1"
 
   # The Compose project is valid and every image builds (nothing is started).
   compose:

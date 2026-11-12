@@ -98,6 +98,10 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
 
 function formatError(e: GraphQLError) {
   const code = e.extensions?.code;
+  // No code and no thrown error behind it: graphql-js itself rejected the request (variable coercion, validation).
+  if (!code && !e.originalError) {
+    return { message: e.message, extensions: { code: "BAD_USER_INPUT" }, ...(e.path ? { path: e.path } : {}) };
+  }
   // Resolver and database failures are logged, never echoed to the client.
   if (!code) {
     console.error(e);
