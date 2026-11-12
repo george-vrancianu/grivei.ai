@@ -30,7 +30,8 @@ from typing import Callable
 
 import requests
 
-from ..archive import QUARANTINE_DIR, Archive, ArchiveError
+from ..anaf import AnafUnavailable
+from ..archive import QUARANTINE_DIR, Archive
 from ..crawl import CrawlError
 from .ledger import LEDGER_NAME, Ledger, parse, stamp
 from .pings import Pinger
@@ -55,9 +56,10 @@ def classify(error: BaseException) -> str:
         return "transient"
     if isinstance(error, DeterministicError):
         return "deterministic"
-    if isinstance(error, (requests.RequestException, CrawlError, ConnectionError, TimeoutError)):
+    if isinstance(error, (requests.RequestException, CrawlError, AnafUnavailable, ConnectionError, TimeoutError)):
         return "transient"
-    if isinstance(error, OSError) and not isinstance(error, (FileNotFoundError, PermissionError, IsADirectoryError, NotADirectoryError, ArchiveError)):
+    # a full disk or a file nobody can read does not clear by itself: deterministic, alert at once
+    if isinstance(error, OSError) and not isinstance(error, (FileNotFoundError, PermissionError, IsADirectoryError, NotADirectoryError)) and error.errno != errno.ENOSPC:
         return "transient"
     if type(error).__module__.startswith("psycopg") and type(error).__name__ in ("OperationalError", "InterfaceError"):
         return "transient"
@@ -96,7 +98,7 @@ def archive_fingerprint(archive: Archive, *, without_source: str | None = None, 
     Quarantined units are one more key (`_quarantine`), so a requeue changes the fingerprint; with `quarantine_apart=False` they count
     under their source instead, so a load that moves a unit to quarantine leaves it as it was."""
     counts: dict[str, int] = {}
-    for directory in archive._unit_dirs():
+    for directory in archive.fetch_dirs():
         source = directory.relative_to(archive.root).parts[0]
         if source != without_source:
             counts[source] = counts.get(source, 0) + 1
@@ -112,13 +114,14 @@ def _days_since(step: dict, now: datetime) -> int:
     return (now.astimezone(timezone.utc).date() - parse(step["ended"]).date()).days
 
 
+def _markers(archive: Archive) -> tuple[Callable[[], dict], Callable[[], dict]]:
+    """The markers of the ANAF and the load step, one definition for the refresh and the seed (a refresh after a seed finds both up to date)."""
+    return (lambda: archive_fingerprint(archive, without_source="anaf", quarantine_apart=False)), (lambda: archive_fingerprint(archive))
+
+
 def refresh_steps(archive: Archive, impl) -> list[Step]:
     """The steps of a refresh. `impl` has `crawl()`, `datagov()`, `anaf()`, `load()`, each returning a `StepResult`."""
-    def fingerprint_all() -> dict:
-        return archive_fingerprint(archive)
-
-    def fingerprint_no_anaf() -> dict:
-        return archive_fingerprint(archive, without_source="anaf", quarantine_apart=False)
+    fingerprint_no_anaf, fingerprint_all = _markers(archive)
 
     def daily(ledger: Ledger, now: datetime, name="crawl") -> str | None:
         last = ledger.last_success(name)
@@ -163,9 +166,10 @@ def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
         return lambda ledger, now: None if ledger.last_success(name, "seed") else "not done yet"
 
     # the markers are the refresh's: after a seed, the first refresh finds ANAF and the load up to date
+    marker_anaf, marker_load = _markers(archive)
     steps = [Step("datagov", impl.datagov, not_done("datagov")),
-             Step("anaf", impl.anaf, not_done("anaf"), lambda: archive_fingerprint(archive, without_source="anaf", quarantine_apart=False)),
-             Step("load", impl.load, not_done("load"), lambda: archive_fingerprint(archive))]
+             Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
+             Step("load", impl.load, not_done("load"), marker_load)]
     if backfill:
         steps.append(Step("backfill", impl.backfill, not_done("backfill")))
     return steps
@@ -194,10 +198,12 @@ def _say_default(line: str) -> None:
 
 
 def _unit_paths(archive: Archive) -> set[str]:
-    return {str(d.relative_to(archive.root)) for d in archive._unit_dirs()}
+    return {str(d.relative_to(archive.root)) for d in archive.fetch_dirs()}
 
 
 def _execute(archive: Archive, step: Step, ledger: Ledger, run: dict, now: Callable[[], datetime], sleep: Callable[[float], None], say) -> dict:
+    previous = ledger.last_success(step.name)
+    known = set((previous or {}).get("allWarnings", (previous or {}).get("warnings", [])))  # what the last success already reported
     record = ledger.begin_step(run, step.name, now())
     before = _unit_paths(archive)
     say(f"step {step.name}: start")
@@ -218,17 +224,18 @@ def _execute(archive: Archive, step: Step, ledger: Ledger, run: dict, now: Calla
             record.update(status="failed", ended=stamp(now()))
             ledger.save()
             return record
-        record.update(status="ok", ended=stamp(now()), counts=result.counts, touched=sorted(set(result.touched) | (_unit_paths(archive) - before))[:200], warnings=result.warnings,
+        record.update(status="ok", ended=stamp(now()), counts=result.counts, touched=sorted(set(result.touched) | (_unit_paths(archive) - before))[:200],
+                      warnings=[w for w in result.warnings if w not in known], allWarnings=result.warnings,  # only a warning that is new makes a success "suspicious"
                       failureClass=None, error=None, marker=step.marker() if step.marker else None)
         for warning in result.warnings:
-            say(f"step {step.name}: warning: {warning}")
+            say(f"step {step.name}: warning: {warning}" + ("" if warning not in known else " (as before)"))
         say(f"step {step.name}: ok {json.dumps(result.counts, sort_keys=True)}")
         ledger.save()
         return record
     raise AssertionError("unreachable")
 
 
-def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger | None, now, sleep, say, ledger_path: Path | None) -> RefreshResult:
+def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger | None, now, sleep, say, ledger_path: Path | None, *, stop_on_failure: bool = False) -> RefreshResult:
     with locked(archive) as got:
         if not got:
             say(f"{kind}: another run holds {archive.root / LOCK_NAME}; nothing to do")
@@ -245,14 +252,19 @@ def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger 
                     say(f"step {step.name}: not due")
                     continue
                 say(f"step {step.name}: due ({reason})")
-                _execute(archive, step, ledger, run, now, sleep, say)
+                record = _execute(archive, step, ledger, run, now, sleep, say)
                 ran += 1
-        except BaseException:  # a kill or a bug in the engine: the ledger says so, then the error goes up
+                if record["status"] == "failed" and stop_on_failure:
+                    say(f"step {step.name} failed: the {kind} stops here, so a resumed {kind} starts at this step; the steps after it did not run")
+                    break
+        except BaseException as e:  # a kill or a bug in the engine: the ledger says so, then the error goes up
             run.update(status="interrupted", ended=stamp(now()))
             for s in run["steps"]:
                 if s["status"] == "running":
                     s.update(status="interrupted", ended=stamp(now()))
             ledger.save()
+            if pinger is not None and isinstance(e, Exception):  # a bug in the engine or in a step's `due`: say so now, not when the dead-man's switch trips
+                pinger.fail(f"refresh engine error: {type(e).__name__}: {e}"[:500])
             raise
         failed = [s for s in run["steps"] if s["status"] == "failed"]
         warnings = [f"{s['name']}: {w}" for s in run["steps"] for w in s["warnings"]]
@@ -295,7 +307,8 @@ def run_refresh(archive: Archive, impl, *, pinger: Pinger | None = None, trigger
 
 def run_seed(archive: Archive, impl, *, backfill: bool = False, again: bool = False, now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
              sleep: Callable[[float], None] | None = None, say: Callable[[str], None] = _say_default, ledger_path: Path | None = None) -> RefreshResult:
-    """The seed: each step skipped once it succeeded in an earlier seed run (`again` forgets that). No pings."""
+    """The seed: each step skipped once it succeeded in an earlier seed run (`again` forgets that); it stops at the first failed step,
+    so a resumed seed continues there and never skips a step that came after a failure. No pings."""
     import time
     def build():
         steps = seed_steps(archive, impl, backfill)
@@ -303,4 +316,4 @@ def run_seed(archive: Archive, impl, *, backfill: bool = False, again: bool = Fa
             for s in steps:
                 s.due = lambda ledger, now_: "again"
         return steps
-    return _run(archive, "seed", "manual", build, None, now, sleep or time.sleep, say, ledger_path)
+    return _run(archive, "seed", "manual", build, None, now, sleep or time.sleep, say, ledger_path, stop_on_failure=True)

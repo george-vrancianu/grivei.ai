@@ -60,7 +60,7 @@ systemctl --user list-timers grivei-refresh.timer             # next run
 journalctl --user -u grivei-refresh -n 50                     # the last run's log
 ```
 
-In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at logon (the `schtasks /Create ... /SC ONLOGON` line is in the file's header). In healthchecks.io set the check's period to 1 day and its grace to 3 days: the dead-man's switch then alerts when no run has succeeded for 3 days, and the run's `/fail` pings carry the reason.
+In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at logon (the `schtasks /Create ... /SC ONLOGON` line is in the file's header; keep its `-ExecutionPolicy Bypass`: with Windows' default `Restricted` policy the script is refused in a hidden window and WSL idles out, so the timer never fires). In healthchecks.io set the check's period to 1 day and its grace to 3 days: the dead-man's switch then alerts when no run has succeeded for 3 days, and the run's `/fail` pings carry the reason.
 
 ## Environment
 

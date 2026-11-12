@@ -1,5 +1,6 @@
 """Seam 2 for the refresh run (#81): a fake clock, fake steps (or the real crawl over a stubbed e-licitatie), stubbed pings, the ledger and
 `pipeline status` as the outside sees them. No network, no database, nothing slept for real."""
+import errno
 import json
 from datetime import date, datetime, timedelta, timezone
 
@@ -7,7 +8,7 @@ import pytest
 import requests
 
 from pipeline import cli
-from pipeline.anaf import AnafClient
+from pipeline.anaf import AnafClient, AnafError
 from pipeline.archive import Archive
 from pipeline.crawl import EliClient
 from pipeline.datagov import FetchSummary
@@ -15,6 +16,7 @@ from pipeline.mf.fetch import MfFetchSummary
 from pipeline.rebuild import RebuildSummary
 from pipeline.refresh import DeterministicError, Ledger, Pinger, StepResult, TransientError, classify, run_refresh, run_seed
 from pipeline.refresh.engine import BACKOFF, LOCK_NAME
+from pipeline.refresh.ledger import LEDGER_NAME
 from test_crawl import FakeEli, contract, notice
 
 START = datetime(2026, 11, 12, 3, 0, tzinfo=timezone.utc)
@@ -198,6 +200,29 @@ def test_the_classes():
     assert classify(DeterministicError("x")) == "deterministic"
     assert classify(ValueError("a bug")) == "deterministic"
     assert classify(FileNotFoundError("gone")) == "deterministic"
+    assert classify(OSError(errno.ENOSPC, "No space left on device")) == "deterministic"  # a full disk does not clear by itself
+    assert classify(OSError(errno.ECONNRESET, "reset")) == "transient"
+
+
+def test_an_anaf_outage_that_outlasts_the_retries_is_transient_but_a_refused_request_is_not():
+    down = AnafClient(post=lambda *a, **k: (503, b""), endpoint="x", sleep=lambda s: None, min_interval=0, retries=2)
+    with pytest.raises(AnafError) as outage:
+        down.query([123], date(2026, 11, 12))
+    assert "giving up" in str(outage.value) and classify(outage.value) == "transient"
+    refused = AnafClient(post=lambda *a, **k: (400, b""), endpoint="x", sleep=lambda s: None, min_interval=0)
+    with pytest.raises(AnafError) as bad:
+        refused.query([123], date(2026, 11, 12))
+    assert classify(bad.value) == "deterministic"
+
+
+def test_an_anaf_outage_is_retried_and_pings_nothing_on_the_first_night(go, impl, pings):
+    down = AnafClient(post=lambda *a, **k: (503, b""), endpoint="x", sleep=lambda s: None, min_interval=0, retries=0)
+    try:
+        down.query([1], date(2026, 11, 12))
+    except AnafError as e:
+        impl.fail["anaf"] = [e, e, e]
+    result = go()
+    assert result.status == "failed" and result.alert is None and pings.calls == []  # transient: no alert until more than 2 runs in a row
 
 
 def test_a_transient_failure_is_retried_with_backoff_and_a_success_on_retry_is_a_plain_success(go, impl, clock, pings):
@@ -368,3 +393,100 @@ def test_seed_at_the_cli_runs_datagov_anaf_load_once_and_a_second_seed_skips_the
     assert "step crawl" not in out and eli.calls == []  # the seed does not crawl
     assert cli.main(argv) == 0
     assert "step load: not due" in capsys.readouterr().out and len(loads) == 1
+
+
+# ---- review fixes (round 1) -----------------------------------------------------------------------------------------------
+
+
+def test_a_seed_stops_at_the_first_failed_step_and_a_resumed_seed_carries_on_from_it(archive, impl, clock):
+    kw = dict(now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    impl.fail["datagov"] = [TransientError("down")] * 3
+    assert run_seed(archive, impl, **kw).exit_code == 1
+    assert impl.ran == ["datagov"] * 3  # retried, then the seed stops: anaf and the (hours-long) load did not run on a partial archive
+    impl.ran.clear()
+    assert run_seed(archive, impl, **kw).exit_code == 0
+    assert impl.ran == ["datagov", "anaf", "load"]  # the resume does everything that was left
+
+
+def test_a_refresh_keeps_going_after_a_failed_step(go, impl):
+    impl.fail["datagov"] = [TransientError("down")] * 3
+    assert go().status == "failed"
+    assert impl.ran == ["crawl", "datagov", "datagov", "datagov", "anaf", "load"]  # its due rules are fingerprint-based, so the next run repairs
+
+
+def test_an_error_in_a_steps_due_pings_fail_at_once_and_marks_the_run_interrupted(archive, impl, clock, pings, monkeypatch):
+    def boom(archive_, **k):
+        raise PermissionError("cannot read the archive")
+    monkeypatch.setattr("pipeline.refresh.engine.archive_fingerprint", boom)
+    with pytest.raises(PermissionError):
+        run_refresh(archive, impl, pinger=Pinger("https://hc.example/p", post=pings), now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    assert pings.urls == ["https://hc.example/p/fail"] and "PermissionError" in pings.calls[0][1]
+    assert Ledger(archive.root / LEDGER_NAME).runs[-1]["status"] == "interrupted"
+
+
+def test_a_warning_that_comes_back_every_night_does_not_make_each_success_suspicious_again(go, impl, clock, pings):
+    impl.warn["datagov"] = ["data.gov.ro dataset missing: 2027"]
+    impl.warn["load"] = ["coverage: 2024-Q4 CONTRACT possibly incomplete"]
+    go()
+    assert "suspicious success" in pings.calls[-1][1]  # new the first time
+    clock.next_day(7)  # datagov due again; the archive is unchanged so the load is not
+    impl.writes.add("crawl")
+    go()
+    assert "suspicious success" not in pings.calls[-1][1]  # the same flags as last time
+    impl.warn["datagov"] = ["data.gov.ro dataset missing: 2027", "data.gov.ro resource not classified: new.csv"]
+    clock.next_day(7)
+    go()
+    assert "new.csv" in pings.calls[-1][1] and "missing: 2027" not in pings.calls[-1][1]  # only what is new
+
+
+def test_a_corrupt_ledger_is_moved_aside_not_overwritten(archive, impl, clock):
+    archive.root.mkdir(parents=True)
+    (archive.root / LEDGER_NAME).write_text("{not json")
+    run_refresh(archive, impl, now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    assert [p.name for p in archive.root.glob(LEDGER_NAME + ".corrupt-*")] and len(Ledger(archive.root / LEDGER_NAME).runs) == 1
+
+
+# ---- load-quarter and the lock of the manual rebuild verbs ----------------------------------------------------------------
+
+
+def test_load_quarter_rejects_a_bad_quarter_and_an_empty_one(cli_world, archive, capsys):
+    base = ["--archive", str(archive.root), "load-quarter"]
+    assert cli.main(base + ["2023-Q2", "--db", "postgresql://x/y"]) == 2
+    assert cli.main(base + ["2023Q5", "--db", "postgresql://x/y"]) == 2
+    assert cli.main(base + ["2023Q2", "--db", "postgresql://x/y"]) == 1
+    assert "nothing archived for 2023Q2" in capsys.readouterr().err
+
+
+def test_load_quarter_requeues_the_quarantined_file_and_exits_1_while_it_is_still_quarantined(cli_world, archive, monkeypatch, capsys):
+    eli, loads, day = cli_world
+    archive.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    archive.quarantine(archive.units()[0], "header mismatch (fixture)")
+    argv = ["--archive", str(archive.root), "load-quarter", "2022q2", "--db", "postgresql://x/y"]
+
+    def requarantine(a, db, *x, **k):
+        loads.append(db)
+        archive.quarantine(archive.units()[0], "header mismatch (fixture)")
+        return RebuildSummary()
+    monkeypatch.setattr(cli, "rebuild", requarantine)
+    assert cli.main(argv) == 1  # the rebuild meets the same bad file again
+    out = capsys.readouterr().out
+    assert "requeued" in out and "still quarantined" in out and len(loads) == 1
+
+
+def test_load_quarter_exits_0_when_the_quarter_loads(cli_world, archive, monkeypatch, capsys):
+    eli, loads, day = cli_world
+    archive.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    monkeypatch.setattr(cli, "rebuild", lambda a, db, *x, **k: loads.append(db) or RebuildSummary(files_loaded=1, records=1))
+    assert cli.main(["--archive", str(archive.root), "load-quarter", "2022Q2", "--db", "postgresql://x/y"]) == 0
+    assert loads == ["postgresql://x/y"]
+
+
+def test_rebuild_and_load_quarter_refuse_to_run_while_a_refresh_holds_the_lock(cli_world, archive, monkeypatch, capsys):
+    eli, loads, day = cli_world
+    archive.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    from pipeline.refresh.engine import locked
+    with locked(archive) as got:
+        assert got
+        assert cli.main(["--archive", str(archive.root), "rebuild", "--db", "postgresql://x/y"]) == 1
+        assert cli.main(["--archive", str(archive.root), "load-quarter", "2022Q2", "--db", "postgresql://x/y"]) == 1
+    assert loads == [] and "holds the archive's lock" in capsys.readouterr().err

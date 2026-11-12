@@ -142,6 +142,10 @@ The entity page's summary card: headline numbers, Signals, top counterparties, p
 The entity page's filterable table of every record, its filters kept in the URL so a filtered list can be cited.
 _Avoid_: ledger
 
+**Pipeline ledger**:
+The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph; unrelated to the Records tab.
+_Avoid_: history, audit log
+
 **Relationships tab**:
 The entity page's view of how money moves between the entity and its counterparties: a counterparty graph, a monthly timeline and the Flow lens.
 

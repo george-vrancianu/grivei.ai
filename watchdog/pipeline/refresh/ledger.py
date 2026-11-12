@@ -6,10 +6,12 @@ half a file. A run still marked `running` when the next one takes the lock is a 
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+log = logging.getLogger(__name__)
 LEDGER_NAME = "refresh-ledger.json"
 KEEP_RUNS = 500
 
@@ -27,7 +29,15 @@ class Ledger:
         self.path = Path(path)
         try:
             self.runs: list[dict] = json.loads(self.path.read_text(encoding="utf-8"))["runs"]
-        except (OSError, ValueError, KeyError):
+        except FileNotFoundError:
+            self.runs = []
+        except (OSError, ValueError, KeyError) as e:  # keep the bad file for a human instead of overwriting the history with an empty one
+            aside = self.path.with_name(f"{self.path.name}.corrupt-{stamp(datetime.now(timezone.utc)).replace(':', '')}")
+            log.warning("refresh ledger %s unreadable (%s: %s); moved to %s, starting an empty one", self.path, type(e).__name__, e, aside.name)
+            try:
+                os.replace(self.path, aside)
+            except OSError:
+                pass
             self.runs = []
 
     def save(self) -> None:
@@ -51,7 +61,7 @@ class Ledger:
         return run
 
     def begin_step(self, run: dict, name: str, now: datetime) -> dict:
-        step = {"name": name, "started": stamp(now), "ended": None, "status": "running", "attempts": 0, "failureClass": None, "counts": {}, "touched": [], "warnings": [], "error": None, "marker": None}
+        step = {"name": name, "started": stamp(now), "ended": None, "status": "running", "attempts": 0, "failureClass": None, "counts": {}, "touched": [], "warnings": [], "allWarnings": [], "error": None, "marker": None}
         run["steps"].append(step)
         self.save()
         return step

@@ -6,6 +6,7 @@ import logging
 import os
 import signal
 import sys
+from types import SimpleNamespace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -27,11 +28,9 @@ from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
 from . import placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
-from .refresh.engine import DeterministicError, refresh_steps
+from .refresh.engine import DeterministicError, locked, refresh_steps
 from .refresh.ledger import LEDGER_NAME
-from .refresh.status import quarantine_lines
 from .refresh.steps import Impl
-from .anaf import ENDPOINT as _ANAF_URL
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
 
@@ -155,9 +154,13 @@ def main(argv: list[str] | None = None) -> int:
         # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
         placement_cli.log_to_stderr()  # the placement step logs every authority it could not match
-        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                            geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps).lines():
-            print(line, flush=True)
+        with locked(archive) as got:  # one long run at a time: not beside a refresh or a seed
+            if not got:
+                print("rebuild: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
+                return 1
+            for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
+                                geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps).lines():
+                print(line, flush=True)
         return 0
     if args.verb == "anaf-lookup":
         status_file = Path(args.progress_file) if args.progress_file else archive.root / ANAF_STATUS_NAME
@@ -287,11 +290,15 @@ def _load_quarter(archive: Archive, args) -> int:
         print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
         return 1
     _log_line(f"load-quarter {quarter}: {len(held) + len(restored)} unit(s) in the archive; the graph is derived whole from the archive, so this is a rebuild")
-    try:
-        _loader(archive, args)()
-    except DeterministicError as e:
-        print(f"load-quarter: {e}", file=sys.stderr)
-        return 2
+    with locked(archive) as got:  # one long run at a time: not beside a refresh or a seed
+        if not got:
+            print("load-quarter: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
+            return 1
+        try:
+            _loader(archive, args)()
+        except DeterministicError as e:
+            print(f"load-quarter: {e}", file=sys.stderr)
+            return 2
     still = [p for p in archive.quarantined() if f"/{quarter}/" in str(p)]
     for p in still:
         _log_line(f"load-quarter {quarter}: still quarantined, so not yet loaded: {p}")
@@ -340,7 +347,6 @@ def _status(archive: Archive, args) -> int:
             code = 0  # no rebuild yet is not a failure once a backfill is on record
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
-    from types import SimpleNamespace
     dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None)
     for line in describe_refresh(archive, ledger, refresh_steps(archive, dummy)):
         print(line)

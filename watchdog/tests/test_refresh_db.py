@@ -9,6 +9,7 @@ import pytest
 psycopg = pytest.importorskip("psycopg")
 
 from pipeline.archive import Archive  # noqa: E402
+from pipeline.progress import Progress, read_status  # noqa: E402
 from pipeline.refresh import Ledger, Pinger, StepResult, run_refresh  # noqa: E402
 from pipeline.refresh.status import quarantine_lines  # noqa: E402
 from pipeline.refresh.steps import Impl  # noqa: E402
@@ -22,7 +23,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_a_quarantined_file_is_a_warning_in_the_run_and_not_yet_loaded_in_the_public_grid(db, tmp_path):
     shutil.copytree(FIXTURES / "archive-coverage", tmp_path / "archive")
     archive, clock, pings = Archive(tmp_path / "archive"), Clock(), Pings()
-    load = lambda: rebuild(archive, db, today=date(2025, 9, 20), known_gaps_path=FIXTURES / "coverage-known-gaps.csv")
+    status_file = tmp_path / "rebuild-status.json"
+    load = lambda: rebuild(archive, db, Progress(status_file), today=date(2025, 9, 20), known_gaps_path=FIXTURES / "coverage-known-gaps.csv")
     impl = Impl(archive, print, None, None, None, None, load)
     impl.crawl = impl.datagov = impl.anaf = lambda: StepResult()  # the network steps are not under test here
 
@@ -30,9 +32,11 @@ def test_a_quarantined_file_is_a_warning_in_the_run_and_not_yet_loaded_in_the_pu
 
     assert result.status == "ok"  # suspicious success: loaded, warned
     assert pings.urls == ["https://hc.example/p"] and "quarantined (not loaded" in pings.calls[0][1]
+    # the same read the Coverage grid's own Seam-1 test (test_coverage_db.py) makes of the persisted grid
     with psycopg.connect(db) as c:
         cell = c.execute("SELECT state, rule, note, records, data_through FROM seap.coverage_cell WHERE quarter = '2022-Q2' AND kind = 'DA'").fetchone()
     assert cell == ("NOT_YET_LOADED", None, None, 0, None)  # public: not yet loaded, no reason, no through-date
+    assert read_status(status_file)["dataThrough"]["DA"] == "2022-03-31"  # the kind's public data-through stays at the last loaded quarter (Q1), not moved by the quarantined Q2
     assert any("quarantine: 1 open" in line for line in quarantine_lines(archive))
     assert Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"][-1]["counts"]["quarantined"] == 1
 
