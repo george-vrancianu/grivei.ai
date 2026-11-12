@@ -236,3 +236,58 @@ def test_a_refused_graph_is_not_reported_as_finished_and_writes_no_outlines(live
     status = read_status(status_file)
     assert status["state"] == "failed" and "SwitchoverRefused" in status["error"]  # `pipeline status` must not call the refused graph finished
     assert not geo.exists()  # the served outlines are untouched
+
+
+def _accepts_connections(url: str) -> bool:
+    try:
+        with psycopg.connect(url, connect_timeout=5):
+            return True
+    except psycopg.OperationalError:
+        return False
+
+
+def test_a_stop_inside_the_first_rename_leaves_the_live_database_accepting_connections(live, tmp_path, monkeypatch):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    real = psycopg.Connection.execute
+
+    def stop_when_terminating_the_live_sessions(self, query, params=None, **kw):
+        if isinstance(query, str) and "pg_terminate_backend" in query and params == (names.live,):
+            raise SystemExit(143)  # SIGTERM after `ALLOW_CONNECTIONS false`, before the rename
+        return real(self, query, params, **kw)
+
+    monkeypatch.setattr(psycopg.Connection, "execute", stop_when_terminating_the_live_sessions)
+    with pytest.raises(SystemExit):
+        switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)
+    monkeypatch.undo()
+    assert _accepts_connections(live) and _count(live) == 6  # the API is not left refused
+
+
+def test_a_live_database_left_refusing_connections_by_a_kill_is_repaired_and_a_refused_check_does_not_claim_it_serves(live, tmp_path):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:  # SIGKILL's leftover: after `ALLOW_CONNECTIONS false`, or after the second rename
+        admin.execute(f'ALTER DATABASE "{names.live}" WITH ALLOW_CONNECTIONS false')
+    assert not _accepts_connections(live)
+    lines = []
+    assert switchover.recover(names, lines.append) is True
+    assert _accepts_connections(live) and _count(live) == 6
+    assert any("REPAIR" in line for line in lines)
+    assert switchover.recover(names, lines.append) is False  # nothing left to repair
+
+
+def test_a_rollback_killed_before_its_last_rename_is_finished_by_the_next_run_and_cleanup_drops_the_swap_copy(live, tmp_path):
+    names = switchover.names_of(live)
+    swap = names.live + switchover.SWAP
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)  # live 13, prev 6
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:  # a rollback killed after its second rename
+        admin.execute(f'ALTER DATABASE "{names.live}" RENAME TO "{swap}"')
+        admin.execute(f'ALTER DATABASE "{names.prev}" RENAME TO "{names.live}"')
+        admin.execute(f'ALTER DATABASE "{names.live}" WITH ALLOW_CONNECTIONS false')
+    assert switchover.recover(names, lambda _: None) is True
+    assert _mine(live) == {names.live, names.prev} and _count(live) == 6 and _count(names.prev_url) == 13  # the rollback is complete
+
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:  # an orphan beside a fallback that is already there
+        admin.execute(f'CREATE DATABASE "{swap}"')
+    assert set(switchover.cleanup(live, lambda _: None)) == {names.prev, swap}

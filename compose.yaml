@@ -34,7 +34,7 @@ services:
   # then DATABASE_URL is repointed (watchdog/README.md, "Major upgrade"). Not part of `up`: `docker compose --profile upgrade up -d db-next`.
   db-next:
     profiles: ["upgrade"]
-    image: ${GRIVEI_DB_NEXT_IMAGE:?set GRIVEI_DB_NEXT_IMAGE to the new paradedb tag}
+    image: ${GRIVEI_DB_NEXT_IMAGE:-paradedb/paradedb:0.26.6-pg18}  # a default, not `:?`: Compose interpolates inactive profiles too, and a required variable would break every command (keep it equal to `db`'s tag)
     cpus: 8
     mem_limit: 12g
     shm_size: 1g

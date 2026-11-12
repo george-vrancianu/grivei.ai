@@ -25,7 +25,7 @@ import psycopg
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-NEXT, PREV = "_next", "_prev"
+NEXT, PREV, SWAP = "_next", "_prev", "_swap"  # `_swap` is the live graph's parking place during a rollback
 MIN_RATIO = 0.95  # the new graph may hold at most 5% fewer Records than the one it replaces (Records are only ever added: the archive is append-only)
 RENAME_ATTEMPTS = 20  # a session that reconnects between the termination and the rename is terminated again
 
@@ -74,14 +74,21 @@ def _drop(admin: psycopg.Connection, name: str) -> None:
 def _rename(admin: psycopg.Connection, old: str, new: str) -> None:
     """Rename a database that sessions may be using: refuse new connections, terminate the sessions, rename; repeat if one slipped in."""
     admin.execute(sql.SQL("ALTER DATABASE {} WITH ALLOW_CONNECTIONS false").format(sql.Identifier(old)))
-    for attempt in range(RENAME_ATTEMPTS):
-        admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()", (old,))
+    try:
+        for attempt in range(RENAME_ATTEMPTS):
+            admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()", (old,))
+            try:
+                admin.execute(sql.SQL("ALTER DATABASE {} RENAME TO {}").format(sql.Identifier(old), sql.Identifier(new)))
+                return
+            except psycopg.errors.ObjectInUse:
+                time.sleep(0.05 * (attempt + 1))
+        raise RuntimeError(f"database {old} is still in use after {RENAME_ATTEMPTS} attempts")
+    except BaseException:  # a stop (SIGTERM as SystemExit, an error) in this window must not leave `old` refusing connections; a kill -9 here is repaired by `recover`
         try:
-            admin.execute(sql.SQL("ALTER DATABASE {} RENAME TO {}").format(sql.Identifier(old), sql.Identifier(new)))
-            return
-        except psycopg.errors.ObjectInUse:
-            time.sleep(0.05 * (attempt + 1))
-    raise RuntimeError(f"database {old} is still in use after {RENAME_ATTEMPTS} attempts")
+            _allow(admin, old, True)
+        except psycopg.Error:
+            pass
+        raise
 
 
 def _allow(admin: psycopg.Connection, name: str, allowed: bool) -> None:
@@ -168,7 +175,7 @@ def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], obj
         if failures:
             for f in failures:
                 say(f"switchover: CHECK FAILED: {f}")
-            say(f"switchover: REFUSED; {n.live} keeps serving, {n.next} is kept for a look (`pipeline cleanup` or the next build drops it)")
+            say(f"switchover: REFUSED; {n.live} is untouched, {n.next} is kept for a look (`pipeline cleanup` or the next build drops it)")
             raise SwitchoverRefused(failures)
         checked.append(True)
         say("switchover: checks passed")
@@ -180,18 +187,33 @@ def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], obj
 
 
 def _rename_plain(admin: psycopg.Connection, old: str, new: str) -> None:
+    """Rename without terminating anything: for a database nobody can be connected to, because an earlier `_rename` disallowed connections to it."""
     admin.execute(sql.SQL("ALTER DATABASE {} RENAME TO {}").format(sql.Identifier(old), sql.Identifier(new)))
 
 
 def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.Connection | None = None) -> bool:
-    """A swap that was killed (or lost its connection) between its renames leaves no `<db>`: put the graph that was live back, so the
-    API has a database again, before anything else runs. That graph is `<db>_swap` (a rollback) or else `<db>_prev` (a switchover).
-    Returns whether it repaired anything."""
+    """A swap that was killed (or lost its connection) between its renames leaves no `<db>`, or a `<db>` that refuses connections, or a
+    `<db>_swap` that was never renamed to `<db>_prev`: put the graph that was live back, so the API has a database again, before anything
+    else runs. A missing `<db>` is restored from `<db>_swap` (a rollback) or else `<db>_prev` (a switchover). Returns whether it repaired anything."""
     if admin is None:
         with psycopg.connect(n.admin_url, autocommit=True) as own:
             return recover(n, say, own)
     if _exists(admin, n.live):
-        return False
+        repaired = False
+        if admin.execute("SELECT datallowconn FROM pg_database WHERE datname = %s", (n.live,)).fetchone()[0] is False:
+            say(f"switchover: REPAIR: {n.live} refuses connections (a swap was killed after disallowing them); allowing them again")
+            _allow(admin, n.live, True)
+            repaired = True
+        swap = n.live + SWAP
+        if _exists(admin, swap):  # a rollback killed after its second rename: the graph that was live is parked as `_swap`
+            if _exists(admin, n.prev):
+                say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
+            else:
+                say(f"switchover: REPAIR: finishing an interrupted rollback, {swap} becomes {n.prev}")
+                _rename_plain(admin, swap, n.prev)
+                _allow(admin, n.prev, True)
+                repaired = True
+        return repaired
     for name in (n.live + SWAP, n.prev):
         if _exists(admin, name):
             say(f"switchover: REPAIR: no {n.live} (an earlier swap was interrupted); restoring the old graph from {name}")
@@ -234,8 +256,6 @@ def _undo(admin: psycopg.Connection, n: Names, old: str | None, say: Callable[[s
         say(f"switchover: could not undo a half-done swap ({type(e).__name__}); the next run or `pipeline rollback` repairs it")
 
 
-SWAP = "_swap"
-
 
 def rollback(db_url: str, say: Callable[[str], None] = _say_default) -> None:
     """Swap `<db>` and `<db>_prev`: the graph before the last switchover serves again, the one being rolled back is kept as `<db>_prev`."""
@@ -268,12 +288,12 @@ def rollback(db_url: str, say: Callable[[str], None] = _say_default) -> None:
 
 
 def cleanup(db_url: str, say: Callable[[str], None] = _say_default) -> list[str]:
-    """Drop `<db>_prev` and `<db>_next`; returns what was dropped. The live database is never touched."""
+    """Drop `<db>_prev`, `<db>_next` and a stray `<db>_swap`; returns what was dropped. The live database is never touched."""
     n = names_of(db_url)
     dropped = []
     with psycopg.connect(n.admin_url, autocommit=True) as admin:
         recover(n, say, admin)  # an interrupted swap's only copy of the live graph may be `<db>_prev`: restore it before dropping anything
-        for name in (n.next, n.prev):
+        for name in (n.next, n.prev, n.live + SWAP):
             if _exists(admin, name):
                 _drop(admin, name)
                 dropped.append(name)
