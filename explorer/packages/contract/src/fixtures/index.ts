@@ -2,17 +2,19 @@
 // and validated against the schema and the operation in CI (fixtures.test.ts).
 import type { Fixture } from "./types.ts";
 import { coverageLens, coveragePage } from "./coverage.ts";
-import { entityOverviewHand, entityRecords, entityRelationships } from "./entity.ts";
+import { entityOverviewHand, entityRecordsHand, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
 import { mainScreenHand } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
+import { recordedEntityRecords } from "./recorded/records.ts";
 import { recordedRecordPage } from "./recorded/record.ts";
 import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
+export { recordedEntityRecords } from "./recorded/records.ts";
 export { recordedRecordPage } from "./recorded/record.ts";
 export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords, recordedZoomedCounty } from "./recorded/index.ts";
 
@@ -28,7 +30,7 @@ export const fixtures = {
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],
   EntityOverview: [...recordedEntityOverview, ...entityOverviewHand],
-  EntityRecords: entityRecords,
+  EntityRecords: [...recordedEntityRecords, ...entityRecordsHand],
   EntityRelationships: entityRelationships,
   RecordPage: [...recordedRecordPage, ...recordPageHand],
   CoverageLens: coverageLens,

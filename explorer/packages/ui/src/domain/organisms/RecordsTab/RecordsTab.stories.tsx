@@ -47,7 +47,7 @@ export const SupplierNoFilter: Story = { render: sample(supplierRecords, "suppli
 export const AuthorityNoFilter: Story = { render: sample(authorityRecords, "authority", {}) };
 /** One facet on (click it again to clear it); the total and the table are the filtered ones. */
 export const OneFacetOn: Story = { render: sample(supplierSplittingRecords, "supplier", supplierSplittingFilter) };
-/** A year, the channel, a Signal and one authority on at once. */
+/** A year, the channel and one authority on at once. */
 export const SeveralFacetsActive: Story = { render: sample(supplierSeveralFacetsRecords, "supplier", supplierSeveralFacetsFilter) };
 /** One supplier chosen on an authority's tab (the filter's `supplier`). */
 export const AuthorityWithSupplierChosen: Story = { render: sample(authorityOneSupplierRecords, "authority", authorityOneSupplierFilter) };

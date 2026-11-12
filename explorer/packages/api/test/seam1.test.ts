@@ -20,13 +20,14 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { CoveragePageQuery, EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
 import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
+import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
@@ -59,6 +60,13 @@ const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // th
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
+
+/** The app's fixture client matches on exact variables, so no two recorded cases may ask the same question. */
+function expectDistinctVariables(cases: ReadonlyArray<{ variables: unknown }>): void {
+  const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
+  const asked = cases.map((c) => JSON.stringify(sorted(c.variables)));
+  expect(new Set(asked).size).toBe(asked.length);
+}
 
 function readImagePin(): string {
   // the single source of truth for the pin is the compose file
@@ -2338,9 +2346,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
 
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
-      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
-      const asked = RECORDED_ENTITY_CASES.map((c) => JSON.stringify(sorted(c.variables)));
-      expect(new Set(asked).size).toBe(asked.length);
+      expectDistinctVariables(RECORDED_ENTITY_CASES);
     });
 
     it("gives the cases the numbers they are named for", () => {
@@ -2390,6 +2396,126 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
       expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
+    });
+  });
+
+  describe("recorded fixtures (#87): the same archives -> rebuild -> the recorded EntityRecords", () => {
+    // The Records tab's seam 3 tests render against these answers; this block fails when one drifts from the committed JSON.
+    // `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const file = resolve(here, "../../contract/src/fixtures/recorded/EntityRecords.json");
+    const DBS = { overview: "records_rec_a", signals: "records_rec_b", moneymap: "records_rec_c" } as const;
+
+    beforeAll(async () => {
+      cpSync(rolesArchive, join(scratch, "archive-records-overview"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-records-overview"), { recursive: true });
+      for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
+      rebuild(DBS.overview, "archive-records-overview");
+      rebuild(DBS.signals, "archive-signals");
+      rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-records-recorded")]);
+    });
+
+    const answer = async (c: RecordedRecordsCase) => {
+      const r = await ask(DBS[c.archive], entityRecords.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(entityRecords.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    const answers = new Map<string, Awaited<ReturnType<typeof answer>>>();
+    beforeAll(async () => {
+      for (const c of RECORDED_RECORDS_CASES) answers.set(c.name, await answer(c));
+    });
+    type Role = NonNullable<NonNullable<EntityRecordsQuery["entity"]>["seap"]["role"]>;
+    const entityOf = (name: string) => (answers.get(name)!.data as EntityRecordsQuery).entity;
+    const recordsOf = (name: string) => (entityOf(name)!.seap.role as Role).records;
+
+    it("EntityRecords: every recorded case is what the API answers now", () => {
+      const recorded = RECORDED_RECORDS_CASES.map((c) => answers.get(c.name)!);
+      if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+    });
+
+    it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
+      expectDistinctVariables(RECORDED_RECORDS_CASES);
+    });
+
+    it("gives the cases the numbers they are named for", () => {
+      const RON = (n: number) => String(n * 100);
+      const rows = (name: string) => recordsOf(name).records.rows.map((r) => r.record);
+      const codes = (name: string) => rows(name).map((r) => r.code);
+      const facet = (name: string, dimension: "channel" | "procedure" | "year" | "signal" | "badge", value: string) => recordsOf(name).facets[dimension].find((f) => f.value === value)?.total;
+      // the unfiltered answers: the entity's own Records, one page, the count the total says
+      expect(entityOf("authority")).toMatchObject({ key: "1000017", seap: { roles: ["AUTHORITY"] } });
+      expect(recordsOf("authority").total).toMatchObject({ awarded: RON(8_840_000), records: 16, suspectLeftOut: 1, noValue: 2, frameworkCeilings: RON(10_000_000) });
+      expect(recordsOf("authority").records.count).toBe(16);
+      expect(rows("authority")).toHaveLength(16);
+      expect(rows("authority").every((r) => r.authority?.key === "1000017")).toBe(true); // scoped to the entity on its side
+      expect(recordsOf("supplier").total).toMatchObject({ awarded: RON(5_915_000), records: 13 });
+      expect(rows("supplier").every((r) => r.winners.some((w) => w.entity?.key === "2000007"))).toBe(true);
+      expect(recordsOf("supplier").facets.counterparty.map((c) => c.entity?.key)).toEqual(["1000017", "1000009", "2000031"]); // authorities, on a supplier's page
+      expect(recordsOf("authority").facets.counterparty.map((c) => c.entity?.key)).toEqual(["2000007", "2000031", "2000015", "2000023"]); // suppliers, on an authority's
+      // both roles: one page per role, what the entity bought is not what it won
+      expect(recordsOf("both-roles-authority-page")).toMatchObject({ total: { awarded: RON(340_000), records: 2 }, records: { count: 2 } });
+      expect(recordsOf("both-roles-supplier-page")).toMatchObject({ total: { awarded: RON(2_020_000), records: 2 }, records: { count: 2 } });
+      expect(codes("both-roles-authority-page")).not.toEqual(codes("both-roles-supplier-page"));
+      // a name-only supplier has its Records and facets all the same
+      expect(entityOf("name-only-supplier")).toMatchObject({ key: "name-furnizor-local-srl", identity: "NAME_ONLY" });
+      expect(recordsOf("name-only-supplier")).toMatchObject({ total: { awarded: RON(20_000), records: 2 }, records: { count: 2 } });
+      // an entity without the role asked for: the entity is there, the role is null; an unknown key is no entity
+      expect(entityOf("authority-asked-as-supplier")).toMatchObject({ key: "1000017", seap: { role: null } });
+      expect(entityOf("unknown-key")).toBeNull();
+
+      // every facet answers with the total and the rows the filter it names gives (facet count == filtered total == rows)
+      const sameAsFacet = (name: string, base: string, dimension: "channel" | "procedure" | "year" | "signal" | "badge", value: string) => {
+        const f = facet(base, dimension, value)!;
+        const filtered = recordsOf(name);
+        expect(f, `${base} has a ${dimension} facet ${value}`).toBeDefined();
+        expect(filtered.total.records, name).toBe(f.records);
+        expect(filtered.total.awarded, name).toBe(f.awarded);
+        expect(filtered.records.count, name).toBe(f.records);
+        expect(filtered.records.rows, name).toHaveLength(f.records);
+        expect(f.records, name).toBeLessThan(recordsOf(base).total.records); // a facet narrows
+        expect(filtered.facets[dimension].map((x) => x.value), name).toEqual([value]); // and the panel follows the filter
+      };
+      sameAsFacet("authority-channel-direct-purchase", "authority", "channel", "DIRECT_PURCHASE");
+      sameAsFacet("authority-channel-contract", "authority", "channel", "CONTRACT");
+      sameAsFacet("authority-procedure", "authority", "procedure", "Negociere");
+      sameAsFacet("authority-year-2024", "authority", "year", "2024");
+      sameAsFacet("authority-year-2023", "authority", "year", "2023");
+      expect(recordsOf("authority-contract-in-2023").total.records).toBe(facet("authority-channel-contract", "year", "2023")!.records); // a second facet, counted in the first's panel
+      sameAsFacet("authority-badge-suspect-value", "authority", "badge", "SUSPECT_VALUE");
+      sameAsFacet("supplier-channel-contract", "supplier", "channel", "CONTRACT");
+      sameAsFacet("authority-signal-over-cap", "authority-with-signals", "signal", "OVER_CAP");
+      sameAsFacet("authority-signal-no-publication", "authority-with-signals", "signal", "NO_PUBLICATION");
+      expect(recordsOf("authority-with-signals").total.records).toBe(15);
+      expect(rows("authority-signal-over-cap").every((r) => r.signals.some((s) => s.rule === "OVER_CAP"))).toBe(true);
+      // the two channels add up to the whole (a Record has one)
+      expect(recordsOf("authority-channel-direct-purchase").total.records + recordsOf("authority-channel-contract").total.records).toBe(16);
+      // a counterparty: the same count as the facet shows beside it, on either side of the pair
+      const counterparty = (base: string, key: string) => recordsOf(base).facets.counterparty.find((c) => c.entity?.key === key)!.matched;
+      expect(recordsOf("authority-counterparty").total.records).toBe(counterparty("authority", "2000007").records);
+      expect(recordsOf("authority-counterparty").total.awarded).toBe(counterparty("authority", "2000007").awarded);
+      expect(recordsOf("supplier-counterparty").total).toEqual(recordsOf("authority-counterparty").total); // the same pair, seen from the other side
+      expect(codes("supplier-counterparty")).toEqual(codes("authority-counterparty"));
+      expect(rows("second-authority-name-only-counterparty").length).toBe(recordsOf("second-authority-name-only-counterparty").total.records);
+      expect(recordsOf("second-authority-name-only-counterparty").total.records).toBeGreaterThan(0);
+      // the suspect value is a row of the badge's answer but counts in no sum
+      expect(recordsOf("authority-badge-suspect-value").total).toMatchObject({ awarded: "0", records: 1, suspectLeftOut: 1 });
+      expect(rows("authority-badge-suspect-value")[0]).toMatchObject({ counted: null, badges: ["SUSPECT_VALUE"] });
+      // several facets at once narrow further than each, and stay consistent with their own rows
+      const several = recordsOf("authority-several-facets");
+      expect(several.total.records).toBeLessThan(recordsOf("authority-channel-contract").total.records);
+      expect(several.total.records).toBeLessThan(recordsOf("authority-counterparty").total.records);
+      expect(several.records.rows).toHaveLength(several.total.records);
+      expect(rows("authority-several-facets").every((r) => r.channel === "CONTRACT" && r.date?.startsWith("2023"))).toBe(true);
+      // a filter that matches nothing leaves zeros and an empty panel, not a missing role
+      expect(recordsOf("authority-nothing-in-filter")).toMatchObject({
+        total: { awarded: "0", records: 0 }, records: { count: 0, rows: [] },
+        facets: { channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] },
+      });
+      // a facet panel is scoped to the entity: the placement world's commune sees only its own Records
+      expect(rows("authority-placed-in-uat").every((r) => r.authority?.key === "51000005")).toBe(true);
     });
   });
 
