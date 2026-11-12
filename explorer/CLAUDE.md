@@ -24,7 +24,7 @@ Place each component at the lowest level that fits:
 
 Components up to templates are **presentational**: they take data through props, typed from the generated GraphQL contract types, and never fetch. Only pages run queries. That is what lets every component be built and mocked on its own in the workbench, before its backend exists.
 
-Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/` and `molecules/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
+Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/`, `molecules/` and `organisms/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
 
 ## One folder per component
 
@@ -59,3 +59,14 @@ Create `hooks/`, `components/` and the utils file only when they have something 
 - **Fixtures.** Stories import mock data from `@grivei/contract/fixtures` (e.g. `fixtures.FullResultsSuppliers`); see `atoms/Table/Table.stories.tsx`. Pass rows through props like the real component will get them.
 - **Every story is tested.** `packages/ui/src/workbench/stories.test.tsx` renders every story file under `packages/ui/src` in both locales through portable stories (jsdom); app stories join by widening its glob.
 - **Lint.** `npm run lint` (part of `check`) rejects `@mui/*` and `@emotion/*` imports outside `packages/ui`; `tooling/lint-boundary.test.ts` proves it.
+
+## The base map (`domain/organisms/BaseMap`)
+
+The shared map every lens builds on (Money, zoomed county, Coverage, Flow). It has no lens logic: a lens passes numbers per area and decides what they mean.
+
+- `topology` (TopoJSON, built at load time, never GraphQL) with features carrying properties `{ code, name }`: `code` is an ISO 3166-2:RO county code or a SIRUTA; `name` is shown as published. Other shapes: pass `readArea`. `object` picks the TopoJSON object (first by default).
+- `values`: `Record<code, number | null>`. Missing, null or non-finite = grey (`NO_DATA_COLOR`, always distinct from the scale). `scale`: `"linear"` (spans zero to the maximum, so colour tracks absolute size; `domain` fixes the span) or `"log"` (zeros are not log-scaled: they take the lowest colour and the legend's low end reads "up to ..."). `formatValue(value, code?)` formats tooltip, area names and legend ends; `code` is the area, so the Money lens looks up the exact Bani string by code and calls `formatMoney` on that, never on the number (on legend ends `code` is an area holding that value, if any).
+- `onSelect(code)` on click, Enter or Space (areas are focusable buttons); without it areas are focusable images, not buttons. `selected` highlights one. `tiles` is a slot beside the map for off-map tiles. `renderTooltip(area)` overrides the tooltip content. `copy: BaseMapCopy` carries every string (`mapLabel`, `legendTitle`, `noData`, `areaLabel`, `atMost`). `width`/`height` set the SVG's coordinate space (it scales to its container); `projection` is `"conic"` (default) or `"mercator"`.
+- Extension points for lenses (the map itself stays lens-free): `colorOf(code)` overrides the numeric fill (a categorical colour; null = grey), `describeArea({code,name,value})` replaces the value text in the accessible name and default tooltip (a category name; null = the formatted value), `legend` replaces the numeric legend (a categorical one that owns its no-data swatch), `renderOverlay({ centroids, project, width, height })` draws marks (a circle per UAT, a mark per Source) inside the SVG over the areas, pointer events off. Stories: `CategoricalFill`, `OverlayCircles`.
+- Pure helpers (`createColorScale`, `featuresOf`) are exported for lenses that need the same colours elsewhere.
+- Story and test outlines are invented (`domain/samples/geo/`, built by `packages/ui/scripts/build-geo-fixtures.ts`).

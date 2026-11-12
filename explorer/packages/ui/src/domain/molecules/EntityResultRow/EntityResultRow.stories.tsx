@@ -1,0 +1,25 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { localeOf, sampleCopy } from "../../samples/copy.ts";
+import { resultSamples } from "../../samples/fixtureData.ts";
+import { EntityResultRow } from "./index.ts";
+
+const meta = { title: "Domain/EntityResultRow", component: EntityResultRow } satisfies Meta<Record<string, unknown>>;
+export default meta;
+type Story = StoryObj;
+
+const hrefOf = (key: string) => `/explore/supplier/${encodeURIComponent(key)}`;
+const list = (rows: (typeof resultSamples)["typical"]["suppliers"]["rows"], locale: "en" | "ro") => (
+  <Stack component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+    {rows.map((row) => (
+      <EntityResultRow key={row.entity.key} row={row} href={hrefOf(row.entity.key)} locale={locale} copy={sampleCopy.entityRow(locale)} />
+    ))}
+  </Stack>
+);
+
+export const WithCounty: Story = { render: (_a, { globals }) => list(resultSamples.typical.suppliers.rows, localeOf(globals["locale"])) };
+/** A national body, an entity no source places, and a name-only foreign firm: the county slot's fallbacks. */
+export const NoCounty: Story = {
+  render: (_a, { globals }) => list([...resultSamples.variety.suppliers.rows, ...resultSamples.variety.authorities.rows], localeOf(globals["locale"])),
+};
+export const HugeAmount: Story = { render: (_a, { globals }) => list(resultSamples.estimated.suppliers.rows, localeOf(globals["locale"])) };

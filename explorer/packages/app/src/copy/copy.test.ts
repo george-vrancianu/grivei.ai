@@ -48,7 +48,7 @@ describe("the copy catalogue", () => {
   });
 
   it("really is Romanian in Romanian: the same text is not reused for the sentences", () => {
-    for (const path of ["pages.placeholder", "status.failed", "main.title", "records.empty"]) {
+    for (const path of ["pages.placeholder", "status.failed", "main.title", "results.empty.records"]) {
       expect(leaves(catalogue.ro).has(path)).toBe(true);
       const get = (c: Copy) => path.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], c);
       expect(get(catalogue.ro), path).not.toBe(get(catalogue.en));
