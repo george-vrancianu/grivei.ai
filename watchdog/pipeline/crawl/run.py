@@ -106,9 +106,9 @@ def run_crawl(archive: Archive, crawler: Crawler, plan: RunPlan, progress: Crawl
     today = now().astimezone(timezone.utc).date()
     trailing_from = min(plan.recrawl) if plan.recrawl else None
     progress.start(plan.first, plan.last, len(plan.days), plan.cursor, trailing_from, archive.root)
+    done = complete_days(archive)  # read once (a listing of the whole archive); this run keeps it current as it goes
     try:
         for day in plan.days:
-            done = complete_days(archive)  # re-read: a day finished a moment ago (or by another run) is complete
             fetched = done.get(day)
             if fetched is not None and not plan.force:
                 if day not in plan.recrawl:
@@ -122,6 +122,7 @@ def run_crawl(archive: Archive, crawler: Crawler, plan: RunPlan, progress: Crawl
             progress.day_begin(day)
             result = crawler.crawl_unit(day.isoformat(), day, day)
             progress.day_done(day, result.notices, result.list_pages, result.contracts, result.path, result.resumed)
+            done[day] = now()
             summary.crawled.append(day)
             summary.notices += result.notices
             summary.contracts += result.contracts
