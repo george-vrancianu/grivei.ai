@@ -43,7 +43,7 @@ def _databases(url: str) -> set[str]:
 
 
 def _build(archive: Archive):
-    return lambda url: rebuild(archive, url)
+    return lambda url, gate=None: rebuild(archive, url, gate=gate)
 
 
 def test_a_rebuild_switches_over_only_after_its_checks_pass_keeps_the_old_graph_and_rollback_cleanup_work(live, tmp_path):
@@ -156,3 +156,83 @@ def test_the_api_keeps_answering_reads_while_the_shadow_graph_builds_and_across_
         blocked = True
     inplace.join()
     assert blocked
+
+
+def _mine(live: str) -> set[str]:
+    return {d for d in _databases(live) if d.startswith(switchover.names_of(live).live)}
+
+
+def test_a_rollback_with_a_session_open_on_the_fallback_still_ends_with_a_live_database(live, tmp_path):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)
+    look = psycopg.connect(names.prev_url)  # the operator inspects the fallback, as the README invites
+    try:
+        switchover.rollback(live, lambda _: None)
+    finally:
+        look.close()
+    assert _mine(live) == {names.live, names.prev} and _count(live) == 6 and _count(names.prev_url) == 13
+
+
+def test_a_stop_between_the_two_renames_puts_the_old_graph_back(live, tmp_path, monkeypatch):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    real, calls = switchover._rename, []
+
+    def stop_after_the_first_rename(admin, old, new):
+        calls.append(old)
+        if len(calls) == 2:
+            raise SystemExit(143)  # SIGTERM, turned into SystemExit by the verb, right after <db> -> <db>_prev
+        return real(admin, old, new)
+
+    monkeypatch.setattr(switchover, "_rename", stop_after_the_first_rename)
+    with pytest.raises(SystemExit):
+        switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)
+    monkeypatch.undo()
+    assert names.live in _databases(live) and _count(live) == 6  # the API still has its graph
+    assert names.next in _databases(live)  # and the checked new graph is kept
+
+
+def test_a_swap_killed_between_the_renames_is_repaired_by_the_next_run_which_never_builds_without_a_live_database(live, tmp_path):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:  # SIGKILL's leftover: <db> was renamed to <db>_prev, <db>_next is complete
+        admin.execute(f'ALTER DATABASE "{names.live}" RENAME TO "{names.prev}"')
+    seen = []
+
+    def build(url, gate):
+        seen.append(names.live in _databases(live))  # while the new graph builds, the live name must serve again
+        return rebuild(_archive(tmp_path, "full"), url, gate=gate)
+
+    lines = []
+    switchover.build_and_switch(live, build, say=lines.append)
+    assert seen == [True] and _count(live) == 13 and _count(names.prev_url) == 6
+    assert any("repair" in line or "restor" in line for line in lines)
+    assert names.next not in _databases(live)
+
+
+def test_a_missing_live_database_fails_the_shrink_check_instead_of_skipping_it(live, tmp_path):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "full"), names.live_url)
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:
+        admin.execute(f'CREATE DATABASE "{names.next}"')
+    with psycopg.connect(names.next_url, autocommit=True) as c:
+        c.execute("CREATE EXTENSION IF NOT EXISTS pg_search")
+    rebuild(_archive(tmp_path, "full2"), names.next_url)
+    failures = switchover.check_graph(names.next_url, against=switchover.make_conninfo(live, dbname="nonexistent_live"))
+    assert any("does not exist" in f for f in failures)
+
+
+def test_a_refused_graph_is_not_reported_as_finished_and_writes_no_outlines(live, tmp_path):
+    from pipeline.progress import Progress, read_status
+
+    rebuild(_archive(tmp_path, "full"), live)
+    shrunk = _archive(tmp_path, "shrunk", drop=("seap/bulk/dan", "seap/bulk/da/2023Q1", "seap/bulk/da/2023Q2"))
+    status_file, geo = tmp_path / "status.json", tmp_path / "geo"
+
+    with pytest.raises(switchover.SwitchoverRefused):
+        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate), say=lambda _: None)
+
+    status = read_status(status_file)
+    assert status["state"] == "failed" and "SwitchoverRefused" in status["error"]  # `pipeline status` must not call the refused graph finished
+    assert not geo.exists()  # the served outlines are untouched

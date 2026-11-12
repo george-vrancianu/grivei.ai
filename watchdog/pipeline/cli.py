@@ -54,6 +54,11 @@ def stamp_now() -> str:
     return stamp(datetime.now(timezone.utc))
 
 
+def _in_place_arg(p) -> None:
+    on = os.environ.get("PIPELINE_REBUILD_IN_PLACE", "").strip().lower() in ("1", "true", "yes", "on")  # "0" and "false" are off
+    p.add_argument("--in-place", action="store_true", default=on, help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE=1; for a new, empty database, e.g. a major upgrade)")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pipeline")
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="raw archive root (env PIPELINE_ARCHIVE)")
@@ -66,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
     placement_cli.add_rebuild_args(r)
-    r.add_argument("--in-place", action="store_true", default=bool(os.environ.get("PIPELINE_REBUILD_IN_PLACE")), help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE; for a new, empty database, e.g. a major upgrade)")
+    _in_place_arg(r)
 
     r.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; default: today, UTC; for tests)")
     r.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV for the Coverage grid (env PIPELINE_KNOWN_GAPS; default: pipeline/coverage/known_gaps.csv)")
@@ -127,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; for tests)")
         p.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV (env PIPELINE_KNOWN_GAPS)")
         placement_cli.add_rebuild_args(p)
-        p.add_argument("--in-place", action="store_true", default=bool(os.environ.get("PIPELINE_REBUILD_IN_PLACE")), help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE; for a new, empty database, e.g. a major upgrade)")
+        _in_place_arg(p)
 
     rf = sub.add_parser("refresh", help="the nightly run (#81): crawl, data.gov.ro + MF list, ANAF, load; each step only when due, under one lock; healthchecks pings")
     load_args(rf)
@@ -263,9 +268,9 @@ def _log_line(line: str) -> None:
 def _rebuild_beside(archive: Archive, args, progress: Progress, say):
     """The rebuild every verb shares: into a fresh database beside the live one, checked, then switched over (switchover.py);
     `--in-place` rebuilds into the database itself (it locks it for the whole load)."""
-    def build(url: str):
+    def build(url: str, gate=None):
         return rebuild(archive, url, progress, overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps)
+                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps, gate=gate)
     if args.in_place:
         return build(args.db)
     return switchover.build_and_switch(args.db, build, say=say)
@@ -275,14 +280,19 @@ def _operate(archive: Archive, args, parser) -> int:
     """`rollback`, `cleanup`, `verify`, `backup`, `restore`: one-shot operator verbs, timestamped lines on stdout."""
     if args.verb in ("rollback", "cleanup", "verify") and not args.db:
         parser.error("--db or DATABASE_URL is required")
-    if args.verb == "rollback":
-        try:
-            switchover.rollback(args.db, _log_line)
-        except LookupError as e:
-            print(f"rollback: {e}", file=sys.stderr)
-            return 1
-    elif args.verb == "cleanup":
-        switchover.cleanup(args.db, _log_line)
+    if args.verb in ("rollback", "cleanup"):
+        with locked(archive) as got:  # not beside a refresh: a cleanup mid-build drops the database being built, a rollback races the swap
+            if not got:
+                print(f"{args.verb}: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
+                return 1
+            if args.verb == "cleanup":
+                switchover.cleanup(args.db, _log_line)
+                return 0
+            try:
+                switchover.rollback(args.db, _log_line)
+            except LookupError as e:
+                print(f"rollback: {e}", file=sys.stderr)
+                return 1
     elif args.verb == "verify":
         failures = switchover.check_graph(args.db, args.against)
         for f in failures:
@@ -432,7 +442,7 @@ def _status(archive: Archive, args) -> int:
             code = 0  # no rebuild yet is not a failure once a backfill is on record
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
-    dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None)
+    dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None, backup=None, pgdump=None)
     for line in describe_refresh(archive, ledger, refresh_steps(archive, dummy)):
         print(line)
     if ledger.runs and ledger.runs[-1]["status"] == "failed":

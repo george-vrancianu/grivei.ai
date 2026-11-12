@@ -107,7 +107,7 @@ services:
       # backups (refresh step 5, #82): empty RESTIC_REPOSITORY = skipped with a warning. Password and backend credentials as restic reads them.
       RESTIC_CACHE_DIR: /tmp/restic-cache
       RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
-      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}  # only this form reaches the container; for RESTIC_PASSWORD_FILE mount the file and set it in an override
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}

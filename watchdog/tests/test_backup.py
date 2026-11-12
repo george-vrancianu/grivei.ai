@@ -5,7 +5,7 @@ import os
 import shutil
 import stat
 import subprocess
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -99,6 +99,37 @@ def test_the_pg_dump_goes_through_restic_without_touching_the_disk_and_a_failing
     with pytest.raises(TransientError, match="connection refused"):
         backup_dump("postgresql://x/y", restic, lambda _: None, pg_dump=broken)
     assert len(restic.snapshots("pgdump")) == 1  # the weekly one from before; the failed run left none (restic saw an empty stdin and a nonzero pg_dump)
+
+
+def test_the_database_password_never_reaches_the_argv_of_pg_dump_or_pg_restore_and_a_wrong_restic_password_is_deterministic(restic, tmp_path):
+    seen = tmp_path / "seen"
+    url = "postgresql://grivei:s3cret@dbhost:5432/grivei?sslmode=require"
+    note = f'echo "ARGS: $*" >> {seen}\necho "ENV: $PGHOST $PGPORT $PGUSER $PGPASSWORD $PGDATABASE $PGSSLMODE" >> {seen}\n'
+    dump = _script(tmp_path / "fake_pg_dump", note + 'echo dumped\n')
+    backup_dump(url, restic, lambda _: None, pg_dump=dump)
+    restore_dump(restic, url, pg_restore=_script(tmp_path / "fake_pg_restore", note + "cat > /dev/null\n"))
+    lines = seen.read_text().splitlines()
+    assert len(lines) == 4 and all("s3cret" not in line for line in lines[0::2])  # the argv lines
+    assert all(line == "ENV: dbhost 5432 grivei s3cret grivei require" for line in lines[1::2])  # the password travels in the child's environment
+
+    wrong = Restic(env={**restic.env, "RESTIC_PASSWORD": "not the password"}, binary=restic.binary)
+    with pytest.raises(DeterministicError, match="password"):  # not mistaken for a missing repository (which `init` would then fail on)
+        wrong.ensure_repository(lambda _: None)
+
+
+def test_a_restic_older_than_the_code_needs_is_deterministic(restic, tmp_path):
+    old = Restic(env=restic.env, repository=restic.repository, binary=_script(tmp_path / "old_restic", 'echo "restic 0.16.4 compiled with go1.21 on linux/amd64"\n'))
+    with pytest.raises(DeterministicError, match=r"restic >= 0\.17"):
+        old.ensure_repository(lambda _: None)
+
+
+def test_a_dump_left_pending_by_a_kill_is_forgotten_by_the_next_dump(restic, tmp_path):
+    dump = _script(tmp_path / "fake_pg_dump", "echo dumped\n")
+    restic.ensure_repository(lambda _: None)
+    restic.run("backup", "--tag", "pgdump-pending", "--host", "grivei", "--stdin", "--stdin-filename", "grivei.dump", stdin=subprocess.Popen(["echo", "half"], stdout=subprocess.PIPE).stdout)
+    assert len(restic.snapshots("pgdump-pending")) == 1
+    backup_dump("postgresql://x/y", restic, lambda _: None, pg_dump=dump)
+    assert restic.snapshots("pgdump-pending") == [] and len(restic.snapshots("pgdump")) == 1
 
 
 def test_unset_repository_is_a_logged_warning_not_a_failure_and_a_missing_password_or_binary_is_deterministic(tmp_path, monkeypatch):

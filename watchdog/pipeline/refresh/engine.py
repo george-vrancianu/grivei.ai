@@ -164,8 +164,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     backup_due, dump_due = (lambda l, n: daily(l, n, "backup")), weekly("pgdump", PGDUMP_EVERY_DAYS)
 
-    backups = [  # an impl without them (a test of the other steps) has no backup steps
-        Step(name, getattr(impl, name), unless_skipped(name, due)) for name, due in (("backup", backup_due), ("pgdump", dump_due)) if hasattr(impl, name)]
+    backups = [Step(name, getattr(impl, name), unless_skipped(name, due)) for name, due in (("backup", backup_due), ("pgdump", dump_due))]
 
     return [
         Step("crawl", impl.crawl, daily),

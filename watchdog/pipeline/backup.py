@@ -9,17 +9,21 @@ password (`RESTIC_PASSWORD`, `RESTIC_PASSWORD_FILE` or `RESTIC_PASSWORD_COMMAND`
 `AWS_SECRET_ACCESS_KEY`, `B2_ACCOUNT_ID`/`B2_ACCOUNT_KEY`, ...). With `RESTIC_REPOSITORY` unset the steps are skipped with a logged warning.
 `PIPELINE_RESTIC_BIN` and `PIPELINE_PG_DUMP` name the executables (default `restic`, `pg_dump`).
 
-The repository is created on first use. After each backup, snapshots are thinned (`forget --prune`): 7 daily, 5 weekly, 12 monthly.
+The repository is created on first use. After each backup, snapshots are thinned (`forget`): 7 daily, 5 weekly, 12 monthly. The weekly dump
+step also prunes (`--prune`: rewrites packs, which on object storage costs requests and egress, so not every night).
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
+
+from psycopg.conninfo import conninfo_to_dict
 
 from .archive import Archive
 from .refresh.engine import DeterministicError, StepResult, TransientError
@@ -29,6 +33,8 @@ DUMP_NAME = "grivei.dump"
 PENDING_TAG = "pgdump-pending"  # a dump snapshot is tagged `pgdump` only once pg_dump has exited cleanly, so a truncated one is never a restore candidate
 HOST = "grivei"
 KEEP = ("--keep-daily", "7", "--keep-weekly", "5", "--keep-monthly", "12")  # spec default taken
+MIN_RESTIC = (0, 17)
+EXIT_NO_REPOSITORY, EXIT_WRONG_PASSWORD = 10, 12  # restic >= 0.17 exit codes
 EXCLUDE = ("refresh.lock",)  # operational, never worth restoring
 
 
@@ -60,14 +66,37 @@ class Restic:
             raise TransientError(f"restic {args[0]} failed (exit {done.returncode}){': ' + detail[0] if detail else ''}")
         return done
 
-    def ensure_repository(self, say: Callable[[str], None]) -> None:
-        if self.run("cat", "config", check=False, capture=True).returncode == 0:
-            return
-        say("backup: no restic repository there yet, creating it")
-        self.run("init")
+    def popen(self, *args: str, **kwargs) -> subprocess.Popen:
+        try:
+            return subprocess.Popen([*self.binary, *args], env=self._env(), **kwargs)
+        except FileNotFoundError as e:
+            raise DeterministicError(f"backup: restic not found ({self.binary[0]}); install it or set PIPELINE_RESTIC_BIN") from e
 
-    def forget(self) -> None:
-        self.run("forget", "--prune", "--group-by", "tags", *KEEP, "--quiet")  # by tag only: a one-shot container has a new hostname every run
+    def check_version(self) -> None:
+        """The code relies on restic >= 0.17: exit codes 10/12 of `cat config`, `backup --json` summaries, `tag --set`. The image installs
+        whatever Debian ships, so say so loudly instead of misbehaving on an older one."""
+        out = self.run("version", capture=True).stdout or ""
+        found = re.search(r"restic (\d+)\.(\d+)", out)
+        if not found or (int(found[1]), int(found[2])) < MIN_RESTIC:
+            raise DeterministicError(f"backup: restic >= {MIN_RESTIC[0]}.{MIN_RESTIC[1]} is required, found {out.strip().splitlines()[0] if out.strip() else 'no version'}")
+
+    def ensure_repository(self, say: Callable[[str], None]) -> None:
+        self.check_version()
+        done = self.run("cat", "config", check=False, capture=True)
+        if done.returncode == 0:
+            return
+        detail = (done.stderr or "").strip().splitlines()[-1:]
+        detail = detail[0] if detail else f"exit {done.returncode}"
+        if done.returncode == EXIT_NO_REPOSITORY:
+            say("backup: no restic repository there yet, creating it")
+            self.run("init")
+        elif done.returncode == EXIT_WRONG_PASSWORD:  # `init` on an existing repository would only fail confusingly
+            raise DeterministicError(f"backup: the restic password does not open the repository: {detail}")
+        else:  # network down, bad credentials: not a reason to create anything
+            raise TransientError(f"restic could not open the repository: {detail}")
+
+    def forget(self, prune: bool = False) -> None:
+        self.run("forget", *(["--prune"] if prune else []), "--group-by", "tags", *KEEP, "--quiet")  # by tag only: a one-shot container has a new hostname every run
 
     def snapshots(self, tag: str) -> list[dict]:
         return json.loads(self.run("snapshots", "--tag", tag, "--json", capture=True).stdout or "[]")
@@ -81,7 +110,7 @@ def backup_archive(archive: Archive, restic: Restic, say: Callable[[str], None])
     excludes = [a for name in EXCLUDE for a in ("--exclude", name)]
     say(f"backup: restic backup of {archive.root}")
     restic.run("backup", "--tag", ARCHIVE_TAG, "--host", HOST, "--quiet", *excludes, ".", cwd=archive.root.resolve())
-    restic.forget()
+    restic.forget()  # no prune: the weekly dump step does that
     return StepResult({"snapshots": len(restic.snapshots(ARCHIVE_TAG))})
 
 
@@ -93,10 +122,13 @@ def backup_dump(db_url: str | None, restic: Restic, say: Callable[[str], None], 
     if not db_url:
         raise DeterministicError("backup: no database to dump (pass --db or set DATABASE_URL)")
     restic.ensure_repository(say)
+    stale = [shot["id"] for shot in restic.snapshots(PENDING_TAG)]  # left by a kill between `backup` and `tag`: never a restore candidate, never kept
+    if stale:
+        restic.run("forget", *stale, "--quiet")
     command = pg_dump or shlex.split(os.environ.get("PIPELINE_PG_DUMP", "pg_dump"))
     say(f"backup: pg_dump of the database into restic ({DUMP_NAME})")
     try:
-        dump = subprocess.Popen([*command, "--format=custom", "--no-owner", "--dbname", db_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        dump = subprocess.Popen([*command, "--format=custom", "--no-owner"], env=pg_env(db_url), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError as e:
         raise DeterministicError(f"backup: {command[0]} not found; install the Postgres client or set PIPELINE_PG_DUMP") from e
     saved = None
@@ -114,8 +146,18 @@ def backup_dump(db_url: str | None, restic: Restic, say: Callable[[str], None], 
     if saved.returncode != 0 or not snapshot:
         raise TransientError(f"restic backup of the dump failed (exit {saved.returncode}): {(saved.stderr or '').strip()[-200:]}")
     restic.run("tag", "--set", DUMP_TAG, snapshot, "--quiet")
-    restic.forget()
+    restic.forget(prune=True)
     return StepResult({"snapshots": len(restic.snapshots(DUMP_TAG))})
+
+
+PG_ENV = {"host": "PGHOST", "port": "PGPORT", "user": "PGUSER", "password": "PGPASSWORD", "dbname": "PGDATABASE", "sslmode": "PGSSLMODE",
+          "sslrootcert": "PGSSLROOTCERT", "sslcert": "PGSSLCERT", "sslkey": "PGSSLKEY"}
+
+
+def pg_env(db_url: str) -> dict[str, str]:
+    """The process environment for pg_dump/pg_restore with the connection in PG* variables: a password in `--dbname` shows in `ps`."""
+    parts = conninfo_to_dict(db_url)
+    return {**os.environ, **{PG_ENV[k]: str(v) for k, v in parts.items() if k in PG_ENV}}
 
 
 def _json_or_empty(line: str) -> dict:
@@ -152,9 +194,9 @@ def restore_dump(restic: Restic, db_url: str, snapshot: str = "latest", pg_resto
     """Restore the dump snapshot into the (existing, empty) database `db_url` with `pg_restore`."""
     shot = _latest(restic, DUMP_TAG, snapshot)
     command = pg_restore or shlex.split(os.environ.get("PIPELINE_PG_RESTORE", "pg_restore"))
-    reader = subprocess.Popen([*restic.binary, "dump", shot["id"], DUMP_NAME], env=restic._env(), stdout=subprocess.PIPE)
+    reader = restic.popen("dump", shot["id"], DUMP_NAME, stdout=subprocess.PIPE)
     try:
-        done = subprocess.run([*command, "--no-owner", "--exit-on-error", "--dbname", db_url], stdin=reader.stdout)
+        done = subprocess.run([*command, "--no-owner", "--exit-on-error"], env=pg_env(db_url), stdin=reader.stdout)
     finally:
         reader.stdout.close()
         reader.wait()

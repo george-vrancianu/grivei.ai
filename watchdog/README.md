@@ -213,7 +213,13 @@ nohup .venv/bin/python -m pipeline rebuild >> ~/grivei-data/rebuild.log 2>&1 &  
 .venv/bin/python -m pipeline verify --db URL [--against LIVE_URL]   # the same checks on any database; exit 1 if any fail
 ```
 
-With Compose, `docker compose run --rm -T pipeline rollback` etc. The `DATABASE_URL` database must have its own name (not `postgres`) and the role must be allowed to create databases and terminate sessions (`grivei` is the superuser). The old graph is the fallback until the next successful switchover or `cleanup`; **the next nightly switchover replaces `<db>_prev`**, so roll back before then. Disk: the live graph, the old graph and the one being built, three copies for the length of a build when a fallback is kept (`cleanup` first if the disk is tight).
+`rollback` and `cleanup` take the archive's lock (`refresh.lock`) like `rebuild`: they refuse to run while a refresh or seed is running (a cleanup mid-build would drop the database being built; a rollback would race the swap). A session someone has open on `<db>_prev` (say, to inspect the fallback) is terminated by a rollback, like the API's sessions at a switchover.
+
+**A swap that was killed half-way repairs itself.** The swap is two renames, so a `kill -9` or a lost connection between them leaves no `<db>` for a moment that does not end by itself. A stop that the process sees (an error, SIGTERM) puts the old graph back under `<db>` before it exits; after a hard kill, the next `rebuild`/refresh load, `rollback` or `cleanup` begins by restoring the graph that was live (`<db>_swap` of a rollback, else `<db>_prev` of a switchover) under `<db>` (log line `switchover: REPAIR: ...`) before it drops or builds anything. If the API reports that the database does not exist, do not wait for the night: `docker compose run --rm -T pipeline cleanup` (or `rollback`) repairs it at once. A missing live database is also a failed check, never a first build: the shrink floor is not skipped.
+
+A refused graph is recorded in the rebuild's status file as failed (`pipeline status` does not call it finished) and writes no outlines to the served `/geo` directory.
+
+With Compose, `docker compose run --rm -T pipeline rollback` etc. The `DATABASE_URL` database must have its own name (not `postgres`) and the role must be allowed to create databases and terminate sessions (`grivei` is the superuser). The old graph is the fallback until the next successful switchover or `cleanup`; **the next nightly switchover replaces `<db>_prev`**, so roll back before then. Disk: the live graph, the old graph and the one being built, three copies for the length of a build when a fallback is kept (`cleanup` first if the disk is tight). A killed build leaves a full-size `<db>_next` until the next run or `cleanup`.
 
 **Major upgrade (new Postgres/ParadeDB version, ADR 0004): a rebuild into a new volume.** There is no in-place `pg_upgrade`; the graph is derived, so build a fresh one on the new version and repoint.
 
@@ -221,17 +227,22 @@ With Compose, `docker compose run --rm -T pipeline rollback` etc. The `DATABASE_
 # 1. a second database service on a new volume (compose profile `upgrade`; the tag is the new paradedb image)
 export GRIVEI_DB_NEXT_IMAGE=paradedb/paradedb:<new tag>
 docker compose --profile upgrade up -d db-next
-# 2. rebuild into it in place (nobody reads it, so there is nothing to lock out); the old stack keeps serving
+#    (db and db-next each get up to 12 GB: check `free -g` first; the new volume is grivei_pgdata-next, the old one grivei_pgdata)
+# 2. rebuild into it in place (nobody reads it, so there is nothing to lock out); the old stack keeps serving. The rebuild takes the archive
+#    lock, so it cannot run beside the nightly refresh: stop the timer first (`systemctl --user stop grivei-refresh.timer`) so no data lands afterwards.
 nohup docker compose run --rm -T -e DATABASE_URL=postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db-next:5432/grivei pipeline rebuild --in-place >> ~/grivei-data/upgrade.log 2>&1 &
 # 3. check it against the live graph
 docker compose run --rm -T pipeline verify --db postgresql://grivei:PW@db-next:5432/grivei --against postgresql://grivei:PW@db:5432/grivei
-# 4. switch: stop the API and the timer, point `db` at the new volume/tag in compose.yaml (or the DATABASE_URL of api and pipeline at db-next), start again
-systemctl --user stop grivei-refresh.timer; docker compose stop api
-#    edit compose.yaml (image tag; volume) -> docker compose up -d db api web ; systemctl --user start grivei-refresh.timer
-# 5. keep the old volume (`docker volume ls`: grivei_pgdata) as the fallback until the new one has run a few nights; then `docker volume rm` it
+#    If the archive grew since step 2, run step 2 again first (a rebuild into an existing database is rerunnable: it replaces the schemas).
+# 4. switch (a few minutes of downtime): stop the API and db-next (a clean shutdown of the new volume), then in compose.yaml give `db` the new
+#    image tag and `volumes: - pgdata-next:/var/lib/postgresql` (the `pgdata-next` volume is already declared there), and start again
+systemctl --user stop grivei-refresh.timer; docker compose stop api; docker compose --profile upgrade stop db-next
+#    edit compose.yaml -> docker compose up -d db api web ; then check the site and `systemctl --user start grivei-refresh.timer`
+# 5. keep the old volume (`docker volume ls`: grivei_pgdata) as the fallback until the new one has run a few nights; then `docker volume rm grivei_pgdata`.
+#    Rollback before that: undo the two compose.yaml edits and `docker compose up -d db api web` (the old volume was never written to).
 ```
 
-If `verify` fails, nothing has changed: the old stack never stopped. The fallback is the old volume itself (point compose back at it). A restored `pg_dump` is not used for an upgrade (a dump from one major version restores on a newer one, but a rebuild is the supported path and checks itself).
+If `verify` fails, nothing has changed: the old stack never stopped. The fallback is the old volume itself (point compose back at it). The new-volume path is manual and not covered by an automated test (it needs two real ParadeDB versions and Compose); the same-cluster switchover above is what the tests cover, so rehearse the upgrade once on the real machine, with the timer stopped, before relying on it. A restored `pg_dump` is not used for an upgrade (a dump from one major version restores on a newer one, but a rebuild is the supported path and checks itself).
 
 ## Backups and restore (#82)
 
@@ -242,11 +253,11 @@ Configure with restic's own environment (the pipeline container gets them from c
 | Variable | Meaning |
 | --- | --- |
 | `RESTIC_REPOSITORY` | e.g. `s3:https://<endpoint>/<bucket>/grivei`, `b2:<bucket>:grivei`, or a local path. **Unset = both steps skip with a logged `WARNING ... NOT backed up`** |
-| `RESTIC_PASSWORD` or `RESTIC_PASSWORD_FILE` | the repository password. Required once a repository is set; **losing it loses the backups** (store it apart from the bucket) |
+| `RESTIC_PASSWORD` (compose) or `RESTIC_PASSWORD_FILE` / `RESTIC_PASSWORD_COMMAND` (a bare-metal run) | the repository password. Required once a repository is set; **losing it loses the backups** (store it apart from the bucket). `compose.yaml` passes only `RESTIC_PASSWORD` to the container (it shows in `docker inspect`; mount a file and set `RESTIC_PASSWORD_FILE` yourself if that matters) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` / `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY` | the backend's credentials |
-| `PIPELINE_RESTIC_BIN`, `PIPELINE_PG_DUMP`, `PIPELINE_PG_RESTORE` | the executables (defaults `restic`, `pg_dump`, `pg_restore`; the pipeline image carries restic and the PostgreSQL 18 client) |
+| `PIPELINE_RESTIC_BIN`, `PIPELINE_PG_DUMP`, `PIPELINE_PG_RESTORE` | the executables (defaults `restic`, `pg_dump`, `pg_restore`; the pipeline image carries restic (>= 0.17 is required and checked) and the PostgreSQL 18 client) |
 
-- The repository is created on first use. `backup` snapshots `<archive>` (everything but `refresh.lock`) tagged `archive`, host `grivei`; `pgdump` streams `pg_dump --format=custom` straight into `restic backup --stdin` (file `grivei.dump`, tag `pgdump`; nothing is written to disk, and a dump whose `pg_dump` fails is removed, never a restore candidate). After each, `restic forget --prune --keep-daily 7 --keep-weekly 5 --keep-monthly 12` per tag (spec default taken: retention of 7 daily, 5 weekly, 12 monthly).
+- The repository is created on first use. `backup` snapshots `<archive>` (everything but `refresh.lock`) tagged `archive`, host `grivei`; `pgdump` streams `pg_dump --format=custom` straight into `restic backup --stdin` (file `grivei.dump`, tag `pgdump`; nothing is written to disk, and a dump whose `pg_dump` fails is removed, never a restore candidate). After each, `restic forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12` per tag (spec default taken: retention of 7 daily, 5 weekly, 12 monthly); the weekly `pgdump` step adds `--prune` (rewriting packs on object storage costs requests and egress, so not every night). A dump left half-done by a kill (tag `pgdump-pending`) is forgotten by the next dump. The database password reaches `pg_dump`/`pg_restore` in `PG*` environment variables, never in their command line.
 - Failures follow the refresh's classes: a network or restic error is transient (retried, alert after more than 2 failed runs), a missing binary or password is deterministic (`/fail` at once).
 - Run now: `pipeline backup [archive|dump|all]` (needs `RESTIC_REPOSITORY`; do not run beside a refresh).
 
@@ -479,7 +490,7 @@ nohup .venv/bin/python -m pipeline seed --backfill >> ~/grivei-data/seed.log 2>&
 
 Expected cost, from the earlier tickets' real runs and estimates: `fetch-datagov` tens of minutes to hours (several GB, about 1 s between requests, low CPU and memory); `anaf-lookup` a few minutes of scanning (one file at a time) plus about 600 requests at 1 per second, under an hour, light; `rebuild` hours (about 860 records/s; about 250 MB for the biggest CSV, about 1.5 GB for a 770k-row DA quarter, so keep 2 GB or more for it); the backfill crawl many hours at 0.35 s per request. The seed holds the single lock, so a `refresh` timer firing meanwhile logs "another run holds the lock" and does nothing.
 
-**The load no longer stalls the API (#82).** The rebuild runs into a fresh database beside the live one and swaps it in after its checks ("Rebuild beside the live database"), so a seed's load and the nightly refresh's load leave the public API reading the old graph until the swap, which is a moment. It needs about twice the database size in disk during the build (the old graph is kept as `<db>_prev` until the next switchover or `pipeline cleanup`). The old advice to stop `api` around the timer is obsolete.
+**The load no longer stalls the API (#82).** The rebuild runs into a fresh database beside the live one and swaps it in after its checks ("Rebuild beside the live database"), so a seed's load and the nightly refresh's load leave the public API reading the old graph until the swap, which is a moment. It needs three copies of the graph in disk during the build (the live one, the old one kept as `<db>_prev` until the next switchover or `pipeline cleanup`, and the one being built). The old advice to stop `api` around the timer is obsolete.
 
 **Stops at the first failure.** A seed that fails a step (after that step's retries) stops there; the steps after it did not run, and the same command resumes at the failed step. A `refresh` keeps going after a failed step (its due rules compare fingerprints, so the next run repairs it).
 

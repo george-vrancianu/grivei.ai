@@ -41,4 +41,4 @@ def test_a_quarantined_file_is_a_warning_in_the_run_and_not_yet_loaded_in_the_pu
     assert next(s for s in Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"] if s["name"] == "load")["counts"]["quarantined"] == 1
 
     again = run_refresh(archive, impl, pinger=Pinger(None), now=clock.now, sleep=clock.sleep, say=lambda _: None)
-    assert [s["name"] for s in again.run["steps"]] == ["backup", "pgdump"]  # (only the unconfigured backup steps, due until configured) # the quarantine moved a unit, but the load that moved it recorded the new state
+    assert [s["name"] for s in again.run["steps"]] == ["backup", "pgdump"]  # only the unconfigured backup steps, due until configured; the quarantine moved a unit, but the load that moved it recorded the new state

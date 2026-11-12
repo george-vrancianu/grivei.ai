@@ -23,7 +23,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -405,8 +405,10 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
-            today: date | None = None, known_gaps_path: Path | str | None = None) -> RebuildSummary:
-    """`today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
+            today: date | None = None, known_gaps_path: Path | str | None = None,
+            gate: Callable[[], None] | None = None) -> RebuildSummary:
+    """`gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
+    live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
     summary = RebuildSummary()
     number = 0
     today = today or datetime.now(timezone.utc).date()
@@ -476,6 +478,13 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         if progress:
             progress.fail(e)
         raise
+    if gate:
+        try:
+            gate()
+        except BaseException as e:  # refused: recorded as failed, nothing served, no outlines
+            if progress:
+                progress.fail(e)
+            raise
     if progress:  # the load is committed (VACUUM is not graph work, so an interrupt there is not a failed load): `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
         progress.finish(summary.records, data_through)
     try:
