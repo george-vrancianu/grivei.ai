@@ -156,7 +156,15 @@ def anaf_units(archive: Archive) -> list[Unit]:
 
 
 def normalise_cui_int(value: object) -> int | None:
-    tax = classify_tax_id(str(value))
+    """A CUI as ANAF writes it (an integer) or the archive publishes it (`RO 123`) -> the integer, or None. It does not test
+    the check digit: ANAF's answer is what confirms a CUI, and the CUIs asked passed the check before."""
+    digits = re.sub(r"^RO(?=\d)", "", re.sub(r"[^0-9A-Z]", "", str(value).upper()))
+    return int(digits) if digits.isdigit() and 0 < int(digits) < 10**10 else None
+
+
+def asked_cui(raw: object) -> int | None:
+    """A published tax id -> the CUI to ask ANAF about: only a Romanian CUI that passes the check digit."""
+    tax = classify_tax_id(None if raw is None else str(raw))
     return int(tax.value) if tax.kind == "cui" and tax.value else None
 
 
@@ -211,7 +219,7 @@ def collect_cuis(archive: Archive, say: Callable[[str], None] | None = None) -> 
             before = len(cuis)
             for r in records:
                 for raw in (r.authority_cui, *(w.cui for w in r.all_winners)):
-                    if (cui := normalise_cui_int(raw)) is not None:
+                    if (cui := asked_cui(raw)) is not None:
                         cuis.add(cui)
             if say:
                 say(f"anaf scan unit {index}/{len(units)} kind={unit.kind} unit={unit.unit} records={len(records)} new_cuis={len(cuis) - before}")
