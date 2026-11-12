@@ -1,5 +1,8 @@
 import { circleRadius } from "../../zoomedCountyMap.utils.ts";
 
+/** The circles' outline: dark enough to read on every fill of the choropleth. */
+const CIRCLE_STROKE = "#1b2a41";
+
 export interface AuthorityCirclesProps {
   /** The projected centre of each UAT, by SIRUTA (the base map's overlay context). */
   centroids: ReadonlyMap<string, readonly [number, number]>;
@@ -15,7 +18,7 @@ export function AuthorityCircles({ centroids, authorities }: AuthorityCirclesPro
       {[...authorities].map(([code, entities]) => {
         const at = centroids.get(code);
         const r = circleRadius(entities, most);
-        return at && r > 0 ? <circle key={code} data-uat={code} cx={at[0]} cy={at[1]} r={r} fill="none" stroke="#1b2a41" strokeWidth={1.5} /> : null;
+        return at && r > 0 ? <circle key={code} data-uat={code} cx={at[0]} cy={at[1]} r={r} fill="none" stroke={CIRCLE_STROKE} strokeWidth={1.5} /> : null;
       })}
     </g>
   );

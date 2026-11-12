@@ -46,3 +46,6 @@ export const withUnknownUat: UatMap = {
   ],
   unknownUat: { ...total(bani(18_400_000), 142), suspectLeftOut: 2 },
 };
+
+/** A county where no authority bought anything (every UAT of its topology is grey), with no row for authorities without a UAT. */
+export const noPurchases: UatMap = { uats: [], unknownUat: null };

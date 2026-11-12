@@ -3,10 +3,9 @@ import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { formatMoney } from "../../atoms/MoneyAmount/index.ts";
 import type { Siruta, UatMap } from "../../types.ts";
 import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
-import { moneyMapValues, totalsByCounty } from "../MoneyLensMap/index.ts";
+import { moneyMapValues, moneyValueFormatter, totalsByCounty } from "../MoneyLensMap/index.ts";
 import { AuthorityCircles } from "./components/AuthorityCircles/index.ts";
 import { UatTooltip } from "./components/UatTooltip/index.ts";
 import { UnknownUatRow } from "./components/UnknownUatRow/index.ts";
@@ -37,10 +36,7 @@ export function ZoomedCountyMap({ map, topology, selected, onSelect, showAuthori
   const values = useMemo(() => moneyMapValues({ counties: map.uats }), [map]);
   const totals = useMemo(() => totalsByCounty({ counties: map.uats }), [map]);
   const authorities = useMemo(() => authoritiesByUat(map), [map]);
-  const formatValue = (value: number, code?: string) => {
-    const total = code === undefined ? undefined : totals.get(code);
-    return formatMoney(total ? total.awarded : String(Math.round(value)), locale);
-  };
+  const formatValue = useMemo(() => moneyValueFormatter(totals, locale), [totals, locale]);
   const renderTooltip = ({ name, code }: AreaInfo) => (
     <UatTooltip name={name} total={totals.get(code)} authorities={showAuthorityCircles ? authorities.get(code) : undefined} locale={locale} copy={copy} />
   );

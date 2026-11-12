@@ -6,7 +6,7 @@ import { sampleCopy } from "../../samples/copy.ts";
 import { bucharestTopology } from "../../samples/geo/bucharest.topo.ts";
 import { countyUatsTopology } from "../../samples/geo/countyUats.topo.ts";
 import { uatsTopology } from "../../samples/geo/uats.topo.ts";
-import { bucharest, typicalCounty, withUnknownUat } from "../../samples/uatMaps.ts";
+import { bucharest, noPurchases, typicalCounty, withUnknownUat } from "../../samples/uatMaps.ts";
 import { ZoomedCountyMap, type ZoomedCountyMapProps } from "./index.ts";
 
 /** The formatted amount as the page renders it: a no-break space after the currency code. */
@@ -61,10 +61,19 @@ describe("ZoomedCountyMap", () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent("No authority bought anything");
   });
 
-  it("renders Bucharest's six sectors, named from the data", () => {
+  it("renders Bucharest's six sectors, named from the outlines", () => {
     setup({ map: bucharest, topology: bucharestTopology });
     for (const n of [1, 2, 3, 4, 5, 6]) expect(screen.getByRole("button", { name: new RegExp(`^Sector ${n}:`) })).toBeVisible();
     expect(screen.getAllByRole("button")).toHaveLength(6);
+  });
+
+  it("draws every UAT grey, with no row and no \"No data\", when no authority bought anything", () => {
+    setup({ map: noPurchases });
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) expect(button).toHaveAccessibleName(/: No authority bought anything$/);
+    expect(screen.queryByRole("group", { name: "County known, UAT unknown" })).toBeNull();
+    expect(screen.queryByText("No data")).toBeNull();
   });
 
   describe("the row for authorities with a known county and no UAT", () => {

@@ -6,7 +6,7 @@ import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { bucharestTopology } from "../../samples/geo/bucharest.topo.ts";
 import { countyUatsTopology } from "../../samples/geo/countyUats.topo.ts";
 import { uatsTopology } from "../../samples/geo/uats.topo.ts";
-import { bucharest, typicalCounty, withUnknownUat } from "../../samples/uatMaps.ts";
+import { bucharest, noPurchases, typicalCounty, withUnknownUat } from "../../samples/uatMaps.ts";
 import type { Siruta, UatMap } from "../../types.ts";
 import { ZoomedCountyMap } from "./index.ts";
 
@@ -36,3 +36,5 @@ export const WithUnknownUatRow: Story = story(withUnknownUat, uatsTopology);
 export const AuthorityCircles: Story = story(typicalCounty, countyUatsTopology, { circles: true });
 export const BucharestAuthorityCircles: Story = story(bucharest, bucharestTopology, { circles: true });
 export const SelectedUat: Story = story(typicalCounty, countyUatsTopology, { selected: "990210" });
+/** Every UAT is grey: a filter left no purchases in the county. */
+export const NoPurchases: Story = story(noPurchases, countyUatsTopology);
