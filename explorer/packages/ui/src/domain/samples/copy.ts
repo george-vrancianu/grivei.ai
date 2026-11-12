@@ -19,6 +19,7 @@ import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
+import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
@@ -437,6 +438,75 @@ export const sampleCopy = {
             boughtNothingNote: "An entity without records may simply have bought nothing.",
           },
           tiles: { heading, national, unplaced, unplacedAuthorities, records, suspectLeftOut },
+        };
+  },
+  flowLensMap: (locale: Locale): FlowLensMapCopy => {
+    const map = sampleCopy.baseMap(locale);
+    const { tiles } = sampleCopy.moneyLensMap(locale);
+    return locale === "ro"
+      ? {
+          map: { ...map, mapLabel: "Harta fluxului de bani pe județe", legendTitle: "Flux", noData: "Fără bani" },
+          tiles,
+          legend: {
+            title: "Flux",
+            bubbleSize: "Aria cercului: banii din județ",
+            arcWidth: "Grosimea arcului: banii dintre cele două județe",
+            arrow: { supplier: "Săgeată: banii intră în județul furnizorului", authority: "Săgeată: banii pleacă din județul autorității" },
+            homeCounty: "Județul entității",
+            otherCounty: "Alte județe cu bani",
+          },
+          caption: {
+            direction: {
+              supplier: (home) => `De unde vin banii furnizorului: autorități din toată țara, către ${home}.`,
+              authority: (home) => `Încotro merg banii autorității: furnizori din toată țara, din ${home}.`,
+            },
+            localOnly: {
+              supplier: (home) => `Toți banii vin din ${home}: un singur cerc, fără arce.`,
+              authority: (home) => `Toți banii merg către furnizori din ${home}: un singur cerc, fără arce.`,
+            },
+            noHome: {
+              supplier: "Județul furnizorului nu este cunoscut: doar cercuri, fără arce.",
+              authority: "Județul autorității nu este cunoscut: doar cercuri, fără arce.",
+            },
+            offMap: "Banii care nu aparțin unui județ sunt în casetele de lângă hartă.",
+          },
+          tooltip: {
+            homeCounty: "Județul entității",
+            direction: { supplier: (home) => `Banii intră în ${home}`, authority: (home) => `Banii pleacă din ${home}` },
+          },
+          empty: "Niciun flux de bani pentru filtrul curent.",
+        }
+      : {
+          map: { ...map, mapLabel: "Map of the money flow by county", legendTitle: "Flow", noData: "No money" },
+          tiles,
+          legend: {
+            title: "Flow",
+            bubbleSize: "Bubble area: money in the county",
+            arcWidth: "Arc width: money between the two counties",
+            arrow: { supplier: "Arrow: money flows in to the supplier's county", authority: "Arrow: money flows out of the authority's county" },
+            homeCounty: "The entity's county",
+            otherCounty: "Other counties with money",
+          },
+          caption: {
+            direction: {
+              supplier: (home) => `Where this supplier's money comes from: authorities across Romania, flowing in to ${home}.`,
+              authority: (home) => `Where this authority's money goes: suppliers across Romania, flowing out of ${home}.`,
+            },
+            localOnly: {
+              supplier: (home) => `All of the money comes from ${home}: a single bubble and no arcs.`,
+              authority: (home) => `All of the money goes to suppliers in ${home}: a single bubble and no arcs.`,
+            },
+            noHome: {
+              supplier: "This supplier's county is not known: bubbles only, no arcs.",
+              authority: "This authority's county is not known: bubbles only, no arcs.",
+            },
+            offMap: "Money that no county holds is on the tiles beside the map.",
+          },
+          tooltip: {
+            homeCounty: "The entity's county",
+            direction: { supplier: (home) => `Money flows in to ${home}`, authority: (home) => `Money flows out of ${home}` },
+          },
+          empty: "No money flow for the current filter.",
         };
   },
   zoomedCountyMap: (locale: Locale): ZoomedCountyMapCopy => {
