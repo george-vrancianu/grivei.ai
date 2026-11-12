@@ -215,6 +215,19 @@ ol { padding: 0; list-style: none; }
   outline-offset: 2px;
 }
 
+/* link to the explorer app (served beside the landing page, at /explore/ and /ro/explore/) */
+.explore-link {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 4px;
+}
+.explore-link:hover { color: var(--accent); }
+.explore-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .phase {
   display: flex;
   align-items: center;
