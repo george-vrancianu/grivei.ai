@@ -87,9 +87,9 @@ export function pathFor(locale: Locale, route: Route): string {
   }
 }
 
-/** The same page in the other language, query string kept: what the EN/RO switch links to. */
-export function switchLocalePath(pathname: string, search: string, to: Locale): string {
+/** The same page in the other language, query string and fragment kept: what the EN/RO switch links to. */
+export function switchLocalePath(pathname: string, search: string, to: Locale, hash = ""): string {
   const { route } = parsePath(pathname);
   const target = route.name === "not-found" ? `${BASE[to]}${pathname.slice(BASE[localeFromPath(pathname)].length)}` : pathFor(to, route);
-  return `${target}${search}`;
+  return `${target}${search}${hash}`;
 }
