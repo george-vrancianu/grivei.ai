@@ -2,6 +2,7 @@ import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
 import { rollupPlan, rollupWhere } from "./rollup.ts";
 import { roleStore, type RoleStore } from "./role.ts";
+import { signalStore, signalsOfRecords, type SignalRow, type SignalStore } from "./signals.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
 export interface EntityRow {
@@ -86,6 +87,8 @@ export interface RecordRow {
   provenance: { kind: "BULK" | "CRAWL"; via: string | null; fetchedAt: string; url: string | null };
   /** The texts as the Source published them (the authority's name and the CPV), which the search document is built from: what "why it matched" highlights (#69). Absent on a stand-in row. */
   published?: { authorityName: string | null; cpvCode: string | null; cpvDescription: string | null };
+  /** The Signals it belongs to (#74), latest first; absent on a stand-in row. */
+  signals?: SignalRow[];
 }
 
 /** One Record for its page: the list row plus what only the page shows. */
@@ -187,7 +190,7 @@ export interface SearchOptions {
 
 export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 
-export interface Store extends RoleStore {
+export interface Store extends RoleStore, SignalStore {
   total(): Promise<TotalRow>;
   records(page: { limit: number; offset: number; order: RecordOrderKey }): Promise<RecordRow[]>;
   /** A Record by its public code (DA, DAN, `<award notice>~<contract number>`, award notice), or null. */
@@ -408,6 +411,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
     }
+    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf);
     const now = new Date().toISOString();
     const fileOf = (id: number) => {
       const f = files.get(id);
@@ -434,6 +438,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       suspect: r.suspect_rule ? { rule: r.suspect_rule, threshold: r.suspect_threshold } : null,
       crawlStatus: r.crawl_status ?? null,
       published: { authorityName: r.authority_name ?? null, cpvCode: r.cpv_code ?? null, cpvDescription: r.cpv_description ?? null },
+      signals: signals.get(r.code) ?? [],
       provenance: {
         kind: r.record_via === "CRAWL" ? "CRAWL" : "BULK",
         via: fileOf(r.source_file_id).via,
@@ -511,6 +516,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
 
   return {
     ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
+    ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
     searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
       const plan = rollup ? rollupPlan(filter) : null;

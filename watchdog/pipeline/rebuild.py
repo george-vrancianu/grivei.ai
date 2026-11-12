@@ -44,6 +44,7 @@ from .mf.build import MfSummary, build_mf
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
+from .signals import build_signals
 from .search import create_index, value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
@@ -62,6 +63,7 @@ class RebuildSummary:
     estimates: int = 0  # archived estimated-value answers the counting rule read (`pipeline estimates`)
     estimates_missing: int = 0  # notices with a Record of 1 bn RON or more and no archived answer yet
     entities: int = 0
+    signals: dict[str, int] = field(default_factory=dict)  # Signals found per rule (#74)
     placement: PlacementSummary | None = None
     mf: MfSummary | None = None  # the MF list step (#80)
     geo_line: str | None = None  # the TopoJSON step's one line
@@ -75,6 +77,8 @@ class RebuildSummary:
         out.append(f"estimates: {self.estimates} archived answers read; {self.estimates_missing} notice(s) of 1 bn RON or more have none yet"
                    + ("; run `pipeline estimates`, then rebuild again" if self.estimates_missing else ""))
         out.append(f"anaf: {self.anaf_found} CUIs found, {self.anaf_not_found} not found (from the archived answers); {self.entities} entities")
+        if self.signals:
+            out.append("signals: " + ", ".join(f"{rule} {n}" for rule, n in self.signals.items()))
         if self.placement is not None:
             out.append(self.placement.line())
         if self.mf is not None:
@@ -464,6 +468,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             summary.records = cur.fetchone()[0]
             cur.execute(DATA_THROUGH_SQL)
             data_through = dict(cur.fetchall())
+            summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
             # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
             cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
             cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")

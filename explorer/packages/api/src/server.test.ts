@@ -40,6 +40,9 @@ const store: Store = {
   roleFrameworks: async () => ({ count: 0, ceilings: "0", subsequentReported: "0" }),
   roleConsortia: async () => [],
   roleLargest: async () => [],
+  signalRules: async () => [],
+  roleSignals: async () => ({ count: 0, rows: [] }),
+  signalRecords: async () => [],
   goTo: async () => null,
   entity: async () => null,
   aliases: async () => [],
@@ -109,12 +112,6 @@ describe("MainScreen for the empty filter", () => {
       ["CAN1~1", ["CRAWLED_PROVISIONAL"]],
       ["CAN2~1", ["NO_VALUE", "CRAWL_ONLY"]],
     ]);
-  });
-
-  it("says plainly that a filter waiting for another ticket is not served yet, instead of ignoring it", async () => {
-    const r = await api.respond({ id: mainScreen.sha256, variables: { filter: { signal: "OVER_CAP" } } });
-    expect(r.status).toBe(200);
-    expect(r.body.errors?.[0]).toMatchObject({ message: expect.stringContaining("not served yet"), extensions: { code: "NOT_IMPLEMENTED" } });
   });
 
   it("runs a text filter on the search store, echoing the folded query, and passes the client's abort signal down", async () => {

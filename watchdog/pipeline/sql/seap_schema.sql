@@ -130,7 +130,8 @@ CREATE TABLE seap.search (
     award_year       integer NOT NULL,
     value_bani       bigint,
     value_bucket     text,                -- the ValueBucket enum (contract value-buckets.ts, bani, upper edge inclusive); null = no value
-    has_signals      boolean NOT NULL DEFAULT false,  -- Signals arrive with their own tickets; false until then
+    has_signals      boolean NOT NULL DEFAULT false,  -- the Record belongs to at least one Signal (pipeline/signals, set before the rollup and the index are built)
+    signals          text[] NOT NULL DEFAULT '{}',    -- the rule slugs (OVER_CAP, ...) of the Signals it belongs to: the `signal` filter reads this
     badges           text[] NOT NULL DEFAULT '{}',    -- the Record's badges (counting, identity, crawl), also the filter chips
     procedure        text,
     cpv_code         text,                -- as published (45233140-2): a prefix filter and a text token
@@ -199,3 +200,37 @@ CREATE INDEX rollup_entity_side_idx ON seap.rollup_entity (side, award_year, cha
 CREATE TABLE seap.rollup_meta (generation text NOT NULL);
 -- The 2-character prefixes the tokens of this load start with (the API's cache warms these).
 CREATE TABLE seap.rollup_prefix (prefix text PRIMARY KEY);
+
+-- Signals (#74, pipeline/signals/): sets of Records a rule picks out, recomputed from scratch in every load transaction, before the rollup
+-- and the search index. A Signal has no public id: `id` is an ordinal of this load only, and the API addresses a Signal by its
+-- reproducing filter (`reproduce`).
+CREATE TABLE seap.signal (
+    id             integer PRIMARY KEY,
+    rule           text NOT NULL,        -- the GraphQL SignalRuleSlug: OVER_CAP | SPLITTING | FRAMEWORK_OVERRUN | NO_PUBLICATION
+    authority_key  text NOT NULL,        -- one authority per Signal
+    last_date      date NOT NULL,        -- dated by its latest Record (award date, ADR 0002)
+    first_date     date NOT NULL,
+    record_count   integer NOT NULL,
+    value_bani     bigint NOT NULL,      -- what its Records add to a sum (counted values): the VALUE_DESC order
+    supplier_keys  text[] NOT NULL DEFAULT '{}',  -- every winner entity of its Records, consortium members included; natural persons have no key and are omitted
+    numbers        jsonb NOT NULL,       -- the fields of the rule's GraphQL numbers type (bani as strings)
+    reproduce      jsonb NOT NULL        -- the RecordFilterValue that returns exactly its Records through seap.search
+);
+CREATE INDEX signal_authority_idx ON seap.signal (authority_key);
+CREATE TABLE seap.signal_member (
+    signal_id    integer NOT NULL REFERENCES seap.signal(id),
+    record_code  text NOT NULL REFERENCES seap.record(code),
+    PRIMARY KEY (signal_id, record_code)
+);
+CREATE INDEX signal_member_record_idx ON seap.signal_member (record_code);
+-- The methodology numbers per rule (story 80), recomputed with the Signals. A rule that has seen no data has no row.
+CREATE TABLE seap.signal_rule (
+    slug            text PRIMARY KEY,
+    window_from     date NOT NULL,       -- 1 January of the first year the rule has Records for
+    window_to       date,                -- null: open, up to data_through
+    base_rate       double precision NOT NULL,  -- with_signal / authorities in base_rate_year
+    base_rate_year  integer NOT NULL,
+    data_through    date NOT NULL,       -- the earliest data-through of the Record kinds the rule reads
+    authorities     integer NOT NULL,    -- authorities with a Record of the rule's kinds in base_rate_year
+    with_signal     integer NOT NULL     -- of those, authorities with a Signal of the rule dated in base_rate_year
+);

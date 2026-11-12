@@ -3,6 +3,7 @@
 // entity-scoped search's by construction. No copy here: data, enums and identifiers only.
 import type { SearchFilter } from "./search.ts";
 import { otherSide, scopeFilter, shareOf, withCounterparty, type RoleSide } from "./role.ts";
+import type { SignalRow, SignalOrderKey } from "./signals.ts";
 import type { EntityRow, RecordRow, Store, TotalRow } from "./store.ts";
 
 const MAX_LIMIT = 200; // the SDL: "the server caps limit at 200"
@@ -20,6 +21,8 @@ export interface RoleHelpers {
   /** The Money lens of a filter on a side (the one `SeapSearch.map` serves). */
   moneyMap(side: RoleSide, filter: SearchFilter, ctx: Ctx): Promise<object>;
   withEstimated(t: TotalRow): object;
+  /** A Signal row as the GraphQL Signal (signals.ts). */
+  signalObject(s: SignalRow): object;
 }
 
 export function roleObject(store: Store, side: RoleSide, key: string, h: RoleHelpers) {
@@ -63,8 +66,11 @@ export function roleObject(store: Store, side: RoleSide, key: string, h: RoleHel
     frameworks: (a: FilterArg, ctx: Ctx) => store.roleFrameworks(scoped(a), { signal: ctx?.signal }),
     largestRecords: async (a: FilterArg & { limit?: number }, ctx: Ctx) =>
       (await store.roleLargest(scoped(a), { limit: capped(a.limit, 10) }, { signal: ctx?.signal })).map(h.recordRow),
-    // Signals are the next ticket's (#74): an empty page, so the persisted EntityOverview still answers
-    signals: () => ({ count: 0, rows: [] }), // TODO #74: the Signal model
+    // The Signals of the entity's Records on its side (consortium members included), kept when any Record is in the filter (#74); never scored
+    signals: async (a: FilterArg & { order?: SignalOrderKey | null; limit?: number; offset?: number }, ctx: Ctx) => {
+      const page = await store.roleSignals(scoped(a), { limit: capped(a.limit, 50), offset: Math.max(a.offset ?? 0, 0), order: a.order ?? "DATE_DESC" }, { signal: ctx?.signal });
+      return { count: page.count, rows: page.rows.map(h.signalObject) };
+    },
     records: (a: FilterArg) => h.search(scoped(a), otherSide(side)),
     timeline: async (a: FilterArg & { counterparty?: string | null }, ctx: Ctx) => {
       // a counterparty is picked by its entity key; a natural person has none, so cannot be picked
