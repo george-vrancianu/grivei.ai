@@ -1,6 +1,7 @@
 import type {
   BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
+import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
 /**
  * The shape of the bilingual copy catalogue: every user-facing string of the app is a key here, and `en.ts` and `ro.ts`
@@ -31,6 +32,8 @@ export interface Copy {
   mainScreenLayout: MainScreenLayoutCopy;
   /** The Money lens map on the main screen: legend, side toggle, off-map tiles. */
   moneyLensMap: MoneyLensMapCopy;
+  /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
+  zoomedCounty: ZoomedCountySectionCopy;
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */
   pages: {
     placeholder: string;

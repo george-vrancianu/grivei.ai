@@ -87,6 +87,22 @@ export const ro: Copy = {
       suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
     },
   },
+  zoomedCounty: {
+    map: {
+      map: { mapLabel: "Harta UAT-urilor județului", legendTitle: "Valoare atribuită", noData: "Nicio autoritate nu a cumpărat", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
+      figures: {
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+        suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+      },
+      authorities: (n, f) => roCount(n, f, "autoritate", "autorități"),
+      circleKey: "Mărimea cercului: numărul de autorități",
+      unknownUat: "Județ cunoscut, UAT necunoscut",
+    },
+    back: "Înapoi la România",
+    title: (name, sectors) => (sectors ? `${name}: sectoare` : `${name}: UAT-uri`),
+    selectedUat: (name) => `Rezultate pentru ${name}`,
+    clearUat: "Arată tot județul",
+  },
   filterChips: {
     label: "Filtre",
     year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
