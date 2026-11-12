@@ -411,7 +411,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
     }
-    const signals = await signalsOfRecords(pool, raw.map((r) => r.code));
+    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf);
     const now = new Date().toISOString();
     const fileOf = (id: number) => {
       const f = files.get(id);

@@ -195,7 +195,7 @@ export function rootValue(store: Store) {
   }
 
   function searchObject(filter: SearchFilter, counterparties?: "AUTHORITY" | "SUPPLIER") {
-    const where = buildWhere(filter); 
+    const where = buildWhere(filter);
     // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
     const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
     const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {

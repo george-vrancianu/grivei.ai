@@ -65,7 +65,8 @@ FRAMEWORK_CEILING = "CEILING"
 FRAMEWORK_SUBSEQUENT = "SUBSEQUENT"
 
 
-def _fold(text: str | None) -> str:
+def fold(text: str | None) -> str:
+    """Lower-case, accents and spacing folded: how a procedure or a contract type is compared."""
     stripped = "".join(c for c in unicodedata.normalize("NFKD", text or "") if not unicodedata.combining(c))
     return re.sub(r"\s+", " ", stripped.lower()).strip()
 
@@ -78,12 +79,12 @@ def cap_for(day: date, works: bool) -> int:
 
 def is_works(contract_type: str | None, cpv_code: str | None) -> bool:
     """Works by `Tip contract` (Lucrari) or by CPV division 45."""
-    return _fold(contract_type).startswith("lucrari") or (cpv_code or "").strip()[:2] == "45"
+    return fold(contract_type).startswith("lucrari") or (cpv_code or "").strip()[:2] == "45"
 
 
 def framework_role(concluded_by: str | None) -> str | None:
     """`Incheiat prin`: CEILING for "Cu acord cadru", SUBSEQUENT for "Cu acord cadru subsecvent", else None (summed as it is)."""
-    text = _fold(concluded_by)
+    text = fold(concluded_by)
     if text.startswith("cu acord cadru"):
         return FRAMEWORK_SUBSEQUENT if "subsecvent" in text else FRAMEWORK_CEILING
     return None

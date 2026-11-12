@@ -249,7 +249,6 @@ export function cachedStore(
     signalRules: () => cached("signal-rules", () => inner.signalRules()),
     roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, () => inner.roleSignals(filter, p, options)),
     signalRecords: (ordinal, p) => cached(`signal-records|${ordinal}|${page(p)}`, () => inner.signalRecords(ordinal, p)),
-    entities: (keys) => cached(`entities|${keys.join(",")}`, () => inner.entities(keys)),
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };

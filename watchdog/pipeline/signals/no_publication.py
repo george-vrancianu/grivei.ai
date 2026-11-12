@@ -11,17 +11,17 @@
 """
 from __future__ import annotations
 
-from ..counting import _fold
+from ..counting import fold
 from .common import Hit, Row, authority_day_hits
 
 SLUG = "NO_PUBLICATION"
 KINDS = ("CONTRACT", "AWARD_NOTICE")
-WHERE = "channel = 'CONTRACT' AND NOT suspect AND procedure ILIKE 'negociere%'"
+WHERE = "channel = 'CONTRACT' AND NOT suspect AND procedure ~* '^\\s*negociere'"
 PROCEDURE_PREFIX = "negociere fara publicare"
 
 
 def is_no_publication(procedure: object) -> bool:
-    return _fold(str(procedure) if procedure else None).startswith(PROCEDURE_PREFIX)
+    return fold(str(procedure) if procedure else None).startswith(PROCEDURE_PREFIX)
 
 
 def match(row: Row) -> dict | None:

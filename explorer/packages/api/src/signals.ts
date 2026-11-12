@@ -28,7 +28,11 @@ export interface ReproduceRow {
 }
 
 export interface SignalRow {
-  /** This load's ordinal: only a handle to read the Signal's Records, never served. */
+  /**
+   * This load's ordinal: only a handle to read the Signal's Records, never served. A request that spans a load commit (or the cache's
+   * 1 s generation window) can read the Records of another Signal under an old row; the window is narrow and the result is a stale page,
+   * never a wrong filter (`reproduce` is by value).
+   */
   ordinal: number;
   rule: string;
   /** Its latest Record's award date. */
@@ -43,6 +47,9 @@ export interface SignalRow {
   numbers: Record<string, unknown>;
   reproduce: ReproduceRow;
   dataThrough: string;
+  /** Its authority and suppliers (in `supplierKeys` order), loaded once for the whole page, so serving them costs no query per Signal. */
+  authority: EntityRow | null;
+  suppliers: EntityRow[];
 }
 
 export interface SignalRuleRow {
@@ -66,8 +73,6 @@ export interface SignalStore {
   roleSignals(filter: SearchFilter, page: { limit: number; offset: number; order: SignalOrderKey }, options?: SearchOptions): Promise<{ count: number; rows: SignalRow[] }>;
   /** A Signal's Records (by the ordinal of the row it came from), latest first, with full provenance like every Record list. */
   signalRecords(ordinal: number, page: { limit: number; offset: number }): Promise<RecordRow[]>;
-  /** The entities of `keys`, in that order; a key the core has no row for is skipped. */
-  entities(keys: string[]): Promise<EntityRow[]>;
 }
 
 interface RawSignal {
@@ -90,6 +95,8 @@ const SIGNAL_COLUMNS = `g.id AS ordinal, g.rule, g.last_date::text AS date, g.fi
 const SIGNAL_FROM = `seap.signal g LEFT JOIN seap.signal_rule r ON r.slug = g.rule`;
 
 const toSignal = (r: RawSignal): SignalRow => ({
+  authority: null,
+  suppliers: [],
   ordinal: r.ordinal,
   rule: r.rule,
   date: r.date,
@@ -103,8 +110,16 @@ const toSignal = (r: RawSignal): SignalRow => ({
   dataThrough: r.data_through ?? r.date,
 });
 
+/** Attach the authority and suppliers of every row, one entity query for the whole page. A key the core has no row for stays absent. */
+async function withEntities(rows: SignalRow[], entitiesOf: (keys: string[]) => Promise<Map<string, EntityRow>>): Promise<SignalRow[]> {
+  const keys = [...new Set(rows.flatMap((s) => [s.authorityKey, ...s.supplierKeys]))];
+  if (!keys.length) return rows;
+  const found = await entitiesOf(keys);
+  return rows.map((s) => ({ ...s, authority: found.get(s.authorityKey) ?? null, suppliers: s.supplierKeys.flatMap((k) => (found.has(k) ? [found.get(k)!] : [])) }));
+}
+
 /** The Signals each of `codes` belongs to (latest first), one query: what `Record.signals` and a list's `signals { rule }` read. */
-export async function signalsOfRecords(pool: pg.Pool, codes: string[]): Promise<Map<string, SignalRow[]>> {
+export async function signalsOfRecords(pool: pg.Pool, codes: string[], entitiesOf: (keys: string[]) => Promise<Map<string, EntityRow>>): Promise<Map<string, SignalRow[]>> {
   const out = new Map<string, SignalRow[]>();
   if (!codes.length) return out;
   const { rows } = await pool.query<RawSignal & { record_code: string }>(
@@ -112,7 +127,13 @@ export async function signalsOfRecords(pool: pg.Pool, codes: string[]): Promise<
       WHERE m.record_code = ANY($1) ORDER BY m.record_code, g.last_date DESC, g.rule, g.id`,
     [codes],
   );
-  for (const r of rows) out.set(r.record_code, [...(out.get(r.record_code) ?? []), toSignal(r)]);
+  // a Signal read for several Records is one object, so the page's entities are attached once per Signal
+  const byId = new Map<number, SignalRow>();
+  const order = new Map<number, SignalRow>();
+  for (const r of rows) if (!byId.has(r.ordinal)) byId.set(r.ordinal, toSignal(r));
+  const full = await withEntities([...byId.values()], entitiesOf);
+  for (const s of full) order.set(s.ordinal, s);
+  for (const r of rows) out.set(r.record_code, [...(out.get(r.record_code) ?? []), order.get(r.ordinal)!]);
   return out;
 }
 
@@ -151,7 +172,7 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalD
         `SELECT ${SIGNAL_COLUMNS}, count(*) OVER ()::int AS n FROM ${SIGNAL_FROM} WHERE ${inSet} ORDER BY ${ORDER[order]} LIMIT ${limit} OFFSET ${offset}`,
         params,
       );
-      if (rows.length || offset === 0) return { count: rows[0]?.n ?? 0, rows: rows.map(toSignal) };
+      if (rows.length || offset === 0) return { count: rows[0]?.n ?? 0, rows: await withEntities(rows.map(toSignal), entitiesOf) };
       // a page past the end has no row to read the count from
       const total = await cancellableQuery<{ n: number }>(pool, signal, `SELECT count(*)::int AS n FROM ${SIGNAL_FROM} WHERE ${inSet}`, params);
       return { count: total.rows[0]!.n, rows: [] };
@@ -164,11 +185,6 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalD
         [ordinal, limit, offset],
       );
       return rowsOf(rows);
-    },
-
-    async entities(keys) {
-      const found = await entitiesOf(keys);
-      return keys.flatMap((k) => (found.has(k) ? [found.get(k)!] : []));
     },
   };
 }
@@ -183,8 +199,8 @@ export interface SignalHelpers {
 
 /** The GraphQL Signal of a row. `authority`, `suppliers` and `records` are read only when the query selects them. */
 export function signalObject(store: SignalStore, s: SignalRow, h: SignalHelpers) {
-  const authority = async () => {
-    const [found] = await store.entities([s.authorityKey]);
+  const authority = () => {
+    const found = s.authority;
     if (!found) throw new Error(`the authority ${s.authorityKey} of a Signal is not in the core`); // the pipeline guarantees it
     return h.entityObject(found);
   };
@@ -193,7 +209,7 @@ export function signalObject(store: SignalStore, s: SignalRow, h: SignalHelpers)
     date: s.date,
     firstDate: s.firstDate,
     authority,
-    suppliers: async () => (await store.entities(s.supplierKeys)).map(h.entityObject),
+    suppliers: async () => s.suppliers.map(h.entityObject),
     recordCount: s.recordCount,
     records: async ({ limit, offset }: { limit: number; offset: number }) =>
       (await store.signalRecords(s.ordinal, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) })).map(h.recordRow),

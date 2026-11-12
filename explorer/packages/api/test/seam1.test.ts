@@ -2110,7 +2110,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const q = `query($k: ID!, $role: Role!) { entity(key: $k) { seap { role(role: $role) { signals(limit: 200) { rows { rule date reproduce { authority supplier signal cpv from to }
           records(limit: 200) { code } } } } } } }`;
       const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
-      let signals = 0;
+      const distinct = new Set<string>();
       for (const [k, role] of [[S, "AUTHORITY"], [COMUNA, "AUTHORITY"], [CNAIR, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [GAMMA, "SUPPLIER"]] as const) {
         const { entity } = await doc(q, { k, role });
         for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
@@ -2118,10 +2118,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
           const found = (await doc(search, { f: filter })).seap.search.records;
           expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
           expect(found.count).toBe(s.records.length);
-          signals++;
+          distinct.add(`${s.rule}|${s.reproduce.authority}|${s.reproduce.from}`);
         }
       }
-      expect(signals).toBeGreaterThanOrEqual(14); // 3 authorities (12 Signals) and the suppliers' pages
+      expect(distinct.size).toBe(12); // every Signal of the load (OVER_CAP 7, NO_PUBLICATION 5), reached from its authority or a supplier
     });
 
     it("record.signals: a Record lists its Signals with their Records; suspect, at-the-cap and ordinary Records have none (#74)", async () => {

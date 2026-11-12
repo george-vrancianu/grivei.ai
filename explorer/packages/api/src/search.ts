@@ -35,7 +35,6 @@ export interface Where {
   qFolded: string | null;
 }
 
-
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**

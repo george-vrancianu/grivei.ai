@@ -43,7 +43,6 @@ const store: Store = {
   signalRules: async () => [],
   roleSignals: async () => ({ count: 0, rows: [] }),
   signalRecords: async () => [],
-  entities: async () => [],
   goTo: async () => null,
   entity: async () => null,
   aliases: async () => [],
