@@ -1,6 +1,6 @@
 // Fixtures recorded from seam 1 runs (tickets #83, #84, #90): the API's own answers to the main screen, full-results
-// zoomed-county and Coverage operations, after a real rebuild of `watchdog/tests/fixtures/archive-moneymap`. Nothing here is hand-written: the
-// JSON is rewritten by `RECORD_FIXTURES=1` (see ../../../README.md) and the seam 1 blocks "recorded fixtures (#83)" and "(#84)"
+// zoomed-county and Coverage operations, after a real rebuild of `watchdog/tests/fixtures/archive-moneymap` (#90: the joined `archive-mf` + `archive-coverage` world). Nothing here is hand-written: the
+// JSON is rewritten by `RECORD_FIXTURES=1` (see ../../../README.md) and the seam 1 blocks "recorded fixtures (#83)", "(#84)" and "(#90)"
 // fails when the API drifts from it. Typed here, validated against the operations by fixtures.test.ts.
 import type {
   CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery, FullResultsRecordsQueryVariables,

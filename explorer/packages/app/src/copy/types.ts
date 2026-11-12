@@ -32,7 +32,7 @@ export interface Copy {
   mainScreenLayout: MainScreenLayoutCopy;
   /** The Money lens map on the main screen: legend, side toggle, off-map tiles. */
   moneyLensMap: MoneyLensMapCopy;
-  /** The Coverage lens map (#51), wired by #90: status words, the N of M sentence, the Source marks; its off-map tiles reuse the Money lens's. */
+  /** The Coverage lens map (#51), wired by #90: status words, the N of M sentence, the Source marks; its off-map tiles carry the same wording as the Money lens's (kept as separate keys so the two can diverge). */
   coverageLensMap: CoverageLensMapCopy;
   /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
   zoomedCounty: ZoomedCountySectionCopy;

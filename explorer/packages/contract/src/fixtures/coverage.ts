@@ -24,27 +24,14 @@ const unplaced = { authorities: 17, total: total({ awarded: ron(12_000_000), rec
 
 // The Coverage operations' answers are recorded from seam 1 (`recorded/CoverageLens.json`, `CoveragePage.json`, ticket #90). These hand sets stay
 // for what a recorded run cannot produce: one county in every status at once (the API's status is uniform across counties), HARVESTED and
-// NOT_HARVESTED beside each other, a grid in every gap state with a hand-written Romanian note and the window echoed, 16 x 4 cells cycling through
-// every state, and an empty grid (a window before the harvest has no grid cells and no snapshot).
+// NOT_HARVESTED beside each other (a window before the harvest is recorded: `before-harvest`), a grid in every gap state with a hand-written Romanian note and the window echoed, 16 x 4 cells cycling through
+// every state, and an empty grid (the page's `empty-window`: no grid cells, no snapshot).
 export const coverageLensHand: FixtureSet<CoverageLensQuery, CoverageLensQueryVariables> = [
   {
     name: "typical-every-status", kind: "typical",
     description: "one county in each coverage status plus National; later Sources not harvested; the Unplaced authorities' tally",
     variables: { window: { from: "2021-01-01", to: "2024-12-31" } },
     data: { sources, coverage: { window: { from: "2021-01-01", to: "2024-12-31" }, counties, unplacedAuthorities: unplaced } },
-  },
-  {
-    name: "empty-nothing-harvested-in-window", kind: "empty",
-    description: "a window before the harvest: every county not harvested, no unplaced authorities, no date bounds echoed",
-    variables: { window: { from: "2019-01-01", to: "2019-12-31" } },
-    data: {
-      sources,
-      coverage: {
-        window: { from: "2019-01-01", to: "2019-12-31" },
-        counties: counties.map((c) => ({ ...c, status: "NOT_HARVESTED" as const, withRecords: 0, otherAuthorities: 0 })),
-        unplacedAuthorities: { authorities: 0, total: zeroTotal },
-      },
-    },
   },
 ];
 

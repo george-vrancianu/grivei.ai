@@ -32,6 +32,7 @@ describe.each([
     unplaced: ["3 authorities without a county", "1 authority without a county"],
     planned: "Not harvested yet: ONRC, ANI, Ministerul Finanțelor, portal.just.ro",
     fromYear: "From year", toYear: "To year",
+    notHarvested: "Not harvested",
   },
   {
     locale: "ro", url: "/ro/explore/", prefix: "/ro",
@@ -42,6 +43,7 @@ describe.each([
     unplaced: ["3 autorități fără județ", "1 autoritate fără județ"],
     planned: "Necolectate încă: ONRC, ANI, Ministerul Finanțelor, portal.just.ro",
     fromYear: "Din anul", toYear: "Până în anul",
+    notHarvested: "Necolectat",
   },
 ] as const)("the Coverage lens at $url", (c) => {
   const t = catalogue[c.locale];
@@ -115,6 +117,20 @@ describe.each([
     await waitFor(() => expect(here()).toBe(`${c.url}?lens=coverage`));
     // the lens answer does not depend on the county: asked once
     expect(asked(sent, "CoverageLens")).toEqual(["{}"]);
+  });
+
+  it("takes the Unplaced tile as an authority area even when the supplier side was chosen", async () => {
+    open(`${c.url}?countySide=supplier&lens=coverage`);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: new RegExp(`^${t.coverageLensMap.tiles.unplaced}`) }));
+    // the area is an authority one: the side goes back to the default instead of matching nothing
+    await waitFor(() => expect(here()).toBe(`${c.url}?county=UNPLACED&lens=coverage`));
+  });
+
+  it("shows a window before any harvest as not harvested, M unchanged", async () => {
+    open(`${c.url}?to=2020-12-31&lens=coverage`);
+    const brasov = await county("Brașov");
+    expect(plain(brasov.getAttribute("aria-label"))).toContain(c.notHarvested);
   });
 
   it("asks nothing for Coverage while the Money lens is shown", async () => {

@@ -12,8 +12,7 @@ import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
-import { highlightWindow } from "../CoveragePage/coveragePage.utils.ts";
-import { useCoveragePage } from "../CoveragePage/hooks/useCoveragePage.ts";
+import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
@@ -106,7 +105,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             onNavigate={(href) => navigate(href, "push")}
             county={filter.county ?? undefined}
             // The same choice as the Money lens (a click on the chosen county takes it back); a UAT belongs to its county, so it goes with it.
-            onSelect={(county) => setFilter({ county, uat: undefined })}
+            // Coverage's areas are authority areas (NATIONAL, UNPLACED match no supplier), so the side goes back to the default.
+            onSelect={(county) => setFilter({ county, countySide: undefined, uat: undefined })}
             locale={locale}
             copy={{ map: t.coverageLensMap, grid: t.coverage.grid }}
             status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}

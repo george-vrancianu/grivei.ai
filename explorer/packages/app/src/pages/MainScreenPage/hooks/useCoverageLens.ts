@@ -16,11 +16,10 @@ export function useCoverageLens(variables: CoverageLensQueryVariables | null): C
   const [settled, setSettled] = useState<{ key: string; state: Settled } | null>(null);
 
   useEffect(() => {
-    const parsed = JSON.parse(key) as CoverageLensQueryVariables | null;
-    if (parsed === null) return;
+    if (key === "null") return;
     const controller = new AbortController();
     client
-      .query(CoverageLens, parsed, { signal: controller.signal })
+      .query(CoverageLens, JSON.parse(key) as CoverageLensQueryVariables, { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "ready", data } });
       })

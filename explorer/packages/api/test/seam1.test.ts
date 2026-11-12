@@ -2106,7 +2106,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
-  describe("recorded fixtures (#90): archive-mf -> rebuild -> the contract's recorded CoverageLens and CoveragePage responses", () => {
+  describe("recorded fixtures (#90): archive-mf + archive-coverage -> rebuild -> the contract's recorded CoverageLens and CoveragePage responses", () => {
     // Same convention as #83/#84: fails when an answer drifts from the committed JSON, `RECORD_FIXTURES=1` rewrites it.
     const recording = process.env.RECORD_FIXTURES === "1";
     const DB = "recorded_coverage";
@@ -2134,6 +2134,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("every recorded CoverageLens and CoveragePage case is what the API answers now", async () => {
       for (const operation of ["CoverageLens", "CoveragePage"] as const) {
+        expectDistinctVariables(RECORDED_COVERAGE_CASES.filter((x) => x.operation === operation));
         const recorded = [];
         for (const c of RECORDED_COVERAGE_CASES.filter((x) => x.operation === operation)) recorded.push(await answer(c));
         const file = resolve(here, `../../contract/src/fixtures/recorded/${operation}.json`);

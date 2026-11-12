@@ -80,11 +80,9 @@ describe.each([
     through: ["Award notices: data through 2 July 2025", "Contracts: data through 2 July 2025", "Direct purchases: data through 24 March 2023"],
     gaps: [
       ["Q1 2023", "Direct purchase award notifications", "Known gap", "Fisier lipsa la sursa (fixture); raportat", "0"],
-      ["Q4 2024", "Contracts", "Possibly incomplete", "Fewer than 60% of the median row count of the surrounding quarters", "9"],
+      ["Q4 2024", "Contracts", "Possibly incomplete", "", "9"],
       ["Q2 2025", "Direct purchase award notifications", "Known gap", "Fișier încărcat greșit (fixture), conținutul nu corespunde trimestrului; raportat la sursă, trimestrul rămâne gol", "0"],
     ],
-    notYetLoaded: ["Awaiting a bulk file for this quarter and record kind", "Not yet loaded"],
-    awaiting: "Awaiting bulk file: the quarter's bulk file is not published yet",
   },
   {
     locale: "ro", path: "/ro/explore/coverage",
@@ -94,8 +92,6 @@ describe.each([
       ["T4 2024", "Contracte", "Posibil incomplet", "", "9"],
       ["T2 2025", "Notificări de atribuire a cumpărării directe", "Lacună cunoscută", "Fișier încărcat greșit (fixture), conținutul nu corespunde trimestrului; raportat la sursă, trimestrul rămâne gol", "0"],
     ],
-    notYetLoaded: ["", "Neîncărcat încă"],
-    awaiting: "",
   },
 ] as const)("the Coverage page's content from the API in $locale", (c) => {
   const t = catalogue[c.locale];
