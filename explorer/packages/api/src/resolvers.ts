@@ -4,6 +4,7 @@ import { buildWhere, type SearchFilter } from "./search.ts";
 import { matchedFieldOf } from "./matched.ts";
 import { foldTokens } from "./fold.ts";
 import { seapLinkUrl } from "./seapLink.ts";
+import { roleObject } from "./roleResolvers.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
@@ -93,7 +94,7 @@ const matchSource = (r: RecordRow) => ({
 });
 
 export function rootValue(store: Store) {
-  /** An Entity of the shared core (ADR 0003). The role aggregates belong to a later ticket (#73): null for now. */
+  /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
   const entityObject = (e: EntityRow) => ({
     __typename: "Entity" as const,
     key: e.key,
@@ -114,7 +115,12 @@ export function rootValue(store: Store) {
       },
     ],
     aliases: () => store.aliases(e.key),
-    seap: () => ({ roles: () => store.roles(e.key), role: () => null }), // TODO #73: the per-role totals, Records and counterparties
+    seap: () => ({
+      roles: () => store.roles(e.key),
+      // null when the entity never held the role (the contract); #73
+      role: async ({ role }: { role: "AUTHORITY" | "SUPPLIER" }) =>
+        (await store.roles(e.key)).includes(role) ? roleObject(store, role, e.key, { entityObject, recordRow, search: (f, other) => searchObject(f, other), moneyMap, withEstimated: (t) => ({ ...zeroTotal(), ...t }) }) : null,
+    }),
   });
 
   function recordRow(r: RecordRow) {
@@ -149,6 +155,90 @@ export function rootValue(store: Store) {
         via: r.provenance.via,
         fetchedAt: r.provenance.fetchedAt,
         url: r.provenance.url ?? seapLinkUrl(r.code),
+      },
+    };
+  }
+
+  /** The Money lens of a filter on a side: the search's `map` (on the filter's `countySide`) and an entity role's `flow` (on the counterparty's side). */
+  async function moneyMap(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, ctx: Ctx) {
+    const [m, counties] = await Promise.all([store.searchMap(side, filter, { signal: ctx?.signal }), store.counties()]);
+    const names = new Map(counties.map((c) => [`RO-${c.iso}`, c.name]));
+    return {
+      side,
+      counties: m.counties.map((c) => ({ area: c.area, name: names.get(c.area) ?? c.area, total: { ...zeroTotal(), ...c.total }, entities: c.entities })),
+      national: { ...zeroTotal(), ...m.national },
+      unplaced: m.unplaced ? { authorities: m.unplaced.authorities, total: { ...zeroTotal(), ...m.unplaced.total } } : null,
+      unknownSupplierCounty: m.unknownSupplierCounty ? { ...zeroTotal(), ...m.unknownSupplierCounty } : null,
+    };
+  }
+
+  /**
+   * The Records tab's facet panel (#73): the Total per channel, procedure, year and badge of the set, and the top counterparties.
+   * Served only when the set is one entity's (an authority or a supplier in the filter): the national set has no facet panel, and
+   * the panel would be a scan of everything. `counterparties` names the side the counterparty facet lists (an entity page knows its own);
+   * the facet offers the alternatives, so the counterparty already picked is dropped from the filter it is computed on. `signal` waits for #74.
+   */
+  function facetsOf(filter: SearchFilter, counterparties: "AUTHORITY" | "SUPPLIER" | null) {
+    const scoped = !!(filter.authority || filter.supplier);
+    const rows = (dimension: "channel" | "procedure" | "year" | "badge") => async (_: unknown, ctx: Ctx) =>
+      scoped ? (await store.searchFacet(dimension, filter, { signal: ctx?.signal })).map((x) => ({ value: x.value, total: { ...zeroTotal(), ...x.total } })) : [];
+    return {
+      channel: rows("channel"),
+      procedure: rows("procedure"),
+      year: rows("year"),
+      signal: [],
+      badge: rows("badge"),
+      counterparty: async (_: unknown, ctx: Ctx) => {
+        if (!scoped || !counterparties) return [];
+        const open = counterparties === "SUPPLIER" ? { ...filter, supplier: undefined } : { ...filter, authority: undefined };
+        const page = await store.searchEntities(counterparties, open, { limit: 10, offset: 0 }, { signal: ctx?.signal });
+        return page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } }));
+      },
+    };
+  }
+
+  function searchObject(filter: SearchFilter, counterparties?: "AUTHORITY" | "SUPPLIER") {
+    const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
+    // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
+    const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
+    const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
+      const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
+      return {
+        count: page.count,
+        countEstimated: page.estimated,
+        rows: page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } })),
+      };
+    };
+    const queryTokens = foldTokens(filter.q ?? "");
+    const echo = (key: string | null | undefined) => (key ? store.entity(key).then((e) => (e ? entityObject(e) : null)) : null);
+    return {
+      filter: { qFolded: where.qFolded, authority: () => echo(filter.authority), supplier: () => echo(filter.supplier) },
+      total,
+      map: (_: unknown, ctx: Ctx) => moneyMap(filter.countySide ?? "AUTHORITY", filter, ctx),
+      // the zoomed county is authority-side (UATs place authorities), whatever the filter's `countySide`
+      uatMap: async ({ county: code }: { county: string }, ctx: Ctx) => {
+        const m = await store.searchUatMap(code, filter, { signal: ctx?.signal });
+        return {
+          uats: m.uats.map((u) => ({ area: u.area, name: u.name, total: { ...zeroTotal(), ...u.total }, entities: u.entities })),
+          unknownUat: m.unknownUat ? { ...zeroTotal(), ...m.unknownUat } : null,
+        };
+      },
+      authorities: entityPage("AUTHORITY"),
+      suppliers: entityPage("SUPPLIER"),
+      // the Go-to card depends on the query alone: the chips never restrict it
+      goTo: async (_: unknown, ctx: Ctx) => {
+        if (!where.qFolded) return null;
+        const found = await store.goTo(where.qFolded, { signal: ctx?.signal });
+        return found ? entityObject(found) : null;
+      },
+      // a search of one authority lists suppliers, of one supplier lists authorities (an entity role says which itself)
+      facets: () => facetsOf(filter, counterparties ?? (filter.authority && !filter.supplier ? "SUPPLIER" : filter.supplier && !filter.authority ? "AUTHORITY" : null)),
+      records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
+        const page = { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order };
+        const { count, rows } = where.empty
+          ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
+          : await store.searchRecords(filter, page, { signal: ctx?.signal });
+        return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: matchedFieldOf(matchSource(record), queryTokens) })) };
       },
     };
   }
@@ -192,61 +282,7 @@ export function rootValue(store: Store) {
         const found = await store.record(code);
         return found ? recordPage(found, recordRow, store) : null;
       },
-      search: ({ filter }: { filter: SearchFilter }) => {
-        const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
-        // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
-        const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
-        const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
-          const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
-          return {
-            count: page.count,
-            countEstimated: page.estimated,
-            rows: page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } })),
-          };
-        };
-        const queryTokens = foldTokens(filter.q ?? "");
-        const echo = (key: string | null | undefined) => (key ? store.entity(key).then((e) => (e ? entityObject(e) : null)) : null);
-        return {
-          filter: { qFolded: where.qFolded, authority: () => echo(filter.authority), supplier: () => echo(filter.supplier) },
-          total,
-          map: async (_: unknown, ctx: Ctx) => {
-            const side = filter.countySide ?? "AUTHORITY";
-            const [m, counties] = await Promise.all([store.searchMap(side, filter, { signal: ctx?.signal }), store.counties()]);
-            const names = new Map(counties.map((c) => [`RO-${c.iso}`, c.name]));
-            return {
-              side,
-              counties: m.counties.map((c) => ({ area: c.area, name: names.get(c.area) ?? c.area, total: { ...zeroTotal(), ...c.total }, entities: c.entities })),
-              national: { ...zeroTotal(), ...m.national },
-              unplaced: m.unplaced ? { authorities: m.unplaced.authorities, total: { ...zeroTotal(), ...m.unplaced.total } } : null,
-              unknownSupplierCounty: m.unknownSupplierCounty ? { ...zeroTotal(), ...m.unknownSupplierCounty } : null,
-            };
-          },
-          // the zoomed county is authority-side (UATs place authorities), whatever the filter's `countySide`
-          uatMap: async ({ county: code }: { county: string }, ctx: Ctx) => {
-            const m = await store.searchUatMap(code, filter, { signal: ctx?.signal });
-            return {
-              uats: m.uats.map((u) => ({ area: u.area, name: u.name, total: { ...zeroTotal(), ...u.total }, entities: u.entities })),
-              unknownUat: m.unknownUat ? { ...zeroTotal(), ...m.unknownUat } : null,
-            };
-          },
-          authorities: entityPage("AUTHORITY"),
-          suppliers: entityPage("SUPPLIER"),
-          // the Go-to card depends on the query alone: the chips never restrict it
-          goTo: async (_: unknown, ctx: Ctx) => {
-            if (!where.qFolded) return null;
-            const found = await store.goTo(where.qFolded, { signal: ctx?.signal });
-            return found ? entityObject(found) : null;
-          },
-          facets: () => ({ channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] }),
-          records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
-            const page = { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order };
-            const { count, rows } = where.empty
-              ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
-              : await store.searchRecords(filter, page, { signal: ctx?.signal });
-            return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: matchedFieldOf(matchSource(record), queryTokens) })) };
-          },
-        };
-      },
+      search: ({ filter }: { filter: SearchFilter }) => searchObject(filter),
     }),
   };
 }
