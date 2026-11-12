@@ -62,6 +62,10 @@ export const ro: Copy = {
       party: { naturalPerson: "Persoană fizică", entityLink },
     },
   },
+  mainScreenLayout: {
+    lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
+    regions: { search: "Căutare", filters: "Filtre", map: "Harta", results: "Rezultate" },
+  },
   filterChips: {
     label: "Filtre",
     year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
