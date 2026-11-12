@@ -14,7 +14,8 @@ CREATE TABLE seap.source_file (
     via         text,                     -- the file as the Source titles it
     url         text,
     fetched_at  timestamptz NOT NULL,     -- from the archive manifest
-    row_count   integer NOT NULL
+    row_count   integer NOT NULL,
+    stream      text NOT NULL DEFAULT 'bulk'  -- 'bulk' (a published file) | 'crawl' (a crawled day, #77; `unit` is the day, via and url are null)
 );
 
 -- The Record. DA and DAN identity = the public code; a CONTRACT is `<award notice code>~<contract number>` (e.g.
@@ -52,7 +53,23 @@ CREATE TABLE seap.record (
     concluded_by     text,                -- `Incheiat prin`: Cu acord cadru | Cu acord cadru subsecvent | Fara acord cadru
     initiation_code  text,                -- the initiation notice (CN / SCN ...), when the file has it
     lot_count        integer,
+    -- How it was obtained (#77). A bulk Record supersedes a crawled one of the same code whatever the dates; a crawled Record
+    -- the bulk does not have stays. crawl_status is set after the load, for the crawled survivors only: PROVISIONAL when no
+    -- bulk file of its kind and quarter is loaded (the bulk has not reached it), CRAWL_ONLY when one is (and has no match).
+    via              text NOT NULL DEFAULT 'BULK' CHECK (via IN ('BULK', 'CRAWL')),
+    crawl_status     text CHECK (crawl_status IN ('PROVISIONAL', 'CRAWL_ONLY')),
+    url              text,                -- crawled Records: the e-licitatie page, built at load time from the notice type and version
+    ca_notice_id     bigint,              -- crawled Records: the internal id
+    sys_notice_type_id    integer,
+    sys_notice_version_id integer,
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
+);
+
+-- The crawl cursor at the time of the rebuild (the last crawl day with a complete manifest, derived from the archive):
+-- what `sources` reports as the data-through date of the crawled kinds.
+CREATE TABLE seap.crawl_state (
+    stream  text PRIMARY KEY,   -- the crawl kind in the archive, e.g. 'award-notices'
+    through date NOT NULL
 );
 
 -- TODO (search-engine ticket): nothing reads this table yet; the tracer API serves seap.record. It is filled on every

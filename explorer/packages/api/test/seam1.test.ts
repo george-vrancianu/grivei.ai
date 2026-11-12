@@ -27,6 +27,7 @@ const watchdog = resolve(here, "../../../../watchdog");
 const fixtureArchive = join(watchdog, "tests/fixtures/archive");
 const bulkArchive = join(watchdog, "tests/fixtures/archive-bulk"); // DA + DAN: renamed headers, quirks, a quarantined file (#63)
 const contractsArchive = join(watchdog, "tests/fixtures/archive-contracts"); // Contracte + "fara anunt": recurring contract, lots, winners (#64)
+const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bulk file + crawl days: superseded, crawl-only, provisional, re-crawl, an unfinished day (#77)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -71,6 +72,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(fixtureArchive, join(scratch, "archive"), { recursive: true }); // a rebuild may quarantine: never touch the checked-in archive
     cpSync(bulkArchive, join(scratch, "archive-bulk"), { recursive: true });
     cpSync(contractsArchive, join(scratch, "archive-contracts"), { recursive: true });
+    cpSync(crawlArchive, join(scratch, "archive-crawl"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -85,6 +87,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE bulk_b");
     await admin.query("CREATE DATABASE contracts_a");
     await admin.query("CREATE DATABASE contracts_b");
+    await admin.query("CREATE DATABASE crawl_a");
+    await admin.query("CREATE DATABASE crawl_b");
   });
 
   afterAll(async () => {
@@ -102,9 +106,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     return r.stdout;
   };
 
+  const byDb = new Map<string, pg.Pool>(); // one small pool per database: a pool per question ran into Postgres' connection limit
   const ask = async (db: string, id: string, variables: unknown = EMPTY_FILTER) => {
-    const pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
-    pools.push(pool);
+    let pool = byDb.get(db);
+    if (!pool) {
+      pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
+      pools.push(pool);
+      byDb.set(db, pool);
+    }
     return createApi(postgresStore(pool), schema).respond({ id, variables });
   };
 
@@ -265,6 +274,80 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(first.filter((x) => (x as string).includes('"record":null')).length).toBe(1);
     rebuild("contracts_b", "archive-contracts"); // and into a fresh one (ADR 0004)
     expect(await snapshot("contracts_b")).toEqual(first);
+  });
+
+  const crawlRecord = async (code: string) => {
+    const r = await ask("crawl_a", recordPage.sha256, { code });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(recordPage.document), r.body.data, { code })).toEqual([]);
+    return (r.body.data as RecordPageQuery).seap.record;
+  };
+
+  it("lets the bulk supersede a crawled Record, badges the survivors and gives them crawl provenance (#77)", async () => {
+    const out = rebuild("crawl_a", "archive-crawl");
+    expect(out).toContain("loaded 5 records from");
+    expect(out).toContain("skipped, incomplete"); // the crawl day that was killed before its manifest
+
+    // Q1, which the bulk has: its contract (150000 lei) was fetched BEFORE the crawl of the same contract (100000 lei) and still stands
+    expect(await crawlRecord("CAN9200001~C-1")).toMatchObject({
+      value: "15000000", counted: "15000000", badges: [], provenance: { source: "SEAP", kind: "BULK", via: "Contracte 2026 - T1", url: null },
+    });
+    // Q1: a crawled contract the bulk does not have survives, counts, and is badged crawl-only
+    expect(await crawlRecord("CAN9200002~C-7")).toMatchObject({
+      kind: "CONTRACT", channel: "CONTRACT", value: "2000050", counted: "2000050", badges: ["CRAWL_ONLY"], date: "2026-02-02",
+      authority: { key: "1000001", displayName: "SPITALUL EXEMPLU" }, winners: [{ publishedName: "DRUMURI DEMO SA", entity: { key: "2000012" } }],
+      provenance: { kind: "CRAWL", via: null, url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000012", fetchedAt: "2026-11-11T09:00:00Z" },
+    });
+    // Q2, which the bulk has not reached: provisional, with crawl provenance; the day's later re-crawl (80000, not 75000 lei) is the version served
+    expect(await crawlRecord("CAN9200003~9/2026")).toMatchObject({
+      value: "8000000", counted: "8000000", badges: ["CRAWLED_PROVISIONAL"], date: "2026-03-30",
+      provenance: { kind: "CRAWL", via: null, url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013", fetchedAt: "2026-11-12T09:00:00Z" },
+    });
+    // an SCNA links to its own route; a notice without a procedure is one award notice whose value adds its two contracts
+    expect(await crawlRecord("SCNA9200004~S-1")).toMatchObject({ badges: ["CRAWLED_PROVISIONAL"], provenance: { url: "https://e-licitatie.ro/pub/notices/ca-notices/view-rfq/92000014" } });
+    expect(await crawlRecord("CAN9200005")).toMatchObject({ kind: "AWARD_NOTICE", value: "350050", badges: ["CRAWLED_PROVISIONAL"], provenance: { kind: "CRAWL" } });
+    // the day that never got its manifest is not in the graph
+    expect(await crawlRecord("CAN9200009~G-1")).toBeNull();
+
+    // the Records list shows the same badges, and the Total counts every Record once (the crawled survivors included)
+    const main = await ask("crawl_a", mainScreen.sha256);
+    expect(main.body.errors).toBeUndefined();
+    const data = main.body.data as MainScreenQuery;
+    expect(data.seap.search.total).toMatchObject({ awarded: "25650125", records: 5, noValue: 0 }); // 15000000 + 2000050 + 8000000 + 300025 + 350050
+    const badges = Object.fromEntries(data.seap.search.records.rows.map((x) => [x.record.code, x.record.badges]));
+    expect(badges).toEqual({
+      "CAN9200001~C-1": [], "CAN9200002~C-7": ["CRAWL_ONLY"], "CAN9200003~9/2026": ["CRAWLED_PROVISIONAL"],
+      "SCNA9200004~S-1": ["CRAWLED_PROVISIONAL"], CAN9200005: ["CRAWLED_PROVISIONAL"],
+    });
+  });
+
+  it("reports a data-through date per record kind, the crawled kinds from the crawl cursor (#77)", async () => {
+    rebuild("crawl_a", "archive-crawl");
+    const main = await ask("crawl_a", mainScreen.sha256);
+    expect(validateResponse(schema, parse(mainScreen.document), main.body.data, EMPTY_FILTER)).toEqual([]);
+    // the cursor is 2026-04-02, the last day with a complete manifest: an empty day counts, the unfinished 2026-04-03 does not
+    expect((main.body.data as MainScreenQuery).sources).toEqual([{
+      id: "SEAP", name: "SEAP", harvested: true,
+      dataThrough: [{ kind: "AWARD_NOTICE", date: "2026-04-02" }, { kind: "CONTRACT", date: "2026-04-02" }],
+    }]);
+    // and a bulk-only archive keeps reporting its latest publication date, as before
+    const bulkOnly = await ask("bulk_a", mainScreen.sha256);
+    expect((bulkOnly.body.data as MainScreenQuery).sources[0]!.dataThrough.map((d) => d.kind)).toEqual(["DA", "DAN"]);
+  });
+
+  it("gives identical responses after a second rebuild of the crawl archive, over it and into a fresh database (#77, ADR 0004)", async () => {
+    const codes = ["CAN9200001~C-1", "CAN9200002~C-7", "CAN9200003~9/2026", "SCNA9200004~S-1", "CAN9200005", "CAN9200009~G-1"];
+    const snapshot = async (db: string) => {
+      const out: unknown[] = [JSON.stringify(await ask(db, mainScreen.sha256))];
+      for (const code of codes) out.push(JSON.stringify(await ask(db, recordPage.sha256, { code })));
+      return out;
+    };
+    rebuild("crawl_a", "archive-crawl");
+    const first = await snapshot("crawl_a");
+    rebuild("crawl_a", "archive-crawl");
+    expect(await snapshot("crawl_a")).toEqual(first);
+    rebuild("crawl_b", "archive-crawl");
+    expect(await snapshot("crawl_b")).toEqual(first);
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
