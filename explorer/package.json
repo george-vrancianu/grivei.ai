@@ -9,9 +9,13 @@
     "node": ">=24"
   },
   "scripts": {
-    "check": "npm run check --workspaces --if-present",
-    "test": "npm test --workspaces --if-present",
-    "codegen": "npm run codegen --workspace @grivei/contract"
+    "check": "npm run lint && npm run check --workspaces --if-present && npm run test:tooling",
+    "test": "npm test --workspaces --if-present && npm run test:tooling",
+    "test:tooling": "vitest run --pool=forks --maxWorkers=4",
+    "lint": "eslint .",
+    "codegen": "npm run codegen --workspace @grivei/contract",
+    "storybook": "storybook dev -p 6006 -c .storybook",
+    "storybook:build": "storybook build -c .storybook -o storybook-static"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

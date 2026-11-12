@@ -1,7 +1,6 @@
 import { screen } from "@testing-library/react";
 import { expectTypeOf } from "vitest";
 import { renderInUi } from "../../testing/render.tsx";
-import { sxProbe, sxProbeStyle } from "../../testing/sx.ts";
 import { Tooltip, type TooltipProps } from "./index.ts";
 
 describe("Tooltip", () => {
