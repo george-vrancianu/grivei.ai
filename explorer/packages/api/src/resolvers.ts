@@ -1,5 +1,6 @@
 import { GraphQLError } from "graphql";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey } from "./store.ts";
+import { buildWhere, type SearchFilter } from "./search.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
 
@@ -16,20 +17,7 @@ function notServed(what: string): () => never {
   };
 }
 
-interface Filter {
-  countySide?: "AUTHORITY" | "SUPPLIER" | null;
-  [key: string]: unknown;
-}
-
-/** The empty filter: nothing but the (defaulted) county side. */
-function assertEmptyFilter(filter: Filter): void {
-  const used = Object.entries(filter).filter(([key, value]) => key !== "countySide" && value != null);
-  if (used.length) {
-    throw new GraphQLError(`filtering is not served yet (got ${used.map(([k]) => k).join(", ")})`, {
-      extensions: { code: "NOT_IMPLEMENTED" },
-    });
-  }
-}
+type Ctx = { signal?: AbortSignal } | undefined;
 
 /** Does the quarter (`2024-Q4`) overlap the window (open ends allowed; `Date`s are `YYYY-MM-DD`, which sort as text)? */
 function overlaps(quarter: string, from: string | null, to: string | null): boolean {
@@ -123,12 +111,7 @@ export function rootValue(store: Store) {
     };
   }
 
-  const total = async () => {
-    const t = await store.total();
-    return { ...zeroTotal(), ...t };
-  };
   const seapSource = async () => ({ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrough: await store.dataThrough() });
-  const emptyPage = () => ({ count: 0, countEstimated: false, rows: [] });
 
   return {
     sources: async () => [await seapSource()],
@@ -158,10 +141,21 @@ export function rootValue(store: Store) {
         const found = await store.record(code);
         return found ? recordPage(found, recordRow, store) : null;
       },
-      search: ({ filter }: { filter: Filter }) => {
-        assertEmptyFilter(filter);
+      search: ({ filter }: { filter: SearchFilter }) => {
+        const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
+        // The empty filter is the tracer's path (a rollup will serve it); anything narrower runs on the search index.
+        const total = (_: unknown, ctx: Ctx) => (where.empty ? store.total() : store.searchTotal(filter, { signal: ctx?.signal })).then((t) => ({ ...zeroTotal(), ...t }));
+        const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
+          const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
+          return {
+            count: page.count,
+            countEstimated: page.estimated,
+            rows: page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } })),
+          };
+        };
+        const echo = (key: string | null | undefined) => (key ? store.entity(key).then((e) => (e ? entityObject(e) : null)) : null);
         return {
-          filter: { qFolded: null, authority: null, supplier: null },
+          filter: { qFolded: where.qFolded, authority: () => echo(filter.authority), supplier: () => echo(filter.supplier) },
           total,
           map: async () => ({
             side: filter.countySide ?? "AUTHORITY",
@@ -171,13 +165,15 @@ export function rootValue(store: Store) {
             unknownSupplierCounty: null,
           }),
           uatMap: () => ({ uats: [], unknownUat: null }),
-          authorities: emptyPage,
-          suppliers: emptyPage,
+          authorities: entityPage("AUTHORITY"),
+          suppliers: entityPage("SUPPLIER"),
           goTo: null,
           facets: () => ({ channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] }),
-          records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }) => {
-            const count = (await store.total()).records;
-            const rows = await store.records({ limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order });
+          records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
+            const page = { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order };
+            const { count, rows } = where.empty
+              ? { count: (await store.total()).records, rows: await store.records(page) }
+              : await store.searchRecords(filter, page, { signal: ctx?.signal });
             return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: null })) };
           },
         };

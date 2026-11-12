@@ -185,7 +185,7 @@ nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>
 
 ## The Coverage grid (#79)
 
-`pipeline rebuild` ends by computing the SEAP Coverage grid from what it just loaded and from the archive, and stores it in `seap.coverage_cell` (one row per quarter and record kind: `2021-Q1` to the quarter of the rebuild's day, DA, DAN, CONTRACT, AWARD_NOTICE). The API serves it as `coverage(source: SEAP, window).grid`; the window keeps the quarters that overlap it. Code: `pipeline/coverage/` (`grid.py` holds the rules and is pure; `build.py` gathers the facts). Flagged cells (possibly incomplete, not yet loaded because a file was set aside, hand-entered gaps) are logged as `coverage: ...` lines, never with the quarantine's reason.
+`pipeline rebuild` ends by computing the SEAP Coverage grid from what it just loaded and from the archive, and stores it in `seap.coverage_cell` (one row per quarter and record kind: `2021-Q1` to the quarter of the rebuild's day, DA, DAN, CONTRACT, AWARD_NOTICE). The API serves it as `coverage(source: SEAP, window).grid`; the window keeps the quarters that overlap it. Code: `pipeline/coverage/` (`grid.py` holds the rules and is pure; `build.py` gathers the facts). Flagged cells (possibly incomplete, not yet loaded because a file was set aside, hand-entered gaps) are logged as `coverage: ...` lines at the end of the rebuild output, never with the quarantine's reason.
 
 State precedence, first match wins:
 

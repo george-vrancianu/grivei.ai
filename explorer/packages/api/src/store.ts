@@ -1,4 +1,5 @@
 import pg from "pg";
+import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
 export interface EntityRow {
@@ -99,6 +100,24 @@ export interface FrameworkRow {
   ratio: number | null;
 }
 
+/** One row of an entity tab: the entity and what it matched (consortium shares summed on the supplier side). */
+export interface EntityHit {
+  entity: EntityRow;
+  matched: TotalRow;
+}
+
+export interface EntityPage {
+  /** Distinct entities in the matching set: exact below the group limit, a HyperLogLog estimate above. */
+  count: number;
+  estimated: boolean;
+  rows: EntityHit[];
+}
+
+/** Options every search statement takes: `signal` aborts (the client disconnected) and cancels the running statement on the server. */
+export interface SearchOptions {
+  signal?: AbortSignal;
+}
+
 export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 
 export interface Store {
@@ -114,6 +133,12 @@ export interface Store {
   dataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The SEAP Coverage grid the last rebuild stored (`seap.coverage_cell`), oldest quarter first, kinds in contract order. */
   coverageGrid(): Promise<GapCellRow[]>;
+  /** The Total of the matching set: matched RON is the sum of the winners' shares. */
+  searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
+  /** An entity tab ranked by matched RON (ties by key), top `limit` from `offset`. */
+  searchEntities(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, page: { limit: number; offset: number }, options?: SearchOptions): Promise<EntityPage>;
+  /** The Records tab: each matching Record once. */
+  searchRecords(filter: SearchFilter, page: { limit: number; offset: number; order: RecordOrderKey }, options?: SearchOptions): Promise<{ count: number; rows: RecordRow[] }>;
   /** An entity by its URL key (a CUI, `vat-<id>`, `name-<slug>` or a pinned key), or null. */
   entity(key: string): Promise<EntityRow | null>;
   /** Its spellings, most used first. */
@@ -206,7 +231,24 @@ interface RawRecord {
 const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, procedure, value_bani::text AS value, counted_bani::text AS counted,
   authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status`;
 
-export function postgresStore(pool: pg.Pool): Store {
+export interface PostgresStoreOptions {
+  /** Distinct-entity counts are exact up to this many groups and a HyperLogLog estimate above (pg_search's group cap is 65,000). */
+  exactGroupLimit?: number;
+}
+
+const SEARCH_ORDER: Record<RecordOrderKey, string> = {
+  VALUE_DESC: "value_bani DESC NULLS LAST, record_code",
+  DATE_DESC: "award_date DESC, record_code",
+  DATE_ASC: "award_date ASC, record_code",
+};
+
+// What one entity tab groups on. Fixed strings.
+const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as const;
+
+/** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
+const AGG_BUCKET_CAP = 65_000;
+
+export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
@@ -246,7 +288,121 @@ export function postgresStore(pool: pg.Pool): Store {
     }));
   }
 
+  const totalOf = (r: { awarded: string; records: number; suspect_left_out: number; no_value: number; framework_ceilings: string }): TotalRow => ({
+    awarded: r.awarded, records: r.records, suspectLeftOut: r.suspect_left_out, noValue: r.no_value, frameworkCeilings: r.framework_ceilings,
+  });
+
   return {
+    async searchTotal(filter, { signal } = {}) {
+      const w = buildWhere(filter);
+      // Matched RON = the winners' shares that matched. A Record counts once: on its first winner's row, or, when the filter
+      // restricts the winners (it can then match on several rows, or not on the first), once per Record after grouping.
+      const sql = w.winnerSide
+        ? `SELECT coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records, (count(*) FILTER (WHERE suspect))::int AS suspect_left_out,
+                  (count(*) FILTER (WHERE no_value))::int AS no_value, coalesce(sum(ceil), 0)::text AS framework_ceilings
+             FROM (SELECT record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                     FROM seap.search WHERE ${w.sql} GROUP BY record_code) g`
+        : `SELECT coalesce(sum(share_bani), 0)::text AS awarded, (count(*) FILTER (WHERE winner_position = 1))::int AS records,
+                  (count(*) FILTER (WHERE winner_position = 1 AND suspect))::int AS suspect_left_out,
+                  (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int AS no_value,
+                  coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
+             FROM seap.search WHERE ${w.sql}`;
+      return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
+    },
+    async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
+      const w = buildWhere(filter);
+      const key = SIDE_KEY[side];
+      // 1. how many distinct entities: a HyperLogLog estimate, cheap and inside the index
+      const card = await cancellableQuery(pool, signal, `SELECT pdb.agg('{"cardinality":{"field":"${key}"}}'::jsonb) AS c FROM seap.search WHERE ${w.sql}`, w.params);
+      const estimate = Math.round(Number((card.rows[0]!.c as { value: number }).value));
+      let ranked: { key: string; awarded: string }[] | null = null;
+      let count = estimate;
+      let estimated = false;
+      if (estimate <= exactGroupLimit) {
+        try {
+          // 2a. exact: the pushed-down GROUP BY, ordered by matched RON then key; the window count is the exact number of groups
+          const r = await cancellableQuery<{ key: string; awarded: string; n: number }>(
+            pool, signal,
+            `SELECT ${key} AS key, coalesce(sum(share_bani), 0)::text AS awarded, count(*) OVER ()::int AS n
+               FROM seap.search WHERE ${w.sql} AND ${key} @@@ pdb.exists()
+              GROUP BY ${key} ORDER BY sum(share_bani) DESC NULLS LAST, ${key} LIMIT ${limit} OFFSET ${offset}`,
+            w.params,
+          );
+          ranked = r.rows;
+          if (r.rows.length) count = r.rows[0]!.n;
+          else if (offset > 0) {
+            const c = await cancellableQuery<{ n: number }>(
+              pool, signal, `SELECT count(*)::int AS n FROM (SELECT ${key} FROM seap.search WHERE ${w.sql} AND ${key} @@@ pdb.exists() GROUP BY ${key}) g`, w.params,
+            );
+            count = c.rows[0]!.n;
+          } else count = 0;
+        } catch (e) {
+          // the estimate was low and the group cap was hit: fall through to the estimated path
+          if (!/max_term_agg_buckets/.test(String((e as Error).message))) throw e;
+          ranked = null;
+        }
+      }
+      if (!ranked) {
+        // 2b. above the group limit: the top groups by matched RON from the index's terms aggregation, the count a HyperLogLog estimate
+        estimated = true;
+        count = estimate;
+        // past the index's bucket cap there is nothing to page to: an empty page, not an error (the cap is Tantivy's default, 65,000)
+        if (offset + limit + 1 > AGG_BUCKET_CAP) return { count, estimated, rows: [] };
+        const spec = { terms: { field: key, size: offset + limit + 1, order: { s: "desc" } }, aggs: { s: { sum: { field: "share_bani" } } } };
+        const r = await cancellableQuery(pool, signal, `SELECT pdb.agg($${w.params.length + 1}::jsonb) AS t FROM seap.search WHERE ${w.sql}`, [...w.params, JSON.stringify(spec)]);
+        const buckets = (r.rows[0]!.t as { buckets: { key: string | null; s: { value: number } }[] }).buckets;
+        ranked = buckets
+          .filter((b): b is { key: string; s: { value: number } } => b.key !== null) // a natural person has no key: the terms aggregation reports them as a null bucket (one extra slot is asked for)
+          .map((b) => ({ key: b.key, awarded: String(Math.round(b.s.value)) }))
+          .sort((a, b) => Number(BigInt(b.awarded) - BigInt(a.awarded)) || (a.key < b.key ? -1 : 1))
+          .slice(offset, offset + limit);
+      }
+      if (!ranked.length) return { count, estimated, rows: [] };
+      // 3. what each of the page's entities matched, once per Record
+      const keys = ranked.map((x) => x.key);
+      const stats = await cancellableQuery<{ key: string; awarded: string; records: number; suspect_left_out: number; no_value: number; framework_ceilings: string }>(
+        pool, signal,
+        `SELECT key, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records, (count(*) FILTER (WHERE suspect))::int AS suspect_left_out,
+                (count(*) FILTER (WHERE no_value))::int AS no_value, coalesce(sum(ceil), 0)::text AS framework_ceilings
+           FROM (SELECT ${key} AS key, record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                   FROM seap.search WHERE ${w.sql} AND ${key} = ANY($${w.params.length + 1}::text[]) GROUP BY ${key}, record_code) g
+          GROUP BY key`,
+        [...w.params, keys],
+      );
+      const byKey = new Map(stats.rows.map((r) => [r.key, totalOf(r)]));
+      const entities = await entitiesOf(keys);
+      const now = new Date().toISOString();
+      const rows = ranked.map((x) => ({
+        entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now),
+        matched: byKey.get(x.key) ?? { awarded: x.awarded, records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }, // the exact per-key sum of step 3, not the aggregation's float
+      }));
+      return { count, estimated, rows };
+    },
+    async searchRecords(filter, { limit, offset, order }, { signal } = {}) {
+      const w = buildWhere(filter);
+      // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record
+      const count = (
+        await cancellableQuery<{ n: number }>(
+          pool, signal,
+          w.winnerSide
+            ? `SELECT count(DISTINCT record_code)::int AS n FROM seap.search WHERE ${w.sql}`
+            : `SELECT count(*)::int AS n FROM seap.search WHERE ${w.sql} AND winner_position = 1`,
+          w.params,
+        )
+      ).rows[0]!.n;
+      const codes = await cancellableQuery<{ record_code: string }>(
+        pool, signal,
+        w.winnerSide
+          ? `SELECT record_code FROM seap.search WHERE ${w.sql} GROUP BY record_code, value_bani, award_date ORDER BY ${SEARCH_ORDER[order]} LIMIT ${limit} OFFSET ${offset}`
+          : `SELECT record_code FROM seap.search WHERE ${w.sql} AND winner_position = 1 ORDER BY ${SEARCH_ORDER[order]} LIMIT ${limit} OFFSET ${offset}`,
+        w.params,
+      );
+      const wanted = codes.rows.map((r) => r.record_code);
+      if (!wanted.length) return { count, rows: [] };
+      const { rows } = await pool.query(`SELECT ${RECORD_COLUMNS} FROM seap.record WHERE code = ANY($1)`, [wanted]);
+      const byCode = new Map((await rowsOf(rows as RawRecord[])).map((r) => [r.code, r]));
+      return { count, rows: wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r) };
+    },
     async total() {
       const { rows } = await pool.query(
         // The counting rule was applied when the graph was built: this only sums and counts what it stored (counted_bani, suspect, ceiling_bani), with no rule predicate here.

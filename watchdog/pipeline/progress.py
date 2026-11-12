@@ -99,10 +99,6 @@ class Progress:
         self.state["records"] += records if outcome == "loaded" else 0
         self._line(f"rebuild unit {index}/{total} kind={kind} unit={unit} files={files} rows={rows} records={records} {detail}")
 
-    def note(self, text: str) -> None:
-        """A free-form progress line (e.g. a Coverage cell worth a look)."""
-        self._line(text)
-
     def finish(self, records_in_graph: int, data_through: dict[str, str] | None = None) -> None:
         s = self.state
         s.update(state="finished", records=records_in_graph, current=None, dataThrough=data_through or {})
