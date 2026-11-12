@@ -20,11 +20,14 @@ export interface EntityPageRequest {
 }
 
 export type EntityPageState =
-  | { status: "loading" }
+  /** `entity` is the header of the same entity (same key and role) from the tab before, so the page can keep it on screen. Null on a first load. */
+  | { status: "loading"; entity: EntityHeaderData | null }
   | { status: "error" }
   /** `entity` is null when no entity has that key. */
   | { status: "ready"; entity: EntityHeaderData | null };
 type Settled = Exclude<EntityPageState, { status: "loading" }>;
+/** The entity a request is about: the header is the same across its tabs. */
+const subjectOf = (r: EntityPageRequest) => `${r.role}:${r.key}`;
 
 /** Each tab runs its own operation; every one of them carries the header fields, which are all this page reads so far. */
 function fetchHeader(client: GraphqlClient, r: EntityPageRequest, signal: AbortSignal): Promise<EntityHeaderData | null> {
@@ -41,21 +44,29 @@ function fetchHeader(client: GraphqlClient, r: EntityPageRequest, signal: AbortS
   }
 }
 
-/** Runs the operation of the open tab. A different request reads as loading again; a superseded one is cancelled. */
+/**
+ * Runs the operation of the open tab. A different request reads as loading again (carrying the last header of the same entity,
+ * so a tab change does not blank the page); a superseded one is cancelled.
+ */
 export function useEntityPage(request: EntityPageRequest): EntityPageState {
   const client = useClient();
   const key = JSON.stringify(request);
+  const subject = subjectOf(request);
   const [settled, setSettled] = useState<{ key: string; state: Settled } | null>(null);
+  const [lastHeader, setLastHeader] = useState<{ subject: string; entity: EntityHeaderData } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     fetchHeader(client, JSON.parse(key) as EntityPageRequest, controller.signal)
-      .then((entity) => setSettled({ key, state: { status: "ready", entity } }))
+      .then((entity) => {
+        setSettled({ key, state: { status: "ready", entity } });
+        if (entity) setLastHeader({ subject, entity });
+      })
       .catch(() => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
       });
     return () => controller.abort();
-  }, [client, key]);
+  }, [client, key, subject]);
 
-  return settled?.key === key ? settled.state : { status: "loading" };
+  return settled?.key === key ? settled.state : { status: "loading", entity: lastHeader?.subject === subject ? lastHeader.entity : null };
 }

@@ -1,6 +1,5 @@
-import { Box } from "../../../../../atoms/Box/index.ts";
-import { Tab } from "../../../../../atoms/Tab/index.ts";
-import { Tabs } from "../../../../../atoms/Tabs/index.ts";
+import { Link } from "../../../../../atoms/Link/index.ts";
+import { Stack } from "../../../../../atoms/Stack/index.ts";
 import type { EntityPageView } from "../../../../types.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 
@@ -21,25 +20,35 @@ export interface EntityTabNavProps {
   copy: EntityTabNavCopy;
 }
 
-/** The three tabs as a navigation of links: every tab has its own URL, so it can be opened, copied and cited on its own. */
+/**
+ * The three tabs as a navigation of links: every tab has its own URL, so it can be opened, copied and cited on its own.
+ * Plain links, not an ARIA tablist: each one is a Tab stop and the open one is marked `aria-current="page"`.
+ */
 export function EntityTabNav({ view, hrefs, onNavigate, copy }: EntityTabNavProps) {
   return (
-    <Box component="nav" aria-label={copy.label}>
-      <Tabs value={view} role={undefined}>
-        {ENTITY_PAGE_VIEWS.map((v) => (
-          <Tab
+    <Stack component="nav" aria-label={copy.label} direction="row" spacing={3} sx={{ borderBottom: 1, borderColor: "divider" }}>
+      {ENTITY_PAGE_VIEWS.map((v) => {
+        const current = v === view;
+        return (
+          <Link
             key={v}
-            value={v}
-            label={copy.tabs[v]}
-            component="a"
-            role={undefined}
             href={hrefs[v]}
-            aria-current={v === view ? "page" : undefined}
-            aria-selected={undefined}
+            aria-current={current ? "page" : undefined}
+            underline={current ? "none" : "hover"}
+            color={current ? "primary" : "text.secondary"}
+            sx={{
+              py: 1.5,
+              fontWeight: current ? 700 : 400,
+              borderBottom: 2,
+              borderColor: current ? "primary.main" : "transparent",
+              mb: "-1px",
+            }}
             onClick={followLink(hrefs[v], onNavigate)}
-          />
-        ))}
-      </Tabs>
-    </Box>
+          >
+            {copy.tabs[v]}
+          </Link>
+        );
+      })}
+    </Stack>
   );
 }

@@ -50,3 +50,15 @@ export const SupplierRecords = page(supplierHeader, "SUPPLIER", "records");
 export const BothRolesRelationships = page(bothRolesHeader, "AUTHORITY", "relationships");
 /** A name-only supplier. */
 export const NameOnlySupplierOverview = page(nameOnlySupplierHeader, "SUPPLIER", "overview");
+
+/** The first load: no header yet, the tabs are already there and the body says it is loading. */
+export const Loading: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return (
+      <EntityPageLayout header={null} view="overview" tabHrefs={hrefs(authorityHeader, "AUTHORITY")} copy={sampleCopy.entityPageLayout(locale)}>
+        <Typography role="status">{locale === "ro" ? "Se încarcă..." : "Loading..."}</Typography>
+      </EntityPageLayout>
+    );
+  },
+};

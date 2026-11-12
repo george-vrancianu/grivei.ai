@@ -1,11 +1,10 @@
-import type { EntityPageView, EntityPageRole } from "@grivei/ui";
+import type { EntityPageView, EntityPageRole, Locale } from "@grivei/ui";
 import type { RecordFilter } from "@grivei/contract";
 import { pathFor, type EntityRoute } from "../../routing/routes.ts";
-import type { Locale } from "@grivei/ui";
 import { encodeUrlState } from "../../urlState/codec.ts";
 
 export const roleOf = (entity: EntityRoute): EntityPageRole => (entity === "authority" ? "AUTHORITY" : "SUPPLIER");
-export const routeOf = (role: EntityPageRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
+const routeOf = (role: EntityPageRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
 
 /**
  * The URL of each tab. The filter travels with the reader from tab to tab (the side panel's filter shapes every tab's totals);

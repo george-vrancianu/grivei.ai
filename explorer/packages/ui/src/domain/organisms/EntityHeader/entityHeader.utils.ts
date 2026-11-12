@@ -1,4 +1,3 @@
-import type { Locale } from "../../../theme/index.ts";
 import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 
 /** ANAF's status for an entity in good standing. Anything else (RADIERE, FUZIUNE ...) is badged. */
@@ -29,11 +28,3 @@ export function hasBothRoles(entity: EntityHeaderData): boolean {
 }
 
 export const ROLES: readonly EntityPageRole[] = ["AUTHORITY", "SUPPLIER"];
-
-/** "12 October 2024" / "12 octombrie 2024" from an ISO instant, in UTC. */
-export function formatFetched(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : locale, {
-    dateStyle: "long",
-    timeZone: "UTC",
-  }).format(new Date(iso));
-}

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { createClient } from "../../graphql/client.ts";
+import type { GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -49,6 +50,48 @@ describe("an entity page", () => {
     expect(window.location.pathname).toBe(`${SUPPLIER}/records`);
     expect(await screen.findByText("The Records tab is not built yet.")).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
+  });
+
+  it("keeps the header and the tabs on screen while the next tab loads", async () => {
+    openAt(SUPPLIER);
+    const { client } = fixtureClient();
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let held = false;
+    const slow: GraphqlClient = {
+      query: async (op, variables, options) => {
+        if (held) await gate;
+        return client.query(op, variables, options);
+      },
+    };
+    render(<App client={slow} />);
+    await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." });
+
+    held = true;
+    const user = userEvent.setup();
+    await user.click(tabs().getByRole("link", { name: "Records" }));
+    expect(screen.getByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
+    expect(currentTab()).toEqual(["Records"]);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
+    expect(screen.queryByText("The Records tab is not built yet.")).toBeNull();
+
+    release();
+    expect(await screen.findByText("The Records tab is not built yet.")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("reaches every tab link with the Tab key", async () => {
+    open(SUPPLIER);
+    await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." });
+    const user = userEvent.setup();
+    const reached: (string | null)[] = [];
+    for (let i = 0; i < 20 && reached.length < 3; i++) {
+      await user.tab();
+      const el = document.activeElement;
+      if (el && tabs().queryAllByRole("link").includes(el as HTMLElement)) reached.push(el.textContent);
+    }
+    expect(reached).toEqual(["Overview", "Records", "Relationships"]);
+    expect(screen.queryByRole("tablist")).toBeNull();
   });
 
   it("carries the filter from tab to tab", async () => {

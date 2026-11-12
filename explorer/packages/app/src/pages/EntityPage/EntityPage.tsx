@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { EntityHeader, EntityPageLayout, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -22,51 +23,57 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
 
-  if (state.status === "loading") {
-    return (
-      <Stack component="main" sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-        <Typography role="status">{t.status.loading}</Typography>
-      </Stack>
-    );
-  }
   if (state.status === "error") {
     return (
-      <Stack component="main" sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+      <PageShell>
         <Typography role="alert">{t.status.failed}</Typography>
-      </Stack>
+      </PageShell>
     );
   }
-  if (state.entity === null) {
+  if (state.status === "ready" && state.entity === null) {
     return (
-      <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+      <PageShell>
         <Typography variant="h4" component="h1">
           {t.entityPage.notFound.title}
         </Typography>
         <Typography>{t.entityPage.notFound.body}</Typography>
         <AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>
-      </Stack>
+      </PageShell>
     );
   }
+  const loading = state.status === "loading";
+  const entity = state.entity;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
   return (
     <EntityPageLayout
       header={
-        <EntityHeader
-          entity={state.entity}
-          role={role}
-          roleHref={(r) => roleHref(locale, state.entity?.key ?? entityKey, view, r)}
-          onNavigate={onNavigate}
-          locale={locale}
-          copy={t.entityPage.header}
-        />
+        entity && (
+          <EntityHeader
+            entity={entity}
+            role={role}
+            roleHref={(r) => roleHref(locale, entity.key, view, r)}
+            onNavigate={onNavigate}
+            locale={locale}
+            copy={t.entityPage.header}
+          />
+        )
       }
       view={view}
-      tabHrefs={tabHrefs(locale, routeRole, entityKey, filter)}
+      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter)}
       onNavigate={onNavigate}
       copy={t.entityPage.layout}
     >
-      <Typography>{t.entityPage.tabBody[view]}</Typography>
+      {loading ? <Typography role="status">{t.status.loading}</Typography> : <Typography>{t.entityPage.tabBody[view]}</Typography>}
     </EntityPageLayout>
+  );
+}
+
+/** The bare page for the states with no entity to show: the data could not be loaded, or no entity has that key. */
+function PageShell({ children }: { children: ReactNode }) {
+  return (
+    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+      {children}
+    </Stack>
   );
 }

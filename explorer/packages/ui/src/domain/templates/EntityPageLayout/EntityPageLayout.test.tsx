@@ -52,6 +52,19 @@ describe("EntityPageLayout", () => {
     expect(current.map((l) => l.textContent)).toEqual([name]);
   });
 
+  it("puts every tab link in the Tab order and builds no tablist", async () => {
+    show("records");
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("tab")).toBeNull();
+    const user = userEvent.setup();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Records" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Relationships" })).toHaveFocus();
+  });
+
   it("names the tabs in Romanian", () => {
     show("records", "ro");
     expect(screen.getByRole("link", { name: "Înregistrări" })).toHaveAttribute("href", "/e/1/records");

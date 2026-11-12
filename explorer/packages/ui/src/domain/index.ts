@@ -5,3 +5,4 @@ export * from "./molecules/index.ts";
 export * from "./organisms/index.ts";
 export * from "./templates/index.ts";
 export type { EntityHeaderData, EntityPageRole, EntityPageView } from "./types.ts";
+export { followLink } from "./utils/followLink.ts";

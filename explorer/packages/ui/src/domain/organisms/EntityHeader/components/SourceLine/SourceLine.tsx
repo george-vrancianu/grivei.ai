@@ -3,7 +3,7 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { EntityHeaderData } from "../../../../types.ts";
-import { formatFetched } from "../../entityHeader.utils.ts";
+import { formatDate } from "../../../../utils/formatDate.ts";
 
 export interface SourceLineCopy {
   /** "Name and status from ANAF, fetched 12 October 2024", given the Source's id and the formatted date. */
@@ -22,7 +22,7 @@ export function SourceLine({ entity, locale, copy }: SourceLineProps) {
   return (
     <Stack spacing={0.25}>
       {entity.provenance.map((p) => {
-        const text = copy.from(p.source, formatFetched(p.fetchedAt, locale));
+        const text = copy.from(p.source, formatDate(p.fetchedAt, locale, "long"));
         return (
           <Typography key={`${p.source}-${p.kind}-${p.fetchedAt}`} variant="caption" color="text.secondary">
             {p.url ? (
