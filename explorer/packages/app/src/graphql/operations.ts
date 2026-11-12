@@ -1,5 +1,8 @@
 import allowlist from "@grivei/contract/persisted-queries.json";
-import type { MainScreenQuery, MainScreenQueryVariables } from "@grivei/contract";
+import type {
+  EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
+  EntityRelationshipsQuery, EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables,
+} from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
 export interface Operation<Data, Variables> {
@@ -16,3 +19,6 @@ function operation<Data, Variables>(name: string): Operation<Data, Variables> {
 }
 
 export const MainScreen = operation<MainScreenQuery, MainScreenQueryVariables>("MainScreen");
+export const EntityOverview = operation<EntityOverviewQuery, EntityOverviewQueryVariables>("EntityOverview");
+export const EntityRecords = operation<EntityRecordsQuery, EntityRecordsQueryVariables>("EntityRecords");
+export const EntityRelationships = operation<EntityRelationshipsQuery, EntityRelationshipsQueryVariables>("EntityRelationships");

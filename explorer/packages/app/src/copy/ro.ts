@@ -29,8 +29,6 @@ export const ro: Copy = {
     placeholder: "Această pagină nu este construită încă.",
     notFound: { title: "Pagina nu a fost găsită", back: "Înapoi la ecranul principal" },
     search: { title: "Căutare" },
-    authority: { overview: "Autoritate", records: "Autoritate: Înregistrări", relationships: "Autoritate: Relații" },
-    supplier: { overview: "Furnizor", records: "Furnizor: Înregistrări", relationships: "Furnizor: Relații" },
     record: { title: "Înregistrare" },
     coverage: { title: "Acoperire" },
     methodology: { title: "Despre cifre" },
@@ -56,5 +54,31 @@ export const ro: Copy = {
     noValue: (n, f) => roCount(n, f, "înregistrare fără valoare", "înregistrări fără valoare"),
     frameworkCeilings: (amount) => `Plafoane de acorduri-cadru neincluse: ${amount}`,
     methodology: "Cum se calculează acest total",
+  },
+  entityPage: {
+    layout: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+    header: {
+      identity: {
+        cui: "CUI",
+        foreignVatId: "Cod TVA străin",
+        nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
+        identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
+      },
+      anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
+      placement: {
+        label: "Locație",
+        national: "Național",
+        unplaced: { label: "Neplasată", explanation: "Nici ANAF, nici SEAP nu plasează această entitate într-un județ." },
+        placedBy: (source) => `plasată de ${source}`,
+      },
+      source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
+      roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+    },
+    notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
+    tabBody: {
+      overview: "Prezentarea generală nu este construită încă.",
+      records: "Fila Înregistrări nu este construită încă.",
+      relationships: "Fila Relații nu este construită încă.",
+    },
   },
 };
