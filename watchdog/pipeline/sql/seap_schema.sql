@@ -157,3 +157,43 @@ CREATE TABLE seap.search (
     UNIQUE (record_code, winner_position)
 );
 CREATE INDEX search_award_date_idx ON seap.search (award_date);
+
+-- The rollup (#70): what the empty and chips-only search states read instead of scanning `seap.search`. Filled by
+-- `pipeline/rollup.py` inside the load transaction, from the search table, so it is exactly as fresh as the load.
+-- The cube: one row per year x channel x value bucket x has-Signals x authority county x supplier county. `records` counts a
+-- Record once (on its first winner's row, so it is right whenever the supplier county is not filtered), `awarded` sums the
+-- winners' shares (null: no row of the group had a share), the rest are the Total's other numbers, with the same definitions
+-- the scan uses (see the API's searchTotal).
+CREATE TABLE seap.rollup_cube (
+    award_year       integer NOT NULL,
+    channel          text NOT NULL,
+    value_bucket     text,
+    has_signals      boolean NOT NULL,
+    authority_county text,
+    supplier_county  text,
+    records          integer NOT NULL,
+    awarded          bigint,
+    suspect_left_out integer NOT NULL,
+    no_value         integer NOT NULL,
+    framework_ceilings bigint NOT NULL
+);
+-- Per-entity rows: one per (side, entity) x year x channel x value bucket x has-Signals, each Record counted once per entity
+-- (a supplier's consortium shares are summed, as in the scan). The two entity tabs are a GROUP BY entity_key over these.
+CREATE TABLE seap.rollup_entity (
+    side             text NOT NULL,       -- 'AUTHORITY' | 'SUPPLIER'
+    entity_key       text NOT NULL,
+    award_year       integer NOT NULL,
+    channel          text NOT NULL,
+    value_bucket     text,
+    has_signals      boolean NOT NULL,
+    records          integer NOT NULL,
+    awarded          bigint,
+    suspect_left_out integer NOT NULL,
+    no_value         integer NOT NULL,
+    framework_ceilings bigint NOT NULL
+);
+CREATE INDEX rollup_entity_side_idx ON seap.rollup_entity (side, award_year, channel);
+-- The load generation: one row, a fresh value for every load. The API's result cache is valid for one generation only.
+CREATE TABLE seap.rollup_meta (generation text NOT NULL);
+-- The 2-character prefixes the tokens of this load start with (the API's cache warms these).
+CREATE TABLE seap.rollup_prefix (prefix text PRIMARY KEY);

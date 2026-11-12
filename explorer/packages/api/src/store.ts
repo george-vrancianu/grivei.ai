@@ -1,5 +1,6 @@
 import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
+import { rollupPlan, rollupWhere } from "./rollup.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
 export interface EntityRow {
@@ -310,6 +311,8 @@ const zeroTotalRow = (): TotalRow => ({ awarded: "0", records: 0, suspectLeftOut
 export interface PostgresStoreOptions {
   /** Distinct-entity counts are exact up to this many groups and a HyperLogLog estimate above (pg_search's group cap is 65,000). */
   exactGroupLimit?: number;
+  /** Serve the empty and chips-only states from the rollup (default). `false` forces the full scan: the tests compare the two. */
+  rollup?: boolean;
 }
 
 const SEARCH_ORDER: Record<RecordOrderKey, string> = {
@@ -324,7 +327,7 @@ const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as con
 /** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
 const AGG_BUCKET_CAP = 65_000;
 
-export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: PostgresStoreOptions = {}): Store {
+export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
@@ -418,8 +421,20 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
     awarded: r.awarded, records: r.records, suspectLeftOut: r.suspect_left_out, noValue: r.no_value, frameworkCeilings: r.framework_ceilings,
   });
 
-  return {
-    async searchTotal(filter, { signal } = {}) {
+  const searchTotal: Store["searchTotal"] = async (filter, { signal } = {}) => {
+      const plan = rollup ? rollupPlan(filter) : null;
+      if (plan) {
+        const params: unknown[] = [];
+        const where = rollupWhere(plan, params);
+        const r = await cancellableQuery<Parameters<typeof totalOf>[0]>(
+          pool, signal,
+          `SELECT coalesce(sum(awarded), 0)::text AS awarded, coalesce(sum(records), 0)::int AS records, coalesce(sum(suspect_left_out), 0)::int AS suspect_left_out,
+                  coalesce(sum(no_value), 0)::int AS no_value, coalesce(sum(framework_ceilings), 0)::text AS framework_ceilings
+             FROM seap.rollup_cube WHERE ${where}`,
+          params,
+        );
+        return totalOf(r.rows[0]!);
+      }
       const w = buildWhere(filter);
       // Matched RON = the winners' shares that matched. A Record counts once: on its first winner's row, or, when the filter
       // restricts the winners (it can then match on several rows, or not on the first), once per Record after grouping.
@@ -434,8 +449,30 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
                   coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
              FROM seap.search WHERE ${w.sql}`;
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
-    },
+  };
+
+  return {
+    searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
+      const plan = rollup ? rollupPlan(filter) : null;
+      if (plan) {
+        // the rollup holds every entity's numbers per chip cell: one exact GROUP BY, ordered as the scan orders (matched RON, then key)
+        const params: unknown[] = [side];
+        const where = rollupWhere(plan, params);
+        type Row = Parameters<typeof totalOf>[0] & { key: string; n: number };
+        const sql = `SELECT entity_key AS key, coalesce(sum(awarded), 0)::text AS awarded, sum(records)::int AS records, sum(suspect_left_out)::int AS suspect_left_out,
+                            sum(no_value)::int AS no_value, coalesce(sum(framework_ceilings), 0)::text AS framework_ceilings, count(*) OVER ()::int AS n
+                       FROM seap.rollup_entity WHERE side = $1 AND ${where}
+                      GROUP BY entity_key ORDER BY sum(awarded) DESC NULLS LAST, entity_key LIMIT ${limit} OFFSET ${offset}`;
+        const r = await cancellableQuery<Row>(pool, signal, sql, params);
+        let count = r.rows[0]?.n ?? 0;
+        if (!r.rows.length && offset > 0) {
+          count = (await cancellableQuery<{ n: number }>(pool, signal, `SELECT count(DISTINCT entity_key)::int AS n FROM seap.rollup_entity WHERE side = $1 AND ${where}`, params)).rows[0]!.n;
+        }
+        const entities = await entitiesOf(r.rows.map((x) => x.key));
+        const now = new Date().toISOString();
+        return { count, estimated: false, rows: r.rows.map((x) => ({ entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now), matched: totalOf(x) })) };
+      }
       const w = buildWhere(filter);
       const key = SIDE_KEY[side];
       // 1. how many distinct entities: a HyperLogLog estimate, cheap and inside the index
@@ -506,8 +543,12 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
     },
     async searchRecords(filter, { limit, offset, order }, { signal } = {}) {
       const w = buildWhere(filter);
-      // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record
-      const count = (
+      // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record.
+      // A chips-only count comes from the rollup; the page itself is always the Top-K query on the index (a Record page is not a rollup).
+      const plan = rollup ? rollupPlan(filter) : null;
+      const count = plan
+        ? (await searchTotal(filter, { signal })).records
+        : (
         await cancellableQuery<{ n: number }>(
           pool, signal,
           w.winnerSide

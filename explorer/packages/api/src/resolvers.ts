@@ -165,8 +165,8 @@ export function rootValue(store: Store) {
       },
       search: ({ filter }: { filter: SearchFilter }) => {
         const where = buildWhere(filter); // refuses the filters that wait for other tickets (NOT_IMPLEMENTED)
-        // The empty filter is the tracer's path (a rollup will serve it); anything narrower runs on the search index.
-        const total = (_: unknown, ctx: Ctx) => (where.empty ? store.total() : store.searchTotal(filter, { signal: ctx?.signal })).then((t) => ({ ...zeroTotal(), ...t }));
+        // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
+        const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
         const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
           const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
           return {
@@ -206,7 +206,7 @@ export function rootValue(store: Store) {
           records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
             const page = { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0), order };
             const { count, rows } = where.empty
-              ? { count: (await store.total()).records, rows: await store.records(page) }
+              ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
               : await store.searchRecords(filter, page, { signal: ctx?.signal });
             return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: null })) };
           },
