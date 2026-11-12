@@ -1,13 +1,13 @@
 """File readers: a bulk file -> (header cells, row cells). No interpretation of the columns here.
 
-CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`) and ordinary quoted
-CSV (DAN). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Any other
+CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`; a field may span
+lines) and ordinary quoted CSV (DAN, Contracte 2021). A CSV is read as it is consumed, never whole (a quarter is up to 300 MB). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Any other
 extension (`.xls`, `.ods`) is not supported yet: the file is invalid, hence quarantined with that reason.
 """
 from __future__ import annotations
 
 import csv
-import io
+import itertools
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -75,32 +75,59 @@ def read_file(path: Path) -> tuple[Header, Rows]:
     raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv and .xlsx are read"])
 
 
+_EOL = re.compile(r"(\r\n|\n|\r)$")
+
+
+class _CsvRows:
+    """The data rows of an open CSV file, read as they are wanted (a quarter can be 300 MB). `close()` releases the file."""
+
+    def __init__(self, handle, rows):
+        self._handle, self._rows = handle, rows
+
+    def __iter__(self) -> Rows:
+        try:
+            yield from self._rows
+        except UnicodeDecodeError as e:
+            raise InvalidFile("not UTF-8 text", [str(e)]) from None
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        self._handle.close()
+
+
 def _read_csv(path: Path) -> tuple[Header, Rows]:
+    handle = path.open(encoding="utf-8-sig", newline="")  # newline="": a quoted field may hold line breaks; lines keep their terminator
     try:
-        with path.open(encoding="utf-8-sig", newline="") as handle:  # newline="": a quoted field may hold line breaks
-            content = handle.read()
+        return _csv_header_and_rows(handle)
+    except BaseException:
+        handle.close()
+        raise
+
+
+def _csv_header_and_rows(handle) -> tuple[Header, Rows]:
+    try:
+        first = next((ln for ln in handle if ln.strip()), None)
     except UnicodeDecodeError as e:
         raise InvalidFile("not UTF-8 text", [str(e)]) from None
-    if not content.strip():
+    if first is None:
         raise InvalidFile("empty file")
-    if content.lstrip().startswith("|"):
-        lines = _LINE_BREAK.split(content)  # not splitlines(): it also splits on \x0c, \x85, \u2028...
-        first = next((n for n, ln in enumerate(lines) if ln.strip()), 0)
+    if first.lstrip().startswith("|"):
         try:
-            header = split_pipe_row(lines[first])
+            header = split_pipe_row(_EOL.sub("", first))
         except ValueError as e:
             raise InvalidFile("unreadable header line", [str(e)]) from None
+        lines = (_EOL.sub("", ln) for ln in handle)  # split on \r\n, \n and \r only (not splitlines(): it also splits on \x0c, \x85, \u2028...)
 
         def pipe_rows() -> Rows:
             # A |text| field may hold a line break (a contract title with a newline): a line that does not split into the
             # header's width is joined with the next ones, up to MAX_FIELD_LINES, before the file is called invalid.
-            n = first + 1
-            while n < len(lines):
-                if not lines[n].strip():
-                    n += 1
+            number = 1  # the header was line 1 (blank lines before it are not counted; the reported number is approximate then)
+            for line in lines:
+                number += 1
+                if not line.strip():
                     continue
-                start, line, extra = n, lines[n], 0
-                n += 1
+                start, extra = number, 0
                 while True:
                     try:
                         # after a join the text has line breaks inside it: only a split whose unwrapped fields are numbers
@@ -108,15 +135,15 @@ def _read_csv(path: Path) -> tuple[Header, Rows]:
                         cells = list(split_pipe_row(line, len(header), numeric_bare=extra > 0))
                         break
                     except ValueError as e:
-                        if n < len(lines) and extra < MAX_FIELD_LINES:
-                            line, n, extra = f"{line}\n{lines[n]}", n + 1, extra + 1
-                            continue
-                        raise InvalidFile(f"line {start + 1}: {e}", [f"line {start + 1}: {e}"]) from None
-                yield start + 1, cells
+                        following = next(lines, None) if extra < MAX_FIELD_LINES else None
+                        if following is None:
+                            raise InvalidFile(f"line {start}: {e}", [f"line {start}: {e}"]) from None
+                        line, extra, number = f"{line}\n{following}", extra + 1, number + 1
+                yield start, cells
 
-        return header, pipe_rows()
+        return header, _CsvRows(handle, pipe_rows())
 
-    reader = csv.reader(io.StringIO(content, newline=""))
+    reader = csv.reader(itertools.chain([first], handle))
     try:
         header = next(reader)
     except (StopIteration, csv.Error) as e:
@@ -130,7 +157,7 @@ def _read_csv(path: Path) -> tuple[Header, Rows]:
         except csv.Error as e:
             raise InvalidFile(f"line {reader.line_num}: {e}", [f"line {reader.line_num}: {e}"]) from None
 
-    return header, csv_rows()
+    return header, _CsvRows(handle, csv_rows())
 
 
 def _read_xlsx(path: Path) -> tuple[Header, Rows]:
