@@ -9,7 +9,11 @@ export interface DebouncedQueryOptions {
   minLength: number;
 }
 
-/** The input text, and the debounced emission of the query it stands for. */
+/**
+ * The input text, and the debounced emission of the query it stands for.
+ * Known limit: if the outside sets `value` to the query this hook last emitted while the box holds something else
+ * (a too-short edit, say), nothing changes, so the box is not reset. Replace-only history makes this very unlikely.
+ */
 export function useDebouncedQuery({ value, onQueryChange, debounceMs, minLength }: DebouncedQueryOptions) {
   const [text, setTextState] = useState(value);
   const lastEmitted = useRef(value);

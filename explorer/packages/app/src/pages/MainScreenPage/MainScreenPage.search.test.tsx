@@ -1,10 +1,10 @@
 // Seam 3 for the search bar: typing is debounced into the URL (history replaced), and a superseded request is cancelled.
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
-import { createClient } from "../../graphql/client.ts";
+import { createClient, type GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -56,6 +56,63 @@ describe.each([
   });
 });
 
+describe("the placeholder", () => {
+  it("tells English readers that the data is in Romanian", () => {
+    openAt("/explore/");
+    render(<App client={fixtureClient().client} />);
+    expect(box()).toHaveAttribute("placeholder", expect.stringContaining("Romanian"));
+    expect(box()).toHaveAttribute("placeholder", expect.stringContaining("deszăpezire"));
+  });
+
+  it("is in Romanian at /ro/explore/", () => {
+    openAt("/ro/explore/");
+    render(<App client={fixtureClient().client} />);
+    const romanianBox = screen.getByRole("searchbox", { name: catalogue.ro.searchBar.label });
+    expect(romanianBox).toHaveAttribute("placeholder", catalogue.ro.searchBar.placeholder);
+    expect(catalogue.ro.searchBar.placeholder).toContain("deszăpezire");
+  });
+});
+
+/** A client that ignores the abort signal and holds every answer until the test releases it. */
+function heldClient() {
+  const real = fixtureClient().client;
+  const held: (() => void)[] = [];
+  const client: GraphqlClient = {
+    query: (op, variables) => {
+      const answer = real.query(op, variables);
+      return new Promise((resolve, reject) => void held.push(() => void answer.then(resolve, reject)));
+    },
+  };
+  return { client, held };
+}
+
+describe("a stale response", () => {
+  it.each([
+    ["/explore/", "contract"],
+    ["/explore/search", "zzzzzz"],
+  ])("never overwrites a newer one (%s)", async (url, typed) => {
+    openAt(url);
+    const { client, held } = heldClient();
+    render(<App client={client} />);
+    await waitFor(() => expect(held).toHaveLength(1));
+    await userEvent.type(box(), typed);
+    await waitFor(() => expect(held).toHaveLength(2));
+    expect(screen.getByRole("search")).toHaveAttribute("aria-busy", "true");
+
+    await act(async () => {
+      held[1]?.(); // the newer answer arrives first
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    await waitFor(() => expect(screen.getByRole("search")).not.toHaveAttribute("aria-busy", "true"));
+    await act(async () => {
+      held[0]?.(); // then the older one, which ignored the abort
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(screen.getByRole("search")).not.toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
 describe("a superseded request", () => {
   it.each([
     ["/explore/", "MainScreen"],
@@ -83,7 +140,7 @@ describe("a superseded request", () => {
     expect(screen.getByRole("search")).toHaveAttribute("aria-busy", "true");
   });
 
-  it("is aborted when the page unmounts, and its answer never lands", async () => {
+  it("is aborted when the page unmounts", async () => {
     openAt("/explore/");
     const signals: AbortSignal[] = [];
     const client = createClient({ fetch: (_i, init) => new Promise(() => void signals.push(init?.signal as AbortSignal)) });

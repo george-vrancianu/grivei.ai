@@ -57,7 +57,7 @@ export function SearchBar({ value, onQueryChange, loading = false, debounceMs = 
                 {loading && <CircularProgress size={16} aria-label={copy.loading} />}
                 {text !== "" && (
                   <IconButton aria-label={copy.clear} size="small" onClick={clearAndFocus} edge="end">
-                    ×
+                    <span aria-hidden="true">×</span>
                   </IconButton>
                 )}
               </>

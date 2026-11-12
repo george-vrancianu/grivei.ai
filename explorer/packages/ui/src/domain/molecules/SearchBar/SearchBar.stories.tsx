@@ -24,7 +24,7 @@ function Demo({ locale, initial = "", loading = false }: { locale: "en" | "ro"; 
 /** Nothing typed: the placeholder says the data is in Romanian. */
 export const Empty: Story = { render: (_a, { globals }) => <Demo locale={localeOf(globals["locale"])} /> };
 
-/** A query is committed (as from the URL): the text and the clear button show. */
+/** Text is being typed over a committed query (as from the URL): the clear button shows and the emission is still pending. */
 export const Typing: Story = {
   render: (_a, { globals }) => <Demo locale={localeOf(globals["locale"])} initial="deszăpezire" />,
   play: async ({ canvasElement }) => {
