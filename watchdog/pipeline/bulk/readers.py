@@ -397,6 +397,11 @@ def _ods_text(paragraph) -> str:
     return "".join(out)
 
 
+_ODS_ROW_CONTAINERS = frozenset(
+    _ODF_TABLE + t for t in ("table", "table-header-rows", "table-row-group", "table-rows")
+)
+
+
 def _ods_cell(cell) -> Cell:
     kind = cell.get(_ODF_OFFICE + "value-type")
     if kind is None:
@@ -428,15 +433,20 @@ def _ods_rows(path: Path):
         stream = archive.open("content.xml")
     except (zipfile.BadZipFile, KeyError, OSError) as e:
         raise InvalidFile("not a readable ODS file", [f"{type(e).__name__}: {e}"]) from None
-    sheet, number, table = -1, 0, None
+    sheet, number = -1, 0
+    containers: list = []  # open table / header-rows / row-group / rows elements: a row is removed from its own parent
     try:
         for event, element in ElementTree.iterparse(stream, events=("start", "end")):
             tag = element.tag
-            if event == "start":
-                if tag == _ODF_TABLE + "table":
-                    sheet, number, table = sheet + 1, 0, element
+            if tag in _ODS_ROW_CONTAINERS:
+                if event == "start":
+                    containers.append(element)
+                    if tag == _ODF_TABLE + "table":
+                        sheet, number = sheet + 1, 0
+                elif containers:
+                    containers.pop()
                 continue
-            if tag != _ODF_TABLE + "table-row":
+            if event == "start" or tag != _ODF_TABLE + "table-row":
                 continue
             repeat = int(element.get(_ODF_TABLE + "number-rows-repeated", "1"))
             cells: list[Cell] = []
@@ -453,8 +463,8 @@ def _ods_rows(path: Path):
                     pending = 0
                     cells.extend([value] * count)
             element.clear()
-            if table is not None:
-                table.remove(element)
+            if containers and element in containers[-1]:
+                containers[-1].remove(element)
             if not cells:
                 number += repeat
                 continue
@@ -463,6 +473,8 @@ def _ods_rows(path: Path):
                 yield sheet, number, list(cells)
     except ElementTree.ParseError as e:
         raise InvalidFile("not a readable ODS file", [f"ParseError: {e}"]) from None
+    except (TypeError, ValueError, AttributeError) as e:  # a cell the format allows but this reader cannot take (no value, a time with days ...)
+        raise InvalidFile("not a readable ODS file", [f"a cell could not be read: {type(e).__name__}: {e}"]) from None
     finally:
         stream.close()
         archive.close()

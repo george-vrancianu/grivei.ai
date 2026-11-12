@@ -487,12 +487,23 @@ def test_load_quarter_exits_0_when_the_quarter_loads(cli_world, archive, monkeyp
 def test_rebuild_and_load_quarter_refuse_to_run_while_a_refresh_holds_the_lock(cli_world, archive, monkeypatch, capsys):
     eli, loads, day = cli_world
     archive.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    archive.write_unit(source="seap", stream="bulk", kind="dan", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    archive.quarantine(archive.units()[-1], "header mismatch (fixture)")
     from pipeline.refresh.engine import locked
     with locked(archive) as got:
         assert got
         assert cli.main(["--archive", str(archive.root), "rebuild", "--db", "postgresql://x/y"]) == 1
         assert cli.main(["--archive", str(archive.root), "load-quarter", "2022Q2", "--db", "postgresql://x/y"]) == 1
     assert loads == [] and "holds the archive's lock" in capsys.readouterr().err
+    assert len(archive.quarantined()) == 1  # not requeued under the running build
+
+
+def test_load_quarter_counts_an_award_notice_quarter_as_archived(cli_world, archive, monkeypatch, capsys):
+    eli, loads, day = cli_world
+    archive.write_unit(source="seap", stream="bulk", kind="fara-anunt", unit="2022Q2", fetched_at=START, files={"f.csv": b"x"})
+    monkeypatch.setattr(cli, "rebuild", lambda a, db, *x, **k: loads.append(db) or RebuildSummary(files_loaded=1, records=1))
+    assert cli.main(["--archive", str(archive.root), "load-quarter", "2022Q2", "--db", "postgresql://x/y"]) == 0
+    assert loads == ["postgresql://x/y"]
 
 
 def test_rollback_and_cleanup_refuse_to_run_while_a_refresh_holds_the_lock(cli_world, archive, monkeypatch, capsys):

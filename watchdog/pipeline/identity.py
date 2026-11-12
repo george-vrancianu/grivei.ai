@@ -94,8 +94,29 @@ def name_key_text(name: str) -> str:
 
 
 _LEGAL_FORMS = frozenset(
-    "sc srl sa snc scs sca pfa ii if ltd gmbh spa sas sarl bv ag ood ad eood doo kft zrt llc inc srld sl ab oy as".split()
+    "sc ra scm coop srl sa snc scs sca pfa ii if ltd gmbh spa sas sarl bv ag ood ad eood doo kft zrt llc inc srld sl ab oy as sro se plc nv kg bt uab ou aps vzw".split()
 )
+
+
+_ORG_WORDS = frozenset(
+    """asociatia asociere asocierea fundatia consortiul consortium grup grupul societatea compania intreprindere
+    primaria consiliul consiliu universitatea spitalul scoala liceul institutul institut directia ministerul
+    regia cabinet cabinetul biserica parohia comuna orasul municipiul judetul agentia autoritatea
+    cooperativa uniunea federatia sindicatul clubul sportiv international romania group holding trading
+    company limited serviciul colegiul casa editura centrul inspectoratul oficiul administratia corporation corp research
+    engineering electronics elektronik publishing services service systems solutions software university journal hotel
+    media consulting consultancy association network trans""".split()
+)
+_SOLE_TRADER_FORMS = frozenset("pfa ii if".split())  # a sole trader published with a truncated CNP is still an individual
+_MAX_ASKED_DIGITS = 8  # as in anaf.py: a longer number is never confirmed by ANAF
+_TRUNCATED_CNP = re.compile(r"[1-8]\d{11}")
+_ID_CARD = re.compile(r"\d{6}|[A-Z]{2}\d{6}")
+
+
+def _shaped_like_a_person(spelling: str) -> bool:
+    """2 to 5 alphabetic words, none a legal form or an organisation word (`PFA`, `ASOCIATIA`, `PRIMARIA` ...)."""
+    words = name_key_text(spelling).split()
+    return 2 <= len(words) <= 5 and all(w.isalpha() and w not in _LEGAL_FORMS and w not in _ORG_WORDS for w in words)
 
 
 def compare_name(name: str) -> str:
@@ -231,6 +252,23 @@ def _loose_id(raw: str) -> str:
     return s.lstrip("0") if s.isdigit() else s
 
 
+def _is_person(spelling: str, raw_id: str | None, kind: str, unusable_cui: bool = False) -> bool:
+    """A winner no CUI ANAF knows and no VAT id resolves, that is an individual all the same (an override, checked before, pins
+    a misclassified company): a truncated CNP (12 digits starting 1-8) unless the name has a legal form or an organisation word
+    (a PFA still counts); an ID card number (6 digits) or series (`XX123456`) or no usable id at all with a name shaped like a
+    person's (see `_shaped_like_a_person`). A CUI is unusable when it is the authority's own (`unusable_cui`) or longer than
+    ANAF is ever asked about."""
+    s = re.sub(r"[^0-9A-Z]", "", (raw_id or "").upper())
+    if kind == "cui" and (unusable_cui or len(s.removeprefix("RO")) > _MAX_ASKED_DIGITS):
+        kind = "other"
+    if kind in ("none", "other") and _TRUNCATED_CNP.fullmatch(s):
+        words = set(name_key_text(spelling).split())
+        return not (words & (_LEGAL_FORMS | _ORG_WORDS) - _SOLE_TRADER_FORMS)
+    if not _shaped_like_a_person(spelling):
+        return False
+    return kind in ("none", "other") or (kind == "cui" and _ID_CARD.fullmatch(s) is not None)
+
+
 class Resolver:
     """Turns a winner (spelling + published id) into its entity. `anaf` maps a CUI ANAF found to its `compare_name`."""
 
@@ -252,11 +290,20 @@ class Resolver:
                 mismatch = True  # the supplier carries the authority's own CUI: unresolved (ADR 0003)
             elif (anaf_name := self.anaf.get(tax.value)) is not None:
                 differs = bool(spelling) and compare_name(spelling) != anaf_name
+                if (
+                    differs
+                    and len(tax.value) == 6
+                    and _shaped_like_a_person(spelling)
+                    and not set(compare_name(spelling).split()) & set(anaf_name.split())  # a renamed company shares a word
+                ):
+                    return NATURAL_PERSON  # an ID card number ANAF happens to know, under a person's name: never named
                 return Resolved(key=tax.value, identity="CUI", cui=tax.value, differs_from_anaf=differs)
         if spelling and (o := self.overrides.by_name.get(name_key_text(spelling))):
             return replace(self._overridden(o, spelling), cui_mismatch=mismatch)
         if tax.kind == "foreign_vat" and tax.value:
             return Resolved(key=vat_key(tax.value), identity="NAME_ONLY", foreign_vat_id=tax.value)
+        if spelling and name_key_text(spelling) and _is_person(spelling, raw_id, tax.kind, mismatch):
+            return replace(NATURAL_PERSON, cui_mismatch=True) if mismatch else NATURAL_PERSON  # an individual without a CNP: never named either (ADR 0003); the badge is a Record fact
         if spelling and name_key_text(spelling):
             return Resolved(key=name_key(spelling), identity="NAME_ONLY", cui_mismatch=mismatch)
         return Resolved(key=None, identity=None, cui_mismatch=mismatch)  # no name and no usable id: nobody to link

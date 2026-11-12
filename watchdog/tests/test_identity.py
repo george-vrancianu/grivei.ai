@@ -190,3 +190,90 @@ def test_the_shipped_override_file_is_valid_and_has_a_reason_per_entry():
 
     overrides = Overrides.load(DEFAULT_OVERRIDES)
     assert all(o.reason for o in (*overrides.by_id.values(), *overrides.by_name.values()))
+
+
+@pytest.mark.parametrize(
+    "raw_id",
+    [None, "", "-", "123456", "654321", "AB123456", "ab 123456", "199010112345", "RO 345678"],
+    ids=["none", "blank", "dash", "6-digit", "6-digit-b", "id-card-series", "id-card-lower", "truncated-cnp", "ro-6-digit"],
+)
+def test_an_individual_published_without_a_cnp_is_a_natural_person_too(raw_id):
+    got = Resolver(ANAF).supplier("PERSOANA FIZICA A", raw_id)
+    assert got is NATURAL_PERSON
+
+
+def test_a_truncated_cnp_is_a_natural_person_whatever_the_name_looks_like():
+    assert Resolver(ANAF).supplier("ALFA 2000 &", "199010112345") is NATURAL_PERSON
+
+
+@pytest.mark.parametrize(
+    "name, raw_id",
+    [
+        ("ALFA CONSTRUCT SRL", None),
+        ("ALFA CONSTRUCT SRL", "123456"),
+        ("PFA PERSOANA FIZICA A", None),
+        ("ASOCIATIA EXEMPLU", ""),
+        ("PRIMARIA ORASULUI EXEMPLU", "-"),
+        ("Siemens", None),  # one word
+        ("ALFA 2000 BETA", None),  # a digit: no person's name
+        ("ASOCIERE ALFA - BETA - GAMA", None),
+    ],
+)
+def test_an_organisation_with_no_usable_id_stays_a_name_only_supplier(name, raw_id):
+    got = Resolver(ANAF).supplier(name, raw_id)
+    assert got.identity == "NAME_ONLY" and not got.natural_person
+
+
+def test_a_six_digit_cui_anaf_knows_is_a_company_not_an_id_card():
+    got = Resolver({"100000": compare_name("ALFA SRL")}).supplier("ALFA SRL", "100000")
+    assert got.identity == "CUI" and got.cui == "100000"
+
+
+def test_an_override_pins_a_misclassified_company_before_the_person_rule(tmp_path):
+    f = tmp_path / "o.toml"
+    f.write_text('[[override]]\nname = "Ion Exemplu"\nkey = "company-ion-exemplu"\nreason = "a company published by a person-like name"\n')
+    got = Resolver(ANAF, Overrides.load(f)).supplier("Ion Exemplu", None)
+    assert got.identity == "NAME_ONLY" and got.curated and not got.natural_person
+
+
+def test_a_six_digit_id_anaf_knows_under_another_name_is_a_person_when_the_name_looks_like_one():
+    anaf = {"100000": compare_name("ALFA SRL")}
+    assert Resolver(anaf).supplier("PERSOANA FIZICA A", "100000") is NATURAL_PERSON
+    got = Resolver(anaf).supplier("ALFA SRL", "100000")  # the company's own spelling
+    assert got.identity == "CUI" and got.cui == "100000"
+    got = Resolver(anaf).supplier("BETA GAMA SRL", "100000")  # renamed company, not person-shaped
+    assert got.identity == "CUI" and got.differs_from_anaf
+
+
+def test_a_six_digit_id_with_a_name_sharing_a_word_with_anaf_stays_a_renamed_company():
+    anaf = {"100000": compare_name("COMPANIA NATIONALA MONETARIA EXEMPLU")}
+    got = Resolver(anaf).supplier("MONETARIA EXEMPLU", "100000")
+    assert got.identity == "CUI" and got.cui == "100000" and got.differs_from_anaf and not got.natural_person
+    got = Resolver(anaf).supplier("R.A. MONETARIA EXEMPLU", "100000")
+    assert got.identity == "CUI" and not got.natural_person
+
+
+def test_a_person_paid_under_the_authoritys_own_cui_is_a_natural_person():
+    got = Resolver(ANAF).supplier("PERSOANA FIZICA A", "1000009", authority_raw_cui="1000009")
+    assert got.natural_person and got.cui_mismatch and got.key is None
+    got = Resolver(ANAF).supplier("PRIMARIA ORASULUI EXEMPLU", "1000009", authority_raw_cui="1000009")
+    assert got.identity == "NAME_ONLY" and got.cui_mismatch
+
+
+def test_a_nine_digit_id_ANAF_is_never_asked_about_is_a_person_when_the_name_looks_like_one():
+    assert Resolver(ANAF).supplier("PERSOANA FIZICA A", "123456789") is NATURAL_PERSON
+    assert Resolver(ANAF).supplier("ALFA CONSTRUCT SRL", "123456789").identity == "NAME_ONLY"
+
+
+@pytest.mark.parametrize(
+    "name, person",
+    [
+        ("INSPECTORATUL SCOLAR JUDETEAN EXEMPLU", False),
+        ("ALFA CONSTRUCT SRL", False),
+        ("BETA SOLUTIONS AB", False),
+        ("PFA PERSOANA FIZICA A", True),
+        ("ALFA 2000 &", True),
+    ],
+)
+def test_a_truncated_cnp_yields_to_a_legal_form_or_organisation_word(name, person):
+    assert (Resolver(ANAF).supplier(name, "199010112345") is NATURAL_PERSON) is person

@@ -136,7 +136,7 @@ def _winner_json(name: str | None, w: Resolved, share: int | None = None) -> dic
     """What `seap.record.winners` keeps of a winner. A natural person keeps nothing: no name, no key, no id (but a share slot).
     `share` is the winner's equal share of the value in bani (a string, like every Bani); the key is there only for several winners."""
     if w.natural_person:
-        out = {"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": False}
+        out = {"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": w.cui_mismatch}
     else:
         out = {"name": name, "key": w.key, "identity": w.identity, "naturalPerson": False, "curated": w.curated,
                "differsFromAnaf": w.differs_from_anaf, "cuiMismatch": w.cui_mismatch}

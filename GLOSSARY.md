@@ -61,7 +61,7 @@ A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), ide
 _Avoid_: unknown supplier, unidentified supplier
 
 **Natural-person supplier**:
-An individual who wins a record; shown only as "Persoană fizică", never named, never given an entity page.
+An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", never named, never given an entity page.
 _Avoid_: PFA (when any individual is meant), person (alone)
 
 **Alias**:
