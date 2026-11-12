@@ -234,3 +234,38 @@ def test_an_override_pins_a_misclassified_company_before_the_person_rule(tmp_pat
     f.write_text('[[override]]\nname = "Ion Exemplu"\nkey = "company-ion-exemplu"\nreason = "a company published by a person-like name"\n')
     got = Resolver(ANAF, Overrides.load(f)).supplier("Ion Exemplu", None)
     assert got.identity == "NAME_ONLY" and got.curated and not got.natural_person
+
+
+def test_a_six_digit_id_anaf_knows_under_another_name_is_a_person_when_the_name_looks_like_one():
+    anaf = {"100000": compare_name("ALFA SRL")}
+    assert Resolver(anaf).supplier("PERSOANA FIZICA A", "100000") is NATURAL_PERSON
+    got = Resolver(anaf).supplier("ALFA SRL", "100000")  # the company's own spelling
+    assert got.identity == "CUI" and got.cui == "100000"
+    got = Resolver(anaf).supplier("BETA GAMA SRL", "100000")  # renamed company, not person-shaped
+    assert got.identity == "CUI" and got.differs_from_anaf
+
+
+def test_a_person_paid_under_the_authoritys_own_cui_is_a_natural_person():
+    got = Resolver(ANAF).supplier("PERSOANA FIZICA A", "1000009", authority_raw_cui="1000009")
+    assert got is NATURAL_PERSON
+    got = Resolver(ANAF).supplier("PRIMARIA ORASULUI EXEMPLU", "1000009", authority_raw_cui="1000009")
+    assert got.identity == "NAME_ONLY" and got.cui_mismatch
+
+
+def test_a_nine_digit_id_ANAF_is_never_asked_about_is_a_person_when_the_name_looks_like_one():
+    assert Resolver(ANAF).supplier("PERSOANA FIZICA A", "123456789") is NATURAL_PERSON
+    assert Resolver(ANAF).supplier("ALFA CONSTRUCT SRL", "123456789").identity == "NAME_ONLY"
+
+
+@pytest.mark.parametrize(
+    "name, person",
+    [
+        ("INSPECTORATUL SCOLAR JUDETEAN EXEMPLU", False),
+        ("ALFA CONSTRUCT SRL", False),
+        ("BETA SOLUTIONS AB", False),
+        ("PFA PERSOANA FIZICA A", True),
+        ("ALFA 2000 &", True),
+    ],
+)
+def test_a_truncated_cnp_yields_to_a_legal_form_or_organisation_word(name, person):
+    assert (Resolver(ANAF).supplier(name, "199010112345") is NATURAL_PERSON) is person
