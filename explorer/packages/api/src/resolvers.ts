@@ -113,7 +113,7 @@ export function rootValue(store: Store) {
         kind: r.provenance.kind,
         via: r.provenance.via,
         fetchedAt: r.provenance.fetchedAt,
-        url: r.provenance.url ?? (r.provenance.kind === "BULK" ? seapLinkUrl(r.code) : null),
+        url: r.provenance.url ?? seapLinkUrl(r.code),
       },
     };
   }

@@ -280,6 +280,11 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
       for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
     }
     const now = new Date().toISOString();
+    const fileOf = (id: number) => {
+      const f = files.get(id);
+      if (!f) throw new Error(`seap.source_file ${id} is missing`); // provenance is never invented
+      return f;
+    };
     return parsed.map(({ r, winners }) => ({
       code: r.code,
       title: r.title,
@@ -301,8 +306,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
       crawlStatus: r.crawl_status ?? null,
       provenance: {
         kind: r.record_via === "CRAWL" ? "CRAWL" : "BULK",
-        via: files.get(r.source_file_id)?.via ?? null,
-        fetchedAt: files.get(r.source_file_id)?.fetchedAt ?? now,
+        via: fileOf(r.source_file_id).via,
+        fetchedAt: fileOf(r.source_file_id).fetchedAt,
         url: r.url,
       },
     }));
@@ -446,9 +451,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
       const { rows } = await pool.query(
         `SELECT r.code, r.title, r.award_date::text AS date, r.kind, r.channel, r.value_bani::text AS value,
                 r.counted_bani::text AS counted, r.authority_key, r.authority_name, r.winners, r.badges, r.procedure,
-                r.suspect_rule, r.suspect_threshold_bani::text AS suspect_threshold, r.framework_role, r.contract_type, r.cpv_code, r.cpv_description, r.crawl_status, r.via AS record_via, r.url, r.source_file_id, f.via,
-                to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
-           FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = $1`,
+                r.suspect_rule, r.suspect_threshold_bani::text AS suspect_threshold, r.framework_role, r.contract_type, r.cpv_code, r.cpv_description, r.crawl_status, r.via AS record_via, r.url, r.source_file_id
+           FROM seap.record r WHERE r.code = $1`,
         [code],
       );
       const r = rows[0];

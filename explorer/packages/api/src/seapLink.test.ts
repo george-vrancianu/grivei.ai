@@ -167,6 +167,46 @@ describe("one lookup per code", () => {
   });
 });
 
+describe("the upstream is not hammered through the public route", () => {
+  it("never more than maxConcurrent lookups in flight; the overflow is 503 with Retry-After and no upstream call", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const release: (() => void)[] = [];
+    const slowFetch: typeof fetch = async (_u, init) => {
+      const body = JSON.parse(String(init?.body)) as { uniqueIdentificationCode: string };
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise<void>((r) => release.push(r));
+      inFlight -= 1;
+      return new Response(JSON.stringify(listRow({ directAcquisitionId: 1, uniqueIdentificationCode: body.uniqueIdentificationCode })), { status: 200 });
+    };
+    const link = createSeapLink({ baseUrl: upstreamBase, fetch: slowFetch, maxConcurrent: 2 });
+    await withApi(link, async (get) => {
+      const first = [get("/source/seap/DA1"), get("/source/seap/DA2")];
+      await new Promise((r) => setTimeout(r, 50));
+      const over = await get("/source/seap/DA3");
+      expect(over.status).toBe(503);
+      expect(over.headers.get("retry-after")).toBe("2");
+      expect(over.headers.get("cache-control")).toBe("no-store");
+      expect(link.upstreamCalls).toBe(2);
+      expect(peak).toBe(2);
+      release.splice(0).forEach((r) => r());
+      expect((await Promise.all(first)).map((r) => r.status)).toEqual([302, 302]);
+      // the refused code was not remembered: once a slot is free it is looked up
+      const again = get("/source/seap/DA3");
+      await new Promise((r) => setTimeout(r, 50));
+      release.splice(0).forEach((r) => r());
+      expect((await again).status).toBe(302);
+      expect(link.upstreamCalls).toBe(3);
+    });
+  });
+
+  it("an upstream answer over the size cap is a 502", async () => {
+    const link = createSeapLink({ baseUrl: upstreamBase, maxBodyBytes: 10, fetch: async () => new Response(JSON.stringify({ items: [], pad: "x".repeat(50) })) });
+    expect((await link.resolve("DA9")).status).toBe(502);
+  });
+});
+
 describe("answers that are not a redirect", () => {
   it("a code that is not on SEAP: 404, remembered only briefly", async () => {
     let t = 0;

@@ -79,12 +79,17 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema(), op
         try {
           if (req.method === "GET" && req.url === "/healthz") return send(200, { ok: true });
           // "Check in SEAP": GET /source/seap/<code> redirects to the public page (seapLink.ts); no GraphQL involved
-          const sourceCode = req.method === "GET" || req.method === "HEAD" ? codeFromPath((req.url ?? "").split("?")[0]!) : undefined;
-          if (sourceCode !== undefined) {
-            const r = sourceCode === null ? { status: 404 as const, body: "Unknown code.\n" } : await seapLink.resolve(sourceCode);
+          const source = req.method === "GET" || req.method === "HEAD" ? codeFromPath((req.url ?? "").split("?")[0]!) : { route: false as const };
+          if (source.route) {
+            const r = await seapLink.resolve(source.code);
             if (gone.signal.aborted) return;
-            if (r.status === 302) res.writeHead(302, { location: r.location, "cache-control": "no-store" }).end();
-            else res.writeHead(r.status, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" }).end(req.method === "HEAD" ? undefined : r.body);
+            // a found page never changes, so it may be cached; every other answer is not
+            if (r.status === 302) res.writeHead(302, { location: r.location, "cache-control": "public, max-age=86400" }).end();
+            else {
+              const headers: Record<string, string | number> = { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" };
+              if (r.status === 503) headers["retry-after"] = r.retryAfterSeconds;
+              res.writeHead(r.status, headers).end(req.method === "HEAD" ? undefined : r.body);
+            }
             return;
           }
           if (req.method !== "POST" || !req.url?.startsWith("/graphql")) {

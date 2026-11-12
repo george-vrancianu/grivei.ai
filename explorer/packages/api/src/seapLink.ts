@@ -71,15 +71,23 @@ export interface SeapLinkOptions {
   /** How long "no such code" is remembered, ms. Failures are never remembered. */
   notFoundTtlMs?: number;
   now?: () => number;
+  /** Most upstream lookups in flight at once, over all codes (the route is public: it must not become a way to hammer e-licitatie). More get 503. */
+  maxConcurrent?: number;
+  /** Largest upstream answer read, bytes. */
+  maxBodyBytes?: number;
 }
 
 export type LinkResult =
   | { status: 302; location: string }
-  | { status: 404 | 502; body: string };
+  | { status: 404 | 502; body: string }
+  | { status: 503; body: string; retryAfterSeconds: number };
+
+/** The answer for a code that is not valid text or not a shape we serve. */
+export const UNKNOWN_CODE: LinkResult = { status: 404, body: "Unknown code.\n" };
 
 export interface SeapLink {
-  /** Resolve a code (as it came in the URL, already percent-decoded) to the answer. Never throws. */
-  resolve(raw: string): Promise<LinkResult>;
+  /** Resolve a code (as it came in the URL, already percent-decoded; null when it was not valid text) to the answer. Never throws. */
+  resolve(raw: string | null): Promise<LinkResult>;
   /** Upstream calls made so far (tests). */
   readonly upstreamCalls: number;
 }
@@ -96,12 +104,16 @@ export function createSeapLink(options: SeapLinkOptions = {}): SeapLink {
   const maxEntries = options.maxEntries ?? 10_000;
   const notFoundTtlMs = options.notFoundTtlMs ?? 60_000;
   const now = options.now ?? Date.now;
+  const maxConcurrent = options.maxConcurrent ?? 4;
+  const maxBodyBytes = options.maxBodyBytes ?? 1_000_000;
+  let active = 0; // upstream lookups running now
 
   const cache = new Map<string, Entry>(); // insertion order = age; a hit is moved to the end
   const inFlight = new Map<string, Promise<Entry>>(); // concurrent requests for one code share one upstream call
   let upstreamCalls = 0;
 
   class UpstreamError extends Error {}
+  class Busy extends Error {}
 
   async function post(path: string, body: unknown): Promise<{ items?: unknown }> {
     upstreamCalls += 1;
@@ -118,7 +130,10 @@ export function createSeapLink(options: SeapLinkOptions = {}): SeapLink {
     }
     if (!res.ok) throw new UpstreamError(`HTTP ${res.status}`);
     try {
-      const json = (await res.json()) as unknown;
+      const declared = Number(res.headers.get("content-length") ?? 0);
+      const text = await res.text();
+      if (declared > maxBodyBytes || text.length > maxBodyBytes) throw new Error("too big");
+      const json = JSON.parse(text) as unknown;
       if (typeof json !== "object" || json === null) throw new Error("not an object");
       return json as { items?: unknown };
     } catch {
@@ -174,13 +189,18 @@ export function createSeapLink(options: SeapLinkOptions = {}): SeapLink {
     }
     const pending = inFlight.get(key);
     if (pending) return pending;
+    if (active >= maxConcurrent) throw new Busy(); // shed load rather than queue: nothing is cached, the client retries
+    active += 1;
     const run = (async () => {
       const path = await lookup(parsed);
       // a found id is stable; "not found" is only remembered briefly (the notice may be published a little later)
       const entry: Entry = { path, until: path === null ? now() + notFoundTtlMs : Infinity };
       remember(key, entry);
       return entry;
-    })().finally(() => inFlight.delete(key));
+    })().finally(() => {
+      active -= 1;
+      inFlight.delete(key);
+    });
     inFlight.set(key, run);
     return run;
   }
@@ -190,12 +210,13 @@ export function createSeapLink(options: SeapLinkOptions = {}): SeapLink {
       return upstreamCalls;
     },
     async resolve(raw) {
-      const parsed = parseCode(raw);
-      if (!parsed) return { status: 404, body: "Unknown code.\n" };
+      const parsed = raw === null ? null : parseCode(raw);
+      if (!parsed) return UNKNOWN_CODE;
       try {
         const { path } = await entryFor(parsed);
         return path === null ? { status: 404, body: "No such code in SEAP.\n" } : { status: 302, location: `${base}${path}` };
       } catch (e) {
+        if (e instanceof Busy) return { status: 503, body: "Too many lookups at once; try again shortly.\n", retryAfterSeconds: 2 };
         if (!(e instanceof UpstreamError)) console.error(e);
         return { status: 502, body: "SEAP did not answer.\n" };
       }
@@ -212,13 +233,15 @@ export function seapLinkUrl(code: string, publicBase: string | undefined = proce
   return `${(publicBase ?? "").replace(/\/+$/, "")}/source/seap/${encodeURIComponent(code)}`;
 }
 
-/** The code in `/source/seap/<code>` (percent-decoded), or null when the path is not that route. */
-export function codeFromPath(pathname: string): string | null | undefined {
+/**
+ * `{ route: false }` when the path is not `/source/seap/<code>`; otherwise the percent-decoded code, or `null` when it is not valid text.
+ */
+export function codeFromPath(pathname: string): { route: false } | { route: true; code: string | null } {
   const m = /^\/source\/seap\/([^/]*)$/.exec(pathname);
-  if (!m) return undefined; // not this route
+  if (!m) return { route: false };
   try {
-    return decodeURIComponent(m[1]!);
+    return { route: true, code: decodeURIComponent(m[1]!) };
   } catch {
-    return null; // this route, but the code is not valid text
+    return { route: true, code: null };
   }
 }
