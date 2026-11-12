@@ -138,3 +138,28 @@ def test_the_shipped_batches_yield_items():
         items = fixture_items(batch)
         kinds = {i.kind for i in items}
         assert kinds == {"da", "contracts"} and all(isinstance(i, Item) and i.quarter[:2] == "20" for i in items)
+
+
+def test_the_shipped_brasov_batch_holds_the_152_das_of_the_5_measurement_in_the_reference_quarter():
+    from pipeline.acceptance import BATCH_DIR, DEFAULT_BATCHES, REFERENCE, REFERENCE_AUTHORITY, REFERENCE_QUARTER
+
+    batch = json.loads((BATCH_DIR / DEFAULT_BATCHES[0]).read_text(encoding="utf-8"))
+    assert batch["authority"]["cui"] == REFERENCE_AUTHORITY
+    das = [i for i in fixture_items(batch) if i.kind == "da" and i.quarter == REFERENCE_QUARTER]
+    assert len(das) == REFERENCE["da"][1] == 152  # research/seap-bulk-sources: "All 152 DAs that the crawl shows as Oferta acceptata and published in the quarter"
+    assert "4384206" not in {json.loads((BATCH_DIR / DEFAULT_BATCHES[1]).read_text(encoding="utf-8"))["authority"]["cui"]}  # Timisoara was not part of #5
+
+
+def test_contracts_go_bulk_to_crawl_and_the_misses_are_the_bulk_ones_the_batch_lacks():
+    from pipeline.acceptance import contracts_in_batch
+
+    assert contracts_in_batch(["CAN1~1", "CAN1145000~27030", "CAN2~3"], {"CAN1~1", "CAN2~3", "CAN9~9"}) == (2, ["CAN1145000~27030"])
+    assert contracts_in_batch([], {"x"}) == (0, [])
+
+
+def test_the_week_prints_the_mix_of_triggers_and_timer_only_ignores_hand_started_runs():
+    runs = [run(d) for d in DAYS[:-1]] + [run("2026-11-07", trigger="manual")]
+    ok, lines = week_report(runs, date(2026, 11, 7))
+    assert ok and "triggers in the window: 1 manual, 6 timer" in lines[0]
+    ok, lines = week_report(runs, date(2026, 11, 7), timer_only=True)
+    assert not ok and "PROBLEM: 2026-11-07: no refresh run" in lines and "(timer-triggered only)" in lines[0]

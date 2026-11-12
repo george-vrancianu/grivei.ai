@@ -5,7 +5,7 @@ import json
 import pytest
 
 from pipeline import bench
-from pipeline.bench import build_where, plan_tasks, rollup_plan, state_of, summarize, verdict
+from pipeline.bench import build_where, judge_scans, plan_tasks, rollup_plan, state_of, summarize, verdict
 
 
 def test_the_last_token_is_a_regex_prefix_and_the_others_must_all_match():
@@ -60,11 +60,24 @@ def _tasks(f, **kw):
     return {t.name: t for t in plan_tasks(f, **kw)}
 
 
-def test_a_keystroke_is_six_parallel_tasks_and_the_scan_runs_the_statements_the_api_runs():
+def test_a_text_keystroke_is_parallel_tasks_with_one_map_and_the_goto_and_the_scan_runs_the_statements_the_api_runs():
     t = _tasks({"q": "ma"})
-    assert list(t) == ["total", "map_authority", "map_supplier", "entities_authority", "entities_supplier", "records"]
+    assert list(t) == ["total", "map", "entities_authority", "entities_supplier", "records", "goto"]  # ONE map: MainScreen asks for one side
     assert {n: x.serving for n, x in t.items()} == {n: "scan" for n in t}
-    assert t["entities_supplier"].statements == ["entities_supplier_cardinality", "entities_supplier_rank|entities_supplier_terms", "entities_supplier_stats"]
+    assert t["entities_supplier"].statements == ["entities_supplier_cardinality", "entities_supplier_rank", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement"]
+    assert t["entities_supplier"].alternatives == ["entities_supplier_terms"]
+    assert t["map"].statements == ["map_totals", "map_entities"] and not t["map"].judged_in_rollup_state
+    assert t["records"].statements == ["records_count", "records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]
+    assert "goto" not in _tasks({}) and "goto" not in _tasks({"channel": "CONTRACT"})  # Go-to depends on the query alone
+
+
+def test_the_map_is_the_side_the_filter_names_authority_by_default():
+    rec = Recorder()
+    _tasks({"q": "ma"})["map"].run(rec)
+    assert "authority_area AS area" in rec.calls[0][1] and "count(DISTINCT authority_key)" in rec.calls[1][1]
+    rec = Recorder()
+    _tasks({"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"})["map"].run(rec)
+    assert "supplier_area AS area" in rec.calls[0][1] and "GROUP BY supplier_area, record_code" in rec.calls[0][1] and "count(DISTINCT supplier_key)" in rec.calls[1][1]
 
 
 class Recorder:
@@ -79,18 +92,33 @@ class Recorder:
         return self.answers.get(name, [])
 
 
-def test_the_empty_state_reads_the_rollup_for_total_entities_and_the_records_count_but_scans_the_map():
+def test_the_empty_state_reads_the_rollup_for_total_and_entities_but_scans_the_map():
     t = _tasks({})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map_authority": "scan", "map_supplier": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
-    rec = Recorder()
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
+    assert t["total"].rollup_statements == ["total"] and t["entities_supplier"].rollup_statements == ["entities_supplier_rank"]
+    rec = Recorder({"entities_supplier_rank": [("k1", "1", 1)]})
     t["total"].run(rec)
     t["entities_supplier"].run(rec)
     assert "seap.rollup_cube" in rec.calls[0][1] and "seap.search" not in rec.calls[0][1]
     assert "seap.rollup_entity" in rec.calls[1][1] and "seap.search" not in rec.calls[1][1] and rec.calls[1][2] == ["SUPPLIER"]
-    scan = Recorder({"records_page": [("DA1",)]})
-    t["records"].run(scan)
-    assert [c[0] for c in scan.calls] == ["records_page", "records_hydrate"]  # the count comes from the rollup total, the page is the Top-K on the index
-    assert "winner_position = 1 ORDER BY value_bani DESC NULLS LAST, record_code LIMIT 50" in scan.calls[0][1]
+    assert [c[0] for c in rec.calls] == ["total", "entities_supplier_rank", "entities_supplier_entities", "entities_supplier_placement"]
+    assert "core.entity" in rec.calls[2][1] and "core.placement" in rec.calls[3][1] and rec.calls[3][2] == [["k1"]]
+
+
+def test_the_empty_states_records_page_is_store_records_on_the_record_table_not_the_index():
+    rec = Recorder({"records_page": [("4384206", 7, [{"key": "27272953"}, {"name": "natural person"}])]})
+    _tasks({})["records"].run(rec)
+    assert [c[0] for c in rec.calls] == ["records_page", "records_entities", "records_placement", "records_files"]
+    assert "FROM seap.record ORDER BY value_bani DESC NULLS LAST, code LIMIT 50" in rec.calls[0][1] and "seap.search" not in rec.calls[0][1]
+    assert rec.calls[1][2] == [["27272953", "4384206"]] and rec.calls[3][2] == [[7]]
+
+
+def test_chips_only_records_take_the_count_from_the_rollup_total_and_the_page_from_the_index():
+    t = _tasks({"channel": "CONTRACT"})["records"]
+    rec = Recorder({"records_page": [("DA1",)], "records_hydrate": [("4384206", 3, [])]})
+    t.run(rec)
+    assert [c[0] for c in rec.calls] == ["records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]  # no count statement
+    assert "winner_position = 1 ORDER BY value_bani DESC NULLS LAST, record_code LIMIT 50" in rec.calls[0][1] and "seap.search" in rec.calls[0][1]
 
 
 def test_chips_the_cube_serves_become_year_channel_bucket_signals_predicates_on_the_rollup():
@@ -109,8 +137,8 @@ def test_the_entity_tab_asks_cardinality_then_ranks_then_reads_the_pages_stats()
     t = _tasks({"q": "ma"})["entities_authority"]
     rec = Recorder({"entities_authority_cardinality": [({"value": 12.4},)], "entities_authority_rank": [("k1", "100", 2), ("k2", "50", 2)]})
     t.run(rec)
-    assert [c[0] for c in rec.calls] == ["entities_authority_cardinality", "entities_authority_rank", "entities_authority_stats"]
-    assert rec.calls[2][2][-1] == ["k1", "k2"]
+    assert [c[0] for c in rec.calls] == ["entities_authority_cardinality", "entities_authority_rank", "entities_authority_stats", "entities_authority_entities", "entities_authority_placement"]
+    assert rec.calls[2][2][-1] == ["k1", "k2"] and rec.calls[3][2] == [["k1", "k2"]]
     assert "pdb.exists()" in rec.calls[1][1] and "ORDER BY sum(share_bani) DESC NULLS LAST, authority_key LIMIT 50" in rec.calls[1][1]
 
 
@@ -119,7 +147,7 @@ def test_above_the_group_limit_the_terms_aggregation_ranks_instead():
     spec = json.dumps({"terms": {"field": "supplier_key", "size": 51, "order": {"s": "desc"}}, "aggs": {"s": {"sum": {"field": "share_bani"}}}})
     rec = Recorder({"entities_supplier_cardinality": [({"value": 5000},)], "entities_supplier_terms": [({"buckets": [{"key": "a", "s": {"value": 1}}, {"key": None, "s": {"value": 1}}]},)]})
     t.run(rec)
-    assert [c[0] for c in rec.calls] == ["entities_supplier_cardinality", "entities_supplier_terms", "entities_supplier_stats"]
+    assert [c[0] for c in rec.calls] == ["entities_supplier_cardinality", "entities_supplier_terms", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement"]
     assert rec.calls[1][2][0] == spec and rec.calls[2][2][-1] == ["a"]  # a natural person (null key) is not looked up
 
 
@@ -127,6 +155,14 @@ def test_supplier_county_counts_distinct_records_and_groups_the_page_per_record(
     rec = Recorder({"records_page": [("DA1",)]})
     _tasks({"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"})["records"].run(rec)
     assert "count(DISTINCT record_code)" in rec.calls[0][1] and "GROUP BY record_code, value_bani, award_date" in rec.calls[1][1]
+
+
+def test_the_goto_lookup_is_by_cui_for_a_number_and_by_folded_name_otherwise():
+    rec = Recorder()
+    _tasks({"q": "RO4384206"})["goto"].run(rec)
+    _tasks({"q": "municipiul brasov"})["goto"].run(rec)
+    assert "key = %s AND identity = 'CUI'" in rec.calls[0][1] and rec.calls[0][2] == ["4384206"]
+    assert "name_folded = %s" in rec.calls[1][1] and rec.calls[1][2] == ["municipiul brasov"]
 
 
 def test_summaries_use_nearest_rank_percentiles():
@@ -152,14 +188,15 @@ def test_a_text_query_passes_under_the_threshold_on_cold_and_warm_p95():
 
 
 def test_the_empty_state_is_judged_on_the_rollup_tasks_and_must_really_use_the_rollup():
-    serving = {"total": "rollup", "map_authority": "scan", "entities_authority": "rollup", "records": "rollup"}
-    assert verdict(_entry("empty", 900, 40, serving=serving, rollup_verified=True), 500)[0]  # the map scan (900) is the cache's business
-    assert not verdict(_entry("empty", 900, 40, serving=serving, rollup_verified=True), 500, strict_maps=True)[0]
-    ok, why = verdict(_entry("empty", 40, 40, serving={**serving, "total": "scan"}, rollup_verified=True), 500)
+    serving = {"total": "rollup", "map": "scan", "entities_authority": "rollup", "records": "rollup"}
+    judged = ["total", "entities_authority", "records"]  # the map task is not judged in the rollup states
+    assert verdict(_entry("empty", 900, 40, serving=serving, rollup_judged=judged, rollup_verified=True), 500)[0]  # the map scan (900) is the cache's business
+    assert not verdict(_entry("empty", 900, 40, serving=serving, rollup_judged=judged, rollup_verified=True), 500, strict_maps=True)[0]
+    ok, why = verdict(_entry("empty", 40, 40, serving={**serving, "total": "scan"}, rollup_judged=judged, rollup_verified=True), 500)
     assert not ok and "not served by the rollup" in why
-    ok, why = verdict(_entry("chips", 40, 40, serving=serving, rollup_verified=False), 500)
+    ok, why = verdict(_entry("chips", 40, 40, serving=serving, rollup_judged=judged, rollup_verified=False), 500)
     assert not ok and "EXPLAIN" in why
-    assert not verdict(_entry("empty", 40, 600, serving=serving, rollup_verified=True), 500)[0]
+    assert not verdict(_entry("empty", 40, 600, serving=serving, rollup_judged=judged, rollup_verified=True), 500)[0]
 
 
 def test_a_chips_only_state_the_rollup_cannot_serve_is_judged_like_text():
@@ -220,3 +257,48 @@ def test_api_mode_posts_the_persisted_operation_and_times_first_then_repeats(mon
     e = report["queries"][0]
     assert len(calls) == 4 and calls[0] == ("http://api/graphql", "id1", {"q": "ma"})
     assert e["wall_ms"]["cold"] == 900.0 and e["wall_ms"]["median"] == 20.0 and not e["pass"] and report["mode"] == "api"
+
+
+def test_the_states_the_cache_warms_are_the_empty_one_and_the_two_character_prefixes_alone():
+    assert bench.expect_cached({}) and bench.expect_cached({"q": "ma"}) and bench.expect_cached({"q": "Ma"})
+    assert bench.expect_cached({"q": "SRL"})  # folds to nothing: the empty state
+    for not_warmed in ({"q": "mal"}, {"q": "m"}, {"q": "ma re"}, {"q": "ma", "channel": "CONTRACT"}, {"channel": "CONTRACT"}, {"q": "ma", "hasSignals": False}):
+        assert not bench.expect_cached(not_warmed), not_warmed
+    assert bench.expect_cached({"q": "ma", "channel": None, "badges": []})
+
+
+def _api(monkeypatch, first_ms):
+    calls = []
+
+    def fake(url, op_id, f, timeout=60.0):
+        calls.append(f)
+        return (first_ms if sum(1 for c in calls if c == f) == 1 else 5.0), {}
+
+    monkeypatch.setattr(bench, "api_request", fake)
+
+
+def test_api_mode_fails_a_warmed_state_whose_first_request_was_slow_and_says_so(monkeypatch):
+    _api(monkeypatch, 300.0)  # under the 500 ms gate, over the 50 ms a cached answer takes
+    report = bench.run_api("http://api/graphql", "id1", [{"label": "ma", "filter": {"q": "ma"}}, {"label": "mal", "filter": {"q": "mal"}}], repetitions=2)
+    by = {e["label"]: e for e in report["queries"]}
+    assert not by["ma"]["pass"] and by["ma"]["from_warmed_cache"] is False and "not from the warmed cache" in by["ma"]["reason"]
+    assert by["mal"]["pass"] and "from_warmed_cache" not in by["mal"]  # an unwarmed text query is held to the gate only
+    assert "warmed cache: NO" in bench.render_table(report)
+    _api(monkeypatch, 20.0)
+    ok = bench.run_api("http://api/graphql", "id1", [{"label": "ma", "filter": {"q": "ma"}}], repetitions=2, cached_ms=50)
+    assert ok["queries"][0]["pass"] and ok["queries"][0]["from_warmed_cache"] is True and "warmed cache: yes" in bench.render_table(ok)
+    assert ok["cachedMs"] == 50
+
+
+def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_needs():
+    before = {"seap.search": 10, "seap.rollup_cube": 4, "seap.rollup_entity": 4}
+    served = judge_scans("empty", before, {"seap.search": 12, "seap.rollup_cube": 5, "seap.rollup_entity": 6})  # the map's two statements
+    assert served == {"search": 2, "cube": 1, "entity": 2, "allowed": 2, "ok": True}
+    assert judge_scans("empty", before, before)["ok"]  # cached: nothing moved
+    assert judge_scans("chips", before, {**before, "seap.search": 13})["ok"]  # the map and the Top-K page
+    assert not judge_scans("chips", before, {**before, "seap.search": 14})["ok"]  # a total or an entity tab scanned
+    assert not judge_scans("empty", before, {**before, "seap.search": 13})["ok"]
+    assert judge_scans("text", before, before) is None and judge_scans("chips-scan", before, before) is None
+    entry = _entry("empty", 40, 40, scans={"search": 5, "allowed": 2}, scan_ok=False)
+    ok, why = verdict(entry, 500)
+    assert not ok and "scanned seap.search 5 time(s), more than the 2" in why

@@ -41,14 +41,33 @@ def test_every_statement_of_every_state_runs_and_is_timed_on_a_rebuilt_graph(bui
     assert report["summary"]["failed"] == 0, report["summary"]
     assert report["host"]["cpus"] >= 1 and report["graph"]["searchRows"] == 16 and report["graph"]["pgSearch"]
     text = by["text"]
-    assert set(text["statements"]) >= {"total", "map_authority_totals", "map_authority_entities", "map_supplier_totals", "entities_authority_cardinality", "entities_authority_rank",
-                                       "entities_authority_stats", "entities_supplier_rank", "records_count", "records_page", "records_hydrate"}
+    assert set(text["statements"]) >= {"total", "map_totals", "map_entities", "entities_authority_cardinality", "entities_authority_rank", "entities_authority_stats",
+                                       "entities_authority_entities", "entities_authority_placement", "entities_supplier_rank", "records_count", "records_page",
+                                       "records_hydrate", "records_entities", "records_files", "go_to"}
+    assert "map_supplier_totals" not in text["statements"]  # one side of the Money lens per request
     assert text["wall_ms"]["n"] == 2 and text["wall_ms"]["cold"] > 0 and text["tasks"]["records"]["median"] > 0
-    assert by["empty"]["serving"] == {"total": "rollup", "map_authority": "scan", "map_supplier": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
-    assert "total" in by["empty"]["statements"] and "records_count" not in by["empty"]["statements"]
-    assert by["empty"]["rollup_verified"] and by["chips"]["rollup_verified"]  # EXPLAIN reads the rollup tables, never seap.search
+    assert by["empty"]["serving"] == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
+    assert "total" in by["empty"]["statements"] and "records_count" not in by["empty"]["statements"] and "records_page" in by["empty"]["statements"]
+    assert by["supplier county"]["statements"]["map_totals"] is not None and "map_totals" in by["supplier county"]["statements"]
+    assert by["empty"]["rollup_verified"] and by["chips"]["rollup_verified"]  # EXPLAIN of the exact statements timed: they read the rollup tables, never seap.search
+    assert by["empty"]["rollup_checked"] == ["total", "entities_authority_rank", "entities_supplier_rank"]
     assert by["chips-scan"]["state"] == "chips-scan" and "rollup_verified" not in by["chips-scan"]
     json.dumps(report)
+
+
+def test_the_explain_check_reads_the_statements_that_ran_and_fails_on_a_scan(built):
+    with psycopg.connect(built) as conn:
+        cold = bench.run_keystroke([conn] * 1, {}, rollup=True)
+        assert bench.verify_rollup(conn, cold["sqls"], cold["mustReadRollup"])
+        scan = bench.run_keystroke([conn], {}, rollup=False)  # the same state answered by the scan: nothing is rollup-served, and a scan statement named as one fails
+        assert not bench.verify_rollup(conn, scan["sqls"], scan["mustReadRollup"])
+        assert not bench.verify_rollup(conn, scan["sqls"], ["total"])
+
+
+def test_the_scan_counters_read_the_three_tables_the_budget_names(built):
+    with psycopg.connect(built) as conn:
+        before = bench.scan_counts(conn)
+        assert set(before) == set(bench.SCAN_TABLES) and all(isinstance(n, int) for n in before.values())
 
 
 def test_the_rollup_and_the_scan_agree_on_the_total_and_the_entity_ranking(built):
@@ -96,7 +115,7 @@ def _batch_of(conn):
     contracts = conn.execute("SELECT code, value_bani, published_on, notice_code, contract_numbers FROM seap.record WHERE kind = 'CONTRACT' ORDER BY code").fetchall()
     assert da and contracts
     return {
-        "authority": {"name": "FIXTURE"},
+        "authority": {"name": "FIXTURE", "cui": "4384206"},
         "da": [{"code": c, "state": "Oferta acceptata", "pub": f"{d}T10:00:00+03:00", "val": (v / 100 if v is not None else None)} for c, v, d in da],
         "notices": [{"noticeNo": n, "procedureId": 1, "date": f"{d}T10:00:00+03:00"} for c, v, d, n, nums in contracts],
         "contracts": [{"noticeNo": n, "contractNo": nums[0], "date": f"{d}T00:00:00+03:00", "valueRon": (v / 100) if v is not None else None}
@@ -105,32 +124,45 @@ def _batch_of(conn):
 
 
 def test_the_validation_fixture_agrees_with_the_graph_it_was_made_from_and_fails_on_a_miss(built, tmp_path, capsys, monkeypatch):
+    """The scope is switched off (quarter and authority `None`): the fixture graph is not Brasov 2026Q3."""
+    everything = dict(quarter=None, authority=None)
     with psycopg.connect(built) as conn:
         good = _batch_of(conn)
     assert good["da"] and good["contracts"]
     path = tmp_path / "batch.json"
     path.write_text(json.dumps(good))
-    ok, lines = check_fixture(built, [path])
+    ok, lines = check_fixture(built, [path], **everything)
     assert ok, lines
-    assert any(l.startswith("da: ") and f"{len(good['da'])}/{len(good['da'])} matched" in l for l in lines)
+    assert any(l.startswith("da (crawl -> graph): ") and f"{len(good['da'])}/{len(good['da'])} matched" in l for l in lines)
+    assert any(l.startswith("contracts (bulk -> crawl): ") and f"{len(good['contracts'])}/{len(good['contracts'])} of the graph's bulk contracts" in l for l in lines)
+    assert any(l.startswith("also (wider") for l in lines)
     # one DA the graph does not have: 0 misses allowed
     good["da"].append({"code": "DA00000001", "state": "Oferta acceptata", "pub": good["da"][0]["pub"], "val": 1})
     path.write_text(json.dumps(good))
-    ok, lines = check_fixture(built, [path])
+    ok, lines = check_fixture(built, [path], **everything)
     assert not ok and "missing: DA00000001" in "\n".join(lines) and "FAILED" in lines[-1]
-    assert check_fixture(built, [path], allow_missing_da=1)[0]
-    # one contract with a different value: 1 allowed by default (#5: 45/46), 0 when asked
+    assert check_fixture(built, [path], allow_missing_da=1, **everything)[0]
     good["da"].pop()
-    good["contracts"][0]["valueRon"] += 1
+    # a DA with another value is not a match either
+    good["da"][0]["val"] += 1
     path.write_text(json.dumps(good))
-    assert check_fixture(built, [path])[0] and not check_fixture(built, [path], allow_missing_contracts=0)[0]
+    ok, lines = check_fixture(built, [path], **everything)
+    assert not ok and any("different:" in l for l in lines)
+    good["da"][0]["val"] -= 1
+    # one bulk contract the crawl batch lacks: 1 allowed by default (#5: 45/46), 0 when asked
+    lacked = good["contracts"].pop()
+    path.write_text(json.dumps(good))
+    ok, lines = check_fixture(built, [path], **everything)
+    assert ok and any(f"{len(good['contracts'])}/{len(good['contracts']) + 1} of the graph's bulk contracts" in l and "1 missing" in l for l in lines)
+    assert any(f"not in the crawl: {lacked['noticeNo']}~{lacked['contractNo']}" in l for l in lines)
+    assert not check_fixture(built, [path], allow_missing_contracts=0, **everything)[0]
+    # the scope: another authority's batch is not the one of #5; a quarter the graph holds no bulk file for compares nothing
+    ok, lines = check_fixture(built, [path], quarter=None, authority="1")
+    assert not ok and "no batch is of authority 1" in "\n".join(lines)
+    ok, lines = check_fixture(built, [path], quarter="2031Q1", authority=None)
+    assert not ok and any("nothing to compare" in l for l in lines)
     monkeypatch.setenv("DATABASE_URL", built)
     from pipeline import cli
 
-    assert cli.main(["--archive", str(tmp_path), "check-fixture", "--batch", str(path), "--allow-missing-contracts", "0"]) == 1
-    assert "different:" in capsys.readouterr().out
-    # a batch of quarters the graph has no bulk file for compares nothing: that is a failure, not a pass
-    far = {"da": [{"code": "DA1", "state": "Oferta acceptata", "pub": "2031-01-01T00:00:00+02:00", "val": 1}], "notices": [], "contracts": []}
-    path.write_text(json.dumps(far))
-    ok, lines = check_fixture(built, [path])
-    assert not ok and any("nothing to compare" in l for l in lines)
+    assert cli.main(["--archive", str(tmp_path), "check-fixture", "--batch", str(path), "--quarter", "all", "--authority", "all", "--allow-missing-contracts", "0"]) == 1
+    assert "not in the crawl:" in capsys.readouterr().out

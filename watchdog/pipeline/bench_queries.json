@@ -26,6 +26,8 @@
   {"label": "cpv 45 (CPV prefix chip)", "filter": {"cpv": "45"}},
   {"label": "deszapezire 2024-2026 contracts", "filter": {"q": "deszapezire", "from": "2024-01-01", "to": "2026-12-31", "channel": "CONTRACT"}},
   {"label": "ma 2025 (text + year chips)", "filter": {"q": "ma", "from": "2025-01-01", "to": "2025-12-31"}},
+  {"label": "faza noru (supplier name)", "filter": {"q": "faza noru"}},
+  {"label": "ma 2025, authority county RO-BV", "filter": {"q": "ma", "from": "2025-01-01", "to": "2025-12-31", "county": "RO-BV", "countySide": "AUTHORITY"}},
   {"label": "ma, supplier county RO-BV", "filter": {"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"}},
   {"label": "(empty)", "filter": {}},
   {"label": "(empty) year 2025", "filter": {"from": "2025-01-01", "to": "2025-12-31"}},

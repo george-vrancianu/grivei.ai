@@ -7,10 +7,20 @@ parts. This module issues the same statements, in the same shape (`buildWhere`: 
 statement and the whole keystroke, and checks the result against a threshold (default 500 ms, the spec's target on 8 vCPU).
 
 Two modes:
-- SQL (`run_sql`): straight to the database, no API needed. The statements below mirror store.ts one for one (a change there needs
-  the same change here; `tests/test_bench.py` pins the shape).
+- SQL (`run_sql`): straight to the database, no API needed. The statements below mirror store.ts (a change there needs the same change
+  here). What keeps them from drifting: `tests/test_bench_parity.py` compares `build_where` and `rollup_plan` with the API's own
+  `buildWhere` / `rollupPlan` over every shipped query (the vitest `explorer/packages/api/test/benchParity.test.ts` writes the
+  expectations into `tests/fixtures/bench_parity.json` and fails when they are stale); the statement sequences of the entity tabs, the
+  map and the Records tab are pinned by `tests/test_bench.py` only, so read store.ts again when it changes.
 - API (`run_api`): POSTs the persisted `MainScreen` operation to a running API and times the whole response. The first request of a
-  query is the one that misses the API's result cache (unless warmed), the repeats are cache hits.
+  query is the one that misses the API's result cache (unless warmed), the repeats are cache hits. The empty state and the 2-character
+  prefixes must be answered from the warmed cache (`expect_cached`): their first request is held to `--cached-ms`.
+
+What one keystroke runs here, per part of the screen: `total`, ONE Money-lens map (the side the filter's `countySide` names, default
+AUTHORITY, as MainScreen asks for one), both entity tabs (rank, then the page's entities and placement), the Records tab (the Top-K
+page, hydrated with its entities and source files; the empty state's page is `seap.record`, as `store.records` reads it) and, for a
+text query, the Go-to lookup. Left out: `signalsOfRecords` (the Signal badges of the page), `facets`, `dataThrough`, `counties()` and the
+echo of a chip's entity: small keyed reads that share the 8-connection pool but never scan the index.
 
 Pure parts (no database): `build_where`, `rollup_plan`, `plan_tasks`, `summarize`, `verdict`, `render_table`, `load_queries`.
 """
@@ -36,7 +46,12 @@ PAGE = 50  # the main screen's tabs show 50 rows
 AGG_BUCKET_CAP = 65_000  # store.ts: Tantivy's terms-aggregation bucket cap; the exact GROUP BY serves up to this many entities
 SIDE_KEY = {"AUTHORITY": "authority_key", "SUPPLIER": "supplier_key"}
 AREA = {"AUTHORITY": ("authority_area", "authority_key"), "SUPPLIER": ("supplier_area", "supplier_key")}
-RECORD_ORDER = "value_bani DESC NULLS LAST, record_code"  # the default Records tab order (VALUE_DESC)
+RECORD_ORDER = "value_bani DESC NULLS LAST, record_code"  # the default Records tab order (VALUE_DESC) on seap.search
+RECORD_COLUMNS = (  # store.ts RECORD_COLUMNS: what the API reads of a Record page
+    "code, title, award_date::text AS date, kind, channel, procedure, value_bani::text AS value, counted_bani::text AS counted, authority_name, badges, "
+    "suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status, via AS record_via, url, cpv_code, cpv_description"
+)
+RECORD_TABLE_ORDER = "value_bani DESC NULLS LAST, code"  # the same on seap.record (the empty state)
 
 
 # ---- the filter -> SQL mapping (mirror of explorer/packages/api/src/search.ts and rollup.ts) -------------------------------------
@@ -181,6 +196,9 @@ class Task:
     name: str
     serving: str  # "rollup" or "scan"
     statements: list[str]  # the statement names, in the order they run (the API runs them in sequence within a task)
+    alternatives: list[str] = field(default_factory=list)  # statements that replace one of the above in some case (the terms aggregation instead of the exact rank)
+    rollup_statements: list[str] = field(default_factory=list)  # the statements that must read the rollup tables (checked with EXPLAIN)
+    judged_in_rollup_state: bool = True  # False: reported, but judged only with --strict-maps (the Money lens map has no rollup path)
     run: Callable[[Callable], None] = field(repr=False, default=lambda timed: None)
 
 
@@ -198,7 +216,7 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
             "SELECT coalesce(sum(awarded), 0)::text, coalesce(sum(records), 0)::int, coalesce(sum(suspect_left_out), 0)::int, coalesce(sum(no_value), 0)::int, "
             f"coalesce(sum(framework_ceilings), 0)::text FROM seap.rollup_cube WHERE {rwhere}"
         )
-        tasks.append(Task("total", "rollup", ["total"], lambda timed, s=total_sql, p=rparams: timed("total", s, p)))
+        tasks.append(Task("total", "rollup", ["total"], rollup_statements=["total"], run=lambda timed, s=total_sql, p=rparams: timed("total", s, p)))
     else:
         if w.winner_side:
             total_sql = f"SELECT {_TOTAL_FIELDS} FROM (SELECT record_code, {_GROUPED} FROM seap.search WHERE {w.sql} GROUP BY record_code) g"
@@ -208,33 +226,32 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                 "(count(*) FILTER (WHERE winner_position = 1 AND suspect))::int, (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int, "
                 f"coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text FROM seap.search WHERE {w.sql}"
             )
-        tasks.append(Task("total", "scan", ["total"], lambda timed, s=total_sql, p=w.params: timed("total", s, p)))
+        tasks.append(Task("total", "scan", ["total"], run=lambda timed, s=total_sql, p=w.params: timed("total", s, p)))
 
-    # the Money lens, both sides: always the scan (store.ts `searchMap` has no rollup path; the API's result cache answers the warmed states)
-    for side in ("AUTHORITY", "SUPPLIER"):
-        area, entity = AREA[side]
-        grouped = side == "SUPPLIER" or w.winner_side
-        if grouped:
-            totals = (
-                f"SELECT area, coalesce(sum(sh), 0)::text, count(*)::int, (count(*) FILTER (WHERE suspect))::int, (count(*) FILTER (WHERE no_value))::int, coalesce(sum(ceil), 0)::text "
-                f"FROM (SELECT {area} AS area, record_code, {_GROUPED} FROM seap.search WHERE {w.sql} GROUP BY {area}, record_code) g GROUP BY area ORDER BY area"
-            )
-        else:
-            totals = (
-                f"SELECT {area} AS area, coalesce(sum(share_bani), 0)::text, (count(*) FILTER (WHERE winner_position = 1))::int, "
-                "(count(*) FILTER (WHERE winner_position = 1 AND suspect))::int, (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int, "
-                f"coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text FROM seap.search WHERE {w.sql} GROUP BY {area} ORDER BY area"
-            )
-        distinct = f"SELECT {area} AS area, count(DISTINCT {entity})::int FROM seap.search WHERE {w.sql} GROUP BY {area}"
-        name = f"map_{side.lower()}"
+    # the Money lens: ONE side per request (MainScreen asks `map` with the filter's countySide, default AUTHORITY: resolvers.ts). Always the
+    # scan: store.ts `searchMap` has no rollup path, the API's result cache answers the warmed states.
+    side = "SUPPLIER" if f.get("countySide") == "SUPPLIER" else "AUTHORITY"
+    area, entity = AREA[side]
+    if side == "SUPPLIER" or w.winner_side:
+        totals = (
+            f"SELECT area, coalesce(sum(sh), 0)::text, count(*)::int, (count(*) FILTER (WHERE suspect))::int, (count(*) FILTER (WHERE no_value))::int, coalesce(sum(ceil), 0)::text "
+            f"FROM (SELECT {area} AS area, record_code, {_GROUPED} FROM seap.search WHERE {w.sql} GROUP BY {area}, record_code) g GROUP BY area ORDER BY area"
+        )
+    else:
+        totals = (
+            f"SELECT {area} AS area, coalesce(sum(share_bani), 0)::text, (count(*) FILTER (WHERE winner_position = 1))::int, "
+            "(count(*) FILTER (WHERE winner_position = 1 AND suspect))::int, (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int, "
+            f"coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text FROM seap.search WHERE {w.sql} GROUP BY {area} ORDER BY area"
+        )
+    distinct = f"SELECT {area} AS area, count(DISTINCT {entity})::int FROM seap.search WHERE {w.sql} GROUP BY {area}"
 
-        def run_map(timed, name=name, totals=totals, distinct=distinct, p=w.params):
-            timed(f"{name}_totals", totals, p)
-            timed(f"{name}_entities", distinct, p)
+    def run_map(timed, totals=totals, distinct=distinct, p=w.params):
+        timed("map_totals", totals, p)
+        timed("map_entities", distinct, p)
 
-        tasks.append(Task(name, "scan", [f"{name}_totals", f"{name}_entities"], run_map))
+    tasks.append(Task("map", "scan", ["map_totals", "map_entities"], judged_in_rollup_state=False, run=run_map))
 
-    # the entity tabs
+    # the entity tabs: rank, then the page's entities and placement (`entitiesOf`)
     for side in ("AUTHORITY", "SUPPLIER"):
         key = SIDE_KEY[side]
         name = f"entities_{side.lower()}"
@@ -245,7 +262,12 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                 "coalesce(sum(framework_ceilings), 0)::text, count(*) OVER ()::int AS n "
                 f"FROM seap.rollup_entity WHERE side = %s AND {rwhere} GROUP BY entity_key ORDER BY sum(awarded) DESC NULLS LAST, entity_key LIMIT {PAGE} OFFSET 0"
             )
-            tasks.append(Task(name, "rollup", [f"{name}_rank"], lambda timed, n=name, s=sql, p=[side, *rparams]: timed(f"{n}_rank", s, p)))
+
+            def run_rollup_entities(timed, n=name, s=sql, p=[side, *rparams]):
+                ranked = timed(f"{n}_rank", s, p)
+                _hydrate_entities(timed, n, [row[0] for row in ranked])
+
+            tasks.append(Task(name, "rollup", [f"{name}_rank", f"{name}_entities", f"{name}_placement"], rollup_statements=[f"{name}_rank"], run=run_rollup_entities))
             continue
 
         def run_entities(timed, key=key, name=name):
@@ -276,28 +298,61 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                     f"WHERE {w.sql} AND {key} = ANY(%s::text[]) GROUP BY {key}, record_code) g GROUP BY key",
                     [*w.params, keys],
                 )
+                _hydrate_entities(timed, name, keys)
 
-        tasks.append(Task(name, "scan", [f"{name}_cardinality", f"{name}_rank|{name}_terms", f"{name}_stats"], run_entities))
+        tasks.append(Task(name, "scan", [f"{name}_cardinality", f"{name}_rank", f"{name}_stats", f"{name}_entities", f"{name}_placement"], alternatives=[f"{name}_terms"], run=run_entities))
 
-    # the Records tab: its count from the rollup when chips-only, the page always the Top-K on the index
+    # the Records tab: the empty state's page is `store.records` on seap.record (its count is the total's); otherwise the count (from the
+    # rollup total when chips-only) and the Top-K page on the index; either way the page is hydrated (entities, placement, source files)
     def run_records(timed):
-        if not plan:
-            if w.winner_side:
-                timed("records_count", f"SELECT count(DISTINCT record_code)::int FROM seap.search WHERE {w.sql}", w.params)
-            else:
-                timed("records_count", f"SELECT count(*)::int FROM seap.search WHERE {w.sql} AND winner_position = 1", w.params)
-        if w.winner_side:
-            codes = timed(
-                "records_page", f"SELECT record_code FROM seap.search WHERE {w.sql} GROUP BY record_code, value_bani, award_date ORDER BY {RECORD_ORDER} LIMIT {PAGE} OFFSET 0", w.params
-            )
+        if w.empty:
+            rows = timed("records_page", f"SELECT authority_key, source_file_id, winners, {RECORD_COLUMNS} FROM seap.record ORDER BY {RECORD_TABLE_ORDER} LIMIT {PAGE} OFFSET 0", [])
         else:
-            codes = timed("records_page", f"SELECT record_code FROM seap.search WHERE {w.sql} AND winner_position = 1 ORDER BY {RECORD_ORDER} LIMIT {PAGE} OFFSET 0", w.params)
-        wanted = [r[0] for r in codes]
-        if wanted:
-            timed("records_hydrate", "SELECT * FROM seap.record WHERE code = ANY(%s)", [wanted])
+            if not plan:
+                if w.winner_side:
+                    timed("records_count", f"SELECT count(DISTINCT record_code)::int FROM seap.search WHERE {w.sql}", w.params)
+                else:
+                    timed("records_count", f"SELECT count(*)::int FROM seap.search WHERE {w.sql} AND winner_position = 1", w.params)
+            if w.winner_side:
+                codes = timed("records_page", f"SELECT record_code FROM seap.search WHERE {w.sql} GROUP BY record_code, value_bani, award_date ORDER BY {RECORD_ORDER} LIMIT {PAGE} OFFSET 0", w.params)
+            else:
+                codes = timed("records_page", f"SELECT record_code FROM seap.search WHERE {w.sql} AND winner_position = 1 ORDER BY {RECORD_ORDER} LIMIT {PAGE} OFFSET 0", w.params)
+            rows = timed("records_hydrate", f"SELECT authority_key, source_file_id, winners, {RECORD_COLUMNS} FROM seap.record WHERE code = ANY(%s)", [[r[0] for r in codes]]) if codes else []
+        keys = {r[0] for r in rows if r[0]}
+        for winner_list in (r[2] for r in rows):
+            keys.update(x.get("key") for x in (winner_list or []) if isinstance(x, dict) and x.get("key"))
+        if keys:
+            _hydrate_entities(timed, "records", sorted(keys))
+        files = sorted({r[1] for r in rows})
+        if files:
+            timed("records_files", "SELECT id, via, fetched_at FROM seap.source_file WHERE id = ANY(%s)", [files])
 
-    tasks.append(Task("records", "rollup" if plan else "scan", ["records_count" if not plan else "(count from total)", "records_page", "records_hydrate"], run_records))
+    if w.empty:
+        names, replaced = ["records_page", "records_entities", "records_placement", "records_files"], []
+    else:
+        names = ["records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]
+        replaced = [] if plan else ["records_count"]
+    tasks.append(Task("records", "rollup" if plan else "scan", [*replaced, *names], run=run_records))
+
+    # Go-to: a text query's exact entity, by CUI or by folded name
+    if w.q_folded:
+        cui = bool(re.fullmatch(r"\d{2,10}", w.q_folded))
+        sql = "SELECT key FROM core.entity WHERE key = %s AND identity = 'CUI' LIMIT 2" if cui else "SELECT key FROM core.entity WHERE name_folded = %s AND name_folded <> '' LIMIT 2"
+        tasks.append(Task("goto", "scan", ["go_to"], run=lambda timed, s=sql, q=w.q_folded: timed("go_to", s, [q])))
     return tasks
+
+
+def _hydrate_entities(timed: Callable, prefix: str, keys: list[str]) -> None:
+    """`entitiesOf`: the entities of a page of keys, then their placement (two reads of the core tables, as store.ts does)."""
+    if not keys:
+        return
+    timed(f"{prefix}_entities", "SELECT * FROM core.entity WHERE key = ANY(%s)", [keys])
+    timed(
+        f"{prefix}_placement",
+        "SELECT p.entity_key, p.county_iso, c.name, p.uat_siruta, u.name, p.village_siruta, p.national, p.placed_by "
+        "FROM core.placement p LEFT JOIN core.county c ON c.iso = p.county_iso LEFT JOIN core.uat u ON u.siruta = p.uat_siruta WHERE p.entity_key = ANY(%s)",
+        [keys],
+    )
 
 
 # ---- statistics, verdicts, rendering ---------------------------------------------------------------------------------------------
@@ -320,15 +375,22 @@ def summarize(values: list[float]) -> dict:
 
 def verdict(entry: dict, threshold_ms: float, *, strict_maps: bool = False) -> tuple[bool, str]:
     """Pass/fail of one query. A text query: the whole keystroke (every task). An empty or chips-only state: the rollup-served tasks,
-    which must really be served by the rollup; the map scans of those states are answered by the API's warmed cache and are judged
-    only with `strict_maps` (they are always reported). The judged number is the p95 of the warm runs, and the cold run too."""
+    which must really be served by the rollup (`entry["rollup_judged"]` names them); the map scan of those states is answered by the
+    API's warmed cache and is judged only with `strict_maps` (it is always reported). The judged number is the p95 of the warm runs,
+    and the cold run too. An API-mode entry may also carry `expect_cached` (the empty state and the 2-character prefixes), which
+    must be answered by the warmed cache (`cached_ms`), and `scan_ok` (False: the first request scanned `seap.search` more than the
+    state allows)."""
     state = entry["state"]
     judged = entry["rollup_wall_ms"] if (state in ("empty", "chips") and not strict_maps) else entry["wall_ms"]
     reasons: list[str] = []
-    if state in ("empty", "chips") and entry.get("serving") and any(s != "rollup" for t, s in entry["serving"].items() if not t.startswith("map_")):
+    if state in ("empty", "chips") and entry.get("serving") and any(s != "rollup" for t, s in entry["serving"].items() if t in entry.get("rollup_judged", ())):
         reasons.append("a non-map part of an empty/chips-only state is not served by the rollup")
     if entry.get("rollup_verified") is False:
         reasons.append("EXPLAIN shows the scan, not the rollup")
+    if entry.get("expect_cached") and entry.get("from_warmed_cache") is False:
+        reasons.append(f"not from the warmed cache: first request {entry['wall_ms']['cold']:.0f} ms > {entry['cached_ms']:.0f} ms")
+    if entry.get("scan_ok") is False:
+        reasons.append(f"the first request scanned seap.search {entry['scans']['search']} time(s), more than the {entry['scans']['allowed']} this state allows")
     for label, value in (("cold", judged.get("cold")), ("warm p95", judged.get("p95"))):
         if value is not None and value > threshold_ms:
             reasons.append(f"{label} {value:.0f} ms > {threshold_ms:.0f} ms")
@@ -340,7 +402,8 @@ def render_table(report: dict) -> str:
     rows = [("query", "state", "cold", "median", "p95", "max", "result")]
     for q in report["queries"]:
         w = q["rollup_wall_ms"] if (q["state"] in ("empty", "chips") and not report.get("strictMaps")) else q["wall_ms"]
-        rows.append((q["label"], q["state"], _ms(w.get("cold")), _ms(w.get("median")), _ms(w.get("p95")), _ms(w.get("max")), "PASS" if q["pass"] else "FAIL " + q["reason"]))
+        warm = {True: " [warmed cache: yes]", False: " [warmed cache: NO]"}.get(q.get("from_warmed_cache"), "")
+        rows.append((q["label"], q["state"], _ms(w.get("cold")), _ms(w.get("median")), _ms(w.get("p95")), _ms(w.get("max")), ("PASS" if q["pass"] else "FAIL " + q["reason"]) + warm))
     widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]) - 1)]
     lines = ["  ".join(c.ljust(widths[i]) for i, c in enumerate(r[:-1])) + "  " + r[-1] for r in rows]
     host = report["host"]
@@ -403,9 +466,11 @@ def _json_default(o):
 
 
 def run_keystroke(conns: list, f: dict, *, rollup: bool = True) -> dict:
-    """Run one keystroke over the connections (one per task, in parallel). Returns wall time, per-task and per-statement times (ms)."""
+    """Run one keystroke over the connections (one per task, in parallel). Returns wall time, per-task and per-statement times (ms),
+    and the SQL each statement ran (for the EXPLAIN of the rollup-served ones)."""
     tasks = plan_tasks(f, rollup=rollup)
     statements: dict[str, float] = {}
+    sqls: dict[str, tuple[str, list]] = {}
     task_ms: dict[str, float] = {}
 
     def run_task(i: int) -> None:
@@ -422,6 +487,7 @@ def run_keystroke(conns: list, f: dict, *, rollup: bool = True) -> dict:
                 raise
             finally:
                 statements[name] = (time.perf_counter() - s0) * 1000
+                sqls[name] = (sql, params)
             conn.rollback()  # end the implicit transaction: the next statement starts clean
             return rows
 
@@ -433,26 +499,54 @@ def run_keystroke(conns: list, f: dict, *, rollup: bool = True) -> dict:
         for fut in [pool.submit(run_task, i) for i in range(len(tasks))]:
             fut.result()
     wall = (time.perf_counter() - t0) * 1000
-    rollup_tasks = [t.name for t in tasks if t.serving == "rollup" or t.name.startswith("map_")]
-    serving = {t.name: t.serving for t in tasks}
-    judged = [task_ms[n] for n in task_ms if not n.startswith("map_")]
-    return {"wall": wall, "rollupWall": max(judged) if judged else wall, "tasks": task_ms, "statements": statements, "serving": serving, "rollupTasks": rollup_tasks}
+    judged_names = [t.name for t in tasks if t.judged_in_rollup_state]
+    judged = [task_ms[n] for n in judged_names if n in task_ms]
+    return {
+        "wall": wall, "rollupWall": max(judged) if judged else wall, "tasks": task_ms, "statements": statements, "sqls": sqls,
+        "serving": {t.name: t.serving for t in tasks}, "rollupJudged": judged_names, "mustReadRollup": [n for t in tasks for n in t.rollup_statements],
+    }
 
 
-def verify_rollup(conn, f: dict) -> bool:
-    """EXPLAIN the rollup-served statements of an empty/chips-only state: they must read the rollup tables and not seap.search."""
+def verify_rollup(conn, sqls: dict[str, tuple[str, list]], must_read_rollup: list[str]) -> bool:
+    """EXPLAIN the exact SQL the rollup-served statements of an empty/chips-only keystroke ran (`total`, the entity tabs' rank): each
+    must read a rollup table and never `seap.search` (its BM25 index). False when there is nothing to check."""
     import psycopg
 
-    plan = rollup_plan(f)
-    if not plan:
+    if not must_read_rollup:
         return False
-    rwhere, rparams = rollup_where(plan)
-    for table, extra in (("seap.rollup_cube", ""), ("seap.rollup_entity", "side = 'AUTHORITY' AND ")):
-        text = "\n".join(r[0] for r in psycopg.ClientCursor(conn).execute(f"EXPLAIN SELECT sum(awarded) FROM {table} WHERE {extra}{rwhere}", rparams).fetchall())  # EXPLAIN takes no bind parameters
+    for name in must_read_rollup:
+        sql, params = sqls[name]
+        text = "\n".join(r[0] for r in psycopg.ClientCursor(conn).execute("EXPLAIN " + sql, params).fetchall())  # EXPLAIN takes no bind parameters
         conn.rollback()
-        if table.split(".")[1] not in text or "seap.search" in text or "search_bm25" in text:
+        if "rollup_" not in text or "seap.search" in text or "search_bm25" in text:
             return False
     return True
+
+
+# The scans of seap.search an uncached API request may run in a state the rollup serves: the rollup takes the total, the Records count
+# and the entity tabs, what is left is the Money-lens map (two statements) and, for the chips-only state, the Top-K Records page on the
+# index (the empty state's page reads seap.record). A cached request runs none.
+SEARCH_SCAN_BUDGET = {"empty": 2, "chips": 3}
+SCAN_TABLES = ("seap.search", "seap.rollup_cube", "seap.rollup_entity")
+
+
+def scan_counts(conn) -> dict[str, int]:
+    """Scans (sequential + index, BM25 included) per table since the statistics were last reset: `pg_stat_user_tables`."""
+    rows = conn.execute(
+        "SELECT schemaname || '.' || relname, coalesce(seq_scan, 0) + coalesce(idx_scan, 0) FROM pg_stat_user_tables WHERE schemaname || '.' || relname = ANY(%s)", [list(SCAN_TABLES)]
+    ).fetchall()
+    conn.rollback()
+    return {name: int(n) for name, n in rows}
+
+
+def judge_scans(state: str, before: dict[str, int], after: dict[str, int]) -> dict | None:
+    """What one uncached API request did to the scan counters of `seap.search` and the rollup tables, against what the state allows.
+    None for a state with no budget (text queries scan by design)."""
+    allowed = SEARCH_SCAN_BUDGET.get(state)
+    if allowed is None:
+        return None
+    delta = {t.split(".")[1].removeprefix("rollup_") if t != "seap.search" else "search": after.get(t, 0) - before.get(t, 0) for t in SCAN_TABLES}
+    return {"search": delta["search"], "cube": delta["cube"], "entity": delta["entity"], "allowed": allowed, "ok": delta["search"] <= allowed}
 
 
 def graph_facts(conn) -> dict:
@@ -481,7 +575,7 @@ def run_sql(db_url: str, queries: list[dict], *, repetitions: int = 5, threshold
     connection set; for a cold buffer cache restart the database first), the next `repetitions` are warm."""
     import psycopg
 
-    conns = [psycopg.connect(db_url, autocommit=False) for _ in range(6)]
+    conns = [psycopg.connect(db_url, autocommit=False) for _ in range(8)]  # the API's pool is 8 (main.ts)
     try:
         facts = graph_facts(conns[0])
         entries = []
@@ -493,14 +587,15 @@ def run_sql(db_url: str, queries: list[dict], *, repetitions: int = 5, threshold
             runs = [cold, *warm]
             names = sorted({n for r in runs for n in r["statements"]})
             entry = {
-                "label": q["label"], "filter": f, "state": state, "serving": cold["serving"],
+                "label": q["label"], "filter": f, "state": state, "serving": cold["serving"], "rollup_judged": cold["rollupJudged"],
                 "wall_ms": {"cold": round(cold["wall"], 2), **summarize([r["wall"] for r in warm])},
                 "rollup_wall_ms": {"cold": round(cold["rollupWall"], 2), **summarize([r["rollupWall"] for r in warm])},
                 "tasks": {t: {"cold": round(cold["tasks"][t], 2), **summarize([r["tasks"][t] for r in warm if t in r["tasks"]])} for t in cold["tasks"]},
                 "statements": {n: {"cold": round(cold["statements"].get(n, 0), 2), **summarize([r["statements"][n] for r in warm if n in r["statements"]])} for n in names},
             }
             if state in ("empty", "chips"):
-                entry["rollup_verified"] = verify_rollup(conns[0], f) if rollup else False
+                entry["rollup_verified"] = verify_rollup(conns[0], cold["sqls"], cold["mustReadRollup"]) if rollup else False
+                entry["rollup_checked"] = cold["mustReadRollup"]
             entry["pass"], entry["reason"] = verdict(entry, threshold_ms, strict_maps=strict_maps)
             entries.append(entry)
             say(f"{q['label']}: cold {cold['wall']:.0f} ms, warm median {entry['wall_ms']['median']} ms {'PASS' if entry['pass'] else 'FAIL'}")
@@ -530,21 +625,58 @@ def main_screen_id(persisted_path: Path | str) -> str:
     raise ValueError("no MainScreen operation in the persisted-query file")
 
 
-def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, threshold_ms: float = DEFAULT_THRESHOLD_MS, say: Callable[[str], None] = lambda s: None) -> dict:
+def expect_cached(f: dict) -> bool:
+    """Is this state one the API's cache warms after each load (`cache.ts` warm): the empty state and `{q: <2-character prefix>}`?"""
+    toks = tokens(f.get("q") or "")
+    if any(v is not None and v != "" and v != [] for k, v in f.items() if k != "q"):
+        return False
+    return not toks or (len(toks) == 1 and len(toks[0]) == 2)
+
+
+DEFAULT_CACHED_MS = 50.0
+
+
+def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, threshold_ms: float = DEFAULT_THRESHOLD_MS, cached_ms: float = DEFAULT_CACHED_MS,
+            db_url: str | None = None, say: Callable[[str], None] = lambda s: None) -> dict:
     """Benchmark the persisted MainScreen operation of a running API. `cold` = the first request (a miss of the API's result cache
-    unless it was warmed: the 2-character prefixes and the empty state are), the repeats are cache hits. Judged on both."""
+    unless it was warmed), the repeats are cache hits. Judged on both against `threshold_ms`. The states the cache warms (the empty
+    state, the 2-character prefixes: `expect_cached`) must answer their *first* request within `cached_ms`, else the cache was not
+    warmed yet (read `docker compose logs api | grep 'cache warmed'` before running this) and the entry fails. With `db_url`, the
+    first request of an empty or chips-only state is also checked against the scan counters of the database (`judge_scans`): it must
+    not scan `seap.search` more than the map and the Top-K page need."""
+    import time as _time
+
+    conn = None
+    if db_url:
+        import psycopg
+
+        conn = psycopg.connect(db_url, autocommit=False)
     entries = []
-    for q in queries:
-        f = q["filter"]
-        state = state_of(f)
-        first, _ = api_request(url, op_id, f)
-        rest = [api_request(url, op_id, f)[0] for _ in range(repetitions)]
-        w = {"cold": round(first, 2), **summarize(rest)}
-        entry = {"label": q["label"], "filter": f, "state": state, "serving": {}, "wall_ms": w, "rollup_wall_ms": w, "tasks": {}, "statements": {}}
-        entry["pass"], entry["reason"] = verdict(entry, threshold_ms, strict_maps=True)
-        entries.append(entry)
-        say(f"{q['label']}: first {first:.0f} ms, repeat median {w['median']} ms {'PASS' if entry['pass'] else 'FAIL'}")
-    return _report("api", entries, repetitions, threshold_ms, True, {"url": url})
+    try:
+        for q in queries:
+            f = q["filter"]
+            state = state_of(f)
+            before = scan_counts(conn) if conn is not None and state in SEARCH_SCAN_BUDGET else None
+            first, _ = api_request(url, op_id, f)
+            scans = None
+            if before is not None:
+                _time.sleep(1.5)  # the statistics reach other sessions about a second after the statements end
+                scans = judge_scans(state, before, scan_counts(conn))
+            rest = [api_request(url, op_id, f)[0] for _ in range(repetitions)]
+            w = {"cold": round(first, 2), **summarize(rest)}
+            entry = {"label": q["label"], "filter": f, "state": state, "serving": {}, "rollup_judged": [], "wall_ms": w, "rollup_wall_ms": w, "tasks": {}, "statements": {}}
+            if expect_cached(f):
+                entry.update(expect_cached=True, cached_ms=cached_ms, from_warmed_cache=first <= cached_ms)
+            if scans is not None:
+                entry.update(scans=scans, scan_ok=scans["ok"])
+            entry["pass"], entry["reason"] = verdict(entry, threshold_ms, strict_maps=True)
+            entries.append(entry)
+            warmed = "" if "from_warmed_cache" not in entry else (", from the warmed cache" if entry["from_warmed_cache"] else ", NOT from the warmed cache")
+            say(f"{q['label']}: first {first:.0f} ms, repeat median {w['median']} ms{warmed} {'PASS' if entry['pass'] else 'FAIL'}")
+    finally:
+        if conn is not None:
+            conn.close()
+    return _report("api", entries, repetitions, threshold_ms, True, {"url": url, "cachedMs": cached_ms, "scanCheck": bool(db_url)})
 
 
 def _report(mode: str, entries: list[dict], repetitions: int, threshold_ms: float, strict_maps: bool, extra: dict) -> dict:
