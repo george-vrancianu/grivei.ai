@@ -19,6 +19,8 @@ import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { SearchBarCopy } from "../molecules/SearchBar/index.ts";
 import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
+import type { CoverageGridCopy } from "../organisms/CoverageGrid/index.ts";
+import type { CoveragePageLayoutCopy } from "../templates/CoveragePageLayout/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
@@ -870,6 +872,163 @@ export const sampleCopy = {
           unknownUat: "County known, UAT unknown",
         };
   },
+  coveragePageLayout: (locale: Locale): CoveragePageLayoutCopy =>
+    locale === "ro"
+      ? {
+        title: "Acoperire",
+        intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
+        grid: {
+          label: "Acoperirea pe trimestre și tipuri de înregistrare",
+          kindHeader: "Tip de înregistrare",
+          quarterName: (quarter) => `T${quarter.slice(6)} ${quarter.slice(0, 4)}`,
+          kinds: { DA: "Achiziții directe", DAN: "Notificări de achiziții directe", CONTRACT: "Contracte", AWARD_NOTICE: "Anunțuri de atribuire" },
+          states: {
+            LOADED: "Încărcat",
+            KNOWN_GAP: "Lacună cunoscută",
+            POSSIBLY_INCOMPLETE: "Posibil incomplet",
+            NOT_IN_SOURCE: "Nu se vede în sursă",
+            CRAWLED_PROVISIONAL: "Colectat, provizoriu",
+            NOT_YET_LOADED: "Încă neîncărcat",
+          },
+          rules: {
+            HAND_ENTERED: "Introdusă manual în fișierul de lacune, cu un motiv scris",
+            COUNT_BELOW_NEIGHBOURS: "Mai puțin de 60% din mediana numărului de rânduri al trimestrelor învecinate",
+            NO_PRIOR_CALL_BEFORE_BACKFILL: "Contractele atribuite fără anunț de participare nu apar în niciun fișier în bloc; rămân nevizibile în sursă până rulează reîncărcarea din e-licitatie",
+            AWAITING_BULK_FILE: "Se așteaptă fișierul în bloc: fișierul în bloc al trimestrului nu a fost publicat încă",
+          },
+          noCell: "fără informații",
+          records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+          crawlOnly: (n, f) => `${f} doar din colectare`,
+          dataThrough: (date) => `date până la ${date}`,
+          inRange: "în intervalul de date",
+          legend: { title: "Stările celulelor", range: "În intervalul de date" },
+          seePage: "Vezi pagina Acoperire",
+        },
+        gridHeading: "Trimestre și tipuri de înregistrare",
+        dataThrough: {
+          heading: "Date până la",
+          intro: "Până unde ajunge fiecare tip de înregistrare. Trimestrul curent vine din colectarea zilnică, înaintea fișierelor în bloc.",
+          none: "Nicio dată limită încă.",
+          copy: { through: "date până la" },
+        },
+        crawlOnly: {
+          heading: "Înregistrări doar din colectare",
+          intro: "Înregistrări găsite prin colectare, care nu se află în fișierul în bloc al trimestrului lor. Sunt păstrate și numărate în celula trimestrului.",
+          line: (kind, quarter, n, f) => `${kind}, ${quarter}: ${roCount(n, f, "înregistrare doar din colectare", "înregistrări doar din colectare")}`,
+        },
+        knownGaps: {
+          heading: "Lacune cunoscute",
+          intro: "Fiecare celulă care este lacună cunoscută, posibil incompletă, nevizibilă în sursă sau în așteptarea unui fișier în bloc, cu motivul sau regula ei.",
+          empty: "Nicio lacună cunoscută în datele afișate.",
+          columns: { quarter: "Trimestru", kind: "Tip de înregistrare", state: "Stare", reason: "Motiv sau regulă", records: "Înregistrări" },
+        },
+        rules: {
+          heading: "Cum se stabilesc lacunele",
+          intro: "Regulile sunt fixe și publice. Nimic nu este ascuns: un trimestru care pare greșit este semnalat de o regulă sau introdus manual, cu motivul lui.",
+          names: {
+            HAND_ENTERED: "Lacună cunoscută",
+            COUNT_BELOW_NEIGHBOURS: "Posibil incomplet",
+            NO_PRIOR_CALL_BEFORE_BACKFILL: "Nu se vede în sursă",
+            AWAITING_BULK_FILE: "Se așteaptă fișierul în bloc",
+          },
+          statesHeading: "Ce înseamnă fiecare stare",
+          states: {
+            LOADED: "Fișierul în bloc al trimestrului pentru acest tip de înregistrare este încărcat.",
+            KNOWN_GAP: "O lacună introdusă manual, cu un motiv scris.",
+            POSSIBLY_INCOMPLETE: "Un fișier în bloc este încărcat, dar numărul lui de rânduri este neobișnuit de mic față de vecini.",
+            NOT_IN_SOURCE: "Sursa nu arată deloc aceste înregistrări, deocamdată.",
+            CRAWLED_PROVISIONAL: "Încă fără fișier în bloc; se afișează ce a găsit colectarea, iar datele se pot schimba când apare fișierul.",
+            NOT_YET_LOADED: "Fișierul în bloc pentru acest trimestru și tip de înregistrare nu este încă în date.",
+          },
+          methodology: "Cum se numără cifrele",
+        },
+        snapshot: {
+          heading: "Lista entităților publice",
+          line: (date) => `Lista entităților publice a Ministerului Finanțelor: versiunea din ${date}`,
+          notLoaded: "Lista entităților publice a Ministerului Finanțelor nu este încărcată încă.",
+        },
+        empty: "Niciun trimestru din SEAP nu se află în acest interval de date.",
+        loading: "Se încarcă acoperirea…",
+        error: "Acoperirea nu a putut fi încărcată. Încearcă din nou peste puțin timp.",
+      }
+      : {
+        title: "Coverage",
+        intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
+        grid: {
+          label: "Coverage by quarter and record kind",
+          kindHeader: "Record kind",
+          quarterName: (quarter) => `Q${quarter.slice(6)} ${quarter.slice(0, 4)}`,
+          kinds: { DA: "Direct purchases", DAN: "Direct purchase notices", CONTRACT: "Contracts", AWARD_NOTICE: "Award notices" },
+          states: {
+            LOADED: "Loaded",
+            KNOWN_GAP: "Known gap",
+            POSSIBLY_INCOMPLETE: "Possibly incomplete",
+            NOT_IN_SOURCE: "Not visible in the source",
+            CRAWLED_PROVISIONAL: "Crawled, provisional",
+            NOT_YET_LOADED: "Not yet loaded",
+          },
+          rules: {
+            HAND_ENTERED: "Entered by hand in the gap file, with a written reason",
+            COUNT_BELOW_NEIGHBOURS: "Fewer than 60% of the median row count of the surrounding quarters",
+            NO_PRIOR_CALL_BEFORE_BACKFILL: "Contracts awarded without a prior call are in no bulk file; they stay not visible in the source until the e-licitatie backfill has run",
+            AWAITING_BULK_FILE: "Awaiting bulk file: the quarter's bulk file is not published yet",
+          },
+          noCell: "no information",
+          records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+          crawlOnly: (n, f) => `${f} of them crawl-only`,
+          dataThrough: (date) => `data through ${date}`,
+          inRange: "inside the date range",
+          legend: { title: "Cell states", range: "Inside the date range" },
+          seePage: "See the Coverage page",
+        },
+        gridHeading: "Quarter by record kind",
+        dataThrough: {
+          heading: "Data through",
+          intro: "How far each record kind reaches. The current quarter comes from the daily crawl, ahead of the bulk files.",
+          none: "No data-through date yet.",
+          copy: { through: "data through" },
+        },
+        crawlOnly: {
+          heading: "Crawl-only Records",
+          intro: "Records found by the crawl that the bulk file of their quarter does not contain. They are kept, and counted in the quarter's cell.",
+          line: (kind, quarter, n, f) => `${kind}, ${quarter}: ${f} crawl-only ${plural(n, "Record", "Records")}`,
+        },
+        knownGaps: {
+          heading: "Known gaps",
+          intro: "Every cell that is a known gap, possibly incomplete, not visible in the source, or waiting for a bulk file, with its reason or its rule.",
+          empty: "No known gaps in the data shown.",
+          columns: { quarter: "Quarter", kind: "Record kind", state: "State", reason: "Reason or rule", records: "Records" },
+        },
+        rules: {
+          heading: "How gaps are decided",
+          intro: "The rules are fixed and published. Nothing is hidden: a quarter that looks wrong is flagged by a rule or entered by hand with its reason.",
+          names: {
+            HAND_ENTERED: "Known gap",
+            COUNT_BELOW_NEIGHBOURS: "Possibly incomplete",
+            NO_PRIOR_CALL_BEFORE_BACKFILL: "Not visible in the source",
+            AWAITING_BULK_FILE: "Awaiting bulk file",
+          },
+          statesHeading: "What each state means",
+          states: {
+            LOADED: "The quarter's bulk file for this record kind is loaded.",
+            KNOWN_GAP: "A gap entered by hand, with a written reason.",
+            POSSIBLY_INCOMPLETE: "A bulk file is loaded, but its row count is unusually low next to its neighbours.",
+            NOT_IN_SOURCE: "The source does not show these Records at all, so far.",
+            CRAWLED_PROVISIONAL: "No bulk file yet; what the crawl found is shown and may change when the bulk file lands.",
+            NOT_YET_LOADED: "The bulk file for this quarter and record kind is not in the data yet.",
+          },
+          methodology: "How the numbers are counted",
+        },
+        snapshot: {
+          heading: "Public entities list",
+          line: (date) => `Ministry of Finance list of public entities: snapshot of ${date}`,
+          notLoaded: "The Ministry of Finance list of public entities is not loaded yet.",
+        },
+        empty: "No quarter of SEAP falls in this date range.",
+        loading: "Loading coverage…",
+        error: "Coverage could not be loaded. Try again in a moment.",
+      },
+  coverageGrid: (locale: Locale): CoverageGridCopy => sampleCopy.coveragePageLayout(locale).grid,
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {
