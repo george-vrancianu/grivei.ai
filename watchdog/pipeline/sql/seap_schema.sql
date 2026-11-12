@@ -7,7 +7,7 @@ CREATE SCHEMA seap;
 -- One row per archived file that was loaded: the provenance of every Record loaded from it.
 CREATE TABLE seap.source_file (
     id          integer PRIMARY KEY,
-    kind        text NOT NULL,            -- 'DA' | 'DAN'
+    kind        text NOT NULL,            -- 'DA' | 'DAN' | 'CONTRACT' | 'AWARD_NOTICE'
     unit        text NOT NULL,            -- '2022Q1'
     file_name   text NOT NULL,
     sha256      text NOT NULL,
@@ -17,12 +17,13 @@ CREATE TABLE seap.source_file (
     row_count   integer NOT NULL
 );
 
--- The Record. DA and DAN identity = the public code. Two dates (ADR 0002): publication assigns the quarter,
+-- The Record. DA and DAN identity = the public code; a CONTRACT is `<award notice code>~<contract number>` (e.g.
+-- CAN1069731~54202) and an AWARD_NOTICE is its notice code (ADR 0002 as amended), so `code` is the one public key. Two dates (ADR 0002): publication assigns the quarter,
 -- the award date drives aggregation and chips, falling back to the publication date. When a code arrives again with
 -- different content, the later publication date wins (a tie: the later file).
 CREATE TABLE seap.record (
     code             text PRIMARY KEY,
-    kind             text NOT NULL CHECK (kind IN ('DA', 'DAN')),
+    kind             text NOT NULL CHECK (kind IN ('DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE')),
     channel          text NOT NULL CHECK (channel IN ('DIRECT_PURCHASE', 'CONTRACT')),
     title            text NOT NULL,
     state            text,
@@ -40,6 +41,17 @@ CREATE TABLE seap.record (
     value_bani       bigint,              -- null = no value in SEAP
     counted_bani     bigint,              -- null = not summed (no value; later: suspect, framework ceiling)
     load_notes       text[] NOT NULL DEFAULT '{}',  -- quirks seen on load, e.g. 'supplier_cui:scientific_notation'
+    -- Winners in their published (file row) order: [{"name": ..., "cui": ...}, ...]. A DA or DAN has its one supplier.
+    -- supplier_cui / supplier_name above are the first winner.
+    winners          jsonb NOT NULL DEFAULT '[]',
+    -- Contracts and award notices (null / empty for DA and DAN). Kept for the counting rule (#65): the framework
+    -- column and the award notice a subsequent contract links to its framework by.
+    notice_code      text,                -- the award notice (CAN / SCNA ...)
+    contract_numbers text[] NOT NULL DEFAULT '{}',  -- a contract: its number; an award notice: its contracts
+    procedure        text,
+    concluded_by     text,                -- `Incheiat prin`: Cu acord cadru | Cu acord cadru subsecvent | Fara acord cadru
+    initiation_code  text,                -- the initiation notice (CN / SCN ...), when the file has it
+    lot_count        integer,
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
 

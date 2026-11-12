@@ -40,6 +40,8 @@ docker compose run --rm pipeline fetch-bulk --unit 2022Q1 \
 docker compose run --rm pipeline rebuild
 ```
 
+`status` shows how far a running or finished `rebuild` is (it reads `rebuild-progress.json` in the archive root); `rebuild` prints one timestamped line per unit. The operator's full-archive run (nohup, log, kill, rerun) is in `watchdog/README.md`, "Operator: rebuild the graph from the archive for real".
+
 `fetch-bulk` only downloads into the archive; `rebuild` drops and recreates the `seap` schema from every complete unit in one transaction. Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
 
 ## Environment
