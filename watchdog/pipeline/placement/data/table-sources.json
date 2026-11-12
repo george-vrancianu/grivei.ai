@@ -1,0 +1,52 @@
+{
+  "attribution": [
+    "SIRUTA: INS, CC BY 4.0",
+    "Limite UAT: ANCPI, CC BY 4.0",
+    "Wikidata coordinates: CC0"
+  ],
+  "counts": {
+    "ancpi_pos": 15,
+    "uats": 3186,
+    "villages": 13749,
+    "wikidata": 3171
+  },
+  "snapshots": {
+    "ancpi": {
+      "fetchedAt": "2026-11-12T21:52:58Z",
+      "files": {
+        "page-0000.geojson": "8ffdf4d85465c80bf4a541691085dd4cbd507233b8b505e7a4a8d75fd8eaecb7",
+        "page-0001.geojson": "53defb760473296be38a25ad04075116b04c9fd7c3a21ac8bc4c58049feecb56",
+        "page-0002.geojson": "814cad2aaa498f75499aae10c211be311fbb64db6147956ae6e8137a1716f8f7",
+        "page-0003.geojson": "4eb33d64b7a40a6b39edb3ba4184f3dd1bc94133a2754b13ae3e799b648e5a7f",
+        "page-0004.geojson": "cb53177f40d8024d6e9f867703d85ffd5b43dbe496e58772a98385fb024d7b41",
+        "page-0005.geojson": "e8dc796846bc13de468def0df0802b06f8c26b6bc0e12dd2cd6af6bd2fa455da",
+        "page-0006.geojson": "97905ae7e9aef1d2698d7957973ddcac081455c93bcc5af1595608c87c75d14c",
+        "page-0007.geojson": "6b5c5c88e184538a9fba89ca790d8488229196e8464a77f06185c6d5f90e91f1",
+        "page-0008.geojson": "01cdf3cc3dfa840a1e309b22372aa7216d9c83a32f157768bdf2da80f7722bb2",
+        "page-0009.geojson": "7378ca464268c707335f2d37dcb74c0f4057818bda9bb646dfe2f55c68dd5bed",
+        "page-0010.geojson": "baa2d1a72e5d4ad3bbf27b77670c728c6b5d3df033b7ba1dcd0200517502e837",
+        "page-0011.geojson": "21b811634120a244bfdd54e6dabce93bf9475619c5d5aa6238567114318a7765",
+        "page-0012.geojson": "64b24f0af800ff511c2d5724ce895b5fba6dfddb3f53d9260b46f189364a06fb",
+        "page-0013.geojson": "57da8c594890bf89a4227cc39fce18fca5b4c2fa093a08fe89f1838b06b6d5ba",
+        "page-0014.geojson": "224a1d820747f93390f3819464921984eb15ed7d579b69b217202e7fed21d3ee",
+        "page-0015.geojson": "07f7a433f4b7a780a656e472f3a654ee0e780a41ee9505a60b77ec2381cc36f3"
+      },
+      "path": "geo/ancpi/uat-polygons/layer-1/2026-11-12"
+    },
+    "siruta": {
+      "fetchedAt": "2026-11-12T21:49:34Z",
+      "files": {
+        "siruta_s1_2026.csv": "f443e49af2f9c9dce8ea515ae53090a18fb476547466b6cd804051424eaf72c6"
+      },
+      "path": "geo/siruta/csv/siruta_s1-2026/2026-11-12"
+    },
+    "wikidata": {
+      "fetchedAt": "2026-11-12T21:49:34Z",
+      "files": {
+        "points.json": "4756ddaaaf757bba2426402498b52ba9f3b61db6e5f0f96affac7cd6cc403305",
+        "query.sparql": "dce634f569aa5f93614f8f6ae6b570c62e7549c1f41507803f50a5d26d6ffb22"
+      },
+      "path": "geo/wikidata/siruta-points/p843-p625/2026-11-12"
+    }
+  }
+}
