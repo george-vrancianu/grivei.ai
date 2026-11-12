@@ -254,7 +254,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(equal!.winners.map((w) => w.publishedName)).toEqual(["ALFA MOBILA SRL", "GAMMA LEMN SRL"]);
     // two lots of different values add; the winners come in the order of the file, not alphabetically
     const summed = await contractPage("contracts_a", "CAN9000002~77/2022");
-    expect(summed).toMatchObject({ value: "120025", counted: "120025" });
+    expect(summed).toMatchObject({ value: "120025", counted: null, badges: ["FRAMEWORK_CEILING", "CONSORTIUM_SHARE"] }); // a framework ceiling (Cu acord cadru): shown, never counted (#65)
     expect(summed!.winners.map((w) => w.publishedName)).toEqual(["BETA CHIMIE SRL", "ALFA CHIMIE SRL"]);
     // a contract number that holds a slash, from the 2025 XLSX (numeric CUIs, a float amount)
     expect(await contractPage("contracts_a", "CAN9000010~1398514/1")).toMatchObject({
@@ -263,7 +263,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // an award notice, identified by its code: its two contracts add; the second notice has one contract and two winners
     expect(await contractPage("contracts_a", "CAN9100001")).toMatchObject({ kind: "AWARD_NOTICE", value: "3548058", date: "2024-11-11" });
     const notice = await contractPage("contracts_a", "CAN9100002");
-    expect(notice).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000" });
+    expect(notice).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000", counted: "9880000", badges: ["CONSORTIUM_SHARE"] });
+    expect(notice!.winners.map((w) => w.share)).toEqual(["4940000", "4940000"]); // equal shares that sum back to the value (#65)
     expect(notice!.winners.map((w) => w.publishedName)).toEqual(["CENTRUL TOPMED DEMO", "ASOCIEREA DEMO"]);
     // no value in SEAP; and a contract of the quarantined file is not there
     expect(await contractPage("contracts_a", "CAN9000020~36181")).toMatchObject({ value: null, badges: ["NO_VALUE"] });
