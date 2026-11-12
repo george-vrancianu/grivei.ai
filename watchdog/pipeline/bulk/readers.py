@@ -2,8 +2,9 @@
 
 CSV comes in two dialects: the DA shape (`|text|` fields, commas between them, see `split_pipe_row`; a field may span
 lines) and ordinary quoted CSV (DAN, Contracte 2021). A CSV is read as it is consumed, never whole (a quarter is up to 300 MB). XLSX (2025+) is read with openpyxl in read-only mode, first sheet, so a 60 MB export streams. Legacy XLS (BIFF, 2021
-to 2023) is read with xlrd the same way (see `_read_xls`: every sheet, an optional title row, typed cells). Any other
-extension (`.ods`) is not supported: the file is invalid, hence quarantined with that reason.
+to 2023) is read with xlrd the same way (see `_read_xls`: every sheet, an optional title row, typed cells). OpenDocument
+(`.ods`, 2026 Q2) is streamed from its content.xml with the standard library (no new dependency). Any other extension is not
+supported: the file is invalid, hence quarantined with that reason.
 """
 from __future__ import annotations
 
@@ -82,7 +83,9 @@ def read_file(path: Path) -> tuple[Header, Rows]:
         return _read_xlsx(path)
     if suffix == ".xls":
         return _read_xls(path)
-    raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv, .xlsx and .xls are read"])
+    if suffix == ".ods":
+        return _read_ods(path)
+    raise InvalidFile(f"unsupported file format {suffix or '(none)'}", [f"{path.name}: only .csv, .xlsx, .xls and .ods are read"])
 
 
 _EOL = re.compile(r"(\r\n|\n|\r)$")
@@ -106,8 +109,33 @@ class _CsvRows:
         self._handle.close()
 
 
+def _csv_encoding(path: Path) -> str:
+    """`utf-8-sig`, or `cp1250` when the file is not UTF-8 (the Contracte 2023 Q4 export is Windows-1250: `ţ ş ă` and the en dash as one byte).
+    One pass over the bytes decides it (a few hundred MB: a second or two); a file that is neither is read as UTF-8 and fails there."""
+    import codecs
+
+    decoder = codecs.getincrementaldecoder("utf-8")()
+    try:
+        with path.open("rb") as raw:
+            while block := raw.read(1 << 22):
+                decoder.decode(block)
+            decoder.decode(b"", final=True)
+        return "utf-8-sig"
+    except UnicodeDecodeError:
+        pass
+    decoder = codecs.getincrementaldecoder("cp1250")()
+    try:
+        with path.open("rb") as raw:
+            while block := raw.read(1 << 22):
+                decoder.decode(block)
+    except UnicodeDecodeError:
+        return "utf-8-sig"
+    return "cp1250"
+
+
 def _read_csv(path: Path) -> tuple[Header, Rows]:
-    handle = path.open(encoding="utf-8-sig", newline="")  # newline="": a quoted field may hold line breaks; lines keep their terminator
+    encoding = _csv_encoding(path)
+    handle = path.open(encoding=encoding, newline="")  # newline="": a quoted field may hold line breaks; lines keep their terminator
     try:
         return _csv_header_and_rows(handle)
     except BaseException:
@@ -153,7 +181,8 @@ def _csv_header_and_rows(handle) -> tuple[Header, Rows]:
 
         return header, _CsvRows(handle, pipe_rows())
 
-    reader = csv.reader(itertools.chain([first], handle))
+    pipes = first.count("|") > first.count(",")  # an unquoted-header pipe-separated file (the 2023 Q3 exports): `A|B|C`, text still `"quoted"`
+    reader = csv.reader(itertools.chain([first], handle), delimiter="|" if pipes else ",")
     try:
         header = next(reader)
     except (StopIteration, csv.Error) as e:
@@ -340,3 +369,166 @@ class _XlsRows:
                     self._book.unload_sheet(index)
         finally:
             self.close()
+
+
+# ---- OpenDocument spreadsheet (.ods, the 2026 Q2 files) ---------------------------------------------------------------
+
+_ODF_TABLE = "{urn:oasis:names:tc:opendocument:xmlns:table:1.0}"
+_ODF_OFFICE = "{urn:oasis:names:tc:opendocument:xmlns:office:1.0}"
+_ODF_TEXT = "{urn:oasis:names:tc:opendocument:xmlns:text:1.0}"
+_ODS_DURATION = re.compile(r"PT(\d+)H(\d+)M(\d+)(?:\.\d+)?S")
+
+
+def _ods_text(paragraph) -> str:
+    """The text of a `text:p`: runs of spaces (`text:s`), tabs and line breaks are written as the characters they stand for."""
+    out = [paragraph.text or ""]
+    for child in paragraph.iter():
+        if child is paragraph:
+            continue
+        tag = child.tag
+        if tag == _ODF_TEXT + "s":
+            out.append(" " * int(child.get(_ODF_TEXT + "c", "1")))
+        elif tag == _ODF_TEXT + "tab":
+            out.append("\t")
+        elif tag == _ODF_TEXT + "line-break":
+            out.append("\n")
+        out.append(child.text or "" if tag in (_ODF_TEXT + "span", _ODF_TEXT + "a") else "")
+        out.append(child.tail or "")
+    return "".join(out)
+
+
+def _ods_cell(cell) -> Cell:
+    kind = cell.get(_ODF_OFFICE + "value-type")
+    if kind is None:
+        return None
+    if kind in ("float", "percentage", "currency"):
+        return values.TypedFloat(float(cell.get(_ODF_OFFICE + "value")))
+    if kind == "date":
+        stamp = datetime.fromisoformat(cell.get(_ODF_OFFICE + "date-value"))
+        return values.TypedDatetime(stamp.year, stamp.month, stamp.day, stamp.hour, stamp.minute, stamp.second)
+    if kind == "time":
+        h, m, s = _ODS_DURATION.fullmatch(cell.get(_ODF_OFFICE + "time-value")).groups()
+        return values.TypedTime(int(h) % 24, int(m), int(s))
+    if kind == "boolean":
+        return cell.get(_ODF_OFFICE + "boolean-value") == "true"
+    given = cell.get(_ODF_OFFICE + "string-value")
+    if given is not None:
+        return given
+    return "\n".join(_ods_text(p) for p in cell.findall(_ODF_TEXT + "p"))
+
+
+def _ods_rows(path: Path):
+    """(sheet index, row number in the sheet, cells) for every non-blank row of every sheet, streamed from content.xml.
+    A row of nothing but empty cells (LibreOffice ends a sheet with a million of them, repeated) is skipped without being expanded."""
+    import zipfile
+    from xml.etree import ElementTree
+
+    try:
+        archive = zipfile.ZipFile(path)
+        stream = archive.open("content.xml")
+    except (zipfile.BadZipFile, KeyError, OSError) as e:
+        raise InvalidFile("not a readable ODS file", [f"{type(e).__name__}: {e}"]) from None
+    sheet, number, table = -1, 0, None
+    try:
+        for event, element in ElementTree.iterparse(stream, events=("start", "end")):
+            tag = element.tag
+            if event == "start":
+                if tag == _ODF_TABLE + "table":
+                    sheet, number, table = sheet + 1, 0, element
+                continue
+            if tag != _ODF_TABLE + "table-row":
+                continue
+            repeat = int(element.get(_ODF_TABLE + "number-rows-repeated", "1"))
+            cells: list[Cell] = []
+            pending = 0  # empty cells not yet known to be followed by a filled one
+            for cell in element:
+                if cell.tag not in (_ODF_TABLE + "table-cell", _ODF_TABLE + "covered-table-cell"):
+                    continue
+                count = int(cell.get(_ODF_TABLE + "number-columns-repeated", "1"))
+                value = _ods_cell(cell)
+                if _blank(value):
+                    pending += count
+                else:
+                    cells.extend([None] * pending)
+                    pending = 0
+                    cells.extend([value] * count)
+            element.clear()
+            if table is not None:
+                table.remove(element)
+            if not cells:
+                number += repeat
+                continue
+            for _ in range(repeat):
+                number += 1
+                yield sheet, number, list(cells)
+    except ElementTree.ParseError as e:
+        raise InvalidFile("not a readable ODS file", [f"ParseError: {e}"]) from None
+    finally:
+        stream.close()
+        archive.close()
+
+
+class _OdsRows:
+    """The data rows of every sheet of an `.ods`, one after the other: each later sheet repeats the header (a different one is invalid)."""
+
+    def __init__(self, path: Path) -> None:
+        self._rows = _ods_rows(path)
+        self.header: Header = []
+        self._first: tuple[int, int, list[Cell]] | None = None
+        self._start()
+
+    def _start(self) -> None:
+        first = next(self._rows, None)
+        if first is None:
+            raise InvalidFile("empty file")
+        sheet, number, cells = first
+        if sum(not _blank(c) for c in cells) == 1:  # a lone title cell above the header
+            following = next(self._rows, None)
+            if following is not None and following[0] == sheet and sum(not _blank(c) for c in following[2]) > 1:
+                sheet, number, cells = following
+            else:
+                self._first = following
+        self.header = _trim_header(cells)
+        self._sheet = sheet
+
+    def __iter__(self) -> Rows:
+        return self._read()
+
+    def close(self) -> None:
+        self._rows.close()
+
+    def _read(self) -> Rows:
+        width, sheet, count = len(self.header), self._sheet, 1
+        pending = [self._first] if self._first else []
+        self._first = None
+        awaiting = False  # a later sheet's header (after an optional title row) is still to come
+        try:
+            for item in itertools.chain(pending, self._rows):
+                at, _, cells = item
+                if at != sheet:
+                    sheet, awaiting = at, True
+                if awaiting:
+                    if sum(not _blank(c) for c in cells) == 1:
+                        continue  # the title row
+                    if _trim_header(cells) != self.header:
+                        raise InvalidFile(f"sheet {at + 1}: header differs from sheet 1", [f"sheet {at + 1}: header differs from sheet 1"])
+                    awaiting = False
+                    continue
+                count += 1
+                fitted = _fit(count, cells, width)
+                if fitted is not None:
+                    yield count, fitted
+        finally:
+            self.close()
+
+
+def _trim_header(cells: list[Cell]) -> Header:
+    width = len(cells)
+    while width and _blank(cells[width - 1]):
+        width -= 1
+    return [str(c).strip() if c is not None else "" for c in cells[:width]]
+
+
+def _read_ods(path: Path) -> tuple[Header, Rows]:
+    rows = _OdsRows(path)
+    return rows.header, rows
