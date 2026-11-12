@@ -6,3 +6,4 @@ export * from "./ZoomedCountyMap/index.ts";
 export * from "./CoverageLensMap/index.ts";
 export * from "./FullResults/index.ts";
 export * from "./RecordsTab/index.ts";
+export * from "./FlowLensMap/index.ts";
