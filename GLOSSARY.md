@@ -52,6 +52,18 @@ _Avoid_: locality, village (for the plotted unit)
 A contracting authority whose remit is the whole country (ministry, national agency, national company); it sits beside the county map, not inside Bucharest.
 _Avoid_: central authority
 
+**Elected leader**:
+A mayor (of a commune, town, municipality, Bucharest sector or Bucharest itself) or a county council president, elected directly; the only officials through whom a Party reaches a contracting authority.
+_Avoid_: local leader, politician, head of authority
+
+**Mandate**:
+One elected leader's term at one authority, from their oath to their successor's oath; an interim leader after a vacancy holds no mandate.
+_Avoid_: term, tenure, office
+
+**Party**:
+The list (party, alliance or "Independent") an elected leader ran on for one mandate, as registered at that election; it belongs to the contracting authority for that mandate's dates and never to a supplier or a person. "Independent" is not a party.
+_Avoid_: political affiliation, current party, party family, ruling party
+
 **Supplier**:
 A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF knows; an entity that both buys and sells is one entity in both roles.
 _Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
@@ -123,6 +135,14 @@ _Avoid_: unknown person, anonymous administrator
 **Naming threshold**:
 The total public money an individual must receive directly (as a natural-person supplier or a fund recipient) before they are named.
 _Avoid_: cutoff, limit
+
+**Party role**:
+A Named person's public, dated tie to a party: a candidacy or mandate on its list in a named election. Never party membership, which no Source publishes.
+_Avoid_: party member, membership, affiliation
+
+**Firm donation**:
+A donation or loan from an organisation, identified by its CUI, to a party; a dated fact on that organisation's page, never a Party.
+_Avoid_: political donation (for individual donors), sponsorship
 
 ### Explorer
 
