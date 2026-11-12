@@ -24,6 +24,7 @@ import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
+import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
@@ -573,7 +574,87 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
       };
 };
 
+const signalCard: Record<Locale, SignalCardCopy> = {
+  en: {
+    rules: {
+      OVER_CAP: {
+        label: "Over cap",
+        sentence: (n) => `One direct purchase was awarded for ${n.value}, ${n.multiple} times the direct-purchase cap of ${n.cap}.`,
+        lawful: "Possible lawful explanations: a call-off under a framework agreement, an exception in the law, or a data-entry error in the value or the type of the Record.",
+      },
+      SPLITTING: {
+        label: "Splitting",
+        sentence: (n) => `${n.purchases} direct purchases in CPV group ${n.cpvGroup} between ${n.from} and ${n.to} add up to ${n.sum}, above the single-purchase cap of ${n.cap}.`,
+        lawful: "Possible lawful explanations: separate needs, separate budget lines, or unrelated items that share a CPV group.",
+      },
+      FRAMEWORK_OVERRUN: {
+        label: "Framework overrun",
+        sentence: (n) => `Subsequent contracts reported under one framework agreement add up to ${n.subsequent}, against a ceiling of ${n.ceiling}: ${n.ratio} of it.`,
+        lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
+      },
+      NO_PUBLICATION: {
+        label: "No publication",
+        sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
+        lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
+      },
+    },
+    compact: { text: (label, when) => `${label}, ${when}` },
+    date: (when) => `Latest Record: ${when}`,
+    records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+    parties: {
+      authority: "Contracting authority",
+      suppliers: "Suppliers",
+      moreSuppliers: (_n, f) => `and ${f} more`,
+      entityLink: entityLink.en,
+    },
+    links: {
+      reproduce: (n, f) => (n === 1 ? "See the Record" : `See the ${f} Records`),
+      seap: { check: "Check in SEAP", checkEach: "Check each Record in SEAP" },
+      methodology: "How this Signal is detected",
+    },
+  },
+  ro: {
+    rules: {
+      OVER_CAP: {
+        label: "Peste plafon",
+        sentence: (n) => `O achiziție directă a fost atribuită pentru ${n.value}, adică de ${n.multiple} ori plafonul achiziției directe (${n.cap}).`,
+        lawful: "Explicații legale posibile: o achiziție subsecventă unui acord-cadru, o excepție prevăzută de lege sau o eroare de introducere a valorii ori a tipului înregistrării.",
+      },
+      SPLITTING: {
+        label: "Fracționare",
+        sentence: (n) => `${roCount(n.purchasesCount, n.purchases, "achiziție directă", "achiziții directe")} din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
+        lawful: "Explicații legale posibile: nevoi distincte, linii bugetare distincte sau produse fără legătură din aceeași grupă CPV.",
+      },
+      FRAMEWORK_OVERRUN: {
+        label: "Depășirea acordului-cadru",
+        sentence: (n) => `Contractele subsecvente raportate pentru un acord-cadru însumează ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
+        lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
+      },
+      NO_PUBLICATION: {
+        label: "Fără publicare",
+        sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
+        lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
+      },
+    },
+    compact: { text: (label, when) => `${label}, ${when}` },
+    date: (when) => `Ultima înregistrare: ${when}`,
+    records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+    parties: {
+      authority: "Autoritate contractantă",
+      suppliers: "Furnizori",
+      moreSuppliers: (_n, f) => `și încă ${f}`,
+      entityLink: entityLink.ro,
+    },
+    links: {
+      reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${roCount(n, f, "înregistrare", "înregistrări")}`),
+      seap: { check: "Verifică în SEAP", checkEach: "Verifică fiecare înregistrare în SEAP" },
+      methodology: "Cum este detectat acest Semnal",
+    },
+  },
+};
+
 export const sampleCopy = {
+  signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   entityOverview,
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
