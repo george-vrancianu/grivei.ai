@@ -9,7 +9,7 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from .archive import Archive
+from .archive import Archive, ArchiveError
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
 from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME, describe_crawl
@@ -56,6 +56,9 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--progress-file", default=os.environ.get("PIPELINE_CRAWL_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_CRAWL_PROGRESS_FILE; default <archive>/{DEFAULT_CRAWL_STATUS_NAME})")
 
+    q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
+    q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
+
     f = sub.add_parser("fetch-bulk", help="download one bulk file into the raw archive (no loading)")
     f.add_argument("--url", required=True)
     f.add_argument("--kind", default="da", choices=["da"])
@@ -81,6 +84,16 @@ def main(argv: list[str] | None = None) -> int:
         return _status(archive, args)
     if args.verb == "crawl":
         return _crawl(archive, args)
+    if args.verb == "requeue":
+        try:
+            restored = archive.requeue(args.match)
+        except ArchiveError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        for path in restored:
+            print(f"requeued {path}")
+        print(f"requeued {len(restored)} unit(s); {len(archive.quarantined())} still in quarantine")
+        return 0
     if args.verb == "fetch-bulk":
         print(fetch_bulk_file(archive, url=args.url, kind=args.kind, unit=args.unit, via=args.via))
         return 0
