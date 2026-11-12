@@ -11,13 +11,17 @@ const meta = { title: "Domain/MoneyLensMap" } satisfies Meta<Record<string, unkn
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
-/** The side and the selection live in the URL in the app; the stories hold them in state so clicking works. */
+/**
+ * The side and the selection live in the URL in the app; the stories hold them in state so clicking works.
+ * The app would refetch the map on a side change; here the other side's sample map stands in for it.
+ */
 function Lens({ locale, map, selected: initial }: { locale: "en" | "ro"; map: MoneyMap; selected?: MapArea }) {
   const [selected, setSelected] = useState<MapArea | undefined>(initial);
   const [side, setSide] = useState<CountySide>(map.side);
+  const shown = side === map.side ? map : side === "SUPPLIER" ? supplierSide : authoritySide;
   return (
     <Box sx={{ maxWidth: 820 }}>
-      <MoneyLensMap map={map} topology={countiesTopology} selected={selected} onSelect={setSelected} side={side} onSideChange={setSide} locale={locale} copy={sampleCopy.moneyLensMap(locale)} />
+      <MoneyLensMap map={shown} topology={countiesTopology} selected={selected} onSelect={setSelected} side={side} onSideChange={setSide} locale={locale} copy={sampleCopy.moneyLensMap(locale)} />
     </Box>
   );
 }

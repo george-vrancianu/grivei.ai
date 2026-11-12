@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { formatMoney } from "../../atoms/MoneyAmount/index.ts";
 import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
+import { CountyTooltip } from "./components/CountyTooltip/index.ts";
 import { OffMapTiles } from "./components/OffMapTiles/index.ts";
 import { SideToggle } from "./components/SideToggle/index.ts";
 import type { MoneyMap } from "../../types.ts";
@@ -39,22 +38,7 @@ export function MoneyLensMap({ map, topology, selected, onSelect, side, onSideCh
     const total = code === undefined ? undefined : totals.get(code);
     return formatMoney(total ? total.awarded : String(Math.round(value)), locale);
   };
-  const renderTooltip = ({ name, code }: AreaInfo) => {
-    const total = totals.get(code);
-    return (
-      <>
-        <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
-        {total ? (
-          <>
-            <Typography component="span" variant="body2" sx={{ display: "block" }}>{formatMoney(total.awarded, locale)}</Typography>
-            <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tiles.records(total.records, formatCount(total.records, total.estimated, locale))}</Typography>
-          </>
-        ) : (
-          <Typography component="span" variant="body2" sx={{ display: "block" }}>{copy.map.noData}</Typography>
-        )}
-      </>
-    );
-  };
+  const renderTooltip = ({ name, code }: AreaInfo) => <CountyTooltip name={name} total={totals.get(code)} locale={locale} copy={copy} />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

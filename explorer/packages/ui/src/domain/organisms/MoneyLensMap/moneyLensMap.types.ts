@@ -7,8 +7,11 @@ export type CountySide = MoneyMap["side"];
 /** A county code ("RO-BV") or one of the off-map areas: the `RecordFilter.county` values. */
 export type MapArea = string;
 
-/** The off-map areas. Each is a tile beside the map; the filter takes these exact strings. */
-export const OFF_MAP_AREAS = { national: "NATIONAL", unplaced: "UNPLACED", unknownSupplierCounty: "UNKNOWN_SUPPLIER_COUNTY" } as const;
+/**
+ * The off-map areas, each a tile beside the map; the filter takes these exact strings.
+ * Mirrors `OFF_MAP_AREAS` in the contract package, which the UI can't import (its module reads files).
+ */
+export const OFF_MAP_TILE_AREAS = { national: "NATIONAL", unplaced: "UNPLACED", unknownSupplierCounty: "UNKNOWN_SUPPLIER_COUNTY" } as const;
 
 export type SideToggleCopy = {
   /** Accessible name of the toggle group, e.g. "Show counties by". */
@@ -27,6 +30,8 @@ export type OffMapTilesCopy = {
   unplacedAuthorities: (count: number, formatted: string) => string;
   /** "9 Records"; the same function the Total figure uses. */
   records: TotalFigureCopy["records"];
+  /** "2 suspect values left out"; the same function the Total figure uses. */
+  suspectLeftOut: TotalFigureCopy["suspectLeftOut"];
 };
 
 /** Every user-facing string of the Money lens map. The app passes its catalogue; stories pass sample copy. */

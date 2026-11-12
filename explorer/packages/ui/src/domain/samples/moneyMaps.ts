@@ -40,3 +40,16 @@ export const supplierSide: MoneyMap = {
   unplaced: null,
   unknownSupplierCounty: total(bani(2_300_000_000), 5_100),
 };
+
+/** Supplier side where the tiles' Totals left suspect Records out. */
+export const supplierSideSuspectLeftOut: MoneyMap = {
+  ...supplierSide,
+  national: { ...supplierSide.national, suspectLeftOut: 12 },
+  unknownSupplierCounty: { ...total(bani(2_300_000_000), 5_100), suspectLeftOut: 1 },
+};
+
+/** Authority side where the Unplaced tile's Total left suspect Records out. */
+export const authoritySideSuspectLeftOut: MoneyMap = {
+  ...authoritySide,
+  unplaced: { authorities: 3, total: { ...total(bani(1_250_000), 17), suspectLeftOut: 2 } },
+};

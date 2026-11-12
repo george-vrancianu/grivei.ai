@@ -53,11 +53,15 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
 
+/** Romanian count noun: "1 înregistrare", "5 înregistrări", "20 de înregistrări" (the "de" rule for 0 and 20+, except 1 to 19 mod 100). */
+const roCount = (n: number, f: string, one: string, many: string) =>
+  n === 1 ? `${f} ${one}` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} ${many}` : `${f} de ${many}`;
+
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
-        records: (n, f) => (n === 1 ? `${f} înregistrare` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} înregistrări` : `${f} de înregistrări`),
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
         noCounty: "județ necunoscut",
         entityLink: entityLink.ro,
@@ -167,8 +171,9 @@ export const sampleCopy = {
             national: "Național",
             unplaced: "Autorități neplasate",
             unknownSupplierCounty: "Județ necunoscut al furnizorului",
-            unplacedAuthorities: (n, f) => `${f} ${plural(n, "autoritate fără județ", "autorități fără județ")}`,
-            records: (n, f) => `${f} ${plural(n, "înregistrare", "înregistrări")}`,
+            unplacedAuthorities: (n, f) => roCount(n, f, "autoritate fără județ", "autorități fără județ"),
+            records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+            suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
           },
         }
       : {
@@ -181,14 +186,15 @@ export const sampleCopy = {
             unknownSupplierCounty: "Unknown supplier county",
             unplacedAuthorities: (n, f) => `${f} ${plural(n, "authority without a county", "authorities without a county")}`,
             records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+            suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
           },
         };
   },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {
-          records: (n, f) => `${f} ${plural(n, "înregistrare", "înregistrări")}`,
-          suspectLeftOut: (n, f) => `${f} ${plural(n, "valoare suspectă exclusă", "valori suspecte excluse")}`,
+          records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+          suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
           noValue: (n, f) => `${f} ${plural(n, "înregistrare fără valoare", "înregistrări fără valoare")}`,
           frameworkCeilings: (amount) => `Plafoane de acorduri-cadru nenumărate: ${amount}`,
           methodology: "Cum se calculează acest total",
