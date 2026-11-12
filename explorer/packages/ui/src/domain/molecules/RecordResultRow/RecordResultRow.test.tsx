@@ -21,7 +21,7 @@ describe("RecordResultRow", () => {
     const { container } = renderRow(highlightedRecord);
     const { record } = highlightedRecord;
     expect(screen.getByRole("link", { name: record.title })).toHaveAttribute("href", `/explore/record/${record.code}`);
-    expect(container).toHaveTextContent("RON 300,000");
+    expect(container).toHaveTextContent("RON 5,000");
     expect(container.querySelector("time")).toHaveAttribute("datetime", record.date!);
     expect(screen.getByRole("link", { name: record.authority.displayName })).toHaveAttribute("href", `/explore/authority/${record.authority.key}`);
   });
@@ -85,6 +85,6 @@ describe("RecordResultRow", () => {
   it("reads in Romanian", () => {
     const { container } = renderRow(highlightedRecord, "ro");
     expect(container).toHaveTextContent("Potrivit în titlu:");
-    expect(container).toHaveTextContent("300.000 RON");
+    expect(container).toHaveTextContent("5.000 RON");
   });
 });

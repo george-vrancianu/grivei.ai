@@ -17,7 +17,7 @@ const money = (bani: string, locale: unknown) =>
   new Intl.NumberFormat(locale === "ro" ? "ro-RO" : "en-GB", { style: "currency", currency: "RON" }).format(Number(bani) / 100);
 
 /** Fixture pattern: rows come straight from the contract's mock fixtures, so the story shows realistic shapes. */
-const typical = fixtures.FullResultsSuppliers.find((f) => f.name === "typical")!;
+const typical = fixtures.FullResultsSuppliers.find((f) => f.name === "empty-filter")!;
 const supplierRows = typical.data.seap!.search.suppliers.rows;
 
 export const FromContractFixture: Story = {

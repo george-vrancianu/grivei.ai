@@ -30,7 +30,7 @@ export const ro: Copy = {
   nav: { label: "Principal", explore: "Explorează", search: "Căutare", coverage: "Acoperire", methodology: "Despre cifre" },
   language: { switchTo: "English", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
-  main: { title: "Explorează cheltuielile publice", total: "Total atribuit" },
+  main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată." },
   searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
   results: {
     label: "Rezultate",
@@ -73,6 +73,19 @@ export const ro: Copy = {
   mainScreenLayout: {
     lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
     regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
+  },
+  moneyLensMap: {
+    map: { mapLabel: "Harta județelor", legendTitle: "Valoare atribuită", noData: "Fără date", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
+    side: { label: "Arată județele după", authority: "Autorități", supplier: "Furnizori" },
+    tiles: {
+      heading: "În afara hărții",
+      national: "Național",
+      unplaced: "Autorități neplasate",
+      unknownSupplierCounty: "Județ necunoscut al furnizorului",
+      unplacedAuthorities: (n, f) => roCount(n, f, "autoritate fără județ", "autorități fără județ"),
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+      suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+    },
   },
   filterChips: {
     label: "Filtre",

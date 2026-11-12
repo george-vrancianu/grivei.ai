@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -18,7 +18,7 @@ export interface Copy {
     switchLabel: string;
   };
   status: { loading: string; failed: string };
-  main: { title: string; total: string };
+  main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string };
   /** The search bar on the main screen and the full-results view. */
   searchBar: SearchBarCopy;
   /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */
@@ -29,6 +29,8 @@ export interface Copy {
   filterChips: FilterChipsCopy;
   /** The main screen template: lens toggle and region names. */
   mainScreenLayout: MainScreenLayoutCopy;
+  /** The Money lens map on the main screen: legend, side toggle, off-map tiles. */
+  moneyLensMap: MoneyLensMapCopy;
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */
   pages: {
     placeholder: string;

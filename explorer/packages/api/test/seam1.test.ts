@@ -24,6 +24,7 @@ import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
+import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
@@ -155,6 +156,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE goto_a");
     await admin.query("CREATE DATABASE moneymap_a");
     await admin.query("CREATE DATABASE moneymap_b");
+    await admin.query("CREATE DATABASE recorded_a");
     await admin.query("CREATE DATABASE rollup_a");
     await admin.query("CREATE DATABASE rollup_b");
     await admin.query("CREATE DATABASE roles_a");
@@ -1991,6 +1993,51 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
           expect(group!.members.map((m) => m.share)).toEqual([RON(500_000), RON(500_000)]);
         }
       });
+    });
+  });
+
+  describe("recorded fixtures (#83): archive-moneymap -> rebuild -> the contract's recorded responses", () => {
+    // The app's seam 3 renders against these answers, so the two seams stay in step: this block fails when an answer
+    // drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const dir = resolve(here, "../../contract/src/fixtures/recorded");
+    const operations = [...new Set(RECORDED_CASES.map((c) => c.operation))];
+
+    beforeAll(() => {
+      rebuild("recorded_a", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-recorded")]); // its own database: no other block rebuilds it under a live pool
+    });
+
+    const answer = async (c: RecordedCase) => {
+      const op = allowlist.operations.find((o) => o.name === c.operation)!;
+      const r = await ask("recorded_a", op.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+
+    for (const operation of operations) {
+      it(`${operation}: every recorded case is what the API answers now`, async () => {
+        const recorded = [];
+        for (const c of RECORDED_CASES.filter((x) => x.operation === operation)) recorded.push(await answer(c));
+        const file = join(dir, `${operation}.json`);
+        if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+        // through JSON, so undefined and key order do not matter
+        expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      });
+    }
+
+    it("gives the cases the states they are named for", async () => {
+      const search = async (name: string) => ((await answer(RECORDED_CASES.find((c) => c.name === name && c.operation === "MainScreen")!)).data as MainScreenQuery).seap.search;
+      const national = await search("empty-filter-national");
+      expect(national.map.national.records).toBeGreaterThan(0);
+      expect(national.map.unplaced?.total.records).toBeGreaterThan(0);
+      expect((await search("supplier-side-unknown-county")).map.unknownSupplierCounty?.records).toBeGreaterThan(0);
+      expect((await search("go-to-entity")).goTo).not.toBeNull();
+      const none = await search("empty-no-match");
+      expect([none.total.records, none.records.count, none.goTo]).toEqual([0, 0, null]);
+      const county = await search("county-authority-side");
+      expect(county.total.records).toBeLessThan(national.total.records);
     });
   });
 

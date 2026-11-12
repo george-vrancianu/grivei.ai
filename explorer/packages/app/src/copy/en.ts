@@ -25,7 +25,7 @@ export const en: Copy = {
   nav: { label: "Main", explore: "Explore", search: "Search", coverage: "Coverage", methodology: "About the numbers" },
   language: { switchTo: "Română", switchLabel: "Romanian version of this page" },
   status: { loading: "Loading…", failed: "The data could not be loaded." },
-  main: { title: "Explore public spending", total: "Total awarded" },
+  main: { title: "Explore public spending", total: "Total awarded", mapUnavailable: "The map could not be loaded." },
   searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   results: {
     label: "Results",
@@ -68,6 +68,19 @@ export const en: Copy = {
   mainScreenLayout: {
     lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
     regions: { search: "Search", map: "Map", results: "Results" },
+  },
+  moneyLensMap: {
+    map: { mapLabel: "Map of counties", legendTitle: "Awarded value", noData: "No data", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },
+    side: { label: "Show counties by", authority: "Authorities", supplier: "Suppliers" },
+    tiles: {
+      heading: "Off the map",
+      national: "National",
+      unplaced: "Unplaced authorities",
+      unknownSupplierCounty: "Unknown supplier county",
+      unplacedAuthorities: (n, f) => `${f} ${plural(n, "authority without a county", "authorities without a county")}`,
+      records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
+    },
   },
   filterChips: {
     label: "Filters",
