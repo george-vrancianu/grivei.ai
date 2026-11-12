@@ -19,8 +19,7 @@ records absent from a re-upload are kept.
 """
 from __future__ import annotations
 
-import re
-import unicodedata
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
@@ -36,9 +35,13 @@ from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
 from .estimates import read_estimates
+from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
+from .search import create_index, value_bucket, vacuum
+
+log = logging.getLogger("pipeline.rebuild")
 
 SQL_DIR = Path(__file__).parent / "sql"
 SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
@@ -73,12 +76,6 @@ class RebuildSummary:
         out += [f"quarantined: {p}" for p in self.quarantined]
         out += [f"skipped, incomplete (no valid manifest): {p}" for p in self.incomplete]
         return out
-
-
-def fold(text: str) -> str:
-    """The tracer's text folding: strip diacritics, lower-case, collapse spaces. (The search ticket owns the full rule.)"""
-    stripped = "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", stripped.lower()).strip()
 
 
 # The data-through date per Record kind, the one definition `sources` (API) and `pipeline status` share: the latest publication date
@@ -162,6 +159,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         resolved = [(w.name, resolver.supplier(w.name, w.cui, r.authority_cui)) for w in winners]
         first_name, first = resolved[0] if resolved else (None, None)
         counted = count(r.kind, r.value_bani, r.award_date, r.contract_type, r.cpv_code, r.concluded_by, r.notice_code, len(winners), estimates)
+        badges = [*counted.badges, *_identity_badges([w for _, w in resolved])]  # on the Record and on each of its search rows
         cur.execute(
             _UPSERT,
             dict(
@@ -176,7 +174,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 suspect_threshold_bani=counted.suspect_threshold_bani,
                 load_notes=list(dict.fromkeys((*r.notes, *counted.notes))),
                 winners=Jsonb([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
-                badges=[*counted.badges, *_identity_badges([w for _, w in resolved])],
+                badges=badges,
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
                 concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count, via=r.via, url=r.url,
                 ca_notice_id=r.ca_notice_id, sys_notice_type_id=r.sys_notice_type_id, sys_notice_version_id=r.sys_notice_version_id,
@@ -193,12 +191,13 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
             keyed = w is not None and not w.natural_person
             cur.execute(
-                """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani,
-                       counted_bani, ceiling_bani, suspect, share_bani, authority_cui, supplier_cui, supplier_key, supplier_spelling, supplier_vat,
-                       supplier_curated, supplier_differs, doc)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani, value_bucket,
+                       badges, procedure, cpv_code, counted_bani, ceiling_bani, suspect, share_bani, authority_key, authority_cui, supplier_cui,
+                       supplier_key, supplier_spelling, supplier_vat, supplier_curated, supplier_differs, doc)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
-                 counted.value_bani, counted.counted_bani, counted.ceiling_bani, counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.cui,
+                 counted.value_bani, value_bucket(counted.value_bani), badges, r.procedure, r.cpv_code, counted.counted_bani, counted.ceiling_bani,
+                 counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.key, authority.cui,
                  w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
                  w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc),
             )
@@ -421,6 +420,10 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
                 if through:
                     cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
+            # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
+            cur.execute(
+                """UPDATE seap.search s SET badges = s.badges || CASE r.crawl_status WHEN 'PROVISIONAL' THEN 'CRAWLED_PROVISIONAL' ELSE 'CRAWL_ONLY' END
+                     FROM seap.record r WHERE r.code = s.record_code AND r.crawl_status IS NOT NULL""")
             build_frameworks(cur)
             cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
             summary.estimates_missing = cur.fetchone()[0]
@@ -435,11 +438,16 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
             cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
             cur.execute("ANALYZE seap.record")
+            create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
         if progress:
             progress.fail(e)
         raise
+    try:
+        vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+    except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
+        log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 
