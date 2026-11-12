@@ -67,7 +67,7 @@ python -m venv .venv              # or: uv venv .venv
 
 `pipeline/` is the explorer's pipeline, grown out of this Connector (ADR 0004): `archive.py` is the raw archive (files unchanged under a
 dated path, a manifest per unit written last, a quarantine area with a reason file), `fetch.py` downloads a bulk file into it,
-`bulk/` reads and validates the DA, DAN, Contracte and "fără anunț de inițiere" bulk files (CSV and XLSX; `headers.py` is the per-quarter header alias table, `values.py` the cell quirks, `records.py` the kind registry), `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`) and `progress.py` reports on it.
+`bulk/` reads and validates the DA, DAN, Contracte and "fără anunț de inițiere" bulk files (CSV and XLSX; `headers.py` is the per-quarter header alias table, `values.py` the cell quirks, `records.py` the kind registry), `rebuild.py` derives the `seap` schema (`pipeline/sql/seap_schema.sql`) and the shared core's entity tables (`pipeline/sql/core_schema.sql`) from the archive, `identity.py` holds the supplier identity rules (ADR 0003), `anaf.py` is the ANAF Reference source connector and `progress.py` reports on a rebuild.
 `datagov.py` is the bulk Connector's fetch half: `python -m pipeline --archive <dir> fetch-datagov [--since-year 2021] [--delay 1]`
 finds the `achizitii-publice-YYYY` datasets on data.gov.ro, archives each quarter's DA, DAN, Contracte and "fără anunț de inițiere"
 file (kinds `da`, `dan`, `contracte`, `fara-anunt`) with the resource identity in the manifest, skips unchanged resources on later
@@ -113,7 +113,7 @@ Archived kinds `contracte` (Record kind `CONTRACT`) and `fara-anunt` (`AWARD_NOT
 
 ## Operator: rebuild the graph from the archive for real
 
-Loads the whole raw archive (DA, DAN, Contracte, "fără anunț") into the `seap` schema. A rebuild is **rerun from scratch, never resumed** (ADR 0004: the graph is derived from the archive): it drops and recreates schema `seap` and loads everything in one transaction, committed only at the end. If it is killed, loses its connection or fails, the transaction rolls back: the database keeps the previous `seap` schema (or none, on a first run) and nothing is half-loaded. Rerunning the same command starts over and gives the same graph. The one effect that survives a kill is on the archive: a unit that failed validation has already been moved to `<archive>/quarantine/...` (with its `reason.json`), and a rerun does not look at the quarantine. Units are read and loaded one at a time, so memory is about one quarter (the biggest known file, 280 MB of CSV, peaks at about 250 MB; DA quarters of 770k rows about 1.5 GB). While it runs, the transaction holds locks on schema `seap`: the API cannot read `seap` until the commit, so stop the `api` service (or accept that it waits) during a multi-hour run.
+Loads the whole raw archive (DA, DAN, Contracte, "fără anunț") into the `seap` schema. A rebuild is **rerun from scratch, never resumed** (ADR 0004: the graph is derived from the archive): it drops and recreates schema `seap` and the core's entity tables (`core.entity`, `core.alias`, `core.anaf_company`: identities from the archived ANAF answers, see "Supplier identity") and loads everything in one transaction, committed only at the end. If it is killed, loses its connection or fails, the transaction rolls back: the database keeps the previous `seap` schema (or none, on a first run) and nothing is half-loaded. Rerunning the same command starts over and gives the same graph. The one effect that survives a kill is on the archive: a unit that failed validation has already been moved to `<archive>/quarantine/...` (with its `reason.json`), and a rerun does not look at the quarantine. Units are read and loaded one at a time, so memory is about one quarter (the biggest known file, 280 MB of CSV, peaks at about 250 MB; DA quarters of 770k rows about 1.5 GB). While it runs, the transaction holds locks on schema `seap`: the API cannot read `seap` until the commit, so stop the `api` service (or accept that it waits) during a multi-hour run.
 
 ```bash
 # once, from a worktree of the integration branch
@@ -140,6 +140,51 @@ nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>
 - **After a kill or a failure:** nothing to clean up. Look at the last log line or `status`, fix the cause if there is one, and run the same `nohup ...` command again (`>>` appends to the log). Stop a run on purpose with `pkill -f 'pipeline rebuild'` (SIGTERM is turned into a normal failure and rolled back; in Compose, `docker stop` the run container).
 - A run that ends `quarantined` units is a normal success; read `<archive>/quarantine/**/reason.json` for why. Fix the header alias (`pipeline/bulk/headers.py`) or the format support and move the unit back to its place in the archive to load it.
 
+## Supplier identity (ADR 0003) and the ANAF Reference source
+
+`pipeline rebuild` turns each Record's contracting authority and winners into **entities** of the shared core (`core.entity`, `core.alias`, `core.anaf_company`, recreated by every rebuild; SEAP's own tables hold only entity keys). The rules (`pipeline/identity.py`, tested in `tests/test_identity.py` and, through a real rebuild, `tests/test_identity_db.py`):
+
+- **Tax id as published** is classified: a Romanian CUI (`RO`, whitespace, punctuation, leading zeros stripped, must pass the check digit), a 13-digit CNP, a foreign VAT id with an EU country prefix (`BG103029862`, `ATU 18379608`), or something else (fails the check digit, 11-12 digits, `-`). A scientific-notation id (`1.00761E+12`) has lost its digits: no id.
+- **Key:** a CUI counts only if it passes the check digit **and** ANAF found it (an archived `found` answer). Entity keys: the CUI; `vat-<id>` for a foreign VAT id; `name-<slug>` otherwise (case, diacritics, punctuation, spacing folded; legal forms kept: `S.R.L.` -> `srl`; a name over 80 characters is cut and given a hash); a key pinned by the override file. A contracting authority is keyed by its CUI when it passes the check digit (ANAF adds its name and status), else by its name.
+- **Display name:** ANAF's current name with the cedilla letters Ş ş Ţ ţ fixed to comma-below Ș ș Ț ț, no re-casing (the raw name stays in `core.anaf_company`). Only when ANAF has no entry, the entity's most frequent SEAP spelling (a tie: the alphabetically first).
+- **Aliases:** every spelling SEAP published, with the number of Records and the first and last award date. They never merge entities. `differsFromAnaf` (and the Record badge `NAME_DIFFERS_FROM_ANAF`) is set when a SEAP spelling under a confirmed CUI is unlike ANAF's name, where "unlike" means: after folding case and diacritics, deleting dots, replacing other punctuation by spaces and dropping the legal-form words (`sc srl sa snc scs sca pfa ii ltd gmbh spa sas sarl ...`, see `_LEGAL_FORMS`), the two names differ. So `S.C. ALFA S.R.L. SRL` equals `ALFA SRL`, and `RCS & RDS` differs from `DIGI ROMANIA` (a rename). The supplier stays attached to the CUI.
+- **A CNP** is recognised first and nothing of the winner is stored: no id, no name, no key (in the Record's `winners` jsonb, load notes, search rows, aliases). The winner is a natural-person supplier (`Party.naturalPerson`, `entity` null); the Record still counts for its authority. The raw archive keeps the file unchanged.
+- **Supplier CUI equal to the Record's authority CUI:** unresolved (a name-only supplier) and the Record carries `CUI_MISMATCH`.
+- **ANAF status** (`stare_inregistrare` read as one word: ACTIV, INACTIV, RADIERE, FUZIUNE, DIVIZARE, DIZOLVARE, SUSPENDARE ..., see `status_of`) is stored with the company and served as `anafStatus`. Branches, groups and merged companies are separate entities.
+- **Override file** `pipeline/identity_overrides.toml` (versioned, reviewed, a `reason` per entry; override with `--identity-overrides` / `PIPELINE_IDENTITY_OVERRIDES`). An entry maps a name (a supplier published without a usable CUI) or a wrong published id to an entity key (a CUI, or a pinned `[a-z][a-z0-9-]*` key for a name-only entity, optionally with a `display_name`). It matches a whole name, so it never splits a joint venture. The entities it touches are `identityCurated`, and the Records it applied to carry `IDENTITY_CURATED`. A 13-digit id in the file is refused. The shipped file has no entries (see its header for the format); the test fixture's is `tests/fixtures/identity-overrides.toml`.
+- **Fixtures** (invented): `tests/fixtures/archive-identity/`, rebuilt by `tests/fixtures/build_identity_archive.py` (SEAP DA and Contracte files plus archived ANAF answers written through the connector's own `archive_batch`).
+
+### ANAF connector (`pipeline/anaf.py`)
+
+`python -m pipeline anaf-lookup` asks ANAF about every CUI of the archive's SEAP files (authorities and winners, normalised, passing the check digit; foreign ids, CNPs and failing numbers are never sent) that no archived ANAF response answers yet. The service (checked on 2026-11-12): `POST https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva` (the old `/PlatitorTvaRest/api/v9/ro/tva` path now answers 404), body `[{"cui": 54760, "data": "2026-11-12"}, ...]`, answered synchronously with `{"found": [{"date_generale": {"cui", "denumire", "adresa", "codPostal", "stare_inregistrare", ...}, "stare_inactiv": {...}, "adresa_sediu_social": {"sdenumire_Localitate", "scod_Localitate", "scod_Judet", "scod_JudetAuto", "scod_Postal", ...}, "adresa_domiciliu_fiscal": {...}}], "notFound": [1000001]}`. At most 100 CUIs per request, at most one request per second (the clock and sleeper are injectable in tests), 6 retries with a doubling backoff (2 s ... 32 s) on HTTP 5xx and 429, timeouts, connection errors, an HTML error page or a throttling answer (`cod` other than 200); a refused request (other 4xx) stops the run.
+Every response is archived unchanged before anything uses it, at `<archive>/anaf/vat/v9/<first cui>-<count>/<fetch day>/{request.json, response.json, manifest.json}`: `request.json` keeps the endpoint, the day and the CUI list (so a rebuild knows what was asked and not found), the files are written under a temporary name and renamed, the manifest last. The rebuild reads these files and never calls ANAF; the latest answer for a CUI wins (a later `notFound` removes an earlier `found`). The address fields #67 needs are stored raw in `core.anaf_company.seat` / `fiscal_domicile`.
+`--recheck-after-days N` also asks again about answers older than N days (the 365-day schedule is #81's); `--max-batches N` is a trial run.
+
+## Operator: ANAF lookup and the identity rebuild for real
+
+Seeds the ANAF answers for every national CUI (tens of thousands of CUIs, hundreds of requests, about one request per second: well under an hour), then rebuilds the graph with identities. Only this command talks to ANAF; run it once, unattended. The order:
+
+1. `fetch-datagov` (above) fills the raw archive with the SEAP files.
+2. `anaf-lookup` reads the archive (a scan of every SEAP file, a few minutes; it quarantines nothing), then asks ANAF.
+3. `rebuild` (above), which now also reads the archived ANAF answers. Run it again after any later `anaf-lookup`.
+
+```bash
+# once, from a worktree of the integration branch (same setup as the rebuild)
+cd watchdog
+uv venv --python 3.12 .venv && . .venv/bin/activate && uv pip install -r requirements.txt
+export PIPELINE_ARCHIVE=~/grivei-data/raw        # the same raw archive; the answers go to $PIPELINE_ARCHIVE/anaf/
+
+nohup python -m pipeline anaf-lookup > ~/grivei-data/anaf.log 2>&1 &
+```
+
+With Docker Compose (outbound internet needed): `nohup docker compose run --rm -T pipeline anaf-lookup > ~/grivei-data/anaf.log 2>&1 &` with `GRIVEI_ARCHIVE_DIR=~/grivei-data/raw`.
+
+- **Environment:** `PIPELINE_ARCHIVE` (the archive, default `/archive`); optional `PIPELINE_ANAF_PROGRESS_FILE` (status file, default `<archive>/anaf-progress.json`) and `PIPELINE_ANAF_URL` (only for a stub). No database is needed. The pace (1 request/s) is not configurable.
+- **Log:** `~/grivei-data/anaf.log`, timestamped lines flushed at once, no progress bar: `anaf scan unit 3/41 kind=da unit=2021Q3 records=... new_cuis=...` while it reads the archive, `anaf scan done: 61234 distinct CUIs in the archive`, `anaf start cuis=61234 batches=613 already_archived=0 archive=... pid=...`, then one line per request `anaf batch 37/613 cuis=100 found=97 notfound=3 archived=<unit directory>`, last `anaf done batches=613 cuis=61234 found=... notfound=... in H:MM:SS`. Retries are logged to the same file as `WARNING anaf attempt 2/7 failed (HTTP 503)`. On failure: `anaf FAILED after 37/613 batches: <error>; every finished batch is archived, rerun the same command to resume`.
+- **Progress:** `python -m pipeline status` prints, after the rebuild section if there is one, `anaf lookup state: running|scanning|finished|failed|interrupted`, `batches: 37/613 done; cuis: 3700/61234 (3590 found, 110 not found); N were archived before this run`, start, last update, last line (same atomic status-file mechanism and host/pid rules as the rebuild's). Quick check without the CLI: `tail -n 2 ~/grivei-data/anaf.log`; `ls $PIPELINE_ARCHIVE/anaf/vat/v9 | wc -l` counts the batches archived.
+- **After a kill or a failure:** nothing to clean up and nothing is lost: finished batches are archived, a batch cut short has no manifest and is ignored. Run the same `nohup ...` command again (`>>` appends to the log): the CUIs already answered, found or not found, are skipped and the run asks only for the rest (the scan repeats first). Stop on purpose with `pkill -f 'pipeline anaf-lookup'` (SIGTERM ends it like a failure).
+- **Later:** a rerun after the next `fetch-datagov` asks only for CUIs that are new; add `--recheck-after-days 365` to refresh old answers.
+
 ## The data model, in brief
 
 | Layer | Tables | Role |
@@ -149,9 +194,11 @@ nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>
 | Typed SEAP | `seap_award_notice`, `seap_contract`, `seap_contract_winner`, `seap_direct_acquisition` | the domain data, with all fields, for precise queries |
 | Investigation | `v_*`, `neighbours()` | a watchdog's standard questions |
 
-Entity resolution: companies are identified by CUI (`norm_cui`), then by `seap_entity_id`, then by
-normalized name (`norm_company_name`: no diacritics, no SC/SRL/SA). People (from ONRC/ANI) will
-need separate rules — there is no public identifier, so matching is on name + context.
+Entity resolution of this legacy loader: companies are identified by CUI (`norm_cui`: digits only, `RO` and punctuation stripped;
+a foreign VAT id or a 13-digit CNP is no CUI and gives NULL), then by `seap_entity_id`. A row with neither is a new entity: names never
+merge entities (ADR 0003). The pipeline's identity rules (check digit, ANAF confirmation, name-only keys) are in
+`pipeline/identity.py` and the section "Supplier identity" below. People (from ONRC/ANI) will need separate rules: there is
+no public identifier, so matching is on name + context.
 
 ## What's next (connectors)
 
