@@ -1,0 +1,4 @@
+# The methodology page ("About the numbers"): each Signal rule's window and how often it fires nationally.
+query MethodologyBaseRates {
+  signalRules { slug window { from to } baseRate baseRateYear dataThrough }
+}
