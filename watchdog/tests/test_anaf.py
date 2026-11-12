@@ -337,7 +337,7 @@ def test_a_failed_lookup_says_so_and_says_how_to_resume(archive, tmp_path):
     dead = Fake(script=lambda n, body: (503, b"") if n > 1 else None)
     with pytest.raises(AnafError):
         run(archive, range(1000, 1300), dead, AnafProgress(status_file, out=lines.append))
-    assert re.search(r"anaf FAILED after 1/3 batches: AnafError: giving up after 7 attempts: HTTP 503; every finished batch is archived, rerun the same command to resume", lines[-1])
+    assert re.search(r"anaf FAILED after 1/3 batches: AnafUnavailable: giving up after 7 attempts: HTTP 503; every finished batch is archived, rerun the same command to resume", lines[-1])
     s = read_status(status_file)
     assert s["state"] == "failed" and "HTTP 503" in s["error"]
     assert any("rerun" in line for line in describe_anaf(s))

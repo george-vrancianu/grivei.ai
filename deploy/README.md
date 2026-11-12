@@ -44,6 +44,24 @@ docker compose run --rm pipeline rebuild
 
 `fetch-bulk` only downloads into the archive; `anaf-lookup` asks ANAF about the CUIs in the archive and archives the answers (resumable; operator steps in `watchdog/README.md`); `rebuild` drops and recreates the `seap` schema and the core's entity tables (`core.entity`, `core.alias`, `core.anaf_company`) from every complete unit in one transaction. Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
 
+## Schedule the refresh
+
+`docker compose run --rm -T pipeline refresh` is the nightly run (what it does and when each step is due: `watchdog/README.md`, "The refresh run"). It takes its own lock in the archive, so any number of triggers is safe. The schedule is a systemd timer in WSL (daily 03:00 and 3 minutes after boot, `Persistent=true`) and a Windows logon task that keeps the distro running. One-time setup:
+
+```bash
+# in WSL; needs systemd (`[boot] systemd=true` in /etc/wsl.conf) and docker reachable from the user
+mkdir -p ~/.config/systemd/user ~/grivei-data
+cp deploy/systemd/grivei-refresh.{service,timer} ~/.config/systemd/user/
+$EDITOR ~/.config/systemd/user/grivei-refresh.service        # WorkingDirectory = this checkout
+printf 'GRIVEI_ARCHIVE_DIR=%s\nGRIVEI_HEALTHCHECK_URL=https://hc-ping.com/<uuid>\n' ~/grivei-data/raw > ~/grivei-data/refresh.env
+loginctl enable-linger "$USER"                                # user units run without a login session
+systemctl --user daemon-reload && systemctl --user enable --now grivei-refresh.timer
+systemctl --user list-timers grivei-refresh.timer             # next run
+journalctl --user -u grivei-refresh -n 50                     # the last run's log
+```
+
+In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at logon (the `schtasks /Create ... /SC ONLOGON` line is in the file's header; keep its `-ExecutionPolicy Bypass`: with Windows' default `Restricted` policy the script is refused in a hidden window and WSL idles out, so the timer never fires). In healthchecks.io set the check's period to 1 day and its grace to 3 days: the dead-man's switch then alerts when no run has succeeded for 3 days, and the run's `/fail` pings carry the reason.
+
 ## Environment
 
 | Variable | Default | Meaning |
@@ -51,6 +69,7 @@ docker compose run --rm pipeline rebuild
 | `GRIVEI_DB_PASSWORD` | `grivei` | Postgres password (the database is not published to the host) |
 | `GRIVEI_ARCHIVE_DIR` | `./archive` | host directory mounted as the raw archive |
 | `GRIVEI_GEO_DIR` | `./geo` | host directory the pipeline writes the county and UAT TopoJSON to and Caddy serves at `/geo/` (create it first: `mkdir geo`, so it is yours, not root's) |
+| `GRIVEI_HEALTHCHECK_URL` | empty | healthchecks.io ping URL for `refresh` (becomes `PIPELINE_HEALTHCHECK_URL` in the pipeline container); empty = no pings |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
 | `SEAP_BASE_URL` | `https://e-licitatie.ro` | the SEAP site the API's `/source/seap/<code>` redirect asks (and redirects to); set on the `api` service, only tests change it |
 | `SEAP_LINK_PUBLIC_BASE` | empty | prefix of the "Check in SEAP" URL a bulk Record's provenance carries (`<base>/source/seap/<code>`); empty = relative, same origin as the app |

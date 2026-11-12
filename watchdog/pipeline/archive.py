@@ -179,6 +179,10 @@ class Archive:
 
     # ---- reading ------------------------------------------------------------------------------------------
 
+    def fetch_dirs(self) -> Iterator[Path]:
+        """Every fetch directory of the archive (quarantine excluded): what a cheap "did the archive change" check counts."""
+        return self._unit_dirs()
+
     def _unit_dirs(self) -> Iterator[Path]:
         """Every fetch directory (`<source>/<stream>/<kind>/<unit>/<day>`), with or without a manifest; quarantine excluded."""
         if not self.root.is_dir():

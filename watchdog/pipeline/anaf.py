@@ -52,6 +52,10 @@ class AnafError(Exception):
     """A lookup that cannot go on: a refused request, or a transient failure that did not clear after every retry."""
 
 
+class AnafUnavailable(AnafError):
+    """ANAF stayed down or busy through every retry: not a refusal, so worth trying again on another day."""
+
+
 class Transient(Exception):
     """One failed attempt worth repeating (5xx, timeout, throttling, an answer that is not a v9 answer)."""
 
@@ -135,7 +139,7 @@ class AnafClient:
             except (requests.Timeout, requests.ConnectionError) as e:
                 last = f"{type(e).__name__}: {e}"
             log.warning("anaf attempt %d/%d failed (%s)", attempt + 1, self.retries + 1, last)
-        raise AnafError(f"giving up after {self.retries + 1} attempts: {last}")
+        raise AnafUnavailable(f"giving up after {self.retries + 1} attempts: {last}")
 
 
 # ---- the archive -------------------------------------------------------------------------------------------------------

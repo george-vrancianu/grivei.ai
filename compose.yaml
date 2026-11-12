@@ -1,6 +1,7 @@
 # The explorer's runtime: one Compose project inside WSL2 (spec #37, #27).
 #
 #   docker compose up -d --build             db + api + web (Caddy) on http://localhost:8080
+#   docker compose run --rm pipeline refresh  the nightly run (crawl, data.gov.ro, ANAF, load; see deploy/README.md)
 #   docker compose run --rm pipeline rebuild  derive the database from the raw archive (one-shot, not part of `up`)
 #
 # Runbook, env vars and the volume layout: deploy/README.md.
@@ -81,6 +82,7 @@ services:
       DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
       PIPELINE_ARCHIVE: /archive
       PIPELINE_GEO_DIR: /geo
+      PIPELINE_HEALTHCHECK_URL: ${GRIVEI_HEALTHCHECK_URL:-}  # healthchecks.io ping URL of `refresh`; empty = no pings
     volumes:
       - ${GRIVEI_ARCHIVE_DIR:-./archive}:/archive
       - ${GRIVEI_GEO_DIR:-./geo}:/geo

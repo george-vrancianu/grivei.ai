@@ -363,6 +363,62 @@ python -m pipeline rebuild --db "$DATABASE_URL"
 
 Tests: `pytest tests/test_placement.py` (rules, generator, TopoJSON, fetch and lookups with HTTP stubbed; no database) and `tests/test_placement_db.py` (Docker); the fixture world is `tests/fixtures/build_placement_archive.py` (run it to regenerate `archive-placement/` and `placement-data/`).
 
+## The refresh run (#81): `pipeline refresh`, `seed`, the ledger and the alerts
+
+`pipeline refresh` is the one nightly run (`docker compose run --rm -T pipeline refresh`, scheduled by the systemd timer in `deploy/README.md`, "Schedule the refresh"). It takes a lock (`<archive>/refresh.lock`, shared with `seed`), then runs its steps in this order, each one **only when due from its own last success** (a calendar day is a UTC day):
+
+| Step | What | Due when |
+| --- | --- | --- |
+| `crawl` | e-licitatie catch-up from the cursor plus the 3-day trailing re-crawl (`pipeline crawl`) | no success today |
+| `datagov` | data.gov.ro bulk files (`fetch-datagov`) and the MF list (`fetch-mf`) | 7 days since its last success |
+| `anaf` | ANAF for new CUIs, plus the 365-day re-check (`anaf-lookup --recheck-after-days 365`) | the archive gained units (other than ANAF answers) since its last success, or 7 days passed |
+| `load` | `rebuild` (new or re-uploaded files, requeued units; evaluates the possibly-incomplete rule into the Coverage grid) | the archive's units changed since its last load, or it never ran |
+
+A second trigger the same day (the on-boot one after the 03:00 one) finds nothing due and exits 0 after a success ping; a trigger while a run holds the lock logs it and exits 0 (no ping, no ledger entry). A step that failed has no success, so it is due again at the next trigger. **Deviation from the spec's step order:** ANAF runs before the load (the spec lists load, then ANAF), because the load reads the archived ANAF answers: placement and identity are right on the first load after new CUIs arrive instead of one night later. Step 5 of the spec (restic of the archive, `pg_dump` weekly) is #82's: it is one more `Step` appended in `pipeline/refresh/engine.py::refresh_steps`.
+
+**Ledger.** `<archive>/refresh-ledger.json` (rewritten whole through a temp name and a rename): every run (id, kind `refresh` or `seed`, trigger, start, end, status `ok|failed|interrupted`, the alert it raised) and every step (start, end, status, attempts, failure class, counts, the archive unit directories it created, warnings, error). A run still `running` when the next takes the lock was killed and is closed `interrupted`.
+
+**Failure classes** (`pipeline/refresh/engine.py::classify`; network and database-unreachable errors, `CrawlError` and an ANAF outage that outlasted its retries are transient; everything else, including an unknown exception, a refused ANAF request (HTTP 4xx) and a full disk, deterministic; an error in the engine itself pings `/fail` at once):
+
+- *transient*: the step is retried inside the run after 60 s and 300 s; if it still fails the other steps still run, the run is `failed` (exit 1), and nothing is pinged until **more than 2 runs in a row** failed, then a `/fail` ping with a one-line reason. The dead-man's switch covers a longer silence.
+- *deterministic* (a bug, no database configured, a crawl with no cursor and nothing to start after): no retry, `/fail` ping with the reason at once.
+- *suspicious success* (the load quarantined a file, a quarter is possibly incomplete, data.gov.ro showed a resource it could not classify): the data loads, the run is `ok`, and the warnings go in the success ping's body (only the ones not already reported by that step's previous success, so a flag that recurs every night does not make every ping suspicious; the full list stays in the log and `allWarnings` of the ledger), `pipeline status` and the ledger. The quarantined quarter shows publicly as "not yet loaded" in the Coverage grid (no reason, no through-date); the quarantine itself stays private.
+
+**Pings.** `PIPELINE_HEALTHCHECK_URL` (compose: `GRIVEI_HEALTHCHECK_URL`): the healthchecks.io check URL. A success ping after every run that did not fail (nothing due included), `<url>/fail` with the reason otherwise. Unset = no pings, logged. A ping that cannot be sent is logged and never fails the run. Tests stub it; never ping a real URL from a test.
+
+**`pipeline status`** prints, after the rebuild, ANAF, crawl and backfill sections (crawl cursor, crawled-through and data-through dates), the refresh section: the last 5 runs newest first with each step's outcome, alerts, errors and warnings, each step's last success, what is due now, and the open quarantines (path and reason).
+
+**Re-run verbs** (all work from the archive, none re-downloads): `pipeline load-quarter 2023Q2 --db URL` (requeues that quarter's quarantined files, then rebuilds: the graph is derived whole from the archive, so there is no partial load; exits 1 if the quarter is still quarantined), `pipeline crawl --from D --to D`, `pipeline backfill`, `pipeline rebuild`, `pipeline requeue` (see the lock note below).
+
+### Operator: seed everything from scratch, then schedule the nightly run
+
+`pipeline seed` runs, in one locked, resumable run with one timestamped log: `datagov` (fetch-datagov and the MF list), `anaf` (ANAF for every CUI in the archive, crawled ones included), `load` (rebuild) and, with `--backfill`, the 2021-22 backfill crawl (`pipeline backfill`, many hours). **Order:** ANAF before the load, so placement is correct on the first load. A step that succeeded in an earlier seed is skipped; the steps themselves skip what is already archived, so a kill loses at most the unit in flight (files are written under a temp name and renamed, a manifest last). Add `crawl` separately (`pipeline crawl`, see above) if you want the crawled quarters in the first load; the nightly `refresh` catches up whatever is missing.
+
+```bash
+# once, from a worktree of the integration branch
+cd watchdog && uv venv --python 3.12 .venv && uv pip install -r requirements.txt
+export PIPELINE_ARCHIVE=~/grivei-data/raw DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
+# optional: PIPELINE_CRAWL_START=2025-07-01 (the nightly crawl's first start day), PIPELINE_CRAWL_DELAY=0.35
+
+nohup .venv/bin/python -m pipeline seed --backfill >> ~/grivei-data/seed.log 2>&1 &      # start (omit --backfill to leave it for later)
+tail -f ~/grivei-data/seed.log                                                         # one timestamped line per step event and per unit
+.venv/bin/python -m pipeline status                                                    # rebuild / ANAF / crawl / backfill state, last runs, quarantines
+pkill -f 'pipeline seed'                                                               # stop (SIGTERM ends it like a failure; the ledger says interrupted)
+nohup .venv/bin/python -m pipeline seed --backfill >> ~/grivei-data/seed.log 2>&1 &      # resume: the same command; finished steps are skipped
+```
+
+Expected cost, from the earlier tickets' real runs and estimates: `fetch-datagov` tens of minutes to hours (several GB, about 1 s between requests, low CPU and memory); `anaf-lookup` a few minutes of scanning (one file at a time) plus about 600 requests at 1 per second, under an hour, light; `rebuild` hours (about 860 records/s; about 250 MB for the biggest CSV, about 1.5 GB for a 770k-row DA quarter, so keep 2 GB or more for it); the backfill crawl many hours at 0.35 s per request. The seed holds the single lock, so a `refresh` timer firing meanwhile logs "another run holds the lock" and does nothing.
+
+**The rebuild holds an exclusive lock on schema `seap` for its whole transaction (hours on a national archive):** the API cannot read `seap` until the commit. Stop the `api` service during a seed's load, or accept the wait. A rebuild into a fresh database beside the live one, checked and then switched over, is #82's (backups and rebuild switchover); this ticket leaves it alone. **The nightly `refresh` will do this every night.** The crawl adds a new day unit and re-crawls the trailing 3 days as new dated directories, so the archive changes every night, `load` is due every night, and each load is a full rebuild: hours (the national archive at about 860 records/s) with the exclusive `seap` lock held, so the public API stalls for those hours until #82's switchover lands. Choose one until then: (a) accept the nightly window (the 03:00 timer makes it a night-time stall), or (b) stop `api` around the timer, for example `ExecStartPre=/usr/bin/docker compose stop api` and `ExecStopPost=/usr/bin/docker compose start api` as a drop-in of `grivei-refresh.service`. Plan the first scheduled night after the seed finishes.
+
+**Stops at the first failure.** A seed that fails a step (after that step's retries) stops there; the steps after it did not run, and the same command resumes at the failed step. A `refresh` keeps going after a failed step (its due rules compare fingerprints, so the next run repairs it).
+
+**Do not run these beside a refresh or a seed.** `rebuild` and `load-quarter` take the same lock and exit 1 if another run holds it. `crawl --from/--to`, `anaf-lookup`, `backfill`, `fetch-datagov` and `requeue` do not: running one of them while the timer's run is going writes the same units from two processes. Stop the timer (`systemctl --user stop grivei-refresh.timer`) or wait for the run (`pipeline status`) first.
+
+**Deviation: the ledger is a file, not tables.** The spec places the operational ledger (`pipeline_run` / `pipeline_step`) in the core database; it is `<archive>/refresh-ledger.json` here (atomic writes, one lock). It works without a database and survives a rebuild, which does not touch it. A corrupt ledger is moved aside as `refresh-ledger.json.corrupt-<time>`, not overwritten. Moving it into the core database is a later choice, not needed by anything yet.
+
+Then enable the nightly schedule: `deploy/README.md`, "Schedule the refresh" (systemd user timer at 03:00 and on boot with `Persistent=true`, and the Windows logon task that keeps WSL up).
+
 ## The data model, in brief
 
 | Layer | Tables | Role |

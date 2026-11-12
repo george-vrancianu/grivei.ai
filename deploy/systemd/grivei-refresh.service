@@ -1,0 +1,16 @@
+# The nightly refresh (#81). A user unit: install with deploy/README.md "Schedule the refresh".
+# Adjust WorkingDirectory to your checkout (the one with compose.yaml) and put GRIVEI_ARCHIVE_DIR etc. in ~/grivei-data/refresh.env.
+[Unit]
+Description=grivei.ai refresh (crawl, data.gov.ro, ANAF, load)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/grivei.ai
+# KEY=value lines: GRIVEI_ARCHIVE_DIR=/home/you/grivei-data/raw, GRIVEI_HEALTHCHECK_URL=https://hc-ping.com/<uuid>, GRIVEI_DB_PASSWORD=...
+EnvironmentFile=-%h/grivei-data/refresh.env
+# `compose run` starts the db service (and waits until healthy) by itself; the one lock inside the run makes a duplicate trigger do nothing
+ExecStart=/usr/bin/docker compose run --rm -T pipeline refresh --trigger timer
+# a transient failure is already retried with backoff inside the run and alerted by healthchecks.io, so no systemd restart
+TimeoutStartSec=12h
