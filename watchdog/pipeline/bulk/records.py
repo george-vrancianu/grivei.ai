@@ -69,6 +69,12 @@ class BulkRecord:
     concluded_by: str | None = None  # `Incheiat prin`: 'Cu acord cadru' | 'Cu acord cadru subsecvent' | 'Fara acord cadru'; #65 needs it
     initiation_code: str | None = None  # the initiation notice (CN/SCN...), when the file has it
     lot_count: int | None = None  # distinct lot numbers, when the file has them
+    # crawled Records only (#77; a bulk Record keeps the defaults): how it was obtained, and what the crawl saw of the notice
+    via: str = "BULK"  # 'BULK' | 'CRAWL'
+    url: str | None = None  # the public e-licitatie page, built at load time from the notice type and version
+    ca_notice_id: int | None = None  # the internal id (`caNoticeId`)
+    sys_notice_type_id: int | None = None
+    sys_notice_version_id: int | None = None
 
     @property
     def all_winners(self) -> tuple[Winner, ...]:

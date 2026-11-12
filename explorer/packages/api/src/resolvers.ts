@@ -50,7 +50,10 @@ function recordRow(r: RecordRow) {
     procedure: r.procedure,
     value: r.value,
     counted: r.counted,
-    badges: r.value === null ? ["NO_VALUE"] : [],
+    badges: [
+      ...(r.value === null ? ["NO_VALUE"] : []),
+      ...(r.crawlStatus === "PROVISIONAL" ? ["CRAWLED_PROVISIONAL"] : r.crawlStatus === "CRAWL_ONLY" ? ["CRAWL_ONLY"] : []),
+    ],
     authority: entity(r.authority.cui, r.authority.name),
     // TODO #66: natural persons. A CNP-shaped CUI_OFERTANT must never be stored or served; it should be naturalPerson: true.
     winners: r.winners.map((w) => ({
@@ -68,8 +71,8 @@ function recordPage(r: RecordDetail) {
     ...recordRow(r),
     contractType: r.contractType,
     cpv: r.cpv,
-    // TODO: `url` is the Source's public page for the Record, served by the /source/seap/<code> redirect (not built yet).
-    provenance: { source: "SEAP" as const, url: null, via: r.provenance.via, kind: "BULK" as const, fetchedAt: r.provenance.fetchedAt },
+    // `url`: a crawled Record's public page was built at load time; a bulk Record's is the /source/seap/<code> redirect's job (not built yet).
+    provenance: { source: "SEAP" as const, url: r.provenance.url, via: r.provenance.via, kind: r.provenance.kind, fetchedAt: r.provenance.fetchedAt },
     suspect: null,
     framework: null,
   };

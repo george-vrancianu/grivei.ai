@@ -25,6 +25,9 @@ from psycopg.types.json import Jsonb
 
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
+from .crawl import KIND as CRAWL_KIND
+from .crawl.unitdir import CRAWLED_KINDS, contiguous_through as crawl_through
+from .crawl.records import parse_unit as parse_crawl_unit
 from .progress import Progress
 
 SCHEMA_SQL = Path(__file__).parent / "sql" / "seap_schema.sql"
@@ -52,6 +55,17 @@ def fold(text: str) -> str:
     return re.sub(r"\s+", " ", stripped.lower()).strip()
 
 
+# The data-through date per Record kind, the one definition `sources` (API) and `pipeline status` share: the latest publication date
+# of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days after the kind's last bulk quarter (crawled Records' own dates do not count:
+# one past a hole would hide the hole; a crawled day with nothing new still means "looked through that day").
+DATA_THROUGH_SQL = """
+SELECT kind, max(d)::text FROM (
+    SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
+    UNION ALL
+    SELECT kind, through FROM seap.crawl_state
+) x GROUP BY kind ORDER BY kind"""
+
+
 def _search_doc(r: BulkRecord) -> str:
     parts = [r.title, r.authority_name, r.supplier_name, r.cpv_code, r.cpv_description, r.code, r.authority_cui, r.supplier_cui]
     for w in r.all_winners[1:]:  # the first winner is the supplier above
@@ -64,15 +78,16 @@ _CONTENT = (
     "kind", "channel", "title", "state", "authority_cui", "authority_name", "supplier_cui", "supplier_name", "cpv_code",
     "cpv_description", "contract_type", "published_on", "quarter", "award_date", "estimated_bani", "value_bani",
     "counted_bani", "load_notes", "winners", "notice_code", "contract_numbers", "procedure", "concluded_by",
-    "initiation_code", "lot_count",
+    "initiation_code", "lot_count", "via", "url", "ca_notice_id", "sys_notice_type_id", "sys_notice_version_id",
 )
 _UPSERT = f"""
 INSERT INTO seap.record (code, {", ".join(_CONTENT)}, source_file_id)
 VALUES (%(code)s, {", ".join(f"%({c})s" for c in _CONTENT)}, %(source_file_id)s)
 ON CONFLICT (code) DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in _CONTENT)}, source_file_id = EXCLUDED.source_file_id
-WHERE EXCLUDED.published_on > seap.record.published_on
+WHERE (EXCLUDED.via = 'BULK' AND seap.record.via = 'CRAWL')
+   OR (EXCLUDED.via = seap.record.via AND (EXCLUDED.published_on > seap.record.published_on
    OR (EXCLUDED.published_on = seap.record.published_on
-       AND ROW({", ".join(f"EXCLUDED.{c}" for c in _CONTENT)}) IS DISTINCT FROM ROW({", ".join(f"seap.record.{c}" for c in _CONTENT)}))
+       AND ROW({", ".join(f"EXCLUDED.{c}" for c in _CONTENT)}) IS DISTINCT FROM ROW({", ".join(f"seap.record.{c}" for c in _CONTENT)}))))
 RETURNING (xmax = 0) AS inserted
 """
 
@@ -81,7 +96,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
     """Upsert Records by code. A code that is already there is replaced only by a later publication date, or by the same
     date with different content (the later file wins a tie), so a re-uploaded old file cannot overwrite newer data and the
     same content twice changes nothing. A replacement replaces the whole Record: its lots and winners are the newer
-    version's, not a merge."""
+    version's, not a merge. A crawled Record (via CRAWL, #77) is always replaced by a bulk one and never replaces one."""
     for r in rows:
         winners = r.all_winners
         contract = r.kind in ("CONTRACT", "AWARD_NOTICE")
@@ -95,7 +110,8 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 estimated_bani=r.estimated_bani, value_bani=r.value_bani, counted_bani=r.value_bani,
                 load_notes=list(r.notes), winners=Jsonb([{"name": w.name, "cui": w.cui} for w in winners]),
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
-                concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count,
+                concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count, via=r.via, url=r.url,
+                ca_notice_id=r.ca_notice_id, sys_notice_type_id=r.sys_notice_type_id, sys_notice_version_id=r.sys_notice_version_id,
                 source_file_id=source_file_id,
             ),
         )
@@ -136,7 +152,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
     """
     summary.incomplete = archive.incomplete()
-    units = [u for u in archive.units() if u.source == "seap" and u.stream == "bulk" and u.kind in KINDS]
+    units = [u for u in archive.units() if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind == CRAWL_KIND))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     if progress:
         progress.start(len(units), archive.root)
@@ -148,23 +164,28 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
         keys = []  # recorded as loaded only once the whole unit validates
         rows = 0
         try:
-            for name in unit.files:
-                path = unit.file_path(name)
-                key = (unit.kind, sha256_of(path))
-                if key in loaded or key in keys:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
-                    summary.duplicate_files.append(path)
-                    continue
-                parsed = parse_file_stats(unit.kind, unit.unit, path)
-                files.append((name, parsed.records))
-                rows += parsed.rows
-                keys.append(key)
+            if unit.stream == "crawl":  # a crawled day: one parse of its list and contracts pages, Records by kind
+                parsed_day = parse_crawl_unit(unit)
+                files = [(label, records) for label, records in parsed_day.records.items() if records]
+                rows = parsed_day.rows
+            else:
+                for name in unit.files:
+                    path = unit.file_path(name)
+                    key = (unit.kind, sha256_of(path))
+                    if key in loaded or key in keys:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
+                        summary.duplicate_files.append(path)
+                        continue
+                    parsed = parse_file_stats(unit.kind, unit.unit, path)
+                    files.append((name, parsed.records))
+                    rows += parsed.rows
+                    keys.append(key)
         except InvalidFile as e:
             summary.quarantined.append(archive.quarantine(unit, e.reason, [p for p in e.problems if p]))
             yield UnitOutcome(index, len(units), unit, "quarantined", rows=rows, reason=e.reason)
             continue  # all or nothing: none of this unit's files load
         loaded.update(keys)
         yield UnitOutcome(index, len(units), unit, "loaded" if files else "skipped", files, rows,
-                          None if files else "same file already loaded")
+                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"))
 
 
 @dataclass
@@ -191,19 +212,32 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None) -> 
             for o in iter_units(archive, summary, progress):
                 for name, rows in o.files:
                     number += 1
+                    crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
                     cur.execute(
-                        "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (number, KINDS[o.unit.kind].label, o.unit.unit, name, sha256_of(o.unit.file_path(name)), o.unit.via, o.unit.url,
-                         o.unit.fetched_at, len(rows)),
+                        "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        (number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
+                         sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
+                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), o.unit.stream),
                     )
                     load_records(cur, number, rows)
                     summary.files_loaded += 1
                 if progress:
                     progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                        sum(len(rows) for _, rows in o.files), o.status, o.reason)
+            # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match)
+            cur.execute(
+                """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
+                       SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
+                   THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
+            for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
+                through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
+                if through:
+                    cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
+            cur.execute(DATA_THROUGH_SQL)
+            data_through = dict(cur.fetchall())
             cur.execute("ANALYZE seap.record")
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
@@ -211,5 +245,5 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None) -> 
             progress.fail(e)
         raise
     if progress:
-        progress.finish(summary.records)
+        progress.finish(summary.records, data_through)
     return summary
