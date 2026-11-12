@@ -12,7 +12,7 @@ const files = Object.entries(modules);
 
 describe("the workbench stories", () => {
   it("has a stories file for every atom and domain component", () => {
-    const levels = ["atoms", "domain/atoms", "domain/molecules", "domain/organisms"];
+    const levels = ["atoms", "domain/atoms", "domain/molecules", "domain/organisms", "domain/templates"];
     const components = levels.flatMap((level) =>
       readdirSync(join(import.meta.dirname, "..", level), { withFileTypes: true })
         .filter((entry) => entry.isDirectory())
