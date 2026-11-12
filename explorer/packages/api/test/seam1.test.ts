@@ -24,6 +24,7 @@ import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
+import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
@@ -2188,6 +2189,85 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       for (const filter of [{ hasSignals: true }, { hasSignals: false, channel: "DIRECT_PURCHASE" }]) {
         expect(await doc(tabs, { f: filter }, true)).toEqual(await doc(tabs, { f: filter }, false));
       }
+    });
+  });
+
+
+  describe("recorded fixtures (#86): archive-roles + archive-roles-names, archive-signals -> rebuild -> the recorded EntityOverview", () => {
+    // The app's seam 3 renders the entity pages against these answers, so the two seams stay in step: this block fails when an
+    // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b" } as const;
+
+    beforeAll(async () => {
+      // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
+      cpSync(rolesArchive, join(scratch, "archive-overview"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
+      for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
+      rebuild(DBS.overview, "archive-overview");
+      rebuild(DBS.signals, "archive-signals");
+    });
+
+    const answer = async (c: RecordedEntityCase) => {
+      const r = await ask(DBS[c.archive], entityOverview.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(entityOverview.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    const answers = new Map<string, Awaited<ReturnType<typeof answer>>>();
+    beforeAll(async () => {
+      for (const c of RECORDED_ENTITY_CASES) answers.set(c.name, await answer(c));
+    });
+    const entityOf = (name: string) => (answers.get(name)!.data as EntityOverviewQuery).entity;
+
+    it("EntityOverview: every recorded case is what the API answers now", () => {
+      const recorded = RECORDED_ENTITY_CASES.map((c) => answers.get(c.name)!);
+      if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      // through JSON, so undefined and key order do not matter
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+    });
+
+    it("gives the cases the numbers they are named for", async () => {
+      const RON = (n: number) => String(n * 100);
+      const role = (name: string) => entityOf(name)!.seap.role!;
+      const keys = (name: string) => role(name).counterparties.rows.map((r) => r.entity?.key ?? null);
+      // an authority: its counted Records (a suspect value, two blanks and a framework ceiling left out of the total), five counterparties
+      expect(entityOf("authority")).toMatchObject({ key: "1000017", identity: "CUI", seap: { roles: ["AUTHORITY"] }, placement: null });
+      expect(role("authority").total).toMatchObject({ awarded: RON(8_840_000), records: 16, suspectLeftOut: 1, noValue: 2, frameworkCeilings: RON(10_000_000) });
+      expect(role("authority").counterparties).toMatchObject({ count: 5, topShare: 0.625 }); // ALFA's 5,525,000 of 8,840,000
+      expect(keys("authority")).toEqual(["2000007", "2000031", "2000015", null, "2000023"]); // the natural person is one row without an entity
+      expect(role("authority").counterparties.rows[3]).toMatchObject({ entity: null, naturalPerson: true });
+      expect(role("authority").consortia).toHaveLength(3);
+      expect(role("authority").frameworks).toEqual({ count: 1, ceilings: RON(10_000_000), subsequentReported: RON(5_000_000) });
+      // a supplier: its own share of each Record
+      expect(role("supplier").total).toMatchObject({ awarded: RON(5_915_000), records: 13 });
+      expect(keys("supplier")).toEqual(["1000017", "1000009", "2000031"]);
+      // both roles: one page per role, each with its own numbers (what the entity bought is not what it won)
+      expect(entityOf("both-roles-authority-page")!.seap.roles).toEqual(["AUTHORITY", "SUPPLIER"]);
+      expect(role("both-roles-authority-page")).toMatchObject({ role: "AUTHORITY", total: { awarded: RON(340_000), records: 2 } });
+      expect(role("both-roles-supplier-page")).toMatchObject({ role: "SUPPLIER", total: { awarded: RON(2_020_000), records: 2 } });
+      expect(keys("both-roles-authority-page")).toEqual(["2000015", "2000007"]);
+      expect(keys("both-roles-supplier-page")).toEqual(["1000017"]);
+      // name-only suppliers: keyed by name or by the foreign VAT id, no CUI, a total all the same
+      expect(entityOf("name-only-supplier")).toMatchObject({ key: "name-furnizor-local-srl", identity: "NAME_ONLY", cui: null });
+      expect(role("name-only-supplier").total).toMatchObject({ awarded: RON(20_000), records: 2 });
+      expect(role("name-only-supplier").counterparties).toMatchObject({ count: 1, topShare: 1 });
+      expect(entityOf("foreign-vat-supplier")).toMatchObject({ key: "vat-bg103029862", identity: "NAME_ONLY", cui: null });
+      expect(role("foreign-vat-supplier").total).toMatchObject({ awarded: RON(30_000), records: 1 });
+      // an entity without the role asked for: the entity is there, the role is null; an unknown key is no entity
+      for (const name of ["authority-asked-as-supplier", "supplier-asked-as-authority"]) expect(entityOf(name)!.seap.role, name).toBeNull();
+      expect(entityOf("authority-asked-as-supplier")!.seap.roles).toEqual(["AUTHORITY"]);
+      expect(entityOf("unknown-key")).toBeNull();
+      // Signals: the authority and the supplier see the same Signals of their Records; the order changes with the argument
+      const dates = (name: string) => role(name).signals.rows.map((x) => `${x.rule} ${x.date}`);
+      expect(role("authority-with-signals").signals.count).toBe(8);
+      expect(role("supplier-with-signals").signals.count).toBe(6);
+      expect(dates("authority-with-signals")[0]).toBe("NO_PUBLICATION 2026-03-29"); // newest first
+      expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
+      expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
+      expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
     });
   });
 

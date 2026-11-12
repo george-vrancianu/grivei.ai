@@ -1,0 +1,4615 @@
+[
+  {
+    "name": "authority",
+    "kind": "typical",
+    "description": "an authority only: headline numbers (suspect and no-value Records left out), counterparties with a natural person among them, consortia, a framework line, the largest Records",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 16,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "884000000",
+              "records": 16,
+              "suspectLeftOut": 1,
+              "noValue": 2,
+              "frameworkCeilings": "1000000000",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 5,
+              "topShare": 0.625,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "552500000",
+                    "records": 11,
+                    "suspectLeftOut": 1,
+                    "noValue": 2,
+                    "frameworkCeilings": "1000000000",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000031",
+                    "displayName": "CNAIR DEMO SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "202000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "68000000",
+                    "records": 4,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "31500000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000023",
+                    "displayName": "GAMMA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "30000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.027149321,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "710000000",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "1000000000",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "150000000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "90000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "total": {
+                  "awarded": "60000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "10000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 1,
+              "ceilings": "1000000000",
+              "subsequentReported": "500000000"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600001~2",
+                "title": "Contract CAN9600001 2",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "400000000",
+                "counted": "400000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600006~1",
+                "title": "Contract CAN9600006 1",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "200000000",
+                "counted": "200000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CNAIR DEMO SA",
+                    "share": null,
+                    "entity": {
+                      "key": "2000031",
+                      "displayName": "CNAIR DEMO SA",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600001~3",
+                "title": "Contract CAN9600001 3",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600002~1",
+                "title": "Contract CAN9600002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "90000000",
+                "counted": "90000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600004~1",
+                "title": "Contract CAN9600004 1",
+                "date": "2023-03-02",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600005~1",
+                "title": "Contract CAN9600005 1",
+                "date": "2023-03-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000001",
+                "title": "Achizitie DA96000001",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000002",
+                "title": "Achizitie DA96000002",
+                "date": "2023-02-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000003",
+                "title": "Achizitie DA96000003",
+                "date": "2023-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96100001",
+                "title": "Achizitie DA96100001",
+                "date": "2024-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2500000",
+                "counted": "2500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "second-authority",
+    "kind": "typical",
+    "description": "a second authority that shares suppliers with the first and buys from name-only suppliers",
+    "variables": {
+      "key": "1000009",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "1000009",
+        "displayName": "COMUNA EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000009",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "COMUNA EXEMPLU",
+            "records": 5,
+            "first": "2023-02-14",
+            "last": "2024-02-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "78500000",
+              "records": 5,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 4,
+              "topShare": 0.490445859,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "38500000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "35000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "vat-bg103029862",
+                    "displayName": "BALKAN DEMO OOD",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "3000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "name-furnizor-local-srl",
+                    "displayName": "FURNIZOR LOCAL SRL",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.108280254,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "70000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "70000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600003~1",
+                "title": "Contract CAN9600003 1",
+                "date": "2023-02-14",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "70000000",
+                "counted": "70000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96100002",
+                "title": "Achizitie DA96100002",
+                "date": "2024-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3500000",
+                "counted": "3500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96200003",
+                "title": "Achizitie DA96200003",
+                "date": "2023-05-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BALKAN DEMO OOD",
+                    "share": null,
+                    "entity": {
+                      "key": "vat-bg103029862",
+                      "displayName": "BALKAN DEMO OOD",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96200001",
+                "title": "Achizitie DA96200001",
+                "date": "2023-04-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "1200000",
+                "counted": "1200000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FURNIZOR LOCAL SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-furnizor-local-srl",
+                      "displayName": "FURNIZOR LOCAL SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96200002",
+                "title": "Achizitie DA96200002",
+                "date": "2023-05-02",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "800000",
+                "counted": "800000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FURNIZOR LOCAL SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-furnizor-local-srl",
+                      "displayName": "FURNIZOR LOCAL SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "supplier",
+    "kind": "typical",
+    "description": "a supplier only: its own share of each Record, consortium shares, a framework agreement and its subsequent contracts",
+    "variables": {
+      "key": "2000007",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000007",
+        "displayName": "ALFA DEMO SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000007",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ALFA DEMO SRL",
+            "records": 13,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "591500000",
+              "records": 13,
+              "suspectLeftOut": 1,
+              "noValue": 2,
+              "frameworkCeilings": "1000000000",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 3,
+              "topShare": 0.934065934,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "552500000",
+                    "records": 11,
+                    "suspectLeftOut": 1,
+                    "noValue": 2,
+                    "frameworkCeilings": "1000000000",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "35000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000031",
+                    "displayName": "CNAIR DEMO SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "4000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.036348267,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "540000000",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "1000000000",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "30000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "90000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "40000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "40000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "80000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 1,
+              "ceilings": "1000000000",
+              "subsequentReported": "500000000"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600001~2",
+                "title": "Contract CAN9600001 2",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "400000000",
+                "counted": "400000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600001~3",
+                "title": "Contract CAN9600001 3",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600003~1",
+                "title": "Contract CAN9600003 1",
+                "date": "2023-02-14",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "70000000",
+                "counted": "70000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600002~1",
+                "title": "Contract CAN9600002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "90000000",
+                "counted": "90000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000001",
+                "title": "Achizitie DA96000001",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600005~1",
+                "title": "Contract CAN9600005 1",
+                "date": "2023-03-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000002",
+                "title": "Achizitie DA96000002",
+                "date": "2023-02-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000007",
+                "title": "Achizitie DA96000007",
+                "date": "2023-02-01",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "4000000",
+                "counted": "4000000",
+                "badges": [],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96100001",
+                "title": "Achizitie DA96100001",
+                "date": "2024-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2500000",
+                "counted": "2500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "both-roles-authority-page",
+    "kind": "typical",
+    "description": "an entity that buys and sells, on its authority page: only what it bought, roles lists both",
+    "variables": {
+      "key": "2000031",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000031",
+        "displayName": "CNAIR DEMO SA",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000031",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "CNAIR DEMO SA",
+            "records": 4,
+            "first": "2023-01-20",
+            "last": "2023-02-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY",
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "34000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.882352941,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "30000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "4000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.117647058,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "30000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600007~1",
+                "title": "Contract CAN9600007 1",
+                "date": "2023-02-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "30000000",
+                "counted": "30000000",
+                "badges": [],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000007",
+                "title": "Achizitie DA96000007",
+                "date": "2023-02-01",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "4000000",
+                "counted": "4000000",
+                "badges": [],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "both-roles-supplier-page",
+    "kind": "typical",
+    "description": "the same entity on its supplier page: only what it won, the role switch points back to the authority page",
+    "variables": {
+      "key": "2000031",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000031",
+        "displayName": "CNAIR DEMO SA",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000031",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "CNAIR DEMO SA",
+            "records": 4,
+            "first": "2023-01-20",
+            "last": "2023-02-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY",
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "202000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "202000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.00990099,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "200000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600006~1",
+                "title": "Contract CAN9600006 1",
+                "date": "2023-01-25",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "200000000",
+                "counted": "200000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CNAIR DEMO SA",
+                    "share": null,
+                    "entity": {
+                      "key": "2000031",
+                      "displayName": "CNAIR DEMO SA",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000006",
+                "title": "Achizitie DA96000006",
+                "date": "2023-01-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "CNAIR DEMO SA",
+                    "share": null,
+                    "entity": {
+                      "key": "2000031",
+                      "displayName": "CNAIR DEMO SA",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "name-only-supplier",
+    "kind": "typical",
+    "description": "a supplier with no tax id: a name-only entity (key name-<slug>), no CUI, its numbers all the same",
+    "variables": {
+      "key": "name-furnizor-local-srl",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "name-furnizor-local-srl",
+        "displayName": "FURNIZOR LOCAL SRL",
+        "identity": "NAME_ONLY",
+        "anafStatus": null,
+        "placement": null,
+        "cui": null,
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "FURNIZOR LOCAL SRL",
+            "records": 2,
+            "first": "2023-04-10",
+            "last": "2023-05-02",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2023 - T2",
+            "kind": "BULK",
+            "fetchedAt": "2023-09-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "2000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA96200001",
+                "title": "Achizitie DA96200001",
+                "date": "2023-04-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "1200000",
+                "counted": "1200000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FURNIZOR LOCAL SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-furnizor-local-srl",
+                      "displayName": "FURNIZOR LOCAL SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96200002",
+                "title": "Achizitie DA96200002",
+                "date": "2023-05-02",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "800000",
+                "counted": "800000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FURNIZOR LOCAL SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "name-furnizor-local-srl",
+                      "displayName": "FURNIZOR LOCAL SRL",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "foreign-vat-supplier",
+    "kind": "typical",
+    "description": "a supplier identified by a foreign VAT id: a name-only entity keyed vat-<id>",
+    "variables": {
+      "key": "vat-bg103029862",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "vat-bg103029862",
+        "displayName": "BALKAN DEMO OOD",
+        "identity": "NAME_ONLY",
+        "anafStatus": null,
+        "placement": null,
+        "cui": null,
+        "foreignVatId": "BG103029862",
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "BALKAN DEMO OOD",
+            "records": 1,
+            "first": "2023-05-20",
+            "last": "2023-05-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2023 - T2",
+            "kind": "BULK",
+            "fetchedAt": "2023-09-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "3000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "3000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA96200003",
+                "title": "Achizitie DA96200003",
+                "date": "2023-05-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BALKAN DEMO OOD",
+                    "share": null,
+                    "entity": {
+                      "key": "vat-bg103029862",
+                      "displayName": "BALKAN DEMO OOD",
+                      "identity": "NAME_ONLY"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "authority-asked-as-supplier",
+    "kind": "empty",
+    "description": "an authority asked for its supplier role: the entity is there, the role is null",
+    "variables": {
+      "key": "1000017",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 16,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024 - T1",
+            "kind": "BULK",
+            "fetchedAt": "2024-06-15T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": null
+        }
+      }
+    }
+  },
+  {
+    "name": "supplier-asked-as-authority",
+    "kind": "empty",
+    "description": "a supplier asked for its authority role: the entity is there, the role is null",
+    "variables": {
+      "key": "2000007",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000007",
+        "displayName": "ALFA DEMO SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000007",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ALFA DEMO SRL",
+            "records": 13,
+            "first": "2023-01-10",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": null
+        }
+      }
+    }
+  },
+  {
+    "name": "unknown-key",
+    "kind": "empty",
+    "description": "no entity under that key: the page shows not-found",
+    "variables": {
+      "key": "name-nobody-has-this-key",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": null
+    }
+  },
+  {
+    "name": "authority-with-signals",
+    "kind": "typical",
+    "description": "an authority with over-cap and no-publication Signals, in the default order (newest first)",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 15,
+            "first": "2021-04-02",
+            "last": "2026-03-29",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": null,
+            "kind": "BULK",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "602844100",
+              "records": 15,
+              "suspectLeftOut": 1,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 6,
+              "topShare": 0.637219473,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "384144000",
+                    "records": 7,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "100000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000023",
+                    "displayName": "GAMMA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "60000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "53350050",
+                    "records": 3,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "name-drumuri-demo-sa",
+                    "displayName": "DRUMURI DEMO SA",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "5000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "name-avocati-demo",
+                    "displayName": "AVOCATI DEMO",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "350050",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.783194195,
+            "procedures": [
+              {
+                "value": "Negociere fara publicare prealabila",
+                "total": {
+                  "awarded": "120700100",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "5000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Procedura simplificata proprie",
+                "total": {
+                  "awarded": "5000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "50000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA98000006",
+                "title": "Achizitie DA98000006",
+                "date": "2023-01-14",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "270119999",
+                "counted": "270119999",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "CAN9800006~1",
+                "title": "Contract CAN9800006 1",
+                "date": "2023-03-05",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": null,
+                    "entity": null
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              },
+              {
+                "code": "CAN9800001~1",
+                "title": "Contract CAN9800001 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000007",
+                "title": "Achizitie DA98000007",
+                "date": "2023-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA98000010",
+                "title": "Achizitie DA98000010",
+                "date": "2023-02-03",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "40000000",
+                "counted": "40000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": null,
+                    "entity": null
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000001",
+                "title": "Achizitie DA98000001",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "30000000",
+                "counted": "30000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000002",
+                "title": "Achizitie DA98000002",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "28000000",
+                "counted": "28000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000004",
+                "title": "Achizitie DA98000004",
+                "date": "2023-01-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012001",
+                "counted": "27012001",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000003",
+                "title": "Achizitie DA98000003",
+                "date": "2023-01-11",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012000",
+                "counted": "27012000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800002~1",
+                "title": "Contract CAN9800002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 8,
+              "rows": [
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2026-03-29",
+                  "firstDate": "2026-03-29",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2026-03-29",
+                    "to": "2026-03-29"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2023-03-05",
+                  "firstDate": "2023-03-05",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2023-03-05",
+                    "to": "2023-03-05"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2023-02-10",
+                  "firstDate": "2023-02-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2023-02-10",
+                    "to": "2023-02-10"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-02-03",
+                  "firstDate": "2023-02-03",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "40000000",
+                    "cap": "27012000",
+                    "multiple": 1.480823
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-02-03",
+                    "to": "2023-02-03"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-14",
+                  "firstDate": "2023-01-14",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "270119999",
+                    "cap": "27012000",
+                    "multiple": 10
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-14",
+                    "to": "2023-01-14"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-12",
+                  "firstDate": "2023-01-12",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "27012001",
+                    "cap": "27012000",
+                    "multiple": 1
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-12",
+                    "to": "2023-01-12"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-10",
+                  "firstDate": "2023-01-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "30000000",
+                    "cap": "27012000",
+                    "multiple": 1.110618
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-10",
+                    "to": "2023-01-10"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2021-04-02",
+                  "firstDate": "2021-04-02",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "name-avocati-demo",
+                      "displayName": "AVOCATI DEMO",
+                      "identity": "NAME_ONLY"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2021-04-02",
+                    "to": "2021-04-02"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "authority-with-signals-by-value",
+    "kind": "typical",
+    "description": "the same authority with its Signals ordered by value, as the page asks for with signalOrder in the URL",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 15,
+            "first": "2021-04-02",
+            "last": "2026-03-29",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": null,
+            "kind": "BULK",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "602844100",
+              "records": 15,
+              "suspectLeftOut": 1,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 6,
+              "topShare": 0.637219473,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "384144000",
+                    "records": 7,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "100000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000023",
+                    "displayName": "GAMMA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "60000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "53350050",
+                    "records": 3,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "name-drumuri-demo-sa",
+                    "displayName": "DRUMURI DEMO SA",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "5000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "name-avocati-demo",
+                    "displayName": "AVOCATI DEMO",
+                    "identity": "NAME_ONLY"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "350050",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.783194195,
+            "procedures": [
+              {
+                "value": "Negociere fara publicare prealabila",
+                "total": {
+                  "awarded": "120700100",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "5000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Procedura simplificata proprie",
+                "total": {
+                  "awarded": "5000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "50000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA98000006",
+                "title": "Achizitie DA98000006",
+                "date": "2023-01-14",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "270119999",
+                "counted": "270119999",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "CAN9800006~1",
+                "title": "Contract CAN9800006 1",
+                "date": "2023-03-05",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": null,
+                    "entity": null
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              },
+              {
+                "code": "CAN9800001~1",
+                "title": "Contract CAN9800001 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000007",
+                "title": "Achizitie DA98000007",
+                "date": "2023-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA98000010",
+                "title": "Achizitie DA98000010",
+                "date": "2023-02-03",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "40000000",
+                "counted": "40000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": null,
+                    "entity": null
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000001",
+                "title": "Achizitie DA98000001",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "30000000",
+                "counted": "30000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000002",
+                "title": "Achizitie DA98000002",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "28000000",
+                "counted": "28000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000004",
+                "title": "Achizitie DA98000004",
+                "date": "2023-01-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012001",
+                "counted": "27012001",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000003",
+                "title": "Achizitie DA98000003",
+                "date": "2023-01-11",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012000",
+                "counted": "27012000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800002~1",
+                "title": "Contract CAN9800002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 8,
+              "rows": [
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-14",
+                  "firstDate": "2023-01-14",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "270119999",
+                    "cap": "27012000",
+                    "multiple": 10
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-14",
+                    "to": "2023-01-14"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2023-03-05",
+                  "firstDate": "2023-03-05",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2023-03-05",
+                    "to": "2023-03-05"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2023-02-10",
+                  "firstDate": "2023-02-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2023-02-10",
+                    "to": "2023-02-10"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-10",
+                  "firstDate": "2023-01-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "30000000",
+                    "cap": "27012000",
+                    "multiple": 1.110618
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-10",
+                    "to": "2023-01-10"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-02-03",
+                  "firstDate": "2023-02-03",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "40000000",
+                    "cap": "27012000",
+                    "multiple": 1.480823
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-02-03",
+                    "to": "2023-02-03"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-12",
+                  "firstDate": "2023-01-12",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "27012001",
+                    "cap": "27012000",
+                    "multiple": 1
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-12",
+                    "to": "2023-01-12"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2026-03-29",
+                  "firstDate": "2026-03-29",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2026-03-29",
+                    "to": "2026-03-29"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2021-04-02",
+                  "firstDate": "2021-04-02",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "name-avocati-demo",
+                      "displayName": "AVOCATI DEMO",
+                      "identity": "NAME_ONLY"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2021-04-02",
+                    "to": "2021-04-02"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "supplier-with-signals",
+    "kind": "typical",
+    "description": "a supplier whose Records are in Signals: the Signals count and cards on the supplier's page",
+    "variables": {
+      "key": "2000007",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000007",
+        "displayName": "ALFA DEMO SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000007",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ALFA DEMO SRL",
+            "records": 12,
+            "first": "2023-01-10",
+            "last": "2024-02-01",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "576144000",
+              "records": 12,
+              "suspectLeftOut": 1,
+              "noValue": 1,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 3,
+              "topShare": 0.666749979,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "384144000",
+                    "records": 7,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "182000000",
+                    "records": 4,
+                    "suspectLeftOut": 0,
+                    "noValue": 1,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000031",
+                    "displayName": "CNAIR DEMO SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "10000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.935779943,
+            "procedures": [
+              {
+                "value": "Negociere fara publicare prealabila",
+                "total": {
+                  "awarded": "25000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "7000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "5000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "50000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA98000006",
+                "title": "Achizitie DA98000006",
+                "date": "2023-01-14",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "270119999",
+                "counted": "270119999",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000009",
+                "title": "Achizitie DA98000009",
+                "date": "2023-02-02",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "95000000",
+                "counted": "95000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000008",
+                "title": "Achizitie DA98000008",
+                "date": "2023-02-01",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "80000000",
+                "counted": "80000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA98000001",
+                "title": "Achizitie DA98000001",
+                "date": "2023-01-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "30000000",
+                "counted": "30000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000004",
+                "title": "Achizitie DA98000004",
+                "date": "2023-01-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012001",
+                "counted": "27012001",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "OVER_CAP"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000003",
+                "title": "Achizitie DA98000003",
+                "date": "2023-01-11",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "27012000",
+                "counted": "27012000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800001~1",
+                "title": "Contract CAN9800001 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere fara publicare prealabila",
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "25000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_PUBLICATION"
+                  }
+                ]
+              },
+              {
+                "code": "DA98000013",
+                "title": "Achizitie DA98000013",
+                "date": "2023-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800005~1",
+                "title": "Contract CAN9800005 1",
+                "date": "2023-03-02",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "7000000",
+                "counted": "7000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9800004~1",
+                "title": "Contract CAN9800004 1",
+                "date": "2023-03-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 6,
+              "rows": [
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2024-02-01",
+                  "firstDate": "2024-02-01",
+                  "recordCount": 1,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000009",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2024-02-01",
+                    "to": "2024-02-01"
+                  }
+                },
+                {
+                  "rule": "NO_PUBLICATION",
+                  "date": "2023-02-10",
+                  "firstDate": "2023-02-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-02-01",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoPublicationNumbers",
+                    "procedure": "Negociere fara publicare prealabila"
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "NO_PUBLICATION",
+                    "cpv": null,
+                    "from": "2023-02-10",
+                    "to": "2023-02-10"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-02-02",
+                  "firstDate": "2023-02-02",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "95000000",
+                    "cap": "90040000",
+                    "multiple": 1.055087
+                  },
+                  "reproduce": {
+                    "authority": "1000009",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-02-02",
+                    "to": "2023-02-02"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-14",
+                  "firstDate": "2023-01-14",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "270119999",
+                    "cap": "27012000",
+                    "multiple": 10
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-14",
+                    "to": "2023-01-14"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-12",
+                  "firstDate": "2023-01-12",
+                  "recordCount": 1,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "27012001",
+                    "cap": "27012000",
+                    "multiple": 1
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-12",
+                    "to": "2023-01-12"
+                  }
+                },
+                {
+                  "rule": "OVER_CAP",
+                  "date": "2023-01-10",
+                  "firstDate": "2023-01-10",
+                  "recordCount": 2,
+                  "dataThrough": "2024-03-20",
+                  "authority": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    },
+                    {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "OverCapNumbers",
+                    "value": "30000000",
+                    "cap": "27012000",
+                    "multiple": 1.110618
+                  },
+                  "reproduce": {
+                    "authority": "1000017",
+                    "supplier": null,
+                    "signal": "OVER_CAP",
+                    "cpv": null,
+                    "from": "2023-01-10",
+                    "to": "2023-01-10"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+]
