@@ -4,7 +4,7 @@ export * from "./atoms/index.ts";
 export * from "./molecules/index.ts";
 export * from "./organisms/index.ts";
 export * from "./templates/index.ts";
-export type { EntityAliases, EntityHeaderData, EntityOverviewData, EntityPageRole, EntityPageView, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsCounterparty, RelationshipsTimeline, CounterpartyRecordsData, SignalData, SignalRule, SignalRuleBaseRateData } from "./types.ts";
+export type { EntityAliases, EntityHeaderData, EntityOverviewData, EntityPageRole, EntityPageView, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsData, RelationshipsCounterparty, RelationshipsTimeline, CounterpartyRecordsData, SignalData, SignalRule, SignalRuleBaseRateData } from "./types.ts";
 export { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type MethodologySectionKey } from "./utils/methodologyAnchors.ts";
 export { followLink } from "./utils/followLink.ts";
 export {

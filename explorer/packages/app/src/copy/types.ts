@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -51,12 +51,20 @@ export interface Copy {
   total: TotalFigureCopy;
   /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */
   recordPage: Omit<RecordDetailCopy, "recordRow"> & { notFound: { title: string; body: (code: string) => string } };
-  /** The Entity pages: the layout's tab names, the header, and what each tab's body says until its ticket fills it. */
+  /** The Entity pages: the layout's tab names, the header and each tab's strings. */
   entityPage: {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
     notFound: { title: string; body: string };
-    tabBody: { relationships: string };
+    /**
+     * The Relationships tab: the graph, timeline and side panel's strings (the entity-link, Record row and page-link copy come from the catalogue's own `entityLink`, `results` and `fullResults`),
+     * the Graph / Flow toggle, and the Flow lens map's (its base map and off-map tiles come from `moneyLensMap`, which they share).
+     */
+    relationships: {
+      lens: { label: string; options: { graph: string; flow: string } };
+      tab: Omit<RelationshipsTabCopy, "entityLink" | "recordRow" | "pagination">;
+      flow: Omit<FlowLensMapCopy, "map" | "tiles"> & { map: Pick<FlowLensMapCopy["map"], "mapLabel" | "legendTitle" | "noData"> };
+    };
     /** The Overview tab: every section's strings. The total, party, Record row and badge copy come from the catalogue's own `total`, `party`, `results` and `badges`. */
     overview: {
       headline: Omit<EntityOverviewCopy["headline"], "totalFigure">;

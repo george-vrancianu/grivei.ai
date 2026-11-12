@@ -224,8 +224,67 @@ export const en: Copy = {
       roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
-    tabBody: {
-      relationships: "The Relationships tab is not built yet.",
+    relationships: {
+      lens: { label: "Show", options: { graph: "Graph", flow: "Money flow" } },
+      tab: {
+        heading: "Relationships",
+        recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
+        graph: {
+          label: "Graph of the top counterparties",
+          naturalPerson: "Persoană fizică",
+          unknown: "Unidentified counterparty",
+          node: (p) =>
+            `${p.name}, ${p.amount}, ${p.records}; ${p.contract} via contracts, ${p.directPurchase} via direct purchases` +
+            `${p.wonTogether ? "; won together" : ""}${p.hasSignals ? "; has Signals" : ""}${p.selected ? "; picked" : ""}`,
+          more: (n, formatted) => `${formatted} more ${n === 1 ? "counterparty" : "counterparties"}`,
+          empty: "No counterparties for the chosen filters.",
+          consortiumNote:
+            "A consortium's money is split equally among its members, by convention; a Record's full value is on its own page.",
+        },
+        legend: {
+          title: "Legend", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Blue line: mostly contracts",
+          directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
+        },
+        timeline: {
+          heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
+        },
+        panel: {
+          label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
+          total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
+        },
+      },
+      flow: {
+        map: { mapLabel: "Map of the money flow by county", legendTitle: "Flow", noData: "No money" },
+        legend: {
+          title: "Flow",
+          bubbleSize: "Bubble area: money in the county",
+          arcWidth: "Arc width: money between the two counties",
+          arrow: { supplier: "Arrow: money flows in to the supplier's county", authority: "Arrow: money flows out of the authority's county" },
+          homeCounty: "The entity's county",
+          otherCounty: "Other counties with money",
+        },
+        caption: {
+          direction: {
+            supplier: (home) => `Where this supplier's money comes from: authorities across Romania, flowing in to ${home}.`,
+            authority: (home) => `Where this authority's money goes: suppliers across Romania, flowing out of ${home}.`,
+          },
+          localOnly: {
+            supplier: (home) => `All of the money placed in a county comes from ${home}: a single bubble and no arcs.`,
+            authority: (home) => `All of the money placed in a county goes to suppliers in ${home}: a single bubble and no arcs.`,
+          },
+          noHome: {
+            supplier: "This supplier's county is not known: bubbles only, no arcs.",
+            authority: "This authority's county is not known: bubbles only, no arcs.",
+          },
+          offMap: "Money that no county holds is on the tiles beside the map.",
+        },
+        tooltip: {
+          homeCounty: "The entity's county",
+          direction: { supplier: (home) => `Money flows in to ${home}`, authority: (home) => `Money flows out of ${home}` },
+        },
+        empty: "No money flow for the current filter.",
+      },
     },
     overview: {
       headline: {

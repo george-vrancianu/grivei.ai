@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Button } from "../../../atoms/Button/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
+import { authorityHome, authorityNationwideFlow } from "../../samples/flowMaps.ts";
+import { countiesTopology } from "../../samples/geo/counties.topo.ts";
+import { FlowLensMap } from "../FlowLensMap/index.ts";
 import {
   authorityDirectSupplierPanel, authorityPickedPanel, authorityTypicalPickedDirectTimeline, authorityTypicalPickedTimeline, authorityTypicalRelationships, consortiumHeavyRelationships,
   emptyRelationships, naturalPersonRelationships, oneCounterpartyRelationships, supplierPickedPanel, supplierPickedRelationships,
@@ -20,8 +23,8 @@ interface Picked { panel: CounterpartyRecordsData; timeline: RelationshipsTimeli
  * The tab with the pick held by the story (the real one holds it in the URL). A counterparty with no data in `picked` shows the loading state,
  * which is what a slow query looks like.
  */
-function Harness({ data, role, picked = {}, initial = null, loading = false, locale, flow = false }: {
-  data: Sample; role: EntityRole; picked?: Record<string, Picked>; initial?: string | null; loading?: boolean; locale: "en" | "ro"; flow?: boolean;
+function Harness({ data, role, picked = {}, initial = null, loading = false, locale, flow = false, flowOpen = false }: {
+  data: Sample; role: EntityRole; picked?: Record<string, Picked>; initial?: string | null; loading?: boolean; locale: "en" | "ro"; flow?: boolean; flowOpen?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(initial);
   const current = selected === null ? undefined : picked[selected];
@@ -38,7 +41,12 @@ function Harness({ data, role, picked = {}, initial = null, loading = false, loc
       sidePanelLoading={loading || (selected !== null && !current)}
       entityHref={(entity, r) => `/explore/${r}/${entity.key}`}
       recordHref={(record) => `/explore/record/${record.code}`}
-      flowToggle={flow ? <Button variant="outlined" size="small">{locale === "ro" ? "Fluxul banilor" : "Money flow"}</Button> : undefined}
+      flowMap={
+        flowOpen ? (
+          <FlowLensMap flow={authorityNationwideFlow} role="authority" home={authorityHome} topology={countiesTopology} onSelect={() => undefined} locale={locale} copy={sampleCopy.flowLensMap(locale)} />
+        ) : undefined
+      }
+      flowToggle={flow || flowOpen ? <Button variant="outlined" size="small">{locale === "ro" ? "Fluxul banilor" : "Money flow"}</Button> : undefined}
       locale={locale}
       copy={sampleCopy.relationshipsTab(locale)}
     />
@@ -74,3 +82,5 @@ export const NaturalPersonCounterparty: Story = { render: render({ data: natural
 export const EmptyEntity: Story = { render: render({ data: emptyRelationships, role: "authority" }) };
 /** The pick has been made but its Records have not arrived. */
 export const LoadingSidePanel: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", initial: "30000002", loading: true }) };
+/** The Flow lens open: the `flowMap` slot replaces the graph and its legend; the timeline and the side panel stay. */
+export const FlowLensOpen: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", flowOpen: true }) };

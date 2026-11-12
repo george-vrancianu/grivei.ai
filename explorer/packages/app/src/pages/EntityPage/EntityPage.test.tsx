@@ -8,11 +8,9 @@ import type { GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
-// The tab-navigation tests walk Overview -> Records on ALFA DEMO SRL, whose two tabs are recorded. 30000001 is the hand-written fixture
-// whose Relationships tab exists (until #88 records it). Header and Overview behaviour of recorded entities is in
-// EntityPage.overview.test.tsx, the Records tab's in EntityPage.records.test.tsx.
+// The tab-navigation tests walk the tabs of ALFA DEMO SRL, whose tabs are all recorded. Header and Overview behaviour of recorded entities is in
+// EntityPage.overview.test.tsx, the Records tab's in EntityPage.records.test.tsx, the Relationships tab's in EntityPage.relationships.test.tsx.
 const SUPPLIER = "/explore/supplier/2000007";
-const HAND_SUPPLIER = "/explore/supplier/30000001";
 const NAME = "ALFA DEMO SRL";
 
 function open(url: string) {
@@ -37,12 +35,18 @@ describe("an entity page", () => {
 
   it.each([
     [SUPPLIER, "/records", "Records", "EntityRecords", NAME],
-    [HAND_SUPPLIER, "/relationships", "Relationships", "EntityRelationships", "HACHI INVEST S.R.L."],
   ])("opens %s%s on its own tab, running that tab's operation", async (base, suffix, name, operation, heading) => {
     const sent = open(`${base}${suffix}`);
     expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
     expect(currentTab()).toEqual([name]);
     expect(sent.map((s) => s.operation)).toEqual([operation]);
+  });
+
+  it("opens the /relationships URL on its own tab, running that tab's operation (a recorded entity: ALFA)", async () => {
+    const sent = open("/explore/supplier/2000007/relationships");
+    expect(await screen.findByRole("heading", { level: 1, name: "ALFA DEMO SRL" })).toBeInTheDocument();
+    expect(currentTab()).toEqual(["Relationships"]);
+    expect(sent.map((s) => s.operation)).toEqual(["EntityRelationships"]);
   });
 
   it("gives each tab its own URL and follows a click without a page load", async () => {

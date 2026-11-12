@@ -229,8 +229,67 @@ export const ro: Copy = {
       roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
-    tabBody: {
-      relationships: "Fila Relații nu este construită încă.",
+    relationships: {
+      lens: { label: "Afișare", options: { graph: "Graf", flow: "Flux de bani" } },
+      tab: {
+        heading: "Relații",
+        recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+        graph: {
+          label: "Graful principalelor contrapărți",
+          naturalPerson: "Persoană fizică",
+          unknown: "Contraparte neidentificată",
+          node: (p) =>
+            `${p.name}, ${p.amount}, ${p.records}; ${p.contract} prin contracte, ${p.directPurchase} prin achiziții directe` +
+            `${p.wonTogether ? "; câștigat împreună" : ""}${p.hasSignals ? "; are Semnale" : ""}${p.selected ? "; ales" : ""}`,
+          more: (n, f) => `încă ${roCount(n, f, "contraparte", "contrapărți")}`,
+          empty: "Nicio contraparte pentru filtrele alese.",
+          consortiumNote:
+            "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
+        },
+        legend: {
+          title: "Legendă", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie albastră: mai ales contracte",
+          directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
+        },
+        timeline: {
+          heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
+        },
+        panel: {
+          label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
+          total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
+        },
+      },
+      flow: {
+        map: { mapLabel: "Harta fluxului de bani pe județe", legendTitle: "Flux", noData: "Fără bani" },
+        legend: {
+          title: "Flux",
+          bubbleSize: "Aria cercului: banii din județ",
+          arcWidth: "Grosimea arcului: banii dintre cele două județe",
+          arrow: { supplier: "Săgeată: banii intră în județul furnizorului", authority: "Săgeată: banii pleacă din județul autorității" },
+          homeCounty: "Județul entității",
+          otherCounty: "Alte județe cu bani",
+        },
+        caption: {
+          direction: {
+            supplier: (home) => `De unde vin banii furnizorului: autorități din toată țara, către ${home}.`,
+            authority: (home) => `Încotro merg banii autorității: furnizori din toată țara, din ${home}.`,
+          },
+          localOnly: {
+            supplier: (home) => `Toți banii plasați într-un județ vin din ${home}: un singur cerc, fără arce.`,
+            authority: (home) => `Toți banii plasați într-un județ merg către furnizori din ${home}: un singur cerc, fără arce.`,
+          },
+          noHome: {
+            supplier: "Județul furnizorului nu este cunoscut: doar cercuri, fără arce.",
+            authority: "Județul autorității nu este cunoscut: doar cercuri, fără arce.",
+          },
+          offMap: "Banii care nu aparțin unui județ sunt în casetele de lângă hartă.",
+        },
+        tooltip: {
+          homeCounty: "Județul entității",
+          direction: { supplier: (home) => `Banii intră în ${home}`, authority: (home) => `Banii pleacă din ${home}` },
+        },
+        empty: "Niciun flux de bani pentru filtrul curent.",
+      },
     },
     overview: {
       headline: {

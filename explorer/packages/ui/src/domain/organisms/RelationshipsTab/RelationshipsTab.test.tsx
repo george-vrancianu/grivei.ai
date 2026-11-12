@@ -193,6 +193,16 @@ describe("RelationshipsTab", () => {
     expect(screen.getByRole("button", { name: "Flow lens" })).toBeVisible();
   });
 
+  it("shows the Flow lens map in place of the graph, keeping the timeline and the side panel", () => {
+    renderInUi(<Harness flowMap={<p>The flow map</p>} />);
+    expect(screen.getByText("The flow map")).toBeVisible();
+    expect(screen.queryByRole("group", { name: copy.graph.label })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Legend" })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button").filter((el) => el.hasAttribute("aria-pressed"))).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
+    expect(screen.getByRole("complementary", { name: "Records with the picked counterparty" })).toBeVisible();
+  });
+
   it("explains the marks in a legend, the dashed one only when it is used", () => {
     renderInUi(<Harness />);
     const legend = screen.getByRole("region", { name: "Legend" });

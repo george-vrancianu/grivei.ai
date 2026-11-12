@@ -370,58 +370,6 @@ const typicalTimeline = monthly([
 
 export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRelationshipsQueryVariables> = [
   {
-    name: "supplier-typical", kind: "typical",
-    description: "radial graph rows (a natural person, a consortium partner, a Signal marker), a monthly timeline for one counterparty, and a Flow lens with National and Unplaced tiles",
-    variables: { key: "30000001", role: "SUPPLIER", filter: {}, counterparty: "4000001" },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      counterparties: {
-        count: 4, topShare: 0.7,
-        rows: [
-          { entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(2_800_000), records: 40 }), viaDirectPurchase: total({ awarded: ron(2_000_000), records: 38 }), viaContract: total({ awarded: ron(800_000), records: 2 }), wonTogether: false, hasSignals: true },
-          { entity: w.constructii, naturalPerson: false, total: total({ awarded: ron(500_000), records: 1 }), viaDirectPurchase: zeroTotal, viaContract: total({ awarded: ron(500_000), records: 1 }), wonTogether: true, hasSignals: false },
-          { entity: null, naturalPerson: true, total: total({ awarded: ron(36_000), records: 1 }), viaDirectPurchase: total({ awarded: ron(36_000), records: 1 }), viaContract: zeroTotal, wonTogether: false, hasSignals: false },
-        ],
-      } satisfies RelCounterparties,
-      timeline: [
-        { month: "2024-01", total: total({ awarded: ron(300_000), records: 1 }) },
-        { month: "2024-02", total: zeroTotal },
-        { month: "2024-07", total: total({ awarded: ron(290_000), records: 2 }) },
-      ],
-      flow: flowOfSupplier,
-    }) },
-  },
-  {
-    name: "supplier-default-view", kind: "typical",
-    description: "a supplier's Relationships tab opened without a filter or a picked counterparty",
-    variables: { key: "30000001", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      counterparties: {
-        count: 1, topShare: 1,
-        rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(2_800_000), records: 40 }), viaDirectPurchase: total({ awarded: ron(2_000_000), records: 38 }), viaContract: total({ awarded: ron(800_000), records: 2 }), wonTogether: false, hasSignals: true }],
-      } satisfies RelCounterparties,
-      timeline: [{ month: "2024-01", total: total({ awarded: ron(300_000), records: 1 }) }],
-      flow: flowOfSupplier,
-    }) },
-  },
-  {
-    name: "authority-flow-national", kind: "typical",
-    description: "an authority's Flow lens: money going to supplier counties, with the unknown-supplier-county bucket",
-    variables: { key: "4000002", role: "AUTHORITY" },
-    data: { entity: withSeap(w.cnairHeader, {
-      role: "AUTHORITY" as Role,
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.drumarii, naturalPerson: false, total: total({ awarded: ron(112_400_000), records: 13 }), viaDirectPurchase: zeroTotal, viaContract: total({ awarded: ron(112_400_000), records: 13 }), wonTogether: false, hasSignals: true }] },
-      timeline: [{ month: "2024-03", total: total({ awarded: ron(9_300_000), records: 1 }) }],
-      flow: moneyMap({
-        side: "SUPPLIER",
-        counties: [{ area: "RO-MS", name: "Mureș", entities: 1, total: total({ awarded: ron(112_400_000), records: 13 }) }],
-        national: zeroTotal,
-        unknownSupplierCounty: total({ awarded: ron(1_200_000), records: 2 }),
-      }),
-    }) },
-  },
-  {
     name: "no-relationships", kind: "empty",
     description: "no counterparties in the filter: empty graph, empty timeline, empty Flow lens",
     variables: { key: "4000001", role: "AUTHORITY", filter: { from: "2019-01-01", to: "2019-12-31" } },
