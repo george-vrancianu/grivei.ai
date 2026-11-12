@@ -1,4 +1,4 @@
-// Entry point of the API container: DATABASE_URL, PORT (default 4000).
+// Entry point of the API container: DATABASE_URL, PORT (default 4000), API_CACHE_MAX_MB (result cache budget, default 300).
 import pg from "pg";
 import { createApi } from "./server.ts";
 import { cachedStore } from "./cache.ts";
@@ -9,7 +9,7 @@ if (!url) throw new Error("DATABASE_URL is required");
 const port = Number(process.env.PORT ?? 4000);
 
 const pool = new pg.Pool({ connectionString: url, max: 8 });
-const store = cachedStore(postgresStore(pool), pool, { log: (m) => console.log(m) });
+const store = cachedStore(postgresStore(pool), pool, { maxBytes: Number(process.env.API_CACHE_MAX_MB ?? 300) * 1024 * 1024, log: (m) => console.log(m) });
 await store.sync(); // reads the load generation and starts warming the 2-character prefixes in the background
 // a load (the pipeline's rebuild) is noticed on the next request; this also notices it, and re-warms, when nobody asks
 const watch = setInterval(() => void store.sync(), 30_000);

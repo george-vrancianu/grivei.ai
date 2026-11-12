@@ -282,8 +282,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     awarded: r.awarded, records: r.records, suspectLeftOut: r.suspect_left_out, noValue: r.no_value, frameworkCeilings: r.framework_ceilings,
   });
 
-  return {
-    async searchTotal(filter, { signal } = {}) {
+  const searchTotal: Store["searchTotal"] = async (filter, { signal } = {}) => {
       const plan = rollup ? rollupPlan(filter) : null;
       if (plan) {
         const params: unknown[] = [];
@@ -311,7 +310,10 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
                   coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
              FROM seap.search WHERE ${w.sql}`;
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
-    },
+  };
+
+  return {
+    searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
       const plan = rollup ? rollupPlan(filter) : null;
       if (plan) {
@@ -406,7 +408,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       // A chips-only count comes from the rollup; the page itself is always the Top-K query on the index (a Record page is not a rollup).
       const plan = rollup ? rollupPlan(filter) : null;
       const count = plan
-        ? (await this.searchTotal(filter, { signal })).records
+        ? (await searchTotal(filter, { signal })).records
         : (
         await cancellableQuery<{ n: number }>(
           pool, signal,

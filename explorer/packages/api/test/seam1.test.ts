@@ -930,11 +930,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect((await answer(scanned, { hasSignals: true, q: "deszapezire" })).total.records).toBe(0);
       await pool.query("UPDATE seap.search SET has_signals = true WHERE record_code = 'DA95000002'"); // what a Signals load will do
       try {
-        await pool.query("UPDATE seap.rollup_cube SET has_signals = true WHERE value_bucket = 'UP_TO_10K' AND channel = 'DIRECT_PURCHASE' AND award_year = 2023 AND records = 2"); // keep the cube in step for this check
         expect(codes(await answer(scanned, { hasSignals: true }))).toEqual(["DA95000002"]);
       } finally {
         await pool.query("UPDATE seap.search SET has_signals = false");
-        await pool.query("UPDATE seap.rollup_cube SET has_signals = false");
       }
     });
 
@@ -987,9 +985,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
       expect(cache.stats()).toMatchObject({ misses, hits: 4 });
 
-      const started = Date.now();
       const report = await cache.warm();
-      process.stderr.write(`WARMTIME ${report.prefixes} prefixes ${Date.now() - started} ms\n`);
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
@@ -1000,6 +996,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(empty.total.records).toBe(13);
 
       rebuild("rollup_b", "archive-counting"); // a second load with different data into the same database
+      await cache.sync(); // lookups reuse a generation read for up to a second; sync() reads fresh
       const after = await answer(api, {});
       expect(cache.stats().flushes).toBe(1);
       const { rows } = await p.query("SELECT count(*)::int AS n FROM seap.record");

@@ -41,6 +41,8 @@ export interface CacheStats {
   /** How many times a new load generation flushed the cache. */
   flushes: number;
   entries: number;
+  /** Approximate heap held by the entries (see `maxBytes`). */
+  bytes: number;
   generation: string | null;
 }
 
@@ -60,65 +62,123 @@ export interface CachedStore extends Store {
 }
 
 export interface CacheOptions {
-  /** Entries kept (oldest dropped first). */
+  /**
+   * Memory budget in approximate bytes (default 300 MB); least recently used entries are dropped first.
+   *
+   * Sizing: the API container has `mem_limit: 2g`, which gives Node 24 a heap limit of about 1.1 GB (measured). An entry is
+   * costed at twice its JSON length (the heap holds the objects and their strings, UTF-16 and with headers, at roughly that
+   * ratio): a Records page of 50 rows is ~20 KB of JSON, so ~40 KB costed, and 300 MB holds ~7,500 such pages or many more
+   * of the smaller totals and entity pages. That leaves about 800 MB of heap for the pool, GraphQL and the requests, and still
+   * holds the whole national warm (about 1,400 prefixes x 4 entries, ~5,600 entries). Configurable through
+   * `API_CACHE_MAX_MB` in `main.ts`.
+   */
+  maxBytes?: number;
+  /** Entries kept at most, whatever their size (default 50,000). */
   maxEntries?: number;
   /** Warm in the background after a flush (default true). */
   autoWarm?: boolean;
-  /** Concurrent warming prefixes (default 2: the pool is shared with the requests). */
+  /** Concurrent warming prefixes (default 1: every statement takes a pooled connection that requests also need). */
   warmConcurrency?: number;
+  /** How long a generation read is reused by lookups, in ms (default 1000); `sync()` always reads fresh. */
+  generationTtlMs?: number;
   log?: (message: string) => void;
 }
 
 const PAGE = { limit: 50, offset: 0 };
 
-export function cachedStore(inner: Store, pool: pg.Pool, { maxEntries = 20_000, autoWarm = true, warmConcurrency = 2, log = () => undefined }: CacheOptions = {}): CachedStore {
-  const entries = new Map<string, unknown>();
+/** Approximate heap cost of a cached value: twice its JSON length. */
+export function approxBytes(value: unknown): number {
+  return 2 * (JSON.stringify(value)?.length ?? 0);
+}
+
+export function cachedStore(
+  inner: Store,
+  pool: pg.Pool,
+  { maxBytes = 300 * 1024 * 1024, maxEntries = 50_000, autoWarm = true, warmConcurrency = 1, generationTtlMs = 1000, log = () => undefined }: CacheOptions = {},
+): CachedStore {
+  // Map order is recency order: a hit re-inserts its key, so the first key is the least recently used.
+  const entries = new Map<string, { value: unknown; bytes: number }>();
+  let bytes = 0;
   let generation: string | null = null;
   let hits = 0;
   let misses = 0;
   let flushes = 0;
   let warming: Promise<WarmReport> | null = null;
+  let lastRead = 0;
+  let reading: Promise<string | null> | null = null;
 
+  // A missing table or row means "no graph yet" (null); a failed read throws so the caller keeps the current generation.
   async function readGeneration(): Promise<string | null> {
     try {
       const r = await pool.query<{ generation: string }>("SELECT generation FROM seap.rollup_meta LIMIT 1");
       return r.rows[0]?.generation ?? null;
-    } catch {
-      return null; // no graph yet: nothing is cached against it
+    } catch (e) {
+      if ((e as { code?: string }).code === "42P01") return null; // undefined_table
+      throw e;
     }
   }
 
-  async function sync(): Promise<string | null> {
-    const g = await readGeneration();
-    if (g !== generation) {
-      if (generation !== null) flushes++;
-      entries.clear();
-      generation = g;
-      if (g !== null && autoWarm) {
-        warming = warm().catch((e) => (log(`cache warming failed: ${(e as Error).message}`), { prefixes: 0, statements: 0, failed: 1, ms: 0 }));
-      }
+  function flush(g: string | null) {
+    if (generation !== null) flushes++;
+    entries.clear();
+    bytes = 0;
+    generation = g;
+    if (g !== null && autoWarm) {
+      warming = warm().catch((e) => (log(`cache warming failed: ${(e as Error).message}`), { prefixes: 0, statements: 0, failed: 1, ms: 0 }));
     }
+  }
+
+  async function sync(fresh: boolean): Promise<string | null> {
+    if (!fresh && generation !== null && Date.now() - lastRead < generationTtlMs) return generation;
+    if (!reading) {
+      reading = readGeneration().finally(() => {
+        reading = null;
+      });
+    }
+    let g: string | null;
+    try {
+      g = await reading; // concurrent lookups share one in-flight read
+    } catch (e) {
+      log(`reading the load generation failed, keeping the current one: ${(e as Error).message}`);
+      return generation;
+    }
+    lastRead = Date.now();
+    if (g !== generation) flush(g);
     return g;
   }
 
   async function cached<T>(key: string, run: () => Promise<T>): Promise<T> {
-    const g = await sync();
-    if (g !== null && entries.has(key)) {
+    const g = await sync(false);
+    const hit = g !== null ? entries.get(key) : undefined;
+    if (hit) {
       hits++;
-      return entries.get(key) as T;
+      entries.delete(key); // LRU: most recently used goes last
+      entries.set(key, hit);
+      return hit.value as T;
     }
     misses++;
     const value = await run(); // a failure or an abort is never cached
     if (g !== null && g === generation) {
-      if (entries.size >= maxEntries) entries.delete(entries.keys().next().value!);
-      entries.set(key, value);
+      const cost = approxBytes(value);
+      if (cost <= maxBytes) {
+        const old = entries.get(key);
+        if (old) bytes -= old.bytes;
+        entries.delete(key);
+        entries.set(key, { value, bytes: cost });
+        bytes += cost;
+        while ((bytes > maxBytes || entries.size > maxEntries) && entries.size > 1) {
+          const [oldest, e] = entries.entries().next().value!;
+          entries.delete(oldest);
+          bytes -= e.bytes;
+        }
+      }
     }
     return value;
   }
 
   async function warm(): Promise<WarmReport> {
     const started = Date.now();
-    const g = generation ?? (await readGeneration());
+    const g = generation;
     const prefixes = (await pool.query<{ prefix: string }>("SELECT prefix FROM seap.rollup_prefix ORDER BY prefix")).rows.map((r) => r.prefix);
     const filters: SearchFilter[] = [{}, ...prefixes.map((q) => ({ q }))];
     let statements = 0;
@@ -129,12 +189,11 @@ export function cachedStore(inner: Store, pool: pg.Pool, { maxEntries = 20_000, 
         const f = filters[next++]!;
         if (generation !== g) return; // a newer load arrived: this warming is stale
         try {
-          await Promise.all([
-            store.searchTotal(f),
-            store.searchEntities("AUTHORITY", f, PAGE),
-            store.searchEntities("SUPPLIER", f, PAGE),
-            f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }),
-          ]);
+          // in sequence: each statement takes a pooled connection, and the pool is shared with the requests
+          await store.searchTotal(f);
+          await store.searchEntities("AUTHORITY", f, PAGE);
+          await store.searchEntities("SUPPLIER", f, PAGE);
+          await (f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }));
           statements += 4;
         } catch (e) {
           failed++;
@@ -151,12 +210,12 @@ export function cachedStore(inner: Store, pool: pg.Pool, { maxEntries = 20_000, 
   const page = (p: { limit: number; offset: number }) => `${p.limit}:${p.offset}`;
   const store: CachedStore = {
     ...inner,
-    stats: () => ({ hits, misses, flushes, entries: entries.size, generation }),
+    stats: () => ({ hits, misses, flushes, entries: entries.size, bytes, generation }),
     sync: async () => {
-      await sync();
+      await sync(true);
     },
     warm: async () => {
-      await sync();
+      await sync(true);
       if (warming) await warming.catch(() => undefined);
       return warm();
     },
