@@ -1,0 +1,13 @@
+# Daily at 03:00 and shortly after boot; Persistent=true runs a missed 03:00 as soon as the machine is up again.
+# Two triggers on one day are harmless: a step runs only when it is due from its last success, and a run holds a lock.
+[Unit]
+Description=grivei.ai refresh, daily and on boot
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+OnBootSec=3min
+Persistent=true
+Unit=grivei-refresh.service
+
+[Install]
+WantedBy=timers.target

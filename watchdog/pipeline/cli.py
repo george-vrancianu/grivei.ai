@@ -26,6 +26,12 @@ from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
 from . import placement_cli
+from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
+from .refresh.engine import DeterministicError, refresh_steps
+from .refresh.ledger import LEDGER_NAME
+from .refresh.status import quarantine_lines
+from .refresh.steps import Impl
+from .anaf import ENDPOINT as _ANAF_URL
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
 
@@ -111,6 +117,31 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
 
+
+    def load_args(p):  # what the verbs that load into the database share with `rebuild`
+        p.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
+        p.add_argument("--identity-overrides", default=os.environ.get("PIPELINE_IDENTITY_OVERRIDES"), help="the reviewed identity override file (env PIPELINE_IDENTITY_OVERRIDES)")
+        p.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help=f"the rebuild's status file (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
+        p.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; for tests)")
+        p.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV (env PIPELINE_KNOWN_GAPS)")
+        placement_cli.add_rebuild_args(p)
+
+    rf = sub.add_parser("refresh", help="the nightly run (#81): crawl, data.gov.ro + MF list, ANAF, load; each step only when due, under one lock; healthchecks pings")
+    load_args(rf)
+    rf.add_argument("--healthcheck-url", default=os.environ.get("PIPELINE_HEALTHCHECK_URL"), help="healthchecks.io ping URL (env PIPELINE_HEALTHCHECK_URL; unset = no pings)")
+    rf.add_argument("--trigger", default="manual", help="what started the run, recorded in the ledger (the systemd unit passes `timer`)")
+    rf.add_argument("--delay", type=float, default=float(os.environ.get("PIPELINE_CRAWL_DELAY", CRAWL_DELAY)), help=f"seconds between crawl requests (default {CRAWL_DELAY})")
+
+    sd = sub.add_parser("seed", help="the first-time sequence, resumable: data.gov.ro + MF list, ANAF, load (reads the archived ANAF answers), optionally the backfill; steps done in an earlier seed are skipped")
+    load_args(sd)
+    sd.add_argument("--backfill", action="store_true", help="also run the 2021-22 backfill crawl (hours) as the last step")
+    sd.add_argument("--again", action="store_true", help="forget what earlier seeds finished and run every step (each still skips what it already archived)")
+    sd.add_argument("--delay", type=float, default=float(os.environ.get("PIPELINE_CRAWL_DELAY", CRAWL_DELAY)), help=f"seconds between crawl requests (default {CRAWL_DELAY})")
+
+    lq = sub.add_parser("load-quarter", help="load one quarter again from the archive, without downloading: requeue its quarantined files, then rebuild")
+    lq.add_argument("quarter", help="e.g. 2023Q2")
+    load_args(lq)
+
     placement_cli.add_parsers(sub)
 
     args = parser.parse_args(argv)
@@ -150,6 +181,10 @@ def main(argv: list[str] | None = None) -> int:
         lookup(archive, cuis, AnafClient(endpoint=args.endpoint), progress,
                recheck_after_days=args.recheck_after_days, max_batches=args.max_batches)
         return 0
+    if args.verb in ("refresh", "seed"):
+        return _refresh(archive, args)
+    if args.verb == "load-quarter":
+        return _load_quarter(archive, args)
     if args.verb == "status":
         return _status(archive, args)
     if args.verb == "crawl":
@@ -192,6 +227,77 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
+def _log_line(line: str) -> None:
+    print(f"{stamp_now()} {line}", flush=True)
+
+
+def _loader(archive: Archive, args):
+    """A callable that rebuilds the graph from the archive with the verb's options (a refresh, a seed or load-quarter)."""
+    def load():
+        if not args.db:
+            raise DeterministicError("no database: pass --db or set DATABASE_URL")
+        status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
+        placement_cli.log_to_stderr()
+        summary = rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
+                          geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps)
+        for line in summary.lines():
+            _log_line(line)
+        return summary
+    return load
+
+
+def _impl(archive: Archive, args) -> Impl:
+    # every dependency is looked up in this module when called, so tests can replace `make_client`, `fetch_datagov`, `fetch_mf`
+    def backfill() -> int:
+        ns = argparse.Namespace(passes="all", delay=args.delay, status=False, progress_file=None)
+        return _backfill(archive, ns)
+
+    return Impl(archive, _log_line, lambda delay, log: make_client(delay, log), lambda a: fetch_datagov(a), lambda a: fetch_mf(a),
+                lambda: AnafClient(endpoint=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT)), _loader(archive, args), backfill, crawl_delay=args.delay,
+                crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None)
+
+
+def _logging_to_stderr() -> None:
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+    logging.getLogger("pipeline").handlers[:] = [handler]
+    logging.getLogger("pipeline").setLevel(logging.INFO)
+
+
+def _refresh(archive: Archive, args) -> int:
+    """`refresh` (nightly, pings healthchecks.io) and `seed` (first time, no pings): one locked run, one timestamped log on stdout."""
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+    _logging_to_stderr()
+    impl = _impl(archive, args)
+    if args.verb == "seed":
+        return run_seed(archive, impl, backfill=args.backfill, again=args.again, say=_log_line).exit_code
+    return run_refresh(archive, impl, pinger=Pinger(args.healthcheck_url), trigger=args.trigger, say=_log_line).exit_code
+
+
+def _load_quarter(archive: Archive, args) -> int:
+    quarter = args.quarter.upper()
+    if len(quarter) != 6 or quarter[4] != "Q" or not quarter[:4].isdigit() or quarter[5] not in "1234":
+        print(f"load-quarter: not a quarter like 2023Q2: {args.quarter!r}", file=sys.stderr)
+        return 2
+    held = [u for u in archive.units() if u.unit == quarter and u.kind in ("da", "dan", "contracte", "scna")]
+    restored = archive.requeue(f"/{quarter}/")
+    for path in restored:
+        _log_line(f"requeued {path}")
+    if not held and not restored:
+        print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
+        return 1
+    _log_line(f"load-quarter {quarter}: {len(held) + len(restored)} unit(s) in the archive; the graph is derived whole from the archive, so this is a rebuild")
+    try:
+        _loader(archive, args)()
+    except DeterministicError as e:
+        print(f"load-quarter: {e}", file=sys.stderr)
+        return 2
+    still = [p for p in archive.quarantined() if f"/{quarter}/" in str(p)]
+    for p in still:
+        _log_line(f"load-quarter {quarter}: still quarantined, so not yet loaded: {p}")
+    return 1 if still else 0
+
+
 def _status(archive: Archive, args) -> int:
     """The rebuild's status (as before), the ANAF lookup's and the crawl's: cursor and data-through dates from the archive, the last run from its status file."""
     status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
@@ -232,6 +338,14 @@ def _status(archive: Archive, args) -> int:
             code = 1
         elif not any(x is not None and effective_state(x) in ("failed", "interrupted") for x in (status, anaf, crawl_status)):
             code = 0  # no rebuild yet is not a failure once a backfill is on record
+    ledger = Ledger(archive.root / LEDGER_NAME)
+    print()  # the refresh run (#81): recent runs, what is due, open quarantines
+    from types import SimpleNamespace
+    dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None)
+    for line in describe_refresh(archive, ledger, refresh_steps(archive, dummy)):
+        print(line)
+    if ledger.runs and ledger.runs[-1]["status"] == "failed":
+        code = 1
     return code
 
 
