@@ -166,3 +166,33 @@ The entity page's view of how money moves between the entity and its counterpart
 
 **Record page**:
 The page, with its own URL, for one SEAP record (a contract or a direct purchase), linking to its source document.
+
+### Investigations
+
+**Investigation**:
+A written case Grivei.ai builds itself, opened by a person from a Signal (or from a tip tied to an entity) and worked across Sources and their source documents; every fact in it is cited, it ends Explained or Unexplained, and it has a public part only after Editor sign-off. It is re-opened only on a new fact, as a new version. It is not a Source and never a Release.
+_Avoid_: own source, case file, story, report
+
+**Editor sign-off**:
+A named human editor's dated approval of an Investigation's public part, never given by an agent; nothing in an Investigation is public without it.
+_Avoid_: review, approval (alone)
+
+**Finding**:
+A conclusion an Investigation reaches; never public, shared only with named journalists by a recorded hand-off.
+_Avoid_: verdict, result (and never for a Signal)
+
+**Open question**:
+A statement in an Investigation's public part that the evidence raises but does not settle, including any link made by name alone.
+_Avoid_: suspicion, allegation
+
+**Right of reply**:
+The fixed window every organisation and Named person in an Investigation's public part gets to answer before it is published; the answer, or its absence, is published verbatim.
+_Avoid_: comment request
+
+**Explained**:
+The outcome of an Investigation whose Signal has an innocent explanation; its public part is published to show it, as a courtesy to the entities involved.
+_Avoid_: cleared, closed, false positive
+
+**Unexplained**:
+The outcome of an Investigation whose public part ends in Open questions, with any Findings handed off privately; the only other outcome is Explained, and there is no "confirmed" or "suspicious".
+_Avoid_: suspicious, confirmed, guilty, flagged
