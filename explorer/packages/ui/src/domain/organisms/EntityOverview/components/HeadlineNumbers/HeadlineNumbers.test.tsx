@@ -23,11 +23,19 @@ describe("HeadlineNumbers", () => {
     expect(within(items[3]!).getByText("2")).toBeVisible();
   });
 
-  it("tells no share when there is nothing awarded", () => {
+  it("tells no share when there are no Records", () => {
     show(emptyOverview.overview);
     const items = within(screen.getByRole("list", { name: "Headline numbers" })).getAllByRole("listitem");
     expect(within(items[2]!).getByText("–")).toBeVisible();
     expect(screen.queryByText(/The largest holds/)).toBeNull();
+  });
+
+  it("tells no share when the Records carry no money, rather than a misleading 0%", () => {
+    const o = supplierOverview.overview;
+    show({ ...o, directPurchaseShare: 0, total: { ...o.total, records: 3, awarded: "0" } });
+    const items = within(screen.getByRole("list", { name: "Headline numbers" })).getAllByRole("listitem");
+    expect(within(items[2]!).getByText("–")).toBeVisible();
+    expect(screen.queryByText("0%")).toBeNull();
   });
 
   it("formats the numbers in Romanian", () => {

@@ -66,7 +66,7 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
         { entity: w.constructii, naturalPerson: false, total: total({ awarded: ron(900_000_000), records: 41 }) },
       ] },
       directPurchaseShare: 0.03,
-      procedures: [{ value: "Licitație deschisă", total: total({ awarded: ron(8_000_000_000), records: 300 }) }],
+      procedures: [{ value: "Licitație deschisă", total: total({ awarded: ron(8_617_600_000), records: 300 }) }],
       consortia: [{ members: [w.constructii, w.drumarii].map((e) => ({ naturalPerson: false, publishedName: e.displayName, share: ron(15_000_000), entity: e })), total: total({ awarded: ron(30_000_000), records: 1 }) }],
       frameworks: { count: 4, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
       largestRecords: [w.rConsortium, w.rSubsequent],
@@ -139,7 +139,7 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
       ] },
       directPurchaseShare: 0.03,
       procedures: [
-        { value: "Licitație deschisă", total: total({ awarded: ron(8_000_000_000), records: 300 }) },
+        { value: "Licitație deschisă", total: total({ awarded: ron(8_617_600_000), records: 300 }) },
         { value: "Cu acord-cadru subsecvent", total: total({ awarded: ron(112_400_000), records: 12 }) },
         { value: "Achiziție directă", total: total({ awarded: ron(270_000_000), records: 888 }) },
       ],

@@ -216,7 +216,7 @@ export const ro: Copy = {
       },
       frameworks: {
         heading: "Acorduri-cadru",
-        line: (n, f, ceilings, reported) => `${f} ${n === 1 ? "acord-cadru" : "acorduri-cadru"}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+        line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
         none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
       },
       largest: { heading: "Cele mai mari înregistrări", note: "Doar înregistrările numărate: valorile suspecte și plafoanele acordurilor-cadru nu apar aici.", empty: "Nicio înregistrare numărată în această selecție." },

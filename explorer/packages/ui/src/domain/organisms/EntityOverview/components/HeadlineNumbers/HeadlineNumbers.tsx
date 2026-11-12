@@ -54,8 +54,8 @@ export function HeadlineNumbers({ overview, locale, copy, methodologyHref, suspe
         )}
       </Figure>
       <Figure label={copy.directPurchase}>
-        {/* with no Records there is no share to tell */}
-        {figure(total.records > 0 ? formatPercent(directPurchaseShare, locale) : "–")}
+        {/* a share of the money: with none awarded (no Records, or none with a value) there is no share to tell */}
+        {figure(BigInt(total.awarded) > 0n ? formatPercent(directPurchaseShare, locale) : "–")}
       </Figure>
       <Figure label={copy.signals}>{figure(formatCount(signals.count, false, locale))}</Figure>
     </Box>

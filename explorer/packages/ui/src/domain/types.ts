@@ -60,7 +60,6 @@ export type RecordSignal = RecordPageData["signals"][number];
 /** What the Overview tab shows (`EntityOverview`'s `seap.role`): totals, counterparties, procedures, consortia, frameworks, largest Records, Signals. */
 export type EntityOverviewData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["seap"]["role"]>;
 /** One counterparty row of the Overview (a natural person has no entity). */
-export type OverviewCounterparty = EntityOverviewData["counterparties"]["rows"][number];
 /** The Overview's counterparty list: the total count, the top share and the first rows. */
 export type OverviewCounterparties = EntityOverviewData["counterparties"];
 export type OverviewConsortium = EntityOverviewData["consortia"][number];
@@ -68,4 +67,3 @@ export type OverviewProcedure = EntityOverviewData["procedures"][number];
 export type OverviewFrameworks = EntityOverviewData["frameworks"];
 /** Every spelling of an Entity's name in SEAP ("Appears in SEAP as"). */
 export type EntityAliases = EntityHeaderData["aliases"];
-export type EntityAlias = EntityAliases[number];

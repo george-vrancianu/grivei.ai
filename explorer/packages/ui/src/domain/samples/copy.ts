@@ -466,7 +466,7 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
         },
         frameworks: {
           heading: "Acorduri-cadru",
-          line: (n, f, ceilings, reported) => `${f} ${plural(n, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+          line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
           none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
         },
         largest: {
