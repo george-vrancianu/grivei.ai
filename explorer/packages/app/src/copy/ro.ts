@@ -254,4 +254,44 @@ export const ro: Copy = {
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
     },
   },
+  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
+  signalCard: {
+    rules: {
+      OVER_CAP: {
+        label: "Peste plafon",
+        sentence: (n) => `O achiziție directă a fost atribuită la ${n.value}, de ${n.multiple} ori plafonul achiziției directe de ${n.cap}.`,
+        lawful: "Explicații legale posibile: o achiziție subsecventă unui acord-cadru, o excepție prevăzută de lege sau o eroare de introducere a valorii ori a tipului înregistrării.",
+      },
+      SPLITTING: {
+        label: "Fracționare",
+        sentence: (n) => `${n.purchases} achiziții directe din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
+        lawful: "Explicații legale posibile: nevoi distincte, linii bugetare distincte sau produse fără legătură din aceeași grupă CPV.",
+      },
+      FRAMEWORK_OVERRUN: {
+        label: "Depășirea acordului-cadru",
+        sentence: (n) => `Contractele unui acord-cadru raportează valori de ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
+        lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
+      },
+      NO_PUBLICATION: {
+        label: "Fără publicare",
+        sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
+        lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
+      },
+    },
+    compact: { text: (label, when) => `${label}, ${when}` },
+    date: (when) => `Din ${when}`,
+    records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+    parties: {
+      authority: "Autoritate contractantă",
+      suppliers: "Furnizori",
+      moreSuppliers: (_n, f) => `și încă ${f}`,
+      entityLink,
+    },
+    links: {
+      reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${f} înregistrări`),
+      seap: { check: "Verifică în SEAP", checkEach: "Verifică fiecare înregistrare în SEAP" },
+      methodology: "Cum este detectat acest Semnal",
+    },
+  },
+
 };

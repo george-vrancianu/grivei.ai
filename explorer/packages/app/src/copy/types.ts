@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -70,4 +70,6 @@ export interface Copy {
     /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
     recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & { facets: Omit<RecordsTabCopy["facets"], "badges" | "channels"> };
   };
+  /** The Signal card and its compact form: the wording of every rule (label, sentence, lawful explanations), the links and the date. Neutral by test: no accusation, in either language. */
+  signalCard: SignalCardCopy;
 }
