@@ -26,6 +26,7 @@ CREATE TABLE core.entity (
     cui               text,
     foreign_vat_id    text,
     display_name      text NOT NULL,
+    name_folded       text NOT NULL DEFAULT '',   -- fold(display_name) (pipeline/fold.py): the Go-to lookup of a name query (#69); '' when only legal forms
     anaf_status       text,
     identity_curated  boolean NOT NULL DEFAULT false,
     provenance_source text NOT NULL CHECK (provenance_source IN ('ANAF', 'SEAP')),

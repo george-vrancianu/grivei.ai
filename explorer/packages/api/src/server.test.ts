@@ -28,6 +28,7 @@ const store: Store = {
   searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
   searchRecords: async () => ({ count: 0, rows: [] }),
+  goTo: async () => null,
   entity: async () => null,
   aliases: async () => [],
   roles: async () => [],
