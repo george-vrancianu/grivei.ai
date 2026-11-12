@@ -24,8 +24,12 @@ export default tseslint.config(
   {
     files: ["**/*.{ts,tsx}"],
     plugins: { "react-hooks": reactHooks },
+    rules: reactHooks.configs.recommended.rules,
+  },
+  {
+    // Every script extension, so the door does not depend on how a file is named.
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
     rules: {
-      ...reactHooks.configs.recommended.rules,
       "no-restricted-imports": ["error", { patterns: [{ group: MUI_DOOR_PATTERNS, message: MUI_DOOR_MESSAGE }] }],
       // no-restricted-imports does not see dynamic import() or require().
       "no-restricted-syntax": [

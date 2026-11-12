@@ -51,7 +51,7 @@ Create `hooks/`, `components/` and the utils file only when they have something 
 
 ## The workbench (Storybook)
 
-`npm run storybook` (local, from `explorer/`) serves every story of `packages/ui` and, once it exists, `packages/app` (`.storybook/main.ts` globs `packages/{ui,app}/src/**/*.stories.tsx`). `npm run storybook:build` makes the static build CI runs (`storybook-static/`, gitignored).
+`npm run storybook` (local, from `explorer/`) serves every story of `packages/ui` and, once it exists, `packages/app` (`.storybook/main.ts` globs `packages/{ui,app}/src/**/*.stories.{ts,tsx}`). `npm run storybook:build` makes the static build CI runs (`storybook-static/`, gitignored).
 
 - **Language switch.** The toolbar has an EN/RO `locale` global; a decorator passes it to the UI library's `UiProvider`, so MUI's own strings follow it. Text in a story comes from per-locale samples: `pick(globals["locale"], { en: "...", ro: "..." })` from `@grivei/ui/workbench`, used in `render: (args, { globals }) => ...`. Write Romanian samples with diacritics. In the app, copy comes from the catalogue instead.
 - **Fixtures.** Stories import mock data from `@grivei/contract/fixtures` (e.g. `fixtures.FullResultsSuppliers`); see `atoms/Table/Table.stories.tsx`. Pass rows through props like the real component will get them.

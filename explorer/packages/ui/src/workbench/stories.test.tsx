@@ -7,7 +7,7 @@ import preview from "../../../../.storybook/preview.tsx";
 import { LOCALES } from "../theme/index.ts";
 
 // Every story of every atom (and, later, of the app), rendered in both languages.
-const modules = import.meta.glob<Record<string, unknown>>("../**/*.stories.tsx", { eager: true });
+const modules = import.meta.glob<Record<string, unknown>>("../**/*.stories.{ts,tsx}", { eager: true });
 const files = Object.entries(modules);
 
 describe("the workbench stories", () => {
@@ -29,7 +29,6 @@ describe("the workbench stories", () => {
       it.each(Object.entries(stories))("%s renders", (_name, Story) => {
         const { container } = render(<Story />);
         expect(container).not.toBeEmptyDOMElement();
-        expect(path).toMatch(/\.stories\.tsx$/);
       });
     });
   });

@@ -32,6 +32,11 @@ describe("the UI library is the only door to MUI", () => {
     expect((await lint(code + "\n", appFile)).length).toBeGreaterThan(0);
   });
 
+  it.each(["js", "jsx", "mjs", "cjs", "mts", "cts"])("rejects @mui/material in a .%s file in app code", async (ext) => {
+    const problems = await lint(`import { Button } from "@mui/material";\nexport const X = Button;\n`, `packages/app/src/Example/x.${ext}`);
+    expect(problems.some((m) => /@grivei\/ui/.test(m.message))).toBe(true);
+  });
+
   it("rejects MUI imports in the contract package and in storybook config too", async () => {
     expect(await lint(`import { Box } from "@mui/material";\nexport const X = Box;\n`, "packages/contract/src/x.ts")).not.toHaveLength(0);
     expect(await lint(`import { Box } from "@mui/material";\nexport const X = Box;\n`, ".storybook/preview.tsx")).not.toHaveLength(0);
