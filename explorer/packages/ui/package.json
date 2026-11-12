@@ -5,7 +5,8 @@
   "type": "module",
   "description": "The explorer's UI library: the only code that imports MUI (ADR 0006). Theme, provider and wrapped atoms.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./workbench": "./src/workbench/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@grivei/contract": "*",
+    "@storybook/react-vite": "^10.6.7",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.9",
@@ -32,6 +34,7 @@
     "jsdom": "^31.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "storybook": "^10.6.7",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

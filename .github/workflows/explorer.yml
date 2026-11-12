@@ -24,6 +24,9 @@ jobs:
           cache: npm
           cache-dependency-path: explorer/package-lock.json
       - run: npm ci
-      # contract: generated types and the persisted-query allowlist are up to date, typecheck,
-      # every operation validates against the schema, every fixture matches its operation.
+      # lint (incl. the "only packages/ui imports MUI" rule), then per package: the contract's
+      # generated files are up to date, typecheck, every operation validates against the schema,
+      # every fixture matches its operation; the UI library's atom and story tests; tooling tests.
       - run: npm run check
+      # the component workbench builds statically (the story render tests already ran above).
+      - run: npm run storybook:build
