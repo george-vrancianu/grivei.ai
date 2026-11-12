@@ -81,6 +81,8 @@ export interface RecordRow {
   suspect: { rule: "DIRECT_PURCHASE_10X_CAP" | "CONTRACT_100X_ESTIMATE" | "CONTRACT_OVER_50BN"; threshold: string | null } | null;
   /** Crawled Records the bulk has not superseded: PROVISIONAL (its quarter has no bulk yet) or CRAWL_ONLY (the bulk has the quarter, not this Record). Null for a bulk Record. */
   crawlStatus: "PROVISIONAL" | "CRAWL_ONLY" | null;
+  /** How we obtained it: BULK (a published file, `via` its title as the Source gives it) or CRAWL (`via` null); when we fetched it (ISO, UTC, from the archive); `url` is the public page a crawled Record had built at load time (null for a bulk Record: its link is the /source/seap redirect, added by the resolver). */
+  provenance: { kind: "BULK" | "CRAWL"; via: string | null; fetchedAt: string; url: string | null };
 }
 
 /** One Record for its page: the list row plus what only the page shows. */
@@ -89,8 +91,6 @@ export interface RecordDetail extends RecordRow {
   frameworkRole: "CEILING" | "SUBSEQUENT" | null;
   contractType: string | null;
   cpv: { code: string; description: string } | null;
-  /** How we obtained it; the file it came from, as the Source titles it (null for a crawl); when we fetched it (ISO, UTC); the public page (crawled Records: built at load time). */
-  provenance: { kind: "BULK" | "CRAWL"; via: string | null; fetchedAt: string; url: string | null };
 }
 
 /** The numbers of one Total. `awarded` sums the stored `counted` and nothing else; the rest say what it left out. */
@@ -285,13 +285,17 @@ interface RawRecord {
   suspect_rule: NonNullable<RecordRow["suspect"]>["rule"] | null;
   suspect_threshold: string | null;
   crawl_status: RecordRow["crawlStatus"];
+  record_via: string | null;
+  url: string | null;
+  source_file_id: number;
 }
 
 /** The date window of the Coverage figures ($1 = from, $2 = to, either may be null): Records by `award_date`, as search does. One place for the "follows the date chip" contract. */
 const WINDOW_SQL = "($1::date IS NULL OR award_date >= $1::date) AND ($2::date IS NULL OR award_date <= $2::date)";
 
 const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, procedure, value_bani::text AS value, counted_bani::text AS counted,
-  authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status`;
+  authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status,
+  via AS record_via, url, source_file_id`;
 
 export interface PostgresStoreOptions {
   /** Distinct-entity counts are exact up to this many groups and a HyperLogLog estimate above (pg_search's group cap is 65,000). */
@@ -349,7 +353,22 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       for (const w of winners) if (w.key) keys.add(w.key);
     }
     const entities = await entitiesOf([...keys]);
+    // provenance: the archive file each Record came from, one query for the page's files
+    const fileIds = [...new Set(raw.map((r) => r.source_file_id))];
+    const files = new Map<number, { via: string | null; fetchedAt: string }>();
+    if (fileIds.length) {
+      const found = await pool.query(
+        `SELECT id, via, to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at FROM seap.source_file WHERE id = ANY($1)`,
+        [fileIds],
+      );
+      for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
+    }
     const now = new Date().toISOString();
+    const fileOf = (id: number) => {
+      const f = files.get(id);
+      if (!f) throw new Error(`seap.source_file ${id} is missing`); // provenance is never invented
+      return f;
+    };
     return parsed.map(({ r, winners }) => ({
       code: r.code,
       title: r.title,
@@ -369,6 +388,12 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       badges: r.badges ?? [],
       suspect: r.suspect_rule ? { rule: r.suspect_rule, threshold: r.suspect_threshold } : null,
       crawlStatus: r.crawl_status ?? null,
+      provenance: {
+        kind: r.record_via === "CRAWL" ? "CRAWL" : "BULK",
+        via: fileOf(r.source_file_id).via,
+        fetchedAt: fileOf(r.source_file_id).fetchedAt,
+        url: r.url,
+      },
     }));
   }
 
@@ -548,9 +573,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       const { rows } = await pool.query(
         `SELECT r.code, r.title, r.award_date::text AS date, r.kind, r.channel, r.value_bani::text AS value,
                 r.counted_bani::text AS counted, r.authority_key, r.authority_name, r.winners, r.badges, r.procedure,
-                r.suspect_rule, r.suspect_threshold_bani::text AS suspect_threshold, r.framework_role, r.contract_type, r.cpv_code, r.cpv_description, r.crawl_status, r.via AS record_via, r.url, f.via,
-                to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
-           FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = $1`,
+                r.suspect_rule, r.suspect_threshold_bani::text AS suspect_threshold, r.framework_role, r.contract_type, r.cpv_code, r.cpv_description, r.crawl_status, r.via AS record_via, r.url, r.source_file_id
+           FROM seap.record r WHERE r.code = $1`,
         [code],
       );
       const r = rows[0];
@@ -561,7 +585,6 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         frameworkRole: r.framework_role,
         contractType: r.contract_type,
         cpv: r.cpv_code ? { code: r.cpv_code, description: r.cpv_description ?? "" } : null,
-        provenance: { kind: r.record_via === "CRAWL" ? "CRAWL" : "BULK", via: r.via, fetchedAt: r.fetched_at, url: r.url },
       };
     },
     async framework(code) {
