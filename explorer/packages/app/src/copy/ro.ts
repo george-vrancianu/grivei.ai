@@ -62,6 +62,14 @@ export const ro: Copy = {
       party: { naturalPerson: "Persoană fizică", entityLink },
     },
   },
+  fullResults: {
+    showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
+    outOfRange: (pages, formatted) => `Această pagină este după ultima: ${pages === 1 ? "există doar 1 pagină" : `sunt doar ${roCount(pages, formatted, "pagină", "pagini")}`}.`,
+    noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
+    firstPage: "Mergi la pagina 1",
+    back: "Înapoi la rezultate",
+    pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
+  },
   mainScreenLayout: {
     lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
     regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
