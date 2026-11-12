@@ -71,7 +71,8 @@ def test_national_authorities_come_from_the_award_notice_or_the_reviewed_file(bu
     p = placements(url)
     assert p[CUI["ministry"]][4:] == (True, "award-notice", "ANAF")  # legalBuyerType central
     assert p[CUI["agency"]][4:] == (True, "file", "ANAF")  # no award notice: the reviewed file
-    assert p[CUI["dsp"]][:2] == ("BV", "880001") and p[CUI["dsp"]][4:] == (False, "file-override", "ANAF")  # the file overrides the notice
+    assert p[CUI["dsp"]][:2] == ("BV", "880001") and p[CUI["dsp"]][4:] == (False, "award-notice", "ANAF")  # central but deconcentrated: its own county, no file line
+    assert p[CUI["huedin"]][4:] == (False, "file-override", "ANAF")  # the notice wrongly says central: the file overrides it
     assert p[CUI["brasov"]][4:6] == (False, "award-notice")  # a local notice
     assert summary.placement.national == 2
 

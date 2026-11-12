@@ -145,10 +145,10 @@ ANAF = {
     "brasov": ("MUNICIPIUL BRASOV", "Mun. Braşov", "BV", "8", "500001"),  # a municipality
     "bucharest3": ("PRIMARIA SECTORULUI 3", "Sector 3 Mun. Bucureşti", "B", "40", "030167"),  # a Bucharest sector
     "unmatched": ("COMUNA FARA NUME", "Com. Necunoscuta", "BV", "8", "500999"),  # not in SIRUTA: the county only, with a log line
-    "huedin": ("ORAS HUEDIN", "Orş. Huedin", "CJ", "12", "405300"),
+    "huedin": ("ORAS HUEDIN", "Orş. Huedin", "CJ", "12", "405300"),  # the notice wrongly says central: the reviewed file overrides it
     "ministry": ("MINISTERUL EXEMPLULUI", "Sector 1 Mun. Bucureşti", "B", "40", "010011"),  # national: the award notice says central
     "agency": ("AGENTIA NATIONALA DEMO", "Sector 2 Mun. Bucureşti", "B", "40", "020022"),  # national: only the reviewed file says so
-    "dsp": ("DIRECTIA DE SANATATE PUBLICA DEMO", "Mun. Braşov", "BV", "8", "500002"),  # the notice says central, the file overrides: local
+    "dsp": ("DIRECTIA DE SANATATE PUBLICA DEMO", "Mun. Braşov", "BV", "8", "500002"),  # the notice says central AND deconcentrated: local, no file line needed
 }
 NOT_IN_ANAF = ("seap", "unplaced")  # asked, notFound
 SEAP_NAMES = {"seap": "COMUNA UCEA SPITAL ASIMILAT", "unplaced": "ASOCIATIA FARA ADRESA"}
@@ -191,9 +191,11 @@ def build() -> None:
                        "city": "Sanpetru", "county": "Brasov", "country": "Romania", "postalCode": None}).encode()
     lookup.archive_lookup(a, "entity-location", CUI["seap"], {"byCif": {"body": CUI["seap"]}, "view": {"path": "/api-pub/Entity/getCAEntityView/777001"}},
                           {"by-cif.json": by_cif, "view.json": view}, at(2026, 11, 5))
-    # award notices: the ministry's says central; the DSP's says central too (the file overrides); Brasov municipality's says local
+    # award notices: the ministry's says central; the DSP's says central but deconcentrated (local); Huedin's wrongly says central (the
+    # file overrides); Brasov municipality's says local
     for key, legal, ca in (("ministry", "Autoritate guvernamentală centrală", "Minister sau orice altă autoritate națională sau federală"),
                            ("dsp", "Autoritate guvernamentală centrală", "Serviciul public deconcentrat"),
+                           ("huedin", "Autoritate guvernamentală centrală", "Minister sau orice altă autoritate națională sau federală"),
                            ("brasov", "Autoritate locală", "Autoritate regională sau locală")):
         lookup.archive_lookup(a, "authority-notice", CUI[key], {"notice": {"path": "/api-pub/C_PUBLIC_CANotice/get/100662702"}},
                               {"notice.json": notice(legal, ca)}, at(2026, 11, 6))
@@ -214,7 +216,7 @@ def build() -> None:
     (DATA / "national_authorities.csv").write_text(
         "cui,national,override,name,reason\n"
         f'{CUI["agency"]},true,false,AGENTIA NATIONALA DEMO,"fictional: a national agency with only direct purchases, no award notice"\n'
-        f'{CUI["dsp"]},false,true,DIRECTIA DE SANATATE PUBLICA DEMO,"fictional: a county unit; the notice says central, the file overrides it"\n',
+        f'{CUI["huedin"]},false,true,ORAS HUEDIN,"fictional: a town the notice wrongly calls central, the file overrides it"\n',
         encoding="utf-8")
     build_tables(a, DATA, DATA)
 

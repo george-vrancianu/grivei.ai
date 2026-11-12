@@ -1,5 +1,6 @@
 """Placement without a database (ticket #67): the matching rules one by one, the UAT table generator, the TopoJSON, the geography
 fetch (seam 2, HTTP stubbed) and the two SEAP lookups (seam 2). The Postgres side is test_placement_db.py."""
+import hashlib
 import json
 import shutil
 import sys
@@ -153,6 +154,16 @@ def seap(city, county, address=None, postal=None):
     return place_by_seap(GAZ, city=city, county=county, address=address, postal_code=postal)
 
 
+def test_the_postal_code_survives_diacritics_in_its_label():
+    assert postal_code_of("Localitate: Sanpetru, Cod poştal: 507190") == "507190"
+
+
+def test_a_county_seat_town_is_told_from_a_commune_by_the_kind_word():
+    from pipeline.placement.matching import KIND_TIPS
+
+    assert KIND_TIPS["ORS"] == {"2", "5"}
+
+
 def test_the_postal_code_is_read_from_the_address():
     assert postal_code_of("Strada: Republicii, nr. 655, Sector: -, Judet: Brasov, Localitate: Sanpetru, Cod postal: 507190") == "507190"
     assert postal_code_of("fara cod") is None
@@ -200,10 +211,28 @@ def test_the_notice_fields_decide_national_central_regional_or_unknown():
         ((None, "De interes local sau regional"), False),
         (("Altceva", None), None),
         ((None, None), None),
+        # a deconcentrated service plots in its own county, whatever else the notice says (the DSP case)
+        (("Autoritate guvernamentală centrală", "Serviciul public deconcentrat"), False),
+        ((None, "Serviciile publice deconcentrate"), False),
+        # a regional legal buyer type beats a caType that lists "regional or local subdivisions" of a ministry
+        (("Autoritate regională", "Minister sau orice altă autoritate națională sau federală, inclusiv subdiviziunile regionale sau locale ale acestora"), False),
+        ((None, "Minister sau orice altă autoritate națională sau federală, inclusiv subdiviziunile regionale sau locale ale acestora"), True),
+        # bodies governed by public law "controlled by" a central authority (universities, hospitals): the file decides
+        (("Organism de drept public, controlat de o autoritate guvernamentală centrală", None), None),
+        (("Organism de drept public, controlat de o autoritate guvernamentală centrală", "Alta"), None),
+        (("Întreprindere publică, controlată de o autoritate guvernamentală centrală", None), None),
     ]
     for (legal, ca), expected in cases:
         notice = {"a": {"legalBuyerType": {"text": legal}} if legal else {}, "b": [{"caType": {"text": ca, "localeKey": "Common.x"}}] if ca else []}
         assert scope.classify_notice(notice)[0] is expected, (legal, ca)
+
+
+def test_a_body_controlled_by_a_central_authority_is_left_to_the_file():
+    obs = lambda national: scope.Observation(national, None, None, datetime(2026, 1, 1, tzinfo=timezone.utc), "x")  # noqa: E731
+    national, _, _ = scope.classify_notice({"legalBuyerType": {"text": "Organism de drept public, controlat de o autoritate guvernamentală centrală", "localeKey": "x.body-pl-cga"}})
+    assert national is None
+    assert scope.decide("1", obs(national), {}) == (False, "default")
+    assert scope.decide("1", obs(national), {"1": scope.Entry("1", True, False, "n", "r")}) == (True, "file")
 
 
 def test_a_notice_keeps_the_texts_it_was_judged_on():
@@ -229,6 +258,22 @@ def test_proposals_are_names_that_look_national_without_a_flag_or_a_line():
     assert len(lines) == 1 and lines[0].startswith("1,true,false,") and "proposal" in lines[0]
 
 
+def test_proposals_are_valid_csv_one_line_per_cui_even_with_quotes_in_the_name():
+    import csv
+    import io
+    import tempfile
+    from pathlib import Path
+
+    lines = scope.propose([("1", 'INSTITUTUL NATIONAL DE BOLI "VICTOR BABES"'), ("1", "INSTITUTUL NATIONAL DE BOLI VICTOR BABES"), ("2", "MINISTERUL A, B")], {}, {})
+    assert len(lines) == 2  # one per CUI
+    with tempfile.TemporaryDirectory() as d:
+        Path(d, scope.CLASSIFICATION_FILE).write_text("cui,national,override,name,reason\n" + "\n".join(lines) + "\n", encoding="utf-8")
+        back = scope.read_classification(d)
+    assert back["1"].name == 'INSTITUTUL NATIONAL DE BOLI "VICTOR BABES"' and back["1"].national is True and "proposal" in back["1"].reason
+    assert back["2"].name == "MINISTERUL A, B" and "proposal" in back["2"].reason
+    assert next(csv.reader(io.StringIO(lines[0])))[1:3] == ["true", "false"]
+
+
 def test_the_shipped_classification_and_alias_files_parse_and_ship_without_entries():
     from pipeline.placement.tables import DEFAULT_DATA_DIR, read_aliases, read_counties
 
@@ -247,6 +292,21 @@ def test_the_checked_in_fixture_tables_are_what_geo_table_makes_of_the_archived_
     assert (summary.uats, summary.villages) == (15, 12)
     assert summary.wikidata_points == 13 and summary.ancpi_points == 2  # 179196 has no Wikidata coordinate, 880010's lies outside its polygon
     assert summary.wikidata_rejected == ["880010"] and summary.no_point == []
+
+
+def test_a_sector_is_a_sector_whichever_level_siruta_files_it_under(archive, tmp_path):
+    f = next((archive.root / "geo/siruta").rglob("siruta_s1_2026.csv"))
+    f.write_bytes(f.read_bytes().replace(b";6;3;", b";6;2;"))
+    manifest = f.parent / "manifest.json"
+    m = json.loads(manifest.read_text(encoding="utf-8"))
+    m["files"][0]["sha256"] = hashlib.sha256(f.read_bytes()).hexdigest()
+    manifest.write_text(json.dumps(m), encoding="utf-8")
+    build_tables(archive, tmp_path, DATA)
+    from pipeline.placement.tables import read_csv
+
+    rows = {r["siruta"]: r for r in read_csv(tmp_path / "uats.csv")}
+    assert rows["179169"]["name"] == "Sector 3" and rows["179169"]["name_folded"] == "SECTOR 3" and rows["179169"]["county_iso"] == "B"
+    assert (tmp_path / "uats.csv").read_text(encoding="utf-8") == (DATA / "uats.csv").read_text(encoding="utf-8")
 
 
 def test_the_table_rows(archive, tmp_path):

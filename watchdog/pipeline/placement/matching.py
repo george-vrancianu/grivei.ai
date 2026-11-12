@@ -126,7 +126,7 @@ class Village:
     postal_code: str | None
 
 
-KIND_TIPS = {"MUN": {"1", "4"}, "ORS": {"2"}, "COM": {"3"}}  # SIRUTA TIP by ANAF's kind word
+KIND_TIPS = {"MUN": {"1", "4"}, "ORS": {"2", "5"}, "COM": {"3"}}  # SIRUTA TIP by ANAF's kind word
 
 
 @dataclass
@@ -234,7 +234,7 @@ _SECTOR_ADDR = re.compile(r"sector\s*:?\s*([1-6])\b", re.IGNORECASE)
 
 def postal_code_of(address: str | None) -> str | None:
     """`Cod postal: 507190` in SEAP's address string."""
-    m = _POSTAL.search(unicodedata.normalize("NFKD", address or ""))
+    m = _POSTAL.search("".join(c for c in unicodedata.normalize("NFKD", address or "") if not unicodedata.combining(c)))
     return m[1] if m else None
 
 

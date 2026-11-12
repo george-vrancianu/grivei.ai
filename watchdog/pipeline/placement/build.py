@@ -95,6 +95,7 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
             elif place is not None and place.uat is not None and not national:
                 out.by_uat += 1
             out.national += national
+            # a national authority with no seat still needs a `placed_by` (the contract's field is non-null): it says where the flag came from
             rows.append((key, place.county if place else None, place.uat if place else None, place.village if place else None,
                          place.sector if place else None, national, national_by, placed_by if (place or not national) else "SEAP",
                          located_on if place else None, source if place else None))

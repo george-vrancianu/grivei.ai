@@ -125,12 +125,12 @@ def build_tables(archive: Archive, out_dir: Path | str | None = None, data_dir: 
     for r in rows:
         siruta, niv, tip, jud = r["SIRUTA"].strip(), r["NIV"].strip(), r["TIP"].strip(), r["JUD"].strip()
         iso = iso_by_jud.get(jud)
-        if niv == "2" and tip != "9" and iso:
-            uats[siruta] = {"siruta": siruta, "county_iso": iso, "siruta_jud": jud, "tip": tip, "name": display_name(r["DENLOC"]),
-                            "name_folded": bare_uat_name(r["DENLOC"])}
-        elif niv == "3" and tip == "6" and siruta in SECTOR_OF:
+        if tip == "6" and siruta in SECTOR_OF:  # whichever NIV the file gives them: the six sectors are known by SIRUTA code
             uats[siruta] = {"siruta": siruta, "county_iso": "B", "siruta_jud": jud, "tip": "6", "name": f"Sector {SECTOR_OF[siruta]}",
                             "name_folded": f"SECTOR {SECTOR_OF[siruta]}"}
+        elif niv == "2" and tip != "9" and iso:
+            uats[siruta] = {"siruta": siruta, "county_iso": iso, "siruta_jud": jud, "tip": tip, "name": display_name(r["DENLOC"]),
+                            "name_folded": bare_uat_name(r["DENLOC"])}
     for r in rows:
         if r["NIV"].strip() == "3" and r["TIP"].strip() != "6" and r["SIRSUP"].strip() in uats:
             code = r["CODP"].strip()

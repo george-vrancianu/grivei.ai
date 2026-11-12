@@ -6,8 +6,10 @@ Two inputs, and one rule between them:
    centrala") and `caType` (e.g. "Minister sau orice alta autoritate nationala sau federala") on the notice detail.
    `pipeline authority-scope` fetches ONE award notice per authority (the crawled Record's internal id when the graph has one,
    else the id from the notice list filtered by the notice number) and archives the answers unchanged (`lookup.py`).
-   `classify_notice` reads them at rebuild: national if either field names a national or central body, local if either names a
-   regional or local one and neither names a national one, unknown otherwise. The observed texts are kept.
+   `classify_notice` reads them at rebuild with an explicit mapping (`_verdict`): national if a field names a central government
+   authority (`legalBuyerType`) or a national authority (`caType`); NOT national if either names a deconcentrated service or a
+   regional or local authority (this wins over "central"); unknown (the file decides) for bodies governed by public law or public
+   undertakings "controlled by" a central authority, and for any text not in the mapping. The observed texts are kept.
 2. The reviewed classification file, `national_authorities.csv` (`cui,national,override,name,reason`), one line per CUI: for
    authorities without an award notice (only direct purchases) and for MF-list entities, plus the entries a human corrects.
    A deconcentrated county unit that the notice calls central is a `national=false` line with `override=true`.
@@ -19,6 +21,7 @@ file line decides; with neither the authority is not national. The reason for th
 from __future__ import annotations
 
 import csv
+import io
 import json
 import re
 from dataclasses import dataclass
@@ -85,12 +88,32 @@ def _describe(value: Any) -> tuple[str, str]:
     return (str(value) if value else ""), ""
 
 
-def _verdict(text: str, key: str) -> bool | None:
-    """True: names a national or central body; False: names a regional or local one; None: unknown. Folded ASCII text and the locale key."""
+# The mapping (README "National authorities"), on the folded ASCII text and the eForms locale key. Not a substring test: the
+# texts below are the ones the research observed or expects; anything else is unknown and the reviewed file decides.
+_CONTROLLED = ("CONTROLAT", "ORGANISM DE DREPT PUBLIC", "INTREPRINDERE PUBLICA")  # universities, hospitals, institutes: not "the whole country"
+_LEGAL_NATIONAL = {"AUTORITATE GUVERNAMENTALA CENTRALA"}
+_LEGAL_LOCAL = {"AUTORITATE LOCALA", "AUTORITATE REGIONALA", "AUTORITATE GUVERNAMENTALA REGIONALA", "AUTORITATE GUVERNAMENTALA LOCALA"}
+_CA_NATIONAL = ("MINISTER SAU ORICE ALTA AUTORITATE NATIONALA", "AGENTIE BIROU NATIONAL", "AGENTIE SAU BIROU NATIONAL")
+_CA_LOCAL = ("AUTORITATE REGIONALA SAU LOCALA", "DE INTERES LOCAL SAU REGIONAL")
+
+
+def _verdict(text: str, key: str, *, legal: bool) -> bool | None:
+    """True: a central or national authority; False: a deconcentrated service, or a regional or local authority; None: unknown
+    (including bodies controlled by a central authority). `legal` is `legalBuyerType`, else `caType`."""
     t, k = fold(text), key.lower()
-    if "nationalorfederal" in k or "centralgovernment" in k or any(w in t for w in ("NATIONAL", "CENTRAL", "MINISTER")):
-        return True
-    if "regionalorlocal" in k or any(w in t for w in ("REGIONAL", "LOCAL")):
+    if "DECONCENTRAT" in t:
+        return False
+    if any(w in t for w in _CONTROLLED) or k.endswith("body-pl-cga"):
+        return None
+    if legal:
+        if t in _LEGAL_NATIONAL or k.endswith(".cga"):
+            return True
+        if t in _LEGAL_LOCAL or "regionalorlocal" in k:
+            return False
+        return None
+    if any(t.startswith(w) for w in _CA_NATIONAL) or "nationalorfederal" in k:
+        return True  # "... inclusiv subdiviziunile regionale sau locale" is still the national type
+    if any(t.startswith(w) for w in _CA_LOCAL) or "regionalorlocal" in k:
         return False
     return None
 
@@ -108,8 +131,8 @@ class Observation:
 
 def classify_notice(notice: Any) -> tuple[bool | None, str | None, str | None]:
     legal, ca = _describe(find(notice, "legalBuyerType")), _describe(find(notice, "caType"))
-    verdicts = [_verdict(*legal) if legal[0] or legal[1] else None, _verdict(*ca) if ca[0] or ca[1] else None]
-    national = True if True in verdicts else (False if False in verdicts else None)
+    verdicts = [_verdict(*legal, legal=True) if legal[0] or legal[1] else None, _verdict(*ca, legal=False) if ca[0] or ca[1] else None]
+    national = False if False in verdicts else (True if True in verdicts else None)  # a deconcentrated or local answer wins
     return national, legal[0] or None, ca[0] or None
 
 
@@ -220,10 +243,15 @@ _NATIONAL_NAME = re.compile(r"^(MINISTERUL|AGENTIA NATIONALA|AUTORITATEA NATIONA
 def propose(authorities: Iterable[tuple[str, str]], observations: Mapping[str, Observation], entries: Mapping[str, Entry]) -> list[str]:
     """CSV lines for authorities `(cui, name)` with no award-notice flag and no line, whose name looks national. A proposal only:
     a human reads each one and pastes the ones that are right (with their reason) into the file."""
+    names: dict[str, str] = {}
+    for cui, name in sorted(authorities):  # one name per CUI: SEAP spells an authority several ways
+        names.setdefault(cui, name)
     lines = []
-    for cui, name in sorted(set(authorities)):
+    for cui, name in names.items():
         if cui in entries or (cui in observations and observations[cui].national is not None):
             continue
         if _NATIONAL_NAME.match(fold(name)):
-            lines.append(f'{cui},true,false,"{name}",name pattern (proposal: review before keeping)')
+            out = io.StringIO()  # the file's column order; csv escapes the quotes and commas in a name
+            csv.writer(out, lineterminator="").writerow([cui, "true", "false", name, "name pattern (proposal: review before keeping)"])
+            lines.append(out.getvalue())
     return lines

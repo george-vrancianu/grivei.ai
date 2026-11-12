@@ -443,10 +443,10 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 
+    if progress:  # the load is done: `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
+        progress.finish(summary.records, data_through)
     try:
         summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
     except Exception as e:  # the graph is loaded; the outlines can be rebuilt on their own with `pipeline geo-topojson`
         summary.geo_line = f"geo: TopoJSON failed ({type(e).__name__}: {e}); the graph is loaded, rerun `pipeline geo-topojson`"
-    if progress:
-        progress.finish(summary.records, data_through)
     return summary

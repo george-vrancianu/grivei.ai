@@ -638,8 +638,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(await placementOf("placement_a", key)).toEqual({ county: null, uat: null, locality: null, national: true, placedBy: "ANAF" });
       expect((await entityPage("placement_a", key, "AUTHORITY"))!.placement).toEqual({ county: null, uat: null, national: true, placedBy: "ANAF" });
     }
-    // a county unit whose notice says "central": the reviewed file overrides it, it plots in its own county
+    // a county unit whose notice says "central" and "deconcentrated": no file line needed, it plots in its own county
     expect(await placementOf("placement_a", P.dsp)).toMatchObject({ county: BV, uat: { siruta: "880001" }, national: false });
+    // a town whose notice wrongly says central: the reviewed file overrides it
+    expect(await placementOf("placement_a", P.huedin)).toMatchObject({ national: false, uat: { name: "Huedin" } });
     // a local authority's notice says local
     expect((await placementOf("placement_a", P.brasov))?.national).toBe(false);
   });
