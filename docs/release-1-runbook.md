@@ -4,7 +4,7 @@ For the operator (a human, on the real machine). It proves the Definition of don
 Release 1 (SEAP) on real data: ticket #91 of spec #37. Nothing here runs in CI and no agent can do it: it needs the real services, hours of
 wall clock and a week of waiting.
 
-Every command exists on this branch (`python -m pipeline <verb> --help` for each), except `pipeline validate` (step 4), which arrives with ticket #64c. Verb details live in `watchdog/README.md`; this page is the
+Every command exists on this branch (`python -m pipeline <verb> --help` for each), except `pipeline validate` (step 4), which comes with ticket #64c. Verb details live in `watchdog/README.md`; this page is the
 order, the costs and the checks. **Durations marked "estimate" were never measured end to end**: the tickets measured pieces, nobody has run the
 whole sequence. Write the real numbers into the closing comment (template at the end).
 
@@ -12,10 +12,14 @@ whole sequence. Write the real numbers into the closing comment (template at the
 
 ```bash
 cd <repo root>                          # a stable checkout of the integration branch, not a throwaway worktree
-export GRIVEI_ARCHIVE_DIR=~/grivei-data/raw GRIVEI_DB_PASSWORD=<a password>   # compose reads both; the archive is outside the repo
+umask 077 && printf 'GRIVEI_ARCHIVE_DIR=%s/grivei-data/raw\nGRIVEI_DB_PASSWORD=<a password>\n' "$HOME" > .env   # ONE file, not `export`: compose reads `.env` beside compose.yaml in every shell and in the timer's run (WorkingDirectory); the archive is outside the repo; `.env` is gitignored
+docker compose config | grep -E 'DATABASE_URL|/archive'   # from a fresh shell: the password you chose and ~/grivei-data/raw must show
 mkdir -p ~/grivei-data/raw ~/grivei-data/bench geo   # `geo` (GRIVEI_GEO_DIR, default ./geo) must exist and be yours before `docker compose up`: Docker would create it as root and the pipeline (uid 1000) could not write the TopoJSON
 P="docker compose run --rm -T pipeline"  # the pipeline container: 2 CPUs, 2 GB, archive at /archive, DATABASE_URL set to the compose db
 ```
+
+**Everything the pipeline needs goes into that `.env`** (mode 600): later `GRIVEI_HEALTHCHECK_URL`, `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the backend keys (step 9), and `GRIVEI_GEO_DIR` if it is not `./geo`. An `export` lives in one terminal only: the timer's unit never sees it
+(it reads only `~/grivei-data/refresh.env`), so nightly runs would connect with the default password and skip the backups; a new terminal would read `./archive`. Do not set these twice in two places.
 
 Long steps run detached, with a log (`nohup docker compose run --rm -T pipeline <verb> >> ~/grivei-data/<verb>.log 2>&1 &`; `$P` below is the same command, for the short ones).
 Stop one with `docker stop` of its run container (or `pkill -f 'pipeline <verb>'` from a venv). **Memory:** WSL has crashed near 30 GB; the compose stack caps `db` at 12 GB and 8 CPUs, `api` and `web` at 2 GB,
@@ -50,6 +54,8 @@ nohup sh -c 'docker compose run --rm -T pipeline fetch-datagov && docker compose
 Expected (estimate): tens of minutes to a few hours, several GB (`du -sh ~/grivei-data/raw`), about 1 s between requests, low CPU and memory. Exit 1 means at least
 one resource failed. Resume: rerun the same command; everything archived is skipped, a cut download leaves only a scratch file. Progress: `tail -f ~/grivei-data/fetch.log`
 (one line per resource). Look at every `unclassified` and `conflict` line: the Q2 2025 DAN file is a known mis-upload (a hand-entered known gap).
+**Wait for it before step 4 or 6:** the log shows the `fetch-mf` summary and `pgrep -f 'pipeline fetch'` prints nothing. A fetch still running would be validated half done, and beside a `seed` it is the forbidden `fetch-datagov` beside a seed.
+**If a seed is already under way** (an earlier attempt with the venv: `seed --backfill`, stopped at ANAF), step 2 and the ANAF part may be done already: do steps 3 and 4 first (the geography and #64c are what that run lacked); step 6's command then resumes the same ledger, and so does the venv form of it.
 
 ### 3. The geography: SIRUTA, ANCPI polygons, the placement tables
 
@@ -70,7 +76,7 @@ The national flag comes after the first load (step 7). Check: `uats.csv` and `vi
 
 **Step 6 must not run before this passes.** On the real archive #64c measured 40 of 73 bulk files passing *before* its reader changes (cp1250, pipe-delimited CSV, `.ods`, day-first DA 2021 dates, the 2023-2026 header eras) and 72 of 73 after.
 Without them a seed quarantines about 33 files and still ends "successfully": the first build has no live graph, so the switchover's floor (95% of the live graph) does not apply. The explorer would then be missing about 45% of the files.
-On this branch `python -m pipeline validate` is an unknown verb. **Available once #64c is merged into the checkout, and after `docker compose build pipeline` has run again from that checkout** (the verb as #64c ships it, branch `ticket-64c`: `pipeline validate [--kind K] [--match TEXT]`):
+`python -m pipeline validate` is the read-only verb of #64c (`pipeline validate [--kind K] [--match TEXT]`). If `validate --help` says it is an unknown verb, #64c is not merged into your checkout yet: wait for it. **It also needs `docker compose build pipeline` run again from a checkout that has it.**
 
 ```bash
 # read-only by construction (it lists the archive and parses; it never quarantines), and mounted read-only too
@@ -92,7 +98,7 @@ nohup docker compose run --rm -T --no-deps pipeline crawl --start 2025-07-01 >> 
 
 Expected: about 220 notices a weekday nationally, a quarter is 2 to 3 hours at the 0.35 s default delay, the five quarters after 2025 Q2 of the order of 10 hours; a day is a few MB.
 Resume: rerun (complete days are skipped, a killed day resumes). Progress: `docker compose run --rm -T --no-deps pipeline status`, `tail -n 2 ~/grivei-data/crawl.log`.
-The seed does not crawl; skip this step and the first nightly refresh catches up instead.
+The seed does not crawl; skip this step and the first nightly refresh catches up instead. **Wait for `crawl done` in `crawl.log` before step 6** (`pgrep -f 'pipeline crawl'` empty): the crawl takes no lock and must not run beside the seed.
 
 ### 6. ANAF lookups and the load (full rebuild): `seed`
 
@@ -103,7 +109,12 @@ The seed does not crawl; skip this step and the first nightly refresh catches up
 nohup docker compose run --rm -T pipeline seed >> ~/grivei-data/seed.log 2>&1 &     # add --backfill to also run step 8's crawl as its last step
 tail -f ~/grivei-data/seed.log
 docker compose run --rm -T pipeline status                                         # rebuild, ANAF, crawl, backfill state; last runs; quarantines
-docker compose up -d --build api web                                                # now: the rollup tables exist. Open http://localhost:8080/explore
+```
+
+Only when `seed run <id> ok` is in the log (the rollup tables exist; started earlier, the API would warm its cache against a database still being loaded):
+
+```bash
+docker compose up -d --build api web                                                # then open http://localhost:8080/explore
 ```
 
 By hand instead (the same steps): `$P anaf-lookup` then `$P rebuild`. Rebuild: hours (about 860 Records/s; 20M search rows is of the order of 6+ hours, estimate), 1.5 GB for the biggest DA
@@ -127,8 +138,12 @@ Expected on the real national load: of the order of 20M search rows (the benchma
 Both lookups read the graph the load just built, archive every answer and are resumable. The names that come out go into the next rebuild.
 
 ```bash
-$P authority-scope          # one award notice per authority: legalBuyerType / caType (national or not); about 3 requests/s, one per authority: of the order of an hour (estimate)
-$P seap-entities            # SEAP's entity view for the authority CUIs ANAF did not answer: the placement fallback; same pace
+# the two lookups send one request per authority (about 16,000 authorities at the 0.35 s default delay: an hour or more each, estimate): detached, one after the other
+nohup sh -c 'docker compose run --rm -T pipeline authority-scope && docker compose run --rm -T pipeline seap-entities' >> ~/grivei-data/placement.log 2>&1 &
+#   authority-scope: one award notice per authority: legalBuyerType / caType (national or not)
+#   seap-entities:   SEAP's entity view for the authority CUIs ANAF did not answer: the placement fallback; same pace
+tail -f ~/grivei-data/placement.log      # `status` does not show these two; wait until the log ends with the seap-entities summary and `pgrep -f 'pipeline (authority-scope|seap-entities)'` is empty
+# resume after a stop or a failure: rerun the same command; every answer is archived and skipped
 $P national-propose         # prints CSV lines for authorities with no flag whose name looks national (MINISTERUL ..., AGENTIA NATIONALA ...): a proposal, never applied by itself
 # review the proposal: add the lines that are right to watchdog/pipeline/placement/data/national_authorities.csv, commit, then rebuild the image so it carries the file
 docker compose build pipeline && $P rebuild
@@ -154,10 +169,11 @@ otherwise): run it again after the next `fetch-datagov`.
 
 ### 9. Enable the nightly schedule, backups and the dead-man's switch
 
-1. healthchecks.io: a check with period 1 day, grace 3 days; its ping URL goes in `GRIVEI_HEALTHCHECK_URL`.
-2. Backups (refresh steps `backup`, `pgdump`; restic, one encrypted repository on object storage): `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the backend credentials in the systemd environment file.
+1. healthchecks.io: a check with period 1 day, grace 3 days; its ping URL goes in `GRIVEI_HEALTHCHECK_URL` (in `.env`).
+2. Backups (refresh steps `backup`, `pgdump`; restic, one encrypted repository on object storage): `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the backend credentials (`AWS_*` or `B2_*`) in the `.env` of the Conventions: compose passes them to the container for every run, by hand or by the timer. `~/grivei-data/refresh.env` (deploy/README.md) may stay as it is or be left out: the unit's `docker compose run` reads `.env` from its `WorkingDirectory`; if you keep both, the same keys must not differ (`GRIVEI_DB_PASSWORD` belongs in `.env`, never only in a shell). Check from a fresh shell: `docker compose config | grep -E 'DATABASE_URL|/archive|RESTIC_REPOSITORY'`.
    Unset = both steps skip with a warning and **the week would not be a backed-up week**. Try once: `$P backup all`, then rehearse a restore into a scratch directory with the container
    (it has restic >= 0.17; make the directory first: `mkdir -p ~/grivei-data/raw-restored`): `docker compose run --rm -T -v ~/grivei-data/raw-restored:/restore pipeline restore archive /restore/r`, then `diff -r ~/grivei-data/raw ~/grivei-data/raw-restored/r`
+   (expect differences for what was written after the backup: the ledger, progress files, a newer crawl day; run the rehearsal right after `$P backup all`, before the timer is enabled, to keep them few)
    (from a venv instead you need a host `restic` >= 0.17 and the same `RESTIC_*` variables; see `watchdog/README.md` "Backups and restore").
 3. The timer: `deploy/README.md` "Schedule the refresh" (`systemctl --user enable --now grivei-refresh.timer`, `loginctl enable-linger`, the Windows logon task `deploy/windows/keep-wsl-up.ps1`; WSL needs `systemd=true`).
 4. Try one run by hand first: `docker compose run --rm -T pipeline refresh` (then `pipeline status`: the last runs, what is due, quarantines).
@@ -172,10 +188,10 @@ Run B right after step 7 (and again after step 8's rebuild), C after step 7, D a
 ### B. Latency: the keystroke benchmark (`pipeline bench`)
 
 The spec's gate: every text query under about 500 ms on 8 vCPU, the empty and chips-only states served by the rollup, 2-character prefixes from the warmed cache. The harness
-(`watchdog/pipeline/bench.py`, queries in `watchdog/pipeline/bench_queries.json`, 37 of them: 2-character prefixes, single and multi-token Romanian procurement terms, a supplier name, CUI, CPV, chips, the empty state) issues
+(`watchdog/pipeline/bench.py`, queries in `watchdog/pipeline/bench_queries.json`, 37 of them (the research row for a CUI used `10000504`, the list has `4384206`: compare that line only loosely): 2-character prefixes, single and multi-token Romanian procurement terms, a supplier name, CUI, CPV, chips, the empty state) issues
 the statements the API issues for one keystroke, in parallel on the API's 8 connections: the total, **one** Money-lens map (the side the filter's `countySide` names, default authority: that is what the main screen asks for), both entity tabs
 (rank, then the page's entities and placement), the Records tab (the Top-K page and its entities and source files; the empty state's page reads `seap.record`) and, for a text query, the Go-to lookup. It reports per query the cold run and the warm median / p95 / max, per statement
-and per task, as JSON and a table. Exit 1 when any query is over the threshold. Left out (small keyed reads): the page's Signal badges, facets, `dataThrough`, `counties()`.
+and per task, as JSON and a table. Exit 1 when any query is over the threshold. `dataThrough` rides on every request too (it is **not** a small read: the API runs it uncached as a scan of `seap.record`) and is judged as the task `data_through`. Left out (small keyed reads): the page's Signal badges, facets, `counties()`.
 The filter-to-SQL mapping is a Python copy of `buildWhere` / `rollupPlan`; `watchdog/tests/test_bench_parity.py` and `explorer/packages/api/test/benchParity.test.ts` keep it equal to the API's over every query of the list.
 
 ```bash
@@ -193,12 +209,13 @@ docker compose run --rm -T -v ~/grivei-data/bench:/out pipeline bench --api-url 
 The cache warming (`cache.ts`) runs after each new load generation, about 1,400 prefixes with 6 to 7 statements each, one after the other: nationally it may take tens of minutes. A benchmark started before it finishes measures misses.
 
 How to read it. **Text queries** are judged on the whole keystroke (the slowest task), cold and warm p95, against `--threshold-ms` (default 500). **Empty and chips-only states** are judged on the rollup-served tasks
-(total, entity tabs, Records), and the report checks with `EXPLAIN`, on the **exact statements that ran** (the total and each entity tab's rank), that they read `seap.rollup_cube` / `seap.rollup_entity` and never `seap.search` (`rollup_verified`).
+(total, entity tabs, Records, `data_through`), and the report checks with `EXPLAIN`, on the **exact statements that ran** (the total and each entity tab's rank), that they read `seap.rollup_cube` / `seap.rollup_entity` and never `seap.search` (`rollup_verified`).
 **Finding to confirm:** the Money lens map (`searchMap`) has no rollup path in the API: for the empty and chips-only states it scans `seap.search` (about 0.8 s at 20M rows in the research); the API's result cache answers the empty state and the 2-character
-prefixes from the warmed cache, but a chips-only state (a year, a channel) pays that scan on its first request. The SQL mode reports the map apart (`--strict-maps` judges it); the
+prefixes from the warmed cache, but a chips-only state (a year, a channel) pays that scan on its first request. The chips-only Records page is an index Top-K by design (task serving `mixed`: the count comes from the rollup, the page from `seap.search`). The SQL mode reports the map apart (`--strict-maps` judges it); the
 API mode (always judged whole) shows what a user sees. A chips-only state that the cube cannot serve (a badge, a partial date range) is reported as `chips-scan` and judged like a text query.
-**API mode also checks** (1) that the empty state and the 2-character prefixes answer their *first* request within `--cached-ms` (default 50): the table says `warmed cache: yes/no`, and a `no` fails the query (the cache was not warm yet, or does not hold it); (2) with the database reachable (the container's `DATABASE_URL`; `--no-scan-check` turns it off),
-that the first request of an empty or chips-only state moves the scan counters of `seap.search` (`pg_stat_user_tables`) by no more than the map and the Top-K page need (2 and 3), and the rollup tables take the rest (`scans` in the JSON).
+**API mode also checks** (1) that the empty state and the 2-character prefixes answer their *first* request within `--cached-ms` (default 50): the table says `warmed cache: yes/no`, and a `no` fails the query. **A `no` with a fast repeat means an uncached part of the request**, not a cold cache: today that is `dataThrough` (a scan of `seap.record` on every request; follow-up: memoize it per load generation in `cache.ts`); look at `data_through` in the SQL-mode JSON. (2) with the database reachable (the container's `DATABASE_URL`; `--no-scan-check` turns it off),
+that the first request of an empty or chips-only state moves the scan counters of `seap.search` (`pg_stat_user_tables`) by no more than the **measured** cost of that state's map and Top-K page (the harness runs them in SQL mode first: the counters count scan nodes, not statements) and, for a request that must miss the cache (chips-only), that the rollup tables were read (`scans` in the JSON). It waits 12 s per such query for PostgreSQL to publish the counters.
+**Only the first API-mode run after a cache flush measures misses**: a second run times cache hits for every text query. To repeat it: `docker compose restart api`, wait for `cache warmed` again.
 The harness prints the usable CPUs of the client container (2: the Compose cap) and the database's declared vCPUs (`--db-cpus`): the 8 vCPU target belongs to the database container.
 Result "fail" is a finding, not a bug: compare with research section 4 (`origin/research/search-engine`), tune `shared_buffers`, parallel workers and the API pool, and decide on the fallback (OpenSearch) only with the numbers.
 

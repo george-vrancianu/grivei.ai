@@ -19,7 +19,8 @@ Two modes:
 What one keystroke runs here, per part of the screen: `total`, ONE Money-lens map (the side the filter's `countySide` names, default
 AUTHORITY, as MainScreen asks for one), both entity tabs (rank, then the page's entities and placement), the Records tab (the Top-K
 page, hydrated with its entities and source files; the empty state's page is `seap.record`, as `store.records` reads it) and, for a
-text query, the Go-to lookup. Left out: `signalsOfRecords` (the Signal badges of the page), `facets`, `dataThrough`, `counties()` and the
+text query, the Go-to lookup, and `dataThrough` (every MainScreen request asks for it, and the API does not cache it: it is a scan of
+`seap.record`, `store.dataThrough`). Left out: `signalsOfRecords` (the Signal badges of the page), `facets`, `counties()` and the
 echo of a chip's entity: small keyed reads that share the 8-connection pool but never scan the index.
 
 Pure parts (no database): `build_where`, `rollup_plan`, `plan_tasks`, `summarize`, `verdict`, `render_table`, `load_queries`.
@@ -194,7 +195,7 @@ class Task:
     """One part of the screen: a name, how it is served, and a function that runs its statements through `timed`."""
 
     name: str
-    serving: str  # "rollup" or "scan"
+    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design) or "record" (a read of seap.record)
     statements: list[str]  # the statement names, in the order they run (the API runs them in sequence within a task)
     alternatives: list[str] = field(default_factory=list)  # statements that replace one of the above in some case (the terms aggregation instead of the exact rank)
     rollup_statements: list[str] = field(default_factory=list)  # the statements that must read the rollup tables (checked with EXPLAIN)
@@ -332,13 +333,22 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
     else:
         names = ["records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]
         replaced = [] if plan else ["records_count"]
-    tasks.append(Task("records", "rollup" if plan else "scan", [*replaced, *names], run=run_records))
+    # chips-only: the page itself is always the Top-K query on the index (store.ts `searchRecords`), so the task is "mixed", not "rollup"
+    tasks.append(Task("records", ("rollup" if w.empty else "mixed") if plan else "scan", [*replaced, *names], run=run_records))
 
     # Go-to: a text query's exact entity, by CUI or by folded name
     if w.q_folded:
         cui = bool(re.fullmatch(r"\d{2,10}", w.q_folded))
         sql = "SELECT key FROM core.entity WHERE key = %s AND identity = 'CUI' LIMIT 2" if cui else "SELECT key FROM core.entity WHERE name_folded = %s AND name_folded <> '' LIMIT 2"
         tasks.append(Task("goto", "scan", ["go_to"], run=lambda timed, s=sql, q=w.q_folded: timed("go_to", s, [q])))
+
+    # dataThrough: asked by every MainScreen request, not cached by the API, and a scan of seap.record (store.ts: no index serves it);
+    # a known cost the whole keystroke pays, judged in every state
+    data_through = (
+        "SELECT kind, max(d)::text AS date FROM (SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind "
+        "UNION ALL SELECT kind, through FROM seap.crawl_state) x GROUP BY kind ORDER BY kind"
+    )
+    tasks.append(Task("data_through", "record", ["data_through"], run=lambda timed, s=data_through: timed("data_through", s, [])))
     return tasks
 
 
@@ -378,19 +388,23 @@ def verdict(entry: dict, threshold_ms: float, *, strict_maps: bool = False) -> t
     which must really be served by the rollup (`entry["rollup_judged"]` names them); the map scan of those states is answered by the
     API's warmed cache and is judged only with `strict_maps` (it is always reported). The judged number is the p95 of the warm runs,
     and the cold run too. An API-mode entry may also carry `expect_cached` (the empty state and the 2-character prefixes), which
-    must be answered by the warmed cache (`cached_ms`), and `scan_ok` (False: the first request scanned `seap.search` more than the
-    state allows)."""
+    must be answered by the warmed cache (`cached_ms`), and `scan_ok` (False: the first request scanned `seap.search` more than its
+    map and Top-K page need, or a request that had to miss the cache did not read the rollup tables)."""
     state = entry["state"]
     judged = entry["rollup_wall_ms"] if (state in ("empty", "chips") and not strict_maps) else entry["wall_ms"]
     reasons: list[str] = []
-    if state in ("empty", "chips") and entry.get("serving") and any(s != "rollup" for t, s in entry["serving"].items() if t in entry.get("rollup_judged", ())):
-        reasons.append("a non-map part of an empty/chips-only state is not served by the rollup")
+    if state in ("empty", "chips") and entry.get("serving") and any(s == "scan" for t, s in entry["serving"].items() if t in entry.get("rollup_judged", ())):
+        reasons.append("a part of an empty/chips-only state that the rollup should serve is a scan")
     if entry.get("rollup_verified") is False:
         reasons.append("EXPLAIN shows the scan, not the rollup")
     if entry.get("expect_cached") and entry.get("from_warmed_cache") is False:
         reasons.append(f"not from the warmed cache: first request {entry['wall_ms']['cold']:.0f} ms > {entry['cached_ms']:.0f} ms")
     if entry.get("scan_ok") is False:
-        reasons.append(f"the first request scanned seap.search {entry['scans']['search']} time(s), more than the {entry['scans']['allowed']} this state allows")
+        sc = entry["scans"]
+        if sc["search"] > sc["allowed"]:
+            reasons.append(f"the first request scanned seap.search {sc['search']} time(s), more than the {sc['allowed']} its map and Top-K page need (measured in SQL mode)")
+        if sc["need_rollup"] and (sc["cube"] < 1 or sc["entity"] < 2):
+            reasons.append(f"the rollup tables were barely read (cube {sc['cube']}, entity {sc['entity']}): a cached answer, or the API did not use the rollup (restart the api, wait for `cache warmed`, run again)")
     for label, value in (("cold", judged.get("cold")), ("warm p95", judged.get("p95"))):
         if value is not None and value > threshold_ms:
             reasons.append(f"{label} {value:.0f} ms > {threshold_ms:.0f} ms")
@@ -509,7 +523,9 @@ def run_keystroke(conns: list, f: dict, *, rollup: bool = True) -> dict:
 
 def verify_rollup(conn, sqls: dict[str, tuple[str, list]], must_read_rollup: list[str]) -> bool:
     """EXPLAIN the exact SQL the rollup-served statements of an empty/chips-only keystroke ran (`total`, the entity tabs' rank): each
-    must read a rollup table and never `seap.search` (its BM25 index). False when there is nothing to check."""
+    must read a rollup table and never `seap.search` (its BM25 index). False when there is nothing to check. This only proves that the
+    SQL this module wrote reads the rollup; that the API does the same is guaranteed by the parity test (`rollup_plan` is the API's) and
+    by the scan counters of API mode (`judge_scans`)."""
     import psycopg
 
     if not must_read_rollup:
@@ -523,11 +539,13 @@ def verify_rollup(conn, sqls: dict[str, tuple[str, list]], must_read_rollup: lis
     return True
 
 
-# The scans of seap.search an uncached API request may run in a state the rollup serves: the rollup takes the total, the Records count
-# and the entity tabs, what is left is the Money-lens map (two statements) and, for the chips-only state, the Top-K Records page on the
-# index (the empty state's page reads seap.record). A cached request runs none.
-SEARCH_SCAN_BUDGET = {"empty": 2, "chips": 3}
+# What an uncached API request may do to `seap.search` in a state the rollup serves: the rollup takes the total, the Records count and the
+# entity tabs, what is left is the Money-lens map and, for the chips-only state, the Top-K Records page on the index. `pg_stat_user_tables`
+# counts scan *nodes* (every index scan of a BitmapAnd, every parallel worker), not statements, so the allowance is measured, not a
+# constant: `calibrate_scans` runs the map and the Records page of the state in SQL mode first and counts what they do.
+SCAN_STATES = ("empty", "chips")
 SCAN_TABLES = ("seap.search", "seap.rollup_cube", "seap.rollup_entity")
+STATS_LAG_S = 12.0  # an idle session reports its statistics to others after up to 10 s (PostgreSQL 18): wait that long after an API request
 
 
 def scan_counts(conn) -> dict[str, int]:
@@ -539,14 +557,36 @@ def scan_counts(conn) -> dict[str, int]:
     return {name: int(n) for name, n in rows}
 
 
-def judge_scans(state: str, before: dict[str, int], after: dict[str, int]) -> dict | None:
-    """What one uncached API request did to the scan counters of `seap.search` and the rollup tables, against what the state allows.
-    None for a state with no budget (text queries scan by design)."""
-    allowed = SEARCH_SCAN_BUDGET.get(state)
-    if allowed is None:
+def calibrate_scans(conn, f: dict) -> int:
+    """The scans of `seap.search` the map and the Records page of filter `f` cost on this database, run once in SQL mode (the work an
+    API miss of an empty or chips-only state cannot avoid). Every statement forces the session's statistics out
+    (`pg_stat_force_next_flush`) so they are visible at once to this connection and to others, with no wait."""
+
+    def timed(name: str, sql: str, params: list):
+        try:
+            conn.execute("SELECT pg_stat_force_next_flush()").fetchall()
+            rows = conn.execute(sql, params).fetchall()
+        finally:
+            conn.rollback()
+        return rows
+
+    before = scan_counts(conn)
+    for task in plan_tasks(f):
+        if task.name in ("map", "records"):
+            task.run(timed)
+    return scan_counts(conn).get("seap.search", 0) - before.get("seap.search", 0)
+
+
+def judge_scans(state: str, before: dict[str, int], after: dict[str, int], allowed: int, *, need_rollup: bool = False) -> dict | None:
+    """What one uncached API request did to the scan counters of `seap.search` and the rollup tables: `search` must not exceed
+    `allowed` (from `calibrate_scans`); with `need_rollup` (a request that had to miss the cache) the rollup tables must have been
+    read (`rollup_cube` at least once, `rollup_entity` at least twice: the two entity tabs). None for a state with no budget (text
+    queries scan by design)."""
+    if state not in SCAN_STATES:
         return None
     delta = {t.split(".")[1].removeprefix("rollup_") if t != "seap.search" else "search": after.get(t, 0) - before.get(t, 0) for t in SCAN_TABLES}
-    return {"search": delta["search"], "cube": delta["cube"], "entity": delta["entity"], "allowed": allowed, "ok": delta["search"] <= allowed}
+    ok = delta["search"] <= allowed and (not need_rollup or (delta["cube"] >= 1 and delta["entity"] >= 2))
+    return {"search": delta["search"], "cube": delta["cube"], "entity": delta["entity"], "allowed": allowed, "need_rollup": need_rollup, "ok": ok}
 
 
 def graph_facts(conn) -> dict:
@@ -643,9 +683,9 @@ def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, 
     state, the 2-character prefixes: `expect_cached`) must answer their *first* request within `cached_ms`, else the cache was not
     warmed yet (read `docker compose logs api | grep 'cache warmed'` before running this) and the entry fails. With `db_url`, the
     first request of an empty or chips-only state is also checked against the scan counters of the database (`judge_scans`): it must
-    not scan `seap.search` more than the map and the Top-K page need."""
-    import time as _time
-
+    not scan `seap.search` more than the map and the Top-K page cost in SQL mode (`calibrate_scans`, run before the request), and a
+    request that must miss the cache (not `expect_cached`) must have read the rollup tables. Only the first API-mode run after a cache
+    flush measures misses: to repeat it, restart the api and wait for `cache warmed`."""
     conn = None
     if db_url:
         import psycopg
@@ -656,12 +696,14 @@ def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, 
         for q in queries:
             f = q["filter"]
             state = state_of(f)
-            before = scan_counts(conn) if conn is not None and state in SEARCH_SCAN_BUDGET else None
+            check = conn is not None and state in SCAN_STATES
+            allowed = calibrate_scans(conn, f) if check else 0
+            before = scan_counts(conn) if check else None
             first, _ = api_request(url, op_id, f)
             scans = None
             if before is not None:
-                _time.sleep(1.5)  # the statistics reach other sessions about a second after the statements end
-                scans = judge_scans(state, before, scan_counts(conn))
+                time.sleep(STATS_LAG_S)
+                scans = judge_scans(state, before, scan_counts(conn), allowed, need_rollup=not expect_cached(f))
             rest = [api_request(url, op_id, f)[0] for _ in range(repetitions)]
             w = {"cold": round(first, 2), **summarize(rest)}
             entry = {"label": q["label"], "filter": f, "state": state, "serving": {}, "rollup_judged": [], "wall_ms": w, "rollup_wall_ms": w, "tasks": {}, "statements": {}}

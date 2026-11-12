@@ -3,6 +3,7 @@ ParadeDB container of test_bulk_loader_db.py, removed at the end); skipped witho
 runs every statement and reads the right tables, not that Postgres is fast."""
 import json
 import shutil
+import time
 from pathlib import Path
 
 import pytest
@@ -46,7 +47,8 @@ def test_every_statement_of_every_state_runs_and_is_timed_on_a_rebuilt_graph(bui
                                        "records_hydrate", "records_entities", "records_files", "go_to"}
     assert "map_supplier_totals" not in text["statements"]  # one side of the Money lens per request
     assert text["wall_ms"]["n"] == 2 and text["wall_ms"]["cold"] > 0 and text["tasks"]["records"]["median"] > 0
-    assert by["empty"]["serving"] == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
+    assert by["empty"]["serving"] == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup", "data_through": "record"}
+    assert by["chips"]["serving"]["records"] == "mixed" and "data_through" in by["text"]["statements"]
     assert "total" in by["empty"]["statements"] and "records_count" not in by["empty"]["statements"] and "records_page" in by["empty"]["statements"]
     assert by["supplier county"]["statements"]["map_totals"] is not None and "map_totals" in by["supplier county"]["statements"]
     assert by["empty"]["rollup_verified"] and by["chips"]["rollup_verified"]  # EXPLAIN of the exact statements timed: they read the rollup tables, never seap.search
@@ -68,6 +70,19 @@ def test_the_scan_counters_read_the_three_tables_the_budget_names(built):
     with psycopg.connect(built) as conn:
         before = bench.scan_counts(conn)
         assert set(before) == set(bench.SCAN_TABLES) and all(isinstance(n, int) for n in before.values())
+
+
+def test_the_scan_budget_of_a_real_chips_miss_is_calibrated_and_passes(built):
+    """The counters count scan nodes, not statements (S-R2-1): the chips state's map + Top-K page cost more than 3 on the fixture, and the
+    budget is what `calibrate_scans` measured, so the statements the API runs on a miss (map, rollup total/entities, Top-K page) pass."""
+    f = {"channel": "CONTRACT", "from": "2023-01-01", "to": "2023-12-31"}
+    with psycopg.connect(built) as conn:
+        allowed = bench.calibrate_scans(conn, f)
+        before = bench.scan_counts(conn)
+        bench.run_keystroke([conn], f, rollup=True)  # the miss: the same statements the API runs, all of them
+        time.sleep(bench.STATS_LAG_S)
+        judged = bench.judge_scans("chips", before, bench.scan_counts(conn), allowed, need_rollup=True)
+    assert allowed >= 1 and judged["ok"], judged
 
 
 def test_the_rollup_and_the_scan_agree_on_the_total_and_the_entity_ranking(built):

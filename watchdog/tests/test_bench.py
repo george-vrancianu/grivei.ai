@@ -62,8 +62,9 @@ def _tasks(f, **kw):
 
 def test_a_text_keystroke_is_parallel_tasks_with_one_map_and_the_goto_and_the_scan_runs_the_statements_the_api_runs():
     t = _tasks({"q": "ma"})
-    assert list(t) == ["total", "map", "entities_authority", "entities_supplier", "records", "goto"]  # ONE map: MainScreen asks for one side
-    assert {n: x.serving for n, x in t.items()} == {n: "scan" for n in t}
+    assert list(t) == ["total", "map", "entities_authority", "entities_supplier", "records", "goto", "data_through"]  # ONE map: MainScreen asks for one side; dataThrough rides on every request
+    assert {n: x.serving for n, x in t.items()} == {**{n: "scan" for n in t}, "data_through": "record"}
+    assert t["data_through"].statements == ["data_through"]
     assert t["entities_supplier"].statements == ["entities_supplier_cardinality", "entities_supplier_rank", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement"]
     assert t["entities_supplier"].alternatives == ["entities_supplier_terms"]
     assert t["map"].statements == ["map_totals", "map_entities"] and not t["map"].judged_in_rollup_state
@@ -94,7 +95,7 @@ class Recorder:
 
 def test_the_empty_state_reads_the_rollup_for_total_and_entities_but_scans_the_map():
     t = _tasks({})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup"}
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup", "data_through": "record"}
     assert t["total"].rollup_statements == ["total"] and t["entities_supplier"].rollup_statements == ["entities_supplier_rank"]
     rec = Recorder({"entities_supplier_rank": [("k1", "1", 1)]})
     t["total"].run(rec)
@@ -129,8 +130,14 @@ def test_chips_the_cube_serves_become_year_channel_bucket_signals_predicates_on_
 
 
 def test_a_chip_that_is_not_a_cube_dimension_falls_back_to_the_scan():
-    assert {x.serving for x in plan_tasks({"badges": ["SUSPECT_VALUE"]})} == {"scan"}
-    assert {x.serving for x in plan_tasks({}, rollup=False)} == {"scan"}
+    assert {x.serving for x in plan_tasks({"badges": ["SUSPECT_VALUE"]})} == {"scan", "record"}
+    assert {x.serving for x in plan_tasks({}, rollup=False)} == {"scan", "record"}
+
+
+def test_the_chips_only_records_page_is_mixed_the_top_k_is_an_index_query_by_design():
+    t = _tasks({"channel": "CONTRACT"})
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "mixed", "data_through": "record"}
+    assert t["records"].judged_in_rollup_state
 
 
 def test_the_entity_tab_asks_cardinality_then_ranks_then_reads_the_pages_stats():
@@ -188,12 +195,12 @@ def test_a_text_query_passes_under_the_threshold_on_cold_and_warm_p95():
 
 
 def test_the_empty_state_is_judged_on_the_rollup_tasks_and_must_really_use_the_rollup():
-    serving = {"total": "rollup", "map": "scan", "entities_authority": "rollup", "records": "rollup"}
-    judged = ["total", "entities_authority", "records"]  # the map task is not judged in the rollup states
+    serving = {"total": "rollup", "map": "scan", "entities_authority": "rollup", "records": "mixed", "data_through": "record"}
+    judged = ["total", "entities_authority", "records", "data_through"]  # the map task is not judged in the rollup states
     assert verdict(_entry("empty", 900, 40, serving=serving, rollup_judged=judged, rollup_verified=True), 500)[0]  # the map scan (900) is the cache's business
     assert not verdict(_entry("empty", 900, 40, serving=serving, rollup_judged=judged, rollup_verified=True), 500, strict_maps=True)[0]
     ok, why = verdict(_entry("empty", 40, 40, serving={**serving, "total": "scan"}, rollup_judged=judged, rollup_verified=True), 500)
-    assert not ok and "not served by the rollup" in why
+    assert not ok and "should serve is a scan" in why
     ok, why = verdict(_entry("chips", 40, 40, serving=serving, rollup_judged=judged, rollup_verified=False), 500)
     assert not ok and "EXPLAIN" in why
     assert not verdict(_entry("empty", 40, 600, serving=serving, rollup_judged=judged, rollup_verified=True), 500)[0]
@@ -290,15 +297,19 @@ def test_api_mode_fails_a_warmed_state_whose_first_request_was_slow_and_says_so(
     assert ok["cachedMs"] == 50
 
 
-def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_needs():
+def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_measured_and_the_rollup_must_be_read():
     before = {"seap.search": 10, "seap.rollup_cube": 4, "seap.rollup_entity": 4}
-    served = judge_scans("empty", before, {"seap.search": 12, "seap.rollup_cube": 5, "seap.rollup_entity": 6})  # the map's two statements
-    assert served == {"search": 2, "cube": 1, "entity": 2, "allowed": 2, "ok": True}
-    assert judge_scans("empty", before, before)["ok"]  # cached: nothing moved
-    assert judge_scans("chips", before, {**before, "seap.search": 13})["ok"]  # the map and the Top-K page
-    assert not judge_scans("chips", before, {**before, "seap.search": 14})["ok"]  # a total or an entity tab scanned
-    assert not judge_scans("empty", before, {**before, "seap.search": 13})["ok"]
-    assert judge_scans("text", before, before) is None and judge_scans("chips-scan", before, before) is None
-    entry = _entry("empty", 40, 40, scans={"search": 5, "allowed": 2}, scan_ok=False)
+    miss = {"seap.search": 13, "seap.rollup_cube": 5, "seap.rollup_entity": 6}
+    served = judge_scans("chips", before, miss, 3, need_rollup=True)  # allowed = what the map and the Top-K page cost in SQL mode (calibrate_scans)
+    assert served == {"search": 3, "cube": 1, "entity": 2, "allowed": 3, "need_rollup": True, "ok": True}
+    assert judge_scans("empty", before, before, 9)["ok"]  # a warmed-cache answer: nothing moved, and no rollup read is demanded
+    assert not judge_scans("chips", before, before, 3, need_rollup=True)["ok"]  # a miss that read no rollup (cached, or the API scanned)
+    assert not judge_scans("chips", before, {**miss, "seap.rollup_entity": 5}, 3, need_rollup=True)["ok"]  # one entity tab only
+    assert not judge_scans("chips", before, {**miss, "seap.search": 14}, 3, need_rollup=True)["ok"]  # a total or an entity tab scanned
+    assert judge_scans("text", before, before, 0) is None and judge_scans("chips-scan", before, before, 0) is None
+    entry = _entry("empty", 40, 40, scans={"search": 5, "allowed": 2, "need_rollup": False, "cube": 0, "entity": 0}, scan_ok=False)
     ok, why = verdict(entry, 500)
     assert not ok and "scanned seap.search 5 time(s), more than the 2" in why
+    entry = _entry("chips", 40, 40, scans={"search": 1, "allowed": 3, "need_rollup": True, "cube": 0, "entity": 0}, scan_ok=False)
+    ok, why = verdict(entry, 500)
+    assert not ok and "barely read" in why
