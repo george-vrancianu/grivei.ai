@@ -56,6 +56,8 @@ git diff ../contract/src/fixtures/recorded   # review what changed, then run the
 
 The entity Overview (#86): `recorded/EntityOverview.json`, loaded by `recorded/entity.ts`; cases in `api/test/recordedEntityCases.ts`, block "recorded fixtures (#86)". Hand-written fixtures stay beside the recorded ones only for states a small archive cannot cheaply produce (220 counterparties, eight spellings of one name, a deregistered ANAF status, a curated identity; `supplier-typical` stays until the other tabs are recorded). Its cases (on the archives `archive-roles` + `archive-roles-names`, `archive-signals`, `archive-moneymap`) are in `api/test/recordedEntityCases.ts`; the same command re-records both blocks.
 
+The Record page (#85): `recorded/RecordPage.json`, loaded by `recorded/record.ts`; 28 cases (one Record per kind and state: DA, DAN, contract, award notice, suspect values, no value, framework and subsequent, consortia, natural person, identity badges, crawled, Signals, not found) in `api/test/recordedRecordCases.ts`, block "recorded fixtures (#85)", on six small archives (counting, contracts, bulk, identity, crawl, signals; each code is asked in one archive only, because the fixture client answers by variables). Two hand fixtures stay in `record-page.ts` (a framework overrun with its Signal, #76; a splitting Signal, #75); delete them when those rules are recorded. The block also follows every bulk Record's `provenance.url` (the `/source/seap/<code>` redirect) through the real server against a fake upstream.
+
 To add a case, add a line to `RECORDED_CASES` (or `RECORDED_ENTITY_CASES`) and re-record. Every answer is validated against its operation before it is written.
 
 ## `RecordFilter` and the URL
