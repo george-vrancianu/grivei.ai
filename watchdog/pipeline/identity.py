@@ -105,7 +105,7 @@ _ORG_WORDS = frozenset(
     cooperativa uniunea federatia sindicatul clubul sportiv international romania group holding trading
     company limited serviciul colegiul casa editura centrul inspectoratul oficiul administratia corporation corp research
     engineering electronics elektronik publishing services service systems solutions software university journal hotel
-    media consulting consultancy association network trans""".split()
+    media consulting consultancy association network trans avocati avocat avocatura""".split()
 )
 _SOLE_TRADER_FORMS = frozenset("pfa ii if".split())  # a sole trader published with a truncated CNP is still an individual
 _MAX_ASKED_DIGITS = 8  # as in anaf.py: a longer number is never confirmed by ANAF

@@ -277,3 +277,8 @@ def test_a_nine_digit_id_ANAF_is_never_asked_about_is_a_person_when_the_name_loo
 )
 def test_a_truncated_cnp_yields_to_a_legal_form_or_organisation_word(name, person):
     assert (Resolver(ANAF).supplier(name, "199010112345") is NATURAL_PERSON) is person
+
+
+def test_a_law_practice_published_without_an_id_stays_name_only():
+    got = Resolver(ANAF).supplier("AVOCATI DEMO", None)
+    assert got is not NATURAL_PERSON and got.identity == "NAME_ONLY"
