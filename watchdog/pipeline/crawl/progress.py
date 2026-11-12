@@ -82,7 +82,9 @@ class CrawlProgress:
         s = self.state
         s.update(state="finished", cursor=_d(cursor), current=None)
         took = _duration((self._now() - self._started).total_seconds())
-        self._line(f"crawl done days={s['done']} crawled={s['crawled']} skipped={s['skipped']} notices={s['notices']} contracts={s['contracts']} cursor={cursor or 'none'} in {took}")
+        failed = s.get("recrawlFailed")
+        tail = f" recrawl_failed={len(failed)} ({', '.join(failed)})" if failed else ""
+        self._line(f"crawl done days={s['done']} crawled={s['crawled']} skipped={s['skipped']} notices={s['notices']} contracts={s['contracts']} cursor={cursor or 'none'} in {took}{tail}")
 
     def fail(self, error: BaseException, cursor: date | None) -> None:
         current = (self.state.get("current") or {}).get("day")
@@ -112,23 +114,25 @@ def _d(day: date | None) -> str | None:
 
 
 def describe_crawl(status: dict | None, cursor: date | None, complete: int, alive: Callable[[int], bool] | None = None, host: str | None = None,
-                   now: datetime | None = None, through: date | None = None, missing: list[date] | None = None) -> list[str]:
+                   now: datetime | None = None, through: dict[str, date | None] | None = None, missing: dict[str, list[date]] | None = None) -> list[str]:
     """The crawl lines of `pipeline status`: the cursor and data-through dates (derived from the archive, live), then the last run."""
     from ..progress import _age, _alive, effective_state  # local: progress.py imports this module's siblings only for helpers
 
-    lines = [
-        f"crawl cursor: {cursor or 'none yet'} (the last day with a complete manifest; {complete} complete day(s) in the archive)",
-        f"crawled through (archive, not yet rebuilt): {(through or cursor) or 'none'} (award notices and contracts: CONTRACT, AWARD_NOTICE)",
-    ]
-    if missing:
-        shown = ", ".join(str(d) for d in missing[:10]) + (f" and {len(missing) - 10} more" if len(missing) > 10 else "")
-        lines.append(f"missing day(s) below the cursor: {shown} (rerun with --from/--to to fill them)")
+    lines = [f"crawl cursor: {cursor or 'none yet'} (the last day with a complete manifest; {complete} complete day(s) in the archive)"]
+    through = through if through is not None else {k: cursor for k in ("CONTRACT", "AWARD_NOTICE")}
+    lines.append("crawled through (archive, not yet rebuilt): " + ", ".join(f"{k} {d or 'none'}" for k, d in through.items()))
+    for kind, days in (missing or {}).items():
+        if days:
+            shown = ", ".join(str(d) for d in days[:10]) + (f" and {len(days) - 10} more" if len(days) > 10 else "")
+            lines.append(f"missing day(s) below the cursor ({kind}): {shown} (rerun with --from/--to to fill them)")
     if status is None:
         return lines + ["crawl run: none recorded"]
     state = effective_state(status, alive or _alive, host)
     lines.append(f"crawl run: {state if state != 'unknown' else 'running? (cannot see the process from here)'}"
                  f" days {status.get('done', 0)}/{status.get('total', 0)} ({status.get('crawled', 0)} crawled, {status.get('skipped', 0)} skipped),"
                  f" {status.get('notices', 0)} notices, {status.get('contracts', 0)} contracts")
+    if status.get("recrawlFailed"):
+        lines.append(f"crawl re-crawl failed (the earlier fetch stands): {', '.join(status['recrawlFailed'])}")
     if state in ("running", "unknown") and status.get("current"):
         lines.append(f"crawl now: day {status['current']['day']}")
     lines.append(f"crawl started: {status.get('startedAt')}, updated: {status.get('updatedAt')} (pid {status.get('pid')} on {status.get('host', 'an unknown host')})")

@@ -14,8 +14,6 @@ its failure is logged and the earlier fetch stands, the run goes on to the next 
 """
 from __future__ import annotations
 
-import calendar
-import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from typing import Callable
@@ -24,7 +22,7 @@ from ..archive import Archive
 from .client import CrawlError
 from .core import Crawler
 from .progress import CrawlProgress
-from .unitdir import complete_days, cursor, days_between, manifest_of
+from .unitdir import complete_days, cursor, days_between, last_bulk_quarter_end
 
 TRAILING_DAYS = 3
 
@@ -53,23 +51,6 @@ class RunSummary:
     @property
     def ok(self) -> bool:
         return self.failed is None and not self.recrawl_failed
-
-
-def last_bulk_quarter_end(archive: Archive, kind: str = "contracte") -> date | None:
-    """The last day of the latest quarter with a complete bulk unit of `kind`, from the directory names (no hashing)."""
-    base = archive.root / "seap" / "bulk" / kind
-    best: tuple[int, int] | None = None
-    if base.is_dir():
-        for unit in base.iterdir():
-            m = re.fullmatch(r"(\d{4})Q([1-4])", unit.name)
-            if m and any(manifest_of(d) for d in unit.iterdir() if d.is_dir()):
-                key = (int(m[1]), int(m[2]))
-                best = max(best, key) if best else key
-    if best is None:
-        return None
-    year, quarter = best
-    month = quarter * 3
-    return date(year, month, calendar.monthrange(year, month)[1])
 
 
 def default_start(archive: Archive) -> date | None:

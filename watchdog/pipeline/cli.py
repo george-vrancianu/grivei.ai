@@ -12,7 +12,7 @@ from pathlib import Path
 from .archive import Archive, ArchiveError
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
-from .crawl.unitdir import contiguous_through, missing_days
+from .crawl.unitdir import CRAWLED_KINDS, contiguous_through, missing_days
 from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME, describe_crawl
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
@@ -125,7 +125,8 @@ def _status(archive: Archive, args) -> int:
             print(line)
         code = 1 if effective_state(status) in ("failed", "interrupted") else 0
     if days or crawl_status is not None:
-        for line in describe_crawl(crawl_status, max(days) if days else None, len(days), through=contiguous_through(archive), missing=missing_days(archive)):
+        for line in describe_crawl(crawl_status, max(days) if days else None, len(days), through={k: contiguous_through(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()},
+                                 missing={k: missing_days(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()}):
             print(line)
         if crawl_status is not None and effective_state(crawl_status) in ("failed", "interrupted"):
             code = 1

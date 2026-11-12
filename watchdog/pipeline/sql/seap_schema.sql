@@ -65,11 +65,14 @@ CREATE TABLE seap.record (
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
 
--- How far the crawl is complete at the time of the rebuild (the last day of the unbroken run of complete days, derived from
--- the archive; the cursor itself may be further when there are holes): what `sources` reports as the data-through date of the crawled kinds.
+-- How far the crawl is complete at the time of the rebuild, per Record kind (the last day of the unbroken run of complete days
+-- after the kind's last bulk quarter, derived from the archive; the cursor itself may be further when there are holes): what
+-- `sources` reports as the data-through date of the crawled kinds.
 CREATE TABLE seap.crawl_state (
-    stream  text PRIMARY KEY,   -- the crawl kind in the archive, e.g. 'award-notices'
-    through date NOT NULL
+    stream  text NOT NULL,      -- the crawl kind in the archive, e.g. 'award-notices'
+    kind    text NOT NULL,      -- the Record kind it yields: CONTRACT or AWARD_NOTICE
+    through date NOT NULL,
+    PRIMARY KEY (stream, kind)
 );
 
 -- TODO (search-engine ticket): nothing reads this table yet; the tracer API serves seap.record. It is filled on every

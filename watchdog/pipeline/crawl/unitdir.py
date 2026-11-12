@@ -16,8 +16,10 @@ loads them oldest first and per-identity precedence decides.
 """
 from __future__ import annotations
 
+import calendar
 import json
 import os
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -79,22 +81,52 @@ def cursor(archive: Archive, kind: str = KIND) -> date | None:
     return max(days) if days else None
 
 
-def contiguous_through(archive: Archive, kind: str = KIND) -> date | None:
-    """The last day of the unbroken run of complete days that starts at the first complete day: what is complete in the archive.
-    The cursor (the maximum) is for planning; this is the honest "crawled through" date when there are holes below it."""
-    days = complete_days(archive, kind)
-    if not days:
+# The Record kinds the crawl yields, with the bulk file kind that covers the same days (the mapping the rebuild uses for CRAWL_ONLY).
+CRAWLED_KINDS = {"CONTRACT": "contracte", "AWARD_NOTICE": "fara-anunt"}
+
+
+def last_bulk_quarter_end(archive: Archive, kind: str = "contracte") -> date | None:
+    """The last day of the latest quarter with a complete bulk unit of `kind`, from the directory names (no hashing)."""
+    base = archive.root / "seap" / "bulk" / kind
+    best: tuple[int, int] | None = None
+    if base.is_dir():
+        for unit in base.iterdir():
+            m = re.fullmatch(r"(\d{4})Q([1-4])", unit.name)
+            if m and any(manifest_of(d) for d in unit.iterdir() if d.is_dir()):
+                key = (int(m[1]), int(m[2]))
+                best = max(best, key) if best else key
+    if best is None:
         return None
-    day = min(days)
+    year, quarter = best
+    month = quarter * 3
+    return date(year, month, calendar.monthrange(year, month)[1])
+
+
+def _run_start(archive: Archive, days: set[date], bulk_kind: str | None) -> date | None:
+    """Where the days a kind still needs from the crawl begin: the day after its last bulk quarter (the bulk has those days),
+    else the first complete crawl day."""
+    end = last_bulk_quarter_end(archive, bulk_kind) if bulk_kind else None
+    return end + timedelta(days=1) if end else (min(days) if days else None)
+
+
+def contiguous_through(archive: Archive, kind: str = KIND, bulk_kind: str | None = None) -> date | None:
+    """The last day of the unbroken run of complete days that starts where the bulk of `bulk_kind` ends (else at the first complete
+    day), or None when that first day is not complete: what is complete in the archive. The cursor (the maximum) is for
+    planning; this is the honest "crawled through" date when there are holes below it."""
+    days = complete_days(archive, kind)
+    day = _run_start(archive, set(days), bulk_kind)
+    if day is None or day not in days:
+        return None
     while day + timedelta(days=1) in days:
         day += timedelta(days=1)
     return day
 
 
-def missing_days(archive: Archive, kind: str = KIND) -> list[date]:
-    """The days without a complete fetch between the first complete day and the cursor."""
+def missing_days(archive: Archive, kind: str = KIND, bulk_kind: str | None = None) -> list[date]:
+    """The days without a complete fetch between where the crawl is needed (see `contiguous_through`) and the cursor."""
     days = complete_days(archive, kind)
-    return [d for d in days_between(min(days), max(days)) if d not in days] if days else []
+    start = _run_start(archive, set(days), bulk_kind)
+    return [d for d in days_between(start, max(days)) if d not in days] if days and start and start <= max(days) else []
 
 
 class UnitWriter:

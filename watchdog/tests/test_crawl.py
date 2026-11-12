@@ -480,7 +480,7 @@ def test_pipeline_status_shows_the_crawl_cursor_and_the_last_run(archive, clock,
     out = capsys.readouterr().out
     assert "no rebuild status" in out
     assert "crawl cursor: 2026-10-02" in out and "2 complete day(s)" in out
-    assert "crawled through (archive, not yet rebuilt): 2026-10-02" in out and "CONTRACT, AWARD_NOTICE" in out
+    assert "crawled through (archive, not yet rebuilt): CONTRACT 2026-10-02, AWARD_NOTICE 2026-10-02" in out
     assert "crawl run: " in out and "days 2/2 (2 crawled, 0 skipped)" in out
 
 
@@ -533,6 +533,9 @@ def test_a_failed_re_crawl_of_a_complete_trailing_day_does_not_block_the_new_day
     assert [d.isoformat() for d in summary.crawled] == ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07"]
     assert cursor(archive) == D("2026-10-07")  # the new days moved the cursor
     assert any("crawl day 2026-10-03 re-crawl FAILED" in line and "the earlier fetch stands" in line for line in lines)
+    assert "crawl done " in lines[-1] and "recrawl_failed=1 (2026-10-03)" in lines[-1]  # the log's last line does not look clean
+    from pipeline.crawl.progress import describe_crawl
+    assert any("re-crawl failed" in line and "2026-10-03" in line for line in describe_crawl(progress.state, cursor(archive), 7))
 
 
 def test_a_failed_new_day_still_stops_the_run(archive, clock):
@@ -553,7 +556,25 @@ def test_the_data_through_stops_at_the_first_hole(archive, clock, capsys):
     assert unitdir.missing_days(archive) == [D("2026-10-03"), D("2026-10-04")]
     assert cli.main(["--archive", str(archive.root), "status"]) in (0, 1)
     out = capsys.readouterr().out
-    assert "crawled through (archive, not yet rebuilt): 2026-10-02" in out and "missing day(s) below the cursor: 2026-10-03, 2026-10-04" in out
+    assert "crawled through (archive, not yet rebuilt): CONTRACT 2026-10-02, AWARD_NOTICE 2026-10-02" in out
+    assert "missing day(s) below the cursor (CONTRACT): 2026-10-03, 2026-10-04" in out
+
+
+def test_a_hole_in_a_quarter_the_bulk_covers_is_no_hole_for_that_kind(archive, clock):
+    eli = eli_for([f"2026-10-{d:02d}" for d in range(1, 8)] + ["2026-09-30", "2026-07-15", "2026-07-17"])
+    crawler, _ = make(archive, eli, clock)
+    archive.write_unit(source="seap", stream="bulk", kind="contracte", unit="2026Q3", fetched_at=START, files={"x.csv": b"a"}, via="v")
+    for a, b in (("2026-07-15", "2026-07-15"), ("2026-07-17", "2026-07-17"), ("2026-10-01", "2026-10-02"), ("2026-10-05", "2026-10-06")):
+        crawl_days(archive, crawler, clock, D(a), D(b))
+    # Contracte covers 2026Q3: the days before October are the bulk's; the run starts on 1 October and stops at the 3rd
+    assert unitdir.contiguous_through(archive, bulk_kind="contracte") == D("2026-10-02")
+    assert unitdir.missing_days(archive, bulk_kind="contracte") == [D("2026-10-03"), D("2026-10-04")]
+    # no "fara anunt" file: 16 July is a hole for award notices, the run is 15 July alone
+    assert unitdir.contiguous_through(archive, bulk_kind="fara-anunt") == D("2026-07-15")
+    assert D("2026-07-16") in unitdir.missing_days(archive, bulk_kind="fara-anunt")
+    # the bulk reaching the last complete day: nothing of the crawl is left to report
+    archive.write_unit(source="seap", stream="bulk", kind="contracte", unit="2026Q4", fetched_at=START, files={"x.csv": b"a"}, via="v")
+    assert unitdir.contiguous_through(archive, bulk_kind="contracte") is None and unitdir.missing_days(archive, bulk_kind="contracte") == []
 
 
 def test_a_later_fetch_directory_suffix_sorts_after_an_earlier_one(archive, clock):

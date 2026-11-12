@@ -119,7 +119,7 @@ export function postgresStore(pool: pg.Pool): Store {
         `SELECT kind, max(d)::text AS date FROM (
            SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
            UNION ALL
-           SELECT k.kind, s.through FROM seap.crawl_state s CROSS JOIN (VALUES ('CONTRACT'), ('AWARD_NOTICE')) AS k(kind)
+           SELECT kind, through FROM seap.crawl_state
          ) x GROUP BY kind ORDER BY kind`,
       );
       return rows;

@@ -26,7 +26,7 @@ from psycopg.types.json import Jsonb
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
 from .crawl import KIND as CRAWL_KIND
-from .crawl.unitdir import contiguous_through as crawl_through
+from .crawl.unitdir import CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
 from .progress import Progress
 
@@ -56,13 +56,13 @@ def fold(text: str) -> str:
 
 
 # The data-through date per Record kind, the one definition `sources` (API) and `pipeline status` share: the latest publication date
-# of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days (crawled Records' own dates do not count:
+# of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days after the kind's last bulk quarter (crawled Records' own dates do not count:
 # one past a hole would hide the hole; a crawled day with nothing new still means "looked through that day").
 DATA_THROUGH_SQL = """
 SELECT kind, max(d)::text FROM (
     SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
     UNION ALL
-    SELECT k.kind, s.through FROM seap.crawl_state s CROSS JOIN (VALUES ('CONTRACT'), ('AWARD_NOTICE')) AS k(kind)
+    SELECT kind, through FROM seap.crawl_state
 ) x GROUP BY kind ORDER BY kind"""
 
 
@@ -230,9 +230,10 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None) -> 
                 """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
                        SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
                    THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
-            through = crawl_through(archive)  # complete days with no hole before it; derived from the archive, so a rebuild reproduces it
-            if through:
-                cur.execute("INSERT INTO seap.crawl_state (stream, through) VALUES (%s, %s)", (CRAWL_KIND, through))
+            for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
+                through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
+                if through:
+                    cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
             cur.execute(DATA_THROUGH_SQL)
