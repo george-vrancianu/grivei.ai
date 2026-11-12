@@ -78,7 +78,9 @@ export function buildWhere(filter: SearchFilter): Where {
     add(`supplier_key = ${bind(filter.supplier)}`);
   }
   if (filter.uat) add(`authority_uat = ${bind(filter.uat)}`);
-  if (filter.hasSignals != null || filter.signal) throw notServed("the Signal filters");
+  // has_signals is false on every row until the Signal tickets fill it: the chip works, and matches nothing when true until then
+  if (filter.hasSignals != null) add(`has_signals = ${bind(filter.hasSignals)}`);
+  if (filter.signal) throw notServed("the Signal filter");
   if (filter.county) {
     if (filter.county === "NATIONAL" || filter.county === "UNPLACED") throw notServed(`the ${filter.county} area (it needs placement)`);
     if (filter.county === "UNKNOWN_SUPPLIER_COUNTY") {

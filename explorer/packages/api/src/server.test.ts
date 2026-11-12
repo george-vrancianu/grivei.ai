@@ -29,7 +29,7 @@ const store: Store = {
   coverageAreas: async () => [],
   unplacedAuthorities: async () => ({ authorities: 0, total: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } }),
   referenceSnapshot: async () => null,
-  searchTotal: async () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
+  searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
   searchRecords: async () => ({ count: 0, rows: [] }),
   entity: async () => null,
@@ -103,7 +103,7 @@ describe("MainScreen for the empty filter", () => {
   });
 
   it("says plainly that a filter waiting for another ticket is not served yet, instead of ignoring it", async () => {
-    const r = await api.respond({ id: mainScreen.sha256, variables: { filter: { hasSignals: true } } });
+    const r = await api.respond({ id: mainScreen.sha256, variables: { filter: { signal: "OVER_CAP" } } });
     expect(r.status).toBe(200);
     expect(r.body.errors?.[0]).toMatchObject({ message: expect.stringContaining("not served yet"), extensions: { code: "NOT_IMPLEMENTED" } });
   });
@@ -127,7 +127,7 @@ describe("MainScreen for the empty filter", () => {
   });
 
   it("does not leak a database failure to the client", async () => {
-    const broken = createApi({ ...store, total: async () => { throw new Error("password authentication failed for user x"); } }, schema);
+    const broken = createApi({ ...store, searchTotal: async () => { throw new Error("password authentication failed for user x"); } }, schema);
     const r = await broken.respond({ id: mainScreen.sha256, variables: EMPTY });
     expect(JSON.stringify(r.body)).not.toContain("password");
     expect(r.body.errors?.[0]?.extensions?.code).toBe("INTERNAL");

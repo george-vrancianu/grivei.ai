@@ -43,6 +43,7 @@ from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_
 from .mf.build import MfSummary, build_mf
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
+from .rollup import build_rollup
 from .search import create_index, value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
@@ -456,6 +457,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
             cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
             cur.execute("ANALYZE seap.record")
+            build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
             create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             cur.execute("ANALYZE seap.search")
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
