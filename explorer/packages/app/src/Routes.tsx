@@ -1,5 +1,6 @@
 import { useCopy } from "./copy/useCopy.ts";
 import { AppLink } from "./components/AppLink/index.ts";
+import { CoveragePage } from "./pages/CoveragePage/index.ts";
 import { EntityPage } from "./pages/EntityPage/index.ts";
 import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
 import { MethodologyPage } from "./pages/MethodologyPage/index.ts";
@@ -13,7 +14,6 @@ import { pathFor } from "./routing/routes.ts";
 export function Routes() {
   const { locale, route } = useLocation();
   const t = useCopy();
-  const body = t.pages.placeholder;
   switch (route.name) {
     case "main":
       return <MainScreenPage locale={locale} />;
@@ -24,7 +24,7 @@ export function Routes() {
     case "record":
       return <RecordPage locale={locale} code={route.code} />;
     case "coverage":
-      return <PlaceholderPage title={t.pages.coverage.title} body={body} />;
+      return <CoveragePage locale={locale} />;
     case "methodology":
       return <MethodologyPage locale={locale} />;
     case "not-found":

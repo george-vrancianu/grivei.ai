@@ -12,23 +12,8 @@ afterEach(() => window.history.replaceState(null, "", "/"));
 
 const here = () => window.location.pathname + window.location.search;
 
-/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages, the search page, the Record page and the methodology page are real: see pages/EntityPage, pages/SearchPage, pages/RecordPage and pages/MethodologyPage. */
-const ROUTES = [
-  { path: "coverage", en: catalogue.en.pages.coverage.title, ro: catalogue.ro.pages.coverage.title },
-] as const;
-
-describe("every route renders its placeholder in both languages", () => {
-  it.each(ROUTES)("/explore/$path in English and /ro/explore/$path in Romanian", (route) => {
-    for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
-      openAt(`${prefix}/${route.path}`);
-      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
-      expect(screen.getByRole("heading", { level: 1, name: route[locale] })).toBeInTheDocument();
-      expect(screen.getByText(catalogue[locale].pages.placeholder)).toBeInTheDocument();
-      expect(document.documentElement.lang).toBe(locale);
-      unmount();
-    }
-  });
-
+/** No placeholder route is left: the entity pages, search, Record, Coverage and methodology pages are real (see pages/*). */
+describe("the routes in both languages", () => {
   it("shows the full-results view at /explore/search and /ro/explore/search", async () => {
     for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
       openAt(`${prefix}/search`);

@@ -81,6 +81,35 @@ export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariab
     },
   },
   {
+    name: "typical-open-window", kind: "typical",
+    description: "no date chip: every quarter of the harvest for the four SEAP kinds; the 2021-22 award notices not in the source, a hand-entered 2023-Q2 DAN gap with its note, a quarantined 2023-Q3 DA file (not yet loaded, no reason), 2024-Q3 CONTRACT possibly incomplete, and the current quarter 2024-Q4 crawled provisional (DA and DAN awaiting the bulk file)",
+    variables: {},
+    data: {
+      sources,
+      coverage: {
+        window: { from: null, to: null },
+        counties,
+        grid: Array.from({ length: 16 }, (_, q) => `${2021 + Math.floor(q / 4)}-Q${(q % 4) + 1}`).flatMap((quarter) =>
+          ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].map((kind): Cell => {
+            const base = { DA: 41_000, DAN: 9_200, CONTRACT: 17_500, AWARD_NOTICE: 6_400 }[kind]!;
+            if (quarter === "2024-Q4") {
+              if (kind === "CONTRACT") return cell(quarter, kind, "CRAWLED_PROVISIONAL", 4_100, { rule: "AWAITING_BULK_FILE", dataThrough: "2024-11-30" });
+              if (kind === "AWARD_NOTICE") return cell(quarter, kind, "CRAWLED_PROVISIONAL", 2_900, { rule: "AWAITING_BULK_FILE", dataThrough: "2024-11-30" });
+              return cell(quarter, kind, "NOT_YET_LOADED", 0, { rule: "AWAITING_BULK_FILE" });
+            }
+            if (kind === "AWARD_NOTICE" && quarter < "2023") return cell(quarter, kind, "NOT_IN_SOURCE", 0, { rule: "NO_PRIOR_CALL_BEFORE_BACKFILL" });
+            if (quarter === "2023-Q2" && kind === "DAN") return cell(quarter, kind, "KNOWN_GAP", 0, { rule: "HAND_ENTERED", note: "Exportul ADR pentru acest trimestru a fost republicat fără notificările de achiziții directe" });
+            if (quarter === "2024-Q3" && kind === "CONTRACT") return cell(quarter, kind, "POSSIBLY_INCOMPLETE", 6_900, { rule: "COUNT_BELOW_NEIGHBOURS", dataThrough: "2024-09-30" });
+            if (quarter === "2023-Q3" && kind === "DA") return cell(quarter, kind, "NOT_YET_LOADED", 0);
+            return cell(quarter, kind, "LOADED", base, { dataThrough: `${quarter.slice(0, 4)}-${({ Q1: "03-31", Q2: "06-30", Q3: "09-30", Q4: "12-31" } as const)[quarter.slice(5) as "Q1"]}` });
+          }),
+        ),
+        unplacedAuthorities: unplaced,
+        referenceSnapshot: "2024-09-15",
+      },
+    },
+  },
+  {
     name: "extreme-full-grid", kind: "extreme",
     description: "every quarter of the window for every record kind: 16 quarters x 4 kinds, cycling through the gap states",
     variables: { window: { from: "2021-01-01", to: "2024-12-31" } },

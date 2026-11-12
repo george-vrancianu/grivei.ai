@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
@@ -85,5 +85,19 @@ export type EntityAliases = EntityHeaderData["aliases"];
 /** A Signal as `SignalFields` selects it: rule, dates, count, authority, suppliers, rule-specific numbers and the filter that reproduces it. */
 export type SignalData = SignalFieldsFragment;
 export type SignalRule = SignalRuleSlug;
+
+/** The Coverage page's data: `CoveragePage` (the `sources` list plus the SEAP `coverage`: grid, reference snapshot). */
+export type CoveragePageData = CoveragePageQuery;
+/** The published rule behind a grid cell's state; the frontend's catalogue words it. */
+export type GapRule = ContractGapRule;
+/** A grid cell's state: LOADED, KNOWN_GAP, POSSIBLY_INCOMPLETE, NOT_IN_SOURCE, CRAWLED_PROVISIONAL or NOT_YET_LOADED. */
+export type GapState = ContractGapState;
+/**
+ * One cell of the quarter x record-kind grid (`coverage.grid`). `crawlOnly` is a UI-side extension of the contract's `GapCell`:
+ * how many of the cell's `records` are crawl-only Records (spec: counted in the quarter's cell). The contract does not carry it yet,
+ * so it is optional and the display shows it only when present.
+ */
+export type GapCellData = CoveragePageQuery["coverage"]["grid"][number] & { crawlOnly?: number };
+
 /** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
 export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];
