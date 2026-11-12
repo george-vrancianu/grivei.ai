@@ -212,9 +212,9 @@ def main(argv: list[str] | None = None) -> int:
             progress.fail(e)
             raise
         print(f"{stamp_now()} anaf scan done: {len(cuis)} distinct CUIs in the archive", flush=True)
-        lookup(archive, cuis, AnafClient(endpoint=args.endpoint), progress,
-               recheck_after_days=args.recheck_after_days, max_batches=args.max_batches)
-        return 0
+        summary = lookup(archive, cuis, AnafClient(endpoint=args.endpoint), progress,
+                         recheck_after_days=args.recheck_after_days, max_batches=args.max_batches)
+        return 1 if summary.failed_batches else 0
     if args.verb in ("refresh", "seed"):
         return _refresh(archive, args)
     if args.verb == "load-quarter":

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { EntityHeader, EntityOverview, EntityPageLayout, RecordsTab, Stack, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
+import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
@@ -8,7 +9,11 @@ import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHrefs } from "./entityPage.utils.ts";
 import { useEntityPage } from "./hooks/useEntityPage.ts";
 import { useOverviewTab } from "./hooks/useOverviewTab.ts";
+import { usePickedCounterparty } from "./hooks/usePickedCounterparty.ts";
 import { useRecordsTab } from "./hooks/useRecordsTab.ts";
+import { useRelationshipsTab } from "./hooks/useRelationshipsTab.ts";
+
+const LENSES = ["graph", "flow"] as const;
 
 export interface EntityPageProps {
   locale: Locale;
@@ -18,14 +23,17 @@ export interface EntityPageProps {
   view: EntityView;
 }
 
-/** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. The Records and Overview tabs are filled; Relationships is not built yet. */
+/** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. Each tab runs its own operation. */
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
-  const { filter, page, order, signalOrder } = useUrlState();
+  const { filter, page, order, signalOrder, lens, counterparty, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
+  const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
+  // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
+  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
 
   if (state.status === "error") {
     return (
@@ -46,6 +54,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
     );
   }
   const loading = state.status === "loading";
+  const flowCopy = flowLensCopy(t);
   const entity = state.entity;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
@@ -89,8 +98,43 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           // ready, but the entity has nothing in this role
           <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
         )
+      ) : state.relationships && entity ? (
+        <>
+          {picked.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+          <RelationshipsTab
+            entity={entity}
+            counterparties={state.relationships.counterparties}
+            timeline={state.relationships.timeline}
+            selectedTimeline={picked.status === "ready" ? picked.timeline : null}
+            sidePanel={picked.status === "ready" ? picked.panel : null}
+            sidePanelLoading={picked.status === "loading"}
+            flowToggle={
+              <OptionToggle
+                options={LENSES}
+                value={lens === "flow" ? "flow" : "graph"}
+                onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })}
+                labels={t.entityPage.relationships.lens.options}
+                label={t.entityPage.relationships.lens.label}
+              />
+            }
+            flowMap={
+              lens === "flow" ? (
+                <LoadedFlowLensSection
+                  flow={state.relationships.flow}
+                  role={routeRole}
+                  home={entity.placement?.county?.code ?? null}
+                  locale={locale}
+                  copy={flowCopy}
+                  status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
+                />
+              ) : undefined
+            }
+            {...relationshipsTab}
+          />
+        </>
       ) : (
-        <Typography>{t.entityPage.tabBody[view]}</Typography>
+        // ready, but the entity has nothing in this role
+        <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
       )}
     </EntityPageLayout>
   );

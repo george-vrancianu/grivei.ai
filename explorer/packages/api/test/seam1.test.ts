@@ -20,7 +20,7 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
@@ -30,6 +30,7 @@ import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntity
 import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
+import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 
@@ -2396,6 +2397,85 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
       expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
+    });
+  });
+
+  describe("recorded fixtures (#88): archive-roles + archive-roles-names, archive-moneymap -> rebuild -> the recorded EntityRelationships and side-panel EntityRecords", () => {
+    // The Relationships tab's seam 3 tests render against these answers (graph, timeline, Flow lens, side panel), so the two seams stay in step.
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const dir = resolve(here, "../../contract/src/fixtures/recorded");
+    const DBS = { overview: "rel_rec_a", moneymap: "rel_rec_b" } as const;
+    const ops = { EntityRelationships: entityRelationships, EntityRecords: entityRecords };
+
+    beforeAll(async () => {
+      cpSync(rolesArchive, join(scratch, "archive-overview-rel"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview-rel"), { recursive: true });
+      for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
+      rebuild(DBS.overview, "archive-overview-rel");
+      rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-relationships-recorded")]);
+    });
+
+    const answer = async (c: RecordedRelationshipsCase) => {
+      const op = ops[c.operation];
+      const r = await ask(DBS[c.archive], op.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    const answers = new Map<string, Awaited<ReturnType<typeof answer>>>();
+    beforeAll(async () => {
+      for (const c of RECORDED_RELATIONSHIPS_CASES) answers.set(`${c.operation}/${c.name}`, await answer(c));
+    });
+
+    for (const operation of ["EntityRelationships", "EntityRecords"] as const) {
+      it(`${operation}: every recorded case is what the API answers now`, () => {
+        const recorded = RECORDED_RELATIONSHIPS_CASES.filter((c) => c.operation === operation).map((c) => answers.get(`${c.operation}/${c.name}`)!);
+        const file = resolve(dir, operation === "EntityRelationships" ? "EntityRelationships.json" : "EntityRecordsSidePanel.json");
+        if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+        expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      });
+    }
+
+    it("asks no two cases of one operation the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
+      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
+      const asked = RECORDED_RELATIONSHIPS_CASES.map((c) => `${c.operation} ${JSON.stringify(sorted(c.variables))}`);
+      expect(new Set(asked).size).toBe(asked.length);
+    });
+
+    it("gives the cases the numbers they are named for", () => {
+      const RON = (n: number) => String(n * 100);
+      const role = (name: string) => (answers.get(`EntityRelationships/${name}`)!.data as EntityRelationshipsQuery).entity!.seap.role!;
+      const rows = (name: string) => role(name).counterparties.rows;
+      const months = (name: string) => role(name).timeline.map((t) => t.month);
+      // an authority: five counterparties (a natural person is one row without an entity), the biggest holds 5,525,000 of 8,840,000
+      expect(rows("authority").map((r) => r.entity?.key ?? null)).toEqual(["2000007", "2000031", "2000015", null, "2000023"]);
+      expect(role("authority").counterparties).toMatchObject({ count: 5, topShare: 0.625 });
+      expect(rows("authority")[3]).toMatchObject({ naturalPerson: true, wonTogether: true });
+      expect(rows("authority")[0]!.total).toMatchObject({ awarded: RON(5_525_000), records: 11 });
+      expect(months("authority")).toEqual(["2023-01", "2023-02", "2023-03", "2024-01"]); // YYYY-MM, oldest first
+      // the picked supplier's months are a part of the overall ones; the graph and the Flow lens do not change with the pick
+      expect(months("authority-supplier-picked")).toEqual(months("authority"));
+      expect(role("authority-supplier-picked").timeline[0]!.total.awarded).toBe(RON(5_100_000));
+      expect(role("authority-supplier-picked").counterparties).toEqual(role("authority").counterparties);
+      expect(role("authority-supplier-picked").flow).toEqual(role("authority").flow);
+      // Flow, authority page: the supplier side by county; a supplier whose county is unknown is off the map; this authority has no placement
+      expect(role("authority").flow).toMatchObject({ side: "SUPPLIER", counties: [{ area: "RO-CJ", entities: 4 }], national: { records: 0 }, unplaced: null, unknownSupplierCounty: { awarded: RON(315_000), records: 2 } });
+      // Flow, supplier page: the authority side; two authorities no Source places are the Unplaced tile
+      expect(role("supplier").flow).toMatchObject({ side: "AUTHORITY", counties: [{ area: "RO-CJ", entities: 1 }], unplaced: { authorities: 2, total: { records: 12 } }, unknownSupplierCounty: null });
+      expect(rows("supplier").map((r) => r.entity!.key)).toEqual(["1000017", "1000009", "2000031"]);
+      expect(role("supplier").counterparties.topShare).toBeCloseTo(0.934, 3);
+      // a placed authority: its supplier counties are on the map; a national one has none of its own
+      expect(role("authority-placed-in-uat").flow.counties.map((c) => c.area)).toEqual(["RO-BV", "RO-CJ"]);
+      expect(role("national-authority").flow.counties.map((c) => c.area)).toEqual(["RO-BV"]);
+      // nothing in the filter: no counterparties, no months, an empty map
+      expect(role("authority-nothing-in-filter")).toMatchObject({ counterparties: { count: 0, topShare: null, rows: [] }, timeline: [], flow: { counties: [] } });
+      // the side panel: the Records the two share, whichever side asks
+      for (const name of ["authority-with-supplier", "supplier-with-authority"]) {
+        const records = (answers.get(`EntityRecords/${name}`)!.data as EntityRecordsQuery).entity!.seap.role!.records;
+        expect(records.total.records, name).toBe(11);
+        expect(records.records.count, name).toBe(11);
+      }
     });
   });
 
