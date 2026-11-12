@@ -106,12 +106,12 @@ export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by
 const recordsOf = (name: string): RecordsTabData => named(fixtures.EntityRecords, name).data.entity!.seap.role!.records;
 const filterOf = (name: string): RecordFilter => named(fixtures.EntityRecords, name).variables.filter;
 // Recorded from the API (seam 1, `recorded/EntityRecords.json`) except the splitting Signal and the estimated total, which stay hand-written.
-/** A supplier's tab with no filter: facets with an authority as the counterparty. */
+/** A supplier's tab with no filter: facets with authorities as the counterparties. */
 export const supplierRecords = recordsOf("supplier");
 /** The same tab after choosing the Splitting facet (hand-written: no recorded archive has a splitting Signal yet). */
 export const supplierSplittingRecords = recordsOf("supplier-signal-splitting");
 export const supplierSplittingFilter = filterOf("supplier-signal-splitting");
-/** A year, the channel, a Signal and one authority on at once. */
+/** A year, the channel and one authority on at once. */
 export const supplierSeveralFacetsRecords = recordsOf("supplier-several-facets");
 export const supplierSeveralFacetsFilter = filterOf("supplier-several-facets");
 /** A facet that matches nothing: zero total, no facets, no rows. */

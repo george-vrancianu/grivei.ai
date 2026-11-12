@@ -36,17 +36,11 @@ describe("an entity page", () => {
   });
 
   it.each([
-    [SUPPLIER, "/records", "Records", "EntityRecords"],
-    [HAND_SUPPLIER, "/relationships", "Relationships", "EntityRelationships"],
-  ])("opens %s%s on its own tab, running that tab's operation", async (base, suffix, name, operation) => {
+    [SUPPLIER, "/records", "Records", "EntityRecords", NAME],
+    [HAND_SUPPLIER, "/relationships", "Relationships", "EntityRelationships", "HACHI INVEST S.R.L."],
+  ])("opens %s%s on its own tab, running that tab's operation", async (base, suffix, name, operation, heading) => {
     const sent = open(`${base}${suffix}`);
-    if (base === HAND_SUPPLIER) {
-      expect(await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
-      expect(currentTab()).toEqual([name]);
-      expect(sent.map((s) => s.operation)).toEqual([operation]);
-      return;
-    }
-    expect(await screen.findByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
     expect(currentTab()).toEqual([name]);
     expect(sent.map((s) => s.operation)).toEqual([operation]);
   });

@@ -56,6 +56,13 @@ const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python")
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
 
+/** The app's fixture client matches on exact variables, so no two recorded cases may ask the same question. */
+function expectDistinctVariables(cases: ReadonlyArray<{ variables: unknown }>): void {
+  const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
+  const asked = cases.map((c) => JSON.stringify(sorted(c.variables)));
+  expect(new Set(asked).size).toBe(asked.length);
+}
+
 function readImagePin(): string {
   // the single source of truth for the pin is the compose file
   const compose = readFileSync(resolve(here, "../../../../compose.yaml"), "utf8");
@@ -2329,9 +2336,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
 
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
-      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
-      const asked = RECORDED_ENTITY_CASES.map((c) => JSON.stringify(sorted(c.variables)));
-      expect(new Set(asked).size).toBe(asked.length);
+      expectDistinctVariables(RECORDED_ENTITY_CASES);
     });
 
     it("gives the cases the numbers they are named for", () => {
@@ -2422,9 +2427,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
 
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
-      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, sorted(x)])) : v);
-      const asked = RECORDED_RECORDS_CASES.map((c) => JSON.stringify(sorted(c.variables)));
-      expect(new Set(asked).size).toBe(asked.length);
+      expectDistinctVariables(RECORDED_RECORDS_CASES);
     });
 
     it("gives the cases the numbers they are named for", () => {

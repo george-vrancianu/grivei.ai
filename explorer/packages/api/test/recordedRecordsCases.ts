@@ -1,7 +1,7 @@
 /**
  * The cases whose answers are recorded as the contract's EntityRecords fixtures (ticket #87): each is one persisted-query request,
  * asked of the API after a real rebuild (seam 1), with exactly the variables the Records tab sends (`key`, `role`, `filter`, a page of
- * 100 at offset 0, no `order`). The block "recorded fixtures (#87)" in `seam1.test.ts` compares each answer with the committed JSON
+ * 100 at offset 0, no `order` unless the URL carries one: the archive-signals cases ask `VALUE_DESC` so their variables differ from the roles archive's). The block "recorded fixtures (#87)" in `seam1.test.ts` compares each answer with the committed JSON
  * and, with `RECORD_FIXTURES=1`, rewrites it. Same convention and archives as `recordedEntityCases.ts` (#86), in its own file.
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";

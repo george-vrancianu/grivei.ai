@@ -42,6 +42,9 @@ describe("the Records tab of an authority", () => {
     expect(panel().getByRole("button", { name: "2023 (15)" })).toBeVisible();
     expect(panel().getByRole("button", { name: /^Suspect value \(1\)/ })).toBeVisible();
     expect(screen.queryByRole("navigation", { name: "Result pages" })).toBeNull(); // one page
+    // natural-person winners are shown as such, and no row links one to an entity page
+    expect(screen.getAllByText("Persoană fizică").length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole("link").filter((l) => /\/explore\/(supplier|authority)\//.test(l.getAttribute("href") ?? "") && /Persoană fizică/.test(l.textContent ?? ""))).toHaveLength(0);
   });
 
   // every facet kind: what the click writes to the URL, and the total and rows the API answered for exactly that filter
@@ -143,18 +146,17 @@ describe("the Records tab of a supplier", () => {
   });
 
   it("a counterparty facet writes authority, and the filtered Records are the same pair seen from the authority's side", async () => {
-    await opened(SUPPLIER);
+    const first = await opened(SUPPLIER);
     await userEvent.setup().click(panel().getByRole("button", { name: /^SPITALUL EXEMPLU/ }));
     await waitFor(() => expect(filterInUrl()).toEqual({ authority: "1000017" }));
     expect(await screen.findByText("11 Records")).toBeVisible();
     const fromTheSupplier = listed();
     expect(fromTheSupplier).toHaveLength(11);
     // the authority's page filtered to this supplier lists the same Records
-    window.history.replaceState(null, "", `${AUTHORITY}?supplier=2000007`);
-    const { client } = fixtureClient();
-    const second = render(<App client={client} />);
-    await screen.findAllByText("11 Records");
-    second.unmount();
+    first.view.unmount();
+    await opened(`${AUTHORITY}?supplier=2000007`);
+    expect(await screen.findByText("11 Records")).toBeVisible();
+    expect([...listed()].sort()).toEqual([...fromTheSupplier].sort());
   });
 
   it("is in Romanian at /ro/, with the facets of the filter in the URL", async () => {
