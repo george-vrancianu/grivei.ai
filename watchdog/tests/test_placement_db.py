@@ -125,3 +125,17 @@ def test_the_search_rows_carry_their_authority_s_county_and_uat(built):
     suppliers = {r[3]: r[4] for r in rows if r[3]}
     assert suppliers.get("2000007") == "RO-BV"  # a placed supplier
     assert all(v is None or v.startswith("RO-") for v in suppliers.values())
+
+
+def test_the_search_rows_carry_the_money_lens_areas(built):
+    """authority_area is the county, NATIONAL or UNPLACED; supplier_area the county or UNKNOWN_SUPPLIER_COUNTY; never null (#71)."""
+    url, _ = built
+    with psycopg.connect(url) as c:
+        rows = c.execute("SELECT authority_key, authority_area, supplier_key, supplier_area FROM seap.search").fetchall()
+    area = {r[0]: r[1] for r in rows}
+    assert area[CUI["sanpetru"]] == "RO-BV"
+    assert area[CUI["bucharest3"]] == "RO-B"
+    assert area[CUI["unmatched"]] == "RO-BV"  # county only
+    assert area[CUI["ministry"]] == "NATIONAL" and area[CUI["agency"]] == "NATIONAL"  # seated in Bucharest, never RO-B
+    assert area[CUI["unplaced"]] == "UNPLACED"
+    assert {r[3] for r in rows if r[2] == "2000007"} == {"RO-BV"}
