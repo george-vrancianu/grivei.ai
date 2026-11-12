@@ -3,14 +3,14 @@ import { AppLink } from "./components/AppLink/index.ts";
 import { CoveragePage } from "./pages/CoveragePage/index.ts";
 import { EntityPage } from "./pages/EntityPage/index.ts";
 import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
+import { NotFoundPage } from "./pages/NotFoundPage/index.ts";
 import { MethodologyPage } from "./pages/MethodologyPage/index.ts";
-import { PlaceholderPage } from "./pages/PlaceholderPage/index.ts";
 import { RecordPage } from "./pages/RecordPage/index.ts";
 import { SearchPage } from "./pages/SearchPage/index.ts";
 import { useLocation } from "./routing/location.tsx";
 import { pathFor } from "./routing/routes.ts";
 
-/** Which page the current route shows. Each placeholder is replaced by its own ticket's page. */
+/** Which page the current route shows. */
 export function Routes() {
   const { locale, route } = useLocation();
   const t = useCopy();
@@ -29,9 +29,8 @@ export function Routes() {
       return <MethodologyPage locale={locale} />;
     case "not-found":
       return (
-        <PlaceholderPage
+        <NotFoundPage
           title={t.pages.notFound.title}
-          body=""
           action={<AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>}
         />
       );

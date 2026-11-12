@@ -6,10 +6,8 @@ import { MainScreen } from "../../../graphql/operations.ts";
 export type MainScreenState = { status: "loading" } | { status: "error" } | { status: "ready"; data: MainScreenQuery };
 type Settled = Exclude<MainScreenState, { status: "loading" }>;
 
-/** The tracer asks for the empty filter only; the URL codec (#42) will feed the real one. */
-const EMPTY: MainScreenQueryVariables = { filter: {} };
-
-export function useMainScreen(variables: MainScreenQueryVariables = EMPTY): MainScreenState {
+/** The main screen's one query, for the filter the URL names. */
+export function useMainScreen(variables: MainScreenQueryVariables): MainScreenState {
   const client = useClient();
   const key = JSON.stringify(variables);
   // The answer remembers which variables it is for: a different key reads as loading again, with no state reset in the effect.

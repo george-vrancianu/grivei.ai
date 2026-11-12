@@ -4,6 +4,7 @@ import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
 import { pathFor, type EntityRoute } from "../../../routing/routes.ts";
 import { methodologyHref } from "../../../methodology/methodologyLinks.ts";
+import { withSuspectBadge } from "../../../urlState/suspect.ts";
 import { useUrlState } from "../../../urlState/useUrlState.ts";
 import { patchTo, recordsHref } from "../entityPage.utils.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
@@ -32,7 +33,7 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
       entityHref: (e, role) => pathFor(locale, { name: "entity", entity: role, key: e.key, view: "overview" }),
       recordHref: (record) => pathFor(locale, { name: "record", code: record.code }),
       methodologyHref: methodologyHref(locale, "awardedValue"),
-      suspectHref: recordsHref(locale, entity, entityKey, { filter: { ...filter, badges: [...(filter.badges ?? []).filter((b) => b !== "SUSPECT_VALUE"), "SUSPECT_VALUE"] } }),
+      suspectHref: recordsHref(locale, entity, entityKey, { filter: withSuspectBadge(filter) }),
       locale,
       copy: {
         heading: own.heading,

@@ -36,13 +36,10 @@ export interface Copy {
   coverageLensMap: CoverageLensMapCopy;
   /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
   zoomedCounty: ZoomedCountySectionCopy;
-  /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */
+  /** The titles of the pages that carry no data of their own (the page not found, the search page); the others have their own keys. */
   pages: {
-    placeholder: string;
     notFound: { title: string; back: string };
     search: { title: string };
-    record: { title: string };
-    methodology: { title: string };
   };
   /** Badge labels and explanations (they double as filter chips). */
   badges: BadgeCopy;
