@@ -1,0 +1,80 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate",
+  "Numar achizitie",
+  "Data publicare",
+  "Denumire",
+  "Cod CPV",
+  "Denumire CPV",
+  "Tip contract",
+  "Fonduri comunitare?",
+  "Denumire program",
+  "Data atribuire",
+  "Valoare atribuita (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "Spitalul Clinic de Copii Dr.Victor Gomoiu",
+   "4283759",
+   "DA34778509",
+   {
+    "date": "2024-01-02T21:45:52"
+   },
+   "PIPERACILLINUM/TAZOBACTAMUM - PERASIN 2G/0.25G",
+   "33651000-8",
+   "Antiinfectioase generale pentru uz sistemic (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2024-01-03T09:08:31"
+   },
+   468.0,
+   "Pharma",
+   "RO 13591928"
+  ],
+  [
+   "SPITALUL UNIVERSITAR DE URGENTA ELIAS",
+   "4192537",
+   "DA34778511",
+   {
+    "date": "2024-01-03T01:21:24"
+   },
+   "Servicii Legislative - 2024",
+   "75111200-9",
+   "Servicii legislative (Rev.2)",
+   "Servicii",
+   "Nu",
+   null,
+   {
+    "date": "2024-01-03T09:40:33"
+   },
+   4000.0,
+   "WOLTERS KLUWER ROMANIA S.R.L.",
+   "RO 8451308"
+  ],
+  [
+   "GRADINITA CU PROGRAM PRELUNGIT NR. 16 TARGOVISTE",
+   "29145301",
+   "DA34778512",
+   {
+    "date": "2024-01-03T06:44:15"
+   },
+   "ACHIZITIE ALIM",
+   "15800000-6",
+   "Diverse produse alimentare (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2024-01-03T16:07:22"
+   },
+   1078.56,
+   "SELGROS CASH&CARRY SRL",
+   "RO11805367"
+  ]
+ ]
+}

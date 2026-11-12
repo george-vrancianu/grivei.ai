@@ -203,6 +203,10 @@ class Archive:
         base = self.root / QUARANTINE_DIR
         return sorted(p.parent for p in base.rglob(REASON)) if base.is_dir() else []
 
+    def survey(self, keep=None) -> list[tuple[Unit | None, Path]]:
+        """Every fetch directory (or those `keep(directory)` accepts) with its Unit, None when incomplete. Read-only; hashes the files of the kept ones."""
+        return [(self._read_unit(d), d) for d in self._unit_dirs() if keep is None or keep(d)]
+
     def _read_all(self) -> list[tuple[Unit | None, Path]]:
         out: list[tuple[Unit | None, Path]] = []
         for directory in self._unit_dirs():

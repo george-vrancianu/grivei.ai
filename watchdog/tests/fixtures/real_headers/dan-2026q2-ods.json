@@ -1,0 +1,80 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Numar notificare",
+  "Data publicare",
+  "Obiectul achizitiei",
+  "Cod CPV",
+  "Denumire CPV",
+  "Tip contract",
+  "Valoare achizitie (RON)",
+  "Finantare prin fonduri comunitare?",
+  "Tipul de proiect/ program",
+  "Data finalizare",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "SCOALA GIMNAZIALA NR.1 SAT HURDUGI",
+   28342674.0,
+   "DAN2718540",
+   {
+    "date": "2026-04-01T00:02:47"
+   },
+   "SERVICII DE REINCARCARE STINGATOARE",
+   "24951210-0",
+   "Pulbere pentru extinctoare de incendii (Rev.2)",
+   "Servicii",
+   322.0,
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T00:02:39"
+   },
+   "S.C. GRUP-STING GUARD S.R.L.",
+   40638750.0
+  ],
+  [
+   "SCOALA GIMNAZIALA NR.1 SAT HURDUGI",
+   28342674.0,
+   "DAN2718541",
+   {
+    "date": "2026-04-01T00:07:03"
+   },
+   "FOND CARTE",
+   "22113000-5",
+   "Carti de biblioteca (Rev.2)",
+   "Furnizare",
+   2252.25,
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T00:06:58"
+   },
+   "LORICART SRL",
+   22637099.0
+  ],
+  [
+   "SPITALUL MUNICIPAL AIUD",
+   4613628.0,
+   "DAN2718542",
+   {
+    "date": "2026-04-01T07:14:59"
+   },
+   "PRESTARI SERVICII DE PAZA CF CONTR.13/01.04.2025",
+   "79713000-5",
+   "Servicii de paza (Rev.2)",
+   "Servicii",
+   18079.2,
+   "Nu",
+   null,
+   {
+    "date": "2026-04-01T07:14:55"
+   },
+   "S.C. LY SECURITY SRL S.R.L.",
+   32566246.0
+  ]
+ ]
+}

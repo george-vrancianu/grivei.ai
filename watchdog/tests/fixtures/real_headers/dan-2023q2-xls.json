@@ -1,0 +1,84 @@
+{
+ "header": [
+  "AUTORITATE_CONTRACTANTA",
+  "CUI_AC",
+  "NUMAR_NOTIFICARE",
+  "DATA_PUBLICARE",
+  "OBIECTUL_ACHIZITIEI",
+  "COD_CPV",
+  "NUME_CPV",
+  "TIP_CONTRACT",
+  "MODALITATE_DESFASURARE",
+  "VALOARE_ACHIZITIE",
+  "FONDURI_COMUNITARE",
+  "NAME",
+  "DATA_FINALIZARE",
+  "OFERTANT",
+  "CUI_OFERTANT"
+ ],
+ "rows": [
+  [
+   "CENTRUL SCOLAR DE EDUCATIE INCLUZIVA",
+   "3626999",
+   "DAN1891459",
+   {
+    "date": "2023-04-01T08:49:23"
+   },
+   "legume",
+   "03221000-6",
+   "Legume (Rev.2)",
+   "Furnizare",
+   "Offline",
+   764.2,
+   "Nu",
+   null,
+   {
+    "date": "2023-04-01T08:49:13"
+   },
+   "S.C. solstimpex srl S.R.L.",
+   "5656686"
+  ],
+  [
+   "CENTRUL SCOLAR DE EDUCATIE INCLUZIVA",
+   "3626999",
+   "DAN1891460",
+   {
+    "date": "2023-04-01T08:52:25"
+   },
+   "patiserie",
+   "15812100-4",
+   "Produse de patiserie (Rev.2)",
+   "Furnizare",
+   "Offline",
+   455.0,
+   "Nu",
+   null,
+   {
+    "date": "2023-04-01T08:52:15"
+   },
+   "D.O.S.CATERING SRL-D",
+   "35943154"
+  ],
+  [
+   "COMUNA BOGDAND",
+   "3896623",
+   "DAN1891461",
+   {
+    "date": "2023-04-01T11:11:05"
+   },
+   "TOBE DE ESAPAMENT",
+   "34325200-3",
+   "Tevi de esapament (Rev.2)",
+   "Furnizare",
+   "Offline",
+   457.98,
+   "Nu",
+   null,
+   {
+    "date": "2023-04-01T11:10:36"
+   },
+   "KOCSIS GYONGYVER-MELINDA ÎNTREPRINDERE FAMILIALĂ",
+   "29003366"
+  ]
+ ]
+}

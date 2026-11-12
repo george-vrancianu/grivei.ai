@@ -33,6 +33,8 @@ from .refresh.ledger import LEDGER_NAME
 from .refresh.steps import Impl
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
+from .validate import summary_lines, validate_archive
+from .bulk import KINDS
 from . import backup as backup_module
 from . import switchover
 
@@ -111,6 +113,10 @@ def main(argv: list[str] | None = None) -> int:
 
     q = sub.add_parser("requeue", help="move quarantined units back into the archive so the next rebuild reads them again (e.g. after a reader or header fix)")
     q.add_argument("--match", default="", help="only units whose path or reason contains this text, e.g. `unsupported file format` or `contracte/2022Q4`")
+
+    v = sub.add_parser("validate", help="read-only: check every archived bulk file against its kind and report pass/fail per file; moves and quarantines nothing (exit 1 if any fails)")
+    v.add_argument("--kind", action="append", choices=sorted(KINDS), help="only this kind (repeatable)")
+    v.add_argument("--match", default="", help="only units whose path contains this text, e.g. `2024Q1`")
 
     f = sub.add_parser("fetch-bulk", help="download one bulk file into the raw archive (no loading)")
     f.add_argument("--url", required=True)
@@ -227,6 +233,11 @@ def main(argv: list[str] | None = None) -> int:
         return _backfill(archive, args)
     if args.verb == "estimates":
         return _estimates(archive, args)
+    if args.verb == "validate":
+        results = validate_archive(archive, args.kind, args.match, _print_result)
+        for line in summary_lines(results):
+            print(line)
+        return 0 if all(r.ok for r in results) else 1
     if args.verb == "requeue":
         try:
             restored = archive.requeue(args.match)
@@ -259,6 +270,16 @@ def main(argv: list[str] | None = None) -> int:
             print(line)
         return 1 if summary.failed else 0
     return 2
+
+
+def _print_result(r) -> None:
+    where = f"{r.kind}/{r.unit}"
+    if r.ok:
+        print(f"PASS {where}  {r.rows} rows, {r.records} records  {r.path}", flush=True)
+    else:
+        print(f"FAIL {where}  {r.reason}  {r.path}", flush=True)
+        for p in r.problems[:5]:
+            print(f"       {p}", flush=True)
 
 
 def _log_line(line: str) -> None:

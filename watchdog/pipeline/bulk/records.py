@@ -337,31 +337,56 @@ class ParsedFile:
     rows: int  # data rows read, duplicates included
 
 
+def _resolves(spec: KindSpec, unit: str, cells: list) -> bool:
+    if not cells or not all(isinstance(c, str) for c in cells if c is not None):
+        return False
+    try:
+        headers.resolve(spec.table, spec.label, unit, [c or "" for c in cells])
+    except InvalidFile:
+        return False
+    return True
+
+
+def _is_header(spec: KindSpec, unit: str, cells: list) -> bool:
+    """A data row that is a header line of this kind (names, not values)."""
+    return _resolves(spec, unit, cells)
+
+
+def _header_of_another_kind(kind: str, unit: str, cells: list) -> str | None:
+    # a |header| line of another width may have been split into this file's width with `|,|` left inside the cells: undo that
+    cells = [part for c in cells for part in (c.split("|,|") if isinstance(c, str) else [c])]
+    return next((other.label for name, other in KINDS.items() if name != kind and _resolves(other, unit, cells)), None)
+
+
 def parse_file_stats(kind: str, unit: str, path: Path) -> ParsedFile:
     """Read and validate one file of `kind` ('da', 'dan', 'contracte', 'fara-anunt') from quarter `unit`. Raises InvalidFile; never a partial result."""
     spec = KINDS[kind]
     header, rows = read_file(path)
     try:
-        columns = headers.resolve(spec.table, spec.label, unit, header)
+        columns, era = headers.resolve_era(spec.table, spec.label, unit, header)
 
         seen: set[Any] = set()
         distinct: list[Any] = []
         read = 0
-        for number, cells in rows:
-            read += 1
-            if len(cells) != len(columns):
-                raise InvalidFile(f"line {number}: {len(cells)} fields, expected {len(columns)}", [f"line {number}: {len(cells)} fields, expected {len(columns)}"])
-            if cells == header:  # the header line repeated in the middle of the file (seen in the 2022 T1 Contracte)
-                continue
-            fields = {c: cell for c, cell in zip(columns, cells) if c}
-            try:
-                row = spec.build(spec.label, fields)
-            except ValueError as e:
-                raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
-            if row in seen:  # an exact duplicate row
-                continue
-            seen.add(row)
-            distinct.append(row)
+        with values.day_first(era.day_first):
+            for number, cells in rows:
+                read += 1
+                if len(cells) != len(columns):
+                    raise InvalidFile(f"line {number}: {len(cells)} fields, expected {len(columns)}", [f"line {number}: {len(cells)} fields, expected {len(columns)}"])
+                if cells == header or (read <= 2 and _is_header(spec, unit, cells)):  # the header repeated (2022 T1 Contracte), or a second header row of technical names (2025 T4)
+                    continue
+                fields = {c: cell for c, cell in zip(columns, cells) if c}
+                try:
+                    row = spec.build(spec.label, fields)
+                except ValueError as e:
+                    other = _header_of_another_kind(kind, unit, cells)
+                    if other:
+                        raise InvalidFile(f"line {number}: a {other} header in the middle of a {spec.label} file: the file mixes kinds", [f"line {number}: {e}"]) from None
+                    raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
+                if row in seen:  # an exact duplicate row
+                    continue
+                seen.add(row)
+                distinct.append(row)
         if not distinct:
             raise InvalidFile("no data rows")
     finally:

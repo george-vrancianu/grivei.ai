@@ -1,0 +1,114 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Tip anunt",
+  "Tip procedura",
+  "Numar anunt initiere",
+  "Data publicare",
+  "Tip legislatie",
+  "Tip incheiere contract",
+  "Tip contract",
+  "Tip criterii de atribuire",
+  "Cod CPV",
+  "Denumire CPV",
+  "Numar lot",
+  "Numar anunt atribuire",
+  "Data publicare",
+  "Data contract",
+  "Numar contract",
+  "Incheiat prin",
+  "Valoare contract (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "INSTITUTUL NATIONAL DE CERCETARE-DEZVOLTARE ÎN SILVICULTURA “MARIN DRACEA”",
+   34638446.0,
+   "Anunt de atribuire",
+   "Licitatie deschisa",
+   "CN1087438",
+   {
+    "date": "2025-11-13T11:50:35"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "38433000-9",
+   "Spectrometre (Rev.2)",
+   1.0,
+   "CAN1165301",
+   {
+    "date": "2026-04-01T07:40:28"
+   },
+   {
+    "date": "2026-03-20T00:00:00"
+   },
+   898.0,
+   "Fara acord cadru",
+   202500.0,
+   "Cromatec",
+   "RO50659017"
+  ],
+  [
+   "Societatea Nationala de Transport Gaze Naturale TRANSGAZ SA",
+   13068733.0,
+   "Anunt de atribuire",
+   "Licitatie deschisa",
+   "CN1087397",
+   {
+    "date": "2025-11-12T14:49:53"
+   },
+   "Legea nr. 99/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "31320000-5",
+   "Cabluri de distributie a curentului electric (Rev.2)",
+   1.0,
+   "CAN1165303",
+   {
+    "date": "2026-04-01T07:58:45"
+   },
+   {
+    "date": "2026-04-01T00:00:00"
+   },
+   209.0,
+   "Fara acord cadru",
+   389150.0,
+   "MANRO",
+   "RO 12280079"
+  ],
+  [
+   "DIRECTIA GENERALA DE ASISTENTA SOCIALA SI PROTECTIA COPILULUI BRAILA",
+   17093659.0,
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "SCN1159886",
+   {
+    "date": "2025-03-12T08:32:36"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Incheierea unui acord-cadru",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "15612100-2",
+   "Faina de grau (Rev.2)",
+   1.0,
+   "SCNA1119403",
+   {
+    "date": "2026-04-01T08:13:59"
+   },
+   {
+    "date": "2025-04-17T00:00:00"
+   },
+   28093.0,
+   "Cu acord cadru",
+   114393.0,
+   "VIVOPREST DISTRIBUTION S.R.L.",
+   42413541.0
+  ]
+ ]
+}
