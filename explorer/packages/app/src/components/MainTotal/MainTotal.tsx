@@ -5,7 +5,7 @@ export interface MainTotalProps {
   total: TotalFieldsFragment;
   /** The Sources' "data through" dates; only a harvested Source has any. */
   sources: readonly DataThroughFieldsFragment[];
-  copy: { heading: string; total: TotalFigureCopy; dataThrough: DataThroughDateCopy };
+  copy: { heading: string; total: TotalFigureCopy; dataThrough: DataThroughDateCopy; kinds: Partial<Record<string, string>> };
   locale: Locale;
   /** The methodology page the ⓘ links to. */
   methodologyHref: string;
@@ -26,7 +26,7 @@ export function MainTotal({ total, sources, copy, locale, methodologyHref, suspe
           <TotalFigure total={total} locale={locale} copy={copy.total} methodologyHref={methodologyHref} suspectHref={suspectHref} />
           {dates.map((dataThrough) => (
             <Typography key={dataThrough.kind} variant="caption" color="text.secondary" component="p">
-              <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} />
+              <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} kindLabel={copy.kinds[dataThrough.kind] ?? dataThrough.kind} />
             </Typography>
           ))}
         </Stack>

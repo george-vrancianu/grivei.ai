@@ -12,10 +12,10 @@ const sources = [{ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrou
 
 export const National: Story = {
   // copy and locale follow the toolbar's language in `render`; the args only satisfy the types
-  args: { total: national.seap.search.total, sources, copy: { heading: catalogue.en.main.total, total: catalogue.en.total, dataThrough: catalogue.en.dataThrough }, locale: "en", methodologyHref: "/explore/methodology#awarded-value", suspectHref: "/explore/?badges=suspect-value&tab=records" },
+  args: { total: national.seap.search.total, sources, copy: { heading: catalogue.en.main.total, total: catalogue.en.total, dataThrough: catalogue.en.dataThrough, kinds: catalogue.en.coverage.grid.kinds }, locale: "en", methodologyHref: "/explore/methodology#awarded-value", suspectHref: "/explore/?badges=suspect-value&tab=records" },
   render: (args, { globals }) => {
     const locale = globals["locale"] === "ro" ? "ro" : "en";
     const t = catalogue[locale];
-    return <MainTotal {...args} locale={locale} copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough }} />;
+    return <MainTotal {...args} locale={locale} copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} />;
   },
 };

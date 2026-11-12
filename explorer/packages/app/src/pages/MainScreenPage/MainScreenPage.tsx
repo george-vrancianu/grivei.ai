@@ -120,7 +120,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           <MainTotal
             total={search.total}
             sources={state.data.sources}
-            copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough }}
+            copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }}
             locale={locale}
             methodologyHref={methodologyHref(locale, "awardedValue")}
             suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
