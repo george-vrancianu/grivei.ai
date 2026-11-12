@@ -80,6 +80,18 @@ describe("ResultTabs", () => {
     expect(card.compareDocumentPosition(screen.getByRole("tablist")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("opens the Go to page entity in the role its SEAP roles name, not the role of the rows shown", () => {
+    const { key, displayName, identity } = resultSamples.goTo.goTo!;
+    const authorityOnly = { key: "name-not-in-rows", displayName, identity, seap: { roles: ["AUTHORITY" as const] } };
+    const { unmount } = renderInUi(<ResultTabs {...base({ ...resultSamples.goTo, goTo: authorityOnly })} />);
+    expect(within(screen.getByRole("region", { name: "Go to page" })).getByRole("link", { name: /Open the page/ })).toHaveAttribute("href", "/explore/authority/name-not-in-rows");
+    unmount();
+    // both roles: the supplier page ("who gets the money")
+    const both = { key, displayName, identity, seap: { roles: ["AUTHORITY" as const, "SUPPLIER" as const] } };
+    renderInUi(<ResultTabs {...base({ ...resultSamples.goTo, goTo: both })} />);
+    expect(within(screen.getByRole("region", { name: "Go to page" })).getByRole("link", { name: /Open the page/ })).toHaveAttribute("href", `/explore/supplier/${key}`);
+  });
+
   it("has no Go to page card when goTo is null", () => {
     renderInUi(<ResultTabs {...base(resultSamples.typical)} />);
     expect(screen.queryByRole("region", { name: "Go to page" })).toBeNull();

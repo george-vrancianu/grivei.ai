@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  DataThroughFieldsFragment, EntityRefFragment, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
+  DataThroughFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
   RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, TotalFieldsFragment,
 } from "@grivei/contract";
 
@@ -9,6 +9,8 @@ export type { RecordBadge };
 export type Total = TotalFieldsFragment;
 export type Bani = Total["awarded"];
 export type EntityRef = EntityRefFragment;
+/** `SeapSearch.goTo`: an entity reference with the SEAP roles it has, which say which page to open. */
+export type GoToEntity = NonNullable<MainScreenQuery["seap"]["search"]["goTo"]>;
 export type Party = PartyFieldsFragment;
 export type DataThrough = DataThroughFieldsFragment["dataThrough"][number];
 

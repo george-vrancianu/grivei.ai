@@ -7,7 +7,7 @@ query MainScreen($filter: RecordFilter!) {
       filter { qFolded authority { ...EntityRef } supplier { ...EntityRef } }
       total { ...TotalFields }
       map { ...MoneyMapFields }
-      goTo { ...EntityRef }
+      goTo { ...EntityRef seap { roles } }
       authorities(limit: 50) { ...EntityResultPageFields }
       suppliers(limit: 50) { ...EntityResultPageFields }
       records(limit: 50) { ...RecordResultFields }

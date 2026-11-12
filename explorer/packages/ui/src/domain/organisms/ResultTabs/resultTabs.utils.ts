@@ -1,4 +1,4 @@
-import type { EntityRef, EntityResultPage, EntityRole } from "../../types.ts";
+import type { EntityRole } from "../../types.ts";
 
 export type ResultTab = "authorities" | "suppliers" | "records";
 export const RESULT_TABS: readonly ResultTab[] = ["authorities", "suppliers", "records"];
@@ -9,12 +9,7 @@ export function toResultTab(value: string | null | undefined): ResultTab {
   return RESULT_TABS.find((tab) => tab === value) ?? DEFAULT_RESULT_TAB;
 }
 
-/**
- * Which role the "Go to page" entity is opened in. `goTo` carries no role, so it is read off the tabs: an entity
- * ranked among the suppliers opens as a supplier, else among the authorities as an authority, else as a supplier.
- */
-export function goToRole(goTo: EntityRef, pages: { suppliers: EntityResultPage; authorities: EntityResultPage }): EntityRole {
-  if (pages.suppliers.rows.some((row) => row.entity.key === goTo.key)) return "supplier";
-  if (pages.authorities.rows.some((row) => row.entity.key === goTo.key)) return "authority";
-  return "supplier";
+/** The role the "Go to page" entity is opened in: its supplier page when it ever won ("who gets the money"), else its authority page. */
+export function goToRole(roles: readonly ("AUTHORITY" | "SUPPLIER")[]): EntityRole {
+  return roles.includes("SUPPLIER") || !roles.includes("AUTHORITY") ? "supplier" : "authority";
 }

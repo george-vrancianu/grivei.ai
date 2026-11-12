@@ -8,7 +8,7 @@ import { ApproxCount } from "../../atoms/ApproxCount/index.ts";
 import { EntityResultRow, type EntityResultRowCopy } from "../../molecules/EntityResultRow/index.ts";
 import { GoToCard, type GoToCardCopy } from "../../molecules/GoToCard/index.ts";
 import { RecordResultRow, type RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
-import type { EntityRef, EntityResultPage, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
+import type { EntityRef, EntityResultPage, GoToEntity, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
 import { useResultTab } from "./hooks/useResultTab.ts";
 import { goToRole, RESULT_TABS, type ResultTab } from "./resultTabs.utils.ts";
 
@@ -30,7 +30,7 @@ export interface ResultTabsProps {
   suppliers: EntityResultPage;
   records: RecordResultPage;
   /** `SeapSearch.goTo`; the pinned card shows when set. */
-  goTo: EntityRef | null;
+  goTo: GoToEntity | null;
   /** The selected tab. Leave it out for an uncontrolled component that starts on Suppliers. */
   tab?: ResultTab;
   onTabChange?: (tab: ResultTab) => void;
@@ -62,7 +62,7 @@ export function ResultTabs(props: ResultTabsProps) {
 
   return (
     <Stack spacing={2}>
-      {goTo && <GoToCard entity={goTo} href={entityHref(goTo, goToRole(goTo, entityPages))} copy={copy.goTo} />}
+      {goTo && <GoToCard entity={goTo} href={entityHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
       <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label}>
         {RESULT_TABS.map((name) => (
           <Tab
