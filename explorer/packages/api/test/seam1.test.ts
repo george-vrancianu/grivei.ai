@@ -1,0 +1,168 @@
+/**
+ * Seam 1 (the main seam): raw archive fixture -> `pipeline rebuild` -> the app's persisted query through the API.
+ *
+ * Why it lives here and not in pytest: the assertions are about GraphQL responses, so the harness is the API's own
+ * (in-process `createApi`, the contract's `validateResponse`), and it drives the Python rebuild as a subprocess, exactly
+ * as an operator would. The Python side has no Node dependency.
+ *
+ * It starts ONE throwaway ParadeDB container (named `pp37-seam1-*`, 3 GB cap, removed at the end and on process exit)
+ * and rebuilds into two fresh databases inside it. Skipped, with the reason printed, when Docker or the pipeline's
+ * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
+ */
+import { execFileSync, spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import pg from "pg";
+import { parse } from "graphql";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
+import { loadSchema, validateResponse } from "@grivei/contract/node";
+import type { MainScreenQuery } from "@grivei/contract";
+import { createApi } from "../src/server.ts";
+import { postgresStore } from "../src/store.ts";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const watchdog = resolve(here, "../../../../watchdog");
+const fixtureArchive = join(watchdog, "tests/fixtures/archive");
+const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
+const image = process.env.PARADEDB_IMAGE ?? readImagePin();
+const container = `pp37-seam1-${process.pid}`;
+
+function readImagePin(): string {
+  // the single source of truth for the pin is the compose file
+  const compose = readFileSync(resolve(here, "../../../../compose.yaml"), "utf8");
+  const m = /image:\s*(paradedb\/paradedb:\S+)/.exec(compose);
+  if (!m?.[1]) throw new Error("no paradedb image pin in compose.yaml");
+  return m[1];
+}
+
+function skipReason(): string | null {
+  if (spawnSync("docker", ["info"], { stdio: "ignore" }).status !== 0) return "Docker is not available";
+  // run the interpreter (not existsSync): PIPELINE_PYTHON may be a bare command name such as `python`
+  if (spawnSync(python, ["-c", "import psycopg"], { stdio: "ignore" }).status !== 0) return `pipeline Python (${python}) is missing or lacks psycopg (set PIPELINE_PYTHON)`;
+  return null;
+}
+const reason = skipReason();
+// SEAM1_REQUIRED=1 (the CI seam-1 job): a skip is a failure, never a silent green.
+if (reason && process.env.SEAM1_REQUIRED) throw new Error(`seam 1 is required but cannot run: ${reason}`);
+if (reason) console.warn(`seam 1 skipped: ${reason}`);
+
+const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
+const schema = loadSchema();
+const EMPTY_FILTER = { filter: {} };
+
+describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL", () => {
+  let scratch = "";
+  let admin: pg.Pool;
+  let baseUrl = "";
+  const pools: pg.Pool[] = [];
+
+  const cleanup = () => {
+    spawnSync("docker", ["rm", "-f", "-v", container], { stdio: "ignore" });
+  };
+
+  beforeAll(async () => {
+    process.on("exit", cleanup); // also when the run is killed half way
+    scratch = mkdtempSync(join(here, "..", ".seam1-"));
+    cpSync(fixtureArchive, join(scratch, "archive"), { recursive: true }); // a rebuild may quarantine: never touch the checked-in archive
+    execFileSync("docker", [
+      "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
+      "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
+    ], { stdio: "pipe" });
+    const port = execFileSync("docker", ["port", container, "5432/tcp"]).toString().trim().split("\n")[0]!.split(":").pop();
+    baseUrl = `postgresql://postgres:seam1@127.0.0.1:${port}`;
+    admin = new pg.Pool({ connectionString: `${baseUrl}/postgres`, max: 1 });
+    await waitForPostgres(admin);
+    await admin.query("CREATE DATABASE rebuild_a");
+    await admin.query("CREATE DATABASE rebuild_b");
+  });
+
+  afterAll(async () => {
+    await Promise.all(pools.map((p) => p.end().catch(() => undefined)));
+    await admin?.end().catch(() => undefined);
+    cleanup();
+    if (scratch) rmSync(scratch, { recursive: true, force: true });
+  });
+
+  const rebuild = (db: string) => {
+    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, "archive"), "rebuild", "--db", `${baseUrl}/${db}`], {
+      cwd: watchdog, encoding: "utf8",
+    });
+    if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
+    return r.stdout;
+  };
+
+  const ask = async (db: string, id: string, variables: unknown = EMPTY_FILTER) => {
+    const pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
+    pools.push(pool);
+    return createApi(postgresStore(pool), schema).respond({ id, variables });
+  };
+
+  it("shows the fixture's Total and Records, valid for the contract", async () => {
+    const out = rebuild("rebuild_a");
+    expect(out).toContain("loaded 4 records from 1 file(s)");
+    expect(out).toContain("quarantined:"); // the 2022 Q2 file has the wrong headers
+
+    const r = await ask("rebuild_a", mainScreen.sha256);
+    expect(r.status).toBe(200);
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY_FILTER)).toEqual([]);
+
+    const data = r.body.data as MainScreenQuery;
+    expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] }]);
+    expect(data.seap.search.total).toEqual({
+      awarded: "1995075", // 120050 + 300000 + 1575025 bani; the blank-valued Record adds nothing
+      records: 4,
+      suspectLeftOut: 0,
+      noValue: 1,
+      frameworkCeilings: "0",
+      estimated: false,
+    });
+    const { count, rows } = data.seap.search.records;
+    expect(count).toBe(4);
+    expect(rows.map((x) => x.record.code)).toEqual(["DA90000004", "DA90000002", "DA90000001", "DA90000003"]); // by value, then code
+    expect(rows[0]!.record).toEqual({
+      code: "DA90000004", title: "Lucrări de întreținere drumuri", date: "2022-03-31", kind: "DA",
+      channel: "DIRECT_PURCHASE", procedure: null, value: "1575025", counted: "1575025", badges: [],
+      authority: { key: "1000001", displayName: "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)", identity: "CUI" },
+      winners: [{ naturalPerson: false, publishedName: "DRUMURI DEMO S.A.", share: null, entity: { key: "2000002", displayName: "DRUMURI DEMO S.A.", identity: "CUI" } }],
+      signals: [],
+    });
+    expect(rows[3]!.record).toMatchObject({ code: "DA90000003", value: null, counted: null, badges: ["NO_VALUE"] });
+    // nothing from the quarantined file (DA90000005) or from the unit whose manifest was never written (DA90000009)
+    expect(JSON.stringify(data)).not.toMatch(/DA90000005|DA90000009/);
+  });
+
+  it("gives identical responses after a second rebuild into a fresh database (ADR 0004)", async () => {
+    rebuild("rebuild_b"); // same archive, now with the failing unit already in quarantine
+    const a = await ask("rebuild_a", mainScreen.sha256);
+    const b = await ask("rebuild_b", mainScreen.sha256);
+    expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+    rebuild("rebuild_a"); // and a rebuild over the same database
+    expect(JSON.stringify(await ask("rebuild_a", mainScreen.sha256))).toBe(JSON.stringify(a));
+  });
+
+  it("refuses a query that is not on the allowlist, even against loaded data", async () => {
+    const pool = new pg.Pool({ connectionString: `${baseUrl}/rebuild_a`, max: 1 });
+    pools.push(pool);
+    const api = createApi(postgresStore(pool), schema);
+    const text = await api.respond({ query: "{ seap { search(filter: {}) { total { awarded } } } }" });
+    expect(text.status).toBe(400);
+    expect(text.body.data).toBeUndefined();
+    expect((await api.respond({ id: "f".repeat(64), variables: EMPTY_FILTER })).status).toBe(400);
+  });
+});
+
+async function waitForPostgres(pool: pg.Pool): Promise<void> {
+  const deadline = Date.now() + 90_000;
+  for (;;) {
+    try {
+      await pool.query("SELECT 1");
+      return;
+    } catch (e) {
+      if (Date.now() > deadline) throw new Error("Postgres did not come up", { cause: e });
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+}

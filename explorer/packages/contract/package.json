@@ -9,7 +9,8 @@
     "./fixtures": "./src/fixtures/index.ts",
     "./schema-types": "./src/generated/schema.ts",
     "./schema.graphql": "./schema/schema.graphql",
-    "./persisted-queries.json": "./generated/persisted-queries.json"
+    "./persisted-queries.json": "./generated/persisted-queries.json",
+    "./node": "./src/node.ts"
   },
   "scripts": {
     "codegen": "graphql-codegen --config codegen.ts && node scripts/build-allowlist.ts",

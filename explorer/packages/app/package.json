@@ -1,0 +1,33 @@
+{
+  "name": "@grivei/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The explorer's React app, served at /explore/ and /ro/explore/. Components come only from @grivei/ui.",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --pool=forks --maxWorkers=4",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@grivei/contract": "*",
+    "@grivei/ui": "*",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "^10.6.7",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.9",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "jsdom": "^31.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
