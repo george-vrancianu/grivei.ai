@@ -5,6 +5,7 @@ import type { BadgeCopy } from "../atoms/BadgeChip/index.ts";
 import type { EntityLinkCopy } from "../atoms/EntityLink/index.ts";
 import type { DataThroughDateCopy } from "../atoms/DataThroughDate/index.ts";
 import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
+import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
@@ -52,6 +53,22 @@ export const sampleCopy = {
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
+  baseMap: (locale: Locale): BaseMapCopy =>
+    locale === "ro"
+      ? {
+          mapLabel: "Harta județelor",
+          legendTitle: "Valoare contractată",
+          noData: "Fără date",
+          areaLabel: (name, value) => `${name}: ${value}`,
+          atMost: (value) => `până la ${value}`,
+        }
+      : {
+          mapLabel: "Map of counties",
+          legendTitle: "Contracted value",
+          noData: "No data",
+          areaLabel: (name, value) => `${name}: ${value}`,
+          atMost: (value) => `up to ${value}`,
+        },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {
