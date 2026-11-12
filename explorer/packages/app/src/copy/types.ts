@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -32,6 +32,8 @@ export interface Copy {
   mainScreenLayout: MainScreenLayoutCopy;
   /** The Money lens map on the main screen: legend, side toggle, off-map tiles. */
   moneyLensMap: MoneyLensMapCopy;
+  /** The Coverage lens map (#51), wired by #90: status words, the N of M sentence, the Source marks; its off-map tiles carry the same wording as the Money lens's (kept as separate keys so the two can diverge). */
+  coverageLensMap: CoverageLensMapCopy;
   /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
   zoomedCounty: ZoomedCountySectionCopy;
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */

@@ -28,6 +28,30 @@
               "date": "2024-03-20"
             }
           ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
         }
       ],
       "seap": {
@@ -1001,6 +1025,30 @@
               "date": "2024-03-20"
             }
           ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
         }
       ],
       "seap": {

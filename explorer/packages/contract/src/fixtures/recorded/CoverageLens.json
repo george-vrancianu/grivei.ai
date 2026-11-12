@@ -1,0 +1,2263 @@
+[
+  {
+    "name": "open-window",
+    "kind": "typical",
+    "description": "no date chip: the whole harvest; PARTIAL because the 2022 Q2 DA file is quarantined; N of M and the other authorities over every Record, 3 unplaced authorities; SEAP harvested through per kind, four planned Sources",
+    "variables": {},
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": null,
+          "to": null
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "PARTIAL",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "PARTIAL",
+            "withRecords": 4,
+            "publicEntities": 6,
+            "otherAuthorities": 3
+          },
+          {
+            "county": "RO-BZ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "PARTIAL",
+            "withRecords": 3,
+            "publicEntities": 4,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-CL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "PARTIAL",
+            "withRecords": 2,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 3,
+          "total": {
+            "awarded": "9740625",
+            "records": 90,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "from-2023",
+    "kind": "typical",
+    "description": "a date chip with only its start (the From year select set first): the window is open-ended",
+    "variables": {
+      "window": {
+        "from": "2023-01-01"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": "2023-01-01",
+          "to": null
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 4,
+            "publicEntities": 6,
+            "otherAuthorities": 3
+          },
+          {
+            "county": "RO-BZ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 3,
+            "publicEntities": 4,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-CL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 2,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 2,
+          "total": {
+            "awarded": "1460000",
+            "records": 7,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "year-2023",
+    "kind": "typical",
+    "description": "the 2023 year chip: past the quarantined quarter, so harvested with known gaps (hand-entered 2023 Q1 gaps); the unplaced tally falls to the authorities with Records dated 2023",
+    "variables": {
+      "window": {
+        "from": "2023-01-01",
+        "to": "2023-12-31"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": "2023-01-01",
+          "to": "2023-12-31"
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 4,
+            "publicEntities": 6,
+            "otherAuthorities": 3
+          },
+          {
+            "county": "RO-BZ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 3,
+            "publicEntities": 4,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-CL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 2,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 1,
+          "total": {
+            "awarded": "100000",
+            "records": 1,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "year-2022",
+    "kind": "typical",
+    "description": "the 2022 year chip: reaches the quarantined 2022 Q2 DA file, so PARTIAL, and no placed authority has a Record dated 2022 (N is 0, M is the list's)",
+    "variables": {
+      "window": {
+        "from": "2022-01-01",
+        "to": "2022-12-31"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": "2022-01-01",
+          "to": "2022-12-31"
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 6,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BZ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 4,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 1,
+          "total": {
+            "awarded": "131575",
+            "records": 3,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "narrow-days",
+    "kind": "typical",
+    "description": "six days inside the loaded 2023 quarter: the status is the quarter's, N and the other authorities fall to the Records dated in the window, M stays the list's",
+    "variables": {
+      "window": {
+        "from": "2023-03-11",
+        "to": "2023-03-16"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": "2023-03-11",
+          "to": "2023-03-16"
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 6,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-BZ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 2,
+            "publicEntities": 4,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 0,
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "before-harvest",
+    "kind": "empty",
+    "description": "a window that ends before the grid starts: every county NOT_HARVESTED, N 0, no unplaced authorities; M is still the list's",
+    "variables": {
+      "window": {
+        "to": "2020-12-31"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": null,
+          "to": "2020-12-31"
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 6,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BZ",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 4,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "NOT_HARVESTED",
+            "withRecords": 0,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 0,
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        }
+      }
+    }
+  }
+]

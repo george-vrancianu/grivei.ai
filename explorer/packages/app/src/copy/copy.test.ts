@@ -93,3 +93,17 @@ describe.each(["en", "ro"] as const)("value bucket labels (%s)", (locale) => {
     });
   });
 });
+
+describe.each(["en", "ro"] as const)("the Coverage copy (%s, #90)", (locale) => {
+  const { grid, rules } = catalogue[locale].coverage;
+  const lens = catalogue[locale].coverageLensMap;
+  it("has words for every gap state and every gap rule, for NOT_YET_LOADED with and without AWAITING_BULK_FILE, and for every coverage status", () => {
+    expect(Object.keys(grid.states).sort()).toEqual(["CRAWLED_PROVISIONAL", "KNOWN_GAP", "LOADED", "NOT_IN_SOURCE", "NOT_YET_LOADED", "POSSIBLY_INCOMPLETE"]);
+    expect(Object.keys(grid.rules).sort()).toEqual(["AWAITING_BULK_FILE", "COUNT_BELOW_NEIGHBOURS", "HAND_ENTERED", "NO_PRIOR_CALL_BEFORE_BACKFILL"]);
+    expect(Object.keys(rules.names).sort()).toEqual(Object.keys(grid.rules).sort());
+    expect(Object.keys(lens.status).sort()).toEqual(["HARVESTED", "HARVESTED_WITH_KNOWN_GAPS", "NOT_HARVESTED", "PARTIAL"]);
+    for (const text of [...Object.values(grid.states), ...Object.values(grid.rules), ...Object.values(rules.names), ...Object.values(lens.status), grid.notYetLoaded, lens.noStatus]) expect(text.trim()).not.toBe("");
+    // a quarantined file and a file still to come both read as "not yet loaded"; the rule's own wording only explains the second
+    expect(grid.notYetLoaded).not.toBe(grid.rules.AWAITING_BULK_FILE);
+  });
+});

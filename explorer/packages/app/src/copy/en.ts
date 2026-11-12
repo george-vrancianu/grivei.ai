@@ -124,6 +124,38 @@ export const en: Copy = {
       suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
     },
   },
+  coverageLensMap: {
+    map: { mapLabel: "Coverage map by county", legendTitle: "Coverage", noData: "No data", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },
+    status: {
+      HARVESTED: "Harvested",
+      HARVESTED_WITH_KNOWN_GAPS: "Harvested, with known gaps",
+      PARTIAL: "Partial",
+      NOT_HARVESTED: "Not harvested",
+    },
+    noStatus: "No coverage status",
+    marks: {
+      title: "One mark per Source",
+      harvested: (source) => `${source}: coloured by the county's status`,
+      notHarvested: (source) => `${source}: not harvested`,
+      plannedLegend: (sources) => `Not harvested yet: ${sources}`,
+    },
+    tooltip: {
+      summary: (p) => {
+        const entities = `${p.withRecordsText} of ${p.publicEntitiesText} public ${plural(p.publicEntities, "entity", "entities")} ${p.withRecords === 1 ? "has" : "have"} ${p.source} records since ${p.since}`;
+        const k = p.otherAuthorities;
+        return k > 0 ? `${entities}, plus ${p.otherAuthoritiesText} other contracting ${plural(k, "authority", "authorities")}` : entities;
+      },
+      boughtNothingNote: "An entity without records may simply have bought nothing.",
+    },
+    tiles: {
+      heading: "Off the map",
+      national: "National",
+      unplaced: "Unplaced authorities",
+      unplacedAuthorities: (n, f) => `${f} ${plural(n, "authority without a county", "authorities without a county")}`,
+      records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
+    },
+  },
   zoomedCounty: {
     map: {
       map: { mapLabel: "Map of the county's UATs", legendTitle: "Awarded value", noData: "No authority bought anything", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },

@@ -22,31 +22,16 @@ const counties = [
 
 const unplaced = { authorities: 17, total: total({ awarded: ron(12_000_000), records: 130 }) };
 
-export const coverageLens: FixtureSet<CoverageLensQuery, CoverageLensQueryVariables> = [
+// The Coverage operations' answers are recorded from seam 1 (`recorded/CoverageLens.json`, `CoveragePage.json`, ticket #90). These hand sets stay
+// for what a recorded run cannot produce: one county in every status at once (the API's status is uniform across counties), HARVESTED and
+// NOT_HARVESTED beside each other (a window before the harvest is recorded: `before-harvest`), a grid in every gap state with a hand-written Romanian note and the window echoed, 16 x 4 cells cycling through
+// every state, and an empty grid (the page's `empty-window`: no grid cells, no snapshot).
+export const coverageLensHand: FixtureSet<CoverageLensQuery, CoverageLensQueryVariables> = [
   {
     name: "typical-every-status", kind: "typical",
     description: "one county in each coverage status plus National; later Sources not harvested; the Unplaced authorities' tally",
     variables: { window: { from: "2021-01-01", to: "2024-12-31" } },
     data: { sources, coverage: { window: { from: "2021-01-01", to: "2024-12-31" }, counties, unplacedAuthorities: unplaced } },
-  },
-  {
-    name: "empty-nothing-harvested-in-window", kind: "empty",
-    description: "a window before the harvest: every county not harvested, no unplaced authorities, no date bounds echoed",
-    variables: { window: { from: "2019-01-01", to: "2019-12-31" } },
-    data: {
-      sources,
-      coverage: {
-        window: { from: "2019-01-01", to: "2019-12-31" },
-        counties: counties.map((c) => ({ ...c, status: "NOT_HARVESTED" as const, withRecords: 0, otherAuthorities: 0 })),
-        unplacedAuthorities: { authorities: 0, total: zeroTotal },
-      },
-    },
-  },
-  {
-    name: "open-window", kind: "typical",
-    description: "no date chip: the window comes back open-ended",
-    variables: {},
-    data: { sources, coverage: { window: { from: null, to: null }, counties, unplacedAuthorities: unplaced } },
   },
 ];
 
@@ -56,7 +41,7 @@ const cell = (quarter: string, kind: string, state: GapState, records: number, o
   quarter, kind, state, rule: null, note: null, records, dataThrough: null, ...o,
 });
 
-export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariables> = [
+export const coveragePageHand: FixtureSet<CoveragePageQuery, CoveragePageQueryVariables> = [
   {
     name: "typical-every-gap-state", kind: "typical",
     description: "a quarter x kind grid showing every gap state, with a published rule (and, for the hand-entered gap, the gap file's own note), the current quarter crawled-provisional (direct purchases: not yet loaded, awaiting the bulk file; a quarantined file shows the same state with no rule) and the 2021-22 no-prior-call contracts not in the source",
@@ -75,35 +60,6 @@ export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariab
           cell("2024-Q4", "DA", "NOT_YET_LOADED", 0, { rule: "AWAITING_BULK_FILE" }),
           cell("2024-Q4", "AWARD_NOTICE", "CRAWLED_PROVISIONAL", 2_900, { dataThrough: "2024-11-30" }),
         ],
-        unplacedAuthorities: unplaced,
-        referenceSnapshot: "2024-09-15",
-      },
-    },
-  },
-  {
-    name: "typical-open-window", kind: "typical",
-    description: "no date chip: every quarter of the harvest for the four SEAP kinds; the 2021-22 award notices not in the source, a hand-entered 2023-Q2 DAN gap with its note, a quarantined 2023-Q3 DA file (not yet loaded, no reason), 2024-Q3 CONTRACT possibly incomplete, and the current quarter 2024-Q4 crawled provisional (DA and DAN awaiting the bulk file)",
-    variables: {},
-    data: {
-      sources,
-      coverage: {
-        window: { from: null, to: null },
-        counties,
-        grid: Array.from({ length: 16 }, (_, q) => `${2021 + Math.floor(q / 4)}-Q${(q % 4) + 1}`).flatMap((quarter) =>
-          ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].map((kind): Cell => {
-            const base = { DA: 41_000, DAN: 9_200, CONTRACT: 17_500, AWARD_NOTICE: 6_400 }[kind]!;
-            if (quarter === "2024-Q4") {
-              if (kind === "CONTRACT") return cell(quarter, kind, "CRAWLED_PROVISIONAL", 4_100, { rule: "AWAITING_BULK_FILE", dataThrough: "2024-11-30" });
-              if (kind === "AWARD_NOTICE") return cell(quarter, kind, "CRAWLED_PROVISIONAL", 2_900, { rule: "AWAITING_BULK_FILE", dataThrough: "2024-11-30" });
-              return cell(quarter, kind, "NOT_YET_LOADED", 0, { rule: "AWAITING_BULK_FILE" });
-            }
-            if (kind === "AWARD_NOTICE" && quarter < "2023") return cell(quarter, kind, "NOT_IN_SOURCE", 0, { rule: "NO_PRIOR_CALL_BEFORE_BACKFILL" });
-            if (quarter === "2023-Q2" && kind === "DAN") return cell(quarter, kind, "KNOWN_GAP", 0, { rule: "HAND_ENTERED", note: "Exportul ADR pentru acest trimestru a fost republicat fără notificările de achiziții directe" });
-            if (quarter === "2024-Q3" && kind === "CONTRACT") return cell(quarter, kind, "POSSIBLY_INCOMPLETE", 6_900, { rule: "COUNT_BELOW_NEIGHBOURS", dataThrough: "2024-09-30" });
-            if (quarter === "2023-Q3" && kind === "DA") return cell(quarter, kind, "NOT_YET_LOADED", 0);
-            return cell(quarter, kind, "LOADED", base, { dataThrough: `${quarter.slice(0, 4)}-${({ Q1: "03-31", Q2: "06-30", Q3: "09-30", Q4: "12-31" } as const)[quarter.slice(5) as "Q1"]}` });
-          }),
-        ),
         unplacedAuthorities: unplaced,
         referenceSnapshot: "2024-09-15",
       },
