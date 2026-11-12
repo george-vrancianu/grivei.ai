@@ -1,0 +1,1049 @@
+[
+  {
+    "name": "over-cap-single-record-signal",
+    "kind": "typical",
+    "description": "a Record that is the only one of its over-cap Signal: the card's Check-in-SEAP link points at this Record",
+    "variables": {
+      "code": "DA98000009"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA98000009",
+          "title": "Achizitie DA98000009",
+          "date": "2023-02-02",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "95000000",
+          "counted": "95000000",
+          "authority": {
+            "key": "1000009",
+            "displayName": "COMUNA EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "45233140-2",
+            "description": "Cod 45233140-2"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA98000009",
+            "via": "Achizitii directe t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-15T09:00:00Z"
+          },
+          "framework": null,
+          "signals": [
+            {
+              "rule": "OVER_CAP",
+              "date": "2023-02-02",
+              "firstDate": "2023-02-02",
+              "recordCount": 1,
+              "dataThrough": "2024-03-20",
+              "authority": {
+                "key": "1000009",
+                "displayName": "COMUNA EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "OverCapNumbers",
+                "value": "95000000",
+                "cap": "90040000",
+                "multiple": 1.055087
+              },
+              "reproduce": {
+                "authority": "1000009",
+                "supplier": null,
+                "signal": "OVER_CAP",
+                "cpv": null,
+                "from": "2023-02-02",
+                "to": "2023-02-02"
+              },
+              "records": [
+                {
+                  "code": "DA98000009",
+                  "title": "Achizitie DA98000009",
+                  "date": "2023-02-02",
+                  "value": "95000000",
+                  "counted": "95000000",
+                  "badges": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-overrun-ceiling",
+    "kind": "typical",
+    "description": "the ceiling Record of a framework whose subsequent contracts add up to 125%: the framework-overrun Signal with its four Records (the ceiling and the first three subsequent contracts)",
+    "variables": {
+      "code": "CAN9700001~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9700001~1",
+          "title": "Contract CAN9700001 1",
+          "date": "2023-01-10",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "100000000",
+          "counted": null,
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9700001~1",
+            "via": "Contracte t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "100000000",
+            "subsequentReported": "125000000",
+            "ratio": 1.25,
+            "agreement": null,
+            "subsequent": [
+              {
+                "code": "CAN9700001~2",
+                "title": "Contract CAN9700001 2",
+                "date": "2023-02-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~3",
+                "title": "Contract CAN9700001 3",
+                "date": "2023-02-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "40000000",
+                "counted": "40000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~4",
+                "title": "Contract CAN9700001 4",
+                "date": "2023-03-05",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "20000000",
+                "counted": "20000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~5",
+                "title": "Contract CAN9700001 5",
+                "date": "2023-03-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": [
+            {
+              "rule": "FRAMEWORK_OVERRUN",
+              "date": "2023-03-05",
+              "firstDate": "2023-01-10",
+              "recordCount": 4,
+              "dataThrough": "2023-03-20",
+              "authority": {
+                "key": "1000017",
+                "displayName": "SPITALUL EXEMPLU",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "FrameworkOverrunNumbers",
+                "ceiling": "100000000",
+                "subsequent": "125000000",
+                "ratio": 1.25
+              },
+              "reproduce": {
+                "authority": "1000017",
+                "supplier": "2000007",
+                "signal": "FRAMEWORK_OVERRUN",
+                "cpv": null,
+                "from": "2023-01-10",
+                "to": "2023-03-05"
+              },
+              "records": [
+                {
+                  "code": "CAN9700001~4",
+                  "title": "Contract CAN9700001 4",
+                  "date": "2023-03-05",
+                  "value": "20000000",
+                  "counted": "20000000",
+                  "badges": [
+                    "SUBSEQUENT_CONTRACT"
+                  ]
+                },
+                {
+                  "code": "CAN9700001~3",
+                  "title": "Contract CAN9700001 3",
+                  "date": "2023-02-15",
+                  "value": "40000000",
+                  "counted": "40000000",
+                  "badges": [
+                    "SUBSEQUENT_CONTRACT"
+                  ]
+                },
+                {
+                  "code": "CAN9700001~2",
+                  "title": "Contract CAN9700001 2",
+                  "date": "2023-02-01",
+                  "value": "60000000",
+                  "counted": "60000000",
+                  "badges": [
+                    "SUBSEQUENT_CONTRACT"
+                  ]
+                },
+                {
+                  "code": "CAN9700001~1",
+                  "title": "Contract CAN9700001 1",
+                  "date": "2023-01-10",
+                  "value": "100000000",
+                  "counted": null,
+                  "badges": [
+                    "FRAMEWORK_CEILING"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-overrun-subsequent-after-crossing",
+    "kind": "typical",
+    "description": "the subsequent contract reported after the crossing: in the framework's total and ratio, not a Record of the Signal, so it lists none",
+    "variables": {
+      "code": "CAN9700001~5"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9700001~5",
+          "title": "Contract CAN9700001 5",
+          "date": "2023-03-20",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "5000000",
+          "counted": "5000000",
+          "authority": {
+            "key": "1000017",
+            "displayName": "SPITALUL EXEMPLU",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "SUBSEQUENT_CONTRACT"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9700001~5",
+            "via": "Contracte t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "100000000",
+            "subsequentReported": "125000000",
+            "ratio": 1.25,
+            "agreement": {
+              "code": "CAN9700001~1",
+              "title": "Contract CAN9700001 1"
+            },
+            "subsequent": [
+              {
+                "code": "CAN9700001~2",
+                "title": "Contract CAN9700001 2",
+                "date": "2023-02-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~3",
+                "title": "Contract CAN9700001 3",
+                "date": "2023-02-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "40000000",
+                "counted": "40000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~4",
+                "title": "Contract CAN9700001 4",
+                "date": "2023-03-05",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "20000000",
+                "counted": "20000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-03-05",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "125000000",
+                      "ratio": 1.25
+                    },
+                    "reproduce": {
+                      "authority": "1000017",
+                      "supplier": "2000007",
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-10",
+                      "to": "2023-03-05"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700001~5",
+                "title": "Contract CAN9700001 5",
+                "date": "2023-03-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-overrun-consortium",
+    "kind": "typical",
+    "description": "a framework ceiling won by a consortium of three, in an overrun Signal that names all three suppliers",
+    "variables": {
+      "code": "CAN9700006~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9700006~1",
+          "title": "Contract CAN9700006 1",
+          "date": "2023-01-05",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "60000000",
+          "counted": null,
+          "authority": {
+            "key": "2000031",
+            "displayName": "CNAIR DEMO SA",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9700006~1",
+            "via": "Contracte t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "100000000",
+            "subsequentReported": "120000000",
+            "ratio": 1.2,
+            "agreement": null,
+            "subsequent": [
+              {
+                "code": "CAN9700006~3",
+                "title": "Contract CAN9700006 3",
+                "date": "2023-02-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "70000000",
+                "counted": "70000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-02-20",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "120000000",
+                      "ratio": 1.2
+                    },
+                    "reproduce": {
+                      "authority": "2000031",
+                      "supplier": null,
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-05",
+                      "to": "2023-02-20"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700006~4",
+                "title": "Contract CAN9700006 4",
+                "date": "2023-02-20",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "50000000",
+                "counted": "50000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FRAMEWORK_OVERRUN",
+                    "date": "2023-02-20",
+                    "numbers": {
+                      "__typename": "FrameworkOverrunNumbers",
+                      "ceiling": "100000000",
+                      "subsequent": "120000000",
+                      "ratio": 1.2
+                    },
+                    "reproduce": {
+                      "authority": "2000031",
+                      "supplier": null,
+                      "signal": "FRAMEWORK_OVERRUN",
+                      "cpv": null,
+                      "from": "2023-01-05",
+                      "to": "2023-02-20"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "signals": [
+            {
+              "rule": "FRAMEWORK_OVERRUN",
+              "date": "2023-02-20",
+              "firstDate": "2023-01-05",
+              "recordCount": 4,
+              "dataThrough": "2023-03-20",
+              "authority": {
+                "key": "2000031",
+                "displayName": "CNAIR DEMO SA",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI"
+                },
+                {
+                  "key": "2000015",
+                  "displayName": "BETA DEMO SRL",
+                  "identity": "CUI"
+                },
+                {
+                  "key": "2000023",
+                  "displayName": "GAMMA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "FrameworkOverrunNumbers",
+                "ceiling": "100000000",
+                "subsequent": "120000000",
+                "ratio": 1.2
+              },
+              "reproduce": {
+                "authority": "2000031",
+                "supplier": null,
+                "signal": "FRAMEWORK_OVERRUN",
+                "cpv": null,
+                "from": "2023-01-05",
+                "to": "2023-02-20"
+              },
+              "records": [
+                {
+                  "code": "CAN9700006~4",
+                  "title": "Contract CAN9700006 4",
+                  "date": "2023-02-20",
+                  "value": "50000000",
+                  "counted": "50000000",
+                  "badges": [
+                    "SUBSEQUENT_CONTRACT"
+                  ]
+                },
+                {
+                  "code": "CAN9700006~3",
+                  "title": "Contract CAN9700006 3",
+                  "date": "2023-02-01",
+                  "value": "70000000",
+                  "counted": "70000000",
+                  "badges": [
+                    "SUBSEQUENT_CONTRACT"
+                  ]
+                },
+                {
+                  "code": "CAN9700006~2",
+                  "title": "Contract CAN9700006 2",
+                  "date": "2023-01-08",
+                  "value": "40000000",
+                  "counted": null,
+                  "badges": [
+                    "FRAMEWORK_CEILING"
+                  ]
+                },
+                {
+                  "code": "CAN9700006~1",
+                  "title": "Contract CAN9700006 1",
+                  "date": "2023-01-05",
+                  "value": "60000000",
+                  "counted": null,
+                  "badges": [
+                    "FRAMEWORK_CEILING"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "framework-overrun-single-record",
+    "kind": "typical",
+    "description": "a Signal of one Record (a ceiling and nothing else is a member): Check in SEAP links this Record",
+    "variables": {
+      "code": "CAN9700009~1"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "CAN9700009~1",
+          "title": "Contract CAN9700009 1",
+          "date": "2023-01-03",
+          "kind": "CONTRACT",
+          "channel": "CONTRACT",
+          "procedure": "Licitatie deschisa",
+          "contractType": null,
+          "value": "100000000",
+          "counted": null,
+          "authority": {
+            "key": "2000031",
+            "displayName": "CNAIR DEMO SA",
+            "identity": "CUI"
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "ALFA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ALFA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": null,
+          "badges": [
+            "FRAMEWORK_CEILING"
+          ],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/CAN9700009~1",
+            "via": "Contracte t1-2023",
+            "kind": "BULK",
+            "fetchedAt": "2023-06-20T09:00:00Z"
+          },
+          "framework": {
+            "ceiling": "100000000",
+            "subsequentReported": "120000000",
+            "ratio": 1.2,
+            "agreement": null,
+            "subsequent": [
+              {
+                "code": "CAN9700009~2",
+                "title": "Contract CAN9700009 2",
+                "date": "2023-03-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "120000000",
+                "counted": "120000000",
+                "badges": [
+                  "SUBSEQUENT_CONTRACT"
+                ],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ]
+          },
+          "signals": [
+            {
+              "rule": "FRAMEWORK_OVERRUN",
+              "date": "2023-01-03",
+              "firstDate": "2023-01-03",
+              "recordCount": 1,
+              "dataThrough": "2023-03-20",
+              "authority": {
+                "key": "2000031",
+                "displayName": "CNAIR DEMO SA",
+                "identity": "CUI"
+              },
+              "suppliers": [
+                {
+                  "key": "2000007",
+                  "displayName": "ALFA DEMO SRL",
+                  "identity": "CUI"
+                }
+              ],
+              "numbers": {
+                "__typename": "FrameworkOverrunNumbers",
+                "ceiling": "100000000",
+                "subsequent": "120000000",
+                "ratio": 1.2
+              },
+              "reproduce": {
+                "authority": "2000031",
+                "supplier": "2000007",
+                "signal": "FRAMEWORK_OVERRUN",
+                "cpv": null,
+                "from": "2023-01-03",
+                "to": "2023-01-03"
+              },
+              "records": [
+                {
+                  "code": "CAN9700009~1",
+                  "title": "Contract CAN9700009 1",
+                  "date": "2023-01-03",
+                  "value": "100000000",
+                  "counted": null,
+                  "badges": [
+                    "FRAMEWORK_CEILING"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

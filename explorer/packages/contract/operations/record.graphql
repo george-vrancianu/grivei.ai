@@ -1,0 +1,33 @@
+# /explore/record/CAN1166685
+query RecordPage($code: ID!) {
+  seap {
+    record(code: $code) {
+      code
+      title
+      date
+      kind
+      channel
+      procedure
+      contractType
+      value
+      counted
+      authority { ...EntityRef }
+      winners { ...PartyFields }
+      cpv { code description }
+      badges
+      suspect { rule threshold }
+      provenance { ...ProvenanceFields }
+      framework {
+        ceiling
+        subsequentReported
+        ratio
+        agreement { code title }
+        subsequent(limit: 50) { ...RecordRowFields }
+      }
+      signals {
+        ...SignalFields
+        records(limit: 50) { code title date value counted badges }
+      }
+    }
+  }
+}

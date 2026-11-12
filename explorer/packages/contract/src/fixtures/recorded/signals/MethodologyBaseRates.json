@@ -1,0 +1,112 @@
+[
+  {
+    "name": "signals-archive",
+    "kind": "typical",
+    "description": "over-cap and no-publication fire for authorities (2 of 3 and 1 of 3), splitting and framework-overrun for none",
+    "variables": {},
+    "data": {
+      "signalRules": [
+        {
+          "slug": "OVER_CAP",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0.6666666666666666,
+          "baseRateYear": 2023,
+          "dataThrough": "2024-03-20"
+        },
+        {
+          "slug": "SPLITTING",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2023,
+          "dataThrough": "2024-03-20"
+        },
+        {
+          "slug": "FRAMEWORK_OVERRUN",
+          "window": {
+            "from": "2023-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2023,
+          "dataThrough": "2024-02-01"
+        },
+        {
+          "slug": "NO_PUBLICATION",
+          "window": {
+            "from": "2021-01-01",
+            "to": null
+          },
+          "baseRate": 0.3333333333333333,
+          "baseRateYear": 2023,
+          "dataThrough": "2024-02-01"
+        }
+      ]
+    }
+  },
+  {
+    "name": "splitting-archive",
+    "kind": "typical",
+    "description": "splitting fires for 2 of 3 authorities with a direct purchase in 2023",
+    "variables": {},
+    "data": {
+      "signalRules": [
+        {
+          "slug": "OVER_CAP",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2022,
+          "dataThrough": "2023-09-10"
+        },
+        {
+          "slug": "SPLITTING",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2022,
+          "dataThrough": "2023-09-10"
+        }
+      ]
+    }
+  },
+  {
+    "name": "framework-overrun-archive",
+    "kind": "typical",
+    "description": "framework-overrun fires for 3 authorities; its window starts at the rule's 2021 floor (a 2020 Contracte file is loaded)",
+    "variables": {},
+    "data": {
+      "signalRules": [
+        {
+          "slug": "FRAMEWORK_OVERRUN",
+          "window": {
+            "from": "2021-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2023,
+          "dataThrough": "2023-03-20"
+        },
+        {
+          "slug": "NO_PUBLICATION",
+          "window": {
+            "from": "2020-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2020,
+          "dataThrough": "2023-03-20"
+        }
+      ]
+    }
+  }
+]

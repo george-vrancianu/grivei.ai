@@ -1,0 +1,126 @@
+# The explorer's runtime: one Compose project inside WSL2 (spec #37, #27).
+#
+#   docker compose up -d --build             db + api + web (Caddy) on http://localhost:8080
+#   docker compose run --rm pipeline refresh  the nightly run (crawl, data.gov.ro, ANAF, load; see deploy/README.md)
+#   docker compose run --rm pipeline rebuild  derive the database from the raw archive (one-shot, not part of `up`)
+#
+# Runbook, env vars and the volume layout: deploy/README.md.
+name: grivei
+
+services:
+  db:
+    # ParadeDB = Postgres + pg_search. The tag is pinned: an upgrade is a rebuild from the raw archive into a fresh
+    # volume beside the old one, never an in-place pg_upgrade (ADR 0004).
+    image: paradedb/paradedb:0.26.6-pg18
+    restart: unless-stopped
+    cpus: 8
+    mem_limit: 12g
+    shm_size: 1g
+    environment:
+      POSTGRES_USER: grivei
+      POSTGRES_PASSWORD: ${GRIVEI_DB_PASSWORD:-grivei}
+      POSTGRES_DB: grivei
+    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=4GB"]
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grivei -d grivei"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # not published: only the API and the pipeline reach it, over the compose network
+
+  # A major upgrade (ADR 0004): a second database on a new volume, built by `rebuild --in-place` against it and checked with `verify`,
+  # then DATABASE_URL is repointed (watchdog/README.md, "Major upgrade"). Not part of `up`: `docker compose --profile upgrade up -d db-next`.
+  db-next:
+    profiles: ["upgrade"]
+    image: ${GRIVEI_DB_NEXT_IMAGE:-paradedb/paradedb:0.26.6-pg18}  # a default, not `:?`: Compose interpolates inactive profiles too, and a required variable would break every command (keep it equal to `db`'s tag)
+    cpus: 8
+    mem_limit: 12g
+    shm_size: 1g
+    environment:
+      POSTGRES_USER: grivei
+      POSTGRES_PASSWORD: ${GRIVEI_DB_PASSWORD:-grivei}
+      POSTGRES_DB: grivei
+    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=4GB"]
+    volumes:
+      - pgdata-next:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grivei -d grivei"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 2g
+    environment:
+      DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
+      PORT: "4000"
+      SEAP_BASE_URL: ${SEAP_BASE_URL:-https://e-licitatie.ro}
+      SEAP_LINK_PUBLIC_BASE: ${SEAP_LINK_PUBLIC_BASE:-}
+      API_CACHE_MAX_MB: ${API_CACHE_MAX_MB:-300}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/healthz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # Caddy, with the landing page (site/) and the built explorer baked in.
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 2g
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # the county and UAT TopoJSON `pipeline rebuild` writes (PIPELINE_GEO_DIR below), served at /geo/ (#67)
+      - ${GRIVEI_GEO_DIR:-./geo}:/srv/geo:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # One-shot: `docker compose run --rm pipeline <verb>`. The profile keeps it out of `docker compose up`.
+  pipeline:
+    profiles: ["pipeline"]
+    build:
+      context: .
+      dockerfile: deploy/pipeline.Dockerfile
+    cpus: 2
+    mem_limit: 2g
+    # the archive is written as the host user, so its files stay yours (set GRIVEI_UID/GRIVEI_GID if yours is not 1000)
+    user: "${GRIVEI_UID:-1000}:${GRIVEI_GID:-1000}"
+    environment:
+      DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
+      PIPELINE_ARCHIVE: /archive
+      PIPELINE_GEO_DIR: /geo
+      PIPELINE_HEALTHCHECK_URL: ${GRIVEI_HEALTHCHECK_URL:-}  # healthchecks.io ping URL of `refresh`; empty = no pings
+      # backups (refresh step 5, #82): empty RESTIC_REPOSITORY = skipped with a warning. Password and backend credentials as restic reads them.
+      RESTIC_CACHE_DIR: /tmp/restic-cache
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}  # only this form reaches the container; for RESTIC_PASSWORD_FILE mount the file and set it in an override
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:-}
+    volumes:
+      - ${GRIVEI_ARCHIVE_DIR:-./archive}:/archive
+      - ${GRIVEI_GEO_DIR:-./geo}:/geo
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata-next:  # only used by the `upgrade` profile
+  # Postgres data: a named volume, which lives on the WSL ext4 disk (never /mnt/c).
+  pgdata:

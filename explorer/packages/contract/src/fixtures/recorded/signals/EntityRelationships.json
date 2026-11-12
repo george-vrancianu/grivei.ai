@@ -1,0 +1,474 @@
+[
+  {
+    "name": "authority-counterparties-with-signals",
+    "kind": "typical",
+    "description": "an authority's graph in 2023: the suppliers of its Records inside Signals carry a ring (hasSignals), the others none",
+    "variables": {
+      "key": "1000017",
+      "role": "AUTHORITY",
+      "filter": {
+        "from": "2023-01-01",
+        "to": "2023-12-31"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "1000017",
+        "displayName": "SPITALUL EXEMPLU",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "1000017",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL EXEMPLU",
+            "records": 15,
+            "first": "2021-04-02",
+            "last": "2026-03-29",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": null,
+            "kind": "BULK",
+            "fetchedAt": "2026-11-11T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "counterparties": {
+              "count": 4,
+              "topShare": 0.643302118,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ALFA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "384144000",
+                    "records": 7,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "354144000",
+                    "records": 5,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "30000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": true,
+                  "hasSignals": true
+                },
+                {
+                  "entity": null,
+                  "naturalPerson": true,
+                  "total": {
+                    "awarded": "100000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "40000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "60000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": false,
+                  "hasSignals": true
+                },
+                {
+                  "entity": {
+                    "key": "2000023",
+                    "displayName": "GAMMA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "60000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "50000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "10000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": false,
+                  "hasSignals": true
+                },
+                {
+                  "entity": {
+                    "key": "2000015",
+                    "displayName": "BETA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "53000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "28000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "25000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": true,
+                  "hasSignals": true
+                }
+              ]
+            },
+            "timeline": [
+              {
+                "month": "2023-01",
+                "total": {
+                  "awarded": "432144000",
+                  "records": 7,
+                  "suspectLeftOut": 1,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "month": "2023-02",
+                "total": {
+                  "awarded": "100000000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "month": "2023-03",
+                "total": {
+                  "awarded": "65000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "flow": {
+              "side": "SUPPLIER",
+              "counties": [
+                {
+                  "area": "RO-CJ",
+                  "name": "Cluj",
+                  "entities": 3,
+                  "total": {
+                    "awarded": "497144000",
+                    "records": 10,
+                    "suspectLeftOut": 1,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ],
+              "national": {
+                "awarded": "0",
+                "records": 0,
+                "suspectLeftOut": 0,
+                "noValue": 0,
+                "frameworkCeilings": "0",
+                "estimated": false
+              },
+              "unplaced": null,
+              "unknownSupplierCounty": {
+                "awarded": "100000000",
+                "records": 2,
+                "suspectLeftOut": 0,
+                "noValue": 0,
+                "frameworkCeilings": "0",
+                "estimated": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "supplier-counterparties-with-signals",
+    "kind": "typical",
+    "description": "a supplier's graph in 2023: the authorities whose Signals touch its Records carry a ring",
+    "variables": {
+      "key": "2000015",
+      "role": "SUPPLIER",
+      "filter": {
+        "from": "2023-01-01",
+        "to": "2023-12-31"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "2000015",
+        "displayName": "BETA DEMO SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000015",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "BETA DEMO SRL",
+            "records": 6,
+            "first": "2022-09-09",
+            "last": "2024-01-15",
+            "differsFromAnaf": false
+          },
+          {
+            "name": "AVOCATI DEMO",
+            "records": 1,
+            "first": "2026-03-29",
+            "last": "2026-03-29",
+            "differsFromAnaf": true
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.854838709,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "53000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "28000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "25000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": true,
+                  "hasSignals": true
+                },
+                {
+                  "entity": {
+                    "key": "2000031",
+                    "displayName": "CNAIR DEMO SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "9000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaDirectPurchase": {
+                    "awarded": "0",
+                    "records": 0,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "viaContract": {
+                    "awarded": "9000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  },
+                  "wonTogether": false,
+                  "hasSignals": false
+                }
+              ]
+            },
+            "timeline": [
+              {
+                "month": "2023-01",
+                "total": {
+                  "awarded": "28000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "month": "2023-02",
+                "total": {
+                  "awarded": "25000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "month": "2023-03",
+                "total": {
+                  "awarded": "9000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "flow": {
+              "side": "AUTHORITY",
+              "counties": [
+                {
+                  "area": "RO-CJ",
+                  "name": "Cluj",
+                  "entities": 1,
+                  "total": {
+                    "awarded": "9000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ],
+              "national": {
+                "awarded": "0",
+                "records": 0,
+                "suspectLeftOut": 0,
+                "noValue": 0,
+                "frameworkCeilings": "0",
+                "estimated": false
+              },
+              "unplaced": {
+                "authorities": 1,
+                "total": {
+                  "awarded": "53000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              "unknownSupplierCounty": null
+            }
+          }
+        }
+      }
+    }
+  }
+]

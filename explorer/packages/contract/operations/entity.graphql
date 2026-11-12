@@ -1,0 +1,82 @@
+# The entity pages. `role` is the role the page shows (the URL's /authority/ or /supplier/);
+# `filter` is the side panel's filter, so every tab's totals follow it.
+
+# /explore/<role>/<key>
+query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrder: SignalOrder, $signalOffset: Int) {
+  entity(key: $key) {
+    ...EntityHeaderFields
+    seap {
+      role(role: $role) {
+        role
+        total(filter: $filter) { ...TotalFields }
+        counterparties(filter: $filter, limit: 10) {
+          count
+          topShare
+          rows {
+            entity { ...EntityRef }
+            naturalPerson
+            total { ...TotalFields }
+          }
+        }
+        directPurchaseShare(filter: $filter)
+        procedures(filter: $filter) { value total { ...TotalFields } }
+        consortia(filter: $filter, limit: 10) {
+          members { ...PartyFields }
+          total { ...TotalFields }
+        }
+        frameworks(filter: $filter) { count ceilings subsequentReported }
+        largestRecords(filter: $filter, limit: 10) { ...RecordRowFields }
+        signals(filter: $filter, order: $signalOrder, limit: 20, offset: $signalOffset) {
+          count
+          # the first Record is only for the card's "Check in SEAP" link, which a Signal of one Record points at
+          rows { ...SignalFields records(limit: 1) { code provenance { url } } }
+        }
+      }
+    }
+  }
+}
+
+# /explore/<role>/<key>/records?signal=splitting&supplier=<key>&cpv=301&from=...&to=...
+query EntityRecords($key: ID!, $role: Role!, $filter: RecordFilter!, $limit: Int!, $offset: Int!, $order: RecordOrder) {
+  entity(key: $key) {
+    ...EntityHeaderFields
+    seap {
+      role(role: $role) {
+        role
+        records(filter: $filter) {
+          total { ...TotalFields }
+          facets { ...RecordFacetsFields }
+          records(limit: $limit, offset: $offset, order: $order) { ...RecordResultFields }
+        }
+      }
+    }
+  }
+}
+
+# /explore/<role>/<key>/relationships (radial graph, monthly timeline, Flow lens)
+# The picked counterparty's Records come from EntityRecords, with the counterparty in the filter.
+query EntityRelationships($key: ID!, $role: Role!, $filter: RecordFilter, $counterparty: ID) {
+  entity(key: $key) {
+    ...EntityHeaderFields
+    seap {
+      role(role: $role) {
+        role
+        counterparties(filter: $filter, limit: 30) {
+          count
+          topShare
+          rows {
+            entity { ...EntityRef }
+            naturalPerson
+            total { ...TotalFields }
+            viaDirectPurchase { ...TotalFields }
+            viaContract { ...TotalFields }
+            wonTogether
+            hasSignals
+          }
+        }
+        timeline(filter: $filter, counterparty: $counterparty) { month total { ...TotalFields } }
+        flow(filter: $filter) { ...MoneyMapFields }
+      }
+    }
+  }
+}

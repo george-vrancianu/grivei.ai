@@ -1,2 +1,6 @@
 # Windows "downloaded from the internet" markers (WSL)
 *:Zone.Identifier
+/archive/
+/geo/
+/.data/
+.env

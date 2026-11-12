@@ -1,0 +1,138 @@
+# Shared selections. Every operation is persisted whole (fragments inlined into
+# its document by scripts/build-allowlist.ts), so these cost nothing at runtime.
+
+fragment TotalFields on Total {
+  awarded
+  records
+  suspectLeftOut
+  noValue
+  frameworkCeilings
+  estimated
+}
+
+fragment EntityRef on Entity {
+  key
+  displayName
+  identity
+}
+
+# A row of a result tab: the entity, where it sits, and the status badge.
+fragment EntityRowFields on Entity {
+  ...EntityRef
+  anafStatus
+  placement {
+    county { code name }
+    uat { siruta name }
+    national
+    placedBy
+  }
+}
+
+fragment PartyFields on Party {
+  naturalPerson
+  publishedName
+  share
+  entity { ...EntityRef }
+}
+
+fragment ProvenanceFields on Provenance {
+  source
+  url
+  via
+  kind
+  fetchedAt
+}
+
+# A Record as a table row or list item.
+fragment RecordRowFields on SeapRecord {
+  code
+  title
+  date
+  kind
+  channel
+  procedure
+  value
+  counted
+  badges
+  authority { ...EntityRef }
+  winners { ...PartyFields }
+  signals { ...SignalBadgeFields }
+}
+
+fragment SignalNumbersFields on SignalNumbers {
+  __typename
+  ... on OverCapNumbers { value cap multiple }
+  ... on SplittingNumbers { purchases sum cap cpvGroup from to }
+  ... on FrameworkOverrunNumbers { ceiling subsequent ratio }
+  ... on NoPublicationNumbers { procedure }
+}
+
+# What a Record's row needs of each Signal it is in: enough for the compact badge and its reproducing link.
+fragment SignalBadgeFields on Signal {
+  rule
+  date
+  numbers { ...SignalNumbersFields }
+  reproduce { authority supplier signal cpv from to }
+}
+
+fragment SignalFields on Signal {
+  rule
+  date
+  firstDate
+  recordCount
+  dataThrough
+  authority { ...EntityRef }
+  suppliers { ...EntityRef }
+  numbers { ...SignalNumbersFields }
+  reproduce { authority supplier signal cpv from to }
+}
+
+fragment MoneyMapFields on MoneyMap {
+  side
+  counties { area name entities total { ...TotalFields } }
+  national { ...TotalFields }
+  unplaced { authorities total { ...TotalFields } }
+  unknownSupplierCounty { ...TotalFields }
+}
+
+fragment DataThroughFields on Source {
+  id
+  name
+  harvested
+  dataThrough { kind date }
+}
+
+fragment RecordFacetsFields on RecordFacets {
+  channel { value total { ...TotalFields } }
+  procedure { value total { ...TotalFields } }
+  year { value total { ...TotalFields } }
+  signal { value total { ...TotalFields } }
+  badge { value total { ...TotalFields } }
+  counterparty { entity { ...EntityRef } matched { ...TotalFields } }
+}
+
+fragment EntityHeaderFields on Entity {
+  ...EntityRowFields
+  cui
+  foreignVatId
+  identityCurated
+  aliases { name records first last differsFromAnaf }
+  provenance { ...ProvenanceFields }
+  seap { roles }
+}
+
+# A ranked tab of entities: the rows and whether the distinct count is an estimate.
+fragment EntityResultPageFields on EntityResultPage {
+  count
+  countEstimated
+  rows { entity { ...EntityRowFields } matched { ...TotalFields } }
+}
+
+# A page of Records, each with the text that matched the query.
+fragment RecordResultFields on RecordResultPage {
+  count
+  rows {
+    record { ...RecordRowFields }
+    matchedField { field text highlights }
+  }
+}

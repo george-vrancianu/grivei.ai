@@ -40,7 +40,7 @@ Query-string names below are illustrative. The URL codec belongs to #42.
 | `entity-overview.html` | `/explore/authority/4384206` | Headline numbers, Signal cards, counterparties, procedures, consortia, frameworks | #54 #56 #59, wired in #86 |
 | `entity-records.html` | `…/records?signal=no-publication` | A Signal's reproducing filter, totals that follow it | #57, wired in #87 |
 | `entity-relationships.html` | `…/relationships` | Counterparty graph, timeline, picked counterparty, Flow lens | #58 #52, wired in #88 |
-| `record.html` | `/explore/record/CAN1145000/<contract-no>` (ADR 0007) | Framework ceiling won by a consortium | #55 #72, wired in #85 |
+| `record.html` | `/explore/record/CAN1145000` | Framework ceiling won by a consortium | #55 #72, wired in #85 |
 | `coverage.html` | `/explore/coverage` | Sources, quarter by kind grid, gap reasons, data-through | #60 #79 #80, wired in #90 |
 | `about-the-numbers.html` | methodology page | Counting rule and the four Signal rules | #61 |
 
@@ -112,47 +112,33 @@ Fixtures for stories and tests come from #39 and from Seam 1 of the spec, not fr
 
 ## Decided after the handoff (2026-11-12)
 
-A design review settled these. Where a decision contradicts a drawing, the decision wins. Terms are in `GLOSSARY.md`; Record URLs are in ADR 0007.
+A design review settled these. They all agree with the explorer on `main` (#92). Where a drawing differs from them, follow these decisions. Review decisions that conflicted with `main` were dropped in favour of what `main` does; they are listed in #94. When a drawing conflicts with `main` (routes, map colour scales, the badge chips, Coverage colours and Sources row, Go-to on public codes), follow `main`.
 
-**Records and URLs**
+Already on `main`:
 
-- A contract's URL is its award notice code plus a slug of its contract number: `/explore/record/CAN1172752/<contract-no>` (ADR 0007). `record.html`'s `/record/CAN1145000` is now the notice's contract list. Every Record row shows the contract number beside the code.
-- An award notice is not a Record. It is where a contract comes from.
-- The Go-to card also fires on an exact public code: a DA or DAN opens the Record, a notice opens its contract list, or the contract itself when there is only one.
-- The methodology page is `/explore/about-the-numbers` and `/ro/explore/about-the-numbers`. Slugs stay English under both prefixes.
-
-**Main screen**
-
-- The eyebrow "search SEAP · national · 2021 onward" is the Source picker in a read-only, one-option state. No picker is drawn for Release 1.
-- The award-date chip defaults to "any", not "2021 – 2026". Records published from 2021 but awarded earlier are counted. "2021 onward" refers to publication.
-- The ten caveat badges fold behind one "caveat badges" chip that shows how many are active. It stays open while any badge is active. Inside the fold, the chips are 44 px tall.
-- A Signal chip on a Record row opens that Signal's reproducing filter, as drawn. An entity row's "n Signals" chip opens that entity's Overview at its Signals section.
-- Map class breaks are recomputed per result set: doubling steps from a rounded value, so the top class holds the maximum. The Flow lens uses the same rule. The zoomed county keeps a log scale with powers-of-ten breaks.
-- **Supplier side of the map:**
-  - two tiles, "county unknown" and "natural persons", both clickable filters; National and Unplaced appear only on the authority side;
-  - after a supplier-county click, the headline total stays the in-county share sum, so it equals the county's value on the map;
-  - each Record row shows its full value, with the in-county share on a second line labelled as the convention.
-- Under the Coverage lens, the authority/supplier toggle is hidden, and it returns in its previous state with Money.
-- Undrawn states (loading, error, no results) are settled as UI-library stories (#40). No results reads "No Records match" and links the Coverage lens for the current county and dates. It never reads as "no spending".
-
-**Coverage**
-
-- "Not harvested" is the dark neutral, the same as "none" on the Money lens. "Partial" is grey.
-- SEAP is harvested nationally, so its gaps apply to every county and the lens shows one status everywhere. The striped and partial counties in `explore-coverage.html` are placeholders. The caption says "SEAP is harvested nationally; gaps apply to every county". "Partial" stays in the legend for later Sources.
-- There are six grid cell states, as drawn. A quarantined file shows as "awaiting the bulk file". A county is "harvested with known gaps" when any cell in the dated window is a known gap or possibly incomplete.
-- The date chip selects publication quarters by year. The caption says so, and there is no attempt at an exact award-to-publication mapping.
-- The Sources row lists explorable Sources only. The future one is "MF balance sheets", not "Ministerul Finanțelor". Reference sources (ANAF, the MF list of public entities) are named under the N of M block with their snapshot dates.
-
-**Entity pages**
-
-- An entity with both roles has two pages, `/authority/<key>` and `/supplier/<key>`. Each role chip links to the other page, or is muted when that role has no Records, and the two are never added together. Authorities-tab rows open the authority page and Suppliers-tab rows the supplier page. A Go-to card for a two-role CUI shows both. A name inside a Record opens the role it plays there.
+- An entity with both roles has two pages, `/authority/<key>` and `/supplier/<key>`, which link to each other. Their numbers are never added together.
 - Every entity's display name is ANAF's current name, authorities included (ADR 0003 amendment). The design's "MUNICIPIUL BRASOV" becomes ANAF's spelling.
-- An entity page opens unfiltered. The breadcrumb returns to the search, and the Records tab offers "only Records matching '<q>'", which carries the query and chips across.
+- The award-date chip defaults to "any", not "2021 – 2026".
+- Under the Coverage lens, the authority/supplier toggle is hidden.
 - An authority's counterparty list uses equal consortium shares, so its percentages sum to 100%. The consortia list keeps full values.
-- A graph edge's colour is the channel holding the most RON with that counterparty, and the legend says so. The picked counterparty's panel shows the split.
-- The Signals list is ordered by date, with a toggle to RON kept in the URL.
+- An entity page opens unfiltered.
+- A Signal chip on a Record row opens that Signal's reproducing filter.
+- A graph edge's colour is the channel holding the most RON with that counterparty.
+- SEAP is harvested nationally, so every county shares one coverage status. The striped and partial counties in `explore-coverage.html` are placeholders.
+
+Decided, not built yet:
+
+- The eyebrow "search SEAP · national · 2021 onward" is the Source picker in a read-only, one-option state.
+- After a supplier-county click, each Record row shows its in-county share on a second line, labelled as the convention. The headline total is already the share sum on `main`.
+- An entity row's "n Signals" chip opens that entity's Overview at its Signals section.
+- The no-results state ("No Records match") links the Coverage lens for the current county and dates. It never reads as "no spending". The other undrawn states (loading, error) are UI-library stories (#40).
+- The Coverage lens caption says "SEAP is harvested nationally; gaps apply to every county".
+- The Records tab offers "only Records matching '<q>'", which carries the main screen's query and chips across.
+- The Relationships legend says the edge colour is the channel with the most RON.
+- The Signals list has a visible toggle between date (the default) and RON. The order is already kept in the URL.
 
 ## Still open
 
 - The CPV group for splitting and the real national-authority rule (spec #37).
 - The header shows the logo; `site/` still uses the text mark and its own favicon.
+- The review decisions that conflict with `main`: #94.

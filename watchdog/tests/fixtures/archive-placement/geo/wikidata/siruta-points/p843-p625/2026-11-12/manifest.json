@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "source": "geo",
+  "stream": "wikidata",
+  "kind": "siruta-points",
+  "unit": "p843-p625",
+  "fetchedAt": "2026-11-12T09:00:00Z",
+  "url": "https://query.wikidata.org/sparql",
+  "via": null,
+  "files": [
+    {
+      "name": "points.json",
+      "sha256": "1f4194a6787216a2bcb9db99e62ed9687bfdad20268f1e72bb9fdeeb971a428e",
+      "bytes": 5105
+    },
+    {
+      "name": "query.sparql",
+      "sha256": "a0a22c9dfa428cdce6fb3e58a40d4052335e17e5fbe42efc2f17f9ca813be62c",
+      "bytes": 9
+    }
+  ],
+  "origin": {
+    "system": "Wikidata Query Service"
+  }
+}

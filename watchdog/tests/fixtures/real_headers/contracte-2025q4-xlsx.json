@@ -1,0 +1,137 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Tip anunt",
+  "Tip procedura",
+  "Numar anunt initiere",
+  "Data publicare",
+  "Tip legislatie",
+  "Tip incheiere contract",
+  "Tip contract",
+  "Tip criterii de atribuire",
+  "Cod CPV",
+  "Denumire CPV",
+  "Numar lot",
+  "Numar anunt atribuire",
+  "Data publicare",
+  "Data contract",
+  "Numar contract",
+  "Incheiat prin",
+  "Valoare contract (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "DENUMIRE_AC",
+   "CUI_AC",
+   "TIP_ANUNT",
+   "TIP_PROCEDURA",
+   "NUMAR_ANUNT_AI",
+   "DATA_PUBLICARE_AI",
+   "TIP_LESIGLATIE",
+   "TIP_INCHEIERE_CONTRACT",
+   "TIP_CONTRACT",
+   "TIP_CRITERII_ATRIBUIRE",
+   "CPV_CODE",
+   "DENUMIRE_CPV",
+   "NUMAR_LOT",
+   "NUMAR_ANUNT_ATRIBUIRE",
+   "DATA_ANUNT_ATRIBUIRE",
+   "DATA_CONTRACT",
+   "NUMAR_CONTRACT",
+   "INCHEIAT_PRIN",
+   "VALOARE_CONTRACT_RON",
+   "OFERTANT",
+   "CUI_OF"
+  ],
+  [
+   "REGIA NATIONALA A PADURILOR - ROMSILVA RA",
+   1590120,
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "SCN1163805",
+   {
+    "date": "2025-06-10T15:34:10"
+   },
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Lucrari",
+   "Pretul cel mai scazut",
+   "45453000-7",
+   "Lucrari de reparatii generale si de renovare (Rev.2)",
+   1,
+   "SCNA1126001",
+   {
+    "date": "2025-10-01T08:54:21"
+   },
+   {
+    "date": "2025-09-16T00:00:00"
+   },
+   11143,
+   "Fara acord cadru",
+   64120,
+   "FLORICRIS",
+   14285773
+  ],
+  [
+   "ECOSALUBRIZARE PREST  S.R.L. HUSI",
+   28147657,
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "SCN1165247",
+   {
+    "date": "2025-07-11T10:12:56"
+   },
+   "Legea nr. 99/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "16710000-5",
+   "Tractoare agricole cu insotitor uman (Rev.2)",
+   1,
+   "SCNA1126002",
+   {
+    "date": "2025-10-01T09:01:29"
+   },
+   {
+    "date": "2025-09-18T00:00:00"
+   },
+   "184047/184046",
+   "Fara acord cadru",
+   698684,
+   "BCR LEASING IFN",
+   "RO13795308"
+  ],
+  [
+   "ECOSALUBRIZARE PREST  S.R.L. HUSI",
+   28147657,
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "SCN1165247",
+   {
+    "date": "2025-07-11T10:12:56"
+   },
+   "Legea nr. 99/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Pretul cel mai scazut",
+   "16710000-5",
+   "Tractoare agricole cu insotitor uman (Rev.2)",
+   1,
+   "SCNA1126002",
+   {
+    "date": "2025-10-01T09:01:29"
+   },
+   {
+    "date": "2025-09-18T00:00:00"
+   },
+   "184047/184046",
+   "Fara acord cadru",
+   698684,
+   "GRADINARIU IMPORT EXPORT",
+   "RO 5348490"
+  ]
+ ]
+}

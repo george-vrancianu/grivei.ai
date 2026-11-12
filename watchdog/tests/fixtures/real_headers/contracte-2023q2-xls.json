@@ -1,0 +1,138 @@
+{
+ "header": [
+  "DENUMIRE_AC",
+  "CUI_AC",
+  "TIP_AUTORITATE",
+  "TIP__ACTIVITATE_AUTORITATE",
+  "TIP_ANUNT",
+  "TIP_PROCEDURA",
+  "TIP_LESIGLATIE",
+  "TIP_INCHEIERE_CONTRACT",
+  "TIP_CONTRACT",
+  "MODALITATE_DESFASURARE",
+  "CU_LICITATIE_ELECTRONICA",
+  "TIP_CRITERII_ATRIBUIRE",
+  "CPV_CODE",
+  "DENUMIRE_CPV",
+  "NUMAR_ANUNT_AI",
+  "DATA_PUBLICARE_AI",
+  "NUMAR_LOT",
+  "NUMAR_ANUNT_ATRIBUIRE",
+  "DATA_ANUNT_ATRIBUIRE",
+  "DATA_CONTRACT",
+  "NUMAR_CONTRACT",
+  "INCHEIAT_PRIN",
+  "VALOARE_CONTRACT_RON",
+  "OFERTANT",
+  "CUI_OF",
+  "ORAS_CASTIGATOR",
+  "TARA_CASTIGATOR"
+ ],
+ "rows": [
+  [
+   "MUNICIPIUL TARGOVISTE",
+   "4279944",
+   "Municipiu",
+   "Servicii generale ale administratiilor publice",
+   "Anunt de atribuire",
+   "Licitatie deschisa",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Online",
+   "NU",
+   "Cel mai bun raport calitate – pret",
+   "24455000-8",
+   "Dezinfectanti (Rev.2)",
+   "CN1046520",
+   {
+    "date": "2022-08-28T11:00:30"
+   },
+   "2",
+   "CAN1095571",
+   {
+    "date": "2023-04-01T11:00:44"
+   },
+   {
+    "date": "2022-12-30T00:00:00"
+   },
+   "44066",
+   "Fara acord cadru",
+   1735465.0,
+   "SOCADANCE MD SRL",
+   "18392942",
+   "stefanesti",
+   "Romania"
+  ],
+  [
+   "MUNICIPIUL TARGOVISTE",
+   "4279944",
+   "Municipiu",
+   "Servicii generale ale administratiilor publice",
+   "Anunt de atribuire",
+   "Licitatie deschisa",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Online",
+   "NU",
+   "Cel mai bun raport calitate – pret",
+   "24455000-8",
+   "Dezinfectanti (Rev.2)",
+   "CN1046520",
+   {
+    "date": "2022-08-28T11:00:30"
+   },
+   "3",
+   "CAN1095571",
+   {
+    "date": "2023-04-01T11:00:44"
+   },
+   {
+    "date": "2022-12-30T00:00:00"
+   },
+   "44065",
+   "Fara acord cadru",
+   371858.0,
+   "SOCADANCE MD SRL",
+   "18392942",
+   "stefanesti",
+   "Romania"
+  ],
+  [
+   "MUNICIPIUL TARGOVISTE",
+   "4279944",
+   "Municipiu",
+   "Servicii generale ale administratiilor publice",
+   "Anunt de atribuire",
+   "Licitatie deschisa",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Furnizare",
+   "Online",
+   "NU",
+   "Cel mai bun raport calitate – pret",
+   "24455000-8",
+   "Dezinfectanti (Rev.2)",
+   "CN1046520",
+   {
+    "date": "2022-08-28T11:00:30"
+   },
+   "4",
+   "CAN1095571",
+   {
+    "date": "2023-04-01T11:00:44"
+   },
+   {
+    "date": "2023-03-16T00:00:00"
+   },
+   "9276",
+   "Fara acord cadru",
+   1781090.0,
+   "KARLA AUCTION TEAM",
+   "38517501",
+   "Bucuresti",
+   "Romania"
+  ]
+ ]
+}

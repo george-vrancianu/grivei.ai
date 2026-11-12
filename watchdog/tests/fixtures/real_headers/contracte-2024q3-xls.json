@@ -1,0 +1,138 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI",
+  "Tip autoritate",
+  "Tip activitate",
+  "Tip anunt",
+  "Tip procedura",
+  "Tip legislatie",
+  "Tip incheiere contract",
+  "Tip contract",
+  "Modalitate de desfasurare",
+  "Cu licitatie electronica?",
+  "Tip criteriu de atribuire",
+  "Cod CPV",
+  "Denumire CPV",
+  "Numar anunt initiere",
+  "Data publicare",
+  "Numar lot",
+  "Numar anunt atribuire",
+  "Data publicare",
+  "Data contract",
+  "Numar contract",
+  "Incheiar prin",
+  "Valoare contract (RON)",
+  "Ofertant",
+  "CUI ofertant",
+  "Oras",
+  "Tara"
+ ],
+ "rows": [
+  [
+   "COMUNA DRAGUTESTI",
+   "4510436",
+   "Comuna",
+   "Servicii publice generale",
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Lucrari",
+   "Online",
+   "NU",
+   "Cel mai bun raport calitate – pret",
+   "45222110-3",
+   "Lucrari de constructii de rampe de deseuri (Rev.2)",
+   "SCN1145555",
+   {
+    "date": "2024-04-24T17:16:32"
+   },
+   "1",
+   "SCNA1106562",
+   {
+    "date": "2024-07-01T06:36:39"
+   },
+   {
+    "date": "2024-06-28T00:00:00"
+   },
+   "6608",
+   "Fara acord cadru",
+   2901967.0,
+   "STRATON CONCEPT",
+   "RO 36549400",
+   "Tismana",
+   "Romania"
+  ],
+  [
+   "Directia Generala de Asistenta Sociala si Protectia Copilului Constanta",
+   "16762887",
+   "Consiliul județean",
+   "Protectie sociala",
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Lucrari",
+   "Online",
+   "NU",
+   "Pretul cel mai scazut",
+   "45333000-0",
+   "Lucrari de instalare de gaz (Rev.2)",
+   "SCN1144179",
+   {
+    "date": "2024-04-05T11:17:36"
+   },
+   "1",
+   "SCNA1106565",
+   {
+    "date": "2024-07-01T08:05:54"
+   },
+   {
+    "date": "2024-06-27T00:00:00"
+   },
+   "128539",
+   "Fara acord cadru",
+   533639.0,
+   "REMONT",
+   "RO 2753846",
+   "Constanta",
+   "Romania"
+  ],
+  [
+   "Municipiul Sibiu",
+   "4270740",
+   "Municipiu",
+   "Servicii publice generale",
+   "Anunt de atribuire la anunt de participare simplificat",
+   "Procedura simplificata",
+   "Legea nr. 98/23.05.2016",
+   "Un contract de achizitii publice",
+   "Lucrari",
+   "Online",
+   "NU",
+   "Pretul cel mai scazut",
+   "45321000-3",
+   "Lucrari de izolare termica (Rev.2)",
+   "SCN1144122",
+   {
+    "date": "2024-04-05T08:24:44"
+   },
+   "1",
+   "SCNA1106566",
+   {
+    "date": "2024-07-01T08:08:12"
+   },
+   {
+    "date": "2024-06-19T00:00:00"
+   },
+   "109",
+   "Fara acord cadru",
+   1323139.0,
+   "INSTAL GRUP",
+   "RO 12473347",
+   "Sibiu",
+   "Romania"
+  ]
+ ]
+}

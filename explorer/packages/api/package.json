@@ -1,0 +1,27 @@
+{
+  "name": "@grivei/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The explorer's GraphQL API: answers only the contract's persisted queries, from the Postgres graph.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --pool=forks --maxWorkers=4",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@grivei/contract": "*",
+    "graphql": "^16.15.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.15.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

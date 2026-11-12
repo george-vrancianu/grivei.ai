@@ -1,0 +1,20 @@
+import type { Locale, SignalRule } from "@grivei/ui";
+import { methodologyHref } from "../methodology/methodologyLinks.ts";
+
+/** The methodology page under the language's prefix, at the section of the Signal's rule. */
+export function signalMethodologyHref(locale: Locale, rule: SignalRule): string {
+  return methodologyHref(locale, { rule });
+}
+
+/**
+ * "Check in SEAP" for a Signal: the Record's SEAP link when the Signal has exactly one Record (its provenance URL, else the `/source/seap/<code>`
+ * redirect), otherwise null: the card then says to check each Record, and each row of the reproducing list has its own link.
+ */
+export function signalSeapHref(
+  signal: { recordCount: number },
+  records: readonly { code: string; provenance?: { url: string | null } | null }[],
+): string | null {
+  const [only] = records;
+  if (signal.recordCount !== 1 || records.length !== 1 || !only) return null;
+  return only.provenance?.url ?? `/source/seap/${encodeURIComponent(only.code)}`;
+}

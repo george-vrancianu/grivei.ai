@@ -24,6 +24,7 @@ No build step, no dependencies, no framework. Keep it that way unless there is a
 - **Direction:** "B · Graf": dark, technical, mono labels, amber accent. It was chosen over three other prototypes (a light minimal one, a construction-site sign, a typed official memo).
 - **What the status shows:** the current phase plus the data-source pipeline. **No institutions, counties, people or figures are named** on the page, even though reports on specific institutions exist in the project.
 - **No call to action:** no email capture, no contact link, no forms.
+  - **One exception, the explorer link (ticket #41):** the top bar carries one plain text link to the explorer app, `explorer` at `/explore/` on the English page and `explorator` at `/ro/explore/` on the Romanian one. The app is served beside this page (Caddy, see `deploy/README.md`), so the links are root-absolute and do not work from a bare `python3 -m http.server` preview of this folder alone.
 - **Public name and domain:** "Grivei.ai", at `https://grivei.ai/`. In the mono UI labels (brand, footer) it is written lowercase, `grivei.ai`; in running copy and titles, `Grivei.ai`.
 - **Hero idea:** the graph's target question from the project README, a path of at most 3 steps between a decision-maker and a company that wins contracts from the same authority ("≤ 3 steps" / "≤ 3 pași").
 

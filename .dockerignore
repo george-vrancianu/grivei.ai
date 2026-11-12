@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.seam1-*
+.git
+.claude
+.agents
+explorer/storybook-static
+explorer/coverage
+archive
+.data
+watchdog/data
+watchdog/reports
+watchdog/viewer

@@ -1,0 +1,93 @@
+[
+  {
+    "name": "has-signals-chip",
+    "kind": "typical",
+    "description": "the authorities tab, full view, with the chip on",
+    "variables": {
+      "filter": {
+        "hasSignals": true
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "654832100",
+            "records": 14,
+            "suspectLeftOut": 0,
+            "noValue": 1,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "authorities": {
+            "count": 3,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "515832100",
+                  "records": 10,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "109000000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 1,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "30000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+]

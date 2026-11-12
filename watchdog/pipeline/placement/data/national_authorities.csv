@@ -1,0 +1,6 @@
+# The reviewed classification of national authorities (spec #37 default: a file in the repo, one line per CUI, with a reason).
+# national = true|false. override = true makes the line win over the award notice's buyer type (use it for a deconcentrated county
+# unit the notice calls central); otherwise the notice wins and the line decides only for an authority without one.
+# reason = who decided and why (source, date). Seed it from `pipeline national-propose` (a proposal, never applied by itself) and from
+# the MF list; only add a CUI you have checked. Ships empty: no entry has been reviewed yet.
+cui,national,override,name,reason
