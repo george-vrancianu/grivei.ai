@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
-import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, Stack, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
+import { useSignalLinks } from "../../signals/useSignalLinks.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
-import { roleHref, roleOf, tabHrefs } from "./entityPage.utils.ts";
-import { useEntityPage } from "./hooks/useEntityPage.ts";
+import { roleHref, roleOf, tabHref, tabHrefs } from "./entityPage.utils.ts";
+import { SIGNALS_PAGE_SIZE, useEntityPage } from "./hooks/useEntityPage.ts";
 import { useOverviewTab } from "./hooks/useOverviewTab.ts";
 import { usePickedCounterparty } from "./hooks/usePickedCounterparty.ts";
 import { useRecordsTab } from "./hooks/useRecordsTab.ts";
@@ -26,6 +27,7 @@ export interface EntityPageProps {
 /** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. Each tab runs its own operation. */
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
+  const signals = useSignalLinks(locale);
   const { filter, page, order, signalOrder, lens, counterparty, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
@@ -81,7 +83,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         // The last Records stay on screen while the next filter loads, so the panel keeps its place and focus.
         state.records ? (
           <div aria-busy={loading}>
-            <RecordsTab records={state.records} {...recordsTab} />
+            <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
           </div>
         ) : loading ? (
           <Typography role="status">{t.status.loading}</Typography>
@@ -93,7 +95,21 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         <Typography role="status">{t.status.loading}</Typography>
       ) : view === "overview" ? (
         state.overview && entity ? (
-          <EntityOverview overview={state.overview} aliases={entity.aliases} {...overviewTab} />
+          <EntityOverview overview={state.overview} aliases={entity.aliases} signals={
+              <SignalList
+                signals={state.overview.signals.rows}
+                locale={locale}
+                renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
+                pagination={{
+                  page: page ?? 1,
+                  pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
+                  // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
+                  pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), page: n }),
+                  onNavigate: (href) => navigate(href, "replace"),
+                  copy: t.entityPage.signalPages,
+                }}
+              />
+            } {...overviewTab} />
         ) : (
           // ready, but the entity has nothing in this role
           <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>

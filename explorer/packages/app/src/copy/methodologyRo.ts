@@ -120,10 +120,10 @@ export const methodologyRo: MethodologyPageCopy = {
       heading: "Depășirea acordului-cadru",
       paragraphs: ["Depășirea acordului-cadru: contractele subsecvente raportate în baza unui acord-cadru însumează peste 110% din plafonul lui."],
       items: [
-        "Acordul-cadru este un anunț de atribuire: plafonul lui este suma valorilor contractelor-cadru, iar contractele lui subsecvente sunt cele din același număr de anunț.",
-        "Doar acorduri-cadru atribuite începând cu 1 ianuarie 2021, cu un plafon care nu este gol.",
+        "Acordul-cadru este un anunț de atribuire: plafonul lui este suma valorilor înregistrărilor sale de plafon (o valoare pe care regula de numărare o lasă deoparte nu se adună, nici în plafon, nici în suma subsecventă), iar contractele lui subsecvente sunt cele din același număr de anunț, indiferent de autoritatea care le-a semnat.",
+        "Doar acorduri-cadru atribuite începând cu 1 ianuarie 2021 (data celei mai vechi înregistrări de plafon), cu un plafon care nu este gol.",
         "Strict peste 110%: exact 110% nu este Semnal.",
-        "Semnalul este datat după contractul subsecvent care a dus primul suma curentă peste 110% și cuprinde înregistrările de plafon și contractele subsecvente până la acela. Cifrele lui descriu acordul așa cum este raportat până la data până la care sunt încărcate datele, deci înregistrările listate pot însuma mai puțin decât totalul subsecvent afișat.",
+        "Semnalul aparține autorității care a încheiat acordul-cadru și este datat după cea mai recentă înregistrare a lui. Cuprinde înregistrările de plafon ale acelei autorități și contractele ei subsecvente până la cel care a dus primul suma curentă peste 110%; contractele raportate după acela nu sunt listate. Cifrele lui descriu acordul așa cum este raportat până la data până la care sunt încărcate datele, deci înregistrările listate pot însuma mai puțin decât totalul subsecvent afișat.",
       ],
       lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
     },

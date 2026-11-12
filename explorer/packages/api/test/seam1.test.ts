@@ -12,7 +12,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -20,7 +20,7 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { SignalFieldsFragment, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
@@ -32,6 +32,7 @@ import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
 import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
+import { RECORDED_SIGNAL_CASES, type RecordedSignalCase } from "./recordedSignalCases.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -3015,6 +3016,221 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         server.closeAllConnections();
         await new Promise<void>((r) => upstream.close(() => r()));
       }
+    });
+  });
+
+
+  describe("recorded fixtures (#89): archive-signals, archive-splitting, archive-framework-overrun -> rebuild -> Signals on every screen", () => {
+    // The app's seam 3 renders the Signals on every screen against these answers. Same convention as #83/#86: this block fails when an answer
+    // drifts from the committed JSON; `RECORD_FIXTURES=1` rewrites it. One JSON file per operation under recorded/signals/.
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const dir = resolve(here, "../../contract/src/fixtures/recorded/signals");
+    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c" } as const;
+    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun" } as const;
+    const OPS = {
+      EntityOverview: entityOverview,
+      EntityRecords: entityRecords,
+      EntityRelationships: entityRelationships,
+      MainScreen: mainScreen,
+      FullResultsAuthorities: allowlist.operations.find((o) => o.name === "FullResultsAuthorities")!,
+      FullResultsSuppliers: allowlist.operations.find((o) => o.name === "FullResultsSuppliers")!,
+      FullResultsRecords: allowlist.operations.find((o) => o.name === "FullResultsRecords")!,
+      RecordPage: recordPage,
+      MethodologyBaseRates: allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!,
+    };
+    type Case = Omit<RecordedSignalCase, "operation"> & { operation: keyof typeof OPS };
+    type Answer = { name: string; kind: string; description: string; variables: Record<string, unknown>; data: unknown };
+
+    beforeAll(async () => {
+      for (const a of Object.keys(DBS) as (keyof typeof DBS)[]) {
+        await admin.query(`CREATE DATABASE ${DBS[a]}`);
+        rebuild(DBS[a], DIRS[a]);
+      }
+    });
+
+    const answer = async (c: Case): Promise<Answer> => {
+      const op = OPS[c.operation];
+      const r = await ask(DBS[c.archive], op.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    /** What the Records tab asks when a Signal's reproducing link is opened: the authority's page with the Signal's grouping as the filter, 100 a page, no order. The case names built here are the recording names; the ui samples (`fixtureData.ts` overCapSignalRecords, splittingSignalRecords) pick recordings by them, so changing the scheme means changing those names. */
+    const reproduceCase = (s: SignalFieldsFragment, archive: RecordedSignalCase["archive"]): Case => {
+      const { authority, signal, supplier, cpv, from, to } = s.reproduce;
+      const filter = Object.fromEntries(Object.entries({ signal, supplier, cpv, from, to }).filter(([, v]) => v !== null && v !== undefined));
+      const who = [signal!.toLowerCase().replace(/_/g, "-"), authority, s.firstDate, s.date, supplier ?? ""].filter(Boolean).join("-");
+      return {
+        operation: "EntityRecords", name: who, archive, kind: "typical",
+        description: `the Records of the ${signal} Signal of authority ${authority} dated ${s.date}, opened from its reproducing link`,
+        variables: { key: authority, role: "AUTHORITY", filter, limit: 100, offset: 0 },
+      };
+    };
+    const answers = new Map<string, Answer>();
+    const cases: Case[] = [];
+    beforeAll(async () => {
+      for (const c of RECORDED_SIGNAL_CASES) {
+        cases.push(c);
+        answers.set(`${c.operation}/${c.name}`, await answer(c));
+      }
+      // one Records-tab case per Signal the recorded Overviews show: the Signal and its Records list cannot drift apart
+      const seen = new Set<string>();
+      // (and the hospital's Signals of #86's recorded Overview, which this block does not ask again)
+      const earlier = (JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[]).filter((x) => x.name === "authority-with-signals");
+      const shown = [
+        ...earlier.map((x) => ({ archive: "signals" as const, rows: x.data.entity!.seap.role!.signals.rows })),
+        ...RECORDED_SIGNAL_CASES.filter((x) => x.operation === "EntityOverview").map((c) => ({ archive: c.archive, rows: (answers.get(`EntityOverview/${c.name}`)!.data as EntityOverviewQuery).entity!.seap.role!.signals.rows })),
+      ];
+      for (const { archive, rows } of shown) {
+        for (const s of rows) {
+          const rc = reproduceCase(s, archive);
+          const k = JSON.stringify(rc.variables);
+          if (seen.has(k)) continue;
+          seen.add(k);
+          cases.push(rc);
+          answers.set(`EntityRecords/${rc.name}`, await answer(rc));
+        }
+      }
+    });
+    const byOperation = (op: string) => cases.filter((c) => c.operation === op).map((c) => answers.get(`${op}/${c.name}`)!);
+
+    it("every recorded case is what the API answers now", () => {
+      for (const op of Object.keys(OPS)) {
+        const recorded = byOperation(op);
+        if (recorded.length === 0) continue;
+        const file = join(dir, `${op}.json`);
+        if (recording) {
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+        }
+        // through JSON, so undefined and key order do not matter
+        expect(JSON.parse(JSON.stringify(recorded)), op).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      }
+    });
+
+    it("asks no two cases the same question, also against the sets recorded by #83, #85, #86, #87 and #88 (the app's fixture client matches on variables)", () => {
+      const sorted = (v: unknown): unknown => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x.localeCompare(y)).map(([k, x]) => [k, sorted(x)])) : v);
+      const recordedDir = resolve(here, "../../contract/src/fixtures/recorded");
+      const earlier: Record<string, string[]> = {
+        EntityOverview: ["EntityOverview"], EntityRecords: ["EntityRecords", "EntityRecordsSidePanel"], EntityRelationships: ["EntityRelationships"], MainScreen: ["MainScreen"], RecordPage: ["RecordPage"],
+        FullResultsAuthorities: ["FullResultsAuthorities"], FullResultsSuppliers: ["FullResultsSuppliers"], FullResultsRecords: ["FullResultsRecords"], MethodologyBaseRates: [],
+      };
+      for (const op of Object.keys(OPS)) {
+        const mine = byOperation(op).map((x) => JSON.stringify(sorted(x.variables)));
+        const before = earlier[op]!.flatMap((f) => (JSON.parse(readFileSync(join(recordedDir, `${f}.json`), "utf8")) as { variables: unknown }[]).map((x) => JSON.stringify(sorted(x.variables))));
+        if (op !== "MethodologyBaseRates") expect(new Set(mine).size, op).toBe(mine.length); // the base rates ask nothing: three archives, three named answers (the app serves one per test)
+        expect(mine.filter((v) => before.includes(v)), `${op} asked again`).toEqual([]);
+        expect(new Set(byOperation(op).map((x) => x.name)).size, `${op} names`).toBe(byOperation(op).length);
+      }
+    });
+
+    const sig = (name: string) => (answers.get(`EntityOverview/${name}`)!.data as EntityOverviewQuery).entity!.seap.role!.signals;
+    const records = (name: string) => (answers.get(`EntityRecords/${name}`)!.data as EntityRecordsQuery).entity!.seap.role!.records;
+    const page = (name: string) => (answers.get(`RecordPage/${name}`)!.data as RecordPageQuery).seap.record!;
+    const keysOf = (name: string) => sig(name).rows.map((x) => x.suppliers.map((y) => y.key).join("+"));
+
+    it("gives each Overview the Signals it is named for, on every page they touch and never on a natural person (ADR 0003)", () => {
+      const RON = (n: number) => String(n * 100);
+      // the consortium (ALFA + BETA + GAMMA) of the no-publication Signal: the Signal is on the page of each member, whole
+      expect(sig("consortium-member-supplier")).toMatchObject({ count: 1, rows: [{ rule: "NO_PUBLICATION", date: "2023-02-10", recordCount: 2, authority: { key: "1000017" } }] });
+      expect(keysOf("consortium-member-supplier")).toEqual(["2000007+2000015+2000023"]);
+      expect(sig("supplier-in-three-authorities-signals").count).toBe(5);
+      expect(sig("supplier-in-three-authorities-signals").rows.map((x) => x.authority.key)).toEqual(["1000017", "2000031", "1000017", "1000017", "1000009"]);
+      expect(sig("commune-with-signals").count).toBe(3);
+      expect(sig("both-roles-authority-with-signal")).toMatchObject({ count: 1, rows: [{ rule: "OVER_CAP", authority: { key: "2000031" } }] });
+      // splitting: purchases, CPV group and window, one supplier each; the supplier's page lists what the authority's does
+      expect(sig("splitting-authority").rows.map((x) => x.numbers)).toEqual([
+        expect.objectContaining({ __typename: "SplittingNumbers", purchases: 2, cpvGroup: "301", from: "2023-08-01", to: "2023-08-02" }),
+        expect.objectContaining({ purchases: 3, from: "2023-03-01", to: "2023-04-08" }),
+        expect.objectContaining({ purchases: 2, from: "2023-01-05", to: "2023-01-20" }),
+      ]);
+      expect(keysOf("splitting-authority")).toEqual(["2000023", "2000023", "2000007"]);
+      expect(sig("splitting-supplier")).toMatchObject({ count: 2 });
+      expect(sig("splitting-supplier-three-authorities").rows.map((x) => x.authority.key)).toEqual(["2000031", "1000017", "1000009"]);
+      // framework-overrun: ceiling 1,000,000 RON, reported 1,250,000, ratio 1.25 (four Records: the ceiling and the first three subsequent contracts)
+      expect(sig("framework-overrun-authority").rows[0]).toMatchObject({ rule: "FRAMEWORK_OVERRUN", recordCount: 4, date: "2023-03-05", firstDate: "2023-01-10", numbers: { __typename: "FrameworkOverrunNumbers", ceiling: RON(1_000_000), subsequent: RON(1_250_000), ratio: 1.25 } });
+      expect(keysOf("framework-overrun-consortium-authority")[0]).toBe("2000007+2000015+2000023");
+      expect(sig("framework-overrun-consortium-member").rows.map((x) => x.authority.key)).toEqual(["2000031", "1000009"]);
+      expect(sig("framework-overrun-supplier").count).toBe(2);
+      // no Signal names a supplier that is not an entity: a natural person has no page, so the Signal of a natural person's purchase names no supplier at all
+      for (const x of cases.filter((c) => c.operation === "EntityOverview"))
+        for (const row of sig(x.name).rows) for (const supplier of row.suppliers) expect(supplier.key, `${x.name} ${row.rule}`).toMatch(/^(\d+|name-.+|vat-.+)$/);
+      const earlier = JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[];
+      const hospital = earlier.find((x) => x.name === "authority-with-signals")!.data.entity!.seap.role!.signals;
+      expect(hospital.count).toBe(8);
+      expect(hospital.rows.find((x) => x.date === "2023-02-03")).toMatchObject({ rule: "OVER_CAP", recordCount: 1, suppliers: [] }); // won by a natural person
+    });
+
+    it("lists, for each Signal an Overview shows, exactly its Records at its reproducing filter (the Records tab of its authority)", async () => {
+      const signalsDoc = `query($key: ID!, $role: Role!) { entity(key: $key) { seap { role(role: $role) { signals(limit: 50) { rows { rule date firstDate recordCount reproduce { authority supplier signal cpv from to } records(limit: 100) { code } } } } } } }`;
+      const pools2 = (db: string) => pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${db}`)!;
+      let checked = 0;
+      const reproducing = cases.filter((x) => x.operation === "EntityRecords" && x.variables.role === "AUTHORITY");
+      for (const c of reproducing) {
+        const pool = pools2(DBS[c.archive]);
+        const v = c.variables as { key: string; filter: { signal: string; from?: string; to?: string } };
+        const r = await graphql({ schema, source: signalsDoc, rootValue: rootValue(postgresStore(pool)), variableValues: { key: v.key, role: "AUTHORITY" } });
+        expect(r.errors, c.name).toBeUndefined();
+        type Row = { rule: string; date: string; firstDate: string; recordCount: number; reproduce: Record<string, string | null>; records: { code: string }[] };
+        const rows = (r.data as { entity: { seap: { role: { signals: { rows: Row[] } } } } }).entity.seap.role.signals.rows;
+        // the Signal whose reproduce filter this case is
+        const filterOf = (x: Row["reproduce"]) => JSON.stringify(Object.fromEntries(Object.entries({ signal: x.signal, supplier: x.supplier, cpv: x.cpv, from: x.from, to: x.to }).filter(([, y]) => y !== null).sort(([m], [n]) => m.localeCompare(n))));
+        const mine = rows.filter((s) => filterOf(s.reproduce) === JSON.stringify(Object.fromEntries(Object.entries(v.filter).sort(([m], [n]) => m.localeCompare(n)))));
+        expect(mine.length, c.name).toBe(1);
+        const rec = records(c.name);
+        expect(rec.records.rows.map((x) => x.record.code).sort(), c.name).toEqual(mine[0]!.records.map((x) => x.code).sort());
+        expect(rec.records.count, c.name).toBe(mine[0]!.recordCount);
+        checked++;
+      }
+      expect(checked).toBe(reproducing.length);
+      expect(checked).toBeGreaterThanOrEqual(21);
+    });
+
+    it("gives the Record pages the Signals they are named for", () => {
+      const over = page("over-cap-single-record-signal");
+      expect(over.signals).toHaveLength(1);
+      expect(over.signals[0]).toMatchObject({ rule: "OVER_CAP", recordCount: 1 });
+      const ceiling = page("framework-overrun-ceiling");
+      expect(ceiling).toMatchObject({ kind: "CONTRACT", framework: { ceiling: "100000000", subsequentReported: "125000000", ratio: 1.25 } });
+      expect(ceiling.signals).toHaveLength(1);
+      expect(ceiling.signals[0]).toMatchObject({ rule: "FRAMEWORK_OVERRUN", recordCount: 4, numbers: { ratio: 1.25 } });
+      expect(ceiling.signals[0]!.records.map((r) => r.code).sort()).toEqual(["CAN9700001~1", "CAN9700001~2", "CAN9700001~3", "CAN9700001~4"]);
+      expect(page("framework-overrun-subsequent-after-crossing").signals).toEqual([]); // reported after the crossing: in the ratio, not in the Signal
+      expect(page("framework-overrun-consortium").signals[0]!.suppliers.map((x) => x.key)).toEqual(["2000007", "2000015", "2000023"]);
+      expect(page("framework-overrun-single-record").signals[0]).toMatchObject({ recordCount: 1 });
+    });
+
+    it("answers the has-Signals chip end to end: every tab counts Records inside a Signal, the opposite chip the rest", () => {
+      const main = (name: string) => (answers.get(`MainScreen/${name}`)!.data as MainScreenQuery).seap.search;
+      const withS = main("has-signals-chip");
+      const without = main("without-signals-chip");
+      expect(withS.total).toMatchObject({ records: 14, awarded: "654832100" });
+      expect(without.total).toMatchObject({ records: 10, awarded: "207012000" });
+      expect(withS.records.count).toBe(14);
+      expect(withS.records.rows.every((x) => x.record.signals.length > 0)).toBe(true); // every Record of the chip is in a Signal
+      expect(without.records.rows.every((x) => x.record.signals.length === 0)).toBe(true);
+      expect(withS.authorities.count).toBe(3);
+      expect(withS.suppliers.count).toBe(4);
+      const full = (op: string) => (answers.get(`${op}/has-signals-chip`)!.data as { seap: { search: { total: { records: number } } } }).seap.search.total.records;
+      for (const op of ["FullResultsAuthorities", "FullResultsSuppliers", "FullResultsRecords"]) expect(full(op), op).toBe(14);
+    });
+
+    it("rings the counterparties whose Records are in a Signal, and only those", () => {
+      const rows = (name: string) => (answers.get(`EntityRelationships/${name}`)!.data as EntityRelationshipsQuery).entity!.seap.role!.counterparties.rows;
+      const ringed = (name: string) => rows(name).filter((r) => r.hasSignals).map((r) => r.entity?.key ?? "natural person").sort();
+      // the hospital's 2023 suppliers: ALFA, BETA and GAMMA won Records inside Signals; the lumped natural-person row has an over-cap Signal too (it names nobody)
+      expect(ringed("authority-counterparties-with-signals")).toEqual(["2000007", "2000015", "2000023", "natural person"]);
+      // BETA's authorities: the hospital (Signals on its Records) is ringed, the both-roles entity's own purchase from BETA in 2023 is not
+      expect(ringed("supplier-counterparties-with-signals")).toEqual(["1000017"]);
+      expect(rows("supplier-counterparties-with-signals").find((r) => r.entity?.key === "2000031")).toMatchObject({ hasSignals: false });
+    });
+
+    it("answers each rule's base rate through signalRules, per archive (the methodology page shows them)", () => {
+      const rates = (name: string) => Object.fromEntries((answers.get(`MethodologyBaseRates/${name}`)!.data as { signalRules: { slug: string; baseRate: number; baseRateYear: number; window: { from: string | null } }[] }).signalRules.map((r) => [r.slug, [r.baseRate, r.baseRateYear, r.window.from]]));
+      expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"] });
+      expect(rates("splitting-archive")).toMatchObject({ SPLITTING: [1, 2022, "2022-01-01"], OVER_CAP: [0, 2022, "2022-01-01"] });
+      expect(rates("framework-overrun-archive")).toMatchObject({ FRAMEWORK_OVERRUN: [1, 2023, "2021-01-01"] }); // the rule's 2021 floor, although a 2020 Contracte file is loaded
     });
   });
 

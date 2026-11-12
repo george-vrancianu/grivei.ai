@@ -1,1 +1,1 @@
-export { RecordResultRow, type RecordResultRowProps, type RecordResultRowCopy } from "./RecordResultRow.tsx";
+export { RecordResultRow, type RecordResultRowProps, type RecordResultRowCopy, type RecordSignalBadges } from "./RecordResultRow.tsx";
