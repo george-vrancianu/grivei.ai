@@ -12,6 +12,32 @@ export interface EntityRow {
   identityCurated: boolean;
   /** ANAF (the Reference source) when it has the CUI, else SEAP. `via` is the SEAP file for a SEAP-named entity. */
   provenance: { source: "ANAF" | "SEAP"; via: string | null; fetchedAt: string };
+  /** Where it sits (core.placement, #67); null/absent when no source places it. */
+  placement?: PlacementRow | null;
+}
+
+/** core.placement joined to its county and UAT names. A national authority keeps its seat here; the API serves none of it. */
+export interface PlacementRow {
+  countyIso: string | null;
+  countyName: string | null;
+  uat: { siruta: string; name: string } | null;
+  /** The village's SIRUTA when ANAF or SEAP named one: stored, not plotted. */
+  villageSiruta: string | null;
+  national: boolean;
+  placedBy: "ANAF" | "SEAP";
+}
+
+/** A county of core.county: ISO 3166-2:RO without `RO-` (Bucharest is `B`) and its Romanian name. */
+export interface CountyRow {
+  iso: string;
+  name: string;
+}
+
+/** A UAT of core.uat (Bucharest's UATs are its six sectors). */
+export interface UatRow {
+  siruta: string;
+  name: string;
+  county: CountyRow;
 }
 
 /** A spelling an entity was published under (core.alias). */
@@ -79,6 +105,10 @@ export interface Store {
   aliases(key: string): Promise<AliasRow[]>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
   roles(key: string): Promise<("AUTHORITY" | "SUPPLIER")[]>;
+  /** Every county, by ISO code. */
+  counties(): Promise<CountyRow[]>;
+  /** The UATs of a county (ISO code without `RO-`), by folded name; Bucharest's are its six sectors. */
+  uats(countyIso: string): Promise<UatRow[]>;
 }
 
 // Fixed strings, never built from input. Ties break on the public code so a page is stable.
@@ -129,6 +159,17 @@ interface RawEntity {
   fetched_at: string;
 }
 
+interface RawPlacement {
+  entity_key: string;
+  county_iso: string | null;
+  county_name: string | null;
+  uat_siruta: string | null;
+  uat_name: string | null;
+  village_siruta: string | null;
+  national: boolean;
+  placed_by: "ANAF" | "SEAP";
+}
+
 const ENTITY_COLUMNS = `key, identity, cui, foreign_vat_id, display_name, anaf_status, identity_curated, provenance_source, provenance_via,
   to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at`;
 
@@ -164,7 +205,27 @@ export function postgresStore(pool: pg.Pool): Store {
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
     const { rows } = await pool.query(`SELECT ${ENTITY_COLUMNS} FROM core.entity WHERE key = ANY($1)`, [keys]);
-    return new Map((rows as RawEntity[]).map((r) => [r.key, toEntity(r)]));
+    const entities = new Map((rows as RawEntity[]).map((r) => [r.key, toEntity(r)]));
+    const placed = await pool.query(
+      `SELECT p.entity_key, p.county_iso, c.name AS county_name, p.uat_siruta, u.name AS uat_name, p.village_siruta, p.national, p.placed_by
+         FROM core.placement p LEFT JOIN core.county c ON c.iso = p.county_iso LEFT JOIN core.uat u ON u.siruta = p.uat_siruta
+        WHERE p.entity_key = ANY($1)`,
+      [keys],
+    );
+    for (const p of placed.rows as RawPlacement[]) {
+      const entity = entities.get(p.entity_key);
+      if (entity) {
+        entity.placement = {
+          countyIso: p.county_iso,
+          countyName: p.county_name,
+          uat: p.uat_siruta && p.uat_name ? { siruta: p.uat_siruta, name: p.uat_name } : null,
+          villageSiruta: p.village_siruta,
+          national: p.national,
+          placedBy: p.placed_by,
+        };
+      }
+    }
+    return entities;
   }
 
   /** Attach authority and winner entities to raw Record rows (one entity query for the whole page). */
@@ -256,6 +317,18 @@ export function postgresStore(pool: pg.Pool): Store {
         [key],
       );
       return rows;
+    },
+    async counties() {
+      const { rows } = await pool.query(`SELECT iso, name FROM core.county ORDER BY iso`);
+      return rows as CountyRow[];
+    },
+    async uats(countyIso) {
+      const { rows } = await pool.query(
+        `SELECT u.siruta, u.name, c.iso, c.name AS county_name FROM core.uat u JOIN core.county c ON c.iso = u.county_iso
+          WHERE u.county_iso = $1 ORDER BY u.name_folded, u.siruta`,
+        [countyIso],
+      );
+      return rows.map((r) => ({ siruta: r.siruta, name: r.name, county: { iso: r.iso, name: r.county_name } }));
     },
     async roles(key) {
       const { rows } = await pool.query(

@@ -24,6 +24,8 @@ const store: Store = {
   entity: async () => null,
   aliases: async () => [],
   roles: async () => [],
+  counties: async () => [],
+  uats: async () => [],
 };
 
 const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;

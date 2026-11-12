@@ -50,6 +50,7 @@ docker compose run --rm pipeline rebuild
 | --- | --- | --- |
 | `GRIVEI_DB_PASSWORD` | `grivei` | Postgres password (the database is not published to the host) |
 | `GRIVEI_ARCHIVE_DIR` | `./archive` | host directory mounted as the raw archive |
+| `GRIVEI_GEO_DIR` | `./geo` | host directory the pipeline writes the county and UAT TopoJSON to and Caddy serves at `/geo/` (create it first: `mkdir geo`, so it is yours, not root's) |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
 
 Put overrides in a `.env` file beside `compose.yaml` (gitignored; do not commit secrets).

@@ -247,6 +247,42 @@ With Docker Compose (outbound internet needed): `nohup docker compose run --rm -
 - **After a kill or a failure:** nothing to clean up and nothing is lost: finished batches are archived, a batch cut short has no manifest and is ignored. Run the same `nohup ...` command again (`>>` appends to the log): the CUIs already answered, found or not found, are skipped and the run asks only for the rest (the scan repeats first). Stop on purpose with `pkill -f 'pipeline anaf-lookup'` (SIGTERM ends it like a failure).
 - **Later:** a rerun after the next `fetch-datagov` asks only for CUIs that are new; add `--recheck-after-days 365` to refresh old answers.
 
+## Placement (#67): counties, UATs, villages, national authorities
+
+Where an authority sits (and any ANAF-known entity): a county (ISO 3166-2:RO, Bucharest `B`), a UAT (SIRUTA; Bucharest's UATs are its six sectors), a village (stored, not plotted) and a `national` flag. All of it is derived at `rebuild` from the archive and from checked-in tables, never from the network (ADR 0004). `core.county`, `core.uat` and `core.placement` hold it; the API serves `counties`, `uats(county)` and `entity.placement`.
+
+**How an entity is placed** (`pipeline/placement/`, rules in `matching.py`):
+
+1. ANAF's seat (`core.anaf_company.seat`): the county from `scod_JudetAuto`, else `scod_Judet` (SIRUTA's JUD); `sdenumire_Localitate` parsed (`Sat X Com. Y`, `Loc. X Mun. Y`, `Mun. Y`, `Orş. Y`, `Com. Y`, `Sector n Mun. Bucureşti`). The UAT is resolved first, by `(county, folded bare name)`, then the village inside it (ANAF's postal code breaks a tie). Folding: cedilla, comma-below and ASCII are one key; `Â` and `Î` both fold to `I`; dots and the spaces around initials go (`I.L. Caragiale` = `I. L. CARAGIALE`); kind words (`Mun.`/`Orş.`/`Com.`/`Sat`/`Loc.`, SIRUTA's `MUNICIPIUL`/`ORAŞ`) are stripped. Typos go through `pipeline/placement/data/locality_aliases.csv` (reviewed, one line each, ships empty).
+2. No UAT match: the county stays, the UAT is empty, and the rebuild logs `placement: <cui> '<name>' placed in BV only: no UAT 'X' in BV` to stderr. Nothing is guessed. With no county either, the authority is unplaced (a tile of its own on the map, Glossary).
+3. A CUI ANAF does not know (authorities only): the archived SEAP entity view (`pipeline seap-entities`, below): `(county, folded city)`, the postal code from `address` (`Cod postal: 507190`) against SIRUTA's CODP when the name is ambiguous, `Sector: n` for Bucharest. SEAP's list is ASCII, so a SIRUTA `Râşnov` is `Rasnov` there: SEAP matching tries that spelling too. `placed_by` is `ANAF` or `SEAP`.
+4. Foreign suppliers have no CUI and no placement (the supplier side's unknown bucket).
+
+**National authorities** (`placement/scope.py`): `scope = national` comes from SEAP's `legalBuyerType` / `caType` on an award notice of the authority (one notice per authority), else from the reviewed file `pipeline/placement/data/national_authorities.csv` (`cui,national,override,name,reason`). The notice flag wins over the file unless the line says `override=true` (use it for a county unit the notice calls central: DSP, ISU, Prefectura plot in their own county). With neither, an authority is not national. A national authority keeps its seat in `core.placement` but the API serves no county, UAT or locality for it, so it is never piled onto Bucharest. `python -m pipeline national-propose --db URL` prints CSV lines for authorities with no flag and no line whose name looks national (`MINISTERUL ...`, `AGENTIA NATIONALA ...`): a proposal to review, never applied by itself.
+
+**Operator order** (once, then after each new load; the lookups need a rebuilt graph, like `estimates`):
+
+```bash
+cd watchdog && . .venv/bin/activate                        # uv pip install -r requirements.txt (shapely is new)
+export PIPELINE_ARCHIVE=~/grivei-data/raw
+# 1. the geography Reference sources, unchanged and dated (a few MB; ANCPI is ~16 pages of 200 UATs, 1 s apart)
+python -m pipeline geo-fetch                               # INS SIRUTA (data.gov.ro siruta_s1-2026), Wikidata P843/P625, ANCPI UAT polygons
+python -m pipeline geo-fetch --only siruta --siruta-dataset siruta_s2-2026   # a new SIRUTA semester is a new dataset id
+# 2. the checked-in tables, generated from those snapshots; review the diff and commit pipeline/placement/data/{uats,villages}.csv, table-sources.json
+python -m pipeline geo-table
+# 3. rebuild, then the two small lookups (each archives every answer; resumable; ~3 requests/s), then rebuild again
+python -m pipeline rebuild --db "$DATABASE_URL"
+python -m pipeline authority-scope --db "$DATABASE_URL"   # one award notice per authority: legalBuyerType / caType
+python -m pipeline seap-entities --db "$DATABASE_URL"     # authority CUIs ANAF did not answer
+python -m pipeline rebuild --db "$DATABASE_URL"
+```
+
+`geo-table` needs the three snapshots and `shapely`; it writes `uats.csv` (one row per UAT and per sector: siruta, county ISO, JUD, TIP, display name, folded name, lon, lat, point source), `villages.csv` (NIV=3 rows: siruta, parent UAT, name, folded name, CODP) and `table-sources.json` (snapshot paths and sha256, attribution). A Wikidata point is accepted only inside the ANCPI polygon with the same SIRUTA; otherwise the polygon's point on surface (`ancpi_pos`). It stops if `counties.csv` disagrees with SIRUTA's county rows. Without `uats.csv` a rebuild places by county only and says so (`no UAT table`); with it, the UATs of `core.uat` come from it. Attribution (CC BY 4.0): "SIRUTA: INS", "Limite UAT: ANCPI"; Wikidata is CC0.
+
+**TopoJSON.** `rebuild` (or `python -m pipeline geo-topojson`) dissolves the archived ANCPI polygons per county and writes static files to `--geo-dir` / `PIPELINE_GEO_DIR` (default `<archive>/derived/geo`; in Compose `GRIVEI_GEO_DIR`, default `./geo`, served by Caddy at `/geo/`): `counties.topo.json` (object `counties`, `properties.code` = `RO-BV` ..., `RO-B`), `uats/RO-BV.topo.json` (object `uats`, `properties.code` = SIRUTA) and `uats/RO-B.topo.json` (object `sectors`, the six sectors), `index.json`. The shape is the one `BaseMap` / `ZoomedCountyMap` read. A failure here prints `geo: TopoJSON failed` and never undoes the load.
+
+Tests: `pytest tests/test_placement.py` (rules, generator, TopoJSON, fetch and lookups with HTTP stubbed; no database) and `tests/test_placement_db.py` (Docker); the fixture world is `tests/fixtures/build_placement_archive.py` (run it to regenerate `archive-placement/` and `placement-data/`).
+
 ## The data model, in brief
 
 | Layer | Tables | Role |
