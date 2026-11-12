@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "dan",
+  "unit": "2025Q1",
+  "fetchedAt": "2025-06-20T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/datagov_raport_notificari_t1_2025.xlsx",
+  "via": "Notificari de atribuire la cumpararea directa T1 2025",
+  "files": [
+    {
+      "name": "datagov_raport_notificari_t1_2025.xlsx",
+      "sha256": "0ea25d9d4887a0d93d7afe696004d1f00e6368ebca11c5fc30ae2a115b704612",
+      "bytes": 5509
+    }
+  ]
+}

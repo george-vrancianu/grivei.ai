@@ -14,6 +14,7 @@ const row = (over: Partial<RecordRow>): RecordRow => ({
 const store: Store = {
   total: async () => ({ awarded: "420050", records: 2, noValue: 1 }),
   records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, supplier: null })].slice(0, limit),
+  record: async () => null,
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
 };
 
