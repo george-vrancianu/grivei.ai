@@ -1,6 +1,8 @@
 import { GraphQLError } from "graphql";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey } from "./store.ts";
 
+const MAX_SUBSEQUENT = 200;
+
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
 // The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
 // the rest of what the main screen selects (maps, tabs, goTo), until the tickets that own them land.
@@ -31,15 +33,32 @@ function assertEmptyFilter(filter: Filter): void {
 
 const zeroTotal = () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false });
 
-function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object) {
+// The order of the RecordBadge enum.
+const BADGE_ORDER = ["FRAMEWORK_CEILING", "SUBSEQUENT_CONTRACT", "CONSORTIUM_SHARE", "SUSPECT_VALUE", "NO_VALUE", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWLED_PROVISIONAL", "CRAWL_ONLY"];
+const badgeRank = (b: string) => (BADGE_ORDER.includes(b) ? BADGE_ORDER.indexOf(b) : BADGE_ORDER.length);
+
+function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store: Store) {
   return {
     ...recordRow(r),
     contractType: r.contractType,
     cpv: r.cpv,
     // `url`: a crawled Record's public page was built at load time; a bulk Record's is the /source/seap/<code> redirect's job (not built yet).
     provenance: { source: "SEAP" as const, url: r.provenance.url, via: r.provenance.via, kind: r.provenance.kind, fetchedAt: r.provenance.fetchedAt },
-    suspect: null,
-    framework: null,
+    // the link to its framework agreement (the counting rule): set for an agreement's own contract and for a contract awarded under one
+    framework: r.frameworkRole
+      ? async () => {
+          const f = await store.framework(r.code);
+          if (!f) return null;
+          return {
+            agreement: f.agreement ? recordRow(f.agreement) : null,
+            ceiling: f.ceiling,
+            subsequentReported: f.subsequentReported,
+            ratio: f.ratio,
+            subsequent: async ({ limit, offset }: { limit: number; offset: number }) =>
+              (await store.subsequent(f.noticeCode, { limit: Math.min(Math.max(limit, 0), MAX_SUBSEQUENT), offset: Math.max(offset, 0) })).map(recordRow),
+          };
+        }
+      : null,
   };
 }
 
@@ -79,18 +98,17 @@ export function rootValue(store: Store) {
       procedure: r.procedure,
       value: r.value,
       counted: r.counted,
-      // the order of the enum: NO_VALUE, then the identity badges the rebuild set
-      badges: [
-        ...(r.value === null ? ["NO_VALUE"] : []),
-        ...(r.crawlStatus === "PROVISIONAL" ? ["CRAWLED_PROVISIONAL"] : r.crawlStatus === "CRAWL_ONLY" ? ["CRAWL_ONLY"] : []),
-        ...r.identityBadges,
-      ],
+      // the counting and identity badges the rebuild stored, plus the crawl ones; one stable order (the enum's)
+      badges: [...r.badges, ...(r.crawlStatus === "PROVISIONAL" ? ["CRAWLED_PROVISIONAL"] : r.crawlStatus === "CRAWL_ONLY" ? ["CRAWL_ONLY"] : [])].sort(
+        (a, b) => badgeRank(a) - badgeRank(b),
+      ),
+      suspect: r.suspect ? { rule: r.suspect.rule, threshold: r.suspect.threshold } : null,
       authority: entityObject(r.authority),
       // A natural person (a 13-digit CNP in the file) is never named or linked: the rebuild stored nothing of them (ADR 0003).
       winners: r.winners.map((w) => ({
         naturalPerson: w.naturalPerson,
         publishedName: w.naturalPerson ? null : w.name,
-        share: null, // TODO #65: an equal share of the counted value for each member of a consortium
+        share: w.share, // an equal share of the value for each member of a consortium, decided by the rebuild
         entity: w.entity ? entityObject(w.entity) : null,
       })),
       signals: [],
@@ -99,7 +117,7 @@ export function rootValue(store: Store) {
 
   const total = async () => {
     const t = await store.total();
-    return { ...zeroTotal(), awarded: t.awarded, records: t.records, noValue: t.noValue };
+    return { ...zeroTotal(), ...t };
   };
   const emptyPage = () => ({ count: 0, countEstimated: false, rows: [] });
 
@@ -118,7 +136,7 @@ export function rootValue(store: Store) {
     seap: () => ({
       record: async ({ code }: { code: string }) => {
         const found = await store.record(code);
-        return found ? recordPage(found, recordRow) : null;
+        return found ? recordPage(found, recordRow, store) : null;
       },
       search: ({ filter }: { filter: Filter }) => {
         assertEmptyFilter(filter);

@@ -13,13 +13,15 @@ const entity = (key: string, displayName: string, over: Partial<EntityRow> = {})
 });
 const row = (over: Partial<RecordRow>): RecordRow => ({
   code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", procedure: null, value: "120050", counted: "120050",
-  authority: entity("1000009", "COMUNA EXEMPLU"), winners: [{ naturalPerson: false, name: "CURAT SRL", entity: entity("name-curat-srl", "CURAT SRL") }],
-  identityBadges: [], crawlStatus: null, ...over,
+  authority: entity("1000009", "COMUNA EXEMPLU"), winners: [{ naturalPerson: false, name: "CURAT SRL", entity: entity("name-curat-srl", "CURAT SRL"), share: null }],
+  badges: [], suspect: null, crawlStatus: null, ...over,
 });
 const store: Store = {
-  total: async () => ({ awarded: "420050", records: 2, noValue: 1 }),
-  records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, winners: [] })].slice(0, limit),
+  total: async () => ({ awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
+  records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, winners: [], badges: ["NO_VALUE"] })].slice(0, limit),
   record: async () => null,
+  framework: async () => null,
+  subsequent: async () => [],
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
   entity: async () => null,
   aliases: async () => [],
@@ -77,7 +79,7 @@ describe("MainScreen for the empty filter", () => {
       ...store,
       records: async () => [
         row({ code: "CAN1~1", kind: "CONTRACT", crawlStatus: "PROVISIONAL" }),
-        row({ code: "CAN2~1", kind: "CONTRACT", crawlStatus: "CRAWL_ONLY", value: null, counted: null }),
+        row({ code: "CAN2~1", kind: "CONTRACT", crawlStatus: "CRAWL_ONLY", value: null, counted: null, badges: ["NO_VALUE"] }),
       ],
     }, schema);
     const r = await crawled.respond({ id: mainScreen.sha256, variables: EMPTY });
