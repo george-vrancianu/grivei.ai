@@ -2708,7 +2708,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       // the commune: CAN9700003 (90%) and CAN9700004 (blank ceiling, 5,000,000 of subsequent contracts) are not Signals; only CAN9700008 is
       expect(await all(C, "AUTHORITY")).toEqual([`${C} 2023-01-02..2023-02-05`]);
       // CNAIR: CAN9700005 is a 2020 framework with 1,500,000 of 2023 subsequent contracts (150%): not a Signal; CAN9700006 and CAN9700009 are
-      expect(await all(N, "AUTHORITY")).toEqual([`${N} 2023-01-03..2023-03-01`, `${N} 2023-01-05..2023-02-20`]);
+      expect(await all(N, "AUTHORITY")).toEqual([`${N} 2023-01-03..2023-01-03`, `${N} 2023-01-05..2023-02-20`]);
       const page = async (code: string) => (await op(recordPage, { code })).seap.record;
       for (const code of ["CAN9700002~1", "CAN9700002~2", "CAN9700003~1", "CAN9700003~3", "CAN9700004~1", "CAN9700004~2", "CAN9700005~1", "CAN9700005~2", "CAN9700005~3"]) {
         expect((await page(code)).signals, code).toEqual([]);
@@ -2733,7 +2733,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("subsequent contracts signed by another authority under the notice count, as on the Record page; the Signal is the concluder's alone (#76)", async () => {
       // CAN9700009: concluded by CNAIR (ceiling 1,000,000), its only subsequent contract (1,200,000) signed by the commune
       const [x9] = (await overruns(N, "AUTHORITY")).filter((s) => s.firstDate === "2023-01-03");
-      expect(x9).toMatchObject({ date: "2023-03-01", recordCount: 1 }); // dated by the crossing subsequent contract of the other authority; its one Record is the ceiling
+      expect(x9).toMatchObject({ date: "2023-01-03", recordCount: 1 }); // the crossing contract (2023-03-01) is the other authority's, not a Record: dated by its latest Record, the ceiling
       expect(x9!.numbers).toEqual({ __typename: "FrameworkOverrunNumbers", ceiling: RON(1_000_000), subsequent: RON(1_200_000), ratio: 1.2 }); // the Record page's numbers
       expect(x9!.reproduce).toEqual({ authority: N, supplier: ALFA, signal: "FRAMEWORK_OVERRUN", cpv: null, from: "2023-01-03", to: "2023-01-03" }); // `to` is the last member's day
       expect((await overruns(C, "AUTHORITY")).map((s) => s.firstDate)).toEqual(["2023-01-02"]); // not a Signal of the commune
@@ -2746,7 +2746,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("a Signal is on its authority's and its suppliers' pages; the filter and the facet count it (#76)", async () => {
       const where = async (key: string) => (await overruns(key, "SUPPLIER")).map((s) => `${s.reproduce.authority} ${range(s)}`).sort();
-      expect(await where(ALFA)).toEqual([`${C} 2023-01-02..2023-02-05`, `${S} 2023-01-10..2023-03-05`, `${N} 2023-01-05..2023-02-20`, `${N} 2023-01-03..2023-03-01`].sort());
+      expect(await where(ALFA)).toEqual([`${C} 2023-01-02..2023-02-05`, `${S} 2023-01-10..2023-03-05`, `${N} 2023-01-05..2023-02-20`, `${N} 2023-01-03..2023-01-03`].sort());
       expect(await where(BETA)).toEqual([`${S} 2023-01-15..2023-02-20`, `${N} 2023-01-05..2023-02-20`].sort());
       expect(await where(GAMMA)).toEqual([`${C} 2023-01-02..2023-02-05`, `${N} 2023-01-05..2023-02-20`].sort());
       const total = async (f: Record<string, unknown>) =>
@@ -2761,16 +2761,18 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("running a Signal's reproduce filter returns exactly its Records, for every framework-overrun Signal (#76)", async () => {
       const q = `query($k: ID!, $role: Role!) { entity(key: $k) { seap { role(role: $role) { signals(limit: 200) { rows { rule date reproduce { authority supplier signal cpv from to }
-          records(limit: 200) { code } } } } } } }`;
+          records(limit: 200) { code date } } } } } } }`;
       const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
       const seen = new Set<string>();
       for (const [k, role] of [[S, "AUTHORITY"], [C, "AUTHORITY"], [N, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [GAMMA, "SUPPLIER"]] as const) {
         const { entity } = await doc(q, { k, role });
-        for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
+        for (const s of entity.seap.role.signals.rows as { rule: string; date: string; reproduce: Record<string, string | null>; records: { code: string; date: string | null }[] }[]) {
           const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
           const found = (await doc(search, { f: filter })).seap.search.records;
           expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
           expect(found.count).toBe(s.records.length);
+          expect(s.date, JSON.stringify(s.reproduce)).toBe(s.records.map((r) => r.date!).sort().at(-1)); // dated by its latest Record, never by a contract that is not one
+          expect(s.reproduce.to).toBe(s.date);
           seen.add(JSON.stringify(s.reproduce));
         }
       }

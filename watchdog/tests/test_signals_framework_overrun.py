@@ -119,18 +119,18 @@ def test_another_authoritys_subsequent_contracts_count_in_the_sums_as_seap_frame
     assert hit.numbers == {"ceiling": str(CEILING), "subsequent": str(10_200_000 * RON), "ratio": 10.2}
 
 
-def test_a_subsequent_contract_of_another_authority_can_cross_and_dates_the_signal_while_reproduce_stops_at_the_last_member():
+def test_a_subsequent_contract_of_another_authority_can_cross_but_the_signal_is_dated_by_its_latest_member():
     [hit] = found(ceiling("F1"), subsequent("C1", 600_000 * RON, days(10)), subsequent("X1", 600_000 * RON, days(20), authority="1000009"),
                   subsequent("C2", 100_000 * RON, days(30)))
-    # 600 + 600 = 1,200 > 1,100 at X1 (day 20): dated by it; the members are the authority's own Records up to that day
-    assert hit.date == days(20) and hit.record_codes == ("F1", "C1") and hit.authority_key == A
-    assert hit.reproduce["to"] == days(10).isoformat() and hit.value_bani == 600_000 * RON
+    # 600 + 600 = 1,200 > 1,100 at X1 (day 20), which is not a Record: the Signal is dated by its latest Record (C1, day 10)
+    assert hit.date == days(10) and hit.record_codes == ("F1", "C1") and hit.authority_key == A
+    assert hit.reproduce["to"] == hit.date.isoformat() and hit.value_bani == 600_000 * RON
     assert hit.numbers["subsequent"] == str(1_300_000 * RON)
 
 
 def test_an_overrun_made_only_of_other_authorities_subsequent_contracts_is_a_signal_of_the_ceiling_authority():
     [hit] = found(ceiling("F1"), subsequent("X1", 700_000 * RON, days(10), authority="1000009"), subsequent("X2", 500_000 * RON, days(12), authority="1000010"))
-    assert hit.authority_key == A and hit.date == days(12) and hit.record_codes == ("F1",) and hit.reproduce["to"] == D0.isoformat()
+    assert hit.authority_key == A and hit.date == D0 and hit.record_codes == ("F1",) and hit.reproduce["to"] == D0.isoformat()
 
 
 def test_a_suspect_earlier_ceiling_still_fixes_the_framework_date():

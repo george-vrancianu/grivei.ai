@@ -135,10 +135,10 @@ def test_framework_overrun_through_a_rebuild_matches_seap_framework_and_floors_i
     load(db, tmp_path, "archive-framework-overrun")
     signals = q(db, "SELECT authority_key, first_date, last_date, record_count, numbers FROM seap.signal WHERE rule = 'FRAMEWORK_OVERRUN' ORDER BY last_date, authority_key")
     assert [(a, f, ld, n) for a, f, ld, n, _ in signals] == [
-        ("1000009", date(2023, 1, 2), date(2023, 2, 5), 3), ("1000017", date(2023, 1, 15), date(2023, 2, 20), 2),
-        ("2000031", date(2023, 1, 5), date(2023, 2, 20), 4), ("2000031", date(2023, 1, 3), date(2023, 3, 1), 1), ("1000017", date(2023, 1, 10), date(2023, 3, 5), 4)]
+        ("2000031", date(2023, 1, 3), date(2023, 1, 3), 1), ("1000009", date(2023, 1, 2), date(2023, 2, 5), 3),
+        ("1000017", date(2023, 1, 15), date(2023, 2, 20), 2), ("2000031", date(2023, 1, 5), date(2023, 2, 20), 4), ("1000017", date(2023, 1, 10), date(2023, 3, 5), 4)]
     by_notice = {r[0]: r for r in q(db, "SELECT notice_code, ceiling_bani, subsequent_bani, ratio FROM seap.framework")}
-    for notice, number in (("CAN9700001", signals[4][4]), ("CAN9700007", signals[1][4]), ("CAN9700006", signals[2][4]), ("CAN9700009", signals[3][4]), ("CAN9700008", signals[0][4])):
+    for notice, number in (("CAN9700001", signals[4][4]), ("CAN9700007", signals[2][4]), ("CAN9700006", signals[3][4]), ("CAN9700009", signals[0][4]), ("CAN9700008", signals[1][4])):
         _, ceiling, subsequent, ratio = by_notice[notice]
         assert number == {"ceiling": str(ceiling), "subsequent": str(subsequent), "ratio": ratio}
     # the 2020 Records are before the window: the base-rate year is 2023, not the "latest complete year" 2020
