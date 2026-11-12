@@ -2,7 +2,7 @@ import { createRef, type ReactElement, type Ref } from "react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../testing/render.tsx";
 import {
-  Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Grid, IconButton, Link, Stack, Tab, Table,
+  Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Grid, IconButton, LinearProgress, Link, Stack, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, Tooltip, Typography,
 } from "./index.ts";
 
@@ -22,6 +22,7 @@ const cases: Case[] = [
   ["Grid", (ref) => <Grid ref={ref} container>x</Grid>, tag("DIV")],
   ["IconButton", (ref) => <IconButton ref={ref} aria-label="x" />, tag("BUTTON")],
   ["IconButton as link", (ref) => <IconButton ref={ref} aria-label="x" href="/x" />, tag("A")],
+  ["LinearProgress", (ref) => <LinearProgress ref={ref} variant="determinate" value={10} />, tag("SPAN")],
   ["Link", (ref) => <Link ref={ref} href="/x">x</Link>, tag("A")],
   ["Stack", (ref) => <Stack ref={ref}>x</Stack>, tag("DIV")],
   ["Tab", (ref) => <Tabs value="a"><Tab ref={ref} value="a" label="x" /></Tabs>, tag("BUTTON")],
