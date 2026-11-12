@@ -1,0 +1,119 @@
+(15677087, 15669478, 187157, 3564.2909947373487, 2972.521962002776) winner rows / with non-CNP CUI / distinct / bn RON raw / bn RON after rough suspect filter
+(244876, 177519, 223884, 162805, 2629.2012663500104) test pairs (spelling, CUI) / CUIs / pairs whose CUI is in ONRC / such CUIs / bn RON
+
+## all test pairs (SEAP spelling, ANAF-confirmed CUI)  (N pairs = 244876, RON bn = 2629.2)
+                                                  rule  unique correct %n  unique WRONG %n  ambiguous %n  no match %n  unique correct %RON  unique WRONG %RON  ambiguous %RON  WRONG / all unique %
+                                r1 name+form, all ONRC              41.59             0.39          3.84        54.18                33.51               0.35            3.17                  0.94
+                          r2 name+form, not struck off              41.69             0.41          1.93        55.97                34.41               0.34            1.74                  0.98
+                                 r3 name+form + county              45.03             0.18          0.21        54.59                36.22               0.03            0.11                  0.39
+                r3b name+form + county, not struck off              43.54             0.15          0.00        56.30                36.14               0.03            0.00                  0.35
+                         r4 name without form + county              82.42             0.36          0.57        16.65                94.77               0.04            0.79                  0.43
+        r4b name without form + county, not struck off              80.13             0.25          0.02        19.60                94.08               0.15            0.20                  0.31
+                       r1x name without form, all ONRC              75.61             0.74          7.85        15.81                82.44               0.48           13.62                  0.97
+                      r5 r1 + SEAP alias index (<2025)              80.55             0.23          5.05        14.18                89.15               0.01           10.14                  0.28
+                                       r5c r5 + county              84.87             0.09          0.60        14.43                96.30               0.00            3.00                  0.11
+r5d r4 + SEAP alias index (name without form + county)              93.72             0.14          1.16         4.98                95.04               0.00            4.90                  0.15
+
+## true CUI is in ONRC  (N pairs = 223884, RON bn = 2621.8)
+                                                  rule  unique correct %n  unique WRONG %n  ambiguous %n  no match %n  unique correct %RON  unique WRONG %RON  ambiguous %RON  WRONG / all unique %
+                                r1 name+form, all ONRC              45.49             0.32          4.19        50.01                33.60               0.30            3.18                  0.69
+                          r2 name+form, not struck off              45.60             0.34          2.10        51.95                34.51               0.29            1.74                  0.75
+                                 r3 name+form + county              49.25             0.13          0.23        50.39                36.32               0.03            0.11                  0.26
+                r3b name+form + county, not struck off              47.62             0.11          0.00        52.26                36.24               0.03            0.00                  0.23
+                         r4 name without form + county              90.14             0.25          0.62         8.98                95.03               0.04            0.79                  0.28
+        r4b name without form + county, not struck off              87.65             0.18          0.03        12.15                94.35               0.15            0.20                  0.20
+                       r1x name without form, all ONRC              82.69             0.54          8.50         8.26                82.68               0.42           13.66                  0.65
+                      r5 r1 + SEAP alias index (<2025)              82.36             0.16          5.06        12.41                89.20               0.01           10.11                  0.19
+                                       r5c r5 + county              86.90             0.05          0.48        12.58                96.31               0.00            3.00                  0.06
+r5d r4 + SEAP alias index (name without form + county)              96.57             0.08          1.02         2.32                95.05               0.00            4.90                  0.09
+
+## true CUI is in ONRC, excl. PFA/II/IF/PF  (N pairs = 204744, RON bn = 2619.3)
+                                                  rule  unique correct %n  unique WRONG %n  ambiguous %n  no match %n  unique correct %RON  unique WRONG %RON  ambiguous %RON  WRONG / all unique %
+                                r1 name+form, all ONRC              45.27             0.30          4.35        50.08                33.60               0.30            3.18                  0.66
+                          r2 name+form, not struck off              45.81             0.33          2.28        51.59                34.51               0.29            1.74                  0.71
+                                 r3 name+form + county              49.30             0.12          0.12        50.45                36.32               0.03            0.11                  0.25
+                r3b name+form + county, not struck off              48.00             0.10          0.00        51.90                36.24               0.03            0.00                  0.21
+                         r4 name without form + county              91.03             0.19          0.28         8.51                95.04               0.04            0.79                  0.20
+        r4b name without form + county, not struck off              88.87             0.14          0.02        10.97                94.36               0.15            0.20                  0.16
+                       r1x name without form, all ONRC              83.29             0.44          8.37         7.91                82.68               0.42           13.67                  0.52
+                      r5 r1 + SEAP alias index (<2025)              82.60             0.15          5.25        11.99                89.20               0.01           10.12                  0.19
+                                       r5c r5 + county              87.43             0.04          0.37        12.15                96.31               0.00            3.00                  0.05
+r5d r4 + SEAP alias index (name without form + county)              97.21             0.06          0.64         2.09                95.05               0.00            4.90                  0.06
+
+## hold-out: pairs used in 2025+ rows, true CUI in ONRC, value = 2025+ only; alias index built from pre-2025 rows (r5 is only fair here)  (N pairs = 146525, RON bn = 553.2)
+                                                  rule  unique correct %n  unique WRONG %n  ambiguous %n  no match %n  unique correct %RON  unique WRONG %RON  ambiguous %RON  WRONG / all unique %
+                                r1 name+form, all ONRC              44.00             0.20          4.26        51.53                34.10               0.09            2.12                  0.46
+                          r2 name+form, not struck off              45.64             0.18          2.18        52.00                35.12               0.09            1.04                  0.39
+                                 r3 name+form + county              47.95             0.07          0.21        51.77                36.04               0.00            0.16                  0.14
+                r3b name+form + county, not struck off              47.79             0.05          0.00        52.16                36.17               0.00            0.00                  0.11
+                         r4 name without form + county              92.44             0.16          0.60         6.80                96.72               0.00            0.68                  0.18
+        r4b name without form + county, not struck off              92.37             0.10          0.02         7.50                97.20               0.02            0.06                  0.10
+                       r1x name without form, all ONRC              84.39             0.35          8.92         6.34                85.07               0.05           12.40                  0.42
+                      r5 r1 + SEAP alias index (<2025)              75.84             0.25          4.95        18.96                84.93               0.03           11.81                  0.32
+                                       r5c r5 + county              80.35             0.07          0.36        19.22                91.42               0.01            5.31                  0.09
+r5d r4 + SEAP alias index (name without form + county)              95.45             0.13          0.87         3.55                93.52               0.00            6.27                  0.13
+
+## hold-out, only pairs first seen 2025+ (spelling new to the alias index)  (N pairs = 48986, RON bn = 26.2)
+                                                  rule  unique correct %n  unique WRONG %n  ambiguous %n  no match %n  unique correct %RON  unique WRONG %RON  ambiguous %RON  WRONG / all unique %
+                                r1 name+form, all ONRC              39.62             0.43          2.81        57.13                30.59               0.04            0.48                  1.09
+                          r2 name+form, not struck off              40.64             0.39          1.28        57.69                30.78               0.03            0.24                  0.94
+                                 r3 name+form + county              42.06             0.16          0.22        57.56                31.03               0.01            0.03                  0.38
+                r3b name+form + county, not struck off              41.85             0.12          0.00        58.03                31.01               0.01            0.00                  0.28
+                         r4 name without form + county              87.54             0.37          0.72        11.37                94.93               0.02            0.45                  0.42
+        r4b name without form + county, not struck off              87.49             0.22          0.01        12.28                95.28               0.02            0.01                  0.25
+                       r1x name without form, all ONRC              82.60             0.77          6.12        10.52                89.94               0.08            5.60                  0.92
+                      r5 r1 + SEAP alias index (<2025)              39.57             0.73          2.98        56.72                30.58               0.62            0.54                  1.82
+                                       r5c r5 + county              42.03             0.22          0.28        57.48                31.02               0.13            0.04                  0.52
+r5d r4 + SEAP alias index (name without form + county)              88.14             0.38          0.86        10.62                94.25               0.02            1.27                  0.43
+
+## r1 name+form, all ONRC: unique WRONG links (true CUI in ONRC), by how the SEAP spelling relates to ANAF's name for the true CUI
+                                             why   n  pct_of_pairs  m_ron
+unlike: likely wrong CUI in SEAP or renamed firm 369         0.165 6817.0
+               short: SEAP used a shortened name 251         0.112  968.8
+               near: typo / spacing / other form  91         0.041    4.6
+
+## r3 name+form + county: unique WRONG links (true CUI in ONRC), by how the SEAP spelling relates to ANAF's name for the true CUI
+                                             why   n  pct_of_pairs  m_ron
+unlike: likely wrong CUI in SEAP or renamed firm 156         0.070  763.9
+               short: SEAP used a shortened name 101         0.045   55.1
+               near: typo / spacing / other form  29         0.013    0.3
+
+## r4 name without form + county: unique WRONG links (true CUI in ONRC), by how the SEAP spelling relates to ANAF's name for the true CUI
+                                             why   n  pct_of_pairs  m_ron
+               short: SEAP used a shortened name 278         0.124   85.2
+unlike: likely wrong CUI in SEAP or renamed firm 237         0.106  925.4
+               near: typo / spacing / other form  45         0.020    0.7
+
+## r4b name without form + county, not struck off: unique WRONG links (true CUI in ONRC), by how the SEAP spelling relates to ANAF's name for the true CUI
+                                             why   n  pct_of_pairs  m_ron
+unlike: likely wrong CUI in SEAP or renamed firm 204         0.091  857.8
+               short: SEAP used a shortened name 178         0.080 3015.3
+               near: typo / spacing / other form  20         0.009    0.1
+
+## r5d r4 + SEAP alias index (name without form + county): unique WRONG links (true CUI in ONRC), by how the SEAP spelling relates to ANAF's name for the true CUI
+                                             why   n  pct_of_pairs  m_ron
+               short: SEAP used a shortened name 103         0.046    2.9
+unlike: likely wrong CUI in SEAP or renamed firm  68         0.030    2.4
+               near: typo / spacing / other form  16         0.007    0.2
+
+## contracting authorities: (17303, 17286, 17649) distinct CUIs / with ANAF county / distinct normalised names
+                     scope                      key  distinct keys  % keys >1 CUI  % CUIs sharing key  max CUIs/key
+        all authority CUIs                     name          17649           2.35                5.92            19
+only CUIs with ANAF county                     name          17637           2.32                5.86            19
+only CUIs with ANAF county            name + county          18236           0.30                0.64             5
+only CUIs with ANAF county name + county + locality          18272           0.15                0.31             2
+
+## most frequent authority homonym names (name + county), anonymised to their pattern
+                         pat  keys
+       SCOALA GIMNAZIALA ...    14
+            STATIUNEA DE ...     4
+        SERVICIUL PUBLIC ...     4
+         CONSILIUL LOCAL ...     3
+       LICEUL TEHNOLOGIC ...     2
+            GRADINITA CU ...     2
+           SERVICIUL APA ...     1
+INSPECTORATUL TERITORIAL ...     1
+      DIRECTIA JUDETEANA ...     1
+       UNITATEA MILITARA ...     1
+          CAMINUL PENTRU ...     1
+  ADMINISTRATIA BAZINALA ...     1

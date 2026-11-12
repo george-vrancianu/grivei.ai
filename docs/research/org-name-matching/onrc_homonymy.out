@@ -1,0 +1,43 @@
+(4233074, 86427, 2195760) rows / blank-or-0 CUI / struck (1084)
+(4146647, 4041402, 2036912) rows with CUI / distinct CUIs / distinct not-struck CUIs
+                             scope               name                      key  distinct keys  % keys >1 CUI  % CUIs sharing key  max CUIs/key
+                               all    with legal form                     name        3840019           3.26                8.33            36
+                               all    with legal form            name + county        4111354           0.54                1.10            27
+                               all    with legal form name + county + locality        4118241           0.42                0.84             7
+                               all legal form removed                     name        3785209           4.20               10.51            38
+                               all legal form removed            name + county        4092921           0.97                1.97            27
+                               all legal form removed name + county + locality        4104751           0.74                1.48             7
+                    not struck off    with legal form                     name        2016205           0.72                1.73            29
+                    not struck off    with legal form            name + county        2036828           0.00                0.01             3
+                    not struck off    with legal form name + county + locality        2036869           0.00                0.00             2
+                    not struck off legal form removed                     name        2013932           0.79                1.91            29
+                    not struck off legal form removed            name + county        2036665           0.01                0.02             3
+                    not struck off legal form removed name + county + locality        2036799           0.01                0.01             2
+           all, excl. PFA/II/IF/PF    with legal form                     name        2670485           3.36                9.18            36
+           all, excl. PFA/II/IF/PF    with legal form            name + county        2912255           0.23                0.48            27
+           all, excl. PFA/II/IF/PF    with legal form name + county + locality        2915540           0.17                0.33             7
+           all, excl. PFA/II/IF/PF legal form removed                     name        2663210           3.44                9.49            38
+           all, excl. PFA/II/IF/PF legal form removed            name + county        2911652           0.25                0.52            27
+           all, excl. PFA/II/IF/PF legal form removed name + county + locality        2915117           0.18                0.36             7
+not struck off, excl. PFA/II/IF/PF    with legal form                     name        1499832           0.90                2.18            29
+not struck off, excl. PFA/II/IF/PF    with legal form            name + county        1519434           0.00                0.01             2
+not struck off, excl. PFA/II/IF/PF    with legal form name + county + locality        1519444           0.00                0.00             2
+not struck off, excl. PFA/II/IF/PF legal form removed                     name        1498858           0.93                2.27            29
+not struck off, excl. PFA/II/IF/PF legal form removed            name + county        1519402           0.00                0.01             2
+not struck off, excl. PFA/II/IF/PF legal form removed name + county + locality        1519418           0.00                0.01             2
+
+## homonym kinds (name with legal form, all registrations): pairs (first-registered CUI, each later CUI)
+                                                kind  pairs  pct
+                   both pre-2000, different counties  79902 37.6
+                                     both struck off  41299 19.4
+                         person-named (PFA/II/IF/PF)  41286 19.4
+earlier one struck off, later one live (name reused)  30686 14.4
+                      earlier live, later struck off  11508  5.4
+                       both live, different counties   7695  3.6
+                              both live, same county     28  0.0
+
+## live-live homonyms (excl. person forms): registration-year bucket of the later CUI
+b
+all 2010+          77
+all pre-2000     2753
+mixed           10683
