@@ -238,6 +238,13 @@ export function cachedStore(
       if (g !== null && g === generation) countiesMemo = { generation: g, rows };
       return rows;
     },
+    // the role aggregates of an entity page (#73): the filter is already scoped to the entity, so its key is in the canonical filter
+    roleCounterparties: (side, filter, p, options) => cached(`cpty|${side}|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleCounterparties(side, filter, p, options)),
+    searchFacet: (dimension, filter, options) => cached(`facet|${dimension}|${canonicalFilter(filter)}`, () => inner.searchFacet(dimension, filter, options)),
+    searchMonths: (filter, options) => cached(`months|${canonicalFilter(filter)}`, () => inner.searchMonths(filter, options)),
+    roleFrameworks: (filter, options) => cached(`frameworks|${canonicalFilter(filter)}`, () => inner.roleFrameworks(filter, options)),
+    roleConsortia: (filter, p, options) => cached(`consortia|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleConsortia(filter, p, options)),
+    roleLargest: (filter, p, options) => cached(`largest|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleLargest(filter, p, options)),
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };
