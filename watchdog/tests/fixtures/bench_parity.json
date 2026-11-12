@@ -1,0 +1,862 @@
+[
+ {
+  "label": "ma (2-char prefix)",
+  "filter": {
+   "q": "ma"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "ma.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "ma"
+  },
+  "rollup": null
+ },
+ {
+  "label": "re (2-char prefix)",
+  "filter": {
+   "q": "re"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "re.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "re"
+  },
+  "rollup": null
+ },
+ {
+  "label": "co (2-char prefix)",
+  "filter": {
+   "q": "co"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "co.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "co"
+  },
+  "rollup": null
+ },
+ {
+  "label": "pr (2-char prefix)",
+  "filter": {
+   "q": "pr"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "pr.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "pr"
+  },
+  "rollup": null
+ },
+ {
+  "label": "se (2-char prefix)",
+  "filter": {
+   "q": "se"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "se.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "se"
+  },
+  "rollup": null
+ },
+ {
+  "label": "in (2-char prefix)",
+  "filter": {
+   "q": "in"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "in.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "in"
+  },
+  "rollup": null
+ },
+ {
+  "label": "de (2-char prefix)",
+  "filter": {
+   "q": "de"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "de.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "de"
+  },
+  "rollup": null
+ },
+ {
+  "label": "furnizare",
+  "filter": {
+   "q": "furnizare"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "furnizare.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "furnizare"
+  },
+  "rollup": null
+ },
+ {
+  "label": "lucrari",
+  "filter": {
+   "q": "lucrari"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "lucrari.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "lucrari"
+  },
+  "rollup": null
+ },
+ {
+  "label": "deszapezire",
+  "filter": {
+   "q": "deszapezire"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "deszapezire.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "deszapezire"
+  },
+  "rollup": null
+ },
+ {
+  "label": "medicamente",
+  "filter": {
+   "q": "medicamente"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "medicamente.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "medicamente"
+  },
+  "rollup": null
+ },
+ {
+  "label": "combustibil",
+  "filter": {
+   "q": "combustibil"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "combustibil.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "combustibil"
+  },
+  "rollup": null
+ },
+ {
+  "label": "consultanta",
+  "filter": {
+   "q": "consultanta"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "consultanta.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "consultanta"
+  },
+  "rollup": null
+ },
+ {
+  "label": "mentenanta",
+  "filter": {
+   "q": "mentenanta"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "mentenanta.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "mentenanta"
+  },
+  "rollup": null
+ },
+ {
+  "label": "spital ur (multi-token, prefix)",
+  "filter": {
+   "q": "spital ur"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "spital",
+    "ur.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "spital ur"
+  },
+  "rollup": null
+ },
+ {
+  "label": "servicii cu (multi-token, prefix)",
+  "filter": {
+   "q": "servicii cu"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "servicii",
+    "cu.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "servicii cu"
+  },
+  "rollup": null
+ },
+ {
+  "label": "primaria co (multi-token, prefix)",
+  "filter": {
+   "q": "primaria co"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "primaria",
+    "co.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "primaria co"
+  },
+  "rollup": null
+ },
+ {
+  "label": "reabilitare strazi (multi-token)",
+  "filter": {
+   "q": "reabilitare strazi"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "reabilitare",
+    "strazi.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "reabilitare strazi"
+  },
+  "rollup": null
+ },
+ {
+  "label": "servicii de consultanta juridica (long)",
+  "filter": {
+   "q": "servicii de consultanta juridica"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "servicii de consultanta",
+    "juridica.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "servicii de consultanta juridica"
+  },
+  "rollup": null
+ },
+ {
+  "label": "municipiul brasov (authority name)",
+  "filter": {
+   "q": "municipiul brasov"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "municipiul",
+    "brasov.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "municipiul brasov"
+  },
+  "rollup": null
+ },
+ {
+  "label": "4384206 (CUI)",
+  "filter": {
+   "q": "4384206"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "4384206.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "4384206"
+  },
+  "rollup": null
+ },
+ {
+  "label": "RO4384206 (CUI with RO)",
+  "filter": {
+   "q": "RO4384206"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "4384206.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "4384206"
+  },
+  "rollup": null
+ },
+ {
+  "label": "45 (CPV prefix as text)",
+  "filter": {
+   "q": "45"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "45.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "45"
+  },
+  "rollup": null
+ },
+ {
+  "label": "45233140 (CPV code as text)",
+  "filter": {
+   "q": "45233140"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "45233140.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "45233140"
+  },
+  "rollup": null
+ },
+ {
+  "label": "cpv 45 (CPV prefix chip)",
+  "filter": {
+   "cpv": "45"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND cpv_code @@@ pdb.regex(%s::text)",
+   "params": [
+    "45.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "deszapezire 2024-2026 contracts",
+  "filter": {
+   "q": "deszapezire",
+   "from": "2024-01-01",
+   "to": "2026-12-31",
+   "channel": "CONTRACT"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text) AND award_date >= %s::date AND award_date <= %s::date AND channel = %s",
+   "params": [
+    "deszapezire.*",
+    "2024-01-01",
+    "2026-12-31",
+    "CONTRACT"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "deszapezire"
+  },
+  "rollup": null
+ },
+ {
+  "label": "ma 2025 (text + year chips)",
+  "filter": {
+   "q": "ma",
+   "from": "2025-01-01",
+   "to": "2025-12-31"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text) AND award_date >= %s::date AND award_date <= %s::date",
+   "params": [
+    "ma.*",
+    "2025-01-01",
+    "2025-12-31"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "ma"
+  },
+  "rollup": null
+ },
+ {
+  "label": "faza noru (supplier name)",
+  "filter": {
+   "q": "faza noru"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "faza",
+    "noru.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "faza noru"
+  },
+  "rollup": null
+ },
+ {
+  "label": "ma 2025, authority county RO-BV",
+  "filter": {
+   "q": "ma",
+   "from": "2025-01-01",
+   "to": "2025-12-31",
+   "county": "RO-BV",
+   "countySide": "AUTHORITY"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text) AND award_date >= %s::date AND award_date <= %s::date AND authority_area = %s",
+   "params": [
+    "ma.*",
+    "2025-01-01",
+    "2025-12-31",
+    "RO-BV"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "ma"
+  },
+  "rollup": null
+ },
+ {
+  "label": "ma, supplier county RO-BV",
+  "filter": {
+   "q": "ma",
+   "county": "RO-BV",
+   "countySide": "SUPPLIER"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text) AND supplier_area = %s",
+   "params": [
+    "ma.*",
+    "RO-BV"
+   ],
+   "winnerSide": true,
+   "empty": false,
+   "qFolded": "ma"
+  },
+  "rollup": null
+ },
+ {
+  "label": "(empty)",
+  "filter": {},
+  "where": {
+   "sql": "id @@@ pdb.all()",
+   "params": [],
+   "winnerSide": false,
+   "empty": true,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": null,
+   "valueBucket": null,
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "(empty) year 2025",
+  "filter": {
+   "from": "2025-01-01",
+   "to": "2025-12-31"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND award_date >= %s::date AND award_date <= %s::date",
+   "params": [
+    "2025-01-01",
+    "2025-12-31"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": 2025,
+   "yearTo": 2025,
+   "channel": null,
+   "valueBucket": null,
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "(empty) contracts",
+  "filter": {
+   "channel": "CONTRACT"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND channel = %s",
+   "params": [
+    "CONTRACT"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": "CONTRACT",
+   "valueBucket": null,
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "(empty) direct purchases, up to 135k",
+  "filter": {
+   "channel": "DIRECT_PURCHASE",
+   "valueBucket": "UP_TO_135K"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND channel = %s AND value_bucket = %s",
+   "params": [
+    "DIRECT_PURCHASE",
+    "UP_TO_135K"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": "DIRECT_PURCHASE",
+   "valueBucket": "UP_TO_135K",
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "(empty) 2025, has Signals",
+  "filter": {
+   "from": "2025-01-01",
+   "to": "2025-12-31",
+   "hasSignals": true
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND award_date >= %s::date AND award_date <= %s::date AND has_signals = %s",
+   "params": [
+    "2025-01-01",
+    "2025-12-31",
+    true
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": 2025,
+   "yearTo": 2025,
+   "channel": null,
+   "valueBucket": null,
+   "hasSignals": true
+  }
+ },
+ {
+  "label": "(empty) over 1 bn",
+  "filter": {
+   "valueBucket": "OVER_1B"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND value_bucket = %s",
+   "params": [
+    "OVER_1B"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": null,
+   "valueBucket": "OVER_1B",
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "(empty) badge SUSPECT_VALUE (not a rollup dimension)",
+  "filter": {
+   "badges": [
+    "SUSPECT_VALUE"
+   ]
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND badges @> %s::text[]",
+   "params": [
+    [
+     "SUSPECT_VALUE"
+    ]
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: legal-form word only",
+  "filter": {
+   "q": "SRL"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all()",
+   "params": [],
+   "winnerSide": false,
+   "empty": true,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": null,
+   "valueBucket": null,
+   "hasSignals": null
+  }
+ },
+ {
+  "label": "extra: RO-prefixed CUI and a legal form",
+  "filter": {
+   "q": "ALFA S.R.L. RO4384206"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "alfa",
+    "4384206.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "alfa 4384206"
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: regex metacharacters",
+  "filter": {
+   "q": "a+b (c)"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND doc @@@ pdb.regex(%s::text)",
+   "params": [
+    "a b",
+    "c.*"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "a b c"
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: authority and supplier",
+  "filter": {
+   "authority": "4384206",
+   "supplier": "27272953"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND authority_key = %s AND supplier_key = %s",
+   "params": [
+    "4384206",
+    "27272953"
+   ],
+   "winnerSide": true,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: supplier county",
+  "filter": {
+   "county": "RO-BV",
+   "countySide": "SUPPLIER"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND supplier_area = %s",
+   "params": [
+    "RO-BV"
+   ],
+   "winnerSide": true,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: authority county",
+  "filter": {
+   "county": "RO-BV"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND authority_area = %s",
+   "params": [
+    "RO-BV"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: UAT and Signal",
+  "filter": {
+   "uat": "40198",
+   "signal": "OVER_CAP"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND authority_uat = %s AND signals @> ARRAY[%s]::text[]",
+   "params": [
+    "40198",
+    "OVER_CAP"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: procedure and badges",
+  "filter": {
+   "procedure": [
+    "x",
+    "y"
+   ],
+   "badges": [
+    "NO_VALUE",
+    "SUSPECT_VALUE"
+   ]
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND badges @> %s::text[] AND procedure = ANY(%s::text[])",
+   "params": [
+    [
+     "NO_VALUE",
+     "SUSPECT_VALUE"
+    ],
+    [
+     "x",
+     "y"
+    ]
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: partial dates",
+  "filter": {
+   "from": "2025-03-01",
+   "to": "2025-06-30"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND award_date >= %s::date AND award_date <= %s::date",
+   "params": [
+    "2025-03-01",
+    "2025-06-30"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: hasSignals false",
+  "filter": {
+   "hasSignals": false,
+   "channel": "CONTRACT",
+   "valueBucket": "OVER_1B"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND channel = %s AND value_bucket = %s AND has_signals = %s",
+   "params": [
+    "CONTRACT",
+    "OVER_1B",
+    false
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": {
+   "yearFrom": null,
+   "yearTo": null,
+   "channel": "CONTRACT",
+   "valueBucket": "OVER_1B",
+   "hasSignals": false
+  }
+ }
+]

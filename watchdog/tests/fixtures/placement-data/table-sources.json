@@ -1,0 +1,38 @@
+{
+  "attribution": [
+    "SIRUTA: INS, CC BY 4.0",
+    "Limite UAT: ANCPI, CC BY 4.0",
+    "Wikidata coordinates: CC0"
+  ],
+  "counts": {
+    "ancpi_pos": 2,
+    "uats": 15,
+    "villages": 12,
+    "wikidata": 13
+  },
+  "snapshots": {
+    "ancpi": {
+      "fetchedAt": "2026-11-12T09:00:00Z",
+      "files": {
+        "page-0000.geojson": "cdefe55fff78b7212b42d0976edb280b864bdbfa42f2c8a796b54c022a409037",
+        "page-0001.geojson": "35569501ae1046fb5200d53affd7208146ed81cf273fdc54eb14fa2378522023"
+      },
+      "path": "geo/ancpi/uat-polygons/layer-1/2026-11-12"
+    },
+    "siruta": {
+      "fetchedAt": "2026-11-12T09:00:00Z",
+      "files": {
+        "siruta_s1_2026.csv": "a4381e3960edfa574b64c69263d07af1cc6b68f9ad3af2f047449d6a2ca54429"
+      },
+      "path": "geo/siruta/csv/siruta_s1-2026/2026-11-12"
+    },
+    "wikidata": {
+      "fetchedAt": "2026-11-12T09:00:00Z",
+      "files": {
+        "points.json": "1f4194a6787216a2bcb9db99e62ed9687bfdad20268f1e72bb9fdeeb971a428e",
+        "query.sparql": "a0a22c9dfa428cdce6fb3e58a40d4052335e17e5fbe42efc2f17f9ca813be62c"
+      },
+      "path": "geo/wikidata/siruta-points/p843-p625/2026-11-12"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source": "geo",
+  "stream": "ancpi",
+  "kind": "uat-polygons",
+  "unit": "layer-1",
+  "fetchedAt": "2026-11-12T09:00:00Z",
+  "url": "https://example.invalid/FeatureServer/1/query",
+  "via": null,
+  "files": [
+    {
+      "name": "page-0000.geojson",
+      "sha256": "cdefe55fff78b7212b42d0976edb280b864bdbfa42f2c8a796b54c022a409037",
+      "bytes": 2518
+    },
+    {
+      "name": "page-0001.geojson",
+      "sha256": "35569501ae1046fb5200d53affd7208146ed81cf273fdc54eb14fa2378522023",
+      "bytes": 2110
+    }
+  ],
+  "origin": {
+    "system": "ANCPI ArcGIS feature service",
+    "maxAllowableOffset": 0.0005
+  }
+}

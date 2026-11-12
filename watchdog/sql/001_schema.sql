@@ -184,9 +184,13 @@ CREATE INDEX IF NOT EXISTS seap_da_fin_idx ON seap_direct_acquisition (finalized
 -- Utility functions
 -- ---------------------------------------------------------------------
 
--- Normalizes a tax code: "RO 16310091" / "ro16310091" / "16310091" -> "16310091"
+-- Normalizes a Romanian tax code: "RO 16310091" / "ro16310091" / "16310091" -> "16310091". Only digits survive: a value that
+-- holds anything else once `RO`, spaces and punctuation are gone (a foreign VAT id such as "BG103029862") is NOT a CUI and
+-- gives NULL, never the digits inside it (ADR 0003). A 13-digit number is a person's CNP and gives NULL too. This is the
+-- legacy loader's cleanup only; the pipeline's rules (check digit, ANAF confirmation) live in watchdog/pipeline/identity.py.
 CREATE OR REPLACE FUNCTION norm_cui(t text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
-  SELECT NULLIF(regexp_replace(upper(coalesce(t,'')), '[^0-9]', '', 'g'), '')
+  SELECT CASE WHEN c ~ '^[0-9]{1,12}$' THEN NULLIF(ltrim(c, '0'), '') END
+  FROM (SELECT regexp_replace(regexp_replace(upper(coalesce(t, '')), '[^0-9A-Z]', '', 'g'), '^RO(?=[0-9])', '') AS c) x
 $$;
 
 -- Normalized name for comparisons (no diacritics, no legal form, no punctuation)
@@ -198,8 +202,9 @@ CREATE OR REPLACE FUNCTION norm_company_name(t text) RETURNS text LANGUAGE sql I
            '[^a-z0-9]+', ' ', 'g'))
 $$;
 
--- Upsert an entity by CUI (if present) or by normalized name.
--- Returns entity.id. Adds the alias + the provenance document.
+-- Upsert an entity by CUI (if present) or by SEAP entity id. Returns entity.id. Adds the alias + the provenance document.
+-- A row with neither is a new entity: names never merge entities (ADR 0003: `DRUM CONSTRUCT SRL` in Sălaj and in Galați
+-- are two companies). The pipeline's name-only suppliers are keyed in pipeline/identity.py, not here.
 CREATE OR REPLACE FUNCTION upsert_entity(
     p_kind entity_kind, p_name text, p_cui text, p_document_id bigint,
     p_seap_entity_id bigint DEFAULT NULL, p_attrs jsonb DEFAULT '{}'::jsonb
@@ -211,12 +216,6 @@ BEGIN
   END IF;
   IF v_id IS NULL AND p_seap_entity_id IS NOT NULL THEN
     SELECT id INTO v_id FROM entity WHERE seap_entity_id = p_seap_entity_id;
-  END IF;
-  IF v_id IS NULL AND v_cui IS NULL THEN
-    -- no hard identifier: exact match on normalized name, same kind
-    SELECT e.id INTO v_id FROM entity e
-     WHERE e.kind = p_kind AND norm_company_name(e.canonical_name) = norm_company_name(p_name)
-     LIMIT 1;
   END IF;
   IF v_id IS NULL THEN
     INSERT INTO entity (kind, canonical_name, cui, seap_entity_id, attrs)

@@ -1,0 +1,5 @@
+# Reviewed typo fixes for ANAF's locality names (and SEAP's city names): one line per fix, never a guess.
+# county = ISO 3166-2:RO without RO- (BV, B ...); anaf_name = the name as ANAF writes it, without Mun./Orş./Com./Sat; siruta_name = the
+# name SIRUTA has (bare, no MUNICIPIUL/ORAŞ). Both are folded before use (case, diacritics, dots, hyphens do not matter), so only a
+# real misspelling needs a line. Grow it from the "placed in <county> only" lines of `pipeline rebuild`; ships empty.
+county,anaf_name,siruta_name

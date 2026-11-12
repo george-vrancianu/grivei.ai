@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "crawl",
+  "kind": "award-notices",
+  "unit": "2025-06-30",
+  "fetchedAt": "2025-07-01T09:00:00Z",
+  "url": "https://e-licitatie.ro/api-pub/NoticeCommon/GetCANoticeList/",
+  "via": "crawl",
+  "files": [
+    {
+      "name": "contracts-95200010-s00000.json",
+      "sha256": "1c6b421f417f768962d9d856c122b0b1bdceec875adb80cc9ce58393a50071eb",
+      "bytes": 521
+    },
+    {
+      "name": "notices-2025-06-30_2025-06-30-p0000.json",
+      "sha256": "8380425bf05e14b2c70712247f0f7bcaa90bfbc43513c2992e9ce0c71708fe51",
+      "bytes": 744
+    }
+  ],
+  "crawl": {
+    "window": [
+      "2025-06-30",
+      "2025-06-30"
+    ],
+    "notices": 1,
+    "kept": 1,
+    "listPages": 1,
+    "contractPages": 1,
+    "contracts": 1,
+    "keep": "keep_all"
+  }
+}

@@ -1,0 +1,80 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI",
+  "Numar achizitie directa",
+  "Data publicare",
+  "Denumire achizitie",
+  "Cod CPV",
+  "Denumire CPV",
+  "Tip contract",
+  "Cu fonduri europene?",
+  "Denumire program",
+  "Data atribuire",
+  "Valoare achizitie (RON)",
+  "Ofertant",
+  "CUI"
+ ],
+ "rows": [
+  [
+   "SERVICIUL PUBLIC SALVAMONT SI SALVASPEO AL CONSILIULUI JUDETEAN HARGHITA",
+   15567101,
+   "DA40735307",
+   {
+    "date": "2026-07-01T00:07:18"
+   },
+   "Reamenajare 30 km trasee turistice in zona Gheorgheni",
+   "98113000-8",
+   "Servicii prestate de organizatii specializate (Rev.2)",
+   "Servicii",
+   "Nu",
+   null,
+   {
+    "date": "2026-07-01T17:22:15"
+   },
+   5000,
+   "Asociatia Salvamont Dancuras",
+   8772324
+  ],
+  [
+   "SERVICIUL PUBLIC SALVAMONT SI SALVASPEO AL CONSILIULUI JUDETEAN HARGHITA",
+   15567101,
+   "DA40735308",
+   {
+    "date": "2026-07-01T00:08:58"
+   },
+   "Concursuri de orientare in zona Odorhei 2026",
+   "98113000-8",
+   "Servicii prestate de organizatii specializate (Rev.2)",
+   "Servicii",
+   "Nu",
+   null,
+   {
+    "date": "2026-07-06T23:04:31"
+   },
+   5000,
+   "ASOCIATIA HARMONT",
+   13680731
+  ],
+  [
+   "SERVICIUL PUBLIC SALVAMONT SI SALVASPEO AL CONSILIULUI JUDETEAN HARGHITA",
+   15567101,
+   "DA40735309",
+   {
+    "date": "2026-07-01T00:10:41"
+   },
+   "Ziua nationala a salvatorilor montan 2026 Ciuc",
+   "98113000-8",
+   "Servicii prestate de organizatii specializate (Rev.2)",
+   "Servicii",
+   "Nu",
+   null,
+   {
+    "date": "2026-07-01T14:57:17"
+   },
+   6500,
+   "ASOCIATIA SALVAMONT CIUC",
+   31884160
+  ]
+ ]
+}

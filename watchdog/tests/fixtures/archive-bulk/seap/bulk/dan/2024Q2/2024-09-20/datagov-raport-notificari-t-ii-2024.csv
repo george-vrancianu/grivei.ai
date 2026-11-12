@@ -1,0 +1,5 @@
+Autoritate contractanta,CUI ,Numar notificare,Data publicare,Denumire,Cod CPV,Denumire CPV,Tip contract,Modalitate desfasurare,Valoare atribuita (RON),Fonduri comunitare?,Denumire program,Data atribuire,Ofertant,CUI ofertant
+SPITAL EXEMPLU,1000003,DAN9100010,04/15/2024 10:00:00,Aparatura medicala,33100000-1,Echipamente medicale (Rev.2),Furnizare,Offline,"1,234,567.50",Nu,,04/15/2024 09:59:00,MEDICAL DEMO S.R.L.,2000010
+SPITAL EXEMPLU,1000003,DAN9100011,06/30/2024 08:30:00,Consumabile,33100000-1,Echipamente medicale (Rev.2),Furnizare,Offline,"12,000",Nu,,,MEDICAL DEMO S.R.L.,2000010
+COMUNA EXEMPLU (PRIMARIA EXEMPLU),1000001,DAN9100002,01/02/2024 22:06:03,"DISTRIBUITOR HIDRAULIC
+FILTRU HIDRAULIC",42968000-9,Distribuitoare (Rev.2),Furnizare,Offline,435,Nu,,01/02/2024 22:05:59,S.C. FLORIMES S.R.L.,5819066

@@ -1,0 +1,108 @@
+{
+ "header": [
+  "CASTIGATOR",
+  "CASTIGATOR_CUI",
+  "CASTIGATOR_TARA",
+  "CASTIGATOR_LOCALITATE",
+  "CASTIGATOR_ADRESA",
+  "TIP_PROCEDURA",
+  "AUTORITATE_CONTRACTANTA",
+  "AUTORITATE_CONTRACTANTA_CUI",
+  "NUMAR_ANUNT",
+  "DATA_ANUNT",
+  "DESCRIERE",
+  "TIP_INCHEIERE_CONTRACT",
+  "NUMAR_CONTRACT",
+  "DATA_CONTRACT",
+  "TITLU_CONTRACT",
+  "VALOARE",
+  "MONEDA",
+  "VALOARE_RON",
+  "VALOARE_EUR",
+  "CPV_CODE_ID",
+  "CPV_CODE"
+ ],
+ "rows": [
+  [
+   "DELTA PLUS TRADING S.R.L.",
+   6865630,
+   "Romania",
+   "Pitesti",
+   "Strada: Autostrada Pitesti - Bucuresti km 3+750, DN65B, nr. 0, Sector: -, Judet: Arges, Localitate: Pitesti, Cod postal: 110185",
+   "Cumparare directa",
+   "DIRECTIA PENTRU AGRICULTURA JUDETEANA ARGES",
+   37609097,
+   "DA27232516",
+   {
+    "date": "2021-01-14T09:34:00"
+   },
+   "Pachet achizitie anvelope 185/65R15 88T all season (4 buc) si echilibrare/montaj anvelope",
+   "Cumparare directa",
+   "DA27232516",
+   {
+    "date": "2021-01-14T15:56:00"
+   },
+   "Pachet achizitie anvelope 185/65R15 88T all season (4 buc) si echilibrare/montaj anvelope",
+   723,
+   "RON",
+   723,
+   148,
+   17368,
+   "50110000-9"
+  ],
+  [
+   "DELTA PLUS TRADING S.R.L.",
+   6865630,
+   "Romania",
+   "Pitesti",
+   "Strada: Autostrada Pitesti - Bucuresti km 3+750, DN65B, nr. 0, Sector: -, Judet: Arges, Localitate: Pitesti, Cod postal: 110185",
+   "Cumparare directa",
+   "CNCIR - COMPANIA NATIONALA PENTRU CONTROLUL CAZANELOR, INSTALATIILOR DE RIDICAT SI RECIPIENTELOR SUB PRESIUNE S.A.",
+   27787860,
+   "DA27210142",
+   {
+    "date": "2021-01-07T16:01:00"
+   },
+   "Reparatie autoturism Dacia Logan\nCatalizator primar , 1 buc - 3.002,13 lei\nProduse de lipit, 1 buc - 27,17 lei\nSol. curatare frana 600ml, 2 buc - 99,44 lei\nDACIA OIL PLUS PREMIUM 5W30 4L, 1 buc- 140,34 lei\nEcotaxa - 0,92 lei\nFiltru ulei, 1 buc- 32,72 lei\nGarnitura buson golire ulei, 1 buc - 9,79 lei\nGarnitura rotunda, 1 buc - 70,02 lei\nElem. fixare esapament, 1 buc - 115,08 lei\nGarnitura rotunda esapament, 1 buc - 24,05 lei\nGarnitura capac chiulasa, 1 buc - 91,21 lei\nDem-rem catalizator, 1 buc - 69,10 lei\nDem-rem capac chiulasa, 1 buc  - 161,22 lei\nInlocuire ulei motor, 1 buc - 46,06 lei\nInlocuire filtru de ulei, 1 buc - 11,52 lei\nCT FC GL Calculatoare, 1 buc - 57,58 lei \n\nTOTAL MANOPERA  345,48  lei\nTOTAL PIESE 3.612,87 lei\nTOTAL: 3.958,35 lei lei",
+   "Cumparare directa",
+   "DA27210142",
+   {
+    "date": "2021-01-11T08:10:00"
+   },
+   "Reparatie autoturism Dacia Logan",
+   3958,
+   "RON",
+   3958,
+   813,
+   17368,
+   "50110000-9"
+  ],
+  [
+   "DELTA PLUS TRADING S.R.L.",
+   6865630,
+   "Romania",
+   "Pitesti",
+   "Strada: Autostrada Pitesti - Bucuresti km 3+750, DN65B, nr. 0, Sector: -, Judet: Arges, Localitate: Pitesti, Cod postal: 110185",
+   "Cumparare directa",
+   "CNCIR - COMPANIA NATIONALA PENTRU CONTROLUL CAZANELOR, INSTALATIILOR DE RIDICAT SI RECIPIENTELOR SUB PRESIUNE S.A.",
+   27787860,
+   "DA27213898",
+   {
+    "date": "2021-01-08T22:33:00"
+   },
+   "Revizie auto Dacia Logan\nRevizie vehicul, 1 buc - 57,58 lei\nInlocuire  filtru de aer, 1 buc, - 11,52 lei\nInlocuire filtru habitaclu, 1 buc,- 11,52 lei\nDemont-rem.x3 bujii de preincalzire, 1 buc - 17,27 lei\nDacia OIL PLUS PREMIUM 5W30 4 litri, 1 buc.- 117,05 lei\nDacia OIL PLUS PREMIUM 5W30 1 litru, 1 buc - 40,87 lei\nCartus filtru ulei, 1 buc - 42,48 lei\nCartus filtrant aer, 1 buc - 53,95 lei\nFiltru habitaclu, 1 buc,- 81,28 lei\nGarnitura D16, 1 buc, - 11,21 lei\nBujie aluminiu, 3 buc, - 234,84 lei\nEcotaxa 1,15 lei\nTotal manopera:  97,89 lei\nTotal piese: 582,83 lei\nTOTAL: 680,72 lei\n\nPreturile nu contin TVA.",
+   "Cumparare directa",
+   "DA27213898",
+   {
+    "date": "2021-01-11T08:53:00"
+   },
+   "Revizie auto Dacia Logan",
+   681,
+   "RON",
+   681,
+   140,
+   17377,
+   "50112200-5"
+  ]
+ ]
+}

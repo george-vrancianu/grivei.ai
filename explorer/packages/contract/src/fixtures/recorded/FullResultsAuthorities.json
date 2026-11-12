@@ -1,0 +1,654 @@
+[
+  {
+    "name": "empty-filter",
+    "kind": "typical",
+    "description": "authorities, first page, no filter",
+    "variables": {
+      "filter": {},
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "2130001",
+            "records": 18,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "authorities": {
+            "count": 14,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51001000",
+                  "displayName": "MINISTERUL EXEMPLULUI",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": null,
+                    "uat": null,
+                    "national": true,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "600000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880010",
+                      "name": "Sânpetru"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200001",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000900",
+                  "displayName": "ASOCIATIA FARA ADRESA",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "170000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000102",
+                  "displayName": "COMUNA I.L. CARAGIALE",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990010",
+                      "name": "I. L. Caragiale"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "160000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000200",
+                  "displayName": "COMUNA APAHIDA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990020",
+                      "name": "Apahida"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880030",
+                      "name": "Râșnov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880060",
+                      "name": "Șinca Nouă"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000609",
+                  "displayName": "PRIMARIA SECTORULUI 3",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-B",
+                      "name": "București"
+                    },
+                    "uat": {
+                      "siruta": "179169",
+                      "name": "Sector 3"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000706",
+                  "displayName": "COMUNA FARA NUME",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000803",
+                  "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880050",
+                      "name": "Ucea"
+                    },
+                    "national": false,
+                    "placedBy": "SEAP"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51001108",
+                  "displayName": "AGENTIA NATIONALA DEMO",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": null,
+                    "uat": null,
+                    "national": true,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51001205",
+                  "displayName": "DIRECTIA DE SANATATE PUBLICA DEMO",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51001302",
+                  "displayName": "ORAS HUEDIN",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990030",
+                      "name": "Huedin"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "county-authority-side",
+    "kind": "typical",
+    "description": "authorities of a clicked county",
+    "variables": {
+      "filter": {
+        "county": "RO-BV"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "800001",
+            "records": 8,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "authorities": {
+            "count": 7,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880010",
+                      "name": "Sânpetru"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200001",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880030",
+                      "name": "Râșnov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880060",
+                      "name": "Șinca Nouă"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000706",
+                  "displayName": "COMUNA FARA NUME",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51000803",
+                  "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880050",
+                      "name": "Ucea"
+                    },
+                    "national": false,
+                    "placedBy": "SEAP"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "51001205",
+                  "displayName": "DIRECTIA DE SANATATE PUBLICA DEMO",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "empty-no-match",
+    "kind": "empty",
+    "description": "no authority matches",
+    "variables": {
+      "filter": {
+        "q": "zzzzzz"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "authorities": {
+            "count": 0,
+            "countEstimated": false,
+            "rows": []
+          }
+        }
+      }
+    }
+  }
+]

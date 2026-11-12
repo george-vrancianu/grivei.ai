@@ -1,0 +1,80 @@
+{
+ "header": [
+  "Autoritate contractanta",
+  "CUI autoritate contractanta",
+  "Numar achizitie directa",
+  "Data publicare",
+  "Denumire achizitie",
+  "Cod CPV",
+  "Denumire CPV",
+  "Tip contract",
+  "Finantare prin fonduri comunitare?",
+  "Denumire program",
+  "Data finalizare",
+  "Valoare achizitie (RON)",
+  "Ofertant castigator",
+  "CUI ofertant castigator"
+ ],
+ "rows": [
+  [
+   "COMUNA MISCA (PRIMARIA COMUNEI MISCA)",
+   3519305,
+   "DA38439693",
+   {
+    "date": "2025-07-01T03:31:16"
+   },
+   "Materiale acoperis",
+   "44112500-3",
+   "Materiale pentru acoperis (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2025-07-01T09:18:08"
+   },
+   5442.86,
+   "MAGNITA SRL",
+   12425250
+  ],
+  [
+   "Spitalul Judetean de Urgenta Giurgiu",
+   4352620,
+   "DA38439694",
+   {
+    "date": "2025-07-01T04:30:58"
+   },
+   "PACHET JUDETEAN GIURGIU",
+   "33141625-7",
+   "Truse de diagnosticare (Rev.2)",
+   "Furnizare",
+   "Nu",
+   null,
+   {
+    "date": "2025-07-01T09:43:54"
+   },
+   1680,
+   "DDS Diagnostic",
+   14688172
+  ],
+  [
+   "SCOALA CU CLASE I -VIII FRECATEI",
+   28643510,
+   "DA38439695",
+   {
+    "date": "2025-07-01T05:28:23"
+   },
+   "Servicii utilizare - \"Sistem Electronic de Management Scolar\"",
+   "48190000-6",
+   "Pachete software educationale (Rev.2)",
+   "Servicii",
+   "Da",
+   "Planul National de Redresare si Rezilienta – PNRR",
+   {
+    "date": "2025-07-01T14:16:03"
+   },
+   25200,
+   "SMART EDUTECH S.R.L.",
+   47395926
+  ]
+ ]
+}

@@ -1,0 +1,618 @@
+"""
+The explorer's GraphQL contract (Release 1: SEAP).
+
+Shape in one breath:
+  shared roots   entity, coverage, sources, signalRules, counties, uats
+  SEAP roots     seap { search, record }   (Source-specific surface, ADR 0005)
+  one filter     RecordFilter = the URL's search state, 1:1
+  one measure    Total { awarded (bani), records, what it left out }
+  no stored ids  Signals are addressed by their reproducing filter
+  no copy        slugs, enums, numbers and Romanian source data only
+
+Only persisted operations (operations/*.graphql) are served.
+"""
+schema { query: Query }
+
+type Query {
+  # ---- shared across Sources ----------------------------------------
+  "An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers)."
+  entity(key: ID!): Entity
+
+  "Per-Source coverage, for the Coverage lens and /explore/coverage. Follows the date chip."
+  coverage(source: SourceId!, window: DateRange): Coverage!
+
+  "Every Source, harvested or planned, with its data-through dates. Loaded once per visit."
+  sources: [Source!]!
+
+  "Signal rules with their methodology numbers (base rate recomputed per load)."
+  signalRules: [SignalRule!]!
+
+  "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
+  counties: [County!]!
+  uats(county: CountyCode!): [Uat!]!
+
+  # ---- Source-specific search surface (one namespace per Source, ADR 0005)
+  seap: SeapQuery!
+}
+
+type SeapQuery {
+  """
+  The main screen and the full-results view. One matching set: every field
+  below is computed from the same filter, in one pg_search pass where possible.
+  """
+  search(filter: RecordFilter!): SeapSearch!
+
+  "A Record by its public code (e.g. CAN1166685, DA12345678), the Record page's URL key."
+  record(code: ID!): SeapRecord
+}
+
+# =====================================================================
+#  Filter = URL state
+# =====================================================================
+
+"""
+The whole search state, shared by the main screen, the full-results view,
+the Records tab and every Signal's reproducing URL. The frontend owns a
+1:1 codec between this and the query string; the server never sees a URL.
+"""
+input RecordFilter {
+  q: String                       # free text; folding and prefix rules server-side
+  from: Date                      # award date, inclusive (year chip sets Jan 1 / Dec 31)
+  to: Date
+  channel: Channel
+  valueBucket: ValueBucket        # preset buckets (see ValueBucket) so the rollup can serve chips-only states; records with no value match no bucket
+  hasSignals: Boolean
+  badges: [RecordBadge!]          # badges double as filter chips
+  procedure: [String!]            # SEAP procedure names, as published
+
+  # map clicks
+  county: MapArea                 # a county, NATIONAL, UNPLACED or UNKNOWN_SUPPLIER_COUNTY
+  uat: Siruta                     # zoomed-county click; a UAT of the authority's county. Authority-side only: the frontend zooms only when countySide is AUTHORITY, and switching the side to SUPPLIER drops uat
+  countySide: CountySide = AUTHORITY
+
+  # entity-scoped (Records tab, Signal URLs)
+  authority: ID                   # entity key
+  supplier: ID
+  cpv: String                     # prefix, e.g. "301"
+  signal: SignalRuleSlug
+}
+
+input DateRange { from: Date, to: Date }
+"Output twin of DateRange."
+type Period { from: Date, to: Date }
+
+enum Channel { DIRECT_PURCHASE CONTRACT }
+enum CountySide { AUTHORITY SUPPLIER }
+"""
+Preset awarded-value buckets, on `value` in RON as published. Each bucket is
+(previous edge, edge]: the upper edge is inclusive, so a purchase exactly at a
+statutory cap sits in the bucket below it, matching "at or under the cap".
+Records with no value match no bucket. Edges in RON, with their source:
+
+  UP_TO_10K    <= 10,000        round floor for small purchases (not statutory)
+  UP_TO_135K   <= 135,060       direct-purchase cap for supplies/services before 10 Sep 2022
+  UP_TO_270K   <= 270,120       the same cap from 10 Sep 2022
+  UP_TO_900K   <= 900,400       direct-purchase cap for works from 10 Sep 2022
+  UP_TO_9M     <= 9,004,000     10x the works cap: top of the over-cap Signal band
+  UP_TO_1B     <= 1,000,000,000 1 bn RON: where contract values start being checked for suspect values
+  OVER_1B      >  1,000,000,000
+
+The counting rule checks contracts "of 1 bn RON or more"; because upper edges are
+inclusive, exactly 1 bn sits in UP_TO_1B. A bucket is a chip, not the rule, so the
+one-value difference is accepted.
+
+The edges are mirrored, in bani, by VALUE_BUCKETS in the contract package.
+"""
+enum ValueBucket { UP_TO_10K UP_TO_135K UP_TO_270K UP_TO_900K UP_TO_9M UP_TO_1B OVER_1B }
+
+"A county ISO 3166-2:RO code, or one of the off-map tiles."
+scalar MapArea   # "RO-BV" | "NATIONAL" | "UNPLACED" | "UNKNOWN_SUPPLIER_COUNTY"
+
+"What an AreaTotal is for: a MapArea on the county map, or a SIRUTA on the zoomed county. Kept apart from MapArea so a SIRUTA is never a valid `RecordFilter.county`."
+scalar AreaKey
+
+# =====================================================================
+#  Search result: one matching set, many views of it
+# =====================================================================
+
+type SeapSearch {
+  "Echo of the filter as the server understood it (folded query, resolved entity names)."
+  filter: RecordFilterEcho!
+
+  total: Total!
+
+  "Money lens, county level, on the side the filter's countySide names (the URL is the only source of the side)."
+  map: MoneyMap!
+
+  "Money lens, zoomed county: UAT choropleth. Authority side only: UATs place authorities (the search carries a supplier's county, never its UAT)."
+  uatMap(county: CountyCode!): UatMap!
+
+  "Result tabs, ranked by matched awarded value (ties by key). Offset/limit paging; the server caps limit at 200. Main screen asks limit: 50."
+  authorities(limit: Int = 50, offset: Int = 0): EntityResultPage!
+  suppliers(limit: Int = 50, offset: Int = 0): EntityResultPage!
+  records(limit: Int = 50, offset: Int = 0, order: RecordOrder = VALUE_DESC): RecordResultPage!
+
+  "Pinned 'Go to page' card: set only when q is an exact CUI or one entity's folded name and exactly one entity matches."
+  goTo: Entity
+
+  "Facet counts for the Records tab side panel (Signal, channel, procedure, year, counterparty)."
+  facets: RecordFacets!
+}
+
+type RecordFilterEcho {
+  qFolded: String
+  authority: Entity
+  supplier: Entity
+}
+
+# ---- money -----------------------------------------------------------
+
+"Integer bani (1/100 RON), serialised as a decimal string so no sum loses precision in JSON."
+scalar Bani
+
+"""
+Every money number the explorer shows is a Total, counted by the one rule
+(awarded value; framework ceilings out; consortium once per authority,
+equal shares per supplier; suspect values out). It always says what it left out.
+"""
+type Total {
+  awarded: Bani!
+  records: Int!
+  "Records in the set whose value is suspect: shown, searchable, not summed."
+  suspectLeftOut: Int!
+  "Records with no value in SEAP: counted here, add nothing."
+  noValue: Int!
+  "Framework ceilings in the set, never summed (for the 'ceilings X' line)."
+  frameworkCeilings: Bani!
+  "True only when `records` is approximated, which exact counts and the rollup never do today: the flag is reserved for a future approximate path. Distinct entity counts (the HyperLogLog ones) carry their own flag: EntityResultPage.countEstimated."
+  estimated: Boolean!
+}
+
+type MoneyMap {
+  side: CountySide!
+  counties: [AreaTotal!]!
+  national: Total!
+  "Authority side only: authorities no source places in a county. Null when there are none."
+  unplaced: UnplacedTile
+  "Supplier side only: money going abroad or to unplaced suppliers. Null when empty."
+  unknownSupplierCounty: Total
+}
+
+"The Unplaced tile: how many authorities, and what they account for."
+type UnplacedTile {
+  authorities: Int!
+  total: Total!
+}
+
+type AreaTotal {
+  "A county code (county map) or a SIRUTA (zoomed county)."
+  area: AreaKey!
+  name: String!
+  total: Total!
+  "Distinct entities behind the total on the lens's side (the optional circle per UAT)."
+  entities: Int!
+}
+
+"""
+Zoomed county: only UATs with Records appear; any UAT of `uats(county)` that is
+absent is grey (no authority bought anything).
+"""
+type UatMap {
+  uats: [AreaTotal!]!
+  "Authorities with a known county but no UAT, a row of their own. Null when there are none."
+  unknownUat: Total
+}
+
+# ---- result rows -----------------------------------------------------
+
+type EntityResultPage {
+  "Distinct entities in the matching set."
+  count: Int!
+  "True when `count` is a HyperLogLog estimate (distinct groups above ~65k): shown with a leading approximately-sign."
+  countEstimated: Boolean!
+  rows: [EntityResult!]!
+}
+
+type EntityResult {
+  entity: Entity!
+  "This entity's share of the matching set: consortium shares on the supplier side."
+  matched: Total!
+}
+
+type RecordResultPage {
+  count: Int!
+  rows: [RecordResult!]!
+}
+
+type RecordResult {
+  record: SeapRecord!
+  "Why it matched: computed only for returned rows."
+  matchedField: MatchedField
+}
+
+type MatchedField {
+  field: MatchableField!
+  text: String!
+  "Highlight ranges into `text`, [start, end) in UTF-16 code units."
+  highlights: [[Int!]!]!
+}
+
+enum MatchableField { TITLE AUTHORITY SUPPLIER CPV_CODE CPV_DESCRIPTION PUBLIC_CODE CUI }
+enum RecordOrder { VALUE_DESC DATE_DESC DATE_ASC }
+
+type RecordFacets {
+  channel: [FacetCount!]!
+  procedure: [FacetCount!]!
+  year: [FacetCount!]!
+  signal: [FacetCount!]!
+  badge: [FacetCount!]!
+  "Top counterparties of the filter's authority/supplier, else empty."
+  counterparty: [EntityResult!]!
+}
+
+type FacetCount { value: String!, total: Total! }
+
+# =====================================================================
+#  Provenance, shared by every node that shows data
+# =====================================================================
+
+enum SourceId { SEAP ANAF ONRC ANI MFINANTE JUST }
+
+"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer)."
+type Provenance {
+  source: SourceId!
+  "Public page in the Source; null only when the Source has no stable public URL."
+  url: String
+  "Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API call, which `kind` already says."
+  via: String
+  kind: ProvenanceKind!
+  "When we fetched it (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
+"How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint)."
+enum ProvenanceKind { BULK CRAWL API }
+
+type Source {
+  id: SourceId!
+  name: String!
+  harvested: Boolean!
+  "Per record kind, e.g. SEAP: DA, DAN, CONTRACT, AWARD_NOTICE."
+  dataThrough: [DataThrough!]!
+}
+
+type DataThrough {
+  "A record kind of the Source. A plain string because kinds belong to each Source (ADR 0005); SEAP's are SeapRecordKind."
+  kind: String!
+  date: Date!
+}
+
+# =====================================================================
+#  Entities: one per CUI (ADR 0003), roles hang off it
+# =====================================================================
+
+"""
+One contracting authority, supplier, or both. URLs use the role
+(/explore/authority/<key>, /explore/supplier/<key>), the API doesn't:
+the page asks for the role it shows.
+"""
+type Entity {
+  key: ID!
+  displayName: String!
+  identity: EntityIdentity!
+  cui: String
+  foreignVatId: String
+  "ANAF status (ACTIV, RADIERE, FUZIUNE ...), badged when not active."
+  anafStatus: String
+  identityCurated: Boolean!
+  placement: Placement
+  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer."
+  provenance: [Provenance!]!
+  "Spellings under which this entity was published, with dates. Never used to merge."
+  aliases: [Alias!]!
+
+  "Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only."
+  seap: SeapEntity!
+}
+
+enum EntityIdentity { CUI NAME_ONLY }
+
+type Placement {
+  county: County
+  uat: Uat
+  "Village SIRUTA when ANAF names one; stored, not plotted."
+  locality: String
+  national: Boolean!
+  placedBy: SourceId!          # ANAF, SEAP fallback
+}
+
+type Alias {
+  name: String!
+  records: Int!
+  first: Date!
+  last: Date!
+  "Badge: SEAP name differs from ANAF under the same CUI."
+  differsFromAnaf: Boolean!
+}
+
+"""
+SEAP side of an entity. The page asks for the role it shows, so one operation
+per tab serves both. Overview, Records and Relationships take the same filter,
+so totals follow the side panel.
+"""
+type SeapEntity {
+  "Roles this entity has in SEAP: AUTHORITY if it ever bought, SUPPLIER if it ever won. Both for CNAIR-like entities."
+  roles: [Role!]!
+  "Null if the entity never held that role."
+  role(role: Role!): SeapRole
+}
+
+type SeapRole {
+  role: Role!
+
+  # Overview
+  total(filter: RecordFilter): Total!
+  counterparties(filter: RecordFilter, limit: Int = 10): CounterpartyPage!
+  "Share of the total via direct purchase."
+  directPurchaseShare(filter: RecordFilter): Float!
+  procedures(filter: RecordFilter): [FacetCount!]!
+  consortia(filter: RecordFilter, limit: Int = 10): [Consortium!]!
+  frameworks(filter: RecordFilter): FrameworkSummary!
+  largestRecords(filter: RecordFilter, limit: Int = 10): [SeapRecord!]!
+
+  # Signals tab sections / Overview list
+  signals(filter: RecordFilter, order: SignalOrder = DATE_DESC, limit: Int = 50, offset: Int = 0): SignalPage!
+
+  # Records tab: the same search, scoped to this entity and role
+  records(filter: RecordFilter): SeapSearch!
+
+  # Relationships tab
+  timeline(filter: RecordFilter, counterparty: ID): [MonthTotal!]!
+  "Flow lens, drawn on the counterparty's side: a supplier's page shows where across Romania its money comes from (side AUTHORITY, with the Unplaced tile); an authority's shows where it goes (side SUPPLIER, with the unknown-supplier-county bucket)."
+  flow(filter: RecordFilter): MoneyMap!
+}
+
+enum Role { AUTHORITY SUPPLIER }
+
+type CounterpartyPage {
+  count: Int!
+  "Top-1 share of the total, for the headline number."
+  topShare: Float
+  rows: [Counterparty!]!
+}
+
+type Counterparty {
+  "Null for natural-person suppliers (shown as 'Persoană fizică'), who are never named or linked."
+  entity: Entity
+  naturalPerson: Boolean!
+  total: Total!
+  "Edge colouring on the Relationships graph."
+  viaDirectPurchase: Total!
+  viaContract: Total!
+  "Dashed edge: won together in a consortium."
+  wonTogether: Boolean!
+  hasSignals: Boolean!
+}
+
+type Consortium {
+  members: [Party!]!
+  total: Total!
+}
+
+type FrameworkSummary {
+  count: Int!
+  ceilings: Bani!
+  subsequentReported: Bani!
+}
+
+type MonthTotal { month: String!, total: Total! }    # "2024-03"
+
+# =====================================================================
+#  Records
+# =====================================================================
+
+"""
+Shared by every Source's records (a SEAP Record today, an ANI declaration
+later): the minimum a result row, a provenance link and a badge need.
+Named SourceRecord, not Record, because `Record` is a TypeScript built-in and
+the generated resolver types would collide with it.
+"""
+interface SourceRecord {
+  code: ID!
+  title: String!
+  date: Date
+  provenance: Provenance!
+  badges: [RecordBadge!]!
+}
+
+enum RecordBadge {
+  FRAMEWORK_CEILING
+  SUBSEQUENT_CONTRACT
+  CONSORTIUM_SHARE
+  SUSPECT_VALUE
+  NO_VALUE
+  CUI_MISMATCH
+  NAME_DIFFERS_FROM_ANAF
+  IDENTITY_CURATED
+  CRAWLED_PROVISIONAL       # current quarter, awaiting bulk
+  CRAWL_ONLY                # survived the bulk import without a bulk match
+}
+
+type SeapRecord implements SourceRecord {
+  code: ID!
+  title: String!
+  date: Date
+  provenance: Provenance!
+  badges: [RecordBadge!]!
+
+  kind: SeapRecordKind!
+  channel: Channel!
+  procedure: String
+  contractType: String            # Furnizare / Servicii / Lucrari, as published
+  cpv: Cpv
+  "Awarded value as published; null = 'no value in SEAP'."
+  value: Bani
+  "Counted value: null when suspect or a framework ceiling, else = value."
+  counted: Bani
+  authority: Entity!
+  "Winners. One for most; consortium members each with their equal share."
+  winners: [Party!]!
+
+  "Set for a framework agreement (ceiling) and for its subsequent contracts."
+  framework: FrameworkLink
+  "Signals this Record belongs to."
+  signals: [Signal!]!
+  "Why the value is suspect; set exactly when `badges` has SUSPECT_VALUE."
+  suspect: SuspectFlag
+}
+
+enum SeapRecordKind { DA DAN CONTRACT AWARD_NOTICE }
+
+"""
+The published rule that flagged a value as suspect (counting rule). The
+frontend's catalogue explains each rule; `threshold` is the number.
+"""
+type SuspectFlag {
+  rule: SuspectRule!
+  "DIRECT_PURCHASE_10X_CAP: the cap in force for its date and type; CONTRACT_100X_ESTIMATE: the estimated value; CONTRACT_OVER_50BN: null."
+  threshold: Bani
+}
+
+enum SuspectRule { DIRECT_PURCHASE_10X_CAP CONTRACT_100X_ESTIMATE CONTRACT_OVER_50BN }
+
+type Cpv { code: String!, description: String! }
+
+"A winner on a Record."
+type Party {
+  "Null for a natural person: never named, never linked."
+  entity: Entity
+  naturalPerson: Boolean!
+  "Name as published on this Record (an Alias of `entity`). Null when `naturalPerson`: a person is never named (ADR 0003)."
+  publishedName: String
+  "Equal consortium share, when the Record has more than one winner."
+  share: Bani
+}
+
+type FrameworkLink {
+  "The framework agreement Record (null on the framework itself)."
+  agreement: SeapRecord
+  ceiling: Bani
+  subsequentReported: Bani!
+  "subsequentReported / ceiling; null when the ceiling is blank."
+  ratio: Float
+  subsequent(limit: Int = 50, offset: Int = 0): [SeapRecord!]!
+}
+
+# =====================================================================
+#  Signals: no stored id, addressed by their reproducing filter
+# =====================================================================
+
+enum SignalRuleSlug { OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION }
+
+type SignalRule {
+  slug: SignalRuleSlug!
+  "Time window the rule can see, e.g. no-publication 2023+ (or 2021+ after the backfill)."
+  window: Period!
+  "Fraction (0 to 1) of contracting authorities with at least one Signal of this rule in baseRateYear. Recomputed per load."
+  baseRate: Float!
+  baseRateYear: Int!
+  dataThrough: Date!
+}
+
+"""
+A set of Records matched by one rule. Never scored. Copy (label, sentence,
+lawful explanations) lives in the frontend's bilingual catalogue, filled
+from `numbers`.
+"""
+type Signal {
+  rule: SignalRuleSlug!
+  "Dated by its latest Record."
+  date: Date!
+  firstDate: Date!
+  authority: Entity!
+  "Every supplier in its Records, consortium members included; natural persons omitted."
+  suppliers: [Entity!]!
+  recordCount: Int!
+  records(limit: Int = 50, offset: Int = 0): [SeapRecord!]!
+  numbers: SignalNumbers!
+  "The Records-tab filter that reproduces it. The frontend turns it into a URL."
+  reproduce: RecordFilterValue!
+  dataThrough: Date!
+}
+
+union SignalNumbers = OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
+
+type OverCapNumbers { value: Bani!, cap: Bani!, multiple: Float! }
+type SplittingNumbers { purchases: Int!, sum: Bani!, cap: Bani!, cpvGroup: String!, from: Date!, to: Date! }
+type FrameworkOverrunNumbers { ceiling: Bani!, subsequent: Bani!, ratio: Float! }
+type NoPublicationNumbers { procedure: String! }
+
+"Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use."
+type RecordFilterValue {
+  authority: ID
+  supplier: ID
+  signal: SignalRuleSlug
+  cpv: String
+  from: Date
+  to: Date
+}
+
+type SignalPage { count: Int!, rows: [Signal!]! }
+enum SignalOrder { DATE_DESC VALUE_DESC }
+
+# =====================================================================
+#  Geography and Coverage
+# =====================================================================
+
+"ISO 3166-2:RO, e.g. RO-BV, RO-B."
+scalar CountyCode
+scalar Siruta
+
+type County { code: CountyCode!, name: String! }
+type Uat { siruta: Siruta!, name: String!, county: County! }
+
+type Coverage {
+  source: Source!
+  window: Period!
+  counties: [CountyCoverage!]!
+  "Planned Sources' greyed marks, per county, come from `sources` (harvested: false)."
+  grid: [GapCell!]!
+  unplacedAuthorities: UnplacedTile!
+  "MF Lista entităților publice snapshot date."
+  referenceSnapshot: Date
+}
+
+type CountyCoverage {
+  county: MapArea!                   # counties plus NATIONAL
+  status: CoverageStatus!
+  "N of M public entities have records in the window (tooltip only)."
+  withRecords: Int!
+  publicEntities: Int!
+  otherAuthorities: Int!
+}
+
+enum CoverageStatus { HARVESTED HARVESTED_WITH_KNOWN_GAPS PARTIAL NOT_HARVESTED }
+
+type GapCell {
+  quarter: String!                   # "2024-Q4"
+  "A record kind of the Source (SEAP: SeapRecordKind). A plain string because kinds belong to each Source (ADR 0005)."
+  kind: String!
+  state: GapState!
+  "The published rule that explains the state. The frontend's catalogue words it in both languages."
+  rule: GapRule
+  "The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated."
+  note: String
+  records: Int!
+  dataThrough: Date
+}
+
+enum GapRule { AWAITING_BULK_FILE NO_PRIOR_CALL_BEFORE_BACKFILL COUNT_BELOW_NEIGHBOURS HAND_ENTERED }
+
+"""
+A grid cell's state. NOT_YET_LOADED: the bulk file for this quarter and kind is not in the graph yet, either because it has not been
+published (rule AWAITING_BULK_FILE) or because the pipeline set it aside (no rule, no note: the reason is never shown).
+"""
+enum GapState { LOADED KNOWN_GAP POSSIBLY_INCOMPLETE NOT_IN_SOURCE CRAWLED_PROVISIONAL NOT_YET_LOADED }
+
+scalar Date
+scalar DateTime

@@ -30,6 +30,10 @@ _Avoid_: launch, release (when going public is meant)
 Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
 _Avoid_: cache, dump, backup
 
+**Switchover**:
+Replacing the served graph with a freshly rebuilt one: the rebuild is built into a database beside the live one, must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
+_Avoid_: migration, cutover (for a rebuild that locks the live database)
+
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
 _Avoid_: last updated, freshness
@@ -57,7 +61,7 @@ A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), ide
 _Avoid_: unknown supplier, unidentified supplier
 
 **Natural-person supplier**:
-An individual who wins a record; shown only as "Persoană fizică", never named, never given an entity page.
+An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", never named, never given an entity page.
 _Avoid_: PFA (when any individual is meant), person (alone)
 
 **Alias**:
@@ -80,12 +84,16 @@ _Avoid_: spent, spending, paid, payments
 The maximum value of a framework agreement; shown on its record but never summed, because the subsequent contracts awarded under it are counted instead.
 _Avoid_: framework value, contract value (for a framework agreement)
 
+**Subsequent contract**:
+A contract awarded under a framework agreement ("Cu acord cadru subsecvent"). It is summed, and it shows the framework it belongs to: the one that shares its award notice number, with the ceiling and how much of it the subsequent contracts reported so far use. One whose framework is not in the data still counts, and shows no ceiling.
+_Avoid_: call-off, draw-down
+
 **Consortium share**:
 A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
 _Avoid_: split, portion
 
 **Suspect value**:
-An awarded value flagged by a published rule as likely a data-entry error; the record stays shown and searchable but is left out of sums. The source value is never edited.
+An awarded value flagged by a published rule as likely a data-entry error (a direct purchase at ten times its cap or more, a contract of 1 bn RON or more at a hundred times its estimated value or more, or above 50 bn RON with no estimate); the record stays shown and searchable but is left out of sums. The source value is never edited. A blank or zero value is not suspect: it is "no value in SEAP", counted as a record and adding nothing.
 _Avoid_: outlier, error, corrected value
 
 **Signal**:
@@ -114,7 +122,11 @@ _Avoid_: coverage %, completeness score
 
 **Known gap**:
 A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page.
+Cells of the Coverage grid carry one of the states loaded, possibly incomplete (the published rule), known gap (entered by hand), not in source, crawled provisional or not yet loaded; "known gap" as a grid state means the hand-entered kind only.
 _Avoid_: missing data, hole, outage
+
+**Not yet loaded**:
+A Coverage grid cell whose bulk file is not in the graph yet: not published (the current quarter), or set aside; the reader is never told which. Records that exist for it (crawled, backfilled) are still counted.
 
 **Unplaced authority**:
 A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value. An authority whose county is known but whose UAT isn't is not an unplaced authority; the zoomed county lists it in a row of its own.
@@ -133,6 +145,10 @@ The entity page's summary card: headline numbers, Signals, top counterparties, p
 **Records tab**:
 The entity page's filterable table of every record, its filters kept in the URL so a filtered list can be cited.
 _Avoid_: ledger
+
+**Pipeline ledger**:
+The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph; unrelated to the Records tab.
+_Avoid_: history, audit log
 
 **Relationships tab**:
 The entity page's view of how money moves between the entity and its counterparties: a counterparty graph, a monthly timeline and the Flow lens.

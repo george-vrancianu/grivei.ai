@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "crawl",
+  "kind": "award-notices",
+  "unit": "2026-04-01",
+  "fetchedAt": "2026-11-11T09:00:00Z",
+  "url": "https://e-licitatie.ro/api-pub/NoticeCommon/GetCANoticeList/",
+  "via": "crawl",
+  "files": [
+    {
+      "name": "contracts-92000013-s00000.json",
+      "sha256": "7a0f1dde74bacfef3809f4009b8e65dce6a93fad1cf9df90a3426f5c58ea2d54",
+      "bytes": 525
+    },
+    {
+      "name": "contracts-92000014-s00000.json",
+      "sha256": "e54690c5e459fa8a8f748febbb5f8cfe71e708d1da3c03d6f5ab9a109e2c81ad",
+      "bytes": 523
+    },
+    {
+      "name": "contracts-92000015-s00000.json",
+      "sha256": "0e4d5cd3d5ddd9bd46f10d584d5df8e7564161516760efc9fa172a4bf8b2b1bd",
+      "bytes": 985
+    },
+    {
+      "name": "notices-2026-04-01_2026-04-01-p0000.json",
+      "sha256": "87e83ee9cce18db315e78aec207dad50ae4c55c3a8087d8444d39f8f06043214",
+      "bytes": 2194
+    }
+  ],
+  "crawl": {
+    "window": [
+      "2026-04-01",
+      "2026-04-01"
+    ],
+    "notices": 3,
+    "kept": 3,
+    "listPages": 1,
+    "contractPages": 3,
+    "contracts": 4,
+    "keep": "keep_all"
+  }
+}

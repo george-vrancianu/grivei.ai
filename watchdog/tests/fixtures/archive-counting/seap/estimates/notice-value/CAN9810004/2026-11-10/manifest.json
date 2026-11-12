@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "estimates",
+  "kind": "notice-value",
+  "unit": "CAN9810004",
+  "fetchedAt": "2026-11-10T09:00:00Z",
+  "url": "https://e-licitatie.ro/api-pub/NoticeCommon/GetCANoticeList/",
+  "via": "e-licitatie notice list",
+  "files": [
+    {
+      "name": "request.json",
+      "sha256": "bab8ea274d3842076ba6fa195f4647819c2a2b955e3b9061e58fb6d667a171f7",
+      "bytes": 285
+    },
+    {
+      "name": "response.json",
+      "sha256": "79f8466900749162619a421c92ca6f0a28b9ecd090936ab8993d20fb9a3281e4",
+      "bytes": 373
+    }
+  ]
+}

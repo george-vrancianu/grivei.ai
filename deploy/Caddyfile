@@ -1,0 +1,49 @@
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	encode zstd gzip
+
+	# The GraphQL API (persisted queries only). Same origin as the app, so no CORS.
+	handle /graphql {
+		reverse_proxy api:4000
+	}
+
+	# "Check in SEAP": /source/seap/<code> redirects to the public e-licitatie page of a Record (served by the API).
+	handle /source/* {
+		reverse_proxy api:4000
+	}
+
+	# County and UAT outlines: static TopoJSON written by `pipeline rebuild` (never through GraphQL). Same origin, so no CORS.
+	handle /geo/* {
+		root * /srv/geo
+		uri strip_prefix /geo
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
+	# The explorer: one bundle for both languages. Hashed assets are immutable.
+	handle /explore/assets/* {
+		root * /srv/explore
+		uri strip_prefix /explore
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# /explore/..., /ro/explore/... : the single-page app (SPA fallback to index.html, which is never cached).
+	@explore path /explore /explore/* /ro/explore /ro/explore/*
+	handle @explore {
+		root * /srv/explore
+		rewrite * /index.html
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	# The landing page: / (English) and /ro/ (Romanian).
+	handle {
+		root * /srv/site
+		file_server
+	}
+}
