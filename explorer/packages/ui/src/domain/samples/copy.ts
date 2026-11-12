@@ -21,6 +21,7 @@ import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/ind
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
+import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
@@ -509,7 +510,71 @@ const searchBar: Record<Locale, SearchBarCopy> = {
   ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
 };
 
+const entityOverview = (locale: Locale): EntityOverviewCopy => {
+  const party: PartyNameCopy = { naturalPerson: "Persoană fizică", entityLink: entityLink[locale] };
+  return locale === "ro"
+    ? {
+        headline: {
+          label: "Cifre principale", total: "Total atribuit", counterparties: "Contraparți", topShare: (p) => `Cea mai mare deține ${p} din total`,
+          directPurchase: "Pondere prin achiziție directă", signals: "Semnale", totalFigure: sampleCopy.total(locale),
+        },
+        signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate." },
+        counterparties: {
+          heading: "Contraparți", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`,
+          empty: "Nicio contraparte în această selecție.", party,
+        },
+        procedures: { heading: "Tipuri de procedură", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
+        consortia: {
+          heading: "Asocieri", convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP.",
+          share: (amount) => `parte egală ${amount}`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), party,
+        },
+        frameworks: {
+          heading: "Acorduri-cadru",
+          line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+          none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
+        },
+        largest: {
+          heading: "Cele mai mari înregistrări", note: "Doar înregistrările numărate: valorile suspecte și plafoanele acordurilor-cadru nu apar aici.",
+          empty: "Nicio înregistrare numărată în această selecție.", recordRow: recordRow(locale),
+        },
+        aliases: {
+          heading: "Apare în SEAP ca", intro: "Fiecare denumire sub care SEAP a publicat această entitate.",
+          records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), range: (a, b) => `prima oară ${a}, ultima oară ${b}`, singleDay: (d) => `doar la ${d}`, badges: badges.ro,
+        },
+      }
+    : {
+        headline: {
+          label: "Headline numbers", total: "Total awarded", counterparties: "Counterparties", topShare: (p) => `The largest holds ${p} of the total`,
+          directPurchase: "Share via direct purchase", signals: "Signals", totalFigure: sampleCopy.total(locale),
+        },
+        signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity." },
+        counterparties: {
+          heading: "Counterparties", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`,
+          empty: "No counterparties in this selection.", party,
+        },
+        procedures: { heading: "Procedure types", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
+        consortia: {
+          heading: "Consortia", convention: "Each member's equal share is a counting convention, not a figure SEAP publishes.",
+          share: (amount) => `equal share ${amount}`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, party,
+        },
+        frameworks: {
+          heading: "Framework agreements",
+          line: (n, f, ceilings, reported) => `${f} ${plural(n, "framework agreement", "framework agreements")}, ceilings ${ceilings}, reported subsequent contracts ${reported}`,
+          none: "No framework agreements.", note: "Ceilings are not money awarded and are not in the total.",
+        },
+        largest: {
+          heading: "Largest Records", note: "Counted Records only: suspect values and framework ceilings are not listed here.",
+          empty: "No counted Records in this selection.", recordRow: recordRow(locale),
+        },
+        aliases: {
+          heading: "Appears in SEAP as", intro: "Every name SEAP has published this entity under.",
+          records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, range: (a, b) => `first seen ${a}, last ${b}`, singleDay: (d) => `seen on ${d} only`, badges: badges.en,
+        },
+      };
+};
+
 export const sampleCopy = {
+  entityOverview,
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,

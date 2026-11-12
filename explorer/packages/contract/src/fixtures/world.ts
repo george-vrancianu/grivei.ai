@@ -52,6 +52,19 @@ export const hachiHeader = entityHeader(hachiRow, {
 export const constructii = entityRef("30000002", "CONSTRUCȚII TRANSILVANIA S.A.");
 export const constructiiRow = entityRow(constructii, placeInCounty("RO-CJ", "Cluj", ["54975", "Cluj-Napoca"]));
 
+export const constructiiHeader = entityHeader(constructiiRow, {
+  aliases: [
+    { name: "CONSTRUCȚII TRANSILVANIA S.A.", records: 38, first: "2021-01-12", last: "2024-10-30", differsFromAnaf: false },
+    { name: "CONSTRUCTII TRANSILVANIA SA", records: 21, first: "2021-03-02", last: "2023-12-14", differsFromAnaf: false },
+    { name: "S.C. CONSTRUCȚII TRANSILVANIA S.A.", records: 17, first: "2021-02-18", last: "2022-09-27", differsFromAnaf: false },
+    { name: "CONSTRUCTII TRANSILVANIA S.A. CLUJ-NAPOCA", records: 9, first: "2022-04-05", last: "2024-06-19", differsFromAnaf: true },
+    { name: "TRANSILVANIA CONSTRUCTII", records: 6, first: "2021-07-21", last: "2023-01-30", differsFromAnaf: true },
+    { name: "CONSTRUCȚII TRANSILVANIA", records: 4, first: "2023-02-08", last: "2023-11-02", differsFromAnaf: true },
+    { name: "CONSTR. TRANSILVANIA S.A.", records: 2, first: "2022-08-16", last: "2022-08-17", differsFromAnaf: true },
+    { name: "TRANSILVANIA CONSTRUCTII SA (ASOCIERE)", records: 1, first: "2024-05-21", last: "2024-05-21", differsFromAnaf: true },
+  ],
+});
+
 export const drumarii = entityRef("30000003", "DRUMARII UNIȚI S.R.L.");
 export const drumariiRow = entityRow(drumarii, placeInCounty("RO-MS", "Mureș", ["114319", "Târgu Mureș"]), "RADIERE");
 

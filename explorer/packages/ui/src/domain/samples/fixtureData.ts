@@ -2,7 +2,7 @@
 // shown with the same invented world every screen uses. Nothing here ships in the app.
 import { fixtures } from "@grivei/contract/fixtures";
 import type { RecordFilter } from "@grivei/contract";
-import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsTimeline, CounterpartyRecordsData } from "../types.ts";
+import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordPageData, RecordsTabData, EntityOverviewData, EntityAliases, RelationshipsCounterparties, RelationshipsTimeline, CounterpartyRecordsData } from "../types.ts";
 
 function named<T extends { name: string }>(set: readonly T[], name: string): T {
   const found = set.find((fixture) => fixture.name === name);
@@ -157,6 +157,24 @@ export const everyBadgePage: RecordPageData = {
   ...provisionalPage,
   badges: ["FRAMEWORK_CEILING", "SUBSEQUENT_CONTRACT", "CONSORTIUM_SHARE", "SUSPECT_VALUE", "NO_VALUE", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWLED_PROVISIONAL", "CRAWL_ONLY"],
 };
+
+// The Overview tab's data (`EntityOverview` fixtures: the entity's `seap.role` and its aliases).
+const overviewOf = (name: string) => {
+  const entity = named(fixtures.EntityOverview, name).data.entity!;
+  return { overview: entity.seap.role as EntityOverviewData, aliases: entity.aliases as EntityAliases };
+};
+/** An authority with one counterparty, no Signals, a Total with no caveats. */
+export const authorityOverview = overviewOf("authority-typical");
+/** An authority with 220 counterparties (four rows sent, one a natural person), a consortium and a framework line. */
+export const authorityManyCounterpartiesOverview = overviewOf("authority-many-counterparties");
+/** A supplier with Signals, a consortium, a Total that left things out and aliases (one differing from ANAF). */
+export const supplierOverview = overviewOf("supplier-typical");
+/** A supplier SEAP spells eight ways, no Signals. */
+export const manyAliasesOverview = overviewOf("supplier-many-aliases");
+/** An authority with nothing in the filter. */
+export const emptyOverview = overviewOf("unplaced-authority");
+/** A name-only foreign supplier whose one Record has no value. */
+export const nameOnlyOverview = overviewOf("name-only-supplier-no-filter");
 
 // ---- the Relationships tab (`EntityRelationships` and `EntityRecords` fixtures) ----------------------------------
 

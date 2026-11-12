@@ -195,8 +195,30 @@ export const en: Copy = {
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     tabBody: {
-      overview: "The Overview is not built yet.",
       relationships: "The Relationships tab is not built yet.",
+    },
+    overview: {
+      headline: {
+        label: "Headline numbers", total: "Total awarded", counterparties: "Counterparties", topShare: (p) => `The largest holds ${p} of the total`,
+        directPurchase: "Share via direct purchase", signals: "Signals",
+      },
+      signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity." },
+      counterparties: { heading: "Counterparties", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`, empty: "No counterparties in this selection." },
+      procedures: { heading: "Procedure types", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
+      consortia: {
+        heading: "Consortia", convention: "Each member's equal share is a counting convention, not a figure SEAP publishes.",
+        share: (amount) => `equal share ${amount}`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      },
+      frameworks: {
+        heading: "Framework agreements",
+        line: (n, f, ceilings, reported) => `${f} ${plural(n, "framework agreement", "framework agreements")}, ceilings ${ceilings}, reported subsequent contracts ${reported}`,
+        none: "No framework agreements.", note: "Ceilings are not money awarded and are not in the total.",
+      },
+      largest: { heading: "Largest Records", note: "Counted Records only: suspect values and framework ceilings are not listed here.", empty: "No counted Records in this selection." },
+      aliases: {
+        heading: "Appears in SEAP as", intro: "Every name SEAP has published this entity under.",
+        records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, range: (a, b) => `first seen ${a}, last ${b}`, singleDay: (d) => `seen on ${d} only`,
+      },
     },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
