@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { UiProvider } from "@grivei/ui";
 import { AppShell } from "./components/AppShell/index.ts";
 import { catalogue } from "./copy/index.ts";
-import { CountyTopologyProvider, type LoadCountyTopology } from "./geo/index.ts";
+import { CountyTopologyProvider, UatTopologyProvider, type LoadCountyTopology, type LoadUatTopology } from "./geo/index.ts";
 import { ClientProvider } from "./graphql/ClientContext.tsx";
 import type { GraphqlClient } from "./graphql/client.ts";
 import { Routes } from "./Routes.tsx";
@@ -13,6 +13,8 @@ export interface AppProps {
   client?: GraphqlClient;
   /** Loads the county outlines the Money lens draws; defaults to `/geo/counties.topo.json`. Tests hand in a small topology. */
   loadCountyTopology?: LoadCountyTopology;
+  /** Loads one county's UAT outlines (`RO-BV`) for the zoomed county; defaults to `/geo/uats/<county>.topo.json`. */
+  loadUatTopology?: LoadUatTopology;
 }
 
 function Shell() {
@@ -40,13 +42,15 @@ function Shell() {
 }
 
 /** The app: the browser location is the router state; every page sits in the shell. */
-export function App({ client, loadCountyTopology }: AppProps) {
+export function App({ client, loadCountyTopology, loadUatTopology }: AppProps) {
   return (
     <ClientProvider {...(client ? { client } : {})}>
       <CountyTopologyProvider {...(loadCountyTopology ? { load: loadCountyTopology } : {})}>
-        <LocationProvider>
-          <Shell />
-        </LocationProvider>
+        <UatTopologyProvider {...(loadUatTopology ? { load: loadUatTopology } : {})}>
+          <LocationProvider>
+            <Shell />
+          </LocationProvider>
+        </UatTopologyProvider>
       </CountyTopologyProvider>
     </ClientProvider>
   );

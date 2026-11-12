@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
+import { loadTestUatTopology } from "../../testing/uatTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -15,7 +16,7 @@ const here = () => window.location.pathname + window.location.search;
 const open = (url: string) => {
   openAt(url);
   const { client, sent } = fixtureClient();
-  return { ...render(<App client={client} loadCountyTopology={loadTestCountyTopology} />), sent };
+  return { ...render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadTestUatTopology} />), sent };
 };
 /** Money is written with a no-break space after the currency code: read it as the plain space a reader sees. */
 const plain = (text: string | null) => (text ?? "").replaceAll("\u00a0", " ");
@@ -53,28 +54,32 @@ describe.each([
 });
 
 describe("a county click and the side toggle", () => {
-  it("filter the Total, the map and the tabs, and the URL carries them (replace history); clicking again takes the county back", async () => {
+  it("filter the Total, the map and the tabs, and the URL carries them (replace history); on the authority side the county is zoomed into (#84), on the supplier side it stays on the county map", async () => {
     const before = window.history.length;
     const { sent } = open("/explore/");
     const user = userEvent.setup();
     await waitFor(() => expect(total().records).toBe("18 Records"));
 
-    await user.click(county("Brașov"));
-    await waitFor(() => expect(here()).toBe("/explore/?county=RO-BV"));
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 8,000", records: "8 Records" }));
-    expect(screen.getByRole("tabpanel")).not.toHaveTextContent("COMUNA I.L. CARAGIALE"); // an authority of Cluj
-
     await user.click(screen.getByRole("button", { name: "Suppliers" }));
+    await waitFor(() => expect(here()).toBe("/explore/?countySide=supplier"));
+    await user.click(county("Brașov"));
     await waitFor(() => expect(here()).toBe("/explore/?county=RO-BV&countySide=supplier"));
     await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "16 Records" }));
     expect(screen.getByRole("button", { name: "Suppliers" })).toHaveAttribute("aria-pressed", "true");
+    expect(county("Brașov")).toHaveAttribute("aria-pressed", "true"); // chosen, and no zoom: the UAT map is authority-side only
+    expect(screen.queryByRole("button", { name: catalogue.en.zoomedCounty.back })).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Authorities" }));
-    await user.click(county("Brașov")); // chosen already: a second click takes it back
+    await user.click(screen.getByRole("button", { name: "Authorities" })); // the county stays: now it is zoomed into
+    await waitFor(() => expect(here()).toBe("/explore/?county=RO-BV"));
+    await waitFor(() => expect(total()).toEqual({ awarded: "RON 8,000", records: "8 Records" }));
+    expect(screen.getByRole("tabpanel")).not.toHaveTextContent("COMUNA I.L. CARAGIALE"); // an authority of Cluj
+    expect(await screen.findByRole("button", { name: catalogue.en.zoomedCounty.back })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: catalogue.en.zoomedCounty.back }));
     await waitFor(() => expect(here()).toBe("/explore/"));
     await waitFor(() => expect(total().records).toBe("18 Records"));
     expect(window.history.length).toBe(before); // every change replaced the entry
-    expect(asked(sent)).toEqual(['{}', '{"county":"RO-BV"}', '{"county":"RO-BV","countySide":"SUPPLIER"}', '{"county":"RO-BV"}', '{}']);
+    expect(asked(sent)).toEqual(['{}', '{"countySide":"SUPPLIER"}', '{"county":"RO-BV","countySide":"SUPPLIER"}', '{"county":"RO-BV"}', '{}']);
   });
 
   it("survive a reload: the URL alone restores the county, the side, the Total and the open tab", async () => {
@@ -108,9 +113,9 @@ describe("a county click and the side toggle", () => {
     open("/ro/explore/");
     const user = userEvent.setup();
     await waitFor(() => expect(total().records).toBe("18 înregistrări"));
-    await user.click(county("Brașov"));
-    await waitFor(() => expect(here()).toBe("/ro/explore/?county=RO-BV"));
     await user.click(screen.getByRole("button", { name: "Furnizori" }));
+    await waitFor(() => expect(here()).toBe("/ro/explore/?countySide=supplier"));
+    await user.click(county("Brașov"));
     await waitFor(() => expect(here()).toBe("/ro/explore/?county=RO-BV&countySide=supplier"));
     await waitFor(() => expect(total()).toEqual({ awarded: "19.500 RON", records: "16 înregistrări" }));
   });
