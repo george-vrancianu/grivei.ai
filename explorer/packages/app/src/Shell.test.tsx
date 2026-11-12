@@ -11,9 +11,8 @@ afterEach(() => window.history.replaceState(null, "", "/"));
 
 const here = () => window.location.pathname + window.location.search;
 
-/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages and the search page are real: see pages/EntityPage and pages/SearchPage. */
+/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages, the search page and the Record page are real: see pages/EntityPage, pages/SearchPage and pages/RecordPage. */
 const ROUTES = [
-  { path: "record/CAN1170001", en: catalogue.en.pages.record.title, ro: catalogue.ro.pages.record.title, detail: "CAN1170001" },
   { path: "coverage", en: catalogue.en.pages.coverage.title, ro: catalogue.ro.pages.coverage.title },
   { path: "methodology", en: catalogue.en.pages.methodology.title, ro: catalogue.ro.pages.methodology.title },
 ] as const;
@@ -24,7 +23,6 @@ describe("every route renders its placeholder in both languages", () => {
       openAt(`${prefix}/${route.path}`);
       const { unmount } = render(<App client={fixtureClient().client} />);
       expect(screen.getByRole("heading", { level: 1, name: route[locale] })).toBeInTheDocument();
-      if ("detail" in route) expect(screen.getByTestId("route-detail")).toHaveTextContent(route.detail);
       expect(screen.getByText(catalogue[locale].pages.placeholder)).toBeInTheDocument();
       expect(document.documentElement.lang).toBe(locale);
       unmount();
@@ -68,12 +66,13 @@ describe("the EN/RO switch", () => {
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.en.language.switchLabel }));
     expect(here()).toBe("/ro/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
-    expect(screen.getByRole("heading", { level: 1, name: catalogue.ro.pages.record.title })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Reabilitare pod peste râul Olt" })).toBeInTheDocument();
+    expect(screen.getByText("Valoare publicată")).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("ro");
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.ro.language.switchLabel }));
     expect(here()).toBe("/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
-    expect(screen.getByRole("heading", { level: 1, name: catalogue.en.pages.record.title })).toBeInTheDocument();
+    expect(await screen.findByText("Value as published")).toBeInTheDocument();
   });
 
   it("works from the main screen too", async () => {

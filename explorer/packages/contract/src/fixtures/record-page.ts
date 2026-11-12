@@ -37,6 +37,8 @@ const fx = (name: string, kind: "typical" | "empty" | "extreme", description: st
 export const recordPage: RecordFixtures = [
   fx("direct-purchase-over-cap", "typical", "a direct purchase above the cap: over-cap Signal listing its Record", "DA12345678",
     page(w.rDirect, { signals: [signal(w.sOverCap, [w.rDirect])], provenance: provenance({ url: "https://e-licitatie.ro/pub/direct-acquisition/view/200000", via: "data.gov.ro 2024 Q1 Achiziții directe" }) })),
+  fx("contract-single-winner", "typical", "a plain contract: one winner, counted in full, no caveats", "CAN1166685",
+    page(w.rContract, { contractType: "Lucrări", cpv: { code: "45233140-2", description: "Lucrări de drumuri" } })),
   fx("consortium-contract", "typical", "a consortium Record: full value plus each member's equal share, a natural-person-free winner list", "CAN1170001",
     page(w.rConsortium, { contractType: "Lucrări", cpv: { code: "45221111-3", description: "Lucrări de construcții de poduri" } })),
   fx("consortium-name-only", "typical", "a consortium of a foreign firm and a name-only association: no CUI-keyed entity link for either", "CAN1170002",
