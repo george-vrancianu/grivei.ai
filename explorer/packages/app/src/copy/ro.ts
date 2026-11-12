@@ -121,6 +121,64 @@ export const ro: Copy = {
     frameworkCeilings: (amount) => `Plafoane de acorduri-cadru neincluse: ${amount}`,
     methodology: "Cum se calculează acest total",
   },
+  recordPage: {
+    notFound: { title: "Înregistrarea nu a fost găsită", body: (code) => `Nicio înregistrare nu este publicată sub codul ${code}.` },
+    heading: {
+      kinds: { DA: "Achiziție directă (DA)", DAN: "Anunț de achiziție directă (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
+      facets: { code: "Cod", date: "Data", kind: "Tip", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+    },
+    value: {
+      published: "Valoare publicată",
+      counted: "Valoare luată în calcul",
+      noValue: "Nicio valoare în SEAP",
+      notCounted: {
+        suspect: "Nu se ia în calcul: valoarea publicată încalcă o regulă de calcul",
+        frameworkCeiling: "Nu se ia în calcul: plafonul unui acord-cadru nu este bani atribuiți; se iau în calcul contractele subsecvente",
+        noValue: "Nu e nimic de luat în calcul: SEAP nu publică nicio valoare",
+        other: "Nu se ia în calcul",
+      },
+    },
+    parties: {
+      authority: "Autoritate contractantă",
+      winners: "Câștigători",
+      share: (amount) => `parte egală ${amount}`,
+      convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
+    },
+    suspect: {
+      heading: "Regula valorii suspecte",
+      rules: {
+        DIRECT_PURCHASE_10X_CAP: (t) => `Valoarea publicată este de cel puțin zece ori plafonul în vigoare pentru o achiziție directă de această dată și de acest tip${t ? ` (${t})` : ""}.`,
+        CONTRACT_100X_ESTIMATE: (t) => `Valoarea publicată este de cel puțin 1 miliard RON și de cel puțin o sută de ori valoarea estimată din e-licitatie${t ? ` (${t})` : ""}.`,
+        CONTRACT_OVER_50BN: () => "Valoarea publicată depășește 50 de miliarde RON, iar e-licitatie nu indică o valoare estimată.",
+      },
+      leftOut: "Valoarea este afișată așa cum a fost publicată și este lăsată în afara totalurilor.",
+      methodology: "Cum se calculează valorile",
+    },
+    framework: {
+      heading: "Acord-cadru",
+      line: (ceiling, reported, percent) => `Plafon ${ceiling}; contracte subsecvente raportate până acum ${reported} (${percent})`,
+      lineBlankCeiling: (reported) => `Plafon nepublicat; contracte subsecvente raportate până acum ${reported}`,
+      agreement: "Atribuit în baza acordului-cadru",
+      subsequentHeading: "Contracte subsecvente",
+    },
+    badges: { heading: "Insigne și semnificația lor" },
+    signals: {
+      heading: "Semnalele din care face parte această înregistrare",
+      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      date: (when) => `din ${when}`,
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+    },
+    provenance: {
+      heading: "Proveniență",
+      source: "Sursă",
+      via: "Fișier sau anunț",
+      kind: "Cum l-am obținut",
+      kinds: { BULK: "Fișier public în masă", CRAWL: "Citit de pe site-ul Sursei", API: "Citit din API-ul Sursei" },
+      fetchedAt: "Preluat la",
+      checkIn: (source) => `Verifică în ${source}`,
+      noPublicPage: (source) => `${source} nu are încă o pagină publică stabilă pentru această înregistrare.`,
+    },
+  },
   entityPage: {
     layout: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {

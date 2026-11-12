@@ -116,6 +116,64 @@ export const en: Copy = {
     frameworkCeilings: (amount) => `Framework ceilings not counted: ${amount}`,
     methodology: "How this total is counted",
   },
+  recordPage: {
+    notFound: { title: "Record not found", body: (code) => `No Record is published under the code ${code}.` },
+    heading: {
+      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase notice (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
+      facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+    },
+    value: {
+      published: "Value as published",
+      counted: "Counted value",
+      noValue: "No value in SEAP",
+      notCounted: {
+        suspect: "Not counted: the published value breaks a counting rule",
+        frameworkCeiling: "Not counted: a framework ceiling is not money awarded; its subsequent contracts are counted instead",
+        noValue: "Nothing to count: SEAP publishes no value",
+        other: "Not counted",
+      },
+    },
+    parties: {
+      authority: "Contracting authority",
+      winners: "Winners",
+      share: (amount) => `equal share ${amount}`,
+      convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
+    },
+    suspect: {
+      heading: "Suspect value rule",
+      rules: {
+        DIRECT_PURCHASE_10X_CAP: (t) => `The published value is at least ten times the cap in force for a direct purchase of this date and type${t ? ` (${t})` : ""}.`,
+        CONTRACT_100X_ESTIMATE: (t) => `The published value is 1 bn RON or more, and at least a hundred times the estimated value in e-licitatie${t ? ` (${t})` : ""}.`,
+        CONTRACT_OVER_50BN: () => "The published value is above 50 bn RON and e-licitatie gives no estimated value.",
+      },
+      leftOut: "The value is shown as published and left out of totals.",
+      methodology: "How values are counted",
+    },
+    framework: {
+      heading: "Framework agreement",
+      line: (ceiling, reported, percent) => `Ceiling ${ceiling}; subsequent contracts reported so far ${reported} (${percent})`,
+      lineBlankCeiling: (reported) => `Ceiling not published; subsequent contracts reported so far ${reported}`,
+      agreement: "Awarded under the framework agreement",
+      subsequentHeading: "Subsequent contracts",
+    },
+    badges: { heading: "Badges and what they mean" },
+    signals: {
+      heading: "Signals this Record belongs to",
+      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      date: (when) => `dated ${when}`,
+      records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
+    },
+    provenance: {
+      heading: "Provenance",
+      source: "Source",
+      via: "File or notice",
+      kind: "How we got it",
+      kinds: { BULK: "Published bulk file", CRAWL: "Read from the Source's own site", API: "Read from the Source's API" },
+      fetchedAt: "Fetched",
+      checkIn: (source) => `Check in ${source}`,
+      noPublicPage: (source) => `${source} has no stable public page for this Record yet.`,
+    },
+  },
   entityPage: {
     layout: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
