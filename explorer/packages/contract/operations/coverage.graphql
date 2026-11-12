@@ -1,0 +1,22 @@
+# The Coverage lens on the main screen: one status per county, one mark per Source.
+# Follows the date chip (`window`).
+query CoverageLens($window: DateRange) {
+  sources { ...DataThroughFields }
+  coverage(source: SEAP, window: $window) {
+    window { from to }
+    counties { county status withRecords publicEntities otherAuthorities }
+    unplacedAuthorities { authorities total { ...TotalFields } }
+  }
+}
+
+# /explore/coverage: quarter x record kind grid, the reference snapshot, known gaps.
+query CoveragePage($window: DateRange) {
+  sources { ...DataThroughFields }
+  coverage(source: SEAP, window: $window) {
+    window { from to }
+    counties { county status withRecords publicEntities otherAuthorities }
+    grid { quarter kind state reason records dataThrough }
+    unplacedAuthorities { authorities total { ...TotalFields } }
+    referenceSnapshot
+  }
+}

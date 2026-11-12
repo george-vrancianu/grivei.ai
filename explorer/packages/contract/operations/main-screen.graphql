@@ -1,0 +1,36 @@
+# /explore/?q=deszapezire&from=2024-01-01&county=RO-BV&tab=suppliers
+# One keystroke, one operation: everything on the main screen from one matching set.
+query MainScreen($filter: RecordFilter!, $side: CountySide) {
+  sources { ...DataThroughFields }
+  seap {
+    search(filter: $filter) {
+      filter { qFolded authority { ...EntityRef } supplier { ...EntityRef } }
+      total { ...TotalFields }
+      map(side: $side) { ...MoneyMapFields }
+      goTo { ...EntityRef }
+      authorities(limit: 50) { count countEstimated rows { entity { ...EntityRowFields } matched { ...TotalFields } } }
+      suppliers(limit: 50) { count countEstimated rows { entity { ...EntityRowFields } matched { ...TotalFields } } }
+      records(limit: 50) {
+        count
+        rows {
+          record { ...RecordRowFields }
+          matchedField { field text highlights }
+        }
+      }
+    }
+  }
+}
+
+# Zoomed county: the UAT choropleth, plus the UAT list so absent UATs draw grey.
+query ZoomedCounty($filter: RecordFilter!, $county: CountyCode!, $side: CountySide) {
+  uats(county: $county) { siruta name county { code name } }
+  seap {
+    search(filter: $filter) {
+      total { ...TotalFields }
+      uatMap(county: $county, side: $side) {
+        uats { area name entities total { ...TotalFields } }
+        unknownUat { ...TotalFields }
+      }
+    }
+  }
+}

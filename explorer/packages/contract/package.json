@@ -1,0 +1,31 @@
+{
+  "name": "@grivei/contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The explorer's GraphQL contract: schema, persisted operations, generated types, mock fixtures.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures/index.ts",
+    "./schema-types": "./src/generated/schema.ts",
+    "./schema.graphql": "./schema/schema.graphql",
+    "./persisted-queries.json": "./generated/persisted-queries.json"
+  },
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.ts && node scripts/build-allowlist.ts",
+    "codegen:check": "graphql-codegen --config codegen.ts --check && node scripts/build-allowlist.ts --check",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --pool=forks --maxWorkers=4",
+    "check": "npm run codegen:check && npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^8.0.0",
+    "@graphql-codegen/typescript": "^7.0.1",
+    "@graphql-codegen/typescript-operations": "^7.0.1",
+    "@graphql-codegen/typescript-resolvers": "^7.0.0",
+    "@types/node": "^26.6.6",
+    "graphql": "^16.15.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
