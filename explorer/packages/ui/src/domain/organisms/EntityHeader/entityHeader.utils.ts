@@ -1,5 +1,5 @@
 import type { Locale } from "../../../theme/index.ts";
-import type { EntityHeaderData, EntityRole } from "../../types.ts";
+import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 
 /** ANAF's status for an entity in good standing. Anything else (RADIERE, FUZIUNE ...) is badged. */
 export function isInactiveStatus(status: string | null): status is string {
@@ -28,7 +28,7 @@ export function hasBothRoles(entity: EntityHeaderData): boolean {
   return entity.seap.roles.includes("AUTHORITY") && entity.seap.roles.includes("SUPPLIER");
 }
 
-export const ROLES: readonly EntityRole[] = ["AUTHORITY", "SUPPLIER"];
+export const ROLES: readonly EntityPageRole[] = ["AUTHORITY", "SUPPLIER"];
 
 /** "12 October 2024" / "12 octombrie 2024" from an ISO instant, in UTC. */
 export function formatFetched(iso: string, locale: Locale): string {

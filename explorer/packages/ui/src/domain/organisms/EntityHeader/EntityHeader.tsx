@@ -1,7 +1,7 @@
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import type { EntityHeaderData, EntityRole } from "../../types.ts";
+import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 import { AnafStatusBadge, type AnafStatusBadgeCopy } from "./components/AnafStatusBadge/index.ts";
 import { IdentityMarkers, type IdentityMarkersCopy } from "./components/IdentityMarkers/index.ts";
 import { PlacementLine, type PlacementLineCopy } from "./components/PlacementLine/index.ts";
@@ -21,9 +21,9 @@ export interface EntityHeaderProps {
   /** `EntityHeaderFields` of the entity query. */
   entity: EntityHeaderData;
   /** The role the page shows (the URL's /authority/ or /supplier/). */
-  role: EntityRole;
+  role: EntityPageRole;
   /** The entity's page in a role, for the role switch. The caller owns routing (language prefix, view, query). */
-  roleHref: (role: EntityRole) => string;
+  roleHref: (role: EntityPageRole) => string;
   /** Called with the href on a plain click on a link, so the app can change page without a load. */
   onNavigate?: (href: string) => void;
   locale: Locale;

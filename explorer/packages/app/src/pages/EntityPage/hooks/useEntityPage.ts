@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { EntityHeaderData, EntityPageView, EntityRole } from "@grivei/ui";
+import type { EntityHeaderData, EntityPageView, EntityPageRole } from "@grivei/ui";
 import type { RecordFilter, RecordOrder, SignalOrder } from "@grivei/contract";
 import { useClient } from "../../../graphql/ClientContext.tsx";
 import type { GraphqlClient } from "../../../graphql/client.ts";
@@ -10,7 +10,7 @@ export const RECORDS_PAGE_SIZE = 100;
 
 export interface EntityPageRequest {
   key: string;
-  role: EntityRole;
+  role: EntityPageRole;
   view: EntityPageView;
   filter: RecordFilter;
   /** 1-based page of the Records tab. */

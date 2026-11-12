@@ -1,7 +1,7 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { EntityRole } from "../../../../types.ts";
+import type { EntityPageRole } from "../../../../types.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import { ROLES } from "../../entityHeader.utils.ts";
 
@@ -14,16 +14,16 @@ export interface RoleSwitchCopy {
 
 export interface RoleSwitchProps {
   /** The role the page shows now; its link is marked `aria-current="page"`. */
-  role: EntityRole;
+  role: EntityPageRole;
   /** The page of this entity in a role. The caller owns routing. */
-  hrefFor: (role: EntityRole) => string;
+  hrefFor: (role: EntityPageRole) => string;
   onNavigate?: (href: string) => void;
   copy: RoleSwitchCopy;
 }
 
 /** Two links, one per role, for an entity that both buys and sells. The caller decides when to show it. */
 export function RoleSwitch({ role, hrefFor, onNavigate, copy }: RoleSwitchProps) {
-  const names: Record<EntityRole, string> = {
+  const names: Record<EntityPageRole, string> = {
     AUTHORITY: copy.authority,
     SUPPLIER: copy.supplier,
   };

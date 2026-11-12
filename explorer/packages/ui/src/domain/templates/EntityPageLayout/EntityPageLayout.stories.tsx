@@ -3,7 +3,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import { EntityHeader } from "../../organisms/EntityHeader/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { authorityHeader, bothRolesHeader, nameOnlySupplierHeader, supplierHeader } from "../../samples/fixtureData.ts";
-import type { EntityHeaderData, EntityPageView, EntityRole } from "../../types.ts";
+import type { EntityHeaderData, EntityPageView, EntityPageRole } from "../../types.ts";
 import { EntityPageLayout } from "./index.ts";
 
 const meta = {
@@ -14,7 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const hrefs = (entity: EntityHeaderData, role: EntityRole): Record<EntityPageView, string> => {
+const hrefs = (entity: EntityHeaderData, role: EntityPageRole): Record<EntityPageView, string> => {
   const root = `/explore/${role.toLowerCase()}/${encodeURIComponent(entity.key)}`;
   return {
     overview: root,
@@ -23,11 +23,11 @@ const hrefs = (entity: EntityHeaderData, role: EntityRole): Record<EntityPageVie
   };
 };
 
-function page(entity: EntityHeaderData, role: EntityRole, view: EntityPageView): Story {
+function page(entity: EntityHeaderData, role: EntityPageRole, view: EntityPageView): Story {
   return {
     render: (_args, { globals }) => {
       const locale = localeOf(globals["locale"]);
-      const roleHref = (r: EntityRole) => hrefs(entity, r).overview;
+      const roleHref = (r: EntityPageRole) => hrefs(entity, r).overview;
       return (
         <EntityPageLayout
           header={<EntityHeader entity={entity} role={role} roleHref={roleHref} locale={locale} copy={sampleCopy.entityHeader(locale)} />}

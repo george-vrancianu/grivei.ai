@@ -8,7 +8,7 @@ import {
   supplierHeader,
   unplacedAuthorityHeader,
 } from "../../samples/fixtureData.ts";
-import type { EntityHeaderData, EntityRole } from "../../types.ts";
+import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 import { EntityHeader } from "./index.ts";
 
 const meta = {
@@ -18,9 +18,9 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const roleHref = (entity: EntityHeaderData) => (role: EntityRole) => `/explore/${role.toLowerCase()}/${encodeURIComponent(entity.key)}`;
+const roleHref = (entity: EntityHeaderData) => (role: EntityPageRole) => `/explore/${role.toLowerCase()}/${encodeURIComponent(entity.key)}`;
 
-function header(entity: EntityHeaderData, role: EntityRole): Story {
+function header(entity: EntityHeaderData, role: EntityPageRole): Story {
   return {
     render: (_args, { globals }) => {
       const locale = localeOf(globals["locale"]);

@@ -10,12 +10,12 @@ import {
   supplierHeader,
   unplacedAuthorityHeader,
 } from "../../samples/fixtureData.ts";
-import type { EntityHeaderData, EntityRole } from "../../types.ts";
+import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { EntityHeader } from "./index.ts";
 
-const roleHref = (role: EntityRole) => `/explore/${role.toLowerCase()}/x`;
-function show(entity: EntityHeaderData, role: EntityRole, locale: Locale = "en", onNavigate?: (href: string) => void) {
+const roleHref = (role: EntityPageRole) => `/explore/${role.toLowerCase()}/x`;
+function show(entity: EntityHeaderData, role: EntityPageRole, locale: Locale = "en", onNavigate?: (href: string) => void) {
   return renderInUi(
     <EntityHeader
       entity={entity}

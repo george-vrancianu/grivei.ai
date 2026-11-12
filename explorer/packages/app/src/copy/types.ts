@@ -1,4 +1,6 @@
-import type { BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, PartyNameCopy, TotalFigureCopy } from "@grivei/ui";
+import type {
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
+} from "@grivei/ui";
 
 /**
  * The shape of the bilingual copy catalogue: every user-facing string of the app is a key here, and `en.ts` and `ro.ts`
@@ -18,12 +20,8 @@ export interface Copy {
   status: { loading: string; failed: string };
   main: { title: string; total: string };
   searchField: { label: string; placeholder: string };
-  records: {
-    heading: string;
-    empty: string;
-    noValue: string;
-    columns: { code: string; title: string; authority: string; supplier: string; date: string; value: string };
-  };
+  /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */
+  results: ResultTabsCopy;
   /** Placeholder pages: what each route will hold. Replaced one by one by the tickets that build the page. */
   pages: {
     placeholder: string;

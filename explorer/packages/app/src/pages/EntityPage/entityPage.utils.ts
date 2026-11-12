@@ -1,11 +1,11 @@
-import type { EntityPageView, EntityRole } from "@grivei/ui";
+import type { EntityPageView, EntityPageRole } from "@grivei/ui";
 import type { RecordFilter } from "@grivei/contract";
 import { pathFor, type EntityRoute } from "../../routing/routes.ts";
 import type { Locale } from "@grivei/ui";
 import { encodeUrlState } from "../../urlState/codec.ts";
 
-export const roleOf = (entity: EntityRoute): EntityRole => (entity === "authority" ? "AUTHORITY" : "SUPPLIER");
-export const routeOf = (role: EntityRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
+export const roleOf = (entity: EntityRoute): EntityPageRole => (entity === "authority" ? "AUTHORITY" : "SUPPLIER");
+export const routeOf = (role: EntityPageRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
 
 /**
  * The URL of each tab. The filter travels with the reader from tab to tab (the side panel's filter shapes every tab's totals);
@@ -18,6 +18,6 @@ export function tabHrefs(locale: Locale, entity: EntityRoute, key: string, filte
 }
 
 /** The same tab of the entity in the other role. The filter is left behind: its counterparties and facets are the other role's. */
-export function roleHref(locale: Locale, key: string, view: EntityPageView, role: EntityRole): string {
+export function roleHref(locale: Locale, key: string, view: EntityPageView, role: EntityPageRole): string {
   return pathFor(locale, { name: "entity", entity: routeOf(role), key, view });
 }
