@@ -9,7 +9,7 @@ import { CoverageTiles } from "./components/CoverageTiles/index.ts";
 import { CoverageTooltip } from "./components/CoverageTooltip/index.ts";
 import { SourceMarks } from "./components/SourceMarks/index.ts";
 import type { CoverageLensMapCopy } from "./coverageLensMap.types.ts";
-import { COVERAGE_COLORS, coverageByCounty } from "./coverageLensMap.utils.ts";
+import { COVERAGE_COLORS, NO_STATUS_COLOR, coverageByCounty, sinceText, summaryParts, coverageSource, COVERAGE_SOURCE_ID } from "./coverageLensMap.utils.ts";
 
 export type CoverageLensMapProps = {
   /** The Coverage lens's data (`CoverageLens` query): the Sources and the SEAP coverage of the date window. */
@@ -32,9 +32,12 @@ const NO_VALUES = {};
  */
 export function CoverageLensMap({ lens, topology, selected, onSelect, locale, copy }: CoverageLensMapProps) {
   const rows = useMemo(() => coverageByCounty(lens.coverage), [lens]);
+  const since = sinceText(lens.coverage.window, locale);
+  const source = coverageSource(lens.sources)?.name ?? COVERAGE_SOURCE_ID;
+  // The accessible name carries the status and the N of M sentence: the tooltip is not linked to the area for assistive tech.
   const describeArea = ({ code }: AreaInfo) => {
     const row = rows.get(code);
-    return row ? copy.status[row.status] : copy.noStatus;
+    return row ? `${copy.status[row.status]}. ${copy.tooltip.summary(summaryParts(row, source, since, locale))}` : copy.noStatus;
   };
   return (
     <BaseMap
@@ -44,7 +47,7 @@ export function CoverageLensMap({ lens, topology, selected, onSelect, locale, co
       formatValue={() => ""}
       colorOf={(code) => {
         const row = rows.get(code);
-        return row ? COVERAGE_COLORS[row.status] : null;
+        return row ? COVERAGE_COLORS[row.status] : NO_STATUS_COLOR;
       }}
       describeArea={describeArea}
       legend={<CoverageLegend sources={lens.sources} copy={copy} />}
@@ -52,7 +55,7 @@ export function CoverageLensMap({ lens, topology, selected, onSelect, locale, co
       renderTooltip={({ code, name }) => <CoverageTooltip name={name} row={rows.get(code)} lens={lens} locale={locale} copy={copy} />}
       onSelect={onSelect}
       selected={selected}
-      tiles={<CoverageTiles lens={lens} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />}
+      tiles={<CoverageTiles lens={lens} coverage={rows} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />}
       copy={copy.map}
     />
   );

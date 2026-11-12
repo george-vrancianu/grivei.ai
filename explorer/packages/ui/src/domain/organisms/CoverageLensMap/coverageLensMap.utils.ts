@@ -1,29 +1,37 @@
 import type { Locale } from "../../../theme/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { FIRST_YEAR } from "../../molecules/FilterChips/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import type { CountyCoverage, CoverageLens, CoverageStatus, SourceInfo } from "../../types.ts";
 import type { CoverageSummaryParts } from "./coverageLensMap.types.ts";
 
-/** The year SEAP bulk data starts: what "since" says when the date window has no start. */
-export const HARVEST_START_YEAR = 2021;
-
 /** The Source the county statuses are about (the lens asks for `coverage(source: SEAP)`). */
 export const COVERAGE_SOURCE_ID = "SEAP";
 
+/** Grey: not harvested. The fill of a not-harvested county and the outline of a planned Source's mark. */
+export const PLANNED_MARK_COLOR = "#757575";
+
+/** A county with no coverage row: its own near-white fill (never grey, which means not harvested), dashed in the legend. */
+export const NO_STATUS_COLOR = "#fafafa";
+
+/** The marks' look, shared by the map's marks and the legend's swatches. */
+export const MARK_OUTLINE = "#1b2a41";
+export const MARK_FILL = "#ffffff";
+/** A harvested Source that is not the coverage Source: filled neutral dark, since the statuses describe only the coverage Source. */
+export const OTHER_HARVESTED_MARK_COLOR = "#424242";
+
 /**
- * One fill per status. Categorical, never a ratio scale. Chosen to stay apart for the common colour-blind types
- * (dark blue / light blue / amber / vermilion, after Okabe and Ito) and from the grey no-status fill; the legend and the
- * accessible names carry the status words, so colour is never the only cue.
+ * One fill per status. Categorical, never a ratio scale. Grey means "not harvested" everywhere on this map (the glossary's rule), the
+ * planned Sources' marks included; the other three stay apart for the common colour-blind types (dark blue / light blue / amber).
+ * The legend and the accessible names carry the status words, so colour is never the only cue.
  */
 export const COVERAGE_COLORS: Record<CoverageStatus, string> = {
   HARVESTED: "#1b5e8c",
   HARVESTED_WITH_KNOWN_GAPS: "#8cc0e0",
   PARTIAL: "#f0c75e",
-  NOT_HARVESTED: "#d55e00",
+  NOT_HARVESTED: PLANNED_MARK_COLOR,
 };
 
-/** The planned Sources' marks: grey, outlined, empty. */
-export const PLANNED_MARK_COLOR = "#757575";
 
 /** Every status, in the legend's order (most to least covered). */
 export const COVERAGE_STATUSES: readonly CoverageStatus[] = ["HARVESTED", "HARVESTED_WITH_KNOWN_GAPS", "PARTIAL", "NOT_HARVESTED"];
@@ -43,9 +51,9 @@ export function coverageSource(sources: readonly SourceInfo[]): SourceInfo | und
   return sources.find((source) => source.id === COVERAGE_SOURCE_ID);
 }
 
-/** "since" in a coverage sentence: the window's start as a date, else the harvest's first year. */
+/** "since" in a coverage sentence: the window's start as a date, else the first year of the data (`FIRST_YEAR`). */
 export function sinceText(window: CoverageLens["coverage"]["window"], locale: Locale): string {
-  return window.from ? formatDate(window.from, locale) : String(HARVEST_START_YEAR);
+  return window.from ? formatDate(window.from, locale) : String(FIRST_YEAR);
 }
 
 /** The parts of a county's coverage sentence, counts formatted for the locale. */

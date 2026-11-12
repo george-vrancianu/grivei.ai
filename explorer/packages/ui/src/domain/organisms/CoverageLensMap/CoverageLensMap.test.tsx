@@ -6,7 +6,7 @@ import { sampleCopy } from "../../samples/copy.ts";
 import { nothingHarvestedCoverage, openWindowCoverage, typicalCoverage } from "../../samples/coverageLenses.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import type { CoverageLens } from "../../types.ts";
-import { CoverageLensMap, COVERAGE_COLORS, type CoverageLensMapProps } from "./index.ts";
+import { CoverageLensMap, COVERAGE_COLORS, NO_STATUS_COLOR, PLANNED_MARK_COLOR, type CoverageLensMapProps } from "./index.ts";
 
 function setup(lens: CoverageLens = typicalCoverage, props: Partial<CoverageLensMapProps> = {}, locale: Locale = "en") {
   const onSelect = vi.fn();
@@ -22,23 +22,33 @@ const fillOf = (code: string) => document.querySelector(`path[data-code="${code}
 describe("CoverageLensMap", () => {
   it("gives each status its own fill and its own word in the county's accessible name", () => {
     setup();
-    const seen = new Map([
-      ["RO-BV", ["HARVESTED", "Brașov: Harvested"]],
-      ["RO-CJ", ["HARVESTED_WITH_KNOWN_GAPS", "Cluj: Harvested, with known gaps"]],
-      ["RO-TM", ["PARTIAL", "Timiș: Partial"]],
-      ["RO-MM", ["NOT_HARVESTED", "Maramureș: Not harvested"]],
+    const seen = new Map<string, [string, RegExp]>([
+      ["RO-BV", ["HARVESTED", /^Brașov: Harvested\. /]],
+      ["RO-CJ", ["HARVESTED_WITH_KNOWN_GAPS", /^Cluj: Harvested, with known gaps\. /]],
+      ["RO-TM", ["PARTIAL", /^Timiș: Partial\. /]],
+      ["RO-MM", ["NOT_HARVESTED", /^Maramureș: Not harvested\. /]],
     ]);
     for (const [code, [status, name]] of seen) {
-      expect(screen.getByRole("button", { name: name! })).toBeVisible();
+      expect(screen.getByRole("button", { name })).toBeVisible();
       expect(fillOf(code)).toBe(COVERAGE_COLORS[status as keyof typeof COVERAGE_COLORS]);
     }
     expect(new Set(Object.values(COVERAGE_COLORS)).size).toBe(4);
   });
 
-  it("fills a county without a coverage row neutral grey, worded as no status and not as not harvested", () => {
+  it("puts N of M in the county's accessible name, for assistive tech", () => {
+    setup();
+    expect(screen.getByRole("button", { name: "Cluj: Harvested, with known gaps. 400 of 480 public entities have SEAP records since 1 Jan 2021, plus 20 other contracting authorities" })).toBeVisible();
+  });
+
+  it("fills a county without a coverage row with its own fill, worded as no status and not as not harvested", () => {
     setup();
     expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
-    expect(Object.values(COVERAGE_COLORS)).not.toContain(fillOf("RO-GL"));
+    expect(fillOf("RO-GL")).toBe(NO_STATUS_COLOR);
+    expect(Object.values(COVERAGE_COLORS)).not.toContain(NO_STATUS_COLOR);
+  });
+
+  it("fills not harvested with the grey of the planned Sources' marks", () => {
+    expect(COVERAGE_COLORS.NOT_HARVESTED).toBe(PLANNED_MARK_COLOR);
   });
 
   it("draws one mark per Source on every county, planned Sources labelled not harvested", () => {
@@ -91,7 +101,7 @@ describe("CoverageLensMap", () => {
     await userEvent.hover(screen.getByRole("button", { name: /^Cluj/ }));
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent("Colectat, cu lacune cunoscute");
-    expect(tooltip).toHaveTextContent("400 din 480 entități publice au înregistrări SEAP din 1 ian. 2021, plus 20 de alte autorități contractante");
+    expect(tooltip).toHaveTextContent("400 din 480 de entități publice au înregistrări SEAP începând cu 1 ian. 2021, plus 20 de alte autorități contractante");
     expect(tooltip).toHaveTextContent("O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic.");
   });
 
@@ -142,7 +152,7 @@ describe("CoverageLensMap", () => {
   it("draws no Unplaced tile when there are none, and every county not harvested when nothing is", () => {
     setup(nothingHarvestedCoverage);
     expect(screen.queryByRole("button", { name: /^Unplaced/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Brașov: Not harvested" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Brașov: Not harvested\. / })).toBeVisible();
     expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
   });
 });

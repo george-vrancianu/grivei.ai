@@ -323,7 +323,7 @@ export const sampleCopy = {
           },
           tooltip: {
             summary: (p) => {
-              const entities = `${p.withRecordsText} din ${p.publicEntitiesText} ${p.publicEntities === 1 ? "entitate publică are" : "entități publice au"} înregistrări ${p.source} din ${p.since}`;
+              const entities = `${p.withRecordsText} din ${roCount(p.publicEntities, p.publicEntitiesText, "entitate publică", "entități publice")} ${p.withRecords === 1 ? "are" : "au"} înregistrări ${p.source} începând cu ${p.since}`;
               const k = p.otherAuthorities;
               const others = roCount(k, p.otherAuthoritiesText, "altă autoritate contractantă", "alte autorități contractante");
               return k > 0 ? `${entities}, plus ${others}` : entities;
@@ -349,7 +349,7 @@ export const sampleCopy = {
           },
           tooltip: {
             summary: (p) => {
-              const entities = `${p.withRecordsText} of ${p.publicEntitiesText} public ${p.publicEntities === 1 ? "entity has" : "entities have"} ${p.source} records since ${p.since}`;
+              const entities = `${p.withRecordsText} of ${p.publicEntitiesText} public ${plural(p.publicEntities, "entity", "entities")} ${p.withRecords === 1 ? "has" : "have"} ${p.source} records since ${p.since}`;
               const k = p.otherAuthorities;
               return k > 0 ? `${entities}, plus ${p.otherAuthoritiesText} other contracting ${plural(k, "authority", "authorities")}` : entities;
             },

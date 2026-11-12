@@ -5,6 +5,7 @@ import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
 import { nothingHarvestedCoverage, typicalCoverage } from "../../../../samples/coverageLenses.ts";
 import type { CoverageLens } from "../../../../types.ts";
 import type { MapArea } from "../../../MoneyLensMap/index.ts";
+import { coverageByCounty } from "../../coverageLensMap.utils.ts";
 import { CoverageTiles } from "./index.ts";
 
 const meta = { title: "Domain/CoverageLensMap/CoverageTiles" } satisfies Meta<Record<string, unknown>>;
@@ -15,7 +16,7 @@ function Tiles({ locale, lens, selected: initial }: { locale: "en" | "ro"; lens:
   const [selected, setSelected] = useState<MapArea | undefined>(initial);
   return (
     <Box sx={{ maxWidth: 300, display: "flex", flexDirection: "column", gap: 1 }}>
-      <CoverageTiles lens={lens} selected={selected} onSelect={setSelected} locale={locale} copy={sampleCopy.coverageLensMap(locale)} />
+      <CoverageTiles lens={lens} coverage={coverageByCounty(lens.coverage)} selected={selected} onSelect={setSelected} locale={locale} copy={sampleCopy.coverageLensMap(locale)} />
     </Box>
   );
 }

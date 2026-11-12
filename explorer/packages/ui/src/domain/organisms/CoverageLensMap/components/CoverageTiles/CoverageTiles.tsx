@@ -1,14 +1,15 @@
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import type { CoverageLens } from "../../../../types.ts";
+import type { CountyCoverage, CoverageLens } from "../../../../types.ts";
 import { AreaFigures, MapTile, OFF_MAP_TILE_AREAS, type MapArea } from "../../../MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../../coverageLensMap.types.ts";
-import { coverageByCounty } from "../../coverageLensMap.utils.ts";
 import { CoverageFigures } from "../CoverageFigures/index.ts";
 
 export interface CoverageTilesProps {
   lens: CoverageLens;
+  /** Each area's coverage row by code, as the map built it (NATIONAL included). */
+  coverage: ReadonlyMap<string, CountyCoverage>;
   selected?: MapArea;
   onSelect: (area: MapArea) => void;
   locale: Locale;
@@ -19,8 +20,8 @@ export interface CoverageTilesProps {
  * The tiles beside the map. National shows NATIONAL's status and its N of M sentence. Unplaced (authorities no Source places in a county)
  * shows their count and their Total, and is drawn only when there are such authorities. Coverage has no unknown-supplier-county tile (authority side only).
  */
-export function CoverageTiles({ lens, selected, onSelect, locale, copy }: CoverageTilesProps) {
-  const national = coverageByCounty(lens.coverage).get(OFF_MAP_TILE_AREAS.national);
+export function CoverageTiles({ lens, coverage, selected, onSelect, locale, copy }: CoverageTilesProps) {
+  const national = coverage.get(OFF_MAP_TILE_AREAS.national);
   const { unplacedAuthorities } = lens.coverage;
   return (
     <>

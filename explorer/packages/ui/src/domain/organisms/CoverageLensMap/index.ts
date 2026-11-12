@@ -5,4 +5,4 @@ export { CoverageTooltip, type CoverageTooltipProps } from "./components/Coverag
 export { CoverageFigures, type CoverageFiguresProps } from "./components/CoverageFigures/index.ts";
 export { SourceMarks, type SourceMarksProps } from "./components/SourceMarks/index.ts";
 export type { CoverageLensMapCopy, CoverageSummaryParts, CoverageTooltipCopy, SourceMarksCopy } from "./coverageLensMap.types.ts";
-export { COVERAGE_COLORS, COVERAGE_STATUSES, HARVEST_START_YEAR, PLANNED_MARK_COLOR, coverageByCounty, plannedSources, sinceText } from "./coverageLensMap.utils.ts";
+export { COVERAGE_COLORS, COVERAGE_SOURCE_ID, COVERAGE_STATUSES, MARK_FILL, MARK_OUTLINE, NO_STATUS_COLOR, OTHER_HARVESTED_MARK_COLOR, PLANNED_MARK_COLOR, coverageByCounty, plannedSources, sinceText } from "./coverageLensMap.utils.ts";
