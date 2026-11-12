@@ -1,4 +1,3 @@
-import type { Locale } from "../../../theme/index.ts";
 import type { RecordPageData } from "../../types.ts";
 
 /** Why a Record has no counted value: its value is suspect, it is a framework ceiling, or SEAP publishes none. `null` when it is counted. */
@@ -16,6 +15,4 @@ export function notCountedReason(record: Pick<RecordPageData, "counted" | "value
 export const isConsortium = (record: Pick<RecordPageData, "winners">): boolean => record.winners.length > 1;
 
 /** A framework ratio (1.124) as a percentage ("112.4%"), one decimal at most, in the locale's format. */
-export function formatRatio(ratio: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }).format(ratio);
-}
+export { formatPercent as formatRatio } from "../../utils/formatPercent.ts";

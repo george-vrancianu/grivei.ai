@@ -25,7 +25,7 @@ describe("an entity page", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
     expect(screen.getByText("30000001")).toBeInTheDocument();
     expect(currentTab()).toEqual(["Overview"]);
-    expect(screen.getByText("The Overview is not built yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Headline numbers" })).toBeInTheDocument();
     expect(sent.map((s) => s.operation)).toEqual(["EntityOverview"]);
     expect(sent[0]).toMatchObject({ variables: { key: "30000001", role: "SUPPLIER", filter: {} } });
   });
@@ -140,7 +140,7 @@ describe("an entity page", () => {
     expect(currentTab()).toEqual(["Prezentare generală"]);
     expect(tabs().getByRole("link", { name: "Înregistrări" })).toHaveAttribute("href", "/ro/explore/authority/4000002/records?from=2021-01-01");
     expect(screen.getByRole("link", { name: "Ca furnizor" })).toHaveAttribute("href", "/ro/explore/supplier/4000002");
-    expect(screen.getByText("Prezentarea generală nu este construită încă.")).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Cifre principale" })).toBeInTheDocument();
   });
 
   it("says so when no entity has that key", async () => {
