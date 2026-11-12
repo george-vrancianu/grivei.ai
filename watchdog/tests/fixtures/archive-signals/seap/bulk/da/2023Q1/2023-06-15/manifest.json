@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "da",
+  "unit": "2023Q1",
+  "fetchedAt": "2023-06-15T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-achizitii-directe-t1-2023.csv",
+  "via": "Achizitii directe t1-2023",
+  "files": [
+    {
+      "name": "raport-achizitii-directe-t1-2023.csv",
+      "sha256": "ec6fb1f76e1ba1301bd709ded31766a6b7c1ecc31c172696b1cc650a597b72d2",
+      "bytes": 2243
+    }
+  ]
+}
