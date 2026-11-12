@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord, naturalPersonRecord, noValueRecord } from "../../samples/fixtureData.ts";
+import { consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord } from "../../samples/fixtureData.ts";
 import type { RecordResult } from "../../types.ts";
 import { RecordResultRow } from "./index.ts";
 
@@ -24,6 +24,13 @@ describe("RecordResultRow", () => {
     expect(container).toHaveTextContent("RON 300,000");
     expect(container.querySelector("time")).toHaveAttribute("datetime", record.date!);
     expect(screen.getByRole("link", { name: record.authority.displayName })).toHaveAttribute("href", `/explore/authority/${record.authority.key}`);
+  });
+
+  it("marks an authority identified by name only, like every other entity link", () => {
+    const nameOnlyAuthority = { ...highlightedRecord, record: { ...highlightedRecord.record, authority: nameOnlyParty.entity! } };
+    renderRow(nameOnlyAuthority);
+    expect(screen.getByRole("link", { name: nameOnlyParty.entity!.displayName })).toHaveAttribute("href", `/explore/authority/${nameOnlyParty.entity!.key}`);
+    expect(screen.getByText("name only")).toBeVisible();
   });
 
   it("says why it matched: the field and the matched text with exactly the ranges marked", () => {
@@ -49,8 +56,11 @@ describe("RecordResultRow", () => {
     const marker = screen.getByText("consortium");
     await userEvent.setup().hover(marker);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("The full contract value is shown. Each member's share is an equal-share convention");
-    // the marker replaces the duplicate badge
-    expect(screen.queryByText("Consortium share")).toBeNull();
+    // the badge stays, for a reader who filtered by it, and its explanation says a Record shows the full value
+    expect(consortiumRecord.record.badges).toContain("CONSORTIUM_SHARE");
+    expect(screen.getByText("Consortium share")).toBeVisible();
+    await userEvent.setup().hover(screen.getByText("Consortium share"));
+    expect(await screen.findByText(/a Record shows the full value/)).toBeVisible();
   });
 
   it("has no consortium marker for a single winner", () => {

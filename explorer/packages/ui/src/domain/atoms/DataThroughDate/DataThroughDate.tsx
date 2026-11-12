@@ -1,5 +1,6 @@
 import type { Locale } from "../../../theme/index.ts";
 import type { DataThrough } from "../../types.ts";
+import { formatDate } from "../../utils/formatDate.ts";
 
 export interface DataThroughDateCopy {
   /** The words between the record kind and the date, e.g. "data through" / "date până la". */
@@ -17,9 +18,7 @@ export interface DataThroughDateProps {
 
 /** "CONTRACT: data through 30 September 2024", the date in a `<time>` element. English uses day-month-year (en-GB) like Romanian. */
 export function DataThroughDate({ dataThrough, locale, copy, kindLabel }: DataThroughDateProps) {
-  const date = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : locale, { dateStyle: "long", timeZone: "UTC" }).format(
-    new Date(`${dataThrough.date}T00:00:00Z`),
-  );
+  const date = formatDate(dataThrough.date, locale, "long");
   return (
     <span>
       {kindLabel ?? dataThrough.kind}: {copy.through} <time dateTime={dataThrough.date}>{date}</time>
