@@ -9,6 +9,7 @@ import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { loadTestUatTopology } from "../../testing/uatTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
+import { plain, readTotal as total } from "../../testing/total.ts";
 
 afterEach(() => window.history.replaceState(null, "", "/"));
 
@@ -18,9 +19,6 @@ const open = (url: string) => {
   const { client, sent } = fixtureClient();
   return { ...render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadTestUatTopology} />), sent };
 };
-/** Money is written with a no-break space after the currency code: read it as the plain space a reader sees. */
-const plain = (text: string | null) => (text ?? "").replaceAll("\u00a0", " ");
-const total = () => ({ awarded: plain(screen.getByTestId("total-awarded").textContent), records: plain(screen.getByTestId("total-records").textContent) });
 const county = (name: string) => screen.getByRole("button", { name: new RegExp(`^${name}:`) });
 const nameOf = (element: HTMLElement) => plain(element.getAttribute("aria-label") ?? element.textContent);
 /** The query strings of every MainScreen request, in order. */

@@ -5,12 +5,14 @@ import {
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
-import { TotalSummary } from "../../components/TotalSummary/index.ts";
+import { MainTotal } from "../../components/MainTotal/index.ts";
+import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
@@ -113,7 +115,18 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           />
         ),
       }}
-      summary={search && <TotalSummary total={search.total} copy={{ total: t.main.total, records: t.total.records }} locale={locale} />}
+      summary={
+        search && state.status === "ready" && (
+          <MainTotal
+            total={search.total}
+            sources={state.data.sources}
+            copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough }}
+            locale={locale}
+            methodologyHref={methodologyHref(locale, "awardedValue")}
+            suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
+          />
+        )
+      }
       results={
         <>
           {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}

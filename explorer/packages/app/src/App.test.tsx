@@ -2,6 +2,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { readTotal } from "./testing/total.ts";
 import { openAt } from "./testing/openAt.ts";
 import { App } from "./App.tsx";
 import { createClient } from "./graphql/client.ts";
@@ -15,8 +16,8 @@ describe("the main screen for the empty filter", () => {
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explore public spending" })).toBeInTheDocument();
-    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("RON 21,300");
-    expect(screen.getByTestId("total-records")).toHaveTextContent("18 Records");
+    await screen.findByTestId("main-total");
+    expect(readTotal()).toEqual({ awarded: "RON 21,300", records: "18 Records" });
 
     // Suppliers is the tab that opens when the URL names none
     expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");
@@ -35,8 +36,8 @@ describe("the main screen for the empty filter", () => {
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explorează cheltuielile publice" })).toBeInTheDocument();
-    expect(await screen.findByTestId("total-awarded")).toHaveTextContent("21.300 RON");
-    expect(screen.getByTestId("total-records")).toHaveTextContent("18 înregistrări");
+    await screen.findByTestId("main-total");
+    expect(readTotal()).toEqual({ awarded: "21.300 RON", records: "18 înregistrări" });
 
     expect(screen.getByRole("tab", { name: /^Furnizori/ })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("tabpanel", { name: /^Furnizori/ });

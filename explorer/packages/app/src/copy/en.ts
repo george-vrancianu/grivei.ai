@@ -201,11 +201,8 @@ export const en: Copy = {
     },
   },
   pages: {
-    placeholder: "This page is not built yet.",
     notFound: { title: "Page not found", back: "Back to the main screen" },
     search: { title: "Search" },
-    record: { title: "Record" },
-    methodology: { title: "About the numbers" },
   },
   badges,
   entityLink,

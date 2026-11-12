@@ -11,6 +11,7 @@ import type { GraphqlClient } from "../../graphql/client.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
+import { plain, readTotal as total } from "../../testing/total.ts";
 import { loadTestUatTopology } from "../../testing/uatTopology.ts";
 
 afterEach(() => window.history.replaceState(null, "", "/"));
@@ -21,8 +22,6 @@ const open = (url: string, loadUat: LoadUatTopology = loadTestUatTopology) => {
   const { client, sent } = fixtureClient();
   return { ...render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadUat} />), sent };
 };
-const plain = (text: string | null) => (text ?? "").replaceAll(" ", " ");
-const total = () => ({ awarded: plain(screen.getByTestId("total-awarded").textContent), records: plain(screen.getByTestId("total-records").textContent) });
 /** A UAT (or county) of the map by its name: map areas are buttons named "<name>: <value>". */
 const area = (name: string) => screen.getByRole("button", { name: new RegExp(`^${name}:`) });
 const asked = (sent: { operation: string; variables: unknown }[], operation: string) => sent.filter((s) => s.operation === operation).map((s) => JSON.stringify(s.variables));
@@ -38,7 +37,7 @@ describe.each([
   it("opens from a county click, draws its UATs (grey where nothing was bought, the unknown-UAT row), and one request per operation", async () => {
     const { sent } = open(base);
     const user = userEvent.setup();
-    await waitFor(() => expect(screen.getByTestId("total-records")).toBeVisible());
+    await waitFor(() => expect(screen.getByTestId("main-total")).toBeVisible());
     await user.click(area("Brașov"));
     await waitFor(() => expect(here()).toBe(`${base}?county=RO-BV`));
 

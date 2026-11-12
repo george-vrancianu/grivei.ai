@@ -44,7 +44,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
       seap: {
         search: {
           filter: { qFolded: "ro", authority: null, supplier: null },
-          total: total({ awarded: "9007199254740993000", records: 2_400_000, suspectLeftOut: 4_100, noValue: 88_000, frameworkCeilings: ron(900_000_000_000) }),
+          total: total({ awarded: "9007199254740993000", records: 2_400_000, suspectLeftOut: 4_100, noValue: 88_000, estimated: true, frameworkCeilings: ron(900_000_000_000) }),
           map: moneyMap({
             counties: [{ area: "RO-B", name: "București", entities: 12_000, total: total({ awarded: "9007199254740993", records: 1_000_000 }) }],
             national: total({ awarded: ron(1), records: 1 }),

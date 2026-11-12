@@ -17,7 +17,7 @@ export const Shell: StoryObj = {
         switchTo={{ locale: other, href: other === "ro" ? "/ro/explore/" : "/explore/" }}
         links={{ explore: `${base}/`, search: `${base}/search`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
       >
-        <Typography sx={{ p: 3 }}>{catalogue[locale].pages.placeholder}</Typography>
+        <Typography sx={{ p: 3 }}>{catalogue[locale].main.title}</Typography>
       </AppShell>
     );
   },

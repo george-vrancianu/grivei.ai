@@ -206,11 +206,8 @@ export const ro: Copy = {
     },
   },
   pages: {
-    placeholder: "Această pagină nu este construită încă.",
     notFound: { title: "Pagina nu a fost găsită", back: "Înapoi la ecranul principal" },
     search: { title: "Căutare" },
-    record: { title: "Înregistrare" },
-    methodology: { title: "Despre cifre" },
   },
   badges,
   entityLink,

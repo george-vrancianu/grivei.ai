@@ -29,7 +29,7 @@ describe("the routes in both languages", () => {
       openAt(prefix);
       const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
       expect(screen.getByRole("heading", { level: 1, name: catalogue[locale].main.title })).toBeInTheDocument();
-      expect(await screen.findByTestId("total-awarded")).toBeInTheDocument();
+      expect(await screen.findByTestId("main-total")).toBeInTheDocument();
       unmount();
     }
   });

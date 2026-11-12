@@ -67,7 +67,6 @@ describe.each([
     expect(document.querySelectorAll("[data-compact] th[data-quarter]")).toHaveLength(19);
     expect(inRange()).toEqual([]);
     expect(screen.getByRole("link", { name: t.coverage.grid.seePage })).toHaveAttribute("href", `${c.prefix}/explore/coverage?lens=coverage`);
-    expect(screen.queryByText(t.pages.placeholder)).toBeNull();
     expect(asked(sent, "CoverageLens")).toEqual(["{}"]);
     expect(asked(sent, "CoveragePage")).toEqual(["{}"]);
   });
@@ -135,7 +134,7 @@ describe.each([
 
   it("asks nothing for Coverage while the Money lens is shown", async () => {
     const { sent } = open(c.url);
-    await screen.findByTestId("total-records");
+    await screen.findByTestId("main-total");
     expect(sent.map((s) => s.operation)).toEqual(["MainScreen"]);
   });
 });
@@ -144,7 +143,7 @@ describe("the Coverage lens' states", () => {
   it("says so when the Coverage answer cannot be loaded, and leaves the results working", async () => {
     open("/explore/?lens=coverage", ["CoverageLens"]);
     expect((await screen.findAllByRole("alert")).map((a) => a.textContent)).toContain(catalogue.en.status.failed);
-    expect(await screen.findByTestId("total-records")).toBeVisible();
+    expect(await screen.findByTestId("main-total")).toBeVisible();
   });
 
   it("shows the lens named in the toggle, pressed, with the map and the grid in its slot only", async () => {
