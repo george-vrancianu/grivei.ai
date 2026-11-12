@@ -12,9 +12,8 @@ afterEach(() => window.history.replaceState(null, "", "/"));
 
 const here = () => window.location.pathname + window.location.search;
 
-/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages, the search page and the Record page are real: see pages/EntityPage, pages/SearchPage and pages/RecordPage. */
+/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages, the search page, the Record page and the Coverage page are real: see pages/EntityPage, pages/SearchPage, pages/RecordPage and pages/CoveragePage. */
 const ROUTES = [
-  { path: "coverage", en: catalogue.en.pages.coverage.title, ro: catalogue.ro.pages.coverage.title },
   { path: "methodology", en: catalogue.en.pages.methodology.title, ro: catalogue.ro.pages.methodology.title },
 ] as const;
 

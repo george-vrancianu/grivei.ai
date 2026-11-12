@@ -1,6 +1,6 @@
 import allowlist from "@grivei/contract/persisted-queries.json";
 import type {
-  EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
+  CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
   EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, RecordPageQuery, RecordPageQueryVariables,
@@ -30,3 +30,4 @@ export const FullResultsSuppliers = operation<FullResultsSuppliersQuery, FullRes
 export const FullResultsRecords = operation<FullResultsRecordsQuery, FullResultsRecordsQueryVariables>("FullResultsRecords");
 export const RecordPage = operation<RecordPageQuery, RecordPageQueryVariables>("RecordPage");
 export const ZoomedCounty = operation<ZoomedCountyQuery, ZoomedCountyQueryVariables>("ZoomedCounty");
+export const CoveragePage = operation<CoveragePageQuery, CoveragePageQueryVariables>("CoveragePage");

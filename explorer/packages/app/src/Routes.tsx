@@ -1,5 +1,6 @@
 import { useCopy } from "./copy/useCopy.ts";
 import { AppLink } from "./components/AppLink/index.ts";
+import { CoveragePage } from "./pages/CoveragePage/index.ts";
 import { EntityPage } from "./pages/EntityPage/index.ts";
 import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
 import { PlaceholderPage } from "./pages/PlaceholderPage/index.ts";
@@ -23,7 +24,7 @@ export function Routes() {
     case "record":
       return <RecordPage locale={locale} code={route.code} />;
     case "coverage":
-      return <PlaceholderPage title={t.pages.coverage.title} body={body} />;
+      return <CoveragePage locale={locale} />;
     case "methodology":
       return <PlaceholderPage title={t.pages.methodology.title} body={body} />;
     case "not-found":
