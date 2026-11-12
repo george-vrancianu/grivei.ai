@@ -6,6 +6,10 @@ import type { EntityLinkCopy } from "../atoms/EntityLink/index.ts";
 import type { DataThroughDateCopy } from "../atoms/DataThroughDate/index.ts";
 import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
+import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
+import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
+import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
+import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
   en: {
@@ -47,7 +51,89 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
 
+const entityRow = (locale: Locale): EntityResultRowCopy =>
+  locale === "ro"
+    ? {
+        matched: "potrivit",
+        records: (n, f) => (n === 1 ? `${f} înregistrare` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} înregistrări` : `${f} de înregistrări`),
+        national: "național",
+        noCounty: "județ necunoscut",
+        entityLink: entityLink.ro,
+      }
+    : {
+        matched: "matched",
+        records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+        national: "national",
+        noCounty: "county unknown",
+        entityLink: entityLink.en,
+      };
+
+const recordRow = (locale: Locale): RecordResultRowCopy =>
+  locale === "ro"
+    ? {
+        noValue: "fără valoare",
+        consortium: {
+          label: "asociere",
+          explanation: "Se afișează valoarea integrală a contractului. Fiecare membru al asocierii are o parte egală, după convenție, nu o sumă publicată.",
+        },
+        authority: "Autoritate",
+        winners: "Câștigători",
+        matchedIn: (field) => `Potrivit în ${field}`,
+        fields: {
+          TITLE: "titlu", AUTHORITY: "autoritate", SUPPLIER: "furnizor", CPV_CODE: "cod CPV", CPV_DESCRIPTION: "descriere CPV",
+          PUBLIC_CODE: "cod public", CUI: "CUI",
+        },
+        badges: badges.ro,
+        party: { naturalPerson: "Persoană fizică", entityLink: entityLink.ro },
+      }
+    : {
+        noValue: "no value",
+        consortium: {
+          label: "consortium",
+          explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",
+        },
+        authority: "Authority",
+        winners: "Winners",
+        matchedIn: (field) => `Matched in ${field}`,
+        fields: {
+          TITLE: "title", AUTHORITY: "authority", SUPPLIER: "supplier", CPV_CODE: "CPV code", CPV_DESCRIPTION: "CPV description",
+          PUBLIC_CODE: "public code", CUI: "CUI",
+        },
+        badges: badges.en,
+        party: { naturalPerson: "Persoană fizică", entityLink: entityLink.en },
+      };
+
+const goTo = (locale: Locale): GoToCardCopy =>
+  locale === "ro"
+    ? { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" }
+    : { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" };
+
+const resultTabs = (locale: Locale): ResultTabsCopy =>
+  locale === "ro"
+    ? {
+        label: "Rezultate",
+        tabs: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
+        empty: { authorities: "Nicio autoritate.", suppliers: "Niciun furnizor.", records: "Nicio înregistrare." },
+        showAll: (_n, f) => `Arată toate cele ${f}`,
+        goTo: goTo(locale),
+        entityRow: entityRow(locale),
+        recordRow: recordRow(locale),
+      }
+    : {
+        label: "Results",
+        tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
+        empty: { authorities: "No authorities.", suppliers: "No suppliers.", records: "No Records." },
+        showAll: (_n, f) => `Show all ${f}`,
+        goTo: goTo(locale),
+        entityRow: entityRow(locale),
+        recordRow: recordRow(locale),
+      };
+
 export const sampleCopy = {
+  entityRow,
+  recordRow,
+  goTo,
+  resultTabs,
   badges: (locale: Locale): BadgeCopy => badges[locale],
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),

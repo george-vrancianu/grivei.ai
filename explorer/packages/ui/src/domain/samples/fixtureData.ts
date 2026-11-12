@@ -44,3 +44,26 @@ export const authoritiesExact = variety.authorities;
 export const dataThroughSeap: DataThrough[] = named(fixtures.MainScreen, "typical-text-county").data.sources[0]!.dataThrough;
 
 export const allBadges: RecordBadge[] = [...new Set(recordRows.flatMap((record) => record.badges))];
+
+const goToSearch = named(fixtures.MainScreen, "supplier-side-unknown-county").data.seap.search;
+const pick = (search: typeof variety) => ({
+  authorities: search.authorities,
+  suppliers: search.suppliers,
+  records: search.records,
+  goTo: search.goTo,
+});
+
+/** The result tabs' inputs for each state a story shows: a typical search, every Record state, estimated counts, a Go-to match, nothing found. */
+export const resultSamples = {
+  typical: pick(typicalSearch.seap.search),
+  variety: pick(variety),
+  estimated: pick(estimatedCounts),
+  goTo: pick(goToSearch),
+  empty: pick(emptySearch.seap.search),
+};
+/** A Record row with highlighted matched text, from the typical search. */
+export const highlightedRecord = typicalSearch.seap.search.records.rows[0]!;
+/** The consortium Record of the variety fixture, with no matched field (an empty query). */
+export const consortiumRecord = variety.records.rows[0]!;
+export const noValueRecord = variety.records.rows.find((row) => row.record.value === null)!;
+export const naturalPersonRecord = variety.records.rows.find((row) => row.record.winners.some((w) => w.naturalPerson))!;
