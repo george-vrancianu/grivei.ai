@@ -82,6 +82,22 @@ export const en: Copy = {
       suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
     },
   },
+  zoomedCounty: {
+    map: {
+      map: { mapLabel: "Map of the county's UATs", legendTitle: "Awarded value", noData: "No authority bought anything", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },
+      figures: {
+        records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+        suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
+      },
+      authorities: (n, f) => `${f} ${plural(n, "authority", "authorities")}`,
+      circleKey: "Circle size: number of authorities",
+      unknownUat: "County known, UAT unknown",
+    },
+    back: "Back to Romania",
+    title: (name, sectors) => (sectors ? `${name}: sectors` : `${name}: UATs`),
+    selectedUat: (name) => `Results for ${name}`,
+    clearUat: "Show the whole county",
+  },
   filterChips: {
     label: "Filters",
     year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
