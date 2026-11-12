@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "dan",
+  "unit": "2024Q2",
+  "fetchedAt": "2024-09-20T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/datagov-raport-notificari-t-ii-2024.csv",
+  "via": "Notificari de atribuire la cumpararea directa T II 2024",
+  "files": [
+    {
+      "name": "datagov-raport-notificari-t-ii-2024.csv",
+      "sha256": "8393b30f2d699f96dcccf900c00748ae0cf6949064620bb83bfffc7a4415d204",
+      "bytes": 813
+    }
+  ]
+}
