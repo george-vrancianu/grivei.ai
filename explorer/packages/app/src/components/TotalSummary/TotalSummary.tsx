@@ -1,10 +1,9 @@
 import type { TotalFieldsFragment } from "@grivei/contract";
 import { Card, CardContent, MoneyAmount, Stack, Typography, type Locale } from "@grivei/ui";
-import type { Copy } from "../../copy.ts";
 
 export interface TotalSummaryProps {
   total: TotalFieldsFragment;
-  copy: Pick<Copy, "total" | "records">;
+  copy: { total: string; records: string };
   locale: Locale;
 }
 

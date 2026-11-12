@@ -2,11 +2,11 @@ import type { RecordResultFieldsFragment } from "@grivei/contract";
 import {
   MoneyAmount, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, type Locale,
 } from "@grivei/ui";
-import type { Copy } from "../../copy.ts";
+import type { Copy } from "../../copy/index.ts";
 
 export interface RecordsListProps {
   page: RecordResultFieldsFragment;
-  copy: Pick<Copy, "recordsList" | "empty" | "noValue" | "columns">;
+  copy: Copy["records"];
   locale: Locale;
 }
 
@@ -15,13 +15,13 @@ export function RecordsList({ page, copy, locale }: RecordsListProps) {
   return (
     <section>
       <Typography variant="h6" component="h2" gutterBottom>
-        {copy.recordsList}
+        {copy.heading}
       </Typography>
       {page.rows.length === 0 ? (
         <Typography>{copy.empty}</Typography>
       ) : (
         <TableContainer>
-          <Table aria-label={copy.recordsList}>
+          <Table aria-label={copy.heading}>
             <TableHead>
               <TableRow>
                 <TableCell>{copy.columns.code}</TableCell>
