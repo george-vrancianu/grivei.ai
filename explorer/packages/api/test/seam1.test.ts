@@ -10,7 +10,7 @@
  * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -80,6 +80,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE rebuild_a");
     await admin.query("CREATE DATABASE rebuild_b");
     await admin.query("CREATE DATABASE bulk_a");
+    await admin.query("CREATE DATABASE bulk_b");
   });
 
   afterAll(async () => {
@@ -180,6 +181,29 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // a Record from the quarantined file, and an unknown code: no such Record
     expect(await page("DA91000099")).toBeNull();
     expect(await page("DAN0000000")).toBeNull();
+  });
+
+  it("gives identical responses after a second rebuild of the bulk archive and after a byte-identical re-upload (#63)", async () => {
+    const codes = ["DA91000002", "DA91000011", "DAN9100001", "DAN9100002", "DAN9100020", "DAN9100022", "DA91000099"];
+    const snapshot = async (db: string) => {
+      const out: unknown[] = [JSON.stringify(await ask(db, mainScreen.sha256))];
+      for (const code of codes) out.push(JSON.stringify(await ask(db, recordPage.sha256, { code })));
+      return out;
+    };
+    rebuild("bulk_a", "archive-bulk"); // a second rebuild over the same database (the first is in the previous test)
+    const first = await snapshot("bulk_a");
+    expect(first.filter((x) => (x as string).includes('"record":null')).length).toBe(1); // only the quarantined code is missing
+    rebuild("bulk_a", "archive-bulk");
+    expect(await snapshot("bulk_a")).toEqual(first);
+
+    // the same DAN file fetched again on a later day: nothing changes in what the API says (only its fetch day differs)
+    const again = join(scratch, "archive-bulk", "seap/bulk/dan/2024Q1");
+    const dest = join(again, "2026-01-01");
+    cpSync(join(again, "2024-06-20"), dest, { recursive: true });
+    const manifest = join(dest, "manifest.json");
+    writeFileSync(manifest, readFileSync(manifest, "utf8").replace(/"fetchedAt":\s*"[^"]*"/, '"fetchedAt": "2026-01-01T09:00:00Z"'));
+    expect(rebuild("bulk_b", "archive-bulk")).toContain("skipped, same file already loaded");
+    expect(await snapshot("bulk_b")).toEqual(first);
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
