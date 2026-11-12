@@ -1,4 +1,5 @@
 import type { Copy } from "./types.ts";
+import { ruleLabels } from "./ruleLabels.ts";
 import { methodologyRo } from "./methodologyRo.ts";
 
 /** Romanian count phrase: singular for 1, plural for 0 and 2..19 (mod 100), "de" + plural otherwise (20 de, 120 de; 101 and 5 take none). */
@@ -24,6 +25,46 @@ const badges: Copy["badges"] = {
   IDENTITY_CURATED: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat cine este această parte; potrivirea nu a fost automată." },
   CRAWLED_PROVISIONAL: { label: "Provizoriu", explanation: "Citită din SEAP în trimestrul curent, în așteptarea datelor oficiale în masă; se poate modifica." },
   CRAWL_ONLY: { label: "Absent din datele în masă", explanation: "Găsită în SEAP, dar nepotrivită niciodată în datele oficiale în masă." },
+};
+
+/** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. The rule labels everywhere else (facets, Record page) come from here. */
+const signalCard: Copy["signalCard"] = {
+  rules: {
+    OVER_CAP: {
+      label: "Peste plafon",
+      sentence: (n) => `O achiziție directă a fost atribuită pentru ${n.value}, adică de ${n.multiple} ori plafonul achiziției directe (${n.cap}).`,
+      lawful: "Explicații legale posibile: o achiziție subsecventă unui acord-cadru, o excepție prevăzută de lege sau o eroare de introducere a valorii ori a tipului înregistrării.",
+    },
+    SPLITTING: {
+      label: "Fracționare",
+      sentence: (n) => `${roCount(n.purchasesCount, n.purchases, "achiziție directă", "achiziții directe")} din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
+      lawful: "Explicații legale posibile: nevoi distincte, linii bugetare distincte sau produse fără legătură din aceeași grupă CPV.",
+    },
+    FRAMEWORK_OVERRUN: {
+      label: "Depășirea acordului-cadru",
+      sentence: (n) => `Contractele subsecvente raportate pentru un acord-cadru însumează ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
+      lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
+    },
+    NO_PUBLICATION: {
+      label: "Fără publicare",
+      sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
+      lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
+    },
+  },
+  compact: { text: (label, when) => `${label}, ${when}` },
+  date: (when) => `Ultima înregistrare: ${when}`,
+  records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+  parties: {
+    authority: "Autoritate contractantă",
+    suppliers: "Furnizori",
+    moreSuppliers: (_n, f) => `și încă ${f}`,
+    entityLink,
+  },
+  links: {
+    reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${roCount(n, f, "înregistrare", "înregistrări")}`),
+    seap: { check: "Verifică în SEAP", checkEach: "Verifică fiecare înregistrare în SEAP" },
+    methodology: "Cum este detectat acest Semnal",
+  },
 };
 
 export const ro: Copy = {
@@ -194,7 +235,7 @@ export const ro: Copy = {
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",
-      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      rules: ruleLabels(signalCard.rules),
       date: (when) => `din ${when}`,
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
     },
@@ -325,50 +366,11 @@ export const ro: Copy = {
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Contraparte ${key}`,
-        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+        signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
     },
   },
+  signalCard,
   methodology: methodologyRo,
-  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
-  signalCard: {
-    rules: {
-      OVER_CAP: {
-        label: "Peste plafon",
-        sentence: (n) => `O achiziție directă a fost atribuită pentru ${n.value}, adică de ${n.multiple} ori plafonul achiziției directe (${n.cap}).`,
-        lawful: "Explicații legale posibile: o achiziție subsecventă unui acord-cadru, o excepție prevăzută de lege sau o eroare de introducere a valorii ori a tipului înregistrării.",
-      },
-      SPLITTING: {
-        label: "Fracționare",
-        sentence: (n) => `${roCount(n.purchasesCount, n.purchases, "achiziție directă", "achiziții directe")} din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
-        lawful: "Explicații legale posibile: nevoi distincte, linii bugetare distincte sau produse fără legătură din aceeași grupă CPV.",
-      },
-      FRAMEWORK_OVERRUN: {
-        label: "Depășirea acordului-cadru",
-        sentence: (n) => `Contractele subsecvente raportate pentru un acord-cadru însumează ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
-        lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
-      },
-      NO_PUBLICATION: {
-        label: "Fără publicare",
-        sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
-        lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
-      },
-    },
-    compact: { text: (label, when) => `${label}, ${when}` },
-    date: (when) => `Ultima înregistrare: ${when}`,
-    records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
-    parties: {
-      authority: "Autoritate contractantă",
-      suppliers: "Furnizori",
-      moreSuppliers: (_n, f) => `și încă ${f}`,
-      entityLink,
-    },
-    links: {
-      reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${roCount(n, f, "înregistrare", "înregistrări")}`),
-      seap: { check: "Verifică în SEAP", checkEach: "Verifică fiecare înregistrare în SEAP" },
-      methodology: "Cum este detectat acest Semnal",
-    },
-  },
-
 };

@@ -3,6 +3,8 @@ import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTa
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
+import { SignalList } from "../../signals/SignalList.tsx";
+import { useSignals } from "../../signals/useSignals.tsx";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
@@ -26,6 +28,7 @@ export interface EntityPageProps {
 /** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. Each tab runs its own operation. */
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
+  const signals = useSignals(locale);
   const { filter, page, order, signalOrder, lens, counterparty, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
@@ -81,7 +84,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         // The last Records stay on screen while the next filter loads, so the panel keeps its place and focus.
         state.records ? (
           <div aria-busy={loading}>
-            <RecordsTab records={state.records} {...recordsTab} />
+            <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
           </div>
         ) : loading ? (
           <Typography role="status">{t.status.loading}</Typography>
@@ -93,7 +96,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         <Typography role="status">{t.status.loading}</Typography>
       ) : view === "overview" ? (
         state.overview && entity ? (
-          <EntityOverview overview={state.overview} aliases={entity.aliases} {...overviewTab} />
+          <EntityOverview overview={state.overview} aliases={entity.aliases} signals={<SignalList signals={state.overview.signals.rows} wiring={signals} />} {...overviewTab} />
         ) : (
           // ready, but the entity has nothing in this role
           <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>

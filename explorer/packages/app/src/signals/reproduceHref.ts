@@ -22,7 +22,7 @@ export function reproduceFilter(reproduce: SignalData["reproduce"]): RecordFilte
  * the Signal's filter in the query, so the list is exactly the Signal's Records and the URL can be cited. It is always the authority's
  * page, also on a supplier's page: a Signal is one authority's, and `reproduce.authority` is the entity key of its page.
  */
-export function signalReproduceHref(locale: Locale, signal: Pick<SignalData, "authority" | "reproduce">): string {
+export function signalReproduceHref(locale: Locale, signal: { authority: { key: string }; reproduce: SignalData["reproduce"] }): string {
   const key = String(signal.reproduce.authority ?? signal.authority.key);
   return recordsHref(locale, "authority", key, { filter: reproduceFilter(signal.reproduce) });
 }

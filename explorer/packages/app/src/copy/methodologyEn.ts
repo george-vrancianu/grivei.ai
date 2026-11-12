@@ -120,10 +120,10 @@ export const methodologyEn: MethodologyPageCopy = {
       heading: "Framework overrun",
       paragraphs: ["Framework overrun: the subsequent contracts reported under a framework agreement add up to more than 110% of its ceiling."],
       items: [
-        "The framework is an award notice: its ceiling is the sum of its framework contracts' values, and its subsequent contracts are the ones under the same notice number.",
-        "Only frameworks awarded from 1 January 2021, with a ceiling that is not blank.",
+        "The framework is an award notice: its ceiling is the sum of the values of its framework-ceiling Records (a value the counting rule leaves out is not summed), and its subsequent contracts are the ones under the same notice number, whichever authority signed them.",
+        "Only frameworks awarded from 1 January 2021 (the date of the earliest of its ceiling Records), with a ceiling that is not blank. A value the counting rule leaves out counts neither in the ceiling nor in the subsequent sum.",
         "Strictly above 110%: exactly 110% is no Signal.",
-        "The Signal is dated by the subsequent contract that first took the running sum above 110%, and lists the ceiling Records and the subsequent contracts up to that one. Its figures describe the framework as reported up to the data-through date, so the Records listed can add up to less than the subsequent total shown.",
+        "The Signal belongs to the authority that concluded the framework and is dated by its latest Record. It lists that authority's ceiling Records and its subsequent contracts up to the one that first took the running sum above 110%; contracts reported after that are not listed. Its figures describe the framework as reported up to the data-through date, so the Records listed can add up to less than the subsequent total shown.",
       ],
       lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
     },

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { RecordDetail, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
+import { useSignals } from "../../signals/useSignals.tsx";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor } from "../../routing/routes.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
@@ -17,6 +18,7 @@ export interface RecordPageProps {
 export function RecordPage({ locale, code }: RecordPageProps) {
   const t = useCopy();
   const state = useRecordPage(code);
+  const signals = useSignals(locale);
 
   if (state.status === "loading") {
     return (
@@ -52,6 +54,8 @@ export function RecordPage({ locale, code }: RecordPageProps) {
         methodologyHref={methodologyHref(locale, "suspectValues")}
         // plain clicks on the page's own links change page without a load; the links keep their real hrefs
         onNavigate={(href) => navigate(href, "push")}
+        // the Signal's own Records have no provenance in this query: a Signal of one Record is this Record
+        renderSignalCard={(signal) => signals.card(signal, signal.recordCount === 1 && state.record ? [{ code: state.record.code, provenance: state.record.provenance }] : signal.records)}
         locale={locale}
         copy={{ ...t.recordPage, recordRow: t.results.recordRow }}
       />

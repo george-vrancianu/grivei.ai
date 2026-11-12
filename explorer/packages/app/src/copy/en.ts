@@ -1,4 +1,5 @@
 import type { Copy } from "./types.ts";
+import { ruleLabels } from "./ruleLabels.ts";
 import { methodologyEn } from "./methodologyEn.ts";
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
@@ -19,6 +20,46 @@ const badges: Copy["badges"] = {
   IDENTITY_CURATED: { label: "Identity curated", explanation: "A person reviewed and fixed who this party is; the match was not automatic." },
   CRAWLED_PROVISIONAL: { label: "Provisional", explanation: "Read from SEAP this quarter and still awaiting the official bulk data; it may change." },
   CRAWL_ONLY: { label: "Not in bulk data", explanation: "Found on SEAP but never matched in the official bulk data." },
+};
+
+/** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. The rule labels everywhere else (facets, Record page) come from here. */
+const signalCard: Copy["signalCard"] = {
+  rules: {
+    OVER_CAP: {
+      label: "Over cap",
+      sentence: (n) => `One direct purchase was awarded for ${n.value}, ${n.multiple} times the direct-purchase cap of ${n.cap}.`,
+      lawful: "Possible lawful explanations: a call-off under a framework agreement, an exception in the law, or a data-entry error in the value or the type of the Record.",
+    },
+    SPLITTING: {
+      label: "Splitting",
+      sentence: (n) => `${n.purchases} direct purchases in CPV group ${n.cpvGroup} between ${n.from} and ${n.to} add up to ${n.sum}, above the single-purchase cap of ${n.cap}.`,
+      lawful: "Possible lawful explanations: separate needs, separate budget lines, or unrelated items that share a CPV group.",
+    },
+    FRAMEWORK_OVERRUN: {
+      label: "Framework overrun",
+      sentence: (n) => `Subsequent contracts reported under one framework agreement add up to ${n.subsequent}, against a ceiling of ${n.ceiling}: ${n.ratio} of it.`,
+      lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
+    },
+    NO_PUBLICATION: {
+      label: "No publication",
+      sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
+      lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
+    },
+  },
+  compact: { text: (label, when) => `${label}, ${when}` },
+  date: (when) => `Latest Record: ${when}`,
+  records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+  parties: {
+    authority: "Contracting authority",
+    suppliers: "Suppliers",
+    moreSuppliers: (_n, f) => `and ${f} more`,
+    entityLink,
+  },
+  links: {
+    reproduce: (n, f) => (n === 1 ? "See the Record" : `See the ${f} Records`),
+    seap: { check: "Check in SEAP", checkEach: "Check each Record in SEAP" },
+    methodology: "How this Signal is detected",
+  },
 };
 
 export const en: Copy = {
@@ -189,7 +230,7 @@ export const en: Copy = {
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
-      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      rules: ruleLabels(signalCard.rules),
       date: (when) => `dated ${when}`,
       records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
     },
@@ -320,50 +361,11 @@ export const en: Copy = {
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Counterparty ${key}`,
-        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+        signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
     },
   },
+  signalCard,
   methodology: methodologyEn,
-  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
-  signalCard: {
-    rules: {
-      OVER_CAP: {
-        label: "Over cap",
-        sentence: (n) => `One direct purchase was awarded for ${n.value}, ${n.multiple} times the direct-purchase cap of ${n.cap}.`,
-        lawful: "Possible lawful explanations: a call-off under a framework agreement, an exception in the law, or a data-entry error in the value or the type of the Record.",
-      },
-      SPLITTING: {
-        label: "Splitting",
-        sentence: (n) => `${n.purchases} direct purchases in CPV group ${n.cpvGroup} between ${n.from} and ${n.to} add up to ${n.sum}, above the single-purchase cap of ${n.cap}.`,
-        lawful: "Possible lawful explanations: separate needs, separate budget lines, or unrelated items that share a CPV group.",
-      },
-      FRAMEWORK_OVERRUN: {
-        label: "Framework overrun",
-        sentence: (n) => `Subsequent contracts reported under one framework agreement add up to ${n.subsequent}, against a ceiling of ${n.ceiling}: ${n.ratio} of it.`,
-        lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
-      },
-      NO_PUBLICATION: {
-        label: "No publication",
-        sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
-        lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
-      },
-    },
-    compact: { text: (label, when) => `${label}, ${when}` },
-    date: (when) => `Latest Record: ${when}`,
-    records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
-    parties: {
-      authority: "Contracting authority",
-      suppliers: "Suppliers",
-      moreSuppliers: (_n, f) => `and ${f} more`,
-      entityLink,
-    },
-    links: {
-      reproduce: (n, f) => (n === 1 ? "See the Record" : `See the ${f} Records`),
-      seap: { check: "Check in SEAP", checkEach: "Check each Record in SEAP" },
-      methodology: "How this Signal is detected",
-    },
-  },
-
 };
