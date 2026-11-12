@@ -4,7 +4,7 @@ import { pathFor, type EntityRoute } from "../../routing/routes.ts";
 import { encodeUrlState, type UrlState } from "../../urlState/codec.ts";
 
 export const roleOf = (entity: EntityRoute): EntityPageRole => (entity === "authority" ? "AUTHORITY" : "SUPPLIER");
-const routeOf = (role: EntityPageRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
+export const routeOf = (role: EntityPageRole): EntityRoute => (role === "AUTHORITY" ? "authority" : "supplier");
 
 /**
  * The URL of each tab. The filter travels with the reader from tab to tab (the side panel's filter shapes every tab's totals);
@@ -21,9 +21,14 @@ export function roleHref(locale: Locale, key: string, view: EntityPageView, role
   return pathFor(locale, { name: "entity", entity: routeOf(role), key, view });
 }
 
+/** The URL of one tab of an entity's page, carrying the URL state (the filter, the order, the page...). */
+export function tabHref(locale: Locale, entity: EntityRoute, key: string, view: EntityPageView, state: UrlState): string {
+  return `${pathFor(locale, { name: "entity", entity, key, view })}${encodeUrlState(state)}`;
+}
+
 /** The Records tab's URL for a page of the list (page 1 is left out), carrying the filter and the order. */
 export function recordsHref(locale: Locale, entity: EntityRoute, key: string, state: UrlState): string {
-  return `${pathFor(locale, { name: "entity", entity, key, view: "records" })}${encodeUrlState(state)}`;
+  return tabHref(locale, entity, key, "records", state);
 }
 
 /** A patch that makes the URL's filter land exactly on `next`: every field either has its new value or is removed (setFilter merges patches). */

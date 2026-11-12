@@ -9,11 +9,13 @@ import { methodologyBaseRates } from "./methodology.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedRecordPage } from "./recorded/record.ts";
+import { recordedEntityRecordsSidePanel, recordedEntityRelationships } from "./recorded/relationships.ts";
 import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
 export { recordedRecordPage } from "./recorded/record.ts";
+export { recordedEntityRecordsSidePanel, recordedEntityRelationships } from "./recorded/relationships.ts";
 export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords, recordedZoomedCounty } from "./recorded/index.ts";
 
 /**
@@ -28,8 +30,8 @@ export const fixtures = {
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],
   EntityOverview: [...recordedEntityOverview, ...entityOverviewHand],
-  EntityRecords: entityRecords,
-  EntityRelationships: entityRelationships,
+  EntityRecords: [...recordedEntityRecordsSidePanel, ...entityRecords],
+  EntityRelationships: [...recordedEntityRelationships, ...entityRelationships],
   RecordPage: [...recordedRecordPage, ...recordPageHand],
   CoverageLens: coverageLens,
   CoveragePage: coveragePage,

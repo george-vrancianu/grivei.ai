@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import type { CounterpartyRecordsData, EntityPageRole, RelationshipsTimeline } from "@grivei/ui";
+import { counterpartyField, type CounterpartyRecordsData, type EntityPageRole, type RelationshipsTimeline } from "@grivei/ui";
 import type { RecordFilter } from "@grivei/contract";
 import { useClient } from "../../../graphql/ClientContext.tsx";
 import { EntityRecords, EntityRelationships } from "../../../graphql/operations.ts";
+import { routeOf } from "../entityPage.utils.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
 
 export interface PickedRequest {
@@ -23,7 +24,7 @@ export type PickedState =
 
 /** The picked counterparty's Records are the entity's, with the counterparty in the filter: `supplier` on an authority's page, `authority` on a supplier's. */
 export const withCounterparty = (role: EntityPageRole, filter: RecordFilter, counterparty: string): RecordFilter =>
-  role === "AUTHORITY" ? { ...filter, supplier: counterparty } : { ...filter, authority: counterparty };
+  ({ ...filter, [counterpartyField(routeOf(role))]: counterparty });
 
 /**
  * What the picked counterparty adds to the Relationships tab: its own months (`EntityRelationships` with `counterparty`, drawn over the overall bars)

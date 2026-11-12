@@ -6,6 +6,7 @@ import type { Locale } from "../../../theme/index.ts";
 import type {
   CounterpartyRecordsData, EntityRef, EntityRole, RecordResult, RelationshipsCounterparties, RelationshipsTimeline,
 } from "../../types.ts";
+import { counterpartyField } from "../RecordsTab/recordsTab.utils.ts";
 import { CounterpartyGraph } from "./components/CounterpartyGraph/index.ts";
 import { CounterpartyPanel } from "./components/CounterpartyPanel/index.ts";
 import { GraphLegend } from "./components/GraphLegend/index.ts";
@@ -60,8 +61,6 @@ const entityInRecords = (sidePanel: CounterpartyRecordsData | null, key: string)
   return null;
 };
 
-const otherRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
-
 /**
  * The Relationships tab of an Entity page: a radial graph of the top counterparties (size = money, colour = contracts or direct purchases,
  * dashed = won together, ring = has Signals), the monthly timeline, and a side panel with every Record with the picked counterparty.
@@ -103,7 +102,7 @@ export function RelationshipsTab({
           counterparty={picked}
           records={sidePanel}
           loading={sidePanelLoading}
-          counterpartyRole={otherRole(role)}
+          counterpartyRole={counterpartyField(role)}
           onClose={() => onSelect(null)}
           paging={sidePanelPaging}
           onNavigate={onNavigate}

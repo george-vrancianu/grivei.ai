@@ -3,8 +3,8 @@ import type { RelationshipsTabProps } from "@grivei/ui";
 import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
 import { pathFor, type EntityRoute } from "../../../routing/routes.ts";
-import { encodeUrlState } from "../../../urlState/codec.ts";
 import { useUrlState } from "../../../urlState/useUrlState.ts";
+import { tabHref } from "../entityPage.utils.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
 
 type Wiring = Omit<RelationshipsTabProps, "entity" | "counterparties" | "timeline" | "selectedTimeline" | "sidePanel" | "sidePanelLoading" | "flowToggle" | "flowMap">;
@@ -19,8 +19,7 @@ export function useRelationshipsTab(locale: Wiring["locale"], entity: EntityRout
   const { filter, page, lens, counterparty, update } = useUrlState();
   return useMemo(() => {
     const own = t.entityPage.relationships;
-    const here = (n: number) =>
-      `${pathFor(locale, { name: "entity", entity, key: entityKey, view: "relationships" })}${encodeUrlState({ filter, ...(lens ? { lens } : {}), ...(counterparty ? { counterparty } : {}), page: n })}`;
+    const here = (n: number) => tabHref(locale, entity, entityKey, "relationships", { filter, ...(lens ? { lens } : {}), ...(counterparty ? { counterparty } : {}), page: n });
     return {
       role: entity,
       selected: counterparty ?? null,

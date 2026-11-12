@@ -8,8 +8,8 @@ import type { GraphqlClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
-// The tab-navigation tests walk Overview -> Records on one entity: 30000001 is the hand-written fixture whose three tabs all exist (until
-// #87 and #88 record them). Header and Overview behaviour of recorded entities is in EntityPage.overview.test.tsx.
+// The tab-navigation tests walk Overview -> Records on one entity: 30000001 is the hand-written fixture whose Records tab exists (until #87
+// records it); the Relationships tab walks recorded ALFA (2000007). Header and Overview behaviour of recorded entities is in EntityPage.overview.test.tsx.
 const SUPPLIER = "/explore/supplier/30000001";
 
 function open(url: string) {
@@ -34,12 +34,18 @@ describe("an entity page", () => {
 
   it.each([
     ["/records", "Records", "EntityRecords"],
-    ["/relationships", "Relationships", "EntityRelationships"],
   ])("opens the %s URL on its own tab, running that tab's operation", async (suffix, name, operation) => {
     const sent = open(`${SUPPLIER}${suffix}`);
     expect(await screen.findByRole("heading", { level: 1, name: "HACHI INVEST S.R.L." })).toBeInTheDocument();
     expect(currentTab()).toEqual([name]);
     expect(sent.map((s) => s.operation)).toEqual([operation]);
+  });
+
+  it("opens the /relationships URL on its own tab, running that tab's operation (a recorded entity: ALFA)", async () => {
+    const sent = open("/explore/supplier/2000007/relationships");
+    expect(await screen.findByRole("heading", { level: 1, name: "ALFA DEMO SRL" })).toBeInTheDocument();
+    expect(currentTab()).toEqual(["Relationships"]);
+    expect(sent.map((s) => s.operation)).toEqual(["EntityRelationships"]);
   });
 
   it("gives each tab its own URL and follows a click without a page load", async () => {

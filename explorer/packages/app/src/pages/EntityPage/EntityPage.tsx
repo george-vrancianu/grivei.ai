@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
-import { FlowLensSection } from "../../components/FlowLensSection/index.ts";
+import { LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
@@ -33,7 +33,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
   const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
   // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
-  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" ? (counterparty ?? null) : null, page: page ?? 1 });
+  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
 
   if (state.status === "error") {
     return (
@@ -119,7 +119,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             }
             flowMap={
               lens === "flow" ? (
-                <FlowLensSection
+                <LoadedFlowLensSection
                   flow={state.relationships.flow}
                   role={routeRole}
                   home={entity.placement?.county?.code ?? null}
