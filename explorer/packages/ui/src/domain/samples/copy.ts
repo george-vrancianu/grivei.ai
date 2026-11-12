@@ -13,6 +13,7 @@ import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts"
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
+import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
@@ -180,11 +181,73 @@ const resultTabs = (locale: Locale): ResultTabsCopy =>
         recordRow: recordRow(locale),
       };
 
+const filterChips = (locale: Locale): FilterChipsCopy => {
+  const BADGES = badges[locale];
+  return locale === "ro"
+    ? {
+      label: "Filtre",
+      year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
+      channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
+      valueBucket: {
+        group: "Valoare",
+        options: {
+          UP_TO_10K: "Până la 10.000 RON",
+          UP_TO_135K: "10.000–135.060 RON",
+          UP_TO_270K: "135.060–270.120 RON",
+          UP_TO_900K: "270.120–900.400 RON",
+          UP_TO_9M: "900.400–9.004.000 RON",
+          UP_TO_1B: "9.004.000 RON–1 mld. RON",
+          OVER_1B: "Peste 1 mld. RON",
+        },
+      },
+      signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
+      procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
+      badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
+      active: {
+        group: "Filtre active",
+        none: "Niciun filtru activ.",
+        from: (when) => `Din ${when}`,
+        to: (when) => `Până în ${when}`,
+        remove: (chip) => `Elimină ${chip}`,
+        clearAll: "Șterge tot",
+      },
+    }
+    : {
+      label: "Filters",
+      year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
+      channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
+      valueBucket: {
+        group: "Value",
+        options: {
+          UP_TO_10K: "Up to 10,000 RON",
+          UP_TO_135K: "10,000–135,060 RON",
+          UP_TO_270K: "135,060–270,120 RON",
+          UP_TO_900K: "270,120–900,400 RON",
+          UP_TO_9M: "900,400–9,004,000 RON",
+          UP_TO_1B: "9,004,000 RON–1 bn RON",
+          OVER_1B: "Over 1 bn RON",
+        },
+      },
+      signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
+      procedure: { group: "Procedure", empty: "No procedures to choose from." },
+      badges: { group: "Record badges", badges: BADGES },
+      active: {
+        group: "Active filters",
+        none: "No filters on.",
+        from: (when) => `From ${when}`,
+        to: (when) => `Until ${when}`,
+        remove: (chip) => `Remove ${chip}`,
+        clearAll: "Clear all",
+      },
+    };
+};
+
 export const sampleCopy = {
   entityRow,
   recordRow,
   goTo,
   resultTabs,
+  filterChips,
   badges: (locale: Locale): BadgeCopy => badges[locale],
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
