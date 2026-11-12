@@ -227,6 +227,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
       },
     }) },
   },
+  {
     name: "supplier-signal-splitting", kind: "typical",
     description: "a supplier's Records tab after the Splitting facet: the total and the rows follow the filter",
     variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { signal: "SPLITTING" } },
