@@ -28,7 +28,8 @@ query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrde
         largestRecords(filter: $filter, limit: 10) { ...RecordRowFields }
         signals(filter: $filter, order: $signalOrder, limit: 20, offset: $signalOffset) {
           count
-          rows { ...SignalFields }
+          # the first Record is only for the card's "Check in SEAP" link, which a Signal of one Record points at
+          rows { ...SignalFields records(limit: 1) { code provenance { url } } }
         }
       }
     }

@@ -5,6 +5,9 @@ import { useClient } from "../../../graphql/ClientContext.tsx";
 import type { GraphqlClient } from "../../../graphql/client.ts";
 import { EntityOverview, EntityRecords, EntityRelationships } from "../../../graphql/operations.ts";
 
+/** Signals per page of the Overview (the `limit` of `EntityOverview`'s `signals`). */
+export const SIGNALS_PAGE_SIZE = 20;
+
 /** Records per page of the Records tab. */
 export const RECORDS_PAGE_SIZE = 100;
 
@@ -13,7 +16,7 @@ export interface EntityPageRequest {
   role: EntityPageRole;
   view: EntityPageView;
   filter: RecordFilter;
-  /** 1-based page of the Records tab. */
+  /** 1-based page of the Records tab, or of the Overview's Signals. */
   page?: number;
   order?: RecordOrder;
   signalOrder?: SignalOrder;
@@ -44,7 +47,7 @@ function fetchPage(client: GraphqlClient, r: EntityPageRequest, signal: AbortSig
   const { key, role, filter } = r;
   switch (r.view) {
     case "overview":
-      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null, relationships: null }));
+      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder, signalOffset: r.page && r.page > 1 ? (r.page - 1) * SIGNALS_PAGE_SIZE : undefined }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null, relationships: null }));
     case "records":
       return client
         .query(EntityRecords, { key, role, filter, limit: RECORDS_PAGE_SIZE, offset: ((r.page ?? 1) - 1) * RECORDS_PAGE_SIZE, order: r.order }, { signal })

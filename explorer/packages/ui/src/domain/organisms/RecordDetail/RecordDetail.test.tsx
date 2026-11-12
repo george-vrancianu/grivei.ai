@@ -9,6 +9,7 @@ import {
   naturalPersonPage, noPublicPage, noValuePage, subsequentPage, suspectDirectPage, suspectNoEstimatePage, suspectOverEstimatePage,
 } from "../../samples/fixtureData.ts";
 import type { RecordPageData } from "../../types.ts";
+import { SignalCard } from "../SignalCard/index.ts";
 import { RecordDetail } from "./index.ts";
 
 function show(record: RecordPageData, locale: Locale = "en") {
@@ -25,6 +26,45 @@ function show(record: RecordPageData, locale: Locale = "en") {
   );
 }
 const section = (name: string) => within(screen.getByRole("region", { name }));
+
+describe("RecordDetail Signals", () => {
+  const withCards = (locale: Locale) =>
+    renderInUi(
+      <RecordDetail
+        record={frameworkOverrunPage}
+        entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
+        recordHref={(code) => `/explore/record/${code}`}
+        methodologyHref="/explore/methodology"
+        locale={locale}
+        copy={sampleCopy.recordDetail(locale)}
+        renderSignalCard={(signal) => (
+          <SignalCard
+            signal={signal}
+            reproduceHref="/explore/authority/1000017/records?signal=framework-overrun"
+            methodologyHref="/explore/methodology#signal-framework-overrun"
+            entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
+            locale={locale}
+            copy={sampleCopy.signalCard(locale)}
+          />
+        )}
+      />,
+      locale,
+    );
+
+  it("shows each Signal as a card, followed by the Signal's own Records, when it is given the card", () => {
+    withCards("en");
+    const signals = section("Signals this Record belongs to");
+    expect(signals.getByRole("heading", { name: "Framework overrun" })).toBeVisible();
+    expect(signals.getByRole("link", { name: "How this Signal is detected" })).toHaveAttribute("href", "/explore/methodology#signal-framework-overrun");
+    expect(signals.getByRole("link", { name: "See the 4 Records" })).toHaveAttribute("href", "/explore/authority/1000017/records?signal=framework-overrun");
+    for (const record of frameworkOverrunPage.signals[0]!.records) expect(signals.getByRole("link", { name: record.title })).toHaveAttribute("href", `/explore/record/${record.code}`);
+  });
+
+  it("says it in Romanian", () => {
+    withCards("ro");
+    expect(section("Semnalele din care face parte această înregistrare").getByRole("heading", { name: "Depășirea acordului-cadru" })).toBeVisible();
+  });
+});
 
 describe("RecordDetail", () => {
   it("shows the title as the heading, with date, kind, procedure, contract type and CPV as published", () => {
@@ -124,7 +164,7 @@ describe("RecordDetail", () => {
 
   it("shows a ratio over 100% as is, and the framework-overrun Signal beside it", () => {
     show(frameworkOverrunPage);
-    expect(section("Framework agreement").getByText(/\(112.4%\)/)).toBeVisible();
+    expect(section("Framework agreement").getByText(/\(125%\)/)).toBeVisible();
     expect(section("Signals this Record belongs to").getAllByRole("heading").length).toBeGreaterThan(0);
   });
 
@@ -183,6 +223,6 @@ describe("RecordDetail", () => {
   it("renders Romanian", () => {
     show(frameworkOverrunPage, "ro");
     expect(screen.getByText("Valoare publicată")).toBeVisible();
-    expect(screen.getByText(/Plafon .*contracte subsecvente raportate până acum .* \(112,4\s?%\)/)).toBeVisible();
+    expect(screen.getByText(/Plafon .*contracte subsecvente raportate până acum .* \(125\s?%\)/)).toBeVisible();
   });
 });

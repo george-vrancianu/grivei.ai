@@ -1,7 +1,7 @@
 // The invented world every fixture draws from: a few entities, Records and Signals
 // that between them show every state the screens must handle. Keys, CUIs and
 // codes are made up. SEAP's own vocabulary (procedure names, CPV, document kinds) is real.
-import type { SignalFieldsFragment } from "../generated/operations.ts";
+import type { SignalBadgeFieldsFragment, SignalFieldsFragment } from "../generated/operations.ts";
 import {
   dataThrough, seapProvenance, entityHeader, entityRef, entityRow, party, placeInCounty, placeNational, record, reproduce, ron,
 } from "./builders.ts";
@@ -87,12 +87,42 @@ export const drumariiHeader = entityHeader(drumariiRow, {
   aliases: [{ name: "DRUMARII UNITI SRL", records: 9, first: "2021-04-01", last: "2022-12-15", differsFromAnaf: false }],
 });
 
+// ---- signals (one per rule) ----------------------------------------------
+
+export const sOverCap: SignalFieldsFragment = {
+  rule: "OVER_CAP", date: "2024-01-19", firstDate: "2024-01-19", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [hachi],
+  numbers: { __typename: "OverCapNumbers", value: ron(300_000), cap: ron(270_120), multiple: 1.11 },
+  reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" }),
+};
+export const sSplitting: SignalFieldsFragment = {
+  rule: "SPLITTING", date: "2024-07-19", firstDate: "2024-07-01", recordCount: 2, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [hachi],
+  numbers: { __typename: "SplittingNumbers", purchases: 2, sum: ron(290_000), cap: ron(270_120), cpvGroup: "770", from: "2024-07-01", to: "2024-07-19" },
+  reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "SPLITTING", cpv: "770", from: "2024-07-01", to: "2024-07-19" }),
+};
+export const sFrameworkOverrun: SignalFieldsFragment = {
+  rule: "FRAMEWORK_OVERRUN", date: "2024-03-12", firstDate: "2022-06-30", recordCount: 13, dataThrough: "2024-11-30",
+  authority: drumuriNationale, suppliers: [drumarii],
+  numbers: { __typename: "FrameworkOverrunNumbers", ceiling: ron(100_000_000), subsequent: ron(112_400_000), ratio: 1.124 },
+  reproduce: reproduce({ authority: "4000002", supplier: "30000003", signal: "FRAMEWORK_OVERRUN" }),
+};
+export const sNoPublication: SignalFieldsFragment = {
+  rule: "NO_PUBLICATION", date: "2023-12-01", firstDate: "2023-12-01", recordCount: 1, dataThrough: "2024-11-30",
+  authority: spitalSibiu, suppliers: [foreignFirm],
+  numbers: { __typename: "NoPublicationNumbers", procedure: "Negociere fără publicare prealabilă" },
+  reproduce: reproduce({ authority: "4000003", supplier: "vat-DE811128135", signal: "NO_PUBLICATION", from: "2023-12-01", to: "2023-12-01" }),
+};
+
+/** A Signal as a Record's row carries it: rule, date, numbers and reproducing filter. */
+export const signalBadge = ({ rule, date, numbers, reproduce: r }: SignalFieldsFragment): SignalBadgeFieldsFragment => ({ rule, date, numbers, reproduce: r });
+
 // ---- records -------------------------------------------------------------
 
 export const rDirect = record({
   code: "DA12345678", title: "Deszăpezire străzi, sezon rece 2023-2024", date: "2024-01-19", kind: "DA",
   channel: "DIRECT_PURCHASE", procedure: "Achiziție directă", value: ron(300_000), counted: ron(300_000),
-  authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "OVER_CAP" }],
+  authority: primariaBrasov, winners: [party(hachi)], signals: [signalBadge(sOverCap)],
 });
 export const rDirectSmall = record({
   code: "DA12340001", title: "Consumabile birotică", date: "2024-02-02", value: ron(8_400), counted: ron(8_400),
@@ -133,7 +163,7 @@ export const rSuspect = record({
 export const rNoValue = record({
   code: "SCNA700123", title: "Anunț de atribuire fără valoare publicată", date: "2023-12-01", kind: "AWARD_NOTICE", channel: "CONTRACT",
   procedure: "Negociere fără publicare prealabilă", value: null, counted: null, badges: ["NO_VALUE"],
-  authority: spitalSibiu, winners: [party(foreignFirm)], signals: [{ rule: "NO_PUBLICATION" }],
+  authority: spitalSibiu, winners: [party(foreignFirm)], signals: [signalBadge(sNoPublication)],
 });
 export const rNaturalPerson = record({
   code: "DA12350005", title: "Servicii de consultanță juridică", date: "2024-06-10", value: ron(36_000), counted: ron(36_000),
@@ -151,36 +181,9 @@ export const rMismatch = record({
 });
 export const rSplit1 = record({
   code: "DA12370001", title: "Servicii de întreținere spații verzi (1)", date: "2024-07-01", value: ron(150_000), counted: ron(150_000),
-  procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "SPLITTING" }],
+  procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [signalBadge(sSplitting)],
 });
 export const rSplit2 = record({
   code: "DA12370002", title: "Servicii de întreținere spații verzi (2)", date: "2024-07-19", value: ron(140_000), counted: ron(140_000),
-  procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "SPLITTING" }],
+  procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [signalBadge(sSplitting)],
 });
-
-// ---- signals (one per rule) ----------------------------------------------
-
-export const sOverCap: SignalFieldsFragment = {
-  rule: "OVER_CAP", date: "2024-01-19", firstDate: "2024-01-19", recordCount: 1, dataThrough: "2024-11-30",
-  authority: primariaBrasov, suppliers: [hachi],
-  numbers: { __typename: "OverCapNumbers", value: ron(300_000), cap: ron(270_120), multiple: 1.11 },
-  reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" }),
-};
-export const sSplitting: SignalFieldsFragment = {
-  rule: "SPLITTING", date: "2024-07-19", firstDate: "2024-07-01", recordCount: 2, dataThrough: "2024-11-30",
-  authority: primariaBrasov, suppliers: [hachi],
-  numbers: { __typename: "SplittingNumbers", purchases: 2, sum: ron(290_000), cap: ron(270_120), cpvGroup: "770", from: "2024-07-01", to: "2024-07-19" },
-  reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "SPLITTING", cpv: "770", from: "2024-07-01", to: "2024-07-19" }),
-};
-export const sFrameworkOverrun: SignalFieldsFragment = {
-  rule: "FRAMEWORK_OVERRUN", date: "2024-03-12", firstDate: "2022-06-30", recordCount: 13, dataThrough: "2024-11-30",
-  authority: drumuriNationale, suppliers: [drumarii],
-  numbers: { __typename: "FrameworkOverrunNumbers", ceiling: ron(100_000_000), subsequent: ron(112_400_000), ratio: 1.124 },
-  reproduce: reproduce({ authority: "4000002", supplier: "30000003", signal: "FRAMEWORK_OVERRUN" }),
-};
-export const sNoPublication: SignalFieldsFragment = {
-  rule: "NO_PUBLICATION", date: "2023-12-01", firstDate: "2023-12-01", recordCount: 1, dataThrough: "2024-11-30",
-  authority: spitalSibiu, suppliers: [foreignFirm],
-  numbers: { __typename: "NoPublicationNumbers", procedure: "Negociere fără publicare prealabilă" },
-  reproduce: reproduce({ authority: "4000003", supplier: "vat-DE811128135", signal: "NO_PUBLICATION", from: "2023-12-01", to: "2023-12-01" }),
-};

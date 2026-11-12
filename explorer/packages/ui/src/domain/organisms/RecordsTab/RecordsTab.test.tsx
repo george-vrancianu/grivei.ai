@@ -45,8 +45,8 @@ describe("the Records tab", () => {
 
   it("shows the filtered total and rows it is given, not the unfiltered ones", () => {
     show(supplierSplittingRecords, "supplier", { signal: "SPLITTING" });
-    expect(screen.getByText("2 Records")).toBeVisible();
-    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("5 Records")).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
     expect(screen.queryByRole("link", { name: "Contract CAN9600001 1" })).toBeNull();
   });
 

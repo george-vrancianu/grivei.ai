@@ -10,6 +10,10 @@ import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedEntityRecords } from "./recorded/records.ts";
 import { recordedRecordPage } from "./recorded/record.ts";
+import {
+  recordedSignalsEntityOverview, recordedSignalsEntityRecords, recordedSignalsEntityRelationships, recordedSignalsFullResultsAuthorities, recordedSignalsFullResultsRecords, recordedSignalsFullResultsSuppliers,
+  recordedSignalsMainScreen, recordedSignalsMethodology, recordedSignalsRecordPage,
+} from "./recorded/signals.ts";
 import { recordedEntityRecordsSidePanel, recordedEntityRelationships } from "./recorded/relationships.ts";
 import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
@@ -17,6 +21,7 @@ export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
 export { recordedEntityRecords } from "./recorded/records.ts";
 export { recordedRecordPage } from "./recorded/record.ts";
+export * from "./recorded/signals.ts";
 export { recordedEntityRecordsSidePanel, recordedEntityRelationships } from "./recorded/relationships.ts";
 export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords, recordedZoomedCounty } from "./recorded/index.ts";
 
@@ -26,18 +31,18 @@ export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResults
  * states a recorded run cannot produce (pagination past 100 Records, estimated counts, every Record state at once).
  */
 export const fixtures = {
-  MainScreen: [...recordedMainScreen, ...mainScreenHand],
+  MainScreen: [...recordedMainScreen, ...recordedSignalsMainScreen, ...mainScreenHand],
   ZoomedCounty: recordedZoomedCounty,
-  FullResultsAuthorities: [...recordedFullResultsAuthorities, ...fullResultsAuthoritiesHand],
-  FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
-  FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],
-  EntityOverview: [...recordedEntityOverview, ...entityOverviewHand],
-  EntityRecords: [...recordedEntityRecords, ...recordedEntityRecordsSidePanel, ...entityRecordsHand],
-  EntityRelationships: [...recordedEntityRelationships, ...entityRelationships],
-  RecordPage: [...recordedRecordPage, ...recordPageHand],
+  FullResultsAuthorities: [...recordedFullResultsAuthorities, ...recordedSignalsFullResultsAuthorities, ...fullResultsAuthoritiesHand],
+  FullResultsSuppliers: [...recordedFullResultsSuppliers, ...recordedSignalsFullResultsSuppliers, ...fullResultsSuppliersHand],
+  FullResultsRecords: [...recordedFullResultsRecords, ...recordedSignalsFullResultsRecords, ...fullResultsRecordsHand],
+  EntityOverview: [...recordedEntityOverview, ...recordedSignalsEntityOverview, ...entityOverviewHand],
+  EntityRecords: [...recordedEntityRecords, ...recordedEntityRecordsSidePanel, ...recordedSignalsEntityRecords, ...entityRecordsHand],
+  EntityRelationships: [...recordedEntityRelationships, ...recordedSignalsEntityRelationships, ...entityRelationships],
+  RecordPage: [...recordedRecordPage, ...recordedSignalsRecordPage, ...recordPageHand],
   CoverageLens: coverageLens,
   CoveragePage: coveragePage,
-  MethodologyBaseRates: methodologyBaseRates,
+  MethodologyBaseRates: [...methodologyBaseRates, ...recordedSignalsMethodology],
 } as const;
 
 export type OperationName = keyof typeof fixtures;

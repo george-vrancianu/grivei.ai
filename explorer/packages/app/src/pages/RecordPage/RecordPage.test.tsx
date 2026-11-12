@@ -1,6 +1,6 @@
 // Seam 3 for the Record page: the app rendered against the API's recorded answers (ticket #85; `recordedRecordPage`, recorded by seam 1)
-// through the injected fetch. The hand fixtures that remain (a framework overrun, a splitting Signal, a Record with no public page) are
-// named where they are used.
+// through the injected fetch. The one hand fixture that remains (a Record with no public page) is named where it is used. The Signal cards are
+// tested over the Signal recordings in RecordPage.signals.test.tsx.
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { recordedRecordPage } from "@grivei/contract/fixtures";
@@ -50,7 +50,7 @@ describe("every Record kind renders from the API's recorded answers, in both lan
       expect(await screen.findByRole("heading", { level: 1, name: record.title })).toBeInTheDocument();
       expect(sent.map((s) => s.operation)).toEqual(["RecordPage"]);
       expect(sent[0]).toMatchObject({ variables: { code: record.code } }); // the code as published, whatever its URL encoding
-      expect(screen.getByText(authorityLabel).nextElementSibling).toHaveTextContent(record.authority.displayName);
+      expect(screen.getAllByText(authorityLabel)[0]!.nextElementSibling).toHaveTextContent(record.authority.displayName);
       // the link: bulk Records go through the redirect endpoint for their code, crawled ones to their e-licitatie page
       const link = region(provenance).getByRole("link", { name: checkIn });
       expect(link, name).toHaveAttribute("href", record.provenance.url!);
@@ -235,7 +235,7 @@ describe("a Record page", () => {
     await openRecorded("over-cap-signal");
     const signals = region("Signals this Record belongs to");
     expect(signals.getByRole("heading", { name: "Over cap" })).toBeInTheDocument();
-    expect(signals.getByText(/2 Records/)).toBeInTheDocument();
+    expect(signals.getByText(/Latest Record: .* · 2 Records/)).toBeInTheDocument();
     expect(signals.getByRole("link", { name: "Achizitie DA98000002" })).toHaveAttribute("href", "/explore/record/DA98000002");
     expect(signals.queryByText(/fraud|illegal|corrupt/i)).toBeNull();
   });
@@ -250,13 +250,6 @@ describe("a Record page", () => {
     await openRecorded("signal-natural-person");
     expect(region("Signals this Record belongs to").getByRole("heading", { name: "Over cap" })).toBeInTheDocument();
     expect(screen.getByText("Winners").nextElementSibling).toHaveTextContent("Persoană fizică");
-  });
-
-  it("shows a framework overrun above 100% and its Signal (hand fixture: the rule is #76, not recorded yet)", async () => {
-    open("/explore/record/CAN1160100");
-    await screen.findByRole("heading", { level: 1, name: /Acord-cadru lucrări/ });
-    expect(screen.getByText(/\(112.4%\)/)).toBeInTheDocument();
-    expect(region("Signals this Record belongs to").getByRole("heading", { name: "Framework overrun" })).toBeInTheDocument();
   });
 
   it("says there is no stable public page when the Record has no URL (hand fixture: the redirect cannot resolve an RFQA code)", async () => {

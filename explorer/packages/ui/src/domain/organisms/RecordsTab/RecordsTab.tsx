@@ -5,7 +5,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
 import { RecordResultList } from "../../molecules/RecordResultList/index.ts";
-import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
+import type { RecordResultRowCopy, RecordSignalBadges } from "../../molecules/RecordResultRow/index.ts";
 import { TotalFigure, type TotalFigureCopy } from "../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, RecordResult, RecordsTabData } from "../../types.ts";
 import { EmptyRecords, type EmptyRecordsCopy } from "./components/EmptyRecords/index.ts";
@@ -42,11 +42,13 @@ export interface RecordsTabProps {
   suspectHref: string;
   locale: Locale;
   copy: RecordsTabCopy;
+  /** A compact badge per Signal on each row; absent = none. */
+  signalBadges?: RecordSignalBadges | undefined;
 }
 
 /** The Records tab of an Entity page: the facet side panel, the total that follows the filter, and the Records table. */
 export function RecordsTab({
-  records, filter, onFilterChange, role, page, pageSize, pageHref, onNavigate, entityHref, recordHref, methodologyHref, suspectHref, locale, copy,
+  records, filter, onFilterChange, role, page, pageSize, pageHref, onNavigate, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signalBadges,
 }: RecordsTabProps) {
   const { total, facets } = records;
   const rows = records.records.rows;
@@ -63,7 +65,7 @@ export function RecordsTab({
         {empty ? (
           <EmptyRecords copy={copy.empty} onClear={hasFacetsOn(filter, role) ? () => onFilterChange(clearFacets(filter, role)) : undefined} />
         ) : (
-          <RecordResultList rows={rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} />
+          <RecordResultList rows={rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} signalBadges={signalBadges} />
         )}
         {pages > 1 && <PageNav page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />}
       </Stack>

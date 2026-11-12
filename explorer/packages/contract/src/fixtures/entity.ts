@@ -1,6 +1,6 @@
 import type {
   EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
-  EntityRelationshipsQuery, EntityRelationshipsQueryVariables, EntityHeaderFieldsFragment, MoneyMapFieldsFragment,
+  EntityRelationshipsQuery, EntityRelationshipsQueryVariables, EntityHeaderFieldsFragment, MoneyMapFieldsFragment, SignalFieldsFragment,
 } from "../generated/operations.ts";
 import { entityHeader, entityRef, moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
@@ -8,6 +8,9 @@ import * as w from "./world.ts";
 
 type Role = "AUTHORITY" | "SUPPLIER";
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
+
+/** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
+const overviewSignal = (s: SignalFieldsFragment) => ({ ...s, records: [{ code: "DA12345678", provenance: { url: "/source/seap/DA12345678" } }] });
 
 const noFramework = { count: 0, ceilings: "0", subsequentReported: "0" };
 const emptyOverview = (role: Role) => ({
@@ -42,7 +45,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       consortia: [{ members: [w.hachi, w.constructii].map((e) => ({ naturalPerson: false, publishedName: e.displayName, share: ron(500_000), entity: e })), total: total({ awarded: ron(500_000), records: 1 }) }],
       frameworks: noFramework,
       largestRecords: [w.rDirect, w.rSplit2],
-      signals: { count: 2, rows: [w.sSplitting, w.sOverCap] },
+      signals: { count: 2, rows: [overviewSignal(w.sSplitting), overviewSignal(w.sOverCap)] },
     }) },
   },
   {
@@ -61,7 +64,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       consortia: [{ members: [w.constructii, w.drumarii].map((e) => ({ naturalPerson: false, publishedName: e.displayName, share: ron(15_000_000), entity: e })), total: total({ awarded: ron(30_000_000), records: 1 }) }],
       frameworks: { count: 4, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
       largestRecords: [w.rConsortium, w.rSubsequent],
-      signals: { count: 1, rows: [w.sFrameworkOverrun] },
+      signals: { count: 1, rows: [overviewSignal(w.sFrameworkOverrun)] },
     }) },
   },
   {
@@ -77,7 +80,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       consortia: [],
       frameworks: { count: 1, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
       largestRecords: [w.rSubsequent],
-      signals: { count: 1, rows: [w.sFrameworkOverrun] },
+      signals: { count: 1, rows: [overviewSignal(w.sFrameworkOverrun)] },
     }) },
   },
   {
@@ -121,19 +124,11 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       consortia: [{ members: [w.constructii, w.drumarii].map((e) => ({ naturalPerson: false, publishedName: e.displayName, share: ron(15_000_000), entity: e })), total: total({ awarded: ron(30_000_000), records: 1 }) }],
       frameworks: { count: 4, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
       largestRecords: [w.rConsortium, w.rSubsequent, w.rDirect],
-      signals: { count: 3, rows: [w.sFrameworkOverrun] },
+      signals: { count: 3, rows: [overviewSignal(w.sFrameworkOverrun)] },
     }) },
   },
 ];
 
-const facetsFull = {
-  channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
-  procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(290_000), records: 2 }) }],
-  year: [{ value: "2024", total: total({ awarded: ron(290_000), records: 2 }) }],
-  signal: [{ value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) }],
-  badge: [],
-  counterparty: [{ entity: w.hachi, matched: total({ awarded: ron(290_000), records: 2 }) }],
-};
 const facetsOfSupplier = {
   channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(590_000), records: 3 }) }],
   procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(590_000), records: 3 }) }],
@@ -174,73 +169,11 @@ const facetsOfAuthority = {
 const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
 
 /**
- * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`):
- * a splitting Signal (#75's archive is not recorded yet), an estimated total (> 65,000 Records) and its second page (offset 100). The
+ * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`,
+ * `recorded/signals/EntityRecords.json` for every Signal's reproducing filter): an estimated total (> 65,000 Records) and its second page (offset 100). The
  * three counterparty-picked ones belong to the Relationships tab's side panel (#88 records them).
  */
 export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
-  {
-    name: "signal-reproduction", kind: "typical",
-    description: "the Records-tab filter a splitting Signal reproduces: authority + supplier + signal + CPV + dates; facets and a counterparty list",
-    variables: {
-      key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, order: "DATE_DESC",
-      filter: { signal: "SPLITTING", supplier: "30000001", cpv: "770", from: "2024-07-01", to: "2024-07-19" },
-    },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
-      role: "AUTHORITY" as Role,
-      records: {
-        total: total({ awarded: ron(290_000), records: 2 }),
-        facets: facetsFull,
-        records: { count: 2, rows: [w.rSplit2, w.rSplit1].map((record) => ({ record, matchedField: null })) },
-      },
-    }) },
-  },
-  {
-    name: "authority-signal-splitting-reproduction", kind: "typical",
-    description: "the Records tab a splitting Signal's reproducing link opens, as the app asks for it (no explicit order): authority page, signal + supplier + CPV group + dates",
-    variables: {
-      key: "4000001", role: "AUTHORITY", limit: 100, offset: 0,
-      filter: { signal: "SPLITTING", supplier: "30000001", cpv: "770", from: "2024-07-01", to: "2024-07-19" },
-    },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
-      role: "AUTHORITY" as Role,
-      records: {
-        total: total({ awarded: ron(290_000), records: 2 }),
-        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
-        records: rowsOf(w.rSplit2, w.rSplit1),
-      },
-    }) },
-  },
-  {
-    name: "authority-signal-over-cap-reproduction", kind: "typical",
-    description: "the Records tab an over-cap Signal's reproducing link opens: authority page, signal + the one day (no supplier, as the pipeline writes it)",
-    variables: {
-      key: "4000001", role: "AUTHORITY", limit: 100, offset: 0,
-      filter: { signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" },
-    },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
-      role: "AUTHORITY" as Role,
-      records: {
-        total: total({ awarded: ron(300_000), records: 1 }),
-        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[1]!] },
-        records: rowsOf(w.rDirect),
-      },
-    }) },
-  },
-  {
-    name: "supplier-signal-splitting", kind: "typical",
-    description: "a supplier's Records tab after the Splitting facet: the total and the rows follow the filter",
-    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { signal: "SPLITTING" } },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      records: {
-        total: total({ awarded: ron(290_000), records: 2 }),
-        facets: { ...facetsOfSupplier, signal: [facetsOfSupplier.signal[0]!], channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
-          counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(290_000), records: 2 }) }] },
-        records: rowsOf(w.rSplit2, w.rSplit1),
-      },
-    }) },
-  },
   {
     name: "authority-one-supplier", kind: "typical",
     description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",

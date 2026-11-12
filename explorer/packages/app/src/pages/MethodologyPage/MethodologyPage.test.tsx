@@ -3,7 +3,7 @@
 // section has a base-rate slot fed from the `signalRules` fixture.
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { fixtures } from "@grivei/contract/fixtures";
+import { fixtures, recordedSignalsMethodology } from "@grivei/contract/fixtures";
 import allowlist from "@grivei/contract/persisted-queries.json";
 import { SIGNAL_RULES, forbiddenWords, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 /** A client answering `MethodologyBaseRates` with one named fixture (the fixture client answers the first one for `{}`), or failing. */
-function clientWith(name: "typical-after-backfill" | "before-backfill" | "fail" | "pending") {
+function clientWith(name: string) {
   const id = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!.sha256;
   return createClient({
     fetch: async (_url, init) => {
@@ -42,7 +42,7 @@ function clientWith(name: "typical-after-backfill" | "before-backfill" | "fail" 
     },
   });
 }
-function open(url: string, name: Parameters<typeof clientWith>[0] = "typical-after-backfill") {
+function open(url: string, name = "typical-after-backfill") {
   openAt(url);
   render(<App client={clientWith(name)} />);
 }
@@ -212,3 +212,40 @@ function suspectPath(): string {
   if (!found) throw new Error("no recorded direct-purchase-suspect");
   return `/explore/record/${encodeURIComponent(found.code)}`;
 }
+
+// Acceptance (#89): the page shows each rule's national base rate from the API. The recorded answers are the real `signalRules` of three
+// archives (seam 1, recorded/signals/MethodologyBaseRates.json): over-cap 2 of 3 and no-publication 1 of 3 authorities in one, splitting 1 of 1
+// in the second and framework-overrun 1 of 1 in the third, so every rule's non-zero base rate is on the page in one of them.
+describe.each(["en", "ro"] as const)("the base rates from the API's own answers (%s)", (locale) => {
+  const t = catalogue[locale].methodology;
+  const recordedRates = recordedSignalsMethodology;
+  const fmt = (d: string) => new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "ro", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+
+  it.each(recordedRates.map((f) => [f.name, f.data.signalRules] as const))("%s: each rule's window, rate, year and data-through date", async (name, rules) => {
+    open(PATH[locale], name);
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/20\d\d/);
+    for (const rule of rules) {
+      const section = region(t.rules[rule.slug].heading);
+      const to = fmt(rule.window.to ?? rule.dataThrough);
+      expect(section.getByText(rule.window.from === null ? t.baseRate.openStart(to) : t.baseRate.range(fmt(rule.window.from), to))).toBeVisible();
+      if (rule.baseRate === 0) expect(section.getByText(t.baseRate.none(rule.baseRateYear))).toBeVisible();
+      else {
+        const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(rule.baseRate);
+        const sentence = t.baseRate.rate(percent, rule.baseRateYear).replace(/\s/g, " ");
+        expect(section.getByText((text) => text.replace(/\s/g, " ") === sentence)).toBeVisible();
+      }
+      expect(section.getByText(t.baseRate.dataThrough(fmt(rule.dataThrough)))).toBeVisible();
+    }
+  });
+
+  it("shows every rule's non-zero rate in one of the three answers, and a rule the answer lacks says nothing was computed", async () => {
+    const nonZero = new Set(recordedRates.flatMap((f) => f.data.signalRules.filter((r) => r.baseRate > 0).map((r) => r.slug)));
+    expect([...nonZero].sort()).toEqual([...SIGNAL_RULES].sort());
+    const splitting = recordedRates.find((f) => f.name === "splitting-archive")!;
+    open(PATH[locale], splitting.name);
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/20\d\d/);
+    // the archive had no Contracte and no negotiated awards: the API sends no row for those two rules, and the page keeps their prose
+    expect(region(t.rules.FRAMEWORK_OVERRUN.heading).getByText(t.rules.FRAMEWORK_OVERRUN.paragraphs[0]!)).toBeVisible();
+    expect(region(t.rules.FRAMEWORK_OVERRUN.heading).queryByText(/100\s?%/)).toBeNull();
+  });
+});
