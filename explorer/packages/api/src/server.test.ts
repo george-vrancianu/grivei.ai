@@ -9,7 +9,7 @@ import type { RecordRow, Store } from "./store.ts";
 
 const row = (over: Partial<RecordRow>): RecordRow => ({
   code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", procedure: null, value: "120050", counted: "120050",
-  authority: { cui: "1000001", name: "COMUNA EXEMPLU" }, winners: [{ cui: "2000001", name: "CURAT SRL" }], ...over,
+  authority: { cui: "1000001", name: "COMUNA EXEMPLU" }, winners: [{ cui: "2000001", name: "CURAT SRL" }], crawlStatus: null, ...over,
 });
 const store: Store = {
   total: async () => ({ awarded: "420050", records: 2, noValue: 1 }),
@@ -62,6 +62,23 @@ describe("MainScreen for the empty filter", () => {
       ["DA2", null, ["NO_VALUE"], 0],
     ]);
     expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] }]);
+  });
+
+  it("badges crawled Records: provisional until the bulk has the quarter, crawl-only after (#77), next to NO_VALUE", async () => {
+    const crawled = createApi({
+      ...store,
+      records: async () => [
+        row({ code: "CAN1~1", kind: "CONTRACT", crawlStatus: "PROVISIONAL" }),
+        row({ code: "CAN2~1", kind: "CONTRACT", crawlStatus: "CRAWL_ONLY", value: null, counted: null }),
+      ],
+    }, schema);
+    const r = await crawled.respond({ id: mainScreen.sha256, variables: EMPTY });
+    expect(r.body.errors).toBeUndefined();
+    const rows = (r.body.data as MainScreenQuery).seap.search.records.rows;
+    expect(rows.map((x) => [x.record.code, x.record.badges])).toEqual([
+      ["CAN1~1", ["CRAWLED_PROVISIONAL"]],
+      ["CAN2~1", ["NO_VALUE", "CRAWL_ONLY"]],
+    ]);
   });
 
   it("says plainly that a filter is not served yet, instead of ignoring it", async () => {

@@ -338,3 +338,97 @@ def _dump_all(url):
         return (c.execute("SELECT code, kind, title, value_bani, quarter, winners, source_file_id FROM seap.record ORDER BY code").fetchall(),
                 c.execute("SELECT record_code, winner_position, share_bani FROM seap.search ORDER BY 1, 2").fetchall(),
                 c.execute("SELECT id, kind, unit, sha256 FROM seap.source_file ORDER BY id").fetchall())
+
+
+# ---- crawled Records (#77): bulk supersedes the crawl, survivors are tagged, the cursor is data-through --------------------
+
+CRAWL_FIXTURE = Path(__file__).parent / "fixtures" / "archive-crawl"
+
+
+def _crawl_archive(tmp_path) -> Archive:
+    root = tmp_path / "archive-crawl"
+    shutil.copytree(CRAWL_FIXTURE, root)
+    return Archive(root)
+
+
+def _crawl_dump(url):
+    with psycopg.connect(url) as c:
+        return (c.execute("SELECT code, kind, via, crawl_status, value_bani, url, ca_notice_id, sys_notice_type_id, sys_notice_version_id, quarter, source_file_id "
+                          "FROM seap.record ORDER BY code").fetchall(),
+                c.execute("SELECT id, kind, unit, stream, via, url, fetched_at, row_count FROM seap.source_file ORDER BY id").fetchall(),
+                c.execute("SELECT stream, kind, through FROM seap.crawl_state ORDER BY kind").fetchall(),
+                c.execute("SELECT count(*) FROM seap.search").fetchall())
+
+
+def test_a_bulk_record_supersedes_the_crawled_one_and_the_survivors_are_tagged(db, tmp_path):
+    summary = rebuild(_crawl_archive(tmp_path), db)
+    assert summary.records == 5 and len(summary.incomplete) == 1  # the 2026-04-03 day was never completed
+    with psycopg.connect(db) as c:
+        rows = {r[0]: r for r in c.execute("SELECT code, via, crawl_status, value_bani, url FROM seap.record").fetchall()}
+        # in Q1 the bulk has the contract: its version (150000 lei, fetched BEFORE the crawl) wins, and nothing marks it
+        assert rows["CAN9200001~C-1"][1:4] == ("BULK", None, 15000000)
+        # in Q1 the bulk lacks this one: it stays, crawl-only
+        assert rows["CAN9200002~C-7"][1:4] == ("CRAWL", "CRAWL_ONLY", 2000050)
+        # in Q2 the bulk has not reached: provisional; the later re-crawl of the day (80000, not 75000) wins; the award notice adds its contracts
+        assert rows["CAN9200003~9/2026"][1:4] == ("CRAWL", "PROVISIONAL", 8000000)
+        assert rows["SCNA9200004~S-1"][2] == "PROVISIONAL" and rows["CAN9200005"][1:4] == ("CRAWL", "PROVISIONAL", 350050)
+        assert rows["CAN9200003~9/2026"][4] == "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013"
+        assert "CAN9200009~G-1" not in rows
+        assert c.execute("SELECT count(*) FROM seap.search WHERE record_code = 'CAN9200001~C-1'").fetchone() == (1,)  # no stale search row of the crawl version
+        # provenance: the bulk Record points at the bulk file, the survivors at a crawl day (no file title, fetch time from the manifest)
+        assert c.execute("SELECT f.stream, f.via, f.fetched_at FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = 'CAN9200001~C-1'"
+                         ).fetchone() == ("bulk", "Contracte 2026 - T1", datetime(2026, 11, 10, 9, tzinfo=timezone.utc))
+        assert c.execute("SELECT f.stream, f.via, f.fetched_at FROM seap.record r JOIN seap.source_file f ON f.id = r.source_file_id WHERE r.code = 'CAN9200003~9/2026'"
+                         ).fetchone() == ("crawl", None, datetime(2026, 11, 12, 9, tzinfo=timezone.utc))
+        assert c.execute("SELECT * FROM seap.crawl_state ORDER BY kind").fetchall() == [
+            ("award-notices", "AWARD_NOTICE", date(2026, 2, 10)),  # no "fara anunt" bulk: 2026-02-11..03-31 are a hole for this kind
+            ("award-notices", "CONTRACT", date(2026, 4, 2))]  # the Contracte bulk covers 2026 Q1: the crawl runs on from 1 April
+
+
+def test_data_through_per_record_kind_takes_the_crawl_cursor_for_the_crawled_kinds(db, tmp_path):
+    from pipeline.rebuild import DATA_THROUGH_SQL
+
+    archive = _crawl_archive(tmp_path)
+    rebuild(archive, db)
+    with psycopg.connect(db) as c:  # Q1 Contracte is loaded; for award notices 2026-02-10 stands alone and a hole follows
+        assert dict(c.execute(DATA_THROUGH_SQL).fetchall()) == {"CONTRACT": "2026-04-02", "AWARD_NOTICE": "2026-02-10"}
+    shutil.rmtree(archive.root / "seap/crawl/award-notices/2026-02-10")  # now 04-01 and 04-02 are the unbroken run
+    rebuild(archive, db)
+    with psycopg.connect(db) as c:
+        assert dict(c.execute(DATA_THROUGH_SQL).fetchall()) == {"CONTRACT": "2026-04-02", "AWARD_NOTICE": "2026-04-02"}
+
+
+def test_the_bulk_wins_whatever_order_the_files_arrive_in_and_a_second_rebuild_is_identical(db, tmp_path):
+    archive = _crawl_archive(tmp_path)
+    rebuild(archive, db)
+    first = _crawl_dump(db)
+    rebuild(archive, db)  # over the same database
+    assert _crawl_dump(db) == first
+    # the bulk file fetched AFTER every crawl day instead of before: the same graph (fetch order must not matter)
+    later = tmp_path / "later"
+    shutil.copytree(archive.root, later)
+    bulk = later / "seap/bulk/contracte/2026Q1"
+    (bulk / "2026-11-10").rename(bulk / "2026-11-20")
+    manifest = bulk / "2026-11-20" / "manifest.json"
+    manifest.write_text(manifest.read_text().replace("2026-11-10T09:00:00Z", "2026-11-20T09:00:00Z"))
+    other = f"{db}x"
+    with psycopg.connect(db.rsplit("/", 1)[0] + "/postgres", autocommit=True) as c:
+        c.execute(f"CREATE DATABASE {other.rsplit('/', 1)[1]}")
+    rebuild(Archive(later), other)
+    swapped = _crawl_dump(other)
+    assert [r[:10] for r in swapped[0]] == [r[:10] for r in first[0]]  # same Records, versions and tags (ids differ with the load order)
+    assert swapped[2:] == first[2:]
+
+
+def test_the_rebuild_status_file_and_pipeline_status_show_the_data_through_dates(db, tmp_path, capsys):
+    from pipeline import cli
+    from pipeline.progress import Progress, read_status
+
+    archive = _crawl_archive(tmp_path)
+    status_file = tmp_path / "rebuild-progress.json"
+    rebuild(archive, db, Progress(status_file, out=lambda line: None))
+    assert read_status(status_file)["dataThrough"] == {"AWARD_NOTICE": "2026-02-10", "CONTRACT": "2026-04-02"}  # Q1 Contracte is loaded; award notices have a hole after 10 February
+    assert cli.main(["--archive", str(archive.root), "status", "--progress-file", str(status_file)]) == 0
+    out = capsys.readouterr().out
+    assert "data through (as of this rebuild): AWARD_NOTICE 2026-02-10, CONTRACT 2026-04-02" in out
+    assert "crawl cursor: 2026-04-02" in out  # the live cursor, from the archive

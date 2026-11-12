@@ -99,9 +99,9 @@ class Progress:
         self.state["records"] += records if outcome == "loaded" else 0
         self._line(f"rebuild unit {index}/{total} kind={kind} unit={unit} files={files} rows={rows} records={records} {detail}")
 
-    def finish(self, records_in_graph: int) -> None:
+    def finish(self, records_in_graph: int, data_through: dict[str, str] | None = None) -> None:
         s = self.state
-        s.update(state="finished", records=records_in_graph, current=None)
+        s.update(state="finished", records=records_in_graph, current=None, dataThrough=data_through or {})
         took = _duration((self._now() - self._started).total_seconds())
         self._line(f"rebuild done units={s['done']} loaded={s['loaded']} skipped={s['skipped']} quarantined={s['quarantined']} records={records_in_graph} in {took}")
 
@@ -176,6 +176,8 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
         f"units: {done}/{total} done ({status.get('loaded', 0)} loaded, {status.get('skipped', 0)} skipped, {status.get('quarantined', 0)} quarantined)",
         f"records loaded so far: {status.get('records', 0)}",
     ]
+    if status.get("dataThrough"):  # per Record kind, as `sources` serves it (bulk: latest publication date; crawled kinds: the cursor too)
+        lines.append("data through (as of this rebuild): " + ", ".join(f"{k} {v}" for k, v in sorted(status["dataThrough"].items())))
     if state in ("running", "unknown") and status.get("current"):
         c = status["current"]
         lines.append(f"now: unit {c['index']}/{total} kind={c['kind']} unit={c['unit']}")
