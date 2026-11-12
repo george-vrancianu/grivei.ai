@@ -17,16 +17,20 @@ from .errors import InvalidFile
 from .values import Cell
 
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
+_NUMBER_LIKE = re.compile(r"^\s*[-+0-9.eE]*\s*$")
+MAX_FIELD_LINES = 300  # the most lines one |text| field may span (a real contract title spans 60, mostly blank)
 Header = list[str]
 Rows = Iterable[tuple[int, list[Cell]]]  # may have a close()  # (line or row number in the file, cells)
 
 
-def split_pipe_row(line: str, expected: int | None = None) -> list[str]:
+def split_pipe_row(line: str, expected: int | None = None, numeric_bare: bool = False) -> list[str]:
     """Split one DA line: `|text|` fields (which may hold commas and even `|`) and bare fields, separated by commas.
 
     A `|` followed by `,` or the end of the line closes a field, but a field may itself contain `|,` (the DA quirk), so
     when `expected` (the header's width) is known the split that gives exactly that many fields wins. Without it the
-    first complete split is taken (the header line). A bare (unwrapped) field never holds a `|`. Raises ValueError when there is none.
+    first complete split is taken (the header line). A bare (unwrapped) field never holds a `|`; with `numeric_bare` it must also
+    look like a number (digits, sign, point, exponent) or be blank, which is what the unwrapped columns of the real files are.
+    Raises ValueError when there is none.
     """
     n = len(line)
 
@@ -44,7 +48,7 @@ def split_pipe_row(line: str, expected: int | None = None) -> list[str]:
         else:
             j = line.find(",", i)
             bare = line[i : n if j == -1 else j]
-            if "|" not in bare:  # bare fields are the numeric columns: one holding a `|` is half of a |text| field
+            if "|" not in bare and (not numeric_bare or _NUMBER_LIKE.match(bare)):  # bare fields are the numeric columns: one holding a `|` is half of a |text| field
                 candidates.append((bare, n if j == -1 else j))
         for value, end in candidates:
             if end >= n:
@@ -80,18 +84,35 @@ def _read_csv(path: Path) -> tuple[Header, Rows]:
     if not content.strip():
         raise InvalidFile("empty file")
     if content.lstrip().startswith("|"):
-        lines = [ln for ln in _LINE_BREAK.split(content) if ln.strip()]  # not splitlines(): it also splits on \x0c, \x85, \u2028...
+        lines = _LINE_BREAK.split(content)  # not splitlines(): it also splits on \x0c, \x85, \u2028...
+        first = next((n for n, ln in enumerate(lines) if ln.strip()), 0)
         try:
-            header = split_pipe_row(lines[0])
+            header = split_pipe_row(lines[first])
         except ValueError as e:
             raise InvalidFile("unreadable header line", [str(e)]) from None
 
         def pipe_rows() -> Rows:
-            for number, line in enumerate(lines[1:], start=2):
-                try:
-                    yield number, list(split_pipe_row(line, len(header)))
-                except ValueError as e:
-                    raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
+            # A |text| field may hold a line break (a contract title with a newline): a line that does not split into the
+            # header's width is joined with the next ones, up to MAX_FIELD_LINES, before the file is called invalid.
+            n = first + 1
+            while n < len(lines):
+                if not lines[n].strip():
+                    n += 1
+                    continue
+                start, line, extra = n, lines[n], 0
+                n += 1
+                while True:
+                    try:
+                        # after a join the text has line breaks inside it: only a split whose unwrapped fields are numbers
+                        # is believed (else the commas in the title of a multi-line field fake extra fields)
+                        cells = list(split_pipe_row(line, len(header), numeric_bare=extra > 0))
+                        break
+                    except ValueError as e:
+                        if n < len(lines) and extra < MAX_FIELD_LINES:
+                            line, n, extra = f"{line}\n{lines[n]}", n + 1, extra + 1
+                            continue
+                        raise InvalidFile(f"line {start + 1}: {e}", [f"line {start + 1}: {e}"]) from None
+                yield start + 1, cells
 
         return header, pipe_rows()
 

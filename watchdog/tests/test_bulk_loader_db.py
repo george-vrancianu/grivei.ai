@@ -8,7 +8,7 @@ import re
 import shutil
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -129,3 +129,121 @@ def test_the_later_publication_wins_and_an_older_reupload_cannot_overwrite_it(db
     rebuild(b, db)
     with psycopg.connect(db) as c:
         assert c.execute("SELECT title FROM seap.record WHERE code='DAN1'").fetchone() == ("corrected",)
+
+
+# ---- contracts and award notices (ticket #64) ---------------------------------------------------------------------------
+
+from test_contracts_loader import H22, line22  # noqa: E402
+
+CONTRACTS = Path(__file__).parent / "fixtures" / "archive-contracts"
+
+
+def _record(url, code):
+    with psycopg.connect(url) as c:
+        return c.execute("SELECT code, title, value_bani, counted_bani, quarter, winners, source_file_id, kind, channel FROM seap.record WHERE code = %s",
+                         (code,)).fetchone()
+
+
+def test_the_contracts_fixture_loads_one_record_per_contract_and_per_award_notice(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    summary = rebuild(Archive(root), db)
+    assert (summary.records, summary.files_loaded, len(summary.quarantined)) == (12, 6, 1)
+    with psycopg.connect(db) as c:
+        assert dict(c.execute("SELECT kind, count(*) FROM seap.record GROUP BY 1").fetchall()) == {"CONTRACT": 10, "AWARD_NOTICE": 2}
+        assert c.execute("SELECT count(*) FROM seap.record WHERE code LIKE 'CAN9000099%'").fetchone() == (0,)  # the quarantined file
+        assert c.execute("SELECT channel, notice_code, contract_numbers, lot_count, concluded_by FROM seap.record WHERE code = 'CAN9000010~133'").fetchone() == (
+            "CONTRACT", "CAN9000010", ["133"], 1, "Cu acord cadru subsecvent")
+
+
+def test_a_contract_recurring_in_a_later_quarter_is_one_record_with_the_newer_version(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    rebuild(Archive(root), db)
+    code, title, value, counted, quarter, winners, file_id, kind, channel = _record(db, "CAN9000003~5")
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'CAN9000003~5'").fetchone() == (1,)
+        assert c.execute("SELECT count(*) FROM seap.search WHERE record_code = 'CAN9000003~5'").fetchone() == (1,)
+        assert c.execute("SELECT unit, row_count FROM seap.source_file WHERE id = %s", (file_id,)).fetchone() == ("2022Q2", 2)
+    # the 2022 Q2 file's version (notice published 2022-05-20): its title, value and winner, and the quarter of that publication
+    assert (title, value, counted, quarter, kind, channel) == ("Combustibil (actualizat)", 15000, 15000, "2022Q2", "CONTRACT", "CONTRACT")
+    assert winners == [{"name": "PETROL NOU SA", "cui": "2000005"}]
+
+
+def test_reloading_an_older_file_after_a_newer_one_leaves_the_newer_version(db, tmp_path):
+    # the fixture's last fetch (2023-01-10) is the 2022 Q1 file again, holding CAN9000003 / 5 as it was in March 2022 (value 999)
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    archive = Archive(root)
+    last = max((u for u in archive.units() if u.kind == "contracte" and u.unit == "2022Q1"), key=lambda u: u.fetched_at)
+    assert last.fetched_at.date().isoformat() == "2023-01-10" and "reincarcat" in last.file_path(last.files[0]).read_text()
+    rebuild(archive, db)
+    assert _record(db, "CAN9000003~5")[1:4] == ("Combustibil (actualizat)", 15000, 15000)
+    with psycopg.connect(db) as c:  # that file was loaded (it is a loaded file, not a skipped one) and changed nothing
+        assert c.execute("SELECT count(*) FROM seap.source_file WHERE unit = '2022Q1'").fetchone() == (2,)
+
+
+def test_the_result_does_not_depend_on_the_order_the_files_arrive_in(db, tmp_path):
+    t = lambda y, m, d: datetime(y, m, d, 9, tzinfo=timezone.utc)
+    old = H22 + line22(published="03/10/2022", value="999", title="old", supplier="OLD", cui="2000004")
+    new = H22 + line22(published="05/20/2022", value="150", title="new", supplier="NEW", cui="2000005")
+    dumps = []
+    for name, first, second in (("a", old, new), ("b", new, old)):
+        a = Archive(tmp_path / name)
+        _write(a, "contracte", "2022Q1", t(2022, 6, 1), first)
+        _write(a, "contracte", "2022Q2", t(2022, 9, 1), second, name="g.csv")
+        rebuild(a, db)
+        with psycopg.connect(db) as c:
+            dumps.append(c.execute("SELECT code, title, value_bani, quarter, award_date, winners FROM seap.record").fetchall())
+            assert c.execute("SELECT count(*) FROM seap.search").fetchone() == (1,)
+    assert dumps[0] == dumps[1] == [("CAN1~C1", "new", 15000, "2022Q2", date(2021, 12, 27), [{"name": "NEW", "cui": "2000005"}])]
+
+
+def test_the_same_publication_date_with_other_content_goes_to_the_later_file_and_replaces_the_whole_version(db, tmp_path):
+    t = lambda y, m, d: datetime(y, m, d, 9, tzinfo=timezone.utc)
+    a = Archive(tmp_path / "a")
+    first = H22 + line22(lot="1", value="100", supplier="ALFA") + line22(lot="2", value="100", supplier="GAMMA", cui="2000003")
+    second = H22 + line22(lot="1", value="300", supplier="BETA", cui="2000002")
+    _write(a, "contracte", "2022Q1", t(2022, 6, 1), first)
+    _write(a, "contracte", "2022Q1", t(2022, 7, 1), second, name="g.csv")
+    _write(a, "contracte", "2022Q1", t(2022, 8, 1), second, name="h.csv")  # the same bytes again: nothing to load
+    summary = rebuild(a, db)
+    assert len(summary.duplicate_files) == 1
+    assert _record(db, "CAN1~C1")[1:4] == ("t", 30000, 30000)
+    # replaced as a whole: the winners are the second file's, not a merge with the first's
+    assert _record(db, "CAN1~C1")[5] == [{"name": "BETA", "cui": "2000002"}]
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT winner_position, winners, supplier_cui, share_bani FROM seap.search ORDER BY 1").fetchall() == [(1, 1, "2000002", 30000)]
+
+
+def test_winners_are_stored_in_published_order_with_one_search_row_each(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    rebuild(Archive(root), db)
+    assert _record(db, "CAN9000002~77/2022")[5] == [{"name": "BETA CHIMIE SRL", "cui": "2000002"}, {"name": "ALFA CHIMIE SRL", "cui": "2000001"}]
+    assert _record(db, "CAN9100002")[5] == [{"name": "CENTRUL TOPMED DEMO", "cui": "6781938"}, {"name": "ASOCIEREA DEMO", "cui": "5555555"}]
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT winner_position, winners, supplier_cui, counted_bani, share_bani FROM seap.search WHERE record_code = 'CAN9000002~77/2022' ORDER BY 1").fetchall() == [
+            (1, 2, "2000002", 120025, None), (2, 2, "2000001", 120025, None)]  # an equal share of a consortium's value is the counting rule's (#65)
+
+
+def test_a_contracts_value_counts_once_when_its_lots_agree_and_sums_when_they_differ(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    rebuild(Archive(root), db)
+    assert _record(db, "CAN9000001~C-100")[2:4] == (100000, 100000)  # 3 lots of 1,000 RON (and a second winner on lot 1)
+    assert _record(db, "CAN9000002~77/2022")[2:4] == (120025, 120025)  # 500 + 700.25
+    assert _record(db, "CAN9100001")[2] == 3519212 + 28846  # an award notice: its two contracts add
+    assert _record(db, "CAN9100002")[2] == 9880000  # one contract, two winners: once
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT counted_bani FROM seap.record WHERE code = 'CAN9000020~36181'").fetchone() == (None,)  # no value in SEAP
+
+
+def test_a_second_rebuild_of_the_contracts_fixture_gives_the_same_graph(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    dump = lambda: psycopg.connect(db).execute("SELECT code, kind, title, value_bani, winners, source_file_id FROM seap.record ORDER BY code").fetchall()
+    rebuild(Archive(root), db)
+    first = dump()
+    rebuild(Archive(root), db)
+    assert dump() == first

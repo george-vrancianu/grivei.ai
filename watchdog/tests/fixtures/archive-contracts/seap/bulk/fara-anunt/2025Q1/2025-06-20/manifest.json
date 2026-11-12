@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "fara-anunt",
+  "unit": "2025Q1",
+  "fetchedAt": "2025-06-20T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/datagov_raport_anunturi-fara-anunt_t1_2025.xlsx",
+  "via": "Anunturi de atribuire la proceduri fara anunt de initiere T1 2025",
+  "files": [
+    {
+      "name": "datagov_raport_anunturi-fara-anunt_t1_2025.xlsx",
+      "sha256": "dc2b52312187c9f27b0f7e67c990ebd62a18366a3a79b53be4c98559ccdd8b08",
+      "bytes": 5698
+    }
+  ]
+}

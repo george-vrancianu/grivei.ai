@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "contracte",
+  "unit": "2021Q3",
+  "fetchedAt": "2021-12-01T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-contracte-t3.csv",
+  "via": "Contracte 2021 - T3",
+  "files": [
+    {
+      "name": "raport-contracte-t3.csv",
+      "sha256": "1057e916b0bb10c455eb350288a9f1f5c5393f8d7792a1bd5601f8403c003424",
+      "bytes": 1608
+    }
+  ]
+}
