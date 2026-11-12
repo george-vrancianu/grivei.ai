@@ -9,16 +9,17 @@ type Settled = Exclude<CoveragePageState, { status: "loading" }>;
 
 /**
  * Runs the `CoveragePage` query; other variables read as loading again and the superseded request is cancelled.
- * This is the seam for #90: the Coverage lens's compact grid asks the same operation through this hook, with `{}` (the whole grid)
- * and highlights the date chip's window with `CoverageGridCompact`'s `dateWindow` (see `highlightWindow`). A windowed `CoveragePage`
- * would hand back only the quarters inside the window, so every column would read as highlighted.
+ * The Coverage lens's compact grid asks the same operation through this hook (#90), with `{}` (the whole grid) and highlights the
+ * date chip's window with `CoverageGridCompact`'s `dateWindow` (see `highlightWindow`). A windowed `CoveragePage` would hand back
+ * only the quarters inside the window, so every column would read as highlighted. `null` = nothing is asked (the lens is not shown).
  */
-export function useCoveragePage(variables: CoveragePageVariables): CoveragePageState {
+export function useCoveragePage(variables: CoveragePageVariables | null): CoveragePageState {
   const client = useClient();
   const key = JSON.stringify(variables);
   const [settled, setSettled] = useState<{ key: string; state: Settled } | null>(null);
 
   useEffect(() => {
+    if (key === "null") return;
     const controller = new AbortController();
     client
       .query(CoveragePage, JSON.parse(key) as CoveragePageVariables, { signal: controller.signal })

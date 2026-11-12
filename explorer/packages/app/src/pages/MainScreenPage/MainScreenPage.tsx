@@ -2,14 +2,19 @@ import {
   chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
+import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
+import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
+import { highlightWindow } from "../CoveragePage/coveragePage.utils.ts";
+import { useCoveragePage } from "../CoveragePage/hooks/useCoveragePage.ts";
+import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
 import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
@@ -21,7 +26,8 @@ import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
  */
 export function MainScreenPage({ locale }: { locale: Locale }) {
   const t = useCopy();
-  const { filter, tab, lens, update, setFilter } = useUrlState();
+  const { filter, tab, lens, search: currentSearch, update, setFilter } = useUrlState();
+  const mapLens = toMapLens(lens);
   const state = useMainScreen({ filter });
   const topology = useCountyTopology();
   // A county on the authority side zooms into its UATs: a second query beside MainScreen for the same filter, and the county's own outlines.
@@ -30,6 +36,10 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const uatTopology = useUatTopology(zoomed);
   const search = state.status === "ready" ? state.data.seap.search : null;
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
+  // The Coverage lens asks only while it is shown: the date chip's window for the map, and the whole grid (highlighted by the same window) for the compact grid.
+  const coverageShown = mapLens === "coverage";
+  const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
+  const coverageGrid = useCoveragePage(coverageShown ? {} : null);
   const side: CountySide = filter.countySide ?? "AUTHORITY";
 
   return (
@@ -84,8 +94,24 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             />
           )
         ),
-        // The Coverage lens is wired by its own page (#90); until then its slot says so.
-        coverage: <Typography>{t.pages.placeholder}</Typography>,
+        coverage: (
+          <CoverageLensSection
+            lens={coverage.status === "ready" ? coverage.data : null}
+            loading={coverage.status === "loading"}
+            failed={coverage.status === "error"}
+            topology={topology}
+            cells={coverageGrid.status === "ready" ? coverageGrid.data.coverage.grid : null}
+            dateWindow={highlightWindow(filter)}
+            pageHref={`${pathFor(locale, { name: "coverage" })}${currentSearch}`}
+            onNavigate={(href) => navigate(href, "push")}
+            county={filter.county ?? undefined}
+            // The same choice as the Money lens (a click on the chosen county takes it back); a UAT belongs to its county, so it goes with it.
+            onSelect={(county) => setFilter({ county, uat: undefined })}
+            locale={locale}
+            copy={{ map: t.coverageLensMap, grid: t.coverage.grid }}
+            status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+          />
+        ),
       }}
       summary={search && <TotalSummary total={search.total} copy={{ total: t.main.total, records: t.total.records }} locale={locale} />}
       results={
@@ -109,7 +135,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           )}
         </>
       }
-      lens={toMapLens(lens)}
+      lens={mapLens}
       onLensChange={(next: MapLens) => update({ lens: next === DEFAULT_MAP_LENS ? undefined : next })}
       copy={t.mainScreenLayout}
     />

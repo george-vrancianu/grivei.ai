@@ -88,6 +88,38 @@ export const ro: Copy = {
       suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
     },
   },
+  coverageLensMap: {
+    map: { mapLabel: "Harta acoperirii pe județe", legendTitle: "Acoperire", noData: "Fără date", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
+    status: {
+      HARVESTED: "Colectat",
+      HARVESTED_WITH_KNOWN_GAPS: "Colectat, cu lacune cunoscute",
+      PARTIAL: "Parțial",
+      NOT_HARVESTED: "Necolectat",
+    },
+    noStatus: "Fără stare de acoperire",
+    marks: {
+      title: "Un semn pentru fiecare Sursă",
+      harvested: (source) => `${source}: culoarea arată starea județului`,
+      notHarvested: (source) => `${source}: necolectată`,
+      plannedLegend: (sources) => `Necolectate încă: ${sources}`,
+    },
+    tooltip: {
+      summary: (p) => {
+        const entities = `${p.withRecordsText} din ${roCount(p.publicEntities, p.publicEntitiesText, "entitate publică", "entități publice")} ${p.withRecords === 1 ? "are" : "au"} înregistrări ${p.source} începând cu ${p.since}`;
+        const k = p.otherAuthorities;
+        return k > 0 ? `${entities}, plus ${roCount(k, p.otherAuthoritiesText, "altă autoritate contractantă", "alte autorități contractante")}` : entities;
+      },
+      boughtNothingNote: "O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic.",
+    },
+    tiles: {
+      heading: "În afara hărții",
+      national: "Național",
+      unplaced: "Autorități neplasate",
+      unplacedAuthorities: (n, f) => roCount(n, f, "autoritate fără județ", "autorități fără județ"),
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+      suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+    },
+  },
   zoomedCounty: {
     map: {
       map: { mapLabel: "Harta UAT-urilor județului", legendTitle: "Valoare atribuită", noData: "Nicio autoritate nu a cumpărat", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
