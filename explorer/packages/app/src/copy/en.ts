@@ -89,8 +89,6 @@ export const en: Copy = {
     placeholder: "This page is not built yet.",
     notFound: { title: "Page not found", back: "Back to the main screen" },
     search: { title: "Search" },
-    authority: { overview: "Authority", records: "Authority: Records", relationships: "Authority: Relationships" },
-    supplier: { overview: "Supplier", records: "Supplier: Records", relationships: "Supplier: Relationships" },
     record: { title: "Record" },
     coverage: { title: "Coverage" },
     methodology: { title: "About the numbers" },
@@ -105,5 +103,31 @@ export const en: Copy = {
     noValue: (n, f) => `${f} ${plural(n, "Record with no value", "Records with no value")}`,
     frameworkCeilings: (amount) => `Framework ceilings not counted: ${amount}`,
     methodology: "How this total is counted",
+  },
+  entityPage: {
+    layout: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+    header: {
+      identity: {
+        cui: "CUI",
+        foreignVatId: "Foreign VAT ID",
+        nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
+        identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+      },
+      anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
+      placement: {
+        label: "Location",
+        national: "National",
+        unplaced: { label: "Unplaced", explanation: "Neither ANAF nor SEAP places this entity in a county." },
+        placedBy: (source) => `placed by ${source}`,
+      },
+      source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
+      roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+    },
+    notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
+    tabBody: {
+      overview: "The Overview is not built yet.",
+      records: "The Records tab is not built yet.",
+      relationships: "The Relationships tab is not built yet.",
+    },
   },
 };

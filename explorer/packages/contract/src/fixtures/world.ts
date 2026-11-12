@@ -68,6 +68,7 @@ export const cnairHeader = entityHeader(drumuriNationaleRow, {
   aliases: [{ name: "CNAIR S.A.", records: 120, first: "2021-01-05", last: "2024-11-30", differsFromAnaf: true }],
   seap: { roles: ["AUTHORITY", "SUPPLIER"] },
 });
+export const autoritateNeplasataHeader = entityHeader(autoritateNeplasataRow, { seap: { roles: ["AUTHORITY"] } });
 export const primariaBrasovHeader = entityHeader(primariaBrasovRow, { seap: { roles: ["AUTHORITY"] } });
 export const drumariiHeader = entityHeader(drumariiRow, {
   aliases: [{ name: "DRUMARII UNITI SRL", records: 9, first: "2021-04-01", last: "2022-12-15", differsFromAnaf: false }],

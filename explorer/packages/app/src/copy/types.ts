@@ -1,4 +1,6 @@
-import type { BadgeCopy, DataThroughDateCopy, EntityLinkCopy, PartyNameCopy, FilterChipsCopy, ResultTabsCopy, TotalFigureCopy } from "@grivei/ui";
+import type {
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
+} from "@grivei/ui";
 
 /**
  * The shape of the bilingual copy catalogue: every user-facing string of the app is a key here, and `en.ts` and `ro.ts`
@@ -27,8 +29,6 @@ export interface Copy {
     placeholder: string;
     notFound: { title: string; back: string };
     search: { title: string };
-    authority: { overview: string; records: string; relationships: string };
-    supplier: { overview: string; records: string; relationships: string };
     record: { title: string };
     coverage: { title: string };
     methodology: { title: string };
@@ -39,4 +39,11 @@ export interface Copy {
   party: PartyNameCopy;
   dataThrough: DataThroughDateCopy;
   total: TotalFigureCopy;
+  /** The Entity pages: the layout's tab names, the header, and what each tab's body says until its ticket fills it. */
+  entityPage: {
+    layout: EntityPageLayoutCopy;
+    header: EntityHeaderCopy;
+    notFound: { title: string; body: string };
+    tabBody: { overview: string; records: string; relationships: string };
+  };
 }
