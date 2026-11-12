@@ -30,3 +30,7 @@ ADR 0009: a natural-person supplier whose public money reaches the Naming thresh
 ## Amended 2026-11-12: natural-person supplier names are stored, not served
 
 The load now keeps a natural-person supplier's published name, linked to its Record and winner slot, in a table of its own (`withheld.natural_person_name`). Nothing serves it: not the API, not `seap.record.winners`, not `seap.search` or its full-text index. It is also never an entity. A name is shown only once the person's public money reaches the Naming threshold and ADR 0009's Go-live conditions are met; turning that on is a later, separate change. CNPs are still never stored, nor any id that holds one: digit runs are removed from the name, and only whether the published id was a CNP is kept. The database, and so its dumps and backups, now holds natural persons' names.
+
+## Amended 2026-11-13: people follow the same rule
+
+ADR 0011 carries this rule over to people. A person is confirmed only by name plus a full birth date from an official publication, never by name. The identity override file also holds person splits and merges.
