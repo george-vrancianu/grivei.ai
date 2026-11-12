@@ -48,6 +48,7 @@ const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Re
 const rolesEdgeArchive = join(watchdog, "tests/fixtures/archive-roles-edge"); // an unlinked winner, a person, a consortium framework agreement (#73)
 const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
 const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
+const splittingArchive = join(watchdog, "tests/fixtures/archive-splitting"); // the splitting rule: a trigger, a 31-day near miss, merging windows, a cap change, left-out cases (#75)
 const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
@@ -122,6 +123,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
     cpSync(signalsArchive, join(scratch, "archive-signals"), { recursive: true });
+    cpSync(splittingArchive, join(scratch, "archive-splitting"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -161,6 +163,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE roles_a");
     await admin.query("CREATE DATABASE roles_edge");
     await admin.query("CREATE DATABASE signals_a");
+    await admin.query("CREATE DATABASE splitting_a");
   });
 
   afterAll(async () => {
@@ -2054,7 +2057,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     beforeAll(() => {
       const out = rebuild(DB, "archive-signals");
-      expect(out).toContain("signals: OVER_CAP 7, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal
+      expect(out).toContain("signals: OVER_CAP 7, SPLITTING 0, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal; the splitting rule (#75) finds none here (its own fixture is archive-splitting)
     });
 
     const op = async (o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
@@ -2082,6 +2085,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(data.signalRules).toEqual([
         // direct purchases since 2022 (the 2022 Q3 file); 2 of 3 authorities with a direct purchase in 2023 had a Signal; 2024 is the data-through year
         { slug: "OVER_CAP", window: { from: "2022-01-01", to: null }, baseRate: 2 / 3, baseRateYear: 2023, dataThrough: "2024-03-20" },
+        // the splitting rule (#75) reads the same direct purchases and finds no Signal in this fixture (its own is archive-splitting)
+        { slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-03-20" },
         // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
         { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
       ]);
@@ -2330,6 +2335,129 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
       expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
+    });
+  });
+
+  describe("splitting (#75): archive-splitting -> rebuild -> Signals, reproduce, filters", () => {
+    type Repro = { authority: string | null; supplier: string | null; signal: string | null; cpv: string | null; from: string | null; to: string | null };
+    type Sig = { rule: string; date: string; firstDate: string; recordCount: number; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Repro; records?: { code: string }[] };
+    const DB = "splitting_a";
+    const S = "1000017";
+    const C = "1000009";
+    const N = "2000031";
+    const ALFA = "2000007";
+    const BETA = "2000015";
+    const GAMMA = "2000023";
+    const RON = (n: number) => String(Math.round(n * 100));
+    const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+
+    beforeAll(() => {
+      expect(rebuild(DB, "archive-splitting")).toContain("signals: OVER_CAP 2, SPLITTING 6, NO_PUBLICATION 0");
+    });
+
+    const op = async (o: { sha256: string; document: string }, variables: Record<string, unknown>) => {
+      const r = await ask(DB, o.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(o.document), r.body.data, variables)).toEqual([]);
+      return r.body.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const signals = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await op(entityOverview, { key, role, filter, signalOrder: "DATE_DESC", signalOffset: 0 })).entity.seap.role.signals as { count: number; rows: Sig[] };
+    const splits = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await signals(key, role, { signal: "SPLITTING", ...filter })).rows.filter((s) => s.rule === "SPLITTING");
+    const doc = (source: string, variableValues: Record<string, unknown> = {}) => {
+      const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${DB}`)!;
+      return graphql({ schema, source, rootValue: rootValue(postgresStore(pool, { rollup: true })), variableValues }).then((r) => {
+        expect(r.errors).toBeUndefined();
+        return r.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    };
+    const range = (s: Sig) => `${s.firstDate}..${s.date}`;
+
+    it("a trigger: two purchases each under the cap and together over it are one Signal with its numbers (#75)", async () => {
+      const spital = await splits(S, "AUTHORITY");
+      const alfa = spital.find((s) => s.suppliers[0]!.key === ALFA)!;
+      expect(alfa).toMatchObject({ rule: "SPLITTING", firstDate: "2023-01-05", date: "2023-01-20", recordCount: 2 });
+      expect(alfa.numbers).toEqual({ __typename: "SplittingNumbers", purchases: 2, sum: RON(300_000), cap: RON(270_120), cpvGroup: "301", from: "2023-01-05", to: "2023-01-20" });
+      expect(alfa.reproduce).toEqual({ authority: S, supplier: ALFA, signal: "SPLITTING", cpv: "301", from: "2023-01-05", to: "2023-01-20" });
+    });
+
+    it("a 31-day span is a near miss; 30 days is a Signal (#75)", async () => {
+      expect((await splits(S, "AUTHORITY", { supplier: BETA })).map(range)).toEqual([]); // 2023-01-05 and 2023-02-04
+      expect((await splits(C, "AUTHORITY", { supplier: BETA })).map(range)).toEqual(["2023-01-05..2023-02-03"]);
+    });
+
+    it("overlapping windows merge into one Signal; a disjoint window of the same triple is another (#75)", async () => {
+      const gamma = (await splits(S, "AUTHORITY", { supplier: GAMMA })).sort((a, b) => a.date.localeCompare(b.date));
+      expect(gamma.map(range)).toEqual(["2023-03-01..2023-04-08", "2023-08-01..2023-08-02"]);
+      expect(gamma[0]!.numbers).toMatchObject({ purchases: 3, sum: RON(450_000), cap: RON(270_120), from: "2023-03-01", to: "2023-04-08" });
+      expect(gamma[1]!.numbers).toMatchObject({ purchases: 2, sum: RON(300_000) });
+    });
+
+    it("the cap of the last purchase's date decides across 10 September 2022 (#75)", async () => {
+      const comuna = await splits(C, "AUTHORITY", { supplier: ALFA });
+      expect(comuna.map(range)).toEqual(["2022-09-01..2022-09-20"]); // 135,060 (the old cap) + 135,100 = 270,160 > the new cap
+      expect(comuna[0]!.numbers).toMatchObject({ purchases: 2, sum: RON(270_160), cap: RON(270_120) });
+      expect(await splits(C, "AUTHORITY", { supplier: GAMMA })).toEqual([]); // 200,000: over the old cap, not the new one
+    });
+
+    it("exempt, suspect, over-cap, person and split-CPV purchases make no Signal; works use the works cap (#75)", async () => {
+      const n = await splits(N, "AUTHORITY");
+      expect(n.map((s) => `${s.suppliers[0]!.key} ${range(s)} ${(s.numbers as { cap: string }).cap}`)).toEqual([`${ALFA} 2023-09-01..2023-09-10 ${RON(900_400)}`]);
+      // the over-cap one is the over-cap rule's: it is in no splitting Signal (the reproduce test below checks no over-cap Record sits in a range)
+      const all = (await signals(N, "AUTHORITY")).rows.map((s) => s.rule).sort();
+      expect(all).toEqual(["OVER_CAP", "SPLITTING"]);
+    });
+
+    it("a Signal is on its authority's and its supplier's page; the filters and the facet count it (#75)", async () => {
+      expect((await splits(ALFA, "SUPPLIER")).map((s) => `${s.reproduce.authority} ${range(s)}`).sort()).toEqual([`${C} 2022-09-01..2022-09-20`, `${S} 2023-01-05..2023-01-20`, `${N} 2023-09-01..2023-09-10`]);
+      expect((await splits(BETA, "SUPPLIER")).map((s) => s.reproduce.authority)).toEqual([C]);
+      const total = async (f: Record<string, unknown>) =>
+        (await doc(`query($f: RecordFilter!) { seap { search(filter: $f) { total { records } } } }`, { f })).seap.search.total.records as number;
+      expect(await total({ signal: "SPLITTING" })).toBe(13); // 2 + 2 + 3 + 2 + 2 + 2 Records
+      expect(await total({ signal: "OVER_CAP" })).toBe(2);
+      // the facet on an entity's Records tab counts its Records per rule: CNAIR has one over-cap purchase and the two works purchases of a splitting Signal
+      const tab = (await op(entityRecords, { key: N, role: "AUTHORITY", filter: {}, limit: 5, offset: 0 })).entity.seap.role.records as { facets: { signal: { value: string; total: { records: number } }[] } };
+      expect(Object.fromEntries(tab.facets.signal.map((f) => [f.value, f.total.records]))).toEqual({ OVER_CAP: 1, SPLITTING: 2 });
+    });
+
+    it("running a Signal's reproduce filter returns exactly its Records, for every splitting Signal (#75)", async () => {
+      const q = `query($k: ID!, $role: Role!) { entity(key: $k) { seap { role(role: $role) { signals(limit: 200) { rows { rule date reproduce { authority supplier signal cpv from to }
+          records(limit: 200) { code } } } } } } }`;
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
+      const seen = new Set<string>();
+      for (const [k, role] of [[S, "AUTHORITY"], [C, "AUTHORITY"], [N, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [GAMMA, "SUPPLIER"]] as const) {
+        const { entity } = await doc(q, { k, role });
+        for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
+          const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+          const found = (await doc(search, { f: filter })).seap.search.records;
+          expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
+          expect(found.count).toBe(s.records.length);
+          if (s.rule === "SPLITTING") seen.add(JSON.stringify(s.reproduce));
+        }
+      }
+      expect(seen.size).toBe(6); // trigger, window edge, merged, second window, cap change, works
+      // the 300,000 purchase inside the trigger's range is over-cap's: the splitting filter does not return it
+      const ranged = (await doc(search, { f: { authority: S, supplier: ALFA, signal: "SPLITTING", cpv: "301", from: "2023-01-05", to: "2023-01-20" } })).seap.search.records;
+      expect(ranged.rows.map((r: { record: { code: string } }) => r.record.code).sort()).toEqual(["DA97000001", "DA97000002"]);
+      const inRange = (await doc(search, { f: { authority: S, supplier: ALFA, cpv: "301", from: "2023-01-05", to: "2023-01-20" } })).seap.search.records;
+      expect(inRange.count).toBe(3);
+    });
+
+    it("the record page lists the splitting Signal with its numbers; a left-out purchase lists none (#75)", async () => {
+      const page = async (code: string) => (await op(recordPage, { code })).seap.record;
+      const r = await page("DA97000005");
+      expect(r.signals.map((s: Sig) => s.rule)).toEqual(["SPLITTING"]);
+      expect(r.signals[0].numbers).toMatchObject({ __typename: "SplittingNumbers", purchases: 3 });
+      expect(r.signals[0].records.map((x: { code: string }) => x.code).sort()).toEqual(["DA97000005", "DA97000006", "DA97000007"]);
+      expect((await page("DA97000010")).signals.map((s: Sig) => s.rule)).toEqual(["OVER_CAP"]);
+      for (const code of ["DA97000003", "DA97000004", "DA97100003", "DA97200003", "DA97200005", "DA97200008", "DA97200010", "DA97300003"]) expect((await page(code)).signals, code).toEqual([]);
+    });
+
+    it("signalRules: the window starts with the first direct purchases, base rate from the latest complete year (2022: the commune bought and split) (#75)", async () => {
+      const data = await op(methodology, {});
+      const rule = (data.signalRules as { slug: string; window: { from: string; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).find((r) => r.slug === "SPLITTING");
+      expect(rule).toEqual({ slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 1, baseRateYear: 2022, dataThrough: "2023-09-10" });
     });
   });
 
