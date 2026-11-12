@@ -69,7 +69,7 @@ export interface CacheOptions {
    * costed at twice its JSON length (the heap holds the objects and their strings, UTF-16 and with headers, at roughly that
    * ratio): a Records page of 50 rows is ~20 KB of JSON, so ~40 KB costed, and 300 MB holds ~7,500 such pages or many more
    * of the smaller totals and entity pages. That leaves about 800 MB of heap for the pool, GraphQL and the requests, and still
-   * holds the whole national warm (about 1,400 prefixes x 4 entries, ~5,600 entries). Configurable through
+   * holds the whole national warm (about 1,400 prefixes x 5 entries, ~7,000 entries). Configurable through
    * `API_CACHE_MAX_MB` in `main.ts`.
    */
   maxBytes?: number;
@@ -147,6 +147,8 @@ export function cachedStore(
     return g;
   }
 
+  let countiesMemo: { generation: string; rows: Awaited<ReturnType<Store["counties"]>> } | null = null;
+
   async function cached<T>(key: string, run: () => Promise<T>): Promise<T> {
     const g = await sync(false);
     const hit = g !== null ? entries.get(key) : undefined;
@@ -191,11 +193,13 @@ export function cachedStore(
         try {
           // in sequence: each statement takes a pooled connection, and the pool is shared with the requests
           await store.searchTotal(f);
+          await store.searchMap("AUTHORITY", f); // the Money lens, the default side (#71)
+          await store.searchMap("SUPPLIER", f); // and the other side, so the first toggle is not a cold scan
           await store.searchEntities("AUTHORITY", f, PAGE);
           await store.searchEntities("SUPPLIER", f, PAGE);
           await (f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }));
           if (f.q) await store.goTo(foldTokens(f.q).join(" ")); // the Go-to lookup of the same folded query
-          statements += f.q ? 5 : 4;
+          statements += f.q ? 7 : 6;
         } catch (e) {
           failed++;
           log(`cache warming of ${JSON.stringify(f)} failed: ${(e as Error).message}`);
@@ -225,6 +229,16 @@ export function cachedStore(
     searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, () => inner.searchRecords(filter, p, options)),
     // the Go-to entity depends on the folded query alone (chips never restrict it), so the key is the folded text
     goTo: (qFolded, options) => cached(`goto|${qFolded}`, () => inner.goTo(qFolded, options)),
+    searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, () => inner.searchMap(side, filter, options)),
+    // the county list is tiny and only changes with a load: kept per generation, outside the LRU and the hit/miss counts
+    counties: async () => {
+      const g = await sync(false);
+      if (g !== null && countiesMemo?.generation === g) return countiesMemo.rows;
+      const rows = await inner.counties();
+      if (g !== null && g === generation) countiesMemo = { generation: g, rows };
+      return rows;
+    },
+    searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };
   return store;

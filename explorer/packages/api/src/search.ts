@@ -82,14 +82,13 @@ export function buildWhere(filter: SearchFilter): Where {
   if (filter.hasSignals != null) add(`has_signals = ${bind(filter.hasSignals)}`);
   if (filter.signal) throw notServed("the Signal filter");
   if (filter.county) {
-    if (filter.county === "NATIONAL" || filter.county === "UNPLACED") throw notServed(`the ${filter.county} area (it needs placement)`);
-    if (filter.county === "UNKNOWN_SUPPLIER_COUNTY") {
-      winnerSide = true;
-      add("supplier_county IS NULL");
-    } else if (filter.countySide === "SUPPLIER") {
-      winnerSide = true;
-      add(`supplier_county = ${bind(filter.county)}`);
-    } else add(`authority_county = ${bind(filter.county)}`);
+    // A county, or an off-map tile of the Money lens (#71). The area columns are never null: the county code, or NATIONAL / UNPLACED
+    // (authority side) / UNKNOWN_SUPPLIER_COUNTY (supplier side). An area that belongs to the other side of the lens matches nothing:
+    // a stale URL is an empty set, not an error (the column is compared to a value it never holds).
+    const supplierSide = filter.countySide === "SUPPLIER";
+    // supplier side: any winner in the area keeps the Record (a row per winner, so the Record can match on several rows)
+    if (supplierSide) winnerSide = true;
+    add(`${supplierSide ? "supplier_area" : "authority_area"} = ${bind(filter.county)}`);
   }
   // `id @@@ pdb.all()` is the "no text" predicate the index needs to push an aggregate down
   if (!tokens.length) preds.unshift("id @@@ pdb.all()");

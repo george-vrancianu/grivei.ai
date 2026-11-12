@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "lookup",
+  "kind": "authority-notice",
+  "unit": "51000501",
+  "fetchedAt": "2026-11-06T09:00:00Z",
+  "url": null,
+  "via": null,
+  "files": [
+    {
+      "name": "notice.json",
+      "sha256": "df129a174296f30fde0ca2b6732146daec2cf4c731e5f0630bb19c9e2a32e2a9",
+      "bytes": 355
+    },
+    {
+      "name": "request.json",
+      "sha256": "a2982996532a94ba4a50c286731250990075b520ed74fda149cf2fa5050d7eda",
+      "bytes": 77
+    }
+  ]
+}
