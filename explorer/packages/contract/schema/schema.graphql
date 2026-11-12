@@ -603,6 +603,8 @@ type GapCell {
   "The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated."
   note: String
   records: Int!
+  "Of `records`, the crawl-only ones: crawled or backfilled Records that the bulk file of their quarter does not hold (or that have no bulk file of their kind)."
+  crawlOnly: Int!
   dataThrough: Date
 }
 

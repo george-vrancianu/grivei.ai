@@ -3,7 +3,8 @@
 A winner's tax id as published (`RO 1112975`, `IT08069460015`, `1003600118796`, ...) is classified by `classify_tax_id`:
 
 - `cui`:         a Romanian CUI that passes the check digit (`RO`, whitespace, punctuation, leading zeros stripped);
-- `cnp`:         13 digits (also Excel's `1.73E+12`, or 13 digits among text). A person's national id: never stored, never shown (the winner is a natural-person supplier);
+- `cnp`:         13 digits (also Excel's `1.73E+12`, or 13 digits among text). A person's national id: never stored, never shown (the winner is a
+                 natural-person supplier; only the fact that a CNP was published is kept, `Resolved.had_cnp`);
 - `foreign_vat`: a VAT id with a known EU country prefix (`BG103029862`, `ATU18379608`): name-only supplier keyed `vat-<id>`;
 - `other`:       anything else (a number that fails the check digit, 11-12 digits, `-`): the name decides.
 
@@ -107,16 +108,62 @@ _ORG_WORDS = frozenset(
     engineering electronics elektronik publishing services service systems solutions software university journal hotel
     media consulting consultancy association network trans avocati avocat avocatura""".split()
 )
+# Words of company names (Romanian ones published without a legal form, foreign industry words) that the person-shape rule also
+# reads as an organisation. Not used against a truncated CNP: that rule keeps `_ORG_WORDS` alone until #66 decides the 12-digit ids.
+_COMPANY_WORDS = frozenset(
+    """construct constructii constructia impex prodcom comimpex com prod serv servicii invest instal instalatii tehnic tehnica
+    exim comert distributie farmacia farmacie medical pharma farma agro auto logistic logistica proiect proiectare expert
+    turism travel tour tours energy energie electric electro petrol gaz metal hidro termo soft tech data info net clinica
+    laborator dental optica print tipografia mobila studio market magazin shop store office computers computer""".split()
+    # foreign industry words: a two-word foreign company name rarely carries a legal form in SEAP's supplier column
+    + """technologies technology technik technique techniques tecnologie tecnologia tecnologias industries industry industrie
+    industria industrial manufacturing construction constructions costruzioni construcciones bau impianti ingenieria
+    ingegneria engineers medizintechnik elektro elektrotechnik pharmaceuticals pharmaceutical laboratories laboratory labs lab
+    diagnostics diagnostic healthcare scientific instruments equipment machinery maschinenbau chemicals chemical security
+    defence defense aerospace aviation automation automotive telecom telecommunications logistics shipping energia
+    products produkte prodotti supply supplies partners enterprises ventures sistemi sistemas servicios servizi
+    insaat sanayi ticaret""".split()
+)
+# a word ending in one of these is a company's coined name (`ALFAPROD`, `BETACONSTRUCT`, `GAMATRANS`): never a person's name
+_ORG_SUFFIXES = ("impex", "prodcom", "construct", "trans", "serv", "invest", "instal", "soft", "tech", "exim", "prod", "grup")
+_MIN_GUARD_WORD = 3  # the word-overlap guard ignores initials and particles (`A`, `DE`, `SI`): they say nothing about a rename
 _SOLE_TRADER_FORMS = frozenset("pfa ii if".split())  # a sole trader published with a truncated CNP is still an individual
 _MAX_ASKED_DIGITS = 8  # as in anaf.py: a longer number is never confirmed by ANAF
 _TRUNCATED_CNP = re.compile(r"[1-8]\d{11}")
 _ID_CARD = re.compile(r"\d{6}|[A-Z]{2}\d{6}")
 
 
+def _organisation_word(word: str) -> bool:
+    """An organisation word (`ASOCIATIA`, `PRIMARIA`, `CONSTRUCT`, `TECHNOLOGIES` ...) or a coined company word (`ALFAPROD`): a
+    whole word of `_ORG_WORDS` or `_COMPANY_WORDS`, or a longer word ending in one of `_ORG_SUFFIXES` (the stem at least 2 letters). Legal forms apart."""
+    return word in _ORG_WORDS or word in _COMPANY_WORDS or any(word.endswith(sfx) and len(word) >= len(sfx) + 2 for sfx in _ORG_SUFFIXES)
+
+
 def _shaped_like_a_person(spelling: str) -> bool:
-    """2 to 5 alphabetic words, none a legal form or an organisation word (`PFA`, `ASOCIATIA`, `PRIMARIA` ...)."""
+    """2 to 5 alphabetic words, none a legal form or an organisation word (`PFA`, `ASOCIATIA`, `PRIMARIA`, `IMPEX`, `ALFAPROD` ...)."""
     words = name_key_text(spelling).split()
-    return 2 <= len(words) <= 5 and all(w.isalpha() and w not in _LEGAL_FORMS and w not in _ORG_WORDS for w in words)
+    return 2 <= len(words) <= 5 and all(w.isalpha() and w not in _LEGAL_FORMS and not _organisation_word(w) for w in words)
+
+
+def shares_a_word(spelling: str, anaf_name: str) -> bool:
+    """The word-overlap guard of a 6-digit id ANAF knows (`Resolver.supplier`): SEAP's spelling and ANAF's name (both `compare_name`d)
+    share a word of at least `_MIN_GUARD_WORD` letters, so the spelling is the company renamed or abbreviated (`MONETARIA EXEMPLU` under
+    `COMPANIA NATIONALA MONETARIA EXEMPLU`), not a person whose ID card number happens to be a CUI. Initials and short particles
+    (`A`, `DE`, `SI`) are ignored: a person `ION A` must not pass as the company `A & B DISTRIBUTIE` because both hold an `A`."""
+    def words(name: str) -> set[str]:
+        return {w for w in name.split() if len(w) >= _MIN_GUARD_WORD}
+    return bool(words(compare_name(spelling)) & words(anaf_name))
+
+
+_ID_RUN = re.compile(r"\d(?:[\s./-]*\d){5,}|\d(?:[.,]\d+)?E\+?\d+", re.IGNORECASE)
+
+
+def withheld_name(name: str | None) -> str | None:
+    """A natural person's published name as `withheld.natural_person_name` keeps it: every run of six or more digits (a CNP, a
+    truncated CNP, an ID card number, also spaced or dotted) and every number in scientific notation removed, blanks collapsed.
+    None when nothing is left. The CNP itself is never kept, even when SEAP published it inside the name."""
+    text = " ".join(_ID_RUN.sub(" ", name or "").split())
+    return text or None
 
 
 def compare_name(name: str) -> str:
@@ -146,7 +193,9 @@ def vat_key(vat_id: str) -> str:
 
 @dataclass(frozen=True)
 class Resolved:
-    """One winner on one Record, resolved. A natural person has no key, no name and no id: nothing of it is stored."""
+    """One winner on one Record, resolved. A natural person has no key, no entity and no id: nothing of it reaches the graph the API
+    reads. Its published name is kept apart, withheld (`withheld.natural_person_name`, ADR 0003 as amended 2026-11-12), with `had_cnp`
+    saying whether the published id was a CNP; the CNP itself is never kept."""
 
     key: str | None
     identity: Literal["CUI", "NAME_ONLY"] | None
@@ -156,9 +205,11 @@ class Resolved:
     curated: bool = False
     cui_mismatch: bool = False
     differs_from_anaf: bool = False
+    had_cnp: bool = False  # a natural person published with a CNP (the CNP is never kept)
 
 
 NATURAL_PERSON = Resolved(key=None, identity=None, natural_person=True)
+NATURAL_PERSON_WITH_CNP = Resolved(key=None, identity=None, natural_person=True, had_cnp=True)
 
 
 def resolve_authority(raw_cui: str | None, name: str) -> Resolved:
@@ -263,7 +314,7 @@ def _is_person(spelling: str, raw_id: str | None, kind: str, unusable_cui: bool 
         kind = "other"
     if kind in ("none", "other") and _TRUNCATED_CNP.fullmatch(s):
         words = set(name_key_text(spelling).split())
-        return not (words & (_LEGAL_FORMS | _ORG_WORDS) - _SOLE_TRADER_FORMS)
+        return not (words & (_LEGAL_FORMS | _ORG_WORDS) - _SOLE_TRADER_FORMS)  # unchanged until #66 decides (not the wider company words)
     if not _shaped_like_a_person(spelling):
         return False
     return kind in ("none", "other") or (kind == "cui" and _ID_CARD.fullmatch(s) is not None)
@@ -279,7 +330,7 @@ class Resolver:
     def supplier(self, name: str | None, raw_id: str | None, authority_raw_cui: str | None = None) -> Resolved:
         tax = classify_tax_id(raw_id)
         if tax.kind == "cnp":
-            return NATURAL_PERSON  # before anything else: nothing about a person is looked at, kept or matched
+            return NATURAL_PERSON_WITH_CNP  # before anything else: the id is neither matched nor kept
         spelling = (name or "").strip()
         published = tax.value if tax.kind in ("cui", "foreign_vat") else (_loose_id(raw_id) if raw_id and tax.kind == "other" else None)
         if published and (o := self.overrides.by_id.get(published)):
@@ -294,7 +345,7 @@ class Resolver:
                     differs
                     and len(tax.value) == 6
                     and _shaped_like_a_person(spelling)
-                    and not set(compare_name(spelling).split()) & set(anaf_name.split())  # a renamed company shares a word
+                    and not shares_a_word(spelling, anaf_name)  # a renamed company shares a word
                 ):
                     return NATURAL_PERSON  # an ID card number ANAF happens to know, under a person's name: never named
                 return Resolved(key=tax.value, identity="CUI", cui=tax.value, differs_from_anaf=differs)

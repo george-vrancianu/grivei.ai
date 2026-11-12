@@ -3,3 +3,4 @@
 # CONTRACT, AWARD_NOTICE), reason. A line starting with # is a comment. A gap here overrides whatever the rebuild computes for the cell.
 quarter,kind,reason
 2025-Q2,DAN,"Fișierul data.gov.ro pentru notificările de atribuire directă din trimestrul 2 din 2025 a fost încărcat greșit (alt conținut decât cel anunțat) și a rămas gol; raportat la sursă."
+2022-Q2,DA,"Fișierul data.gov.ro cu achizițiile directe din trimestrul 2 din 2022 se oprește la achizițiile publicate până la 31 mai 2022: de la linia 415944 conține un export de contracte lipit în el. Achizițiile directe publicate în iunie 2022 lipsesc din fișier."

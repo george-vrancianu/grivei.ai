@@ -527,10 +527,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   // ---- supplier identity (#66, ADR 0003) ----------------------------------------------------------------------------------
 
   const CNPS = ["1990101123456", "2950202123456", "199010112", "295020212"]; // the fixture's invented CNPs, whole and in part
-  const PEOPLE = ["POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV"];
+  const PEOPLE = ["POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV", "POPESCU Y FICTIV"]; // invented
   const IDENTITY_CODES = [
     "DA93000001", "DA93000002", "DA93000003", "DA93000004", "DA93000005", "DA93000006", "DA93000007", "DA93000008", "DA93000009", "DA93000010",
-    "DA93000011", "DA93000012", "DA93000013", "DA93000014", "DA93000015", "DA93000016", "DA93000017", "DA93000018", "CAN9700001~C-1",
+    "DA93000011", "DA93000012", "DA93000013", "DA93000014", "DA93000015", "DA93000016", "DA93000017", "DA93000018", "DA93000019", "CAN9700001~C-1",
   ];
   const identityRecord = async (db: string, code: string) => {
     const variables = { code };
@@ -549,7 +549,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
   it("resolves every identity case through the persisted RecordPage operation (#66)", async () => {
     const out = rebuild("identity_a", "archive-identity", ["--identity-overrides", identityOverrides]);
-    expect(out).toContain("loaded 19 records from 2 file(s)");
+    expect(out).toContain("loaded 20 records from 2 file(s)");
     expect(out).toContain("anaf: 8 CUIs found, 2 not found");
 
     const winner = async (code: string, i = 0) => (await identityRecord("identity_a", code)).winners[i]!;
@@ -573,6 +573,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // a supplier CUI equal to the authority's: unresolved, with the CUI mismatch badge
     expect((await winner("DA93000009")).entity).toMatchObject({ key: "name-primaria-comuna-exemplu", identity: "NAME_ONLY" });
     expect((await identityRecord("identity_a", "DA93000009")).badges).toEqual(["CUI_MISMATCH"]);
+    // a person paid under the authority's own CUI: a natural person, unnamed, and the Record keeps the CUI mismatch badge
+    const mismatched = await identityRecord("identity_a", "DA93000019");
+    expect(mismatched.winners).toEqual([{ naturalPerson: true, publishedName: null, share: null, entity: null }]);
+    expect(mismatched.badges).toEqual(["CUI_MISMATCH"]);
     // the override file: a pinned key, and a wrong CUI mapped to the entity it really is; both Records say so
     expect((await winner("DA93000012")).entity).toEqual({ key: "consortium-podul-exemplu", displayName: "Asocierea pentru Podul Exemplu", identity: "NAME_ONLY" });
     expect((await identityRecord("identity_a", "DA93000012")).badges).toEqual(["IDENTITY_CURATED"]);
@@ -622,17 +626,32 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect((await identityRecord("identity_a", "DA93000015")).winners[0]!.entity!.key).toBe("2000082");
   });
 
-  it("never serves a CNP or a natural person's name in any response (#66)", async () => {
+  it("never serves a CNP or a natural person's name in any response, though the names are stored withheld (#66, ADR 0003 amended 2026-11-12)", async () => {
+    // the names are in the database (so the scan below is meaningful), only in the withheld schema the API never reads
+    const db = new pg.Pool({ connectionString: `${baseUrl}/identity_a`, max: 1 });
+    pools.push(db);
+    const withheld = (await db.query<{ name: string }>("SELECT name FROM withheld.natural_person_name ORDER BY name")).rows.map((r) => r.name);
+    expect(withheld).toEqual(["IONESCU MARIA FICTIV", "POPESCU ION FICTIV", "POPESCU X FICTIV", "POPESCU Y FICTIV"]);
     const keys = ["1000009", "1000017", "2000007", "2000023", "2000031", "2000066", "2000074", "2000082", "vat-bg103029862", "consortium-podul-exemplu",
       "name-furnizor-necunoscut-srl", "name-cifra-gresita-srl", "name-servicii-fara-cui-srl", "name-primaria-comuna-exemplu"];
     const responses: unknown[] = [await ask("identity_a", mainScreen.sha256)];
     for (const code of IDENTITY_CODES) responses.push(await ask("identity_a", recordPage.sha256, { code }));
     for (const key of keys) for (const role of ["AUTHORITY", "SUPPLIER"] as const) responses.push(await ask("identity_a", entityOverview.sha256, { key, role }));
+    // a search for the people's own names, and the authorities that paid them (Records, counterparties, relationships)
+    for (const q of ["POPESCU", "IONESCU MARIA", "FICTIV", "popescu y fictiv"]) {
+      responses.push(await ask("identity_a", mainScreen.sha256, { filter: { q } }));
+      responses.push(await ask("identity_a", fullSuppliers.sha256, { filter: { q }, limit: 50, offset: 0 }));
+    }
+    for (const key of ["1000009", "1000017"]) {
+      responses.push(await ask("identity_a", entityRecords.sha256, { key, role: "AUTHORITY", filter: {}, limit: 50, offset: 0 }));
+      responses.push(await ask("identity_a", entityRelationships.sha256, { key, role: "AUTHORITY", filter: {} }));
+    }
+    for (const r of responses) expect((r as { body: { errors?: unknown } }).body.errors).toBeUndefined();
     const text = JSON.stringify(responses);
     expect(text.length).toBeGreaterThan(5000); // the scan has something to scan
     for (const needle of [...CNPS, ...PEOPLE]) expect(text).not.toContain(needle);
     // and the person is not reachable by a made-up key either
-    for (const key of ["name-popescu-ion-fictiv", "name-popescu-x-fictiv", "1990101123456", "name-ionescu-maria-fictiv"]) expect(await entityPage("identity_a", key)).toBeNull();
+    for (const key of ["name-popescu-ion-fictiv", "name-popescu-x-fictiv", "name-popescu-y-fictiv", "1990101123456", "name-ionescu-maria-fictiv"]) expect(await entityPage("identity_a", key)).toBeNull();
   });
 
   it("gives identical responses after a second rebuild of the identity archive into a fresh database (#66, ADR 0004)", async () => {

@@ -172,7 +172,7 @@ export type CoveragePageQueryVariables = Exact<{
 }>;
 
 
-export type CoveragePageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { referenceSnapshot: string | null, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, rule: GapRule | null, note: string | null, records: number, dataThrough: string | null }>, unplacedAuthorities: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } } };
+export type CoveragePageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { referenceSnapshot: string | null, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, rule: GapRule | null, note: string | null, records: number, crawlOnly: number, dataThrough: string | null }>, unplacedAuthorities: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } } };
 
 export type EntityOverviewQueryVariables = Exact<{
   key: string | number;

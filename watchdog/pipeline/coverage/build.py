@@ -44,8 +44,10 @@ def backfilled_quarters(archive: Archive) -> set[Quarter]:
 
 
 def read_facts(cur: psycopg.Cursor) -> dict[tuple[str, Quarter], CellFacts]:
-    cur.execute("SELECT kind, quarter, count(*), count(*) FILTER (WHERE via = 'CRAWL'), max(published_on), count(*) FILTER (WHERE crawl_status = 'PROVISIONAL') FROM seap.record GROUP BY kind, quarter")
-    return {(kind, parse_quarter(quarter)): CellFacts(records, crawled, latest, provisional) for kind, quarter, records, crawled, latest, provisional in cur.fetchall()}
+    cur.execute("SELECT kind, quarter, count(*), count(*) FILTER (WHERE via = 'CRAWL'), max(published_on), count(*) FILTER (WHERE crawl_status = 'PROVISIONAL'), "
+                "count(*) FILTER (WHERE crawl_status = 'CRAWL_ONLY') FROM seap.record GROUP BY kind, quarter")
+    return {(kind, parse_quarter(quarter)): CellFacts(records, crawled, latest, provisional, crawl_only)
+            for kind, quarter, records, crawled, latest, provisional, crawl_only in cur.fetchall()}
 
 
 def gather(cur: psycopg.Cursor, archive: Archive, today: date, bulk_rows: dict[tuple[str, Quarter], int], known_gaps_path: Path | str | None = None) -> Inputs:
@@ -65,8 +67,8 @@ def gather(cur: psycopg.Cursor, archive: Archive, today: date, bulk_rows: dict[t
 
 def store(cur: psycopg.Cursor, cells: list[Cell]) -> None:
     cur.executemany(
-        "INSERT INTO seap.coverage_cell (quarter, kind, state, rule, note, records, data_through) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        [(c.quarter, c.kind, c.state, c.rule, c.note, c.records, c.data_through) for c in cells],
+        "INSERT INTO seap.coverage_cell (quarter, kind, state, rule, note, records, data_through, crawl_only) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        [(c.quarter, c.kind, c.state, c.rule, c.note, c.records, c.data_through, c.crawl_only) for c in cells],
     )
 
 

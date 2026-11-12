@@ -15,7 +15,8 @@ CREATE TABLE seap.source_file (
     url         text,
     fetched_at  timestamptz NOT NULL,     -- from the archive manifest
     row_count   integer NOT NULL,
-    stream      text NOT NULL DEFAULT 'bulk'  -- 'bulk' (a published file) | 'crawl' (a crawled day, #77; `unit` is the day, via and url are null) | 'backfill' (a backfilled week, #78; `unit` is its first day)
+    stream      text NOT NULL DEFAULT 'bulk', -- 'bulk' (a published file) | 'crawl' (a crawled day, #77; `unit` is the day, via and url are null) | 'backfill' (a backfilled week, #78; `unit` is its first day)
+    load_notes  text[] NOT NULL DEFAULT '{}'  -- what the load left out of the file, e.g. `set_aside:CONTRACT:from_line_415944:87912_rows` (a file that switches kind partway)
 );
 
 -- The Record. DA and DAN identity = the public code; a CONTRACT is `<award notice code>~<contract number>` (e.g.
@@ -100,6 +101,7 @@ CREATE TABLE seap.coverage_cell (
     note          text,
     records       integer NOT NULL,
     data_through  date,
+    crawl_only    integer NOT NULL DEFAULT 0,  -- of `records`, the crawl-only ones: crawled or backfilled, not in the bulk file of their quarter (#60/#90)
     PRIMARY KEY (quarter, kind)
 );
 

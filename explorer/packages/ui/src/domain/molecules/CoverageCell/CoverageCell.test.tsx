@@ -4,7 +4,7 @@ import { sampleCopy } from "../../samples/copy.ts";
 import type { GapCellData } from "../../types.ts";
 import { CoverageCell } from "./index.ts";
 
-const cell: GapCellData = { quarter: "2024-Q4", kind: "CONTRACT", state: "POSSIBLY_INCOMPLETE", rule: "COUNT_BELOW_NEIGHBOURS", note: null, records: 18_400, dataThrough: null };
+const cell: GapCellData = { quarter: "2024-Q4", kind: "CONTRACT", state: "POSSIBLY_INCOMPLETE", rule: "COUNT_BELOW_NEIGHBOURS", note: null, records: 18_400, crawlOnly: 0, dataThrough: null };
 const show = (props: Partial<Parameters<typeof CoverageCell>[0]> = {}) =>
   render(
     <table>

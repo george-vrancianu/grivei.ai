@@ -19,7 +19,7 @@ class FileResult:
     unit: str
     path: str  # relative to the archive root
     ok: bool
-    reason: str | None = None
+    reason: str | None = None  # why it failed; on a pass, what was set aside (a file that switches kind partway)
     problems: tuple[str, ...] = ()
     rows: int = 0
     records: int = 0
@@ -56,7 +56,9 @@ def validate_archive(archive: Archive, kinds: Iterable[str] | None = None, match
             except Exception as e:  # an unforeseen reader error is a failure of that file, not of the run
                 add(FileResult(unit.kind, unit.unit, relative(path), False, f"{type(e).__name__}: {e}"))
             else:
-                add(FileResult(unit.kind, unit.unit, relative(path), True, rows=parsed.rows, records=len(parsed.records)))
+                aside = parsed.set_aside  # a file that switches kind partway passes: its own rows load, the tail is set aside
+                note = f"set aside from line {aside.line}: a {aside.kind} export, {aside.rows} rows not loaded" if aside else None
+                add(FileResult(unit.kind, unit.unit, relative(path), True, note, rows=parsed.rows, records=len(parsed.records)))
     return results
 
 

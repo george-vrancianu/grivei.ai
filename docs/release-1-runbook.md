@@ -88,7 +88,9 @@ docker run --rm -v ~/grivei-data/raw:/archive:ro -v "$PWD/watchdog":/app:ro pyth
 
 It prints `PASS` or `FAIL <kind>/<quarter>` per file (with the reason) and `N passed, M failed of T file(s) (da a/b, ...)`, and exits 1 on any failure. The image name is Compose's (`docker compose --profile pipeline config --images`).
 Expected: about 15 minutes for 4.7 GB (use `--kind` to split it), one file in memory at a time (xls files whole: up to a few hundred MB). Resume: it changes nothing, rerun.
-**Expected result on the real archive: 72 of 73 passed.** The one FAIL is the DA 2022 Q2 file: it mixes a pasted Contracte export and is rejected for that stated reason; it stays quarantined (note it in the closing comment). Fix, or accept in writing, every other FAIL before step 6.
+**Expected result on the real archive: 73 of 73 passed.** The DA 2022 Q2 file passes with a note: it switches to a pasted Contracte export at line 415944, so its DA rows (published up to 31 May 2022) load and the 87,912 Contracte rows after that line are set aside, never loaded (`PASS da/2022Q2 ...; set aside from line 415944: a CONTRACT export, 87912 rows not loaded`). June 2022's direct purchases are missing from the file: `pipeline/coverage/known_gaps.csv` enters DA 2022 Q2 as a known gap with that reason. Fix, or accept in writing, every FAIL before step 6.
+
+**If DA 2022 Q2 is already in quarantine** (a seed or load ran before this rule; `reason.json` says `a CONTRACT header in the middle of a DA file`), bring it back once, with nothing else running (`requeue` does not take the lock), then load: `$P requeue --match da/2022Q2` (it prints `requeued 1 unit(s)`), then the next load (`$P load-quarter 2022Q2`, which requeues and rebuilds in one go under the lock, or the next nightly `refresh`: a requeue changes the archive fingerprint, so its load step is due). The rebuild summary then says `set aside, not loaded: ... from line 415944 a CONTRACT export (87912 rows) ...; its cell is a known gap`, and `seap.source_file.load_notes` keeps `set_aside:CONTRACT:from_line_415944:87912_rows`.
 
 ### 5. (Optional, before the seed) crawl the quarters the bulk has not reached
 
@@ -123,8 +125,8 @@ up to 8 CPUs. It is one transaction: not resumable, a kill rolls back and the li
 `tail -n 2 ~/grivei-data/seed.log` (one line per unit: `rebuild unit i/N ...`), `$P status`. After it: read `status` for quarantines
 (`<archive>/quarantine/**/reason.json`), fix the header alias or reader, `requeue --match TEXT`, rebuild again (`load-quarter 2023Q2` does both for one quarter).
 
-**Acceptance A (full rebuild succeeds):** the log ends `rebuild done units=... quarantined=N ...` and `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=1`: the DA 2022 Q2 file;
-the Q2 2025 DAN mis-upload may be a second) and is named in the closing comment; `verify` passes on the live graph:
+**Acceptance A (full rebuild succeeds):** the log ends `rebuild done units=... quarantined=N ...` and `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=0`: the DA 2022 Q2 file loads its DA rows and sets the pasted part aside;
+the Q2 2025 DAN mis-upload may be one) and is named in the closing comment; `verify` passes on the live graph:
 
 ```bash
 $P verify                                          # the container's DATABASE_URL is the live graph; the checks of a switchover, exit 1 if any fails

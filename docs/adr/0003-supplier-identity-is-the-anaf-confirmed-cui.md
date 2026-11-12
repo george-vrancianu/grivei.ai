@@ -26,3 +26,7 @@ The display-name rule applies to every entity in either role, not only to suppli
 ## Amended 2026-11-12: natural-person suppliers above the Naming threshold are named
 
 ADR 0009: a natural-person supplier whose public money reaches the Naming threshold becomes a Named person, with a name and an entity page, once that posture's Go-live conditions are met. Below the threshold nothing changes. CNPs are still never stored or shown.
+
+## Amended 2026-11-12: natural-person supplier names are stored, not served
+
+The load now keeps a natural-person supplier's published name, linked to its Record and winner slot, in a table of its own (`withheld.natural_person_name`). Nothing serves it: not the API, not `seap.record.winners`, not `seap.search` or its full-text index. It is also never an entity. A name is shown only once the person's public money reaches the Naming threshold and ADR 0009's Go-live conditions are met; turning that on is a later, separate change. CNPs are still never stored, nor any id that holds one: digit runs are removed from the name, and only whether the published id was a CNP is kept. The database, and so its dumps and backups, now holds natural persons' names.

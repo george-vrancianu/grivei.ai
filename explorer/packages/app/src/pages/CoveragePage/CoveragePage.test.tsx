@@ -78,6 +78,7 @@ describe.each([
   {
     locale: "en", path: "/explore/coverage",
     through: ["Award notices: data through 2 July 2025", "Contracts: data through 2 July 2025", "Direct purchases: data through 24 March 2023"],
+    crawlOnly: ["Award notices, Q2 2021: 2 Records not in bulk data", "Award notices, Q3 2021: 1 Record not in bulk data", "Contracts, Q2 2025: 1 Record not in bulk data"],
     gaps: [
       ["Q1 2023", "Direct purchase award notifications", "Known gap", "Fisier lipsa la sursa (fixture); raportat", "0"],
       ["Q4 2024", "Contracts", "Possibly incomplete", "", "9"],
@@ -87,6 +88,11 @@ describe.each([
   {
     locale: "ro", path: "/ro/explore/coverage",
     through: ["Anunțuri de atribuire: date până la 2 iulie 2025", "Contracte: date până la 2 iulie 2025", "Achiziții directe: date până la 24 martie 2023"],
+    crawlOnly: [
+      "Anunțuri de atribuire, T2 2021: 2 înregistrări absente din datele în masă",
+      "Anunțuri de atribuire, T3 2021: 1 înregistrare absentă din datele în masă",
+      "Contracte, T2 2025: 1 înregistrare absentă din datele în masă",
+    ],
     gaps: [
       ["T1 2023", "Notificări de atribuire a cumpărării directe", "Lacună cunoscută", "Fisier lipsa la sursa (fixture); raportat", "0"],
       ["T4 2024", "Contracte", "Posibil incomplet", "", "9"],
@@ -133,9 +139,10 @@ describe.each([
     expect(t.coverage.grid.rules.AWAITING_BULK_FILE).not.toBe("");
   });
 
-  it("hides the crawl-only section: the contract carries no crawl-only count", async () => {
+  it("lists the crawl-only Records per quarter and record kind, from the API's counts (#60/#90)", async () => {
     open(c.path);
     await screen.findByRole("region", { name: t.coverage.gridHeading });
-    expect(screen.queryByRole("heading", { name: t.coverage.crawlOnly.heading })).toBeNull();
+    const section = screen.getByRole("region", { name: t.coverage.crawlOnly.heading });
+    expect(within(section).getAllByRole("listitem").map((li) => (li.textContent ?? "").replace(/\s/g, " "))).toEqual(c.crawlOnly);
   });
 });

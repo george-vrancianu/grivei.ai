@@ -93,11 +93,10 @@ export type GapRule = ContractGapRule;
 /** A grid cell's state: LOADED, KNOWN_GAP, POSSIBLY_INCOMPLETE, NOT_IN_SOURCE, CRAWLED_PROVISIONAL or NOT_YET_LOADED. */
 export type GapState = ContractGapState;
 /**
- * One cell of the quarter x record-kind grid (`coverage.grid`). `crawlOnly` is a UI-side extension of the contract's `GapCell`:
- * how many of the cell's `records` are crawl-only Records (spec: counted in the quarter's cell). The contract does not carry it yet,
- * so it is optional and the display shows it only when present.
+ * One cell of the quarter x record-kind grid (`coverage.grid`). `crawlOnly` is how many of the cell's `records` are crawl-only Records
+ * (spec: counted in the quarter's cell; #60/#90); the display shows it only when it is above zero.
  */
-export type GapCellData = CoveragePageQuery["coverage"]["grid"][number] & { crawlOnly?: number };
+export type GapCellData = CoveragePageQuery["coverage"]["grid"][number];
 
 /** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
 export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { GapCellData } from "../types.ts";
 import { crawlOnlyCells, explainedCells, gridShape, kindsOf, quarterBounds, quarterInWindow, quarterSpan, reasonOf, windowActive } from "./coverageGrid.ts";
 
-const cell = (quarter: string, kind: string, state: GapCellData["state"], o: Partial<GapCellData> = {}): GapCellData => ({ quarter, kind, state, rule: null, note: null, records: 0, dataThrough: null, ...o });
+const cell = (quarter: string, kind: string, state: GapCellData["state"], o: Partial<GapCellData> = {}): GapCellData => ({ quarter, kind, state, rule: null, note: null, records: 0, crawlOnly: 0, dataThrough: null, ...o });
 
 describe("quarters", () => {
   it("knows each quarter's first and last day, and rejects what is not a quarter", () => {
