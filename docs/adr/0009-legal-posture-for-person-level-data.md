@@ -26,3 +26,7 @@ Grivei.ai names a person only when they are tied to public money. That means one
 - **DPO:** none, as long as no art. 9 or art. 10 data is shown by name.
 - **Retention:** a past register role stays visible, with its dates, while its time window overlaps a record in the graph (*Manni*). Otherwise it leaves the graph.
 - **ADR 0003 changes for natural-person suppliers above the Naming threshold:** they are named and get an entity page. CNPs are still never stored or shown.
+
+## Amended 2026-11-12: Investigations are covered by the Go-live conditions
+
+ADR 0010 adds Investigations, whose private Findings are handed to journalists. Before the first Investigation is published, the lawyer review and the DPIA above must also cover Investigations, their Findings and the hand-offs. This posture binds both the public part and the Findings.
