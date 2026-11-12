@@ -26,6 +26,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
 const fixtureArchive = join(watchdog, "tests/fixtures/archive");
 const bulkArchive = join(watchdog, "tests/fixtures/archive-bulk"); // DA + DAN: renamed headers, quirks, a quarantined file (#63)
+const contractsArchive = join(watchdog, "tests/fixtures/archive-contracts"); // Contracte + "fara anunt": recurring contract, lots, winners (#64)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -69,6 +70,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     scratch = mkdtempSync(join(here, "..", ".seam1-"));
     cpSync(fixtureArchive, join(scratch, "archive"), { recursive: true }); // a rebuild may quarantine: never touch the checked-in archive
     cpSync(bulkArchive, join(scratch, "archive-bulk"), { recursive: true });
+    cpSync(contractsArchive, join(scratch, "archive-contracts"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -81,6 +83,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE rebuild_b");
     await admin.query("CREATE DATABASE bulk_a");
     await admin.query("CREATE DATABASE bulk_b");
+    await admin.query("CREATE DATABASE contracts_a");
+    await admin.query("CREATE DATABASE contracts_b");
   });
 
   afterAll(async () => {
@@ -204,6 +208,63 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     writeFileSync(manifest, readFileSync(manifest, "utf8").replace(/"fetchedAt":\s*"[^"]*"/, '"fetchedAt": "2026-01-01T09:00:00Z"'));
     expect(rebuild("bulk_b", "archive-bulk")).toContain("skipped, same file already loaded");
     expect(await snapshot("bulk_b")).toEqual(first);
+  });
+
+  const contractPage = async (db: string, code: string) => {
+    const variables = { code };
+    const r = await ask(db, recordPage.sha256, variables);
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(recordPage.document), r.body.data, variables)).toEqual([]);
+    return (r.body.data as RecordPageQuery).seap.record;
+  };
+
+  it("serves contracts and award notices with their winners through the persisted RecordPage operation (#64)", async () => {
+    const out = rebuild("contracts_a", "archive-contracts");
+    expect(out).toContain("loaded 12 records from 6 file(s)");
+    expect(out).toContain("quarantined:"); // the 2023 Q1 Contracte file has unknown headers
+
+    // a contract recurring in a later quarter: ONE Record, carrying the newer notice version. The 2022 Q1 file, fetched again
+    // last with the old version (value 999), changed nothing.
+    expect(await contractPage("contracts_a", "CAN9000003~5")).toMatchObject({
+      code: "CAN9000003~5", title: "Combustibil (actualizat)", date: "2021-12-27", kind: "CONTRACT", channel: "CONTRACT", procedure: "Licitatie deschisa",
+      value: "15000", counted: "15000", authority: { displayName: "SPITALUL EXEMPLU", key: "1000001" },
+      winners: [{ publishedName: "PETROL NOU SA", entity: { key: "2000005" } }],
+      provenance: { source: "SEAP", kind: "BULK", via: "Contracte 2022 - T2", fetchedAt: "2022-09-15T09:00:00Z" },
+    });
+    // three lots of the same value count once; the second winner of lot 1 does not add it again
+    const equal = await contractPage("contracts_a", "CAN9000001~C-100");
+    expect(equal).toMatchObject({ value: "100000", counted: "100000" });
+    expect(equal!.winners.map((w) => w.publishedName)).toEqual(["ALFA MOBILA SRL", "GAMMA LEMN SRL"]);
+    // two lots of different values add; the winners come in the order of the file, not alphabetically
+    const summed = await contractPage("contracts_a", "CAN9000002~77/2022");
+    expect(summed).toMatchObject({ value: "120025", counted: "120025" });
+    expect(summed!.winners.map((w) => w.publishedName)).toEqual(["BETA CHIMIE SRL", "ALFA CHIMIE SRL"]);
+    // a contract number that holds a slash, from the 2025 XLSX (numeric CUIs, a float amount)
+    expect(await contractPage("contracts_a", "CAN9000010~1398514/1")).toMatchObject({
+      kind: "CONTRACT", value: "28963700", authority: { key: "4267117" }, winners: [{ entity: { key: "18165761" } }],
+    });
+    // an award notice, identified by its code: its two contracts add; the second notice has one contract and two winners
+    expect(await contractPage("contracts_a", "CAN9100001")).toMatchObject({ kind: "AWARD_NOTICE", value: "3548058", date: "2024-11-11" });
+    const notice = await contractPage("contracts_a", "CAN9100002");
+    expect(notice).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000" });
+    expect(notice!.winners.map((w) => w.publishedName)).toEqual(["CENTRUL TOPMED DEMO", "ASOCIEREA DEMO"]);
+    // no value in SEAP; and a contract of the quarantined file is not there
+    expect(await contractPage("contracts_a", "CAN9000020~36181")).toMatchObject({ value: null, badges: ["NO_VALUE"] });
+    expect(await contractPage("contracts_a", "CAN9000099~1")).toBeNull();
+  });
+
+  it("gives identical responses after a second rebuild of the contracts archive (#64)", async () => {
+    const codes = ["CAN9000003~5", "CAN9000001~C-100", "CAN9000002~77/2022", "CAN9000010~21", "CAN9100001", "CAN9100002", "CAN9000099~1"];
+    const snapshot = async (db: string) => {
+      const out: unknown[] = [JSON.stringify(await ask(db, mainScreen.sha256))];
+      for (const code of codes) out.push(JSON.stringify(await ask(db, recordPage.sha256, { code })));
+      return out;
+    };
+    rebuild("contracts_a", "archive-contracts"); // over the database of the previous test
+    const first = await snapshot("contracts_a");
+    expect(first.filter((x) => (x as string).includes('"record":null')).length).toBe(1);
+    rebuild("contracts_b", "archive-contracts"); // and into a fresh one (ADR 0004)
+    expect(await snapshot("contracts_b")).toEqual(first);
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
