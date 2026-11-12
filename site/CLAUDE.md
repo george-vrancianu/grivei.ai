@@ -32,10 +32,11 @@ No build step, no dependencies, no framework. Keep it that way unless there is a
 
 The source rows (`<ol id="sources">`) are the single source of truth, **once per language**: `index.html` and `ro/index.html` must carry the same rows with the same `data-status`. Every status change is an edit in both files.
 
-- Each `<li class="source">` carries `data-status`: `live`, `wip` or `next`. The visible words are `live` / `in progress` / `next` in English and `funcțional` / `în lucru` / `urmează` in Romanian.
+- Each `<li class="source">` carries `data-status`: `live`, `wip`, `next` or `skipped`. The visible words are `live` / `in progress` / `next` / `skipped` in English and `funcțional` / `în lucru` / `urmează` / `omis` in Romanian.
+- A `skipped` row also carries a `<p class="source__note">` saying why, citing its source document (the law or ruling, with dates).
 - To change a source's status, change `data-status` **and** the word inside `<p class="status">`. Nothing else.
 - Row numbers come from a CSS counter. The segmented bar and the summary line ("1 funcțională · 1 în lucru · 3 urmează") are rebuilt from the rows by `status.js`, which picks the wording from `<html lang>`. The static bar and summary in the markup are the no-JS fallback, so keep them in sync when you edit rows.
-- Keep rows ordered `live`, then `wip`, then `next`, so the bar reads left to right.
+- Keep rows ordered `live`, then `wip`, then `next`, then `skipped`, so the bar reads left to right. The summary leaves out groups with no rows.
 - The project phase is plain text in the top bar: `phase: research` / `stadiu: cercetare`.
 - Bump the date in the footer (`<time datetime>` and the visible text, `11 Nov 2026` / `11.11.2026`) in both pages on every status change.
 
@@ -44,7 +45,7 @@ Current status and why:
 | Source | Shown as | Basis |
 | --- | --- | --- |
 | SEAP | live | Harvester, loader, views and reports exist. |
-| ANI | in progress | Confirmed by the user 2026-11-11 (`004_ani.sql` and one ANI report exist). |
+| ANI | skipped | Decided by the user 2026-11-12: CCR Decision 297/2025 (29 May 2025) struck down online publication of declarations; Law 180/2026 (in force 31 Aug 2026) keeps full declarations confidential. Research: [ANI declarations](https://github.com/george-vrancianu/grivei.ai/issues/114). |
 | ONRC | next | README "Ce urmează". |
 | Ministry of Finance (Ministerul Finanțelor) | next | README "Ce urmează". |
 | portal.just.ro | next | README "Ce urmează". |
@@ -55,7 +56,7 @@ Current status and why:
 - **Romanian diacritics:** use the comma-below letters ș ț (U+0219, U+021B), never the cedilla forms ş ţ. Any font added must cover the `latin-ext` range.
 - **Copy rules, taken from the project's legal and ethical notes:** results are signals, not conclusions; every link points to its source document; personal names are personal data, publish no more than the public interest needs. Do not add claims, numbers or dates that are not in the project's own documents.
 - **Colour:** everything comes from the custom properties in `:root`. `--accent` (#F2B33D) is the only accent. Text colours were chosen to stay at or above 4.5:1 on `--bg` and `--panel`; check contrast before introducing a new grey.
-- **Status marks** differ in shape as well as colour (filled dot, accent ring, grey ring). Keep that if you restyle them.
+- **Status marks** differ in shape as well as colour (filled dot, accent ring, grey ring, grey dash; a hatched bar segment for `skipped`). Keep that if you restyle them.
 - **Layout:** fluid, one `max-width: 1200px` container (`.wrap`). Breakpoints at 900px (hero stacks), 760px (source rows and principles stack) and 420px (smaller card).
 - **Motion:** only the pulsing phase dot, behind `prefers-reduced-motion: no-preference`.
 

@@ -401,6 +401,9 @@ h1 {
   background: transparent;
   border: 2px solid var(--accent);
 }
+.bar span[data-status="skipped"] {
+  background: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 6px);
+}
 
 .sources {
   margin-top: 8px;
@@ -426,8 +429,15 @@ h1 {
 
 .source__name { font: 600 1.25rem/1.3 var(--font-display); }
 .source__what { color: var(--text-2); }
+.source__note {
+  grid-column: 3 / 5;
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.source__note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
-/* Status marks differ in shape as well as colour: filled dot, accent ring, grey ring. */
+/* Status marks differ in shape as well as colour: filled dot, accent ring, grey ring, grey dash. */
 .status {
   display: flex;
   align-items: center;
@@ -452,6 +462,15 @@ h1 {
 
 .source[data-status="wip"] .status { color: var(--text); }
 .source[data-status="wip"] .status::before { border-color: var(--accent); }
+
+.source[data-status="skipped"] .source__name,
+.source[data-status="skipped"] .source__what { color: var(--muted); }
+.source[data-status="skipped"] .status::before {
+  height: 2px;
+  border: 0;
+  border-radius: 0;
+  background: var(--idle);
+}
 
 /* ---------- how we work ---------- */
 
@@ -521,6 +540,7 @@ h1 {
   .source__name { grid-area: name; }
   .source__what { grid-area: what; }
   .status { grid-area: status; }
+  .source__note { grid-column: 2 / -1; margin-top: 0; }
 
   .rules {
     grid-template-columns: minmax(0, 1fr);

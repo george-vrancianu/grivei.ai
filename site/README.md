@@ -15,7 +15,7 @@ python3 -m http.server 8000
 
 Make every change in **both** `index.html` (English) and `ro/index.html` (Romanian).
 
-- **A data source changes state:** in its `<li class="source">`, set `data-status` to `live`, `wip` or `next`, and change the word in `<p class="status">`: `live` / `in progress` / `next` in English, `funcțional` / `în lucru` / `urmează` in Romanian. The numbering, the bar and the summary line follow on their own.
+- **A data source changes state:** in its `<li class="source">`, set `data-status` to `live`, `wip`, `next` or `skipped`, and change the word in `<p class="status">`: `live` / `in progress` / `next` / `skipped` in English, `funcțional` / `în lucru` / `urmează` / `omis` in Romanian. A skipped source also gets a `<p class="source__note">` with the reason. The numbering, the bar and the summary line follow on their own.
 - **The project changes phase:** edit `phase: research` / `stadiu: cercetare` in the top bar.
 - **Either way:** bump the date in the footer.
 
