@@ -1,4 +1,5 @@
 import type { Copy } from "./types.ts";
+import { methodologyRo } from "./methodologyRo.ts";
 
 /** Romanian count phrase: singular for 1, plural for 0 and 2..19 (mod 100), "de" + plural otherwise (20 de, 120 de; 101 and 5 take none). */
 export const roCount = (n: number, formatted: string, one: string, other: string): string => {
@@ -271,6 +272,7 @@ export const ro: Copy = {
     },
   },
   /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
+  methodology: methodologyRo,
   signalCard: {
     rules: {
       OVER_CAP: {

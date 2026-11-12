@@ -1,4 +1,5 @@
 import type { Copy } from "./types.ts";
+import { methodologyEn } from "./methodologyEn.ts";
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
 
@@ -266,6 +267,7 @@ export const en: Copy = {
     },
   },
   /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
+  methodology: methodologyEn,
   signalCard: {
     rules: {
       OVER_CAP: {

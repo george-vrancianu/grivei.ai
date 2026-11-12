@@ -13,7 +13,7 @@ const subscribe = (listener: () => void) => {
   };
 };
 // One string snapshot, so React compares by value.
-const snapshot = () => `${window.location.pathname}${window.location.search}`;
+const snapshot = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
 /**
  * Goes to a URL. `replace` (the default for URL-state updates such as typing a search) rewrites the current history
@@ -29,6 +29,8 @@ export interface AppLocation {
   pathname: string;
   /** The query string with its leading `?`, or "". */
   search: string;
+  /** The fragment with its leading `#`, or "" (the methodology page scrolls to it). */
+  hash: string;
   locale: Locale;
   route: Route;
 }
@@ -38,9 +40,12 @@ const LocationContext = createContext<AppLocation | null>(null);
 export function LocationProvider({ children }: { children: ReactNode }) {
   const url = useSyncExternalStore(subscribe, snapshot, snapshot);
   const value = useMemo<AppLocation>(() => {
-    const at = url.indexOf("?");
-    const pathname = at === -1 ? url : url.slice(0, at);
-    return { pathname, search: at === -1 ? "" : url.slice(at), ...parsePath(pathname) };
+    const hashAt = url.indexOf("#");
+    const hash = hashAt === -1 ? "" : url.slice(hashAt);
+    const rest = hashAt === -1 ? url : url.slice(0, hashAt);
+    const at = rest.indexOf("?");
+    const pathname = at === -1 ? rest : rest.slice(0, at);
+    return { pathname, search: at === -1 ? "" : rest.slice(at), hash, ...parsePath(pathname) };
   }, [url]);
   return <LocationContext value={value}>{children}</LocationContext>;
 }

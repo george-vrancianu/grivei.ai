@@ -1,13 +1,12 @@
 import type { Locale, SignalRule } from "@grivei/ui";
-import { pathFor } from "../routing/routes.ts";
-import { enumToUrl } from "../urlState/codec.ts";
+import { methodologyHref, signalAnchor } from "../methodology/methodologyLinks.ts";
 
 /** The anchor of a rule's section on the methodology page: `#signal-over-cap`, `#signal-framework-overrun`. */
-export const methodologyAnchor = (rule: SignalRule): string => `signal-${enumToUrl(rule)}`;
+export const methodologyAnchor = (rule: SignalRule): string => signalAnchor(rule);
 
 /** The methodology page under the language's prefix, at the section of the Signal's rule. */
 export function signalMethodologyHref(locale: Locale, rule: SignalRule): string {
-  return `${pathFor(locale, { name: "methodology" })}#${methodologyAnchor(rule)}`;
+  return methodologyHref(locale, { rule });
 }
 
 /**
