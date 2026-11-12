@@ -4,7 +4,7 @@ import { schemaPath } from "./paths.ts";
 
 /** ISO 3166-2:RO county codes, Bucharest included (the map's 42 areas). */
 export const COUNTY_CODES = [
-  "AB", "AR", "AG", "BC", "BH", "BN", "BT", "BV", "BR", "BZ", "CS", "CJ", "CT", "CV", "DB", "DJ", "GL", "GR", "GJ",
+  "AB", "AR", "AG", "BC", "BH", "BN", "BT", "BV", "BR", "BZ", "CL", "CS", "CJ", "CT", "CV", "DB", "DJ", "GL", "GR", "GJ",
   "HR", "HD", "IL", "IS", "IF", "MM", "MH", "MS", "NT", "OT", "PH", "SM", "SJ", "SB", "SV", "TR", "TM", "TL", "VS",
   "VL", "VN", "B",
 ].map((c) => `RO-${c}`);
