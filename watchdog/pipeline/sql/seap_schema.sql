@@ -7,7 +7,7 @@ CREATE SCHEMA seap;
 -- One row per archived file that was loaded: the provenance of every Record loaded from it.
 CREATE TABLE seap.source_file (
     id          integer PRIMARY KEY,
-    kind        text NOT NULL,            -- 'DA'
+    kind        text NOT NULL,            -- 'DA' | 'DAN'
     unit        text NOT NULL,            -- '2022Q1'
     file_name   text NOT NULL,
     sha256      text NOT NULL,
@@ -17,11 +17,12 @@ CREATE TABLE seap.source_file (
     row_count   integer NOT NULL
 );
 
--- The Record. DA identity = its public code. Two dates (ADR 0002): publication assigns the quarter,
--- the award date drives aggregation and chips, falling back to the publication date.
+-- The Record. DA and DAN identity = the public code. Two dates (ADR 0002): publication assigns the quarter,
+-- the award date drives aggregation and chips, falling back to the publication date. When a code arrives again with
+-- different content, the later publication date wins (a tie: the later file).
 CREATE TABLE seap.record (
     code             text PRIMARY KEY,
-    kind             text NOT NULL CHECK (kind IN ('DA')),
+    kind             text NOT NULL CHECK (kind IN ('DA', 'DAN')),
     channel          text NOT NULL CHECK (channel IN ('DIRECT_PURCHASE', 'CONTRACT')),
     title            text NOT NULL,
     state            text,
@@ -31,11 +32,14 @@ CREATE TABLE seap.record (
     supplier_name    text,
     cpv_code         text,
     cpv_description  text,
+    contract_type    text,                -- Furnizare / Servicii / Lucrari, as published (DAN)
     published_on     date NOT NULL,
+    quarter          text NOT NULL,       -- from published_on: '2024Q2'
     award_date       date NOT NULL,
     estimated_bani   bigint,
     value_bani       bigint,              -- null = no value in SEAP
     counted_bani     bigint,              -- null = not summed (no value; later: suspect, framework ceiling)
+    load_notes       text[] NOT NULL DEFAULT '{}',  -- quirks seen on load, e.g. 'supplier_cui:scientific_notation'
     source_file_id   integer NOT NULL REFERENCES seap.source_file(id)
 );
 
