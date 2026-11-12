@@ -27,11 +27,11 @@ from types import ModuleType
 import psycopg
 from psycopg.types.json import Jsonb
 
-from . import no_publication, over_cap
+from . import no_publication, over_cap, splitting
 from .common import Hit
 
 # The contract's SignalRuleSlug order. Every rule is a module with SLUG, KINDS, WHERE and detect.
-RULES: tuple[ModuleType, ...] = (over_cap, no_publication)
+RULES: tuple[ModuleType, ...] = (over_cap, splitting, no_publication)
 
 ROW_COLUMNS = "code, kind, channel, authority_key, award_date, value_bani, counted_bani, suspect, cpv_code, contract_type, procedure, winners"
 
