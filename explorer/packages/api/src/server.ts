@@ -19,7 +19,7 @@ const refuse = (status: number, code: string, message: string): ApiResponse => (
 
 export interface Api {
   /** One request body (already JSON-parsed) -> the response. Only persisted queries run. */
-  respond(body: unknown): Promise<ApiResponse>;
+  respond(body: unknown, options?: { signal?: AbortSignal }): Promise<ApiResponse>;
   listen(port: number, host?: string): Promise<Server>;
 }
 
@@ -31,7 +31,7 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
   const queries = loadPersistedQueries(schema);
   const root = rootValue(store);
 
-  async function respond(body: unknown): Promise<ApiResponse> {
+  async function respond(body: unknown, options: { signal?: AbortSignal } = {}): Promise<ApiResponse> {
     if (typeof body !== "object" || body === null || Array.isArray(body)) {
       return refuse(400, "BAD_REQUEST", "The request body must be a JSON object.");
     }
@@ -49,6 +49,7 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
       schema,
       document: persisted.document,
       rootValue: root,
+      contextValue: { signal: options.signal }, // aborted when the client disconnects: the running statement is cancelled
       variableValues: (variables ?? {}) as Record<string, unknown>,
     });
     return {
@@ -68,6 +69,11 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
           res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
           res.end(JSON.stringify(payload));
         };
+        // The client went away before the answer: abort, which cancels the statement Postgres is running for it.
+        const gone = new AbortController();
+        res.on("close", () => {
+          if (!res.writableFinished) gone.abort();
+        });
         try {
           if (req.method === "GET" && req.url === "/healthz") return send(200, { ok: true });
           if (req.method !== "POST" || !req.url?.startsWith("/graphql")) {
@@ -81,8 +87,8 @@ export function createApi(store: Store, schema: GraphQLSchema = loadSchema()): A
             const r = refuse(tooBig ? 413 : 400, tooBig ? "BODY_TOO_LARGE" : "BAD_REQUEST", tooBig ? "Request body too large." : "The body is not valid JSON.");
             return send(r.status, r.body);
           }
-          const r = await respond(parsed);
-          send(r.status, r.body);
+          const r = await respond(parsed, { signal: gone.signal });
+          if (!gone.signal.aborted) send(r.status, r.body);
         } catch (e) {
           console.error(e);
           send(500, { errors: [{ message: "Internal error", extensions: { code: "INTERNAL" } }] });

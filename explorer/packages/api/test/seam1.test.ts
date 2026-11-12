@@ -18,8 +18,9 @@ import { parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { EntityOverviewQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
+import { cancellableQuery } from "../src/search.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -32,6 +33,7 @@ const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // ba
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
+const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -57,6 +59,7 @@ if (reason) console.warn(`seam 1 skipped: ${reason}`);
 
 const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
 const recordPage = allowlist.operations.find((o) => o.name === "RecordPage")!;
+const fullSuppliers = allowlist.operations.find((o) => o.name === "FullResultsSuppliers")!;
 const entityOverview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
 const schema = loadSchema();
 const EMPTY_FILTER = { filter: {} };
@@ -81,6 +84,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
+    cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -103,6 +107,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE identity_b");
     await admin.query("CREATE DATABASE counting_a");
     await admin.query("CREATE DATABASE counting_b");
+    await admin.query("CREATE DATABASE search_a");
   });
 
   afterAll(async () => {
@@ -640,6 +645,232 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     };
     rebuild("counting_b", "archive-counting");
     expect(await snapshot("counting_b")).toEqual(await snapshot("counting_a"));
+  });
+
+  describe("search (#68): archive-search -> rebuild -> MainScreen with a filter", () => {
+    type Filter = Record<string, unknown>;
+    let searchData: (filter: Filter) => Promise<MainScreenQuery["seap"]["search"]>;
+    const codes = (d: MainScreenQuery["seap"]["search"]) => d.records.rows.map((r) => r.record.code);
+    const keys = (rows: { entity: { key: string } }[]) => rows.map((r) => r.entity.key);
+
+    beforeAll(() => {
+      rebuild("search_a", "archive-search");
+      searchData = async (filter) => {
+        const variables = { filter };
+        const r = await ask("search_a", mainScreen.sha256, variables);
+        expect(r.body.errors).toBeUndefined();
+        expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+        return (r.body.data as MainScreenQuery).seap.search;
+      };
+    });
+
+    it("folds diacritics, both ş/ș and ţ/ț, in the query and in the documents", async () => {
+      for (const q of ["stefan", "Ștefan", "Ştefan", "ȘTEFAN"]) expect(codes(await searchData({ q })), q).toEqual(["DA95000001"]);
+      for (const q of ["tara", "Țara", "Ţara"]) expect(codes(await searchData({ q })), q).toEqual(["DA95000001", "CAN9500002~1"]); // a winner's name, by value
+      expect((await searchData({ q: "Şantier" })).filter.qFolded).toBe("santier");
+    });
+
+    it("joins dotted legal forms and drops legal-form words; a query of only those is the empty query", async () => {
+      const plain = codes(await searchData({ q: "santier" }));
+      expect(plain).toEqual(["DA95000001", "CAN9500002~1"]);
+      for (const q of ["santier srl", "santier S.R.L.", "S.C. santier S.A."]) expect(codes(await searchData({ q })), q).toEqual(plain);
+      for (const q of ["SRL", "S.R.L. SA", "  "]) {
+        const all = await searchData({ q });
+        expect(all.filter.qFolded, q).toBeNull();
+        expect(all.total.records, q).toBe(13);
+        expect(all.total.awarded).toBe("57412100"); // every Record, as for no query at all
+      }
+    });
+
+    it("requires every token and takes the last as a prefix", async () => {
+      expect(codes(await searchData({ q: "hartie copiator" }))).toEqual(["DA95000002"]);
+      expect(codes(await searchData({ q: "hartie zzz" }))).toEqual([]);
+      expect(codes(await searchData({ q: "desz" }))).toEqual(["DA95000006", "DA95000005", "CAN9500001~1"]); // a prefix; by value
+      expect(codes(await searchData({ q: "servicii dez" }))).toEqual(["DA95000007"]); // "dez" is no prefix of deszapezire
+      expect(codes(await searchData({ q: "serv dez" }))).toEqual([]); // only the LAST token is a prefix
+      expect(codes(await searchData({ q: "deszapezire serv" }))).toEqual(["DA95000006", "DA95000005", "CAN9500001~1"]);
+    });
+
+    it("matches a CPV code by prefix: 45 finds every 45xxxxxx Record", async () => {
+      expect(codes(await searchData({ q: "45" }))).toEqual(["DA95000001", "DA95000005"]);
+      expect(codes(await searchData({ q: "4523" }))).toEqual(["DA95000001"]);
+      expect(codes(await searchData({ cpv: "30" }))).toEqual(["DA95000008", "DA95000009", "DA95000010", "DA95000002", "DA95000011"]); // the cpv filter; no value last
+    });
+
+    it("matches a CUI with or without RO", async () => {
+      const comuna = ["DA95000004", "DA95000003", "DA95000001", "DA95000006", "DA95000005", "DA95000002", "DA95000007", "DA95000011"];
+      expect(codes(await searchData({ q: "RO1000009" }))).toEqual(comuna);
+      expect(codes(await searchData({ q: "1000009" }))).toEqual(comuna);
+      expect(codes(await searchData({ q: "ro1000017" })).sort()).toEqual(["CAN9500001~1", "CAN9500002~1", "DA95000008"]); // the authority's CUI, and a RO CUI typed in a title
+    });
+
+    it("never matches a natural person", async () => {
+      const r = await searchData({ q: "ionescu" });
+      expect(r.total.records).toBe(0);
+      expect(r.suppliers.rows).toEqual([]);
+    });
+
+    it("ranks the tabs by matched RON, ties by key, and the Records by value", async () => {
+      const all = await searchData({});
+      expect(keys(all.authorities.rows)).toEqual(["1000009", "1000017", "name-primaria-echivalent-a", "name-primaria-echivalent-b"]); // the last two tie at 20,000 RON
+      expect(all.authorities.rows.map((r) => r.matched.awarded)).toEqual(["48612100", "4800000", "2000000", "2000000"]);
+      expect(keys(all.suppliers.rows)).toEqual([
+        "name-petrol-beta-srl", "name-zapada-demo-srl", "name-santier-tara-srl", "name-papetarie-alfa-sa", "name-birou-echivalent-srl", "name-delta-consort-sa", "name-gamma-consort-srl",
+      ]);
+      expect(all.suppliers).toMatchObject({ count: 7, countEstimated: false });
+      expect(codes(all).slice(0, 3)).toEqual(["DA95000004", "DA95000003", "DA95000001"]);
+      // the matched set of a text query: by summed RON, with what each entity matched
+      const snow = await searchData({ q: "deszapezire" });
+      expect(snow.total).toMatchObject({ awarded: "11100000", records: 3, suspectLeftOut: 0, noValue: 0 });
+      expect(snow.authorities.rows.map((r) => [r.entity.key, r.matched.awarded, r.matched.records])).toEqual([["1000009", "11000000", 2], ["1000017", "100000", 1]]);
+    });
+
+    it("sums each winner's share, not the full value, in the supplier ranking (consortium)", async () => {
+      const snow = await searchData({ q: "deszapezire" });
+      // CAN9500001~1 is 1,000 RON won by three: 333.34 + 333.33 + 333.33. The match on the Record matches every winner.
+      expect(snow.suppliers.rows.map((r) => [r.entity.key, r.matched.awarded, r.matched.records])).toEqual([
+        ["name-zapada-demo-srl", "11000000", 2],
+        ["name-papetarie-alfa-sa", "33334", 1],
+        ["name-delta-consort-sa", "33333", 1], // ties by key
+        ["name-gamma-consort-srl", "33333", 1],
+      ]);
+      expect(snow.suppliers.rows.reduce((n, r) => n + BigInt(r.matched.awarded), 0n)).toBe(11000000n + 100000n); // the shares add back up to the value, nothing twice
+      // a winner of a consortium AND of other Records: only its share of the consortium Record
+      const alfa = await searchData({ supplier: "name-papetarie-alfa-sa" });
+      expect(alfa.total).toMatchObject({ awarded: String(500000 + 4000000 + 33334), records: 4, noValue: 1 });
+      // a consortium counts once on the authority side: its whole value, one Record
+      expect((await searchData({ q: "consortiu" })).authorities.rows.map((r) => [r.entity.key, r.matched.awarded, r.matched.records])).toEqual([["1000017", "100000", 1]]);
+      expect(codes(await searchData({ supplier: "name-gamma-consort-srl" }))).toEqual(["CAN9500001~1"]); // a Record once, whichever winner matched
+    });
+
+    it("pages the tabs with offset and limit, and says how many entities there are", async () => {
+      const variables = (limit: number, offset: number) => ({ filter: {}, limit, offset });
+      const page = async (limit: number, offset: number) => {
+        const r = await ask("search_a", fullSuppliers.sha256, variables(limit, offset));
+        expect(r.body.errors).toBeUndefined();
+        return (r.body.data as FullResultsSuppliersQuery).seap.search.suppliers;
+      };
+      const second = await page(2, 2);
+      expect(second.count).toBe(7);
+      expect(keys(second.rows)).toEqual(["name-santier-tara-srl", "name-papetarie-alfa-sa"]);
+      expect(await page(2, 20)).toMatchObject({ count: 7, rows: [] });
+    });
+
+    it("estimates the distinct counts above the exact limit, and flags it", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
+      pools.push(pool);
+      const hll = createApi(postgresStore(pool, { exactGroupLimit: 3 }), schema); // 7 suppliers is above 3 "groups"
+      const variables = { filter: {} };
+      const r = await hll.respond({ id: mainScreen.sha256, variables });
+      expect(r.body.errors).toBeUndefined();
+      const search = (r.body.data as MainScreenQuery).seap.search;
+      expect(search.suppliers.countEstimated).toBe(true);
+      expect(Math.abs(search.suppliers.count - 7)).toBeLessThanOrEqual(1);
+      expect(search.authorities.countEstimated).toBe(true); // 4 authorities, also above 3
+      expect(keys(search.suppliers.rows).slice(0, 3)).toEqual(["name-petrol-beta-srl", "name-zapada-demo-srl", "name-santier-tara-srl"]); // still ranked by matched RON
+      expect(search.suppliers.rows[0]!.matched.awarded).toBe("27012100");
+    });
+
+    it("pages the estimated path too: exactly `limit` rows, no overlap, the same order as the exact path", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
+      pools.push(pool);
+      const hll = postgresStore(pool, { exactGroupLimit: 1 }); // every side is above 1 "group": the terms-aggregation path
+      const exact = postgresStore(pool);
+      const filter = {} as Parameters<typeof hll.searchEntities>[1];
+      for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
+        const all = (await exact.searchEntities(side, filter, { limit: 50, offset: 0 })).rows.map((r) => r.entity.key);
+        const first = await hll.searchEntities(side, filter, { limit: 2, offset: 0 });
+        const second = await hll.searchEntities(side, filter, { limit: 2, offset: 2 });
+        expect(first.estimated).toBe(true);
+        expect(first.rows.map((r) => r.entity.key)).toEqual(all.slice(0, 2));
+        expect(second.rows.map((r) => r.entity.key)).toEqual(all.slice(2, 4));
+        // the exact per-key sum, not the aggregation's float
+        expect(second.rows.every((r) => /^\d+$/.test(r.matched.awarded))).toBe(true);
+      }
+      // past the bucket cap: an empty page, not an error
+      const far = await hll.searchEntities("SUPPLIER", filter, { limit: 50, offset: 1_000_000 });
+      expect(far.rows).toEqual([]);
+      expect(far.estimated).toBe(true);
+    });
+
+    it("narrows by the chips and the entity filters", async () => {
+      expect((await searchData({ from: "2023-01-01" })).total.records).toBe(12); // DA95000003 is of 2022
+      expect((await searchData({ to: "2022-12-31" })).total.records).toBe(1);
+      expect(codes(await searchData({ channel: "CONTRACT" })).sort()).toEqual(["CAN9500001~1", "CAN9500002~1"]);
+      // preset buckets, upper edge inclusive (13,506,000 bani = 135,060 RON sits in the bucket below the next one)
+      expect(codes(await searchData({ valueBucket: "UP_TO_270K" }))).toEqual(["DA95000004"]);
+      expect((await searchData({ valueBucket: "UP_TO_135K" })).total.records).toBe(7);
+      expect((await searchData({ valueBucket: "UP_TO_10K" })).total.records).toBe(4);
+      expect(codes(await searchData({ badges: ["CONSORTIUM_SHARE"] })).sort()).toEqual(["CAN9500001~1", "CAN9500002~1"]);
+      expect(codes(await searchData({ badges: ["NO_VALUE"] }))).toEqual(["DA95000011"]);
+      expect(codes(await searchData({ procedure: ["Negociere"] }))).toEqual(["CAN9500002~1"]);
+      expect((await searchData({ authority: "1000017" })).total.records).toBe(3);
+      expect(codes(await searchData({ q: "birou", authority: "1000017" }))).toEqual(["DA95000008"]);
+      expect((await searchData({ authority: "1000017" })).filter.authority).toMatchObject({ key: "1000017" });
+    });
+
+    it("says plainly that a filter that waits for another ticket is not served yet", async () => {
+      const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", hasSignals: true } });
+      expect(r.body.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
+    });
+
+    it("cancels the running statement when the client disconnects", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 4 });
+      pools.push(pool);
+      const server = await createApi(postgresStore(pool), schema).listen(0, "127.0.0.1");
+      const locker = new pg.Client({ connectionString: `${baseUrl}/search_a` });
+      const watcher = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 1 });
+      pools.push(watcher);
+      await locker.connect();
+      const searching = () => watcher.query("SELECT pid FROM pg_stat_activity WHERE datname = 'search_a' AND state = 'active' AND query LIKE '%FROM seap.search%' AND pid <> pg_backend_pid()");
+      try {
+        // a lock nobody releases: every search statement queues behind it, so it is running (waiting) when the client leaves
+        await locker.query("BEGIN");
+        await locker.query("LOCK TABLE seap.search IN ACCESS EXCLUSIVE MODE");
+        const abort = new AbortController();
+        const port = (server.address() as import("node:net").AddressInfo).port;
+        const request = fetch(`http://127.0.0.1:${port}/graphql`, {
+          method: "POST", headers: { "content-type": "application/json" }, signal: abort.signal,
+          body: JSON.stringify({ id: mainScreen.sha256, variables: { filter: { q: "deszapezire" } } }),
+        }).catch(() => "aborted");
+        const deadline = Date.now() + 20_000;
+        while (!(await searching()).rows.length) {
+          if (Date.now() > deadline) throw new Error("the search statement never started");
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        abort.abort(); // the client disconnects
+        expect(await request).toBe("aborted");
+        while ((await searching()).rows.length) {
+          if (Date.now() > deadline) throw new Error("the statement was not cancelled although the client left (the lock is still held)");
+          await new Promise((r) => setTimeout(r, 50));
+        }
+      } finally {
+        await locker.query("ROLLBACK").catch(() => undefined);
+        await locker.end().catch(() => undefined);
+        await new Promise((r) => server.close(r));
+      }
+    });
+
+    it("cancels a statement longer than track_activity_query_size too (pg_stat_activity truncates its text)", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
+      pools.push(pool);
+      const locker = new pg.Client({ connectionString: `${baseUrl}/search_a` });
+      await locker.connect();
+      try {
+        await locker.query("BEGIN");
+        await locker.query("LOCK TABLE seap.search IN ACCESS EXCLUSIVE MODE");
+        const text = `SELECT count(*) FROM seap.search /* ${"x".repeat(3000)} */`;
+        const abort = new AbortController();
+        const running = cancellableQuery(pool, abort.signal, text).then(() => "finished", (e: Error) => e.name);
+        await new Promise((r) => setTimeout(r, 300)); // let it start and queue behind the lock
+        abort.abort();
+        const outcome = await Promise.race([running, new Promise((r) => setTimeout(() => r("still running"), 15_000))]);
+        expect(outcome).toBe("AbortError");
+      } finally {
+        await locker.query("ROLLBACK").catch(() => undefined);
+        await locker.end().catch(() => undefined);
+      }
+    });
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
