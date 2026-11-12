@@ -6,6 +6,7 @@ Layout (one directory per fetch of one unit, `<fetched on>` is the UTC date of t
     <root>/<source>/<stream>/<kind>/<unit>/<fetched on>/manifest.json      <- written LAST
     <root>/quarantine/<same relative path>/{<files>, manifest.json, reason.json}
 
+A second fetch of a unit on the same UTC day goes to `<day>.2`, `<day>.3`, ... (so the directory name is not always a date).
 e.g. `seap/bulk/da/2022Q1/2022-06-15/raport-achizitii-directe-t1-2022.csv`. A unit is a quarter file today and a
 crawl day later. The manifest lists every file with its sha256; a unit counts as archived only when its manifest
 exists and every listed file matches, so a fetch that died half way is invisible to a rebuild. The archive is

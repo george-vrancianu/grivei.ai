@@ -23,14 +23,14 @@ import posixpath
 import re
 import time
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 import requests
 
-from .archive import MANIFEST, Archive
+from .archive import MANIFEST, QUARANTINE_DIR, Archive
 from .fetch import USER_AGENT, fetch_bulk_file
 
 CKAN = "https://data.gov.ro/api/3/action/package_show?id="
@@ -72,11 +72,9 @@ class FetchSummary:
 
     def lines(self) -> list[str]:
         out = [f"{k}: {n}" for k, n in self.counts().items()]
-        for title, items in (("archived", self.archived), ("unclassified", self.unclassified), ("failed", self.failed)):
-            for i in items:
-                what = i.path or i.reason
-                out.append(f"  {title}: {i.dataset} / {i.name!r} ({i.kind or '?'} {i.unit or '?'}): {what}"
-                           if title != "archived" else f"  archived: {i.kind} {i.unit}: {i.path}")
+        out += [f"  archived: {i.kind} {i.unit}: {i.path}" for i in self.archived]
+        for title, items in (("unclassified", self.unclassified), ("failed", self.failed)):
+            out += [f"  {title}: {i.dataset} / {i.name!r} ({i.kind or '?'} {i.unit or '?'}): {i.reason}" for i in items]
         for name in self.missing_datasets:
             out.append(f"  no dataset yet: {name}")
         return out
@@ -144,15 +142,18 @@ def classify(resource: dict, dataset_year: int) -> tuple[tuple[str, str] | None,
 # ---- the archive's view of what was fetched -----------------------------------------------------------------
 
 def _latest_markers(archive: Archive) -> dict[str, dict]:
-    """resource id -> origin of its latest archived fetch (by fetch time, then directory). Reads manifests only."""
-    latest: dict[str, tuple[tuple[str, str], dict]] = {}
-    for path in sorted((archive.root / "seap" / "bulk").glob(f"*/*/*/{MANIFEST}")):
+    """resource id -> origin of its latest fetch (by fetch time, then `.N`). Reads manifests only. Quarantined units count:
+    a file that failed validation is still what the Source gave, so it is not downloaded again until the Source changes."""
+    latest: dict[str, tuple[tuple[str, int], dict]] = {}
+    paths = sorted((archive.root / "seap" / "bulk").glob(f"*/*/*/{MANIFEST}"))
+    paths += sorted((archive.root / QUARANTINE_DIR / "seap" / "bulk").glob(f"*/*/*/{MANIFEST}"))
+    for path in paths:
         try:
             m = json.loads(path.read_text(encoding="utf-8"))
             origin = m["origin"]
             if origin.get("system") != SYSTEM:
                 continue
-            stamp = (m["fetchedAt"], path.parent.name)
+            stamp = (m["fetchedAt"], int(path.parent.name.rpartition(".")[2]) if path.parent.name.count(".") else 1)
             rid = origin["resourceId"]
             if rid not in latest or stamp >= latest[rid][0]:
                 latest[rid] = (stamp, origin)
@@ -223,6 +224,12 @@ def fetch_datagov(
 
         chosen: dict[tuple[str, str], list[dict]] = {}
         for resource in resources:
+            if not isinstance(resource, dict) or not isinstance(resource.get("id"), str) or not resource["id"]:
+                summary.unclassified.append(Item(
+                    dataset=name, name=str(resource.get("name") or "").strip() if isinstance(resource, dict) else None,
+                    reason="resource has no id" if isinstance(resource, dict) else "entry is not a resource",
+                ))
+                continue
             try:
                 what, why = classify(resource, year)
             except Exception as error:  # noqa: BLE001
@@ -230,18 +237,21 @@ def fetch_datagov(
             item = Item(dataset=name, resource_id=resource.get("id"), name=(resource.get("name") or "").strip())
             if what is None:
                 bucket = summary.ignored if why.startswith("ignored:") else summary.unclassified
-                bucket.append(Item(**{**item.__dict__, "reason": why.removeprefix("ignored: ")}))
+                bucket.append(replace(item, reason=why.removeprefix("ignored: ")))
             elif not resource.get("url"):
-                summary.unclassified.append(Item(**{**item.__dict__, "kind": what[0], "unit": what[1], "reason": "resource has no URL"}))
+                summary.unclassified.append(replace(item, kind=what[0], unit=what[1], reason="resource has no URL"))
             else:
                 chosen.setdefault(what, []).append(resource)
 
         for (kind, unit), candidates in sorted(chosen.items()):
-            candidates.sort(key=_format_rank)
+            candidates.sort(key=lambda r: str(r.get("last_modified") or ""), reverse=True)  # newest first ...
+            candidates.sort(key=_format_rank)  # ... then preferred format first (stable)
             for other in candidates[1:]:
+                same = _format_rank(other) == _format_rank(candidates[0])
                 summary.ignored.append(Item(
                     dataset=name, resource_id=other["id"], name=(other.get("name") or "").strip(), kind=kind, unit=unit,
-                    reason=f"another format of the same file is fetched ({candidates[0].get('format')})",
+                    reason="an older resource of the same file is skipped" if same
+                    else f"another format of the same file is fetched ({candidates[0].get('format')})",
                 ))
             resource = candidates[0]
             origin = _origin(dataset, resource)
@@ -257,7 +267,7 @@ def fetch_datagov(
                     timeout=timeout, origin=origin, same_day=True,
                 )
             except Exception as error:  # noqa: BLE001 - fetch_bulk_file leaves no unit behind on failure
-                summary.failed.append(Item(**{**item.__dict__, "reason": str(error) or type(error).__name__}))
+                summary.failed.append(replace(item, reason=str(error) or type(error).__name__))
                 continue
-            summary.archived.append(Item(**{**item.__dict__, "path": where}))
+            summary.archived.append(replace(item, path=where))
     return summary

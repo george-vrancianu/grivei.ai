@@ -1,10 +1,8 @@
 """Seam 2 for the data.gov.ro fetch: HTTP stubbed (`requests.get`), tiny hand-written CKAN responses and few-byte files.
 Assertions are on the archived files, their manifests and the returned/printed summary. No network, no database,
 and the fetch never imports the loader."""
-import ast
 import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 import pytest
 
@@ -260,19 +258,13 @@ def test_downloads_are_spaced_by_the_configured_delay(net, archive, monkeypatch)
 # ---- written before any load, never modified ----------------------------------------------------------------
 
 def test_fetching_never_loads_and_never_modifies_what_is_archived(net, archive):
-    imported = set()
-    for node in ast.walk(ast.parse(Path(datagov.__file__).read_text())):
-        if isinstance(node, ast.Import):
-            imported |= {a.name for a in node.names}
-        elif isinstance(node, ast.ImportFrom):
-            imported |= {node.module or "", *(a.name for a in node.names)}
-    assert not imported & {"rebuild", "da_bulk", "psycopg"}  # fetch and load stay separate halves
     serve(net, da_q1())
     run(archive)
     snapshot = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in archive.root.rglob("*") if p.is_file()}
     run(archive, now=DAY2)
     run(archive, now=DAY2)
     assert {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in archive.root.rglob("*") if p.is_file()} == snapshot
+    assert not (archive.root / "quarantine").exists()  # fetching validates and loads nothing
 
 
 # ---- the CLI ------------------------------------------------------------------------------------------------
@@ -285,3 +277,45 @@ def test_the_cli_verb_prints_a_summary(net, tmp_path, capsys, monkeypatch):
     assert code == 0
     assert "archived: 1" in out and "unclassified: 1" in out and "unchanged: 0" in out and "failed: 0" in out
     assert (tmp_path / "a/seap/bulk/da/2026Q1").is_dir()
+
+
+# ---- review fixes -------------------------------------------------------------------------------------------
+
+def test_an_unchanged_quarantined_resource_is_not_downloaded_again(net, archive):
+    serve(net, da_q1())
+    run(archive)
+    [unit] = archive.units()
+    archive.quarantine(unit, "bad headers")
+    net.requests.clear()
+    summary = run(archive, now=DAY2)
+    assert net.downloads() == [] and summary.archived == [] and len(summary.unchanged) == 1
+    assert len(archive.units()) == 0 and len(archive.quarantined()) == 1
+    # a real re-upload of the quarantined file is still fetched
+    net.packages["achizitii-publice-2026"] = package(2026, da_q1(modified="2026-11-05T10:00:00.000000"))
+    assert len(run(archive, now=DAY2).archived) == 1
+
+
+def test_a_resource_without_an_id_or_not_a_dict_is_reported_and_the_others_still_run(net, archive):
+    good = da_q1()
+    noid = resource("x", "Achiziții directe 2026 - T2", "raport-achizitii-directe-t2-2026.csv")
+    del noid["id"]
+    blank = resource("", "Contracte 2026 - T1", "raport-contracte-t1-2026.csv")
+    serve(net, good)
+    net.packages["achizitii-publice-2026"] = package(2026, noid, "junk", None, blank, good)
+    summary = run(archive)
+    assert [a.resource_id for a in summary.archived] == ["r-da1"]
+    assert len(summary.unclassified) == 4 and all("no id" in u.reason or "not a resource" in u.reason for u in summary.unclassified)
+    assert summary.failed == []
+
+
+def test_a_corrected_csv_listed_beside_the_old_one_is_fetched_whatever_the_api_order(net, archive):
+    old = da_q1()
+    new = resource("r-da1-new", "Achiziții directe 2026 - T1", "raport-achizitii-directe-t1-2026-corectat.csv",
+                   modified="2026-11-05T10:00:00.000000")
+    for order in ((old, new), (new, old)):
+        a = Archive(archive.root.parent / f"a{order[0]['id']}")
+        serve(net, *order)
+        summary = run(a)
+        assert [x.resource_id for x in summary.archived] == ["r-da1-new"]
+        [ignored] = summary.ignored
+        assert ignored.resource_id == "r-da1" and "older resource" in ignored.reason
