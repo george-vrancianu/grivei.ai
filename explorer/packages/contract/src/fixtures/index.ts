@@ -3,20 +3,26 @@
 import type { Fixture } from "./types.ts";
 import { coverageLens, coveragePage } from "./coverage.ts";
 import { entityOverview, entityRecords, entityRelationships } from "./entity.ts";
-import { fullResultsAuthorities, fullResultsRecords, fullResultsSuppliers } from "./full-results.ts";
-import { mainScreen, zoomedCounty } from "./main-screen.ts";
+import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
+import { mainScreenHand, zoomedCounty } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
 import { recordPage } from "./record-page.ts";
+import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
+export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords } from "./recorded/index.ts";
 
-/** Fixtures by operation name. A new operation must get a set here (the tests insist). */
+/**
+ * Fixtures by operation name. A new operation must get a set here (the tests insist).
+ * The main screen and full-results operations are the API's recorded answers (`recorded/`), plus the few hand-written
+ * states a recorded run cannot produce (pagination past 100 Records, estimated counts, every Record state at once).
+ */
 export const fixtures = {
-  MainScreen: mainScreen,
+  MainScreen: [...recordedMainScreen, ...mainScreenHand],
   ZoomedCounty: zoomedCounty,
-  FullResultsAuthorities: fullResultsAuthorities,
-  FullResultsSuppliers: fullResultsSuppliers,
-  FullResultsRecords: fullResultsRecords,
+  FullResultsAuthorities: [...recordedFullResultsAuthorities, ...fullResultsAuthoritiesHand],
+  FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
+  FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],
   EntityOverview: entityOverview,
   EntityRecords: entityRecords,
   EntityRelationships: entityRelationships,

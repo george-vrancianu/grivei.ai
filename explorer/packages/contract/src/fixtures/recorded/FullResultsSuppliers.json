@@ -1,0 +1,197 @@
+[
+  {
+    "name": "empty-filter",
+    "kind": "typical",
+    "description": "suppliers, first page, no filter (the default view of /explore/search)",
+    "variables": {
+      "filter": {},
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "2130001",
+            "records": 18,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "suppliers": {
+            "count": 3,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "1950001",
+                  "records": 16,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "2000104",
+                  "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990001",
+                      "name": "Cluj-Napoca"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "115000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "entity": {
+                  "key": "vat-bg103029862",
+                  "displayName": "BALKAN TRADING OOD",
+                  "identity": "NAME_ONLY",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "30000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "county-supplier-side",
+    "kind": "typical",
+    "description": "suppliers seated in a county",
+    "variables": {
+      "filter": {
+        "county": "RO-BV",
+        "countySide": "SUPPLIER"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "1950001",
+            "records": 16,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "suppliers": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "1950001",
+                  "records": 16,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "empty-no-match",
+    "kind": "empty",
+    "description": "no supplier matches",
+    "variables": {
+      "filter": {
+        "q": "zzzzzz"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "suppliers": {
+            "count": 0,
+            "countEstimated": false,
+            "rows": []
+          }
+        }
+      }
+    }
+  }
+]

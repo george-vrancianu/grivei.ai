@@ -62,14 +62,15 @@ describe("fixtures", () => {
       }
     });
 
-    it("splits a consortium Record's value equally between its winners, so the shares sum to the value", () => {
+    it("splits a consortium Record's value equally between its winners (odd bani to the first), so the shares sum to the value", () => {
       const consortia = everyObject().filter((o) => Array.isArray(o.winners) && o.winners.length > 1 && o.value != null);
       expect(consortia.length).toBeGreaterThan(0);
       for (const r of consortia) {
         const winners = r.winners as Node[];
         const value = BigInt(r.value as string);
         const shares = winners.map((w) => BigInt(w.share as string));
-        for (const s of shares) expect(s, String(r.code)).toBe(value / BigInt(winners.length));
+        const n = BigInt(winners.length);
+        shares.forEach((s, i) => expect(s, `${String(r.code)} winner ${i}`).toBe(value / n + (i === 0 ? value % n : 0n))); // the counting rule: remainder bani stay with the first winner
         expect(shares.reduce((a, b) => a + b, 0n), String(r.code)).toBe(value);
       }
     });

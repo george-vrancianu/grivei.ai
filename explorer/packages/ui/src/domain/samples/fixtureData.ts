@@ -13,7 +13,7 @@ function named<T extends { name: string }>(set: readonly T[], name: string): T {
 const variety = named(fixtures.MainScreen, "records-variety").data.seap.search;
 const estimatedCounts = named(fixtures.MainScreen, "extreme-estimated-counts").data.seap.search;
 const emptySearch = named(fixtures.MainScreen, "empty-no-match").data;
-const typicalSearch = named(fixtures.MainScreen, "typical-text-county").data;
+const typicalSearch = named(fixtures.MainScreen, "text-query").data;
 
 export const recordRows = variety.records.rows.map((row) => row.record);
 export const winners: Party[] = recordRows.flatMap((record) => record.winners);
@@ -42,11 +42,11 @@ export const authoritiesEstimated = estimatedCounts.authorities;
 export const suppliersEstimated = estimatedCounts.suppliers;
 export const authoritiesExact = variety.authorities;
 
-export const dataThroughSeap: DataThrough[] = named(fixtures.MainScreen, "typical-text-county").data.sources[0]!.dataThrough;
+export const dataThroughSeap: DataThrough[] = named(fixtures.MainScreen, "text-query").data.sources[0]!.dataThrough;
 
 export const allBadges: RecordBadge[] = [...new Set(recordRows.flatMap((record) => record.badges))];
 
-const goToSearch = named(fixtures.MainScreen, "supplier-side-unknown-county").data.seap.search;
+const goToSearch = named(fixtures.MainScreen, "go-to-entity").data.seap.search;
 const pick = (search: typeof variety) => ({
   authorities: search.authorities,
   suppliers: search.suppliers,
@@ -62,8 +62,8 @@ export const resultSamples = {
   goTo: pick(goToSearch),
   empty: pick(emptySearch.seap.search),
 };
-/** A Record row with highlighted matched text, from the typical search. */
-export const highlightedRecord = typicalSearch.seap.search.records.rows[0]!;
+/** A single-winner Record row whose title matched the query, with its highlighted range (the recorded "text-query-title-match"). */
+export const highlightedRecord = named(fixtures.MainScreen, "text-query-title-match").data.seap.search.records.rows[0]!;
 /** The consortium Record of the variety fixture, with no matched field (an empty query). */
 export const consortiumRecord = variety.records.rows[0]!;
 export const noValueRecord = variety.records.rows.find((row) => row.record.value === null)!;
