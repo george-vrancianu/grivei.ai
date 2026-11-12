@@ -30,7 +30,7 @@ describe("the Signal card", () => {
     expect(within(card).getByRole("heading", { level: 3, name: "Over cap" })).toBeVisible();
     expect(within(card).getByText("One direct purchase was awarded for RON 300,000.00, 1.11 times the direct-purchase cap of RON 270,120.00.")).toBeVisible();
     expect(within(card).getByText(/^Possible lawful explanations: a call-off under a framework agreement/)).toBeVisible();
-    expect(within(card).getByText("Dated 19 January 2024 · 1 Record")).toBeVisible();
+    expect(within(card).getByText("Latest Record: 19 January 2024 · 1 Record")).toBeVisible();
   });
 
   it("fills a splitting Signal with its purchases, group, window and sums", () => {
@@ -43,7 +43,7 @@ describe("the Signal card", () => {
 
   it("fills a framework-overrun Signal with the ceiling, what was reported and the ratio", () => {
     show(frameworkOverrunSignal);
-    expect(screen.getByText(/report RON 112,400,000.00 awarded against a ceiling of RON 100,000,000.00, 112.4% of it\./)).toBeVisible();
+    expect(screen.getByText(/Subsequent contracts reported under one framework agreement add up to RON 112,400,000.00, against a ceiling of RON 100,000,000.00: 112.4% of it\./)).toBeVisible();
     expect(screen.getByText(/indexation of prices, or modifications the law allows/)).toBeVisible();
   });
 
@@ -98,5 +98,21 @@ describe("the Signal card", () => {
   it("shows no score, rank or percentage of suspicion", () => {
     show(frameworkOverrunSignal);
     expect(screen.queryByText(/score|rank|\/ 100/i)).toBeNull();
+  });
+
+  it("writes Romanian counts of 20 or more with \"de\" (25 de achiziții, 25 de înregistrări)", () => {
+    const many: SignalData = {
+      ...splittingSignal, recordCount: 25,
+      numbers: { __typename: "SplittingNumbers", purchases: 25, sum: "29000000", cap: "27012000", cpvGroup: "770", from: "2024-07-01", to: "2024-07-19" },
+    };
+    show(many, "ro");
+    expect(screen.getByText(/^25 de achiziții directe din grupa CPV 770/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Vezi cele 25 de înregistrări" })).toBeVisible();
+  });
+
+  it("writes Romanian counts under 20 without \"de\" and a framework sentence that names the subsequent contracts", () => {
+    show(frameworkOverrunSignal, "ro");
+    expect(screen.getByRole("link", { name: "Vezi cele 13 înregistrări" })).toBeVisible();
+    expect(screen.getByText(/^Contractele subsecvente raportate pentru un acord-cadru însumează/)).toBeVisible();
   });
 });

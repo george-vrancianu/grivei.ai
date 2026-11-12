@@ -19,7 +19,7 @@ const splitting: SignalData = {
 const overCap: SignalData = {
   ...common, rule: "OVER_CAP", date: "2024-01-19", firstDate: "2024-01-19", recordCount: 1,
   numbers: { __typename: "OverCapNumbers", value: "30000000", cap: "27012000", multiple: 1.11 },
-  reproduce: { authority: "4000001", supplier: "30000001", signal: "OVER_CAP", cpv: null, from: "2024-01-19", to: "2024-01-19" },
+  reproduce: { authority: "4000001", supplier: null, signal: "OVER_CAP", cpv: null, from: "2024-01-19", to: "2024-01-19" },
 };
 
 const FACETS = /^(Filter by facet|Filtre pe fațete)$/;

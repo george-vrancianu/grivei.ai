@@ -2,12 +2,11 @@ import type { SignalData, SignalRule } from "../types.ts";
 import type { Locale } from "../../theme/index.ts";
 import { formatMoney } from "../atoms/MoneyAmount/index.ts";
 import { formatDate } from "./formatDate.ts";
-import { formatPercent } from "./formatPercent.ts";
 
 /** What each rule's sentence gets: the Signal's numbers already formatted for the reader (money, dates, ratios in the locale; procedure and CPV group as published). */
 export interface SignalNumberTexts {
   OVER_CAP: { value: string; cap: string; multiple: string };
-  SPLITTING: { purchases: string; sum: string; cap: string; cpvGroup: string; from: string; to: string };
+  SPLITTING: { purchasesCount: number; purchases: string; sum: string; cap: string; cpvGroup: string; from: string; to: string };
   FRAMEWORK_OVERRUN: { ceiling: string; subsequent: string; ratio: string };
   NO_PUBLICATION: { procedure: string };
 }
@@ -23,6 +22,10 @@ export type SignalRulesCopy = { [R in SignalRule]: SignalRuleCopy<R> };
 
 export const SIGNAL_RULES: readonly SignalRule[] = ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"];
 
+/** A ratio as a percentage, cut (not rounded) at two decimals: 1.1004 reads "110.04%", never a rounded "110%" on a rule that fires above 110%. */
+const ratioPercent = (ratio: number, locale: Locale) =>
+  new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2, roundingMode: "trunc" }).format(ratio);
+
 const decimals = (value: number, locale: Locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value);
 
 /** The numbers of a Signal as text for its rule's sentence. Money is exact (bani shown), dates are long, the multiple has two decimals at most. */
@@ -35,12 +38,12 @@ export function signalNumberTexts(numbers: SignalData["numbers"], locale: Locale
       return {
         rule: "SPLITTING",
         texts: {
-          purchases: new Intl.NumberFormat(locale).format(numbers.purchases), sum: money(numbers.sum), cap: money(numbers.cap), cpvGroup: numbers.cpvGroup,
+          purchasesCount: numbers.purchases, purchases: new Intl.NumberFormat(locale).format(numbers.purchases), sum: money(numbers.sum), cap: money(numbers.cap), cpvGroup: numbers.cpvGroup,
           from: formatDate(numbers.from, locale, "long"), to: formatDate(numbers.to, locale, "long"),
         },
       };
     case "FrameworkOverrunNumbers":
-      return { rule: "FRAMEWORK_OVERRUN", texts: { ceiling: money(numbers.ceiling), subsequent: money(numbers.subsequent), ratio: formatPercent(numbers.ratio, locale) } };
+      return { rule: "FRAMEWORK_OVERRUN", texts: { ceiling: money(numbers.ceiling), subsequent: money(numbers.subsequent), ratio: ratioPercent(numbers.ratio, locale) } };
     case "NoPublicationNumbers":
       return { rule: "NO_PUBLICATION", texts: { procedure: numbers.procedure } };
   }
@@ -71,28 +74,19 @@ export const FORBIDDEN_STEMS: Record<Locale, RegExp> = {
 
 const stripDiacritics = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
-/** The forbidden stems found in a text (empty when it is neutral). Reads the text in the given language, so "risc" is found in Romanian and "risk" in English. */
+/** The forbidden stems found in a text (empty when it is neutral). Both languages' stems are looked for in every text (an English word left in Romanian copy is caught too); the given language's own stems come first. */
 export function forbiddenWords(text: string, locale: Locale): string[] {
   const plain = stripDiacritics(text);
-  const found = new RegExp(FORBIDDEN_STEMS[locale].source, "g");
+  const other: Locale = locale === "en" ? "ro" : "en";
+  const found = new RegExp(`${FORBIDDEN_STEMS[locale].source}|${FORBIDDEN_STEMS[other].source}`, "g");
   return [...plain.matchAll(found)].map((m) => m[0]);
 }
 
-/** Sample numbers every rule's sentence is rendered with in the guard test and in stories. */
-export const SAMPLE_NUMBER_TEXTS: SignalNumberTexts = {
-  OVER_CAP: { value: "RON 300,000.00", cap: "RON 270,120.00", multiple: "1.11" },
-  SPLITTING: { purchases: "2", sum: "RON 290,000.00", cap: "RON 270,120.00", cpvGroup: "770", from: "1 July 2024", to: "19 July 2024" },
-  FRAMEWORK_OVERRUN: { ceiling: "RON 100,000,000.00", subsequent: "RON 112,400,000.00", ratio: "112.4%" },
-  NO_PUBLICATION: { procedure: "Negociere fără publicare prealabilă" },
-};
-
-/** Every wording of the rules (label, filled sentence, lawful line) as plain strings: what the guard reads. */
-export function ruleTexts(rules: SignalRulesCopy): string[] {
-  return [
-    ...(["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"] as const).flatMap((rule) => {
-      const copy = rules[rule];
-      const sentence = (copy.sentence as (n: SignalNumberTexts[typeof rule]) => string)(SAMPLE_NUMBER_TEXTS[rule]);
-      return [copy.label, sentence, copy.lawful];
-    }),
-  ];
+/** Every wording of the rules (label, sentence filled with the given numbers, lawful line) as plain strings: what the guard reads. */
+export function ruleTexts(rules: SignalRulesCopy, numbers: SignalNumberTexts): string[] {
+  const of = <R extends SignalRule>(rule: R) => {
+    const copy: SignalRuleCopy<R> = rules[rule];
+    return [copy.label, copy.sentence(numbers[rule]), copy.lawful];
+  };
+  return SIGNAL_RULES.flatMap((rule) => of(rule));
 }

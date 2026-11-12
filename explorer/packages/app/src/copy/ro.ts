@@ -275,17 +275,17 @@ export const ro: Copy = {
     rules: {
       OVER_CAP: {
         label: "Peste plafon",
-        sentence: (n) => `O achiziție directă a fost atribuită la ${n.value}, de ${n.multiple} ori plafonul achiziției directe de ${n.cap}.`,
+        sentence: (n) => `O achiziție directă a fost atribuită pentru ${n.value}, adică de ${n.multiple} ori plafonul achiziției directe (${n.cap}).`,
         lawful: "Explicații legale posibile: o achiziție subsecventă unui acord-cadru, o excepție prevăzută de lege sau o eroare de introducere a valorii ori a tipului înregistrării.",
       },
       SPLITTING: {
         label: "Fracționare",
-        sentence: (n) => `${n.purchases} achiziții directe din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
+        sentence: (n) => `${roCount(n.purchasesCount, n.purchases, "achiziție directă", "achiziții directe")} din grupa CPV ${n.cpvGroup}, între ${n.from} și ${n.to}, însumează ${n.sum}, peste plafonul de ${n.cap} al unei singure achiziții.`,
         lawful: "Explicații legale posibile: nevoi distincte, linii bugetare distincte sau produse fără legătură din aceeași grupă CPV.",
       },
       FRAMEWORK_OVERRUN: {
         label: "Depășirea acordului-cadru",
-        sentence: (n) => `Contractele unui acord-cadru raportează valori de ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
+        sentence: (n) => `Contractele subsecvente raportate pentru un acord-cadru însumează ${n.subsequent}, față de un plafon de ${n.ceiling}, adică ${n.ratio} din acesta.`,
         lawful: "Explicații legale posibile: indexarea prețurilor sau modificările permise de lege.",
       },
       NO_PUBLICATION: {
@@ -295,7 +295,7 @@ export const ro: Copy = {
       },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
-    date: (when) => `Din ${when}`,
+    date: (when) => `Ultima înregistrare: ${when}`,
     records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
     parties: {
       authority: "Autoritate contractantă",
@@ -304,7 +304,7 @@ export const ro: Copy = {
       entityLink,
     },
     links: {
-      reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${f} înregistrări`),
+      reproduce: (n, f) => (n === 1 ? "Vezi înregistrarea" : `Vezi cele ${roCount(n, f, "înregistrare", "înregistrări")}`),
       seap: { check: "Verifică în SEAP", checkEach: "Verifică fiecare înregistrare în SEAP" },
       methodology: "Cum este detectat acest Semnal",
     },

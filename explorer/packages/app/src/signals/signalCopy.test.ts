@@ -1,11 +1,19 @@
-import { forbiddenWords, ruleTexts, SIGNAL_RULES, type Locale } from "@grivei/ui";
+import { forbiddenWords, ruleTexts, SIGNAL_RULES, type Locale, type SignalNumberTexts } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { catalogue } from "../copy/index.ts";
+
+/** Numbers the sentences are filled with; 25 purchases, so Romanian counts take "de". */
+const numbers: SignalNumberTexts = {
+  OVER_CAP: { value: "300.000,00 RON", cap: "270.120,00 RON", multiple: "1,11" },
+  SPLITTING: { purchasesCount: 25, purchases: "25", sum: "290.000,00 RON", cap: "270.120,00 RON", cpvGroup: "770", from: "1 iulie 2024", to: "19 iulie 2024" },
+  FRAMEWORK_OVERRUN: { ceiling: "100.000.000,00 RON", subsequent: "112.400.000,00 RON", ratio: "112,4%" },
+  NO_PUBLICATION: { procedure: "Negociere fără publicare prealabilă" },
+};
 
 /** Every string the Signal card and its compact form can say, with sample numbers: the rules' label, filled sentence and lawful line, then the rest of the card's copy. */
 function signalTexts(locale: Locale): string[] {
   const { rules, parties, ...rest } = catalogue[locale].signalCard;
-  const out: string[] = [...ruleTexts(rules)];
+  const out: string[] = [...ruleTexts(rules, numbers)];
   const walk = (value: unknown) => {
     if (typeof value === "string") out.push(value);
     else if (typeof value === "function") out.push((value as (a: number, b: string) => string)(2, "2"));
@@ -19,13 +27,21 @@ function signalTexts(locale: Locale): string[] {
 describe.each(["en", "ro"] as const)("the Signal wording catalogue (%s)", (locale) => {
   it("has a label, a sentence and a lawful-explanations line for each of the four rules", () => {
     expect(Object.keys(catalogue[locale].signalCard.rules).sort()).toEqual([...SIGNAL_RULES].sort());
-    expect(ruleTexts(catalogue[locale].signalCard.rules)).toHaveLength(12);
+    expect(ruleTexts(catalogue[locale].signalCard.rules, numbers)).toHaveLength(12);
   });
 
   it("never says suspect, fraud, irregular, illegal or risk (nor the Romanian equivalents), in any part", () => {
     const texts = signalTexts(locale);
     expect(texts.length).toBeGreaterThan(20);
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
+  });
+
+  it("counts 20 or more in Romanian with \"de\"", () => {
+    if (locale !== "ro") return;
+    const { rules, links } = catalogue.ro.signalCard;
+    expect(rules.SPLITTING.sentence(numbers.SPLITTING)).toMatch(/^25 de achiziții directe/);
+    expect(links.reproduce(25, "25")).toBe("Vezi cele 25 de înregistrări");
+    expect(links.reproduce(13, "13")).toBe("Vezi cele 13 înregistrări");
   });
 
   it("writes Romanian with diacritics, never the cedilla forms", () => {

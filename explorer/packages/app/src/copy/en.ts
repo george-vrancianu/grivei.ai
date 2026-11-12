@@ -280,7 +280,7 @@ export const en: Copy = {
       },
       FRAMEWORK_OVERRUN: {
         label: "Framework overrun",
-        sentence: (n) => `Contracts under one framework agreement report ${n.subsequent} awarded against a ceiling of ${n.ceiling}, ${n.ratio} of it.`,
+        sentence: (n) => `Subsequent contracts reported under one framework agreement add up to ${n.subsequent}, against a ceiling of ${n.ceiling}: ${n.ratio} of it.`,
         lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
       },
       NO_PUBLICATION: {
@@ -290,7 +290,7 @@ export const en: Copy = {
       },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
-    date: (when) => `Dated ${when}`,
+    date: (when) => `Latest Record: ${when}`,
     records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
     parties: {
       authority: "Contracting authority",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sampleCopy } from "../samples/copy.ts";
-import { signalSamples } from "../samples/signals.ts";
+import { sampleNumberTexts, signalSamples } from "../samples/signals.ts";
 import { forbiddenWords, ruleTexts, signalNumberTexts, signalSentence, SIGNAL_RULES } from "./signalWording.ts";
 
 describe("the neutral-wording checker", () => {
@@ -24,9 +24,28 @@ describe("the neutral-wording checker", () => {
 
 describe("the sample wording of every rule", () => {
   it.each(["en", "ro"] as const)("has no accusing word in %s (label, sentence, lawful line)", (locale) => {
-    const texts = ruleTexts(sampleCopy.signalCard(locale).rules);
+    const texts = ruleTexts(sampleCopy.signalCard(locale).rules, sampleNumberTexts);
     expect(texts).toHaveLength(12);
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
+  });
+});
+
+describe("the checker across languages", () => {
+  it("finds an English word left in Romanian copy, and a Romanian one in English copy", () => {
+    expect(forbiddenWords("A risk, illegal and irregular", "ro")).toEqual(["risk", "illegal", "irregular"]);
+    expect(forbiddenWords("Achiziție suspectă", "en")).toEqual(["suspect"]);
+  });
+});
+
+describe("the percentage of a framework overrun", () => {
+  it("never rounds up to the 110% the rule fires above", () => {
+    const text = (ratio: number) => {
+      const filled = signalNumberTexts({ __typename: "FrameworkOverrunNumbers", ceiling: "100", subsequent: "110", ratio }, "en");
+      return "ratio" in filled.texts ? filled.texts.ratio : "";
+    };
+    expect(text(1.1004)).toBe("110.04%");
+    expect(text(1.1999)).toBe("119.99%");
+    expect(text(1.124)).toBe("112.4%");
   });
 });
 

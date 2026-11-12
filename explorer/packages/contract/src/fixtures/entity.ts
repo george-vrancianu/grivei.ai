@@ -209,16 +209,16 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
   },
   {
     name: "authority-signal-over-cap-reproduction", kind: "typical",
-    description: "the Records tab an over-cap Signal's reproducing link opens: authority page, signal + supplier + the one day",
+    description: "the Records tab an over-cap Signal's reproducing link opens: authority page, signal + the one day (no supplier, as the pipeline writes it)",
     variables: {
       key: "4000001", role: "AUTHORITY", limit: 100, offset: 0,
-      filter: { signal: "OVER_CAP", supplier: "30000001", from: "2024-01-19", to: "2024-01-19" },
+      filter: { signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" },
     },
     data: { entity: withSeap(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(300_000), records: 1 }),
-        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[1]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
+        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[1]!] },
         records: rowsOf(w.rDirect),
       },
     }) },

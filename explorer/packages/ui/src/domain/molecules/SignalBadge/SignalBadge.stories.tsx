@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, splittingSignal } from "../../samples/signals.ts";
+import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, ruleSlug, splittingSignal } from "../../samples/signals.ts";
 import type { SignalData } from "../../types.ts";
 import { SignalBadge } from "./index.ts";
 
@@ -19,7 +19,7 @@ const badges =
           <SignalBadge
             key={`${signal.rule}-${signal.date}`}
             signal={signal}
-            href={`/explore/authority/${signal.reproduce.authority}/records?signal=${signal.rule.toLowerCase().replaceAll("_", "-")}`}
+            href={`/explore/authority/${signal.reproduce.authority}/records?signal=${ruleSlug(signal.rule)}`}
             locale={locale}
             copy={sampleCopy.signalCard(locale)}
           />

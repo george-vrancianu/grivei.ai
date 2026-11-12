@@ -2,6 +2,7 @@
 // `SignalFields`); the recorded Overview fixtures carry real-shaped over-cap and no-publication Signals too, but the other two rules
 // have no recorded fixture yet (#76 adds the framework-overrun rule to the pipeline).
 import type { EntityRef, SignalData, SignalRule } from "../types.ts";
+import type { SignalNumberTexts } from "../utils/signalWording.ts";
 
 const authority: EntityRef = { key: "4000001", displayName: "MUNICIPIUL BRAȘOV", identity: "CUI" };
 const roadAuthority: EntityRef = { key: "4000002", displayName: "COMPANIA NAȚIONALĂ DE ADMINISTRARE A INFRASTRUCTURII RUTIERE S.A.", identity: "CUI" };
@@ -46,6 +47,17 @@ export const manySuppliersSignal: SignalData = {
   reproduce: { authority: "4000002", supplier: null, signal: "NO_PUBLICATION", cpv: null, from: "2023-12-14", to: "2023-12-14" },
 };
 
+/** The URL slug of a rule, as the app writes it (`over-cap`, `framework-overrun`): for the stories' links. */
+export const ruleSlug = (rule: SignalRule): string => rule.toLowerCase().replaceAll("_", "-");
+
 export const signalSamples: Record<SignalRule, SignalData> = {
   OVER_CAP: overCapSignal, SPLITTING: splittingSignal, FRAMEWORK_OVERRUN: frameworkOverrunSignal, NO_PUBLICATION: noPublicationSignal,
+};
+
+/** Sample numbers every rule's sentence is rendered with in the guard tests (English formats; the sentences only place them). */
+export const sampleNumberTexts: SignalNumberTexts = {
+  OVER_CAP: { value: "RON 300,000.00", cap: "RON 270,120.00", multiple: "1.11" },
+  SPLITTING: { purchasesCount: 25, purchases: "25", sum: "RON 290,000.00", cap: "RON 270,120.00", cpvGroup: "770", from: "1 July 2024", to: "19 July 2024" },
+  FRAMEWORK_OVERRUN: { ceiling: "RON 100,000,000.00", subsequent: "RON 112,400,000.00", ratio: "112.4%" },
+  NO_PUBLICATION: { procedure: "Negociere fără publicare prealabilă" },
 };

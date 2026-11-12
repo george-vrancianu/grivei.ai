@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, splittingSignal } from "../../samples/signals.ts";
+import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, ruleSlug, splittingSignal } from "../../samples/signals.ts";
 import type { SignalData } from "../../types.ts";
 import { SignalCard } from "./index.ts";
 
@@ -15,8 +15,8 @@ const card =
     return (
       <SignalCard
         signal={signal}
-        reproduceHref={`/explore/authority/${signal.reproduce.authority}/records?signal=${signal.rule.toLowerCase().replaceAll("_", "-")}`}
-        methodologyHref={`/explore/methodology#signal-${signal.rule.toLowerCase().replaceAll("_", "-")}`}
+        reproduceHref={`/explore/authority/${signal.reproduce.authority}/records?signal=${ruleSlug(signal.rule)}`}
+        methodologyHref={`/explore/methodology#signal-${ruleSlug(signal.rule)}`}
         seapHref={seapHref}
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         locale={locale}

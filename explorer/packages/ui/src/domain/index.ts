@@ -7,6 +7,6 @@ export * from "./templates/index.ts";
 export type { EntityAliases, EntityHeaderData, EntityOverviewData, EntityPageRole, EntityPageView, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsCounterparty, RelationshipsTimeline, CounterpartyRecordsData, SignalData, SignalRule } from "./types.ts";
 export { followLink } from "./utils/followLink.ts";
 export {
-  FORBIDDEN_STEMS, SAMPLE_NUMBER_TEXTS, SIGNAL_RULES, forbiddenWords, ruleTexts, signalNumberTexts, signalSentence,
+  FORBIDDEN_STEMS, SIGNAL_RULES, forbiddenWords, ruleTexts, signalNumberTexts, signalSentence,
   type SignalNumberTexts, type SignalRuleCopy, type SignalRulesCopy,
 } from "./utils/signalWording.ts";
