@@ -106,7 +106,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /**
  * Runs one statement on its own pooled connection and cancels it on the server when `signal` aborts (the client left):
  * a short-lived second connection asks Postgres to cancel that backend's active statement, so a fast typist's superseded,
- * broad queries do not pile up on the CPUs. The cancel matches on the statement text, so it can never hit the next
+ * broad queries do not pile up on the CPUs. The cancel matches on the statement text (cut as Postgres cuts it in pg_stat_activity), so it can never hit the next
  * statement a pooled connection runs.
  */
 export async function cancellableQuery<R extends pg.QueryResultRow = pg.QueryResultRow>(
@@ -124,10 +124,12 @@ export async function cancellableQuery<R extends pg.QueryResultRow = pg.QueryRes
       const killer = new pg.Client(pool.options);
       try {
         await killer.connect();
-        await killer.query("SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE pid = $1 AND state = 'active' AND query = $2", [
-          (client as unknown as { processID: number }).processID,
-          text,
-        ]);
+        // pg_stat_activity.query is cut at track_activity_query_size: compare both texts cut to what it can hold
+        await killer.query(
+          `SELECT pg_cancel_backend(pid) FROM pg_stat_activity, (SELECT setting::int - 1 AS n FROM pg_settings WHERE name = 'track_activity_query_size') t
+            WHERE pid = $1 AND state = 'active' AND left(query, t.n) = left($2::text, t.n)`,
+          [(client as unknown as { processID: number }).processID, text],
+        );
       } catch {
         // the connection or the statement is already gone
       } finally {

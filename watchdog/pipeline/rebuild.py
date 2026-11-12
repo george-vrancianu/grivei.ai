@@ -19,6 +19,7 @@ records absent from a re-upload are kept.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
@@ -38,6 +39,8 @@ from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
 from .progress import Progress
 from .search import create_index, value_bucket, vacuum
+
+log = logging.getLogger("pipeline.rebuild")
 
 SQL_DIR = Path(__file__).parent / "sql"
 SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
@@ -149,6 +152,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         resolved = [(w.name, resolver.supplier(w.name, w.cui, r.authority_cui)) for w in winners]
         first_name, first = resolved[0] if resolved else (None, None)
         counted = count(r.kind, r.value_bani, r.award_date, r.contract_type, r.cpv_code, r.concluded_by, r.notice_code, len(winners), estimates)
+        badges = [*counted.badges, *_identity_badges([w for _, w in resolved])]  # on the Record and on each of its search rows
         cur.execute(
             _UPSERT,
             dict(
@@ -163,7 +167,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 suspect_threshold_bani=counted.suspect_threshold_bani,
                 load_notes=list(dict.fromkeys((*r.notes, *counted.notes))),
                 winners=Jsonb([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
-                badges=[*counted.badges, *_identity_badges([w for _, w in resolved])],
+                badges=badges,
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
                 concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count, via=r.via, url=r.url,
                 ca_notice_id=r.ca_notice_id, sys_notice_type_id=r.sys_notice_type_id, sys_notice_version_id=r.sys_notice_version_id,
@@ -177,7 +181,6 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
             cur.execute("DELETE FROM seap.search WHERE record_code = %s", (r.code,))
         doc = _search_doc(r, authority, resolved)
         # one row per winner; share_bani is the winner's equal share of the counted value (counting.split_evenly), a sole winner has it all
-        badges = [*counted.badges, *_identity_badges([w for _, w in resolved])]
         for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
             keyed = w is not None and not w.natural_person
             cur.execute(
@@ -432,7 +435,10 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         if progress:
             progress.fail(e)
         raise
-    vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+    try:
+        vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+    except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
+        log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
     if progress:
         progress.finish(summary.records, data_through)
     return summary

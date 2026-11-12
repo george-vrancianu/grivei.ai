@@ -232,6 +232,9 @@ const SEARCH_ORDER: Record<RecordOrderKey, string> = {
 // What one entity tab groups on. Fixed strings.
 const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as const;
 
+/** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
+const AGG_BUCKET_CAP = 65_000;
+
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
@@ -330,6 +333,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
         // 2b. above the group limit: the top groups by matched RON from the index's terms aggregation, the count a HyperLogLog estimate
         estimated = true;
         count = estimate;
+        // past the index's bucket cap there is nothing to page to: an empty page, not an error (the cap is Tantivy's default, 65,000)
+        if (offset + limit + 1 > AGG_BUCKET_CAP) return { count, estimated, rows: [] };
         const spec = { terms: { field: key, size: offset + limit + 1, order: { s: "desc" } }, aggs: { s: { sum: { field: "share_bani" } } } };
         const r = await cancellableQuery(pool, signal, `SELECT pdb.agg($${w.params.length + 1}::jsonb) AS t FROM seap.search WHERE ${w.sql}`, [...w.params, JSON.stringify(spec)]);
         const buckets = (r.rows[0]!.t as { buckets: { key: string | null; s: { value: number } }[] }).buckets;
@@ -337,7 +342,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
           .filter((b): b is { key: string; s: { value: number } } => b.key !== null) // a natural person has no key: the terms aggregation reports them as a null bucket (one extra slot is asked for)
           .map((b) => ({ key: b.key, awarded: String(Math.round(b.s.value)) }))
           .sort((a, b) => Number(BigInt(b.awarded) - BigInt(a.awarded)) || (a.key < b.key ? -1 : 1))
-          .slice(offset);
+          .slice(offset, offset + limit);
       }
       if (!ranked.length) return { count, estimated, rows: [] };
       // 3. what each of the page's entities matched, once per Record
@@ -356,7 +361,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
       const now = new Date().toISOString();
       const rows = ranked.map((x) => ({
         entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now),
-        matched: { ...(byKey.get(x.key) ?? { awarded: x.awarded, records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }), awarded: x.awarded },
+        matched: byKey.get(x.key) ?? { awarded: x.awarded, records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }, // the exact per-key sum of step 3, not the aggregation's float
       }));
       return { count, estimated, rows };
     },

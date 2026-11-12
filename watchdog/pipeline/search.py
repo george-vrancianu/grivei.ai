@@ -34,11 +34,11 @@ def value_bucket(value_bani: int | None) -> str | None:
 
 
 # Text columns that are filtered or grouped on are `pdb.literal` (one exact term, a fast field), the document is tokenised
-# by `pdb.simple` (already folded: ascii_folding is a harmless second guard), numbers, dates and booleans are fast fields.
+# by `pdb.simple` (already folded by fold.py: no further folding, so the index and the query's fold() agree on every letter), numbers, dates and booleans are fast fields.
 INDEX_SQL = """
 CREATE INDEX search_bm25 ON seap.search USING paradedb (
     id,
-    (doc::pdb.simple('ascii_folding=true')),
+    (doc::pdb.simple),
     (record_code::pdb.literal), winner_position, winners,
     (channel::pdb.literal), award_date, award_year, value_bani, (value_bucket::pdb.literal), has_signals,
     (badges::pdb.literal), (procedure::pdb.literal), (cpv_code::pdb.literal),

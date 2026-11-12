@@ -20,6 +20,7 @@ import allowlist from "@grivei/contract/persisted-queries.json" with { type: "js
 import { loadSchema, validateResponse } from "@grivei/contract/node";
 import type { EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
+import { cancellableQuery } from "../src/search.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -770,6 +771,28 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(search.suppliers.rows[0]!.matched.awarded).toBe("27012100");
     });
 
+    it("pages the estimated path too: exactly `limit` rows, no overlap, the same order as the exact path", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
+      pools.push(pool);
+      const hll = postgresStore(pool, { exactGroupLimit: 1 }); // every side is above 1 "group": the terms-aggregation path
+      const exact = postgresStore(pool);
+      const filter = {} as Parameters<typeof hll.searchEntities>[1];
+      for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
+        const all = (await exact.searchEntities(side, filter, { limit: 50, offset: 0 })).rows.map((r) => r.entity.key);
+        const first = await hll.searchEntities(side, filter, { limit: 2, offset: 0 });
+        const second = await hll.searchEntities(side, filter, { limit: 2, offset: 2 });
+        expect(first.estimated).toBe(true);
+        expect(first.rows.map((r) => r.entity.key)).toEqual(all.slice(0, 2));
+        expect(second.rows.map((r) => r.entity.key)).toEqual(all.slice(2, 4));
+        // the exact per-key sum, not the aggregation's float
+        expect(second.rows.every((r) => /^\d+$/.test(r.matched.awarded))).toBe(true);
+      }
+      // past the bucket cap: an empty page, not an error
+      const far = await hll.searchEntities("SUPPLIER", filter, { limit: 50, offset: 1_000_000 });
+      expect(far.rows).toEqual([]);
+      expect(far.estimated).toBe(true);
+    });
+
     it("narrows by the chips and the entity filters", async () => {
       expect((await searchData({ from: "2023-01-01" })).total.records).toBe(12); // DA95000003 is of 2022
       expect((await searchData({ to: "2022-12-31" })).total.records).toBe(1);
@@ -825,6 +848,27 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         await locker.query("ROLLBACK").catch(() => undefined);
         await locker.end().catch(() => undefined);
         await new Promise((r) => server.close(r));
+      }
+    });
+
+    it("cancels a statement longer than track_activity_query_size too (pg_stat_activity truncates its text)", async () => {
+      const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
+      pools.push(pool);
+      const locker = new pg.Client({ connectionString: `${baseUrl}/search_a` });
+      await locker.connect();
+      try {
+        await locker.query("BEGIN");
+        await locker.query("LOCK TABLE seap.search IN ACCESS EXCLUSIVE MODE");
+        const text = `SELECT count(*) FROM seap.search /* ${"x".repeat(3000)} */`;
+        const abort = new AbortController();
+        const running = cancellableQuery(pool, abort.signal, text).then(() => "finished", (e: Error) => e.name);
+        await new Promise((r) => setTimeout(r, 300)); // let it start and queue behind the lock
+        abort.abort();
+        const outcome = await Promise.race([running, new Promise((r) => setTimeout(() => r("still running"), 15_000))]);
+        expect(outcome).toBe("AbortError");
+      } finally {
+        await locker.query("ROLLBACK").catch(() => undefined);
+        await locker.end().catch(() => undefined);
       }
     });
   });

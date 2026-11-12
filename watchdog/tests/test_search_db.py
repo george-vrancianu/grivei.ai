@@ -89,3 +89,30 @@ def test_a_rolled_back_load_never_reaches_search(built):
         assert writer.execute(HIT).fetchone() == (1,)
         writer.rollback()
     assert q(built, HIT) == [(0,)]
+
+
+class _Progress:
+    """Records the rebuild's calls to the progress reporter (only the ones the rebuild makes at its end matter here)."""
+    def __init__(self):
+        self.events = []
+
+    def __getattr__(self, name):
+        return lambda *a, **k: self.events.append(name)
+
+
+def test_a_vacuum_that_fails_after_the_commit_is_a_warning_and_the_rebuild_still_finishes(db, tmp_path, monkeypatch, caplog):
+    import pipeline.rebuild as rebuild_module
+
+    def boom(_url):
+        raise psycopg.OperationalError("vacuum went away")
+
+    monkeypatch.setattr(rebuild_module, "vacuum", boom)
+    root = tmp_path / "archive"
+    shutil.copytree(ARCHIVE, root)
+    progress = _Progress()
+    with caplog.at_level("WARNING", logger="pipeline.rebuild"):
+        summary = rebuild(Archive(root), db, progress=progress)
+    assert summary.records > 0
+    assert "finish" in progress.events and "fail" not in progress.events
+    assert any("VACUUM" in m for m in caplog.messages)
+    assert q(db, "SELECT count(*) FROM seap.search") != [(0,)]  # committed

@@ -22,6 +22,7 @@
     { "rule": "RO CUI in a sentence", "input": "CUI RO12345678 alfa", "folded": "cui 12345678 alfa" },
     { "rule": "RO that is not a CUI stays", "input": "ro roma ro1 ro12345678901", "folded": "ro roma ro1 ro12345678901" },
     { "rule": "a dotted word that is not a legal form is split, not joined", "input": "www.exemplu.ro", "folded": "www exemplu ro" },
+    { "rule": "letters NFKD does not decompose stay as they are, in the document and in the query alike", "input": "Łukasz Straße Øst", "folded": "łukasz straße øst" },
     { "rule": "single dotted letters inside a name join", "input": "I.C.A.R. Ionescu", "folded": "icar ionescu" }
   ]
 }
