@@ -4,6 +4,7 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordSignal } from "../../../../types.ts";
+import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
@@ -11,7 +12,7 @@ export interface SignalsSectionCopy {
   heading: string;
   /** One neutral label per rule. The Signal card and its wording catalogue replace this entry. */
   rules: Record<RecordSignal["rule"], string>;
-  /** "since 12 March 2024", given the formatted date. */
+  /** "dated 12 March 2024" (the date of the latest Record in the Signal, not a start), given the formatted date. */
   date: (when: string) => string;
   /** "13 Records", given the count and its formatted number. */
   records: (n: number, formatted: string) => string;
@@ -38,12 +39,12 @@ export function SignalsSection({ signals, recordHref, onNavigate, locale, copy }
       </Typography>
       <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", rowGap: 1.5 }}>
         {signals.map((signal) => (
-          <li key={`${signal.rule}-${signal.date}-${signal.authority.key}`}>
+          <li key={`${signal.rule}-${signal.date}-${signal.authority.key}-${signal.suppliers.map((s) => s.key).join(",")}`}>
             <Typography variant="subtitle2" component="h3">
               {copy.rules[signal.rule]}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {copy.date(formatDate(signal.date, locale, "long"))} · {copy.records(signal.recordCount, signal.recordCount.toLocaleString(locale))}
+              {copy.date(formatDate(signal.date, locale, "long"))} · {copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}
             </Typography>
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
               {signal.records.map((r) => (

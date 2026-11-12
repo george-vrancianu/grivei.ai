@@ -27,7 +27,7 @@ import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts"
 const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
   en: {
     heading: {
-      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase notice (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
+      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
     },
     value: {
@@ -84,8 +84,8 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
   },
   ro: {
     heading: {
-      kinds: { DA: "Achiziție directă (DA)", DAN: "Anunț de achiziție directă (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
-      facets: { code: "Cod", date: "Data", kind: "Tip", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
+      facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
     },
     value: {
       published: "Valoare publicată",

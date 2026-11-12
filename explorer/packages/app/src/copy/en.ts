@@ -119,7 +119,7 @@ export const en: Copy = {
   recordPage: {
     notFound: { title: "Record not found", body: (code) => `No Record is published under the code ${code}.` },
     heading: {
-      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase notice (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
+      kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
     },
     value: {

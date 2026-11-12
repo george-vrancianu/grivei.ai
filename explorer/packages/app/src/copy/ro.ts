@@ -124,8 +124,8 @@ export const ro: Copy = {
   recordPage: {
     notFound: { title: "Înregistrarea nu a fost găsită", body: (code) => `Nicio înregistrare nu este publicată sub codul ${code}.` },
     heading: {
-      kinds: { DA: "Achiziție directă (DA)", DAN: "Anunț de achiziție directă (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
-      facets: { code: "Cod", date: "Data", kind: "Tip", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
+      facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
     },
     value: {
       published: "Valoare publicată",

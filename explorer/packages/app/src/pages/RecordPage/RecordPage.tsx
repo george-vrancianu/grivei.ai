@@ -52,7 +52,7 @@ export function RecordPage({ locale, code }: RecordPageProps) {
         // plain clicks on the page's own links change page without a load; the links keep their real hrefs
         onNavigate={(href) => navigate(href, "push")}
         locale={locale}
-        copy={{ ...t.recordPage, recordRow: { ...t.results.recordRow } }}
+        copy={{ ...t.recordPage, recordRow: t.results.recordRow }}
       />
     </PageShell>
   );

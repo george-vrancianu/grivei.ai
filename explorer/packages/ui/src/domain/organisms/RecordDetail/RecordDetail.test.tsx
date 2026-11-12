@@ -37,6 +37,15 @@ describe("RecordDetail", () => {
     expect(screen.getByText("45233140-2 Lucrări de drumuri")).toBeVisible();
   });
 
+  it("names a DAN a direct purchase award notification, in both languages", () => {
+    const dan: RecordPageData = { ...directPurchaseRecord, kind: "DAN" };
+    const { unmount } = show(dan);
+    expect(screen.getByText("Direct purchase award notification (DAN)")).toBeVisible();
+    unmount();
+    show(dan, "ro");
+    expect(screen.getByText("Notificare de atribuire a cumpărării directe (DAN)")).toBeVisible();
+  });
+
   it("shows the value as published and the counted value", () => {
     show(contractRecord);
     expect(screen.getByText("Value as published").nextElementSibling).toHaveTextContent("RON 12,800,000.00");
