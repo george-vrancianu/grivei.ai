@@ -52,6 +52,8 @@ export type RecordsTabData = NonNullable<NonNullable<EntityRecordsQuery["entity"
 /** The Records tab's facet counts. */
 export type RecordFacetData = RecordsTabData["facets"];
 
+/** What the Relationships tab shows (`EntityRelationships`' `seap.role`): the counterparties, the overall timeline and the Flow lens. */
+export type RelationshipsData = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>;
 /** What the Relationships tab's graph shows (`EntityRelationships`): the role's `counterparties` (the top 30 by money, with their count and top share). */
 export type RelationshipsCounterparties = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["counterparties"];
 /** One counterparty of the graph: the Entity (null for a natural person or an unlinked winner), its money by channel and its markers. */

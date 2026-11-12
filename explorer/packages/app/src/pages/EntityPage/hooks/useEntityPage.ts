@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { EntityHeaderData, EntityOverviewData, EntityPageView, EntityPageRole, RecordsTabData } from "@grivei/ui";
+import type { EntityHeaderData, EntityOverviewData, EntityPageView, EntityPageRole, RecordsTabData, RelationshipsData } from "@grivei/ui";
 import type { RecordFilter, RecordOrder, SignalOrder } from "@grivei/contract";
 import { useClient } from "../../../graphql/ClientContext.tsx";
 import type { GraphqlClient } from "../../../graphql/client.ts";
@@ -21,13 +21,13 @@ export interface EntityPageRequest {
 
 export type EntityPageState =
   /** `entity` is the header of the same entity (same key and role) from the tab before, so the page can keep it on screen. Null on a first load. */
-  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: null }
+  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: null; relationships: null }
   | { status: "error" }
   /**
    * `entity` is null when no entity has that key. `records` is the Records tab's data (null on the other tabs, or when the role has none);
-   * `overview` is the Overview tab's (null on the other tabs, or when the entity lacks the page's role). The Overview does not keep the last one while loading: its numbers follow the filter.
+   * `overview` is the Overview tab's and `relationships` the Relationships tab's (each null on the other tabs, or when the entity lacks the page's role). The Overview does not keep the last one while loading: its numbers follow the filter.
    */
-  | { status: "ready"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null };
+  | { status: "ready"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; relationships: RelationshipsData | null };
 type Settled = Exclude<EntityPageState, { status: "loading" }>;
 /** The entity a request is about: the header is the same across its tabs. */
 const subjectOf = (r: EntityPageRequest) => `${r.role}:${r.key}`;
@@ -36,6 +36,7 @@ interface Fetched {
   entity: EntityHeaderData | null;
   records: RecordsTabData | null;
   overview: EntityOverviewData | null;
+  relationships: RelationshipsData | null;
 }
 
 /** Each tab runs its own operation; every one of them carries the header fields. The Records tab's also brings its `records(filter)`. */
@@ -43,13 +44,13 @@ function fetchPage(client: GraphqlClient, r: EntityPageRequest, signal: AbortSig
   const { key, role, filter } = r;
   switch (r.view) {
     case "overview":
-      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null }));
+      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null, relationships: null }));
     case "records":
       return client
         .query(EntityRecords, { key, role, filter, limit: RECORDS_PAGE_SIZE, offset: ((r.page ?? 1) - 1) * RECORDS_PAGE_SIZE, order: r.order }, { signal })
-        .then((d) => ({ entity: d.entity, records: d.entity?.seap.role?.records ?? null, overview: null }));
+        .then((d) => ({ entity: d.entity, records: d.entity?.seap.role?.records ?? null, overview: null, relationships: null }));
     case "relationships":
-      return client.query(EntityRelationships, { key, role, filter }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: null }));
+      return client.query(EntityRelationships, { key, role, filter }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: null, relationships: d.entity?.seap.role ?? null }));
   }
 }
 
@@ -67,8 +68,8 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
   useEffect(() => {
     const controller = new AbortController();
     fetchPage(client, JSON.parse(key) as EntityPageRequest, controller.signal)
-      .then(({ entity, records, overview }) => {
-        setSettled({ key, state: { status: "ready", entity, records, overview } });
+      .then(({ entity, records, overview, relationships }) => {
+        setSettled({ key, state: { status: "ready", entity, records, overview, relationships } });
         // the last Records of this entity stay on screen while the next filter loads (the panel keeps its place and focus)
         if (entity) setLast((before) => ({ subject, entity, records: records ?? (before?.subject === subject ? before.records : null) }));
       })
@@ -80,5 +81,5 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
 
   if (settled?.key === key) return settled.state;
   const same = last?.subject === subject ? last : null;
-  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: null };
+  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: null, relationships: null };
 }
