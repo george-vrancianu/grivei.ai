@@ -99,8 +99,8 @@ def test_the_fixture_file_parses_with_dedup_blank_value_and_cui_cleanup(copy_of_
     assert sorted(rows) == ["DA90000001", "DA90000002", "DA90000003", "DA90000004"]  # the duplicate row is dropped
     assert rows["DA90000001"].value_bani == 120050 and rows["DA90000001"].authority_name.endswith("JUDETUL TEST)")
     assert rows["DA90000001"].awarded_on.isoformat() == "2022-03-30"  # MM/DD/YYYY
-    assert rows["DA90000003"].value_bani is None and rows["DA90000003"].supplier_cui == "2000003"
-    assert rows["DA90000004"].awarded_on is None and rows["DA90000004"].supplier_cui == "2000002"
+    assert rows["DA90000003"].value_bani is None and rows["DA90000003"].supplier_cui == "RO2000003"
+    assert rows["DA90000004"].awarded_on is None and rows["DA90000004"].supplier_cui == "RO 2000002"
 
 
 @pytest.mark.parametrize(

@@ -121,3 +121,25 @@ def test_graph_export_drops_the_null_link_of_an_unmapped_notice_type(db, tmp_pat
                     "--out", out], check=True, capture_output=True, env={**os.environ, "DATABASE_URL": db})
     [edge] = [e for e in json.loads(out.read_text())["edges"] if e["rel"] == "AWARDED_CONTRACT"]
     assert edge["urls"] == [f"{V}ca-notices/view-c/930003"]
+
+
+# ---- ADR 0003: the legacy loader no longer turns foreign ids into digits or merges suppliers by name (#66) ----------------
+
+
+@pytest.mark.parametrize(
+    "published, cui",
+    [("RO 16310091", "16310091"), ("ro16310091", "16310091"), ("0016310091", "16310091"), ("16310091", "16310091"),
+     ("BG103029862", None), ("ATU 18379608", None), ("1003600118796", None), ("", None), ("-", None)],
+)
+def test_norm_cui_keeps_a_cui_and_never_turns_a_foreign_id_into_digits(db, published, cui):
+    out = psql(db, "-c", f"SELECT coalesce(norm_cui('{published}'), '<null>')").strip()
+    assert out == (cui or "<null>")
+
+
+def test_upsert_entity_does_not_merge_homonyms_by_name(db):
+    ids = psql(db, "-c", """
+        SELECT upsert_entity('company', 'DRUM CONSTRUCT SRL', '16310091', NULL)
+        UNION ALL SELECT upsert_entity('company', 'DRUM CONSTRUCT SRL', '22676950', NULL)
+        UNION ALL SELECT upsert_entity('company', 'DRUM CONSTRUCT SRL', NULL, NULL)
+        UNION ALL SELECT upsert_entity('company', 'DRUM CONSTRUCT S.R.L.', 'BG103029862', NULL)""").split()
+    assert len(set(ids)) == 4  # same name, four entities

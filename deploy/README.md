@@ -42,7 +42,7 @@ docker compose run --rm pipeline rebuild
 
 `status` shows how far a running or finished `rebuild` is (it reads `rebuild-progress.json` in the archive root); `rebuild` prints one timestamped line per unit. The operator's full-archive run (nohup, log, kill, rerun) is in `watchdog/README.md`, "Operator: rebuild the graph from the archive for real".
 
-`fetch-bulk` only downloads into the archive; `rebuild` drops and recreates the `seap` schema from every complete unit in one transaction. Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
+`fetch-bulk` only downloads into the archive; `anaf-lookup` asks ANAF about the CUIs in the archive and archives the answers (resumable; operator steps in `watchdog/README.md`); `rebuild` drops and recreates the `seap` schema and the core's entity tables (`core.entity`, `core.alias`, `core.anaf_company`) from every complete unit in one transaction. Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
 
 ## Environment
 

@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import type { Store, RecordRow, RecordDetail, RecordOrderKey } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey } from "./store.ts";
 
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
 // The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
@@ -31,42 +31,7 @@ function assertEmptyFilter(filter: Filter): void {
 
 const zeroTotal = () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false });
 
-const entity = (cui: string | null, name: string) => ({
-  __typename: "Entity" as const,
-  key: cui ?? `name-${name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-  displayName: name,
-  identity: cui ? ("CUI" as const) : ("NAME_ONLY" as const),
-  cui,
-});
-
-function recordRow(r: RecordRow) {
-  return {
-    __typename: "SeapRecord" as const,
-    code: r.code,
-    title: r.title,
-    date: r.date,
-    kind: r.kind,
-    channel: r.channel,
-    procedure: r.procedure,
-    value: r.value,
-    counted: r.counted,
-    badges: [
-      ...(r.value === null ? ["NO_VALUE"] : []),
-      ...(r.crawlStatus === "PROVISIONAL" ? ["CRAWLED_PROVISIONAL"] : r.crawlStatus === "CRAWL_ONLY" ? ["CRAWL_ONLY"] : []),
-    ],
-    authority: entity(r.authority.cui, r.authority.name),
-    // TODO #66: natural persons. A CNP-shaped CUI_OFERTANT must never be stored or served; it should be naturalPerson: true.
-    winners: r.winners.map((w) => ({
-      naturalPerson: false,
-      publishedName: w.name,
-      share: null, // TODO #65: an equal share of the counted value for each member of a consortium
-      entity: entity(w.cui, w.name ?? w.cui ?? ""),
-    })),
-    signals: [],
-  };
-}
-
-function recordPage(r: RecordDetail) {
+function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object) {
   return {
     ...recordRow(r),
     contractType: r.contractType,
@@ -79,6 +44,59 @@ function recordPage(r: RecordDetail) {
 }
 
 export function rootValue(store: Store) {
+  /** An Entity of the shared core (ADR 0003). Placement and the role aggregates belong to later tickets (#67, #73): null for now. */
+  const entityObject = (e: EntityRow) => ({
+    __typename: "Entity" as const,
+    key: e.key,
+    displayName: e.displayName,
+    identity: e.identity,
+    cui: e.cui,
+    foreignVatId: e.foreignVatId,
+    anafStatus: e.anafStatus,
+    identityCurated: e.identityCurated,
+    placement: null,
+    provenance: [
+      {
+        source: e.provenance.source,
+        url: null,
+        via: e.provenance.via,
+        kind: e.provenance.source === "ANAF" ? ("API" as const) : ("BULK" as const),
+        fetchedAt: e.provenance.fetchedAt,
+      },
+    ],
+    aliases: () => store.aliases(e.key),
+    seap: () => ({ roles: () => store.roles(e.key), role: () => null }), // TODO #73: the per-role totals, Records and counterparties
+  });
+
+  function recordRow(r: RecordRow) {
+    return {
+      __typename: "SeapRecord" as const,
+      code: r.code,
+      title: r.title,
+      date: r.date,
+      kind: r.kind,
+      channel: r.channel,
+      procedure: r.procedure,
+      value: r.value,
+      counted: r.counted,
+      // the order of the enum: NO_VALUE, then the identity badges the rebuild set
+      badges: [
+        ...(r.value === null ? ["NO_VALUE"] : []),
+        ...(r.crawlStatus === "PROVISIONAL" ? ["CRAWLED_PROVISIONAL"] : r.crawlStatus === "CRAWL_ONLY" ? ["CRAWL_ONLY"] : []),
+        ...r.identityBadges,
+      ],
+      authority: entityObject(r.authority),
+      // A natural person (a 13-digit CNP in the file) is never named or linked: the rebuild stored nothing of them (ADR 0003).
+      winners: r.winners.map((w) => ({
+        naturalPerson: w.naturalPerson,
+        publishedName: w.naturalPerson ? null : w.name,
+        share: null, // TODO #65: an equal share of the counted value for each member of a consortium
+        entity: w.entity ? entityObject(w.entity) : null,
+      })),
+      signals: [],
+    };
+  }
+
   const total = async () => {
     const t = await store.total();
     return { ...zeroTotal(), awarded: t.awarded, records: t.records, noValue: t.noValue };
@@ -89,7 +107,10 @@ export function rootValue(store: Store) {
     sources: async () => [
       { id: "SEAP", name: "SEAP", harvested: true, dataThrough: await store.dataThrough() },
     ],
-    entity: notServed("entity"),
+    entity: async ({ key }: { key: string }) => {
+      const found = await store.entity(key);
+      return found ? entityObject(found) : null;
+    },
     coverage: notServed("coverage"),
     signalRules: notServed("signalRules"),
     counties: notServed("counties"),
@@ -97,7 +118,7 @@ export function rootValue(store: Store) {
     seap: () => ({
       record: async ({ code }: { code: string }) => {
         const found = await store.record(code);
-        return found ? recordPage(found) : null;
+        return found ? recordPage(found, recordRow) : null;
       },
       search: ({ filter }: { filter: Filter }) => {
         assertEmptyFilter(filter);
