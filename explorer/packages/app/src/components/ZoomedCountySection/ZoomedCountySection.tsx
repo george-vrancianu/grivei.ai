@@ -1,6 +1,7 @@
 import type { ZoomedCountyQuery } from "@grivei/contract";
 import { Box, Button, Typography, ZoomedCountyMap, type Locale, type ZoomedCountyMapCopy } from "@grivei/ui";
 import type { UatTopologyState } from "../../geo/index.ts";
+import { BUCHAREST } from "./zoomedCountySection.utils.ts";
 
 /** The strings the section adds around the map. */
 export interface ZoomedCountySectionCopy {
@@ -67,7 +68,7 @@ export function ZoomedCountySection({ county, data, loading, failed, topology, u
         </Button>
         {data && (
           <Typography variant="h6" component="h2">
-            {copy.title(countyName, county === "RO-B")}
+            {copy.title(countyName, county === BUCHAREST)}
           </Typography>
         )}
       </Box>

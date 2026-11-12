@@ -1,7 +1,11 @@
+import { OFF_MAP_TILE_AREAS } from "@grivei/ui";
 import type { RecordFilter, ZoomedCountyQueryVariables } from "@grivei/contract";
 
 /** The off-map areas a `county` filter can hold besides a real county: none of them has UATs to zoom into. */
-const OFF_MAP = new Set(["NATIONAL", "UNPLACED", "UNKNOWN_SUPPLIER_COUNTY"]);
+const OFF_MAP = new Set<string>(Object.values(OFF_MAP_TILE_AREAS));
+
+/** Bucharest is one county of sectors: the heading says so. */
+export const BUCHAREST = "RO-B";
 
 /**
  * The county the main screen zooms into, or null. A county in the filter zooms when it is an ISO county (`RO-BV`, `RO-B`)

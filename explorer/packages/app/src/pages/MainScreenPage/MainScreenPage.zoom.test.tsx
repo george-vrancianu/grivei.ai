@@ -1,12 +1,13 @@
 // Seam 3 for ticket #84: the zoomed county against the recorded responses (`@grivei/contract` `fixtures/recorded`, made by
 // seam 1). A county on the authority side zooms into its UAT choropleth; a UAT click filters the results; the way back
 // clears both. The whole state (county, uat) lives in the URL and survives a reload, in both languages.
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import type { LoadUatTopology } from "../../geo/index.ts";
+import type { GraphqlClient } from "../../graphql/client.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
@@ -125,7 +126,7 @@ describe.each([
 });
 
 describe("the zoomed county where the county's outlines are missing or it is the supplier side", () => {
-  it("says the map could not be loaded when the UAT file is missing, and the results and the way back still work", async () => {
+  it("says the map could not be loaded and offers the way back", async () => {
     open("/explore/?county=RO-IS");
     // no outlines for RO-IS (404) and no fixture for it: the screen has no recorded answer, but the map says so
     expect(await screen.findByText(catalogue.en.main.mapUnavailable)).toBeVisible();
@@ -160,5 +161,57 @@ describe("the zoomed county where the county's outlines are missing or it is the
     await user.click(await screen.findByRole("button", { name: /^Brașov:/ }));
     await screen.findByRole("button", { name: /^Sânpetru:/ });
     expect(loaded).toEqual(["RO-BV"]);
+  });
+});
+
+describe("superseded zoom requests", () => {
+  /** Holds every ZoomedCounty answer (the real fixtures, released by the test) and records its abort signal; other operations pass through. */
+  function heldZoomClient() {
+    const real = fixtureClient().client;
+    const signals: AbortSignal[] = [];
+    const release: (() => void)[] = [];
+    const client: GraphqlClient = {
+      query: (op, variables, options) => {
+        const answer = real.query(op, variables, options);
+        if (op.name !== "ZoomedCounty") return answer;
+        if (options?.signal) signals.push(options.signal);
+        return new Promise((resolve, reject) => void release.push(() => void answer.then(resolve, reject)));
+      },
+    };
+    return { client, signals, release };
+  }
+
+  it("aborts the older request when the filter changes, and a stale answer that arrives late is never drawn", async () => {
+    openAt("/explore/?county=RO-BV");
+    const { client, signals, release } = heldZoomClient();
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadTestUatTopology} />);
+    await waitFor(() => expect(signals).toHaveLength(1));
+    expect(signals[0]?.aborted).toBe(false);
+
+    await userEvent.type(screen.getByRole("searchbox", { name: catalogue.en.searchBar.label }), "comuna");
+    await waitFor(() => expect(signals).toHaveLength(2));
+    expect(signals[0]?.aborted).toBe(true);
+    expect(signals[1]?.aborted).toBe(false);
+
+    await act(async () => {
+      release[1]?.(); // the newer answer (q=comuna): Brașov has no Records in it
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    const noData = catalogue.en.zoomedCounty.map.map.noData;
+    expect(plain((await screen.findByRole("button", { name: /^Brașov:/ })).getAttribute("aria-label"))).toContain(noData);
+    await act(async () => {
+      release[0]?.(); // the older one (no q), which ignored the abort, arrives last
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(plain(area("Brașov").getAttribute("aria-label"))).toContain(noData); // still the newer answer
+  });
+
+  it("aborts the request when the page unmounts", async () => {
+    openAt("/explore/?county=RO-BV");
+    const { client, signals } = heldZoomClient();
+    const { unmount } = render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadTestUatTopology} />);
+    await waitFor(() => expect(signals).toHaveLength(1));
+    unmount();
+    expect(signals[0]?.aborted).toBe(true);
   });
 });
