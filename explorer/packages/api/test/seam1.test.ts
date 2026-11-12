@@ -332,7 +332,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     // Q1, which the bulk has: its contract (150000 lei) was fetched BEFORE the crawl of the same contract (100000 lei) and still stands
     expect(await crawlRecord("CAN9200001~C-1")).toMatchObject({
-      value: "15000000", counted: "15000000", badges: [], provenance: { source: "SEAP", kind: "BULK", via: "Contracte 2026 - T1", url: null },
+      value: "15000000", counted: "15000000", badges: [], provenance: { source: "SEAP", kind: "BULK", via: "Contracte 2026 - T1", url: "/source/seap/CAN9200001~C-1" },
     });
     // Q1: a crawled contract the bulk does not have survives, counts, and is badged crawl-only
     expect(await crawlRecord("CAN9200002~C-7")).toMatchObject({
@@ -424,7 +424,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // 2023-today pass: the bulk (fetched after the backfill) has the same identity with another value and wins; the one it lacks survives
     // (Pass 2 only lists a week once its bulk is archived, so a Record is superseded only when a bulk file is fetched or re-uploaded later: not a selection bug.)
     expect(await backfillRecord("CAN9300001~B-1")).toMatchObject({
-      kind: "CONTRACT", value: "15000000", counted: "15000000", badges: [], provenance: { kind: "BULK", via: "Contracte 2023 - T1", url: null },
+      kind: "CONTRACT", value: "15000000", counted: "15000000", badges: [], provenance: { kind: "BULK", via: "Contracte 2023 - T1", url: "/source/seap/CAN9300001~B-1" },
     });
     expect(await backfillRecord("CAN9300002~B-2")).toMatchObject({
       kind: "CONTRACT", value: "2000050", badges: ["CRAWL_ONLY"], provenance: { kind: "CRAWL", fetchedAt: "2026-11-11T09:00:00Z" },
@@ -856,6 +856,65 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(some.grid).toHaveLength(12);
     expect(some.grid).toEqual(all.grid.filter((c) => ["2024-Q4", "2025-Q1", "2025-Q2"].includes(c.quarter)));
     expect((await coverageGrid("coverage_a", { from: "2025-09-20" })).grid.map((c) => c.quarter)).toEqual(Array(4).fill("2025-Q3"));
+  });
+
+  // Every Record in every response that returns Records carries its provenance (#72). No persisted operation selects `provenance` on
+  // a list row, so the lists are asked through the real resolvers with an ad-hoc document that does.
+  const adhocPools = new Map<string, pg.Pool>();
+  const adhocRecords = async (db: string, source: string, variableValues: Record<string, unknown> = {}) => {
+    let pool = adhocPools.get(db);
+    if (!pool) {
+      pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
+      pools.push(pool);
+      adhocPools.set(db, pool);
+    }
+    const r = await graphql({ schema, source, rootValue: rootValue(postgresStore(pool)), variableValues });
+    expect(r.errors).toBeUndefined();
+    return r.data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  };
+  const PROV = "provenance { source kind via fetchedAt url }";
+  const LISTS = `query Q($code: ID!) { seap {
+    search(filter: {}) { records(limit: 200, offset: 0, order: DATE_DESC) { rows { record { code ${PROV} } } } }
+    record(code: $code) { code ${PROV} framework { agreement { code ${PROV} } subsequent(limit: 200) { code ${PROV} } } }
+  } }`;
+
+  /** Collect every Record node (anything with a code and a provenance) in a response, wherever it sits. */
+  function recordsIn(node: unknown, out: { code: string; provenance: Record<string, any> }[] = []) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (Array.isArray(node)) node.forEach((n) => recordsIn(n, out));
+    else if (node && typeof node === "object") {
+      const o = node as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (typeof o.code === "string" && o.provenance) out.push({ code: o.code, provenance: o.provenance });
+      Object.values(o).forEach((v) => recordsIn(v, out));
+    }
+    return out;
+  }
+
+  it("gives every Record in every response its provenance: BULK via the file and the /source/seap redirect, CRAWL with the notice URL, fetchedAt always (#72)", async () => {
+    const seen = new Map<string, number>();
+    for (const [db, kinds] of [
+      ["bulk_a", ["BULK"]], ["contracts_a", ["BULK"]], ["counting_a", ["BULK"]], ["identity_a", ["BULK"]], ["crawl_a", ["BULK", "CRAWL"]], ["backfill_a", ["BULK", "CRAWL"]],
+    ] as const) {
+      const codes = ((await adhocRecords(db, `{ seap { search(filter: {}) { records(limit: 200, offset: 0, order: DATE_DESC) { rows { record { code } } } } } }`)).seap.search.records.rows as { record: { code: string } }[]).map((r) => r.record.code);
+      expect(codes.length, `${db} has Records`).toBeGreaterThan(0);
+      const records = recordsIn(await adhocRecords(db, LISTS, { code: codes[0] }));
+      // the list, plus each Record's page with its framework agreement and subsequent contracts
+      for (const code of codes) records.push(...recordsIn(await adhocRecords(db, LISTS, { code })));
+      for (const { code, provenance: p } of records) {
+        expect(p.source, `${db} ${code}`).toBe("SEAP");
+        expect(p.fetchedAt, `${db} ${code}`).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
+        expect(kinds, `${db} ${code}`).toContain(p.kind);
+        if (p.kind === "BULK") {
+          expect(p.via, `${db} ${code}`).toEqual(expect.stringMatching(/\S/)); // the file as the Source titles it
+          expect(p.url, `${db} ${code}`).toBe(`/source/seap/${encodeURIComponent(code)}`);
+        } else {
+          expect(p.via, `${db} ${code}`).toBeNull();
+          expect(p.url, `${db} ${code}`).toMatch(/^https:\/\/e-licitatie\.ro\/pub\/notices\/ca-notices\//);
+        }
+        seen.set(p.kind, (seen.get(p.kind) ?? 0) + 1);
+      }
+    }
+    expect(seen.get("BULK")).toBeGreaterThan(0);
+    expect(seen.get("CRAWL")).toBeGreaterThan(0); // a crawled and a backfilled Record were walked
   });
 
   describe("search (#68): archive-search -> rebuild -> MainScreen with a filter", () => {

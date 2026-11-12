@@ -6,7 +6,7 @@ One Compose project, `compose.yaml` at the repo root, inside WSL2. Run everythin
 | --- | --- | --- | --- |
 | `db` | ParadeDB Postgres (`paradedb/paradedb:0.26.6-pg18`, pinned), `shared_buffers` 3 GB | 8 CPU, 12 GB | compose network only |
 | `api` | the TypeScript GraphQL API (`explorer/packages/api`), persisted queries only | 2 CPU, 2 GB | via Caddy at `/graphql` |
-| `web` | Caddy: `site/` at `/` and `/ro/`, the explorer build at `/explore/` and `/ro/explore/`, `/graphql` proxied to the API | 2 CPU, 2 GB | http://localhost:8080 |
+| `web` | Caddy: `site/` at `/` and `/ro/`, the explorer build at `/explore/` and `/ro/explore/`, `/graphql` and `/source/*` proxied to the API | 2 CPU, 2 GB | http://localhost:8080 |
 | `pipeline` | one-shot Python pipeline (profile `pipeline`, not started by `up`) | 2 CPU, 2 GB | `docker compose run` |
 
 ## Start
@@ -52,6 +52,8 @@ docker compose run --rm pipeline rebuild
 | `GRIVEI_ARCHIVE_DIR` | `./archive` | host directory mounted as the raw archive |
 | `GRIVEI_GEO_DIR` | `./geo` | host directory the pipeline writes the county and UAT TopoJSON to and Caddy serves at `/geo/` (create it first: `mkdir geo`, so it is yours, not root's) |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
+| `SEAP_BASE_URL` | `https://e-licitatie.ro` | the SEAP site the API's `/source/seap/<code>` redirect asks (and redirects to); set on the `api` service, only tests change it |
+| `SEAP_LINK_PUBLIC_BASE` | empty | prefix of the "Check in SEAP" URL a bulk Record's provenance carries (`<base>/source/seap/<code>`); empty = relative, same origin as the app |
 
 Put overrides in a `.env` file beside `compose.yaml` (gitignored; do not commit secrets).
 

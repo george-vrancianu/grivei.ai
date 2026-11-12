@@ -15,7 +15,7 @@ const entity = (key: string, displayName: string, over: Partial<EntityRow> = {})
 const row = (over: Partial<RecordRow>): RecordRow => ({
   code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", procedure: null, value: "120050", counted: "120050",
   authority: entity("1000009", "COMUNA EXEMPLU"), winners: [{ naturalPerson: false, name: "CURAT SRL", entity: entity("name-curat-srl", "CURAT SRL"), share: null }],
-  badges: [], suspect: null, crawlStatus: null, ...over,
+  badges: [], suspect: null, crawlStatus: null, provenance: { kind: "BULK", via: "2022 T1 DA", fetchedAt: "2026-11-12T10:00:00Z", url: null }, ...over,
 });
 const store: Store = {
   total: async () => ({ awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
