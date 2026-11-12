@@ -1,5 +1,5 @@
-import { ChipGroup } from "../ChipGroup/index.ts";
-import { ToggleChip } from "../ToggleChip/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
+import { ToggleChip } from "../../../ToggleChip/index.ts";
 
 export interface ChoiceChipsProps<T extends string> {
   label: string;

@@ -16,6 +16,7 @@ import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts"
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
+import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
@@ -283,7 +284,45 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     };
 };
 
+const recordsFacets = (locale: Locale): FacetPanelCopy =>
+  locale === "ro"
+    ? {
+        label: "Filtre pe fațete",
+        groups: {
+          signal: "Semnal", channel: "Canal", procedure: "Procedură", year: "Anul atribuirii",
+          counterpartyOfAuthority: "Furnizor", counterpartyOfSupplier: "Autoritate contractantă", badge: "Insigne",
+        },
+        option: (label, count) => `${label} (${count})`,
+        counterpartyKey: (key) => `Contraparte ${key}`,
+        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+        channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
+        badges: badges.ro,
+      }
+    : {
+        label: "Filter by facet",
+        groups: {
+          signal: "Signal", channel: "Channel", procedure: "Procedure", year: "Award year",
+          counterpartyOfAuthority: "Supplier", counterpartyOfSupplier: "Contracting authority", badge: "Badges",
+        },
+        option: (label, count) => `${label} (${count})`,
+        counterpartyKey: (key) => `Counterparty ${key}`,
+        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+        channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
+        badges: badges.en,
+      };
+
+const recordsTab = (locale: Locale): RecordsTabCopy => ({
+  heading: locale === "ro" ? "Înregistrări" : "Records",
+  facets: recordsFacets(locale),
+  empty: locale === "ro" ? { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" } : { text: "No Records match these filters.", clear: "Clear filters" },
+  total: sampleCopy.total(locale),
+  recordRow: recordRow(locale),
+  pagination: fullResults(locale).pagination,
+});
+
 export const sampleCopy = {
+  recordsFacets,
+  recordsTab,
   entityRow,
   recordRow,
   goTo,

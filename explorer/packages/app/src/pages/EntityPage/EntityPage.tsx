@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { EntityHeader, EntityPageLayout, Stack, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityPageLayout, RecordsTab, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
@@ -7,6 +7,7 @@ import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHrefs } from "./entityPage.utils.ts";
 import { useEntityPage } from "./hooks/useEntityPage.ts";
+import { useRecordsTab } from "./hooks/useRecordsTab.ts";
 
 export interface EntityPageProps {
   locale: Locale;
@@ -22,6 +23,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const { filter, page, order, signalOrder } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
+  const recordsTab = useRecordsTab(locale, routeRole, entityKey);
 
   if (state.status === "error") {
     return (
@@ -64,7 +66,23 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       onNavigate={onNavigate}
       copy={t.entityPage.layout}
     >
-      {loading ? <Typography role="status">{t.status.loading}</Typography> : <Typography>{t.entityPage.tabBody[view]}</Typography>}
+      {view === "records" ? (
+        // The last Records stay on screen while the next filter loads, so the panel keeps its place and focus.
+        state.records ? (
+          <div aria-busy={loading}>
+            <RecordsTab records={state.records} {...recordsTab} />
+          </div>
+        ) : loading ? (
+          <Typography role="status">{t.status.loading}</Typography>
+        ) : (
+          // ready, but the entity has no Records in this role
+          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+        )
+      ) : loading ? (
+        <Typography role="status">{t.status.loading}</Typography>
+      ) : (
+        <Typography>{t.entityPage.tabBody[view]}</Typography>
+      )}
     </EntityPageLayout>
   );
 }

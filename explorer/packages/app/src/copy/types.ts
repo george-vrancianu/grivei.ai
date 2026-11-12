@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, ResultTabsCopy, TotalFigureCopy,
+  BadgeCopy, DataThroughDateCopy, EntityHeaderCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, MainScreenLayoutCopy, PartyNameCopy, RecordsTabCopy, ResultTabsCopy, TotalFigureCopy,
 } from "@grivei/ui";
 
 /**
@@ -48,6 +48,10 @@ export interface Copy {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
     notFound: { title: string; body: string };
-    tabBody: { overview: string; records: string; relationships: string };
+    tabBody: { overview: string; relationships: string };
+    /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
+    recordsNoRole: { authority: string; supplier: string };
+    /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
+    recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & { facets: Omit<RecordsTabCopy["facets"], "badges" | "channels"> };
   };
 }
