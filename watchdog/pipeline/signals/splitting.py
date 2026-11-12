@@ -20,11 +20,15 @@
   because a Signal has ONE supplier: a consortium Record (one row per winner in the search) would also match the filter of a co-winner
   who is not the Signal's supplier, so consortium Records are left out of the rule (documented trade-off; the Signal never splits a
   consortium's shares). Two Signals of one triple are disjoint in dates, so `from` / `to` tell them apart.
+- Memory: the rule declares `ORDER_BY` (one triple after another, each by date then code), so `detect` holds ONE triple's purchases at a time
+  (as compact tuples), never the whole graph. Ties on a day go by code: the type of the last purchase by code decides the sum's cap.
 - Numbers: `purchases`, `sum` (bani, the awarded values), `cap` (the cap in force on the last purchase's date), `cpvGroup`, `from`, `to`.
 """
 from __future__ import annotations
 
 from datetime import date, timedelta
+from itertools import groupby
+from typing import Iterable, Iterator, NamedTuple
 
 from ..counting import EXEMPT_CPV_DIVISIONS, cap_for, is_works
 from .common import Hit, Row
@@ -34,6 +38,9 @@ KINDS = ("DA", "DAN")
 WINDOW_DAYS = 30  # first and last purchase at most this many days apart, both days counted
 WHERE = ("kind IN ('DA', 'DAN') AND NOT suspect AND value_bani IS NOT NULL AND authority_key IS NOT NULL "
          "AND cpv_code ~ '^\\s*[0-9]{3}' AND jsonb_array_length(winners) = 1")
+# Rows arrive one (authority, supplier, CPV group) triple after another, each by date then code (see signals/__init__.py `_rows`): the supplier is
+# the one winner's key and the group the first three digits, the same as `supplier_of` / `cpv_group` below.
+ORDER_BY = ("authority_key, winners->0->>'key', substring(cpv_code from '^\\s*([0-9]{3})'), award_date, code")
 
 
 def cpv_group(cpv: object) -> str | None:
@@ -67,45 +74,59 @@ def eligible(row: Row) -> tuple[str, str, str] | None:
     return str(authority), supplier, group
 
 
-def _signals_of(rows: list[Row]) -> list[tuple[int, int]]:
+def order_key(row: Row) -> tuple[str, str, str, date, str]:
+    """The Python twin of `ORDER_BY` for eligible rows (tests feed `detect` in this order)."""
+    triple = eligible(row)
+    assert triple is not None
+    return (*triple, row["award_date"], str(row["code"]))  # type: ignore[return-value]
+
+
+class Purchase(NamedTuple):
+    code: str
+    day: date
+    value: int
+    counted: int
+    works: bool
+
+
+def _signals_of(rows: list[Purchase]) -> list[tuple[int, int]]:
     """The merged qualifying windows of one triple's purchases (sorted by date, then code), as inclusive index ranges."""
     windows: list[tuple[int, int]] = []
     start, total = 0, 0
     for end, last in enumerate(rows):
-        total += int(last["value_bani"])  # type: ignore[call-overload]
-        day: date = last["award_date"]  # type: ignore[assignment]
-        if end + 1 < len(rows) and rows[end + 1]["award_date"] == day:
+        total += last.value
+        if end + 1 < len(rows) and rows[end + 1].day == last.day:
             continue  # a window ends on a day, not between two purchases of it
-        while (day - rows[start]["award_date"]) > timedelta(days=WINDOW_DAYS - 1):  # type: ignore[operator]
-            total -= int(rows[start]["value_bani"])  # type: ignore[call-overload]
+        while (last.day - rows[start].day) > timedelta(days=WINDOW_DAYS - 1):
+            total -= rows[start].value
             start += 1
-        if end > start and total > cap_for(day, _works(last)):
-            first_day = rows[start]["award_date"]
-            if windows and first_day <= rows[windows[-1][1]]["award_date"]:  # overlaps the previous window: one Signal
+        if end > start and total > cap_for(last.day, last.works):
+            if windows and rows[start].day <= rows[windows[-1][1]].day:  # overlaps the previous window: one Signal
                 windows[-1] = (windows[-1][0], end)
             else:
                 windows.append((start, end))
     return windows
 
 
-def detect(rows) -> list[Hit]:
-    groups: dict[tuple[str, str, str], list[Row]] = {}
-    for row in rows:
-        triple = eligible(row)
-        if triple is not None:
-            groups.setdefault(triple, []).append(row)
-    hits = []
-    for (authority, supplier, group), purchases in groups.items():
-        purchases.sort(key=lambda r: (r["award_date"], str(r["code"])))  # type: ignore[arg-type,return-value]
+def _triples(rows: Iterable[Row]) -> Iterator[tuple[tuple[str, str, str], Iterator[tuple[tuple[str, str, str], Row]]]]:
+    """The eligible rows grouped by consecutive triple: the rows must arrive in `ORDER_BY` order, so a triple is one run."""
+    tagged = ((triple, row) for row in rows if (triple := eligible(row)) is not None)
+    return groupby(tagged, key=lambda pair: pair[0])
+
+
+def detect(rows: Iterable[Row]) -> Iterator[Hit]:
+    """Rows in `ORDER_BY` order; keeps one triple's purchases in memory at a time."""
+    for (authority, supplier, group), run in _triples(rows):
+        purchases = [Purchase(str(r["code"]), r["award_date"], int(r["value_bani"]), int(r["counted_bani"] or 0), _works(r))  # type: ignore[arg-type,call-overload]
+                     for _, r in run]
         for first, last in _signals_of(purchases):
             members = purchases[first:last + 1]
-            start, end = members[0]["award_date"], members[-1]["award_date"]
-            cap = cap_for(end, _works(members[-1]))  # type: ignore[arg-type]
-            total = sum(int(r["value_bani"]) for r in members)  # type: ignore[call-overload]
-            hits.append(Hit(
-                rule=SLUG, authority_key=authority, first_date=start, date=end, record_codes=tuple(str(r["code"]) for r in members),
-                value_bani=sum(int(r["counted_bani"] or 0) for r in members), supplier_keys=(supplier,),
+            start, end = members[0].day, members[-1].day
+            cap = cap_for(end, members[-1].works)
+            total = sum(p.value for p in members)
+            yield Hit(
+                rule=SLUG, authority_key=authority, first_date=start, date=end, record_codes=tuple(p.code for p in members),
+                value_bani=sum(p.counted for p in members), supplier_keys=(supplier,),
                 numbers={"purchases": len(members), "sum": str(total), "cap": str(cap), "cpvGroup": group, "from": start.isoformat(), "to": end.isoformat()},
                 reproduce={"authority": authority, "signal": SLUG, "supplier": supplier, "cpv": group, "from": start.isoformat(), "to": end.isoformat()},
-            ))
-    return hits
+            )

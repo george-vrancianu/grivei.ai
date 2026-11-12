@@ -10,7 +10,8 @@ rollup and the search index are built, so the has-Signals chip, the rollup and t
 - `seap.search.signals` / `has_signals`: the rule slugs each Record belongs to, which the `signal` and has-Signals filters read.
 
 How to add a rule: write `signals/<rule>.py` exposing `SLUG`, `KINDS`, `WHERE`, `detect(rows) -> list[Hit]` (see common.py; the
-single-Record rules call `authority_day_hits`), add the module to `RULES` below, add the numbers' fields to the rule's GraphQL numbers
+single-Record rules call `authority_day_hits`; a rule that groups Records may also declare `ORDER_BY`, a fixed SQL ordering (default
+`code`), so that it sees one group after another and keeps only one group in memory, as `splitting` does), add the module to `RULES` below, add the numbers' fields to the rule's GraphQL numbers
 type if they are not there yet (the API maps `numbers` jsonb to that type by slug in `explorer/packages/api/src/signals.ts`
 `NUMBERS_TYPE`, nothing else is per rule). Tests: pure ones over row dicts, plus the Signal fixture archive and seam 1.
 
@@ -36,11 +37,12 @@ RULES: tuple[ModuleType, ...] = (over_cap, splitting, no_publication)
 ROW_COLUMNS = "code, kind, channel, authority_key, award_date, value_bani, counted_bani, suspect, cpv_code, contract_type, procedure, winners"
 
 
-def _rows(cur: psycopg.Cursor, where: str):
-    """The candidate Records of a rule, streamed from the database as dicts (a rule keeps only what it groups)."""
+def _rows(cur: psycopg.Cursor, where: str, order_by: str = "code"):
+    """The candidate Records of a rule, streamed from the database as dicts (a rule keeps only what it groups), in the rule's `ORDER_BY`
+    (default `code`)."""
     with cur.connection.cursor(name="signal_rows", row_factory=psycopg.rows.dict_row) as stream:
         stream.itersize = 20_000
-        stream.execute(f"SELECT {ROW_COLUMNS} FROM seap.record WHERE {where} ORDER BY code")  # a fixed string from the rule module
+        stream.execute(f"SELECT {ROW_COLUMNS} FROM seap.record WHERE {where} ORDER BY {order_by}")  # fixed strings from the rule module
         yield from stream
 
 
@@ -48,7 +50,7 @@ def find(cur: psycopg.Cursor) -> list[Hit]:
     """Every rule's Signals, in a deterministic order (the same data always gives the same ordinals)."""
     hits: list[Hit] = []
     for rule in RULES:
-        hits += sorted(rule.detect(_rows(cur, rule.WHERE)), key=lambda h: (h.date, h.authority_key, h.record_codes))
+        hits += sorted(rule.detect(_rows(cur, rule.WHERE, getattr(rule, "ORDER_BY", "code"))), key=lambda h: (h.date, h.authority_key, h.record_codes))
     return hits
 
 

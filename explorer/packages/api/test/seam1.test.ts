@@ -2263,7 +2263,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("exempt, suspect, over-cap, person and split-CPV purchases make no Signal; works use the works cap (#75)", async () => {
       const n = await splits(N, "AUTHORITY");
       expect(n.map((s) => `${s.suppliers[0]!.key} ${range(s)} ${(s.numbers as { cap: string }).cap}`)).toEqual([`${ALFA} 2023-09-01..2023-09-10 ${RON(900_400)}`]);
-      // the over-cap one is the over-cap rule's: it is in no splitting Signal, though it sits inside another triple's range
+      // the over-cap one is the over-cap rule's: it is in no splitting Signal (the reproduce test below checks no over-cap Record sits in a range)
       const all = (await signals(N, "AUTHORITY")).rows.map((s) => s.rule).sort();
       expect(all).toEqual(["OVER_CAP", "SPLITTING"]);
     });

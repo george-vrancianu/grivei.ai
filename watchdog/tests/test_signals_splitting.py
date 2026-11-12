@@ -16,7 +16,7 @@ def buy(code, day, value, authority=A, supplier=S1, cpv="30197000-6", **kw):
 
 
 def found(*rows):
-    return splitting.detect(list(rows))
+    return list(splitting.detect(sorted((r for r in rows if splitting.eligible(r)), key=splitting.order_key)))
 
 
 def test_two_purchases_each_under_the_cap_and_over_it_together_are_a_signal():
@@ -99,7 +99,7 @@ def test_contracts_are_not_direct_purchases():
 
 def test_the_cap_of_the_last_purchases_date_decides_across_10_september_2022():
     old_a, new_b = date(2022, 9, 1), date(2022, 9, 20)
-    # 200,000 RON together: over the old cap (135,060 x 2 = 270,120 would be needed under the new one), a Signal only under the old cap: no Signal
+    # 200,000 RON together is over the old cap but at or under the new one, and the last date is in the new era: no Signal
     assert found(buy("DA1", old_a, 100_000 * RON), buy("DA2", new_b, 100_000 * RON)) == []
     # 135,060 (at the old cap) + 135,100 = 270,160 > the NEW cap in force on the last date: a Signal carrying the new cap
     [hit] = found(buy("DA1", old_a, OLD_SUPPLIES), buy("DA2", new_b, 135_100 * RON))
@@ -120,3 +120,49 @@ def test_works_have_their_own_cap_by_contract_type_and_by_cpv_45():
     assert hit.numbers["cap"] == str(NEW_WORKS)
     # a works purchase over the works cap is over-cap's
     assert found(buy("DA1", D0, NEW_WORKS + 1, cpv="45233140-2"), buy("DA2", D0, 1000, cpv="45233140-2")) == []
+
+
+def test_detect_streams_one_triple_at_a_time_from_rows_in_order_by_order():
+    pulled = []
+
+    def stream():
+        for r in sorted([buy("DA1", D0, HALF), buy("DA2", D0 + timedelta(days=5), HALF),
+                         buy("DA3", D0, HALF, supplier=S2), buy("DA4", D0 + timedelta(days=5), HALF, supplier=S2)], key=splitting.order_key):
+            pulled.append(r["code"])
+            yield r
+
+    hits = splitting.detect(stream())
+    assert pulled == []  # lazy
+    first = next(hits)
+    assert first.supplier_keys == (S1,) and pulled == ["DA1", "DA2", "DA3"]  # the next triple's first row ends the run; the rest is not read yet
+    assert next(hits).supplier_keys == (S2,) and pulled == ["DA1", "DA2", "DA3", "DA4"]
+
+
+def test_the_rule_declares_the_ordering_the_runner_uses():
+    from pipeline.signals import _rows
+
+    class Cur:
+        sql = None
+        connection = None
+
+        def cursor(self, **kw):
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def execute(self, sql):
+            Cur.sql = sql
+
+        def __iter__(self):
+            return iter(())
+
+    cur = Cur()
+    cur.connection = cur
+    list(_rows(cur, splitting.WHERE, splitting.ORDER_BY))
+    assert Cur.sql.endswith(f"ORDER BY {splitting.ORDER_BY}") and splitting.ORDER_BY.endswith("award_date, code")
+    list(_rows(cur, "TRUE"))
+    assert Cur.sql.endswith("ORDER BY code")
