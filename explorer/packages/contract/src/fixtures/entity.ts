@@ -79,8 +79,8 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     variables: { key: "vat-DE811128135", role: "SUPPLIER" },
     data: { entity: withSeap(w.foreignFirmHeader, {
       role: "SUPPLIER" as Role,
-      total: total({ awarded: ron(2_290_000), records: 3, noValue: 1 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_290_000), records: 3, noValue: 1 }) }] },
+      total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }) }] },
       directPurchaseShare: 0,
       procedures: [{ value: "Negociere fără publicare prealabilă", total: total({ awarded: "0", records: 1, noValue: 1 }) }],
       consortia: [],

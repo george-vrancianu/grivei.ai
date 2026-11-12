@@ -62,6 +62,24 @@ describe("fixtures", () => {
       }
     });
 
+    it("splits a consortium Record's value equally between its winners, so the shares sum to the value", () => {
+      const consortia = everyObject().filter((o) => Array.isArray(o.winners) && o.winners.length > 1 && o.value != null);
+      expect(consortia.length).toBeGreaterThan(0);
+      for (const r of consortia) {
+        const winners = r.winners as Node[];
+        const value = BigInt(r.value as string);
+        const shares = winners.map((w) => BigInt(w.share as string));
+        for (const s of shares) expect(s, String(r.code)).toBe(value / BigInt(winners.length));
+        expect(shares.reduce((a, b) => a + b, 0n), String(r.code)).toBe(value);
+      }
+    });
+
+    it("never traces a name-only entity to ANAF, which knows no CUI for it", () => {
+      const named = everyObject().filter((o) => o.identity === "NAME_ONLY" && Array.isArray(o.provenance));
+      expect(named.length).toBeGreaterThan(0);
+      for (const e of named) for (const p of e.provenance as Node[]) expect(p.source, String(e.key)).not.toBe("ANAF");
+    });
+
     it("puts the Unplaced tile on the authority side and the unknown-supplier-county bucket on the supplier side", () => {
       const maps = everyObject().filter((o) => "unknownSupplierCounty" in o && "unplaced" in o);
       expect(maps.length).toBeGreaterThan(0);

@@ -3,7 +3,7 @@
 // codes are made up. SEAP's own vocabulary (procedure names, CPV, document kinds) is real.
 import type { SignalFieldsFragment } from "../generated/operations.ts";
 import {
-  dataThrough, entityHeader, entityRef, entityRow, party, placeInCounty, placeNational, record, reproduce, ron,
+  dataThrough, seapProvenance, entityHeader, entityRef, entityRow, party, placeInCounty, placeNational, record, reproduce, ron,
 } from "./builders.ts";
 
 // ---- sources (the same data-through dates on every screen) ----------------
@@ -58,7 +58,7 @@ export const drumariiRow = entityRow(drumarii, placeInCounty("RO-MS", "Mureș", 
 export const foreignFirm = entityRef("vat-DE811128135", "MEDTECH GMBH", "NAME_ONLY");
 export const foreignFirmRow = entityRow(foreignFirm, null, null);
 export const foreignFirmHeader = entityHeader(foreignFirmRow, {
-  cui: null, foreignVatId: "DE811128135", aliases: [{ name: "MEDTECH GMBH", records: 3, first: "2022-11-01", last: "2024-02-20", differsFromAnaf: false }],
+  cui: null, foreignVatId: "DE811128135", provenance: [seapProvenance], aliases: [{ name: "MEDTECH GMBH", records: 3, first: "2022-11-01", last: "2024-02-20", differsFromAnaf: false }],
 });
 
 export const asociere = entityRef("name-asociere-alfa-beta", "ASOCIEREA ALFA - BETA", "NAME_ONLY");
@@ -99,7 +99,7 @@ export const rConsortiumNameOnly = record({
   code: "CAN1170002", title: "Furnizare echipamente imagistice", date: "2024-02-27", kind: "CONTRACT", channel: "CONTRACT",
   procedure: "Licitație deschisă", value: ron(4_500_000), counted: ron(4_500_000), badges: ["CONSORTIUM_SHARE"],
   authority: spitalSibiu,
-  winners: [party(foreignFirm, { share: ron(2_290_000) }), party(asociere, { share: ron(2_290_000) })],
+  winners: [party(foreignFirm, { share: ron(2_250_000) }), party(asociere, { share: ron(2_250_000) })],
 });
 export const rFrameworkCeiling = record({
   code: "CAN1160100", title: "Acord-cadru lucrări de întreținere drumuri naționale", date: "2022-06-30", kind: "CONTRACT",

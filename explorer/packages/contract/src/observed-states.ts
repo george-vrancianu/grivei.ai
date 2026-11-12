@@ -6,7 +6,7 @@ export const REQUIRED_STATES = [
   "national", "unplaced", "unknown-supplier-county", "unknown-uat",
   "natural-person", "name-only-supplier", "consortium", "framework", "subsequent-contract",
   "suspect-value", "no-value", "estimated-count",
-  "both-roles", "not-found", "identity-curated", "crawled-provisional",
+  "both-roles", "entity-provenance:SEAP", "not-found", "identity-curated", "crawled-provisional",
   "signal:over-cap", "signal:splitting", "signal:framework-overrun", "signal:no-publication",
   "suspect:DIRECT_PURCHASE_10X_CAP", "suspect:CONTRACT_100X_ESTIMATE", "suspect:CONTRACT_OVER_50BN",
   "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL",
@@ -46,6 +46,8 @@ export function observedStates(data: unknown): Set<string> {
       seen.add(`signal:${SIGNAL_OF_NUMBERS[o.__typename]}`);
     }
     if (key === "suspect" && typeof o.rule === "string") seen.add(`suspect:${o.rule}`);
+    // An Entity's provenance is a list; one traced to SEAP is the fallback when ANAF has no answer.
+    if (Array.isArray(o.provenance) && o.provenance.some((p) => (p as { source?: Json }).source === "SEAP")) seen.add("entity-provenance:SEAP");
     if (o.countEstimated === true) seen.add("estimated-count");
     if (Array.isArray(o.roles) && o.roles.length > 1) seen.add("both-roles");
     if (o.identityCurated === true) seen.add("identity-curated");

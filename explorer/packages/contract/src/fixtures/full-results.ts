@@ -44,7 +44,7 @@ export const fullResultsSuppliers: FixtureSet<FullResultsSuppliersQuery, FullRes
       suppliers: { count: 3, countEstimated: false, rows: [
         { entity: w.constructiiRow, matched: total({ awarded: ron(30_000_000), records: 20 }) },
         { entity: w.drumariiRow, matched: total({ awarded: ron(15_000_000), records: 1 }) },
-        { entity: w.foreignFirmRow, matched: total({ awarded: ron(2_290_000), records: 1, noValue: 1 }) },
+        { entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 1, noValue: 1 }) },
       ] },
     } } },
   },

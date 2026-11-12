@@ -82,7 +82,7 @@ Changes the screens needed beyond the markers:
 - `ValueBucket` is the preset list above.
 - `GapCell` carries `rule: GapRule` (a slug the catalogue words) and `note` (the gap file's own text, source data, only for `HAND_ENTERED`), not a prose `reason`.
 - The Money lens side is the filter's `countySide` only: `MoneyMap` and `UatMap` take no `side` argument and the operations no `$side` variable. The zoomed county is authority-side only (UATs place authorities; the search table carries a supplier's county, never its UAT), so `RecordFilter.uat` and `uatMap` are too. A supplier's Flow lens is drawn on the authority side, an authority's on the supplier side.
-- `Entity.provenance` (the ANAF lookup, or SEAP) and `Provenance.kind` (`BULK`, `CRAWL`, `API`); `via` is the file title as the Source publishes it, null when there is none.
+- `Entity.provenance` (ANAF, or SEAP when ANAF has no answer) and `Provenance.kind` (`BULK`, `CRAWL`, `API`); `via` is the file title as the Source publishes it, null when there is none.
 - `AreaTotal.area` is an `AreaKey` (county, off-map tile or SIRUTA), so a SIRUTA is never a valid `RecordFilter.county`.
 - Entity Overview Signals take `signalOrder` and `signalOffset`.
 - Shared fragments `EntityResultPageFields` and `RecordResultFields`; the Entity Records tab also selects `matchedField`.

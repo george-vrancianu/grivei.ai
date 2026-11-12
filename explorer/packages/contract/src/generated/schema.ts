@@ -149,7 +149,7 @@ export type Entity = {
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
   placement: Maybe<Placement>;
-  /** Where the name and ANAF status came from and when we fetched them: the ANAF lookup, or SEAP when ANAF has no answer. */
+  /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer. */
   provenance: Array<Provenance>;
   /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
   seap: SeapEntity;
@@ -314,7 +314,7 @@ export type Placement = {
   uat: Maybe<Uat>;
 };
 
-/** Where a shown fact came from. Every Record has one; so does every Entity (the ANAF lookup, or SEAP when ANAF has no answer). */
+/** Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer). */
 export type Provenance = {
   __typename?: 'Provenance';
   /** When we fetched it (from the raw archive). */
@@ -323,11 +323,11 @@ export type Provenance = {
   source: SourceId;
   /** Public page in the Source; null only when the Source has no stable public URL. */
   url: Maybe<Scalars['String']['output']>;
-  /** Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API lookup, which `kind` already says. */
+  /** Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API call, which `kind` already says. */
   via: Maybe<Scalars['String']['output']>;
 };
 
-/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup). */
+/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint). */
 export type ProvenanceKind =
   | 'API'
   | 'BULK'
@@ -756,7 +756,7 @@ export type SplittingNumbers = {
 
 /**
  * The published rule that flagged a value as suspect (counting rule). The
- * frontend's catalogue explains each rule; `threshold` and `estimate` are the numbers.
+ * frontend's catalogue explains each rule; `threshold` is the number.
  */
 export type SuspectFlag = {
   __typename?: 'SuspectFlag';

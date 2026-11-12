@@ -67,7 +67,7 @@ input RecordFilter {
 
   # map clicks
   county: MapArea                 # a county, NATIONAL, UNPLACED or UNKNOWN_SUPPLIER_COUNTY
-  uat: Siruta                     # zoomed-county click; a UAT of the authority's county (the zoomed county is authority-side only)
+  uat: Siruta                     # zoomed-county click; a UAT of the authority's county. Authority-side only: the frontend zooms only when countySide is AUTHORITY, and switching the side to SUPPLIER drops uat
   countySide: CountySide = AUTHORITY
 
   # entity-scoped (Records tab, Signal URLs)
@@ -258,19 +258,19 @@ type FacetCount { value: String!, total: Total! }
 
 enum SourceId { SEAP ANAF ONRC ANI MFINANTE JUST }
 
-"Where a shown fact came from. Every Record has one; so does every Entity (the ANAF lookup, or SEAP when ANAF has no answer)."
+"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer)."
 type Provenance {
   source: SourceId!
   "Public page in the Source; null only when the Source has no stable public URL."
   url: String
-  "Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API lookup, which `kind` already says."
+  "Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API call, which `kind` already says."
   via: String
   kind: ProvenanceKind!
   "When we fetched it (from the raw archive)."
   fetchedAt: DateTime!
 }
 
-"How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup)."
+"How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint)."
 enum ProvenanceKind { BULK CRAWL API }
 
 type Source {
@@ -306,7 +306,7 @@ type Entity {
   anafStatus: String
   identityCurated: Boolean!
   placement: Placement
-  "Where the name and ANAF status came from and when we fetched them: the ANAF lookup, or SEAP when ANAF has no answer."
+  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer."
   provenance: [Provenance!]!
   "Spellings under which this entity was published, with dates. Never used to merge."
   aliases: [Alias!]!
@@ -470,7 +470,7 @@ enum SeapRecordKind { DA DAN CONTRACT AWARD_NOTICE }
 
 """
 The published rule that flagged a value as suspect (counting rule). The
-frontend's catalogue explains each rule; `threshold` and `estimate` are the numbers.
+frontend's catalogue explains each rule; `threshold` is the number.
 """
 type SuspectFlag {
   rule: SuspectRule!

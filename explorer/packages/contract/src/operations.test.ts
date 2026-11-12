@@ -43,7 +43,6 @@ describe("operations", () => {
     // A new String field is a decision: is it Romanian source data or an identifier (add it here),
     // or prose (it belongs in the frontend's bilingual catalogue, as a slug, enum or number)?
     const allowed = new Set([
-      "RecordFilter.q", "RecordFilter.cpv", "RecordFilter.procedure",
       "RecordFilterEcho.qFolded", "RecordFilterValue.cpv",
       "Provenance.url", "Provenance.via",
       "Source.name", "DataThrough.kind", "GapCell.kind", "GapCell.quarter", "GapCell.note",
@@ -51,7 +50,7 @@ describe("operations", () => {
       "Placement.locality", "Alias.name",
       "Party.publishedName", "Cpv.code", "Cpv.description",
       "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
-      "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name", "SignalNumbers.procedure",
+      "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
     ]);
     const found: string[] = [];

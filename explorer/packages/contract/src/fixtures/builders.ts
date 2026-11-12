@@ -31,9 +31,14 @@ export const entityRow = (ref: EntityRefFragment, placement: EntityRowFieldsFrag
   ...ref, anafStatus, placement,
 });
 
-/** The ANAF lookup every entity header is traced to. */
-export const anafLookup: EntityHeaderFieldsFragment["provenance"][number] = {
+/** The ANAF provenance every entity header is traced to. */
+export const anafProvenance: EntityHeaderFieldsFragment["provenance"][number] = {
   source: "ANAF", url: null, via: null, kind: "API", fetchedAt: "2024-10-01T05:00:00Z",
+};
+
+/** What a name-only supplier is traced to: ANAF has no answer for it, so SEAP's own entity endpoint. */
+export const seapProvenance: EntityHeaderFieldsFragment["provenance"][number] = {
+  source: "SEAP", url: null, via: null, kind: "API", fetchedAt: "2024-10-01T05:00:00Z",
 };
 
 export const entityHeader = (
@@ -45,7 +50,7 @@ export const entityHeader = (
   foreignVatId: null,
   identityCurated: false,
   aliases: [],
-  provenance: [anafLookup],
+  provenance: [anafProvenance],
   seap: { roles: ["SUPPLIER"] },
   ...o,
 });

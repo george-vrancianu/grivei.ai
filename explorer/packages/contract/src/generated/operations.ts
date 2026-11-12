@@ -47,7 +47,7 @@ export type MatchableField =
   | 'SUPPLIER'
   | 'TITLE';
 
-/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup). */
+/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint). */
 export type ProvenanceKind =
   | 'API'
   | 'BULK'
