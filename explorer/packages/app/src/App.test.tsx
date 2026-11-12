@@ -1,5 +1,6 @@
 // Seam 3: the app rendered against the contract's mock responses. English at /explore/, Romanian at /ro/explore/.
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { openAt } from "./testing/openAt.ts";
 import { App } from "./App.tsx";
@@ -16,11 +17,11 @@ describe("the main screen for the empty filter", () => {
     expect(await screen.findByTestId("total-awarded")).toHaveTextContent("RON 86,000,000,000");
     expect(screen.getByTestId("total-records")).toHaveTextContent("410,000 Records");
 
-    const table = screen.getByRole("table", { name: "Records" });
-    expect(within(table).getByRole("columnheader", { name: "Supplier" })).toBeInTheDocument();
-    const row = within(table).getByRole("row", { name: /CAN1170001/ });
-    expect(row).toHaveTextContent("Reabilitare pod peste râul Olt"); // source data, as published
-    expect(row).toHaveTextContent("RON 30,000,000");
+    // Suppliers is the tab that opens when the URL names none
+    expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");
+    const panel = screen.getByRole("tabpanel", { name: /^Suppliers/ });
+    expect(within(panel).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/explore/supplier/30000002");
+    expect(panel).toHaveTextContent("RON 1,800,000,000 matched · 320 Records · Cluj");
 
     // it asked for the empty filter, by persisted id
     expect(sent).toHaveLength(1);
@@ -36,9 +37,33 @@ describe("the main screen for the empty filter", () => {
     expect(await screen.findByTestId("total-awarded")).toHaveTextContent("86.000.000.000 RON");
     expect(screen.getByTestId("total-records")).toHaveTextContent("410.000 de înregistrări");
 
-    const table = screen.getByRole("table", { name: "Înregistrări" });
-    expect(within(table).getByRole("columnheader", { name: "Furnizor" })).toBeInTheDocument();
-    expect(within(table).getByRole("row", { name: /CAN1170001/ })).toHaveTextContent("Reabilitare pod peste râul Olt");
+    expect(screen.getByRole("tab", { name: /^Furnizori/ })).toHaveAttribute("aria-selected", "true");
+    const panel = screen.getByRole("tabpanel", { name: /^Furnizori/ });
+    expect(panel).toHaveTextContent("1.800.000.000 RON potrivit · 320 de înregistrări · Cluj");
+    expect(within(panel).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/ro/explore/supplier/30000002");
+  });
+
+  it("opens on the Records tab for ?tab=records, with the full value of a consortium Record", async () => {
+    openAt("/explore/?tab=records");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+
+    expect(await screen.findByRole("tab", { name: /^Records/ })).toHaveAttribute("aria-selected", "true");
+    const panel = screen.getByRole("tabpanel", { name: /^Records/ });
+    expect(within(panel).getByRole("link", { name: "Reabilitare pod peste râul Olt" })).toHaveAttribute("href", "/explore/record/CAN1170001");
+    expect(panel).toHaveTextContent("RON 30,000,000");
+    expect(within(panel).getByText("consortium")).toBeVisible();
+  });
+
+  it("puts the chosen tab in the URL, replacing the history entry, and links entities by locale", async () => {
+    openAt("/ro/explore/");
+    const before = window.history.length;
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    await userEvent.setup().click(await screen.findByRole("tab", { name: /^Autorități/ }));
+    await waitFor(() => expect(window.location.search).toBe("?tab=authorities"));
+    expect(window.history.length).toBe(before);
+    expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: /COMPANIA NAȚIONALĂ/ })).toHaveAttribute("href", "/ro/explore/authority/4000002");
   });
 
   it("tells the reader when the data could not be loaded", async () => {

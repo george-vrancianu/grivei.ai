@@ -7,6 +7,19 @@ const entityLink: Copy["entityLink"] = {
   identityCurated: { label: "curated", explanation: "A person reviewed and fixed this entity's identity." },
 };
 
+const badges: Copy["badges"] = {
+  FRAMEWORK_CEILING: { label: "Framework ceiling", explanation: "The agreed maximum of a framework agreement, not money awarded. Never added to a total." },
+  SUBSEQUENT_CONTRACT: { label: "Subsequent contract", explanation: "Awarded under a framework agreement. Counted here; the framework's ceiling is not." },
+  CONSORTIUM_SHARE: { label: "Consortium share", explanation: "Several suppliers won together; each is shown with an equal share of the value." },
+  SUSPECT_VALUE: { label: "Suspect value", explanation: "The published value breaks a counting rule (for example, far above its estimate). Shown and searchable, but left out of totals." },
+  NO_VALUE: { label: "No value", explanation: "SEAP publishes no value for this Record. It is counted, and adds nothing to totals." },
+  CUI_MISMATCH: { label: "CUI mismatch", explanation: "The CUI published here does not match the one ANAF confirms for this name." },
+  NAME_DIFFERS_FROM_ANAF: { label: "Name differs from ANAF", explanation: "The name published on this Record differs from the registered name at ANAF." },
+  IDENTITY_CURATED: { label: "Identity curated", explanation: "A person reviewed and fixed who this party is; the match was not automatic." },
+  CRAWLED_PROVISIONAL: { label: "Provisional", explanation: "Read from SEAP this quarter and still awaiting the official bulk data; it may change." },
+  CRAWL_ONLY: { label: "Not in bulk data", explanation: "Found on SEAP but never matched in the official bulk data." },
+};
+
 export const en: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Main", explore: "Explore", search: "Search", coverage: "Coverage", methodology: "About the numbers" },
@@ -14,11 +27,35 @@ export const en: Copy = {
   status: { loading: "Loading…", failed: "The data could not be loaded." },
   main: { title: "Explore public spending", total: "Total awarded" },
   searchField: { label: "Search", placeholder: "Authority, supplier, CUI, title…" },
-  records: {
-    heading: "Records",
-    empty: "No Records yet.",
-    noValue: "no value",
-    columns: { code: "Code", title: "Title", authority: "Authority", supplier: "Supplier", date: "Date", value: "Value" },
+  results: {
+    label: "Results",
+    tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
+    empty: { authorities: "No authorities match.", suppliers: "No suppliers match.", records: "No Records match." },
+    showAll: (_n, formatted) => `Show all ${formatted}`,
+    goTo: { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" },
+    entityRow: {
+      matched: "matched",
+      records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      national: "national",
+      noCounty: "county unknown",
+      entityLink,
+    },
+    recordRow: {
+      noValue: "no value",
+      consortium: {
+        label: "consortium",
+        explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",
+      },
+      authority: "Authority",
+      winners: "Winners",
+      matchedIn: (field) => `Matched in ${field}`,
+      fields: {
+        TITLE: "title", AUTHORITY: "authority", SUPPLIER: "supplier", CPV_CODE: "CPV code", CPV_DESCRIPTION: "CPV description",
+        PUBLIC_CODE: "public code", CUI: "CUI",
+      },
+      badges,
+      party: { naturalPerson: "Persoană fizică", entityLink },
+    },
   },
   pages: {
     placeholder: "This page is not built yet.",
@@ -30,20 +67,9 @@ export const en: Copy = {
     coverage: { title: "Coverage" },
     methodology: { title: "About the numbers" },
   },
-  badges: {
-    FRAMEWORK_CEILING: { label: "Framework ceiling", explanation: "The agreed maximum of a framework agreement, not money awarded. Never added to a total." },
-    SUBSEQUENT_CONTRACT: { label: "Subsequent contract", explanation: "Awarded under a framework agreement. Counted here; the framework's ceiling is not." },
-    CONSORTIUM_SHARE: { label: "Consortium share", explanation: "Several suppliers won together; each is shown with an equal share of the value." },
-    SUSPECT_VALUE: { label: "Suspect value", explanation: "The published value breaks a counting rule (for example, far above its estimate). Shown and searchable, but left out of totals." },
-    NO_VALUE: { label: "No value", explanation: "SEAP publishes no value for this Record. It is counted, and adds nothing to totals." },
-    CUI_MISMATCH: { label: "CUI mismatch", explanation: "The CUI published here does not match the one ANAF confirms for this name." },
-    NAME_DIFFERS_FROM_ANAF: { label: "Name differs from ANAF", explanation: "The name published on this Record differs from the registered name at ANAF." },
-    IDENTITY_CURATED: { label: "Identity curated", explanation: "A person reviewed and fixed who this party is; the match was not automatic." },
-    CRAWLED_PROVISIONAL: { label: "Provisional", explanation: "Read from SEAP this quarter and still awaiting the official bulk data; it may change." },
-    CRAWL_ONLY: { label: "Not in bulk data", explanation: "Found on SEAP but never matched in the official bulk data." },
-  },
+  badges,
   entityLink,
-  party: { naturalPerson: "Natural person", entityLink },
+  party: { naturalPerson: "Persoană fizică", entityLink },
   dataThrough: { through: "data through" },
   total: {
     records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
