@@ -16,9 +16,11 @@ export function SearchPage() {
   const state = useFullResults({ tab, filter, page, order });
   const here = pathFor(locale, { name: "search" });
   // The page links keep the whole URL state and change only `page`; page 1 is the default and drops out of the URL.
+  // The tab is the canonical one, so a spelling the page falls back from never makes a second URL for the same view.
+  const tabState = tab !== DEFAULT_RESULT_TAB ? { tab } : {};
   const pageHref = (target: number) =>
-    `${here}${encodeUrlState({ filter, ...(tabParam ? { tab: tabParam } : {}), ...(order ? { order } : {}), ...(target > 1 ? { page: target } : {}) })}`;
-  const backHref = `${pathFor(locale, { name: "main" })}${encodeUrlState({ filter, ...(tab !== DEFAULT_RESULT_TAB ? { tab } : {}) })}`;
+    `${here}${encodeUrlState({ filter, ...tabState, ...(order ? { order } : {}), ...(target > 1 ? { page: target } : {}) })}`;
+  const backHref = `${pathFor(locale, { name: "main" })}${encodeUrlState({ filter, ...tabState })}`;
   return (
     <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h4" component="h1">
@@ -33,12 +35,13 @@ export function SearchPage() {
           page={page}
           pageSize={FULL_RESULTS_PAGE_SIZE}
           pageHref={pageHref}
-          onNavigate={(href) => navigate(href, "replace")}
+          // Page links change state within this page (replace); leaving it, as "Back to results" does, is a step of its own (push).
+          onNavigate={(href) => navigate(href, href.split("?")[0] === here ? "replace" : "push")}
           backHref={backHref}
           entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
           recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
           locale={locale}
-          copy={{ ...t.fullResults, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
+          copy={{ ...t.fullResults, heading: t.results.tabs, empty: t.results.empty, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
         />
       )}
     </Stack>

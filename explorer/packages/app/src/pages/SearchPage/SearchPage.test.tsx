@@ -59,6 +59,26 @@ describe("the full-results view at /explore/search", () => {
     expect(screen.getByRole("link", { name: "Înapoi la rezultate" })).toHaveAttribute("href", "/ro/explore/?tab=records");
   });
 
+  it("Back to results adds a history entry, so the browser's back button returns to this page", async () => {
+    openAt("/explore/search?tab=records&page=2");
+    const before = window.history.length;
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("link", { name: "Back to results" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/explore/"));
+    expect(window.history.length).toBe(before + 1);
+  });
+
+  it("a stale page on a one-page result reads in the singular", async () => {
+    openAt("/explore/search?tab=authorities&q=deszapezire&page=3");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+
+    expect(await screen.findByText("This page is past the end: there is only 1 page.")).toBeVisible();
+  });
+
   it("a page past the last says so and links back to page 1", async () => {
     openAt("/explore/search?tab=records&page=4");
     const { client } = fixtureClient();

@@ -62,7 +62,8 @@ export function FullResults({
   const estimated = results.tab !== "records" && results.page.countEstimated;
   const pages = pageCount(count, pageSize);
   const shown = results.page.rows.length;
-  const pastTheEnd = count > 0 && page > pages;
+  // An estimated count can overshoot the real one, so a page inside `pages` may come back with no rows: also past the end.
+  const pastTheEnd = count > 0 && (page > pages || shown === 0);
   const range = shown > 0 && !pastTheEnd ? { ...pageRange(page, pageSize, shown), text: copy.showing } : undefined;
 
   const rows =

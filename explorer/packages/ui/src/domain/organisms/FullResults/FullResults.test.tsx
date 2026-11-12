@@ -86,6 +86,25 @@ describe("FullResults", () => {
     expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
   });
 
+  it("an estimated count that overshoots: an in-range page with no rows says it is past the end", () => {
+    show(authorities(70_000, [], true), 5);
+    expect(screen.getByText(/This page is past the end/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go to page 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("the past-the-end sentence is singular for one page", () => {
+    show(records(3, []), 2, { pageSize: 4 });
+    expect(screen.getByText("This page is past the end: there is only 1 page.")).toBeInTheDocument();
+  });
+
+  it("the past-the-end sentence takes Romanian plural forms", () => {
+    const ro = sampleCopy.fullResults("ro");
+    expect(ro.outOfRange(1, "1")).toBe("Această pagină este după ultima: există doar 1 pagină.");
+    expect(ro.outOfRange(3, "3")).toBe("Această pagină este după ultima: sunt doar 3 pagini.");
+    expect(ro.outOfRange(20, "20")).toBe("Această pagină este după ultima: sunt doar 20 de pagini.");
+  });
+
   it("an empty result says so for the tab", () => {
     show({ tab: "suppliers", page: { count: 0, countEstimated: false, rows: [] } }, 1);
     expect(screen.getByText("No suppliers.")).toBeInTheDocument();

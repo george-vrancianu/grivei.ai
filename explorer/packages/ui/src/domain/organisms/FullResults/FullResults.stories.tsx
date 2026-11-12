@@ -41,6 +41,7 @@ export const AuthoritiesMiddlePage: Story = { render: sample(authorities(fullRes
 export const AuthoritiesLastPage: Story = { render: sample(authorities(fullResultsAuthorityRows.slice(0, 2)), 3) };
 export const RecordsFirstPage: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 4)), 1, { pageSize: 4 }) };
 export const RecordsMiddlePage: Story = { render: sample(records(fullResultsRecords.rows.slice(4, 8)), 2, { pageSize: 4 }) };
+/** The last page holds the rest: three of four (the fixture has no rows to spare, so these repeat the first page's). */
 export const RecordsLastPage: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 3)), 3, { pageSize: 4 }) };
 /** Many pages: first, last and the neighbours of the current page, with gaps between. */
 export const ManyPages: Story = {
@@ -53,3 +54,7 @@ export const SinglePage: Story = { render: sample({ tab: "authorities", page: { 
 /** A stale URL: the page is past the last, with a way back to page 1. */
 export const PageOutOfRange: Story = { render: sample({ tab: "records", page: { count: 11, rows: [] } }, 9, { pageSize: 4 }) };
 export const Empty: Story = { render: sample({ tab: "suppliers", page: { count: 0, countEstimated: false, rows: [] } }, 1) };
+/** An estimated count that overshoots: the page is inside the estimated pages but holds no rows, so it reads as past the end. */
+export const EstimatedCountOvershoots: Story = {
+  render: sample({ tab: "authorities", page: { ...fullResultsEstimatedAuthorities, rows: [] } }, 5, { pageSize: 50 }),
+};
