@@ -106,6 +106,50 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     }) },
   },
   {
+    name: "supplier-many-aliases", kind: "extreme",
+    description: "a supplier SEAP spells eight ways (five differ from ANAF's name), no Signals",
+    variables: { key: "30000002", role: "SUPPLIER", filter: {} },
+    data: { entity: withSeap(w.constructiiHeader, {
+      ...emptyOverview("SUPPLIER"),
+      total: total({ awarded: ron(14_200_000), records: 98 }),
+      counterparties: { count: 2, topShare: 0.9, rows: [
+        { entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(12_800_000), records: 1 }) },
+        { entity: w.drumuriNationale, naturalPerson: false, total: total({ awarded: ron(1_400_000), records: 97 }) },
+      ] },
+      directPurchaseShare: 0.1,
+      procedures: [
+        { value: "Licitație deschisă", total: total({ awarded: ron(12_800_000), records: 1 }) },
+        { value: "Achiziție directă", total: total({ awarded: ron(1_400_000), records: 97 }) },
+      ],
+      largestRecords: [w.rContract, w.rProvisional],
+    }) },
+  },
+  {
+    name: "authority-many-counterparties", kind: "extreme",
+    description: "an authority with 220 counterparties (the first rows sent, a natural person among them), a consortium, a framework line and suspect and ceiling Records left out of the largest list",
+    variables: { key: "4000002", role: "AUTHORITY", filter: {} },
+    data: { entity: withSeap(w.cnairHeader, {
+      role: "AUTHORITY" as Role,
+      total: total({ awarded: ron(9_000_000_000), records: 1_200, suspectLeftOut: 2, noValue: 14, frameworkCeilings: ron(100_000_000) }),
+      counterparties: { count: 220, topShare: 0.12, rows: [
+        { entity: w.drumarii, naturalPerson: false, total: total({ awarded: ron(1_080_000_000), records: 90 }) },
+        { entity: w.constructii, naturalPerson: false, total: total({ awarded: ron(900_000_000), records: 41 }) },
+        { entity: w.foreignFirm, naturalPerson: false, total: total({ awarded: ron(450_000_000), records: 12 }) },
+        { entity: null, naturalPerson: true, total: total({ awarded: ron(36_000), records: 1 }) },
+      ] },
+      directPurchaseShare: 0.03,
+      procedures: [
+        { value: "Licitație deschisă", total: total({ awarded: ron(8_000_000_000), records: 300 }) },
+        { value: "Cu acord-cadru subsecvent", total: total({ awarded: ron(112_400_000), records: 12 }) },
+        { value: "Achiziție directă", total: total({ awarded: ron(270_000_000), records: 888 }) },
+      ],
+      consortia: [{ members: [w.constructii, w.drumarii].map((e) => ({ naturalPerson: false, publishedName: e.displayName, share: ron(15_000_000), entity: e })), total: total({ awarded: ron(30_000_000), records: 1 }) }],
+      frameworks: { count: 4, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
+      largestRecords: [w.rConsortium, w.rSubsequent, w.rDirect],
+      signals: { count: 3, rows: [w.sFrameworkOverrun] },
+    }) },
+  },
+  {
     name: "authority-typical", kind: "typical",
     description: "an authority placed in a county and UAT, no filter: the entity page's default Overview for an authority",
     variables: { key: "4000001", role: "AUTHORITY", filter: {} },
