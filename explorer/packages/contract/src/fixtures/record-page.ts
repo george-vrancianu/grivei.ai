@@ -4,8 +4,8 @@
 //    Signal: that rule is #76 (in progress), and no archive holds an overrun yet.
 //  - `no-public-page`: a Record with no `provenance.url` (a code the redirect cannot resolve: RFQA, PCA, ...): the fixture archives hold none
 //    of those codes, so it is the recorded crawled-provisional answer under another code, with the URL taken away.
-//  - `splitting-signal`: a Record inside a splitting Signal: the rule (#75) is not on this branch's pipeline yet.
-// When #75/#76 land, record those two from their archives and delete this file.
+// (A Record inside a splitting Signal, rule #75, is recorded from archive-splitting.) When #76 lands, record the overrun from its
+// archive and delete the hand fixture.
 import type {
   RecordPageQuery, RecordPageQueryVariables, RecordRowFieldsFragment, SignalFieldsFragment,
 } from "../generated/operations.ts";
@@ -50,8 +50,6 @@ export const recordPageHand: RecordFixtures = [
       framework: { ceiling: ron(100_000_000), subsequentReported: ron(112_400_000), ratio: 1.124, agreement: null, subsequent: [w.rSubsequent] },
       signals: [signal(w.sFrameworkOverrun, [w.rFrameworkCeiling, w.rSubsequent])],
     })),
-  fx("splitting-signal", "typical", "a Record inside a splitting Signal, which lists its Records (rule #75, not on this branch's pipeline yet)", "DA12370002",
-    page(w.rSplit2, { signals: [signal(w.sSplitting, [w.rSplit1, w.rSplit2])] })),
   fx("no-public-page", "extreme", "a Record whose code the redirect cannot resolve (RFQA ...): no URL, so the page says there is no stable public page (the recorded crawled-provisional answer under another code)", "RFQA9100077",
     noPublicPage()),
 ];

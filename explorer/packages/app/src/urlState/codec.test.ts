@@ -109,4 +109,13 @@ describe("the URL <-> RecordFilter codec", () => {
   it("accepts a query string with or without the leading ?", () => {
     expect(decodeUrlState("cpv=301")).toEqual(decodeUrlState("?cpv=301"));
   });
+
+  it("round-trips the zoomed county and its UAT (#84): the county zooms, the SIRUTA filters, both replace history and survive a reload", () => {
+    expect(roundTrip("county=RO-BV&uat=880010")).toBe("?county=RO-BV&uat=880010");
+    expect(roundTrip("uat=880010&county=RO-BV")).toBe("?county=RO-BV&uat=880010"); // canonical order
+    expect(roundTrip("county=RO-B&uat=179169&tab=authorities")).toBe("?county=RO-B&uat=179169&tab=authorities"); // Bucharest by sector
+    expect(decodeUrlState("?county=RO-BV&uat=880010").filter).toEqual({ county: "RO-BV", uat: "880010" });
+    expect(roundTrip("county=RO-BV&uat=")).toBe("?county=RO-BV"); // an empty UAT is no UAT
+    expect(roundTrip("county=RO-BV&uat=Sanpetru")).toBe("?county=RO-BV"); // malformed: a SIRUTA is digits
+  });
 });

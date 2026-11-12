@@ -6,7 +6,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedOperation = "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords";
+export type RecordedOperation = "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords" | "ZoomedCounty";
 
 export interface RecordedCase {
   operation: RecordedOperation;
@@ -32,6 +32,12 @@ export const RECORDED_CASES: readonly RecordedCase[] = [
   { operation: "MainScreen", name: "text-query-with-county", kind: "typical", description: "a text query inside a clicked county", variables: { filter: { q: "comuna", county: "RO-BV" } } },
   { operation: "MainScreen", name: "go-to-entity", kind: "typical", description: "a query that is exactly one entity's name: the Go-to card", variables: { filter: { q: "SANTIERUL TARA DEMO SRL" } } },
   { operation: "MainScreen", name: "empty-no-match", kind: "empty", description: "nothing matches: zero totals, empty tabs, no Go-to card", variables: { filter: { q: "zzzzzz" } } },
+  // The zoomed county (#84): the main screen for a county on the authority side, and a UAT clicked inside it.
+  { operation: "MainScreen", name: "county-cluj", kind: "typical", description: "a second county zoomed into: no authority without a UAT, so no unknown-UAT row", variables: { filter: { county: "RO-CJ" } } },
+  { operation: "MainScreen", name: "county-bucharest", kind: "typical", description: "Bucharest chosen: its Records sit in the sectors", variables: { filter: { county: "RO-B" } } },
+  { operation: "MainScreen", name: "county-with-uat", kind: "typical", description: "a UAT clicked inside a zoomed county: map, Total and tabs narrowed to its authorities", variables: { filter: { county: "RO-BV", uat: "880010" } } },
+  { operation: "MainScreen", name: "bucharest-with-sector", kind: "typical", description: "one Bucharest sector clicked", variables: { filter: { county: "RO-B", uat: "179169" } } },
+  { operation: "MainScreen", name: "empty-county-no-match", kind: "empty", description: "a county zoomed into with a query nothing matches: zero totals, empty tabs", variables: { filter: { q: "zzzzzz", county: "RO-CJ" } } },
   // The full-results view: the same filter, one tab, a page at a time (limit 50 as the app asks).
   { operation: "FullResultsAuthorities", name: "empty-filter", kind: "typical", description: "authorities, first page, no filter", variables: { filter: {}, ...page } },
   { operation: "FullResultsAuthorities", name: "county-authority-side", kind: "typical", description: "authorities of a clicked county", variables: { filter: { county: "RO-BV" }, ...page } },

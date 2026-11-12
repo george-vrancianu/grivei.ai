@@ -4,26 +4,26 @@ import type { Fixture } from "./types.ts";
 import { coverageLens, coveragePage } from "./coverage.ts";
 import { entityOverviewHand, entityRecords, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
-import { mainScreenHand, zoomedCounty } from "./main-screen.ts";
+import { mainScreenHand } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedRecordPage } from "./recorded/record.ts";
-import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen } from "./recorded/index.ts";
+import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
 export { recordedRecordPage } from "./recorded/record.ts";
-export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords } from "./recorded/index.ts";
+export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords, recordedZoomedCounty } from "./recorded/index.ts";
 
 /**
  * Fixtures by operation name. A new operation must get a set here (the tests insist).
- * The main screen and full-results operations are the API's recorded answers (`recorded/`), plus the few hand-written
+ * The main screen, zoomed-county and full-results operations are the API's recorded answers (`recorded/`), plus the few hand-written
  * states a recorded run cannot produce (pagination past 100 Records, estimated counts, every Record state at once).
  */
 export const fixtures = {
   MainScreen: [...recordedMainScreen, ...mainScreenHand],
-  ZoomedCounty: zoomedCounty,
+  ZoomedCounty: recordedZoomedCounty,
   FullResultsAuthorities: [...recordedFullResultsAuthorities, ...fullResultsAuthoritiesHand],
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],

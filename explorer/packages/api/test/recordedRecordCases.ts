@@ -5,15 +5,15 @@
  * ask for exactly these variables, so a case here is also a page a test can open. Same convention as `recordedCases.ts` (#83) and
  * `recordedEntityCases.ts` (#86), in its own file.
  *
- * Six small existing archives, each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
+ * Seven small existing archives, each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
  * framework agreement and its subsequent contracts, a consortium with a natural person), `contracts` (contracts and award notices as
  * the Contracte files publish them, with the odd codes), `bulk` (DA and DAN files), `identity` (every identity case, the override
- * file), `crawl` (crawled Records beside the bulk) and `signals` (Records inside Signals). A code is asked in ONE archive only:
+ * file), `crawl` (crawled Records beside the bulk), `signals` (Records inside over-cap and no-publication Signals) and `splitting` (a Record inside a splitting Signal). A code is asked in ONE archive only:
  * the app's fixture client answers by variables, so two archives holding the same code would collide.
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals";
+export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals" | "splitting";
 
 export interface RecordedRecordCase {
   operation: "RecordPage";
@@ -63,5 +63,6 @@ export const RECORDED_RECORD_CASES: readonly RecordedRecordCase[] = [
   // signals (archive-signals)
   c("signals", "typical", "over-cap-signal", "DA98000001", "a direct purchase above the cap: the over-cap Signal with its two Records and its numbers"),
   c("signals", "typical", "signal-natural-person", "DA98000010", "an over-cap Signal whose only winner is a natural person: no name, no link"),
+  c("splitting", "typical", "splitting-signal", "DA97000005", "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records"),
   c("signals", "typical", "no-publication-signal", "CAN9400001", "a backfilled award notice negotiated without prior publication: the no-publication Signal, crawl-only badge and provenance"),
 ];
