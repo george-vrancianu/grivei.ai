@@ -1,8 +1,8 @@
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import type { Locale } from "../../../../../theme/index.ts";
-import { RecordResultRow, type RecordResultRowCopy } from "../../../../molecules/RecordResultRow/index.ts";
-import type { EntityRef, EntityRole, RecordResult } from "../../../../types.ts";
-import { listSx } from "../../resultTabs.utils.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { RecordResultRow, type RecordResultRowCopy } from "../RecordResultRow/index.ts";
+import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
+import { listSx } from "../../utils/listSx.ts";
 
 export interface RecordResultListProps {
   rows: readonly RecordResult[];

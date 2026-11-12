@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
-import { renderInUi } from "../../../../../testing/render.tsx";
-import { sampleCopy } from "../../../../samples/copy.ts";
-import { resultSamples } from "../../../../samples/fixtureData.ts";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sampleCopy } from "../../samples/copy.ts";
+import { resultSamples } from "../../samples/fixtureData.ts";
 import { RecordResultList } from "./index.ts";
 
 describe("RecordResultList", () => {
