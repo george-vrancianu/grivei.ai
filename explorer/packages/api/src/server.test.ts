@@ -5,17 +5,25 @@ import { loadSchema, validateResponse } from "@grivei/contract/node";
 import { parse } from "graphql";
 import type { MainScreenQuery } from "@grivei/contract";
 import { createApi } from "./server.ts";
-import type { RecordRow, Store } from "./store.ts";
+import type { EntityRow, RecordRow, Store } from "./store.ts";
 
+const entity = (key: string, displayName: string, over: Partial<EntityRow> = {}): EntityRow => ({
+  key, displayName, identity: /^\d+$/.test(key) ? "CUI" : "NAME_ONLY", cui: /^\d+$/.test(key) ? key : null, foreignVatId: null, anafStatus: null,
+  identityCurated: false, provenance: { source: "SEAP", via: null, fetchedAt: "2026-11-12T10:00:00Z" }, ...over,
+});
 const row = (over: Partial<RecordRow>): RecordRow => ({
   code: "DA1", title: "Hârtie", date: "2022-03-30", kind: "DA", channel: "DIRECT_PURCHASE", procedure: null, value: "120050", counted: "120050",
-  authority: { cui: "1000001", name: "COMUNA EXEMPLU" }, winners: [{ cui: "2000001", name: "CURAT SRL" }], ...over,
+  authority: entity("1000009", "COMUNA EXEMPLU"), winners: [{ naturalPerson: false, name: "CURAT SRL", entity: entity("name-curat-srl", "CURAT SRL") }],
+  identityBadges: [], ...over,
 });
 const store: Store = {
   total: async () => ({ awarded: "420050", records: 2, noValue: 1 }),
   records: async ({ limit }) => [row({}), row({ code: "DA2", value: null, counted: null, winners: [] })].slice(0, limit),
   record: async () => null,
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
+  entity: async () => null,
+  aliases: async () => [],
+  roles: async () => [],
 };
 
 const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
