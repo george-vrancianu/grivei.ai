@@ -7,6 +7,13 @@ import { ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
 import * as w from "./world.ts";
 
+/** `n` distinct Records for a long list: the same Record states cycled, each with its own public code. */
+const rowsFrom = (start: number, n: number) =>
+  Array.from({ length: n }, (_, i) => {
+    const base = [w.rDirect, w.rContract, w.rConsortium, w.rNoValue][(start + i) % 4]!;
+    return { record: { ...base, code: `CAN${2_000_000 + start + i}` }, matchedField: null };
+  });
+
 export const fullResultsAuthorities: FixtureSet<FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables> = [
   {
     name: "typical-page-2", kind: "typical", description: "page 2 of authorities (offset 50), national and unplaced-adjacent rows",
@@ -49,6 +56,18 @@ export const fullResultsSuppliers: FixtureSet<FullResultsSuppliersQuery, FullRes
     } } },
   },
   {
+    name: "first-page-no-filter", kind: "typical", description: "the default view of /explore/search: suppliers, page 1, no filter",
+    variables: { filter: {}, limit: 50, offset: 0 },
+    data: { seap: { search: {
+      total: total({ awarded: ron(60_000_000), records: 40 }),
+      suppliers: { count: 3, countEstimated: false, rows: [
+        { entity: w.constructiiRow, matched: total({ awarded: ron(30_000_000), records: 20 }) },
+        { entity: w.drumariiRow, matched: total({ awarded: ron(15_000_000), records: 1 }) },
+        { entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 1, noValue: 1 }) },
+      ] },
+    } } },
+  },
+  {
     name: "empty", kind: "empty", description: "no supplier matches",
     variables: { filter: { q: "zzzzzz" }, limit: 50, offset: 0 },
     data: { seap: { search: { total: zeroTotal, suppliers: { count: 0, countEstimated: false, rows: [] } } } },
@@ -56,6 +75,26 @@ export const fullResultsSuppliers: FixtureSet<FullResultsSuppliersQuery, FullRes
 ];
 
 export const fullResultsRecords: FixtureSet<FullResultsRecordsQuery, FullResultsRecordsQueryVariables> = [
+  {
+    name: "page-1-of-3", kind: "typical", description: "the default page size of 50: page 1 of 120 Records, fifty full rows",
+    variables: { filter: {}, limit: 50, offset: 0 },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(0, 50) } } } },
+  },
+  {
+    name: "page-2-of-3-middle", kind: "typical", description: "a middle page: Records 51 to 100 of 120",
+    variables: { filter: {}, limit: 50, offset: 50 },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(50, 50) } } } },
+  },
+  {
+    name: "page-3-of-3-last", kind: "typical", description: "the last page is partial: Records 101 to 120",
+    variables: { filter: {}, limit: 50, offset: 100 },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(100, 20) } } } },
+  },
+  {
+    name: "page-4-past-the-end", kind: "empty", description: "a stale URL's page 4 of 120 Records: no rows, the count says why",
+    variables: { filter: {}, limit: 50, offset: 150 },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: [] } } } },
+  },
   {
     name: "typical-by-value", kind: "typical", description: "Records ordered by value, with every Record state in the list",
     variables: { filter: { hasSignals: true }, limit: 100, offset: 0, order: "VALUE_DESC" },

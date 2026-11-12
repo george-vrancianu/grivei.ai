@@ -87,3 +87,12 @@ export const nameOnlySupplierHeader = headerOf(fixtures.EntityOverview, "name-on
 export const deregisteredHeader = headerOf(fixtures.EntityOverview, "deregistered-supplier-extreme-concentration");
 /** An authority neither ANAF nor SEAP places in a county. */
 export const unplacedAuthorityHeader = headerOf(fixtures.EntityOverview, "unplaced-authority");
+
+// The full-results view's pages. Pagination is a prop of the view, so stories slice these rows into pages (a small page size)
+// and say how many results there are in all.
+/** Three authority rows (from the FullResultsAuthorities fixtures). */
+export const fullResultsAuthorityRows = named(fixtures.FullResultsAuthorities, "typical-page-2").data.seap.search.authorities.rows;
+/** Page 1 of a huge result: a HyperLogLog distinct count, shown with "≈". */
+export const fullResultsEstimatedAuthorities = named(fixtures.FullResultsAuthorities, "extreme-estimated").data.seap.search.authorities;
+/** Eight Records with every Record state (from the FullResultsRecords fixtures); the fixture counts 11 in all. */
+export const fullResultsRecords = named(fixtures.FullResultsRecords, "typical-by-value").data.seap.search.records;

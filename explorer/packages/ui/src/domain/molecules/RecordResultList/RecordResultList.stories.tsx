@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
-import { resultSamples } from "../../../../samples/fixtureData.ts";
+import { localeOf, sampleCopy } from "../../samples/copy.ts";
+import { resultSamples } from "../../samples/fixtureData.ts";
 import { RecordResultList } from "./index.ts";
 
-const meta = { title: "Domain/ResultTabs/RecordResultList", component: RecordResultList } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/RecordResultList", component: RecordResultList } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj;
 

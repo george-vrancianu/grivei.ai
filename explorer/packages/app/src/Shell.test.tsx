@@ -11,9 +11,8 @@ afterEach(() => window.history.replaceState(null, "", "/"));
 
 const here = () => window.location.pathname + window.location.search;
 
-/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages are real: see pages/EntityPage. */
+/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages and the search page are real: see pages/EntityPage and pages/SearchPage. */
 const ROUTES = [
-  { path: "search", en: catalogue.en.pages.search.title, ro: catalogue.ro.pages.search.title },
   { path: "record/CAN1170001", en: catalogue.en.pages.record.title, ro: catalogue.ro.pages.record.title, detail: "CAN1170001" },
   { path: "coverage", en: catalogue.en.pages.coverage.title, ro: catalogue.ro.pages.coverage.title },
   { path: "methodology", en: catalogue.en.pages.methodology.title, ro: catalogue.ro.pages.methodology.title },
@@ -28,6 +27,16 @@ describe("every route renders its placeholder in both languages", () => {
       if ("detail" in route) expect(screen.getByTestId("route-detail")).toHaveTextContent(route.detail);
       expect(screen.getByText(catalogue[locale].pages.placeholder)).toBeInTheDocument();
       expect(document.documentElement.lang).toBe(locale);
+      unmount();
+    }
+  });
+
+  it("shows the full-results view at /explore/search and /ro/explore/search", async () => {
+    for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
+      openAt(`${prefix}/search`);
+      const { unmount } = render(<App client={fixtureClient().client} />);
+      expect(screen.getByRole("heading", { level: 1, name: catalogue[locale].pages.search.title })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { level: 2, name: new RegExp(`^${catalogue[locale].results.tabs.suppliers} 3$`) })).toBeInTheDocument();
       unmount();
     }
   });

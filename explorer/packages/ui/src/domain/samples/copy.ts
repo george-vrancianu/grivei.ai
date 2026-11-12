@@ -14,6 +14,7 @@ import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts"
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
+import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
@@ -194,6 +195,33 @@ const resultTabs = (locale: Locale): ResultTabsCopy =>
         recordRow: recordRow(locale),
       };
 
+const fullResults = (locale: Locale): FullResultsCopy =>
+  locale === "ro"
+    ? {
+        heading: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
+        showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
+        empty: { authorities: "Nicio autoritate.", suppliers: "Niciun furnizor.", records: "Nicio înregistrare." },
+        outOfRange: (pages, formatted) => `Această pagină este după ultima: ${pages === 1 ? "există doar 1 pagină" : `sunt doar ${formatted}${pages % 100 >= 1 && pages % 100 <= 19 ? "" : " de"} pagini`}.`,
+        noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
+        firstPage: "Mergi la pagina 1",
+        back: "Înapoi la rezultate",
+        pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
+        entityRow: entityRow(locale),
+        recordRow: recordRow(locale),
+      }
+    : {
+        heading: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
+        showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
+        empty: { authorities: "No authorities.", suppliers: "No suppliers.", records: "No Records." },
+        outOfRange: (pages, formatted) => `This page is past the end: there ${pages === 1 ? "is only 1 page" : `are only ${formatted} pages`}.`,
+        noRowsHere: "There are no results on this page: the count above is an estimate.",
+        firstPage: "Go to page 1",
+        back: "Back to results",
+        pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
+        entityRow: entityRow(locale),
+        recordRow: recordRow(locale),
+      };
+
 const filterChips = (locale: Locale): FilterChipsCopy => {
   const BADGES = badges[locale];
   return locale === "ro"
@@ -260,6 +288,7 @@ export const sampleCopy = {
   recordRow,
   goTo,
   resultTabs,
+  fullResults,
   filterChips,
   badges: (locale: Locale): BadgeCopy => badges[locale],
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],

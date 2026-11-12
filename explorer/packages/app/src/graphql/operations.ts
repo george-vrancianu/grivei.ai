@@ -1,7 +1,9 @@
 import allowlist from "@grivei/contract/persisted-queries.json";
 import type {
   EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
-  EntityRelationshipsQuery, EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables,
+  EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
+  FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
+  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables,
 } from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
@@ -22,3 +24,6 @@ export const MainScreen = operation<MainScreenQuery, MainScreenQueryVariables>("
 export const EntityOverview = operation<EntityOverviewQuery, EntityOverviewQueryVariables>("EntityOverview");
 export const EntityRecords = operation<EntityRecordsQuery, EntityRecordsQueryVariables>("EntityRecords");
 export const EntityRelationships = operation<EntityRelationshipsQuery, EntityRelationshipsQueryVariables>("EntityRelationships");
+export const FullResultsAuthorities = operation<FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables>("FullResultsAuthorities");
+export const FullResultsSuppliers = operation<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables>("FullResultsSuppliers");
+export const FullResultsRecords = operation<FullResultsRecordsQuery, FullResultsRecordsQueryVariables>("FullResultsRecords");

@@ -4,3 +4,4 @@ export * from "./ResultTabs/index.ts";
 export * from "./MoneyLensMap/index.ts";
 export * from "./ZoomedCountyMap/index.ts";
 export * from "./CoverageLensMap/index.ts";
+export * from "./FullResults/index.ts";

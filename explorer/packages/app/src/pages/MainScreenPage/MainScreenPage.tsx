@@ -3,6 +3,7 @@ import { useCopy } from "../../copy/useCopy.ts";
 import { SearchField } from "../../components/SearchField/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
 import { pathFor } from "../../routing/routes.ts";
+import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
@@ -41,6 +42,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             tab={toResultTab(tab)}
             onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
             entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
+            showAllHref={(name) => `${pathFor(locale, { name: "search" })}${encodeUrlState({ filter, ...(name !== DEFAULT_RESULT_TAB ? { tab: name } : {}) })}`}
             recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
             locale={locale}
             copy={t.results}
