@@ -90,7 +90,7 @@ It prints `PASS` or `FAIL <kind>/<quarter>` per file (with the reason) and `N pa
 Expected: about 15 minutes for 4.7 GB (use `--kind` to split it), one file in memory at a time (xls files whole: up to a few hundred MB). Resume: it changes nothing, rerun.
 **Expected result on the real archive: 72 of 73 passed.** The one FAIL is the DA 2022 Q2 file: it mixes a pasted Contracte export and is rejected for that stated reason; it stays quarantined (note it in the closing comment). Fix, or accept in writing, every other FAIL before step 6.
 
-**Steps 5 and 6 in one detached chain:** `setsid nohup deploy/first-load.sh >> ~/grivei-data/seed.log 2>&1 &` runs the crawl, then the seed, so the one full load includes the crawled days (add `--backfill` for step 8; see the script's header). The steps below are the same commands by hand.
+**Steps 5 and 6 in one detached chain:** `setsid nohup deploy/first-load.sh >> ~/grivei-data/seed.log 2>&1 &` runs the crawl, then the three lookups of step 6 (`anaf-lookup`, `authority-scope`, `seap-entities`), then the seed, so the lookups and the one full load include the crawled days (add `--backfill` for step 8; see the script's header). The steps below are the same commands by hand.
 
 ### 5. (Optional, before the seed) crawl the quarters the bulk has not reached
 
