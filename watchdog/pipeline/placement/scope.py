@@ -94,21 +94,22 @@ _CONTROLLED = ("CONTROLAT", "ORGANISM DE DREPT PUBLIC", "INTREPRINDERE PUBLICA")
 _LEGAL_NATIONAL = {"AUTORITATE GUVERNAMENTALA CENTRALA"}
 _LEGAL_LOCAL = {"AUTORITATE LOCALA", "AUTORITATE REGIONALA", "AUTORITATE GUVERNAMENTALA REGIONALA", "AUTORITATE GUVERNAMENTALA LOCALA"}
 _CA_NATIONAL = ("MINISTER SAU ORICE ALTA AUTORITATE NATIONALA", "AGENTIE BIROU NATIONAL", "AGENTIE SAU BIROU NATIONAL")
-_CA_LOCAL = ("AUTORITATE REGIONALA SAU LOCALA", "DE INTERES LOCAL SAU REGIONAL")
+_CA_LOCAL = ("AUTORITATE REGIONALA SAU LOCALA", "DE INTERES LOCAL SAU REGIONAL", "AGENTIE BIROU REGIONAL")
+CONTROLLED = "controlled"  # a marker, not a verdict: the body is controlled by a central authority, so only the file can say
 
 
-def _verdict(text: str, key: str, *, legal: bool) -> bool | None:
+def _verdict(text: str, key: str, *, legal: bool) -> bool | str | None:
     """True: a central or national authority; False: a deconcentrated service, or a regional or local authority; None: unknown
-    (including bodies controlled by a central authority). `legal` is `legalBuyerType`, else `caType`."""
+    (including bodies controlled by a central authority, which come back as CONTROLLED so a ministry caType cannot make them national). `legal` is `legalBuyerType`, else `caType`."""
     t, k = fold(text), key.lower()
     if "DECONCENTRAT" in t:
         return False
     if any(w in t for w in _CONTROLLED) or k.endswith("body-pl-cga"):
-        return None
+        return CONTROLLED
     if legal:
         if t in _LEGAL_NATIONAL or k.endswith(".cga"):
             return True
-        if t in _LEGAL_LOCAL or "regionalorlocal" in k:
+        if t in _LEGAL_LOCAL or "regionalorlocal" in k or k.endswith((".la", ".ra")):
             return False
         return None
     if any(t.startswith(w) for w in _CA_NATIONAL) or "nationalorfederal" in k:
@@ -132,7 +133,8 @@ class Observation:
 def classify_notice(notice: Any) -> tuple[bool | None, str | None, str | None]:
     legal, ca = _describe(find(notice, "legalBuyerType")), _describe(find(notice, "caType"))
     verdicts = [_verdict(*legal, legal=True) if legal[0] or legal[1] else None, _verdict(*ca, legal=False) if ca[0] or ca[1] else None]
-    national = False if False in verdicts else (True if True in verdicts else None)  # a deconcentrated or local answer wins
+    # a deconcentrated or local answer wins; a controlled body is unknown even when the caType names a ministry (the file decides)
+    national = False if False in verdicts else (None if CONTROLLED in verdicts else (True if True in verdicts else None))
     return national, legal[0] or None, ca[0] or None
 
 
@@ -243,15 +245,15 @@ _NATIONAL_NAME = re.compile(r"^(MINISTERUL|AGENTIA NATIONALA|AUTORITATEA NATIONA
 def propose(authorities: Iterable[tuple[str, str]], observations: Mapping[str, Observation], entries: Mapping[str, Entry]) -> list[str]:
     """CSV lines for authorities `(cui, name)` with no award-notice flag and no line, whose name looks national. A proposal only:
     a human reads each one and pastes the ones that are right (with their reason) into the file."""
-    names: dict[str, str] = {}
-    for cui, name in sorted(authorities):  # one name per CUI: SEAP spells an authority several ways
-        names.setdefault(cui, name)
+    spellings: dict[str, list[str]] = {}
+    for cui, name in sorted(authorities):  # SEAP spells an authority several ways: one line per CUI, if any spelling looks national
+        spellings.setdefault(cui, []).append(name)
     lines = []
-    for cui, name in names.items():
+    for cui, names in spellings.items():
         if cui in entries or (cui in observations and observations[cui].national is not None):
             continue
-        if _NATIONAL_NAME.match(fold(name)):
+        if matching := [n for n in names if _NATIONAL_NAME.match(fold(n).lstrip("\"' "))]:
             out = io.StringIO()  # the file's column order; csv escapes the quotes and commas in a name
-            csv.writer(out, lineterminator="").writerow([cui, "true", "false", name, "name pattern (proposal: review before keeping)"])
+            csv.writer(out, lineterminator="").writerow([cui, "true", "false", matching[0], "name pattern (proposal: review before keeping)"])
             lines.append(out.getvalue())
     return lines

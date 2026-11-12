@@ -106,6 +106,8 @@ class Progress:
         self._line(f"rebuild done units={s['done']} loaded={s['loaded']} skipped={s['skipped']} quarantined={s['quarantined']} records={records_in_graph} in {took}")
 
     def fail(self, error: BaseException) -> None:
+        if self.state.get("state") == "finished":  # the load is committed: a later interrupt (the outlines) must not say "nothing was loaded"
+            return
         self.state.update(state="failed", error=f"{type(error).__name__}: {error}".strip(": "))
         try:
             self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units: {self.state['error']}; nothing was loaded, rerun from scratch")

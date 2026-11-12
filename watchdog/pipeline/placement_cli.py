@@ -110,7 +110,7 @@ def run(archive: Archive, args) -> int | None:
         from .placement import scope
 
         with psycopg.connect(args.db) as conn, conn.cursor() as cur:
-            cur.execute("SELECT authority_cui, min(authority_name) FROM seap.record WHERE authority_key ~ '^[0-9]+$' AND authority_cui IS NOT NULL GROUP BY authority_cui")
+            cur.execute("SELECT DISTINCT authority_cui, authority_name FROM seap.record WHERE authority_key ~ '^[0-9]+$' AND authority_cui IS NOT NULL AND authority_name IS NOT NULL")
             authorities = [(c, n) for c, n in cur.fetchall()]
         for line in scope.propose(authorities, scope.read_scopes(archive), scope.read_classification(args.placement_data)):
             print(line)

@@ -159,9 +159,11 @@ def test_the_postal_code_survives_diacritics_in_its_label():
 
 
 def test_a_county_seat_town_is_told_from_a_commune_by_the_kind_word():
-    from pipeline.placement.matching import KIND_TIPS
+    from pipeline.placement.matching import County, Gazetteer, Uat
 
-    assert KIND_TIPS["ORS"] == {"2", "5"}
+    gaz = Gazetteer(counties=[County("BV", "8", "Brasov")], uats=[Uat("1", "BV", "3", "X", "X"), Uat("2", "BV", "5", "ORAS X", "X")])
+    assert place_by_anaf(gaz, county_auto="BV", county_jud=None, locality="Orş. X").uat == "2"
+    assert place_by_anaf(gaz, county_auto="BV", county_jud=None, locality="Com. X").uat == "1"
 
 
 def test_the_postal_code_is_read_from_the_address():
@@ -201,6 +203,11 @@ def test_seap_no_match_keeps_the_county():
 
 # ---- national authorities -------------------------------------------------------------------------------------------------
 
+def test_a_cui_is_proposed_if_any_of_its_spellings_looks_national():
+    lines = scope.propose([("1", '"MINISTERUL FINANTELOR'), ("1", "MINISTERUL FINANTELOR"), ("2", "ALPHA"), ("2", "MINISTERUL APARARII")], {}, {})
+    assert [line.split(",")[0] for line in lines] == ["1", "2"]
+
+
 def test_the_notice_fields_decide_national_central_regional_or_unknown():
     cases = [
         (("Autoritate guvernamentală centrală", "Minister sau orice altă autoritate națională sau federală"), True),
@@ -221,10 +228,24 @@ def test_the_notice_fields_decide_national_central_regional_or_unknown():
         (("Organism de drept public, controlat de o autoritate guvernamentală centrală", None), None),
         (("Organism de drept public, controlat de o autoritate guvernamentală centrală", "Alta"), None),
         (("Întreprindere publică, controlată de o autoritate guvernamentală centrală", None), None),
+        # ... and a caType naming a ministry does not make them national: the file decides (R2-S1)
+        (("Organism de drept public, controlat de o autoritate guvernamentală centrală", "Minister sau orice altă autoritate națională sau federală, inclusiv subdiviziunile regionale sau locale ale acestora"), None),
+        # a body governed by public law is not the national type either, whatever the caType says
+        (("Organism de drept public", "Minister sau orice altă autoritate națională sau federală"), None),
+        # a central legal type with a public-law caType contradict each other: unknown, the file decides
+        (("Autoritate guvernamentală centrală", "Organism de drept public"), None),
+        # the regional or local agency caType, and the eForms regional/local keys
+        ((None, "Agenție/birou regional sau local"), False),
     ]
     for (legal, ca), expected in cases:
         notice = {"a": {"legalBuyerType": {"text": legal}} if legal else {}, "b": [{"caType": {"text": ca, "localeKey": "Common.x"}}] if ca else []}
         assert scope.classify_notice(notice)[0] is expected, (legal, ca)
+
+
+def test_the_eforms_legal_type_keys_for_local_and_regional_authorities_are_not_national():
+    for key in ("buyer-legal-type.la", "buyer-legal-type.ra", "buyer-legal-type.cga"):
+        got = scope.classify_notice({"legalBuyerType": {"text": "x", "localeKey": key}})[0]
+        assert got is (True if key.endswith("cga") else False), key
 
 
 def test_a_body_controlled_by_a_central_authority_is_left_to_the_file():
