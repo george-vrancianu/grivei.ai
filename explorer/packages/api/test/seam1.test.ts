@@ -154,6 +154,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE goto_a");
     await admin.query("CREATE DATABASE moneymap_a");
     await admin.query("CREATE DATABASE moneymap_b");
+    await admin.query("CREATE DATABASE recorded_a");
     await admin.query("CREATE DATABASE rollup_a");
     await admin.query("CREATE DATABASE rollup_b");
     await admin.query("CREATE DATABASE roles_a");
@@ -1999,12 +2000,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     const operations = [...new Set(RECORDED_CASES.map((c) => c.operation))];
 
     beforeAll(() => {
-      rebuild("moneymap_a", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-recorded")]);
+      rebuild("recorded_a", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-recorded")]); // its own database: no other block rebuilds it under a live pool
     });
 
     const answer = async (c: RecordedCase) => {
       const op = allowlist.operations.find((o) => o.name === c.operation)!;
-      const r = await ask("moneymap_a", op.sha256, c.variables);
+      const r = await ask("recorded_a", op.sha256, c.variables);
       expect(r.status, c.name).toBe(200);
       expect(r.body.errors, c.name).toBeUndefined();
       expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
