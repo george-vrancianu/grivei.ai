@@ -1,0 +1,1587 @@
+[
+  {
+    "name": "whole-grid",
+    "kind": "typical",
+    "description": "the whole grid (no window): 2021 Q1 .. 2025 Q3 x four kinds in every gap state, data-through per kind, the hand-entered gaps with their notes, the MF snapshot date; what the Coverage page and the lens's compact grid ask for",
+    "variables": {},
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": null,
+          "to": null
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "PARTIAL",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "PARTIAL",
+            "withRecords": 4,
+            "publicEntities": 6,
+            "otherAuthorities": 3
+          },
+          {
+            "county": "RO-BZ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "PARTIAL",
+            "withRecords": 3,
+            "publicEntities": 4,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-CL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "PARTIAL",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "PARTIAL",
+            "withRecords": 2,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "grid": [
+          {
+            "quarter": "2021-Q1",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q1",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q1",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q2",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q2",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 2,
+            "dataThrough": "2021-05-06"
+          },
+          {
+            "quarter": "2021-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q3",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 1,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q4",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q4",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q4",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2021-Q4",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q1",
+            "kind": "DA",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 3,
+            "dataThrough": "2022-03-31"
+          },
+          {
+            "quarter": "2022-Q1",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q1",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": null,
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q2",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q2",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q3",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q4",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q4",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q4",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2022-Q4",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_IN_SOURCE",
+            "rule": "NO_PRIOR_CALL_BEFORE_BACKFILL",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "DA",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 14,
+            "dataThrough": "2023-03-24"
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "DAN",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "CONTRACT",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q1",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q1",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q1",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q2",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q2",
+            "kind": "CONTRACT",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 12,
+            "dataThrough": "2024-05-12"
+          },
+          {
+            "quarter": "2024-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q3",
+            "kind": "CONTRACT",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 18,
+            "dataThrough": "2024-08-18"
+          },
+          {
+            "quarter": "2024-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q4",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q4",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2024-Q4",
+            "kind": "CONTRACT",
+            "state": "POSSIBLY_INCOMPLETE",
+            "rule": "COUNT_BELOW_NEIGHBOURS",
+            "note": null,
+            "records": 9,
+            "dataThrough": "2024-11-09"
+          },
+          {
+            "quarter": "2024-Q4",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q1",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q1",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q1",
+            "kind": "CONTRACT",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 23,
+            "dataThrough": "2025-02-23"
+          },
+          {
+            "quarter": "2025-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q2",
+            "kind": "DAN",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fișier încărcat greșit (fixture), conținutul nu corespunde trimestrului; raportat la sursă, trimestrul rămâne gol",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q2",
+            "kind": "CONTRACT",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 16,
+            "dataThrough": "2025-06-30"
+          },
+          {
+            "quarter": "2025-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2025-Q3",
+            "kind": "CONTRACT",
+            "state": "CRAWLED_PROVISIONAL",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 3,
+            "dataThrough": "2025-07-02"
+          },
+          {
+            "quarter": "2025-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "CRAWLED_PROVISIONAL",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 2,
+            "dataThrough": "2025-07-02"
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 3,
+          "total": {
+            "awarded": "9740625",
+            "records": 90,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        },
+        "referenceSnapshot": "2026-11-01"
+      }
+    }
+  },
+  {
+    "name": "year-2023-grid",
+    "kind": "typical",
+    "description": "the grid cut to the quarters of 2023: the API returns only the quarters overlapping the window",
+    "variables": {
+      "window": {
+        "from": "2023-01-01",
+        "to": "2023-12-31"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "AWARD_NOTICE",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "CONTRACT",
+              "date": "2025-07-02"
+            },
+            {
+              "kind": "DA",
+              "date": "2023-03-24"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "coverage": {
+        "window": {
+          "from": "2023-01-01",
+          "to": "2023-12-31"
+        },
+        "counties": [
+          {
+            "county": "RO-AB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AG",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-AR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-B",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 1,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BC",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-BV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 4,
+            "publicEntities": 6,
+            "otherAuthorities": 3
+          },
+          {
+            "county": "RO-BZ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 3,
+            "publicEntities": 4,
+            "otherAuthorities": 1
+          },
+          {
+            "county": "RO-CL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-CV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-DJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-GR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HD",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-HR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IF",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-IS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-MS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-NT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-OT",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-PH",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SB",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SJ",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-SV",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TM",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-TR",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 1,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VN",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "RO-VS",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 0,
+            "publicEntities": 0,
+            "otherAuthorities": 0
+          },
+          {
+            "county": "NATIONAL",
+            "status": "HARVESTED_WITH_KNOWN_GAPS",
+            "withRecords": 2,
+            "publicEntities": 3,
+            "otherAuthorities": 0
+          }
+        ],
+        "grid": [
+          {
+            "quarter": "2023-Q1",
+            "kind": "DA",
+            "state": "LOADED",
+            "rule": null,
+            "note": null,
+            "records": 14,
+            "dataThrough": "2023-03-24"
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "DAN",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "CONTRACT",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q1",
+            "kind": "AWARD_NOTICE",
+            "state": "KNOWN_GAP",
+            "rule": "HAND_ENTERED",
+            "note": "Fisier lipsa la sursa (fixture); raportat",
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q2",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q3",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "DA",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "DAN",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "CONTRACT",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          },
+          {
+            "quarter": "2023-Q4",
+            "kind": "AWARD_NOTICE",
+            "state": "NOT_YET_LOADED",
+            "rule": "AWAITING_BULK_FILE",
+            "note": null,
+            "records": 0,
+            "dataThrough": null
+          }
+        ],
+        "unplacedAuthorities": {
+          "authorities": 1,
+          "total": {
+            "awarded": "100000",
+            "records": 1,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          }
+        },
+        "referenceSnapshot": "2026-11-01"
+      }
+    }
+  }
+]

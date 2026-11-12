@@ -6,7 +6,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedOperation = "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords" | "ZoomedCounty";
+export type RecordedOperation = "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords" | "ZoomedCounty" | "CoverageLens" | "CoveragePage";
 
 export interface RecordedCase {
   operation: RecordedOperation;

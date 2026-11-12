@@ -59,7 +59,7 @@ export function samplePageContent(dateWindow: GridWindow = { from: "2023-01-01",
   return { cells: sampleGrid(options), sources: sampleSeap, referenceSnapshot: "2025-08-14", dateWindow };
 }
 
-/** A Coverage page fixture of the contract as page content (`CoveragePage`: typical-every-gap-state, typical-open-window, extreme-full-grid, empty-window). */
+/** A Coverage page fixture of the contract as page content (`CoveragePage`: typical-every-gap-state, whole-grid, extreme-full-grid, empty-window). */
 export function fixturePageContent(name: string): CoveragePageContent {
   const found = fixtures.CoveragePage.find((f) => f.name === name);
   if (!found) throw new Error(`No CoveragePage fixture named ${name}`);

@@ -47,8 +47,8 @@ export const WindowOpenEnd: Story = { render: grid(sampleGrid(), { from: "2024-0
 /** No date chip: nothing is highlighted. */
 export const WindowNone: Story = { render: grid(sampleGrid(), { from: null, to: null }) };
 
-/** The contract's `CoveragePage` fixture "typical-open-window". */
-export const FromFixture: Story = { render: grid(fixturePageContent("typical-open-window").cells) };
+/** The contract's `CoveragePage` fixture "whole-grid". */
+export const FromFixture: Story = { render: grid(fixturePageContent("whole-grid").cells) };
 
 /** The contract's "typical-every-gap-state" fixture is sparse: quarters and kinds with no cell show as "no information". */
 export const SparseFixture: Story = { render: grid(fixturePageContent("typical-every-gap-state").cells, { from: "2021-01-01", to: "2024-12-31" }) };

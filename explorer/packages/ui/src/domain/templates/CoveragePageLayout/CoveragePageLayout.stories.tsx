@@ -16,8 +16,8 @@ const page = (status: "loading" | "error" | "ready", content?: CoveragePageConte
 /** The whole page on the sample grid: all six states, 2023-24 highlighted among the 19 quarters, data-through per kind, crawl-only counts, known gaps with reasons, rules, MF snapshot date. */
 export const FullPage: Story = { render: page("ready", samplePageContent()) };
 
-/** The contract's "typical-open-window" fixture, no date chip. */
-export const FromFixtureOpenWindow: Story = { render: page("ready", fixturePageContent("typical-open-window")) };
+/** The contract's recorded "whole-grid" fixture (the API's own answer), no date chip. */
+export const FromFixtureOpenWindow: Story = { render: page("ready", fixturePageContent("whole-grid")) };
 
 /** The contract's sparse "typical-every-gap-state" fixture with its closed window. */
 export const FromFixtureEveryGapState: Story = { render: page("ready", fixturePageContent("typical-every-gap-state")) };

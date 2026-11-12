@@ -20,7 +20,7 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { CoverageLensQuery, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
@@ -33,6 +33,7 @@ import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecord
 import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
+import { RECORDED_COVERAGE_CASES } from "./recordedCoverageCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
@@ -175,6 +176,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE moneymap_b");
     await admin.query("CREATE DATABASE recorded_a");
     await admin.query("CREATE DATABASE recorded_zoom");
+    await admin.query("CREATE DATABASE recorded_coverage");
     await admin.query("CREATE DATABASE rollup_a");
     await admin.query("CREATE DATABASE rollup_b");
     await admin.query("CREATE DATABASE roles_a");
@@ -223,7 +225,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY_FILTER)).toEqual([]);
 
     const data = r.body.data as MainScreenQuery;
-    expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] }]);
+    expect(data.sources[0]).toEqual({ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "DA", date: "2022-03-31" }] });
+    expect(data.sources.slice(1).map((s) => [s.id, s.harvested])).toEqual([["ONRC", false], ["ANI", false], ["MFINANTE", false], ["JUST", false]]); // planned Sources (#90)
     expect(data.seap.search.total).toEqual({
       awarded: "1995075", // 120050 + 300000 + 1575025 bani; the blank-valued Record adds nothing
       records: 4,
@@ -425,10 +428,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // the cursor is 2026-04-02. Contracts: the Contracte bulk covers 2026 Q1, so the crawl is complete through 04-02. Award notices: no
     // "fara anunt" bulk, so 2026-02-10 is followed by a hole (02-11..03-31 never crawled): complete only through 2026-02-10;
     // the crawled Records' own dates (up to 04-01) do not hide the hole, and the unfinished 2026-04-03 does not count
-    expect((main.body.data as MainScreenQuery).sources).toEqual([{
+    expect((main.body.data as MainScreenQuery).sources[0]).toEqual({
       id: "SEAP", name: "SEAP", harvested: true,
       dataThrough: [{ kind: "AWARD_NOTICE", date: "2026-02-10" }, { kind: "CONTRACT", date: "2026-04-02" }],
-    }]);
+    });
     // and a bulk-only archive keeps reporting its latest publication date, as before
     const bulkOnly = await ask("bulk_a", mainScreen.sha256);
     expect((bulkOnly.body.data as MainScreenQuery).sources[0]!.dataThrough.map((d) => d.kind)).toEqual(["DA", "DAN"]);
@@ -502,7 +505,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     ]);
 
     // the backfill is not the nightly crawl: no crawl day, so the data-through dates are the bulk's alone (the backfilled 2021-22 dates do not move them)
-    expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "AWARD_NOTICE", date: "2023-01-05" }, { kind: "CONTRACT", date: "2023-01-06" }] }]);
+    expect(data.sources[0]).toEqual({ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "AWARD_NOTICE", date: "2023-01-05" }, { kind: "CONTRACT", date: "2023-01-06" }] });
   });
 
   it("gives identical responses after a second rebuild of the backfill archive, over it and into a fresh database (#78, ADR 0004)", async () => {
@@ -2100,6 +2103,105 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const none = await zoom("county-no-match");
       expect([none.seap.search.total.records, none.seap.search.uatMap.uats, none.seap.search.uatMap.unknownUat]).toEqual([0, [], null]);
       expect(none.uats.length).toBeGreaterThan(0); // the county's UATs are still listed: they all draw grey
+    });
+  });
+
+  describe("recorded fixtures (#90): archive-mf -> rebuild -> the contract's recorded CoverageLens and CoveragePage responses", () => {
+    // Same convention as #83/#84: fails when an answer drifts from the committed JSON, `RECORD_FIXTURES=1` rewrites it.
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const DB = "recorded_coverage";
+
+    // One world for both operations: the placement world (N of M in 2023 Q1), the MF list (the snapshot date, M), and the Coverage archive's grid
+    // (every gap state, a quarantined file, crawled quarters), rebuilt as of 2025-09-20 with both known-gaps files joined.
+    beforeAll(() => {
+      const archive = join(scratch, "archive-recorded-coverage");
+      for (const part of ["archive-mf", "archive-coverage"]) cpSync(join(scratch, part), archive, { recursive: true });
+      const gaps = join(scratch, "recorded-coverage-gaps.csv");
+      writeFileSync(gaps, `${readFileSync(mfGaps, "utf8").trimEnd()}\n${readFileSync(coverageGaps, "utf8").split("\n").slice(1).join("\n")}`);
+      rebuild(DB, "archive-recorded-coverage", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-recorded-coverage"), "--today", "2025-09-20", "--known-gaps", gaps]);
+    });
+
+    const answer = async (c: (typeof RECORDED_COVERAGE_CASES)[number]) => {
+      const op = allowlist.operations.find((o) => o.name === c.operation)!;
+      const r = await ask(DB, op.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    const named = async (name: string, operation: "CoverageLens" | "CoveragePage" = "CoverageLens") =>
+      (await answer(RECORDED_COVERAGE_CASES.find((c) => c.name === name && c.operation === operation)!)).data as CoverageLensQuery & CoveragePageQuery;
+
+    it("every recorded CoverageLens and CoveragePage case is what the API answers now", async () => {
+      for (const operation of ["CoverageLens", "CoveragePage"] as const) {
+        const recorded = [];
+        for (const c of RECORDED_COVERAGE_CASES.filter((x) => x.operation === operation)) recorded.push(await answer(c));
+        const file = resolve(here, `../../contract/src/fixtures/recorded/${operation}.json`);
+        if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+        expect(JSON.parse(JSON.stringify(recorded)), operation).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      }
+    });
+
+    it("gives the cases the figures they are named for: the date chip moves the status, N and the other authorities, never M", async () => {
+      const lens = async (name: string) => {
+        const d = await named(name);
+        const row = (area: string) => {
+          const r = d.coverage.counties.find((x) => x.county === area)!;
+          return { status: r.status, n: r.withRecords, m: r.publicEntities, other: r.otherAuthorities };
+        };
+        return { d, row, unplaced: d.coverage.unplacedAuthorities.authorities };
+      };
+      const open = await lens("open-window");
+      expect(open.d.coverage.window).toEqual({ from: null, to: null });
+      expect(open.d.coverage.counties).toHaveLength(43); // 42 counties and National
+      expect(open.row("RO-BV")).toEqual({ status: "PARTIAL", n: 4, m: 6, other: 3 }); // the quarantined 2022 Q2 DA file is a hole in the whole harvest
+      expect(open.row("RO-CJ")).toEqual({ status: "PARTIAL", n: 3, m: 4, other: 1 });
+      expect(open.row("NATIONAL")).toEqual({ status: "PARTIAL", n: 2, m: 3, other: 0 });
+      expect(open.unplaced).toBe(3);
+      // the Sources: SEAP harvested with its data-through per kind, the four later Sources planned (not harvested, no dates)
+      expect(open.d.sources.map((s) => [s.id, s.harvested])).toEqual([["SEAP", true], ["ONRC", false], ["ANI", false], ["MFINANTE", false], ["JUST", false]]);
+      expect(open.d.sources[0]!.dataThrough).toEqual([{ kind: "AWARD_NOTICE", date: "2025-07-02" }, { kind: "CONTRACT", date: "2025-07-02" }, { kind: "DA", date: "2023-03-24" }]);
+
+      const y2023 = await lens("year-2023");
+      expect(y2023.d.coverage.window).toEqual({ from: "2023-01-01", to: "2023-12-31" });
+      expect(y2023.row("RO-BV")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 4, m: 6, other: 3 }); // past the quarantined quarter: the hand-entered 2023 Q1 gaps
+      expect(y2023.unplaced).toBe(1);
+      const from2023 = await lens("from-2023");
+      expect(from2023.d.coverage.window).toEqual({ from: "2023-01-01", to: null });
+      expect([from2023.row("RO-BV").status, from2023.unplaced]).toEqual(["HARVESTED_WITH_KNOWN_GAPS", 2]); // later crawled Records place two more authorities nowhere
+      const y2022 = await lens("year-2022");
+      expect(y2022.row("RO-BV")).toEqual({ status: "PARTIAL", n: 0, m: 6, other: 0 }); // the quarantined file is in this window; no placed authority has a 2022 Record
+      expect(y2022.row("RO-AB")).toEqual({ status: "PARTIAL", n: 0, m: 0, other: 0 });
+      const narrow = await lens("narrow-days");
+      expect(narrow.row("RO-BV")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 1, m: 6, other: 1 });
+      expect(narrow.row("RO-CJ")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 2, m: 4, other: 0 });
+      expect(narrow.unplaced).toBe(0);
+      const before = await lens("before-harvest");
+      expect(before.d.coverage.counties.every((x) => x.status === "NOT_HARVESTED" && x.withRecords === 0 && x.otherAuthorities === 0)).toBe(true);
+      expect(before.row("RO-BV").m).toBe(6); // M is the list, not the window
+      expect(before.unplaced).toBe(0);
+      expect(new Set([open, y2023, y2022, before].map((x) => x.row("RO-BV").status))).toEqual(new Set(["PARTIAL", "HARVESTED_WITH_KNOWN_GAPS", "NOT_HARVESTED"])); // the chip changes the status
+    });
+
+    it("serves the Coverage page's whole grid with every state, data-through dates and the MF snapshot, and cuts a windowed one", async () => {
+      const whole = (await named("whole-grid", "CoveragePage")).coverage;
+      expect(whole.referenceSnapshot).toBe("2026-11-01");
+      expect(whole.grid).toHaveLength(19 * 4); // 2021 Q1 .. 2025 Q3, four kinds
+      const cell = (quarter: string, kind: string) => whole.grid.find((c) => c.quarter === quarter && c.kind === kind)!;
+      const shape = ({ state, rule, note, records, dataThrough }: (typeof whole.grid)[number]) => ({ state, rule, note, records, dataThrough });
+      expect(shape(cell("2023-Q1", "DA"))).toEqual({ state: "LOADED", rule: null, note: null, records: 14, dataThrough: "2023-03-24" });
+      expect(shape(cell("2023-Q1", "DAN"))).toEqual({ state: "KNOWN_GAP", rule: "HAND_ENTERED", note: "Fisier lipsa la sursa (fixture); raportat", records: 0, dataThrough: null });
+      expect(shape(cell("2025-Q2", "DAN")).note).toBe("Fișier încărcat greșit (fixture), conținutul nu corespunde trimestrului; raportat la sursă, trimestrul rămâne gol"); // verbatim
+      expect(shape(cell("2022-Q2", "DA"))).toEqual({ state: "NOT_YET_LOADED", rule: null, note: null, records: 0, dataThrough: null }); // the quarantined file: no reason is served
+      expect(shape(cell("2022-Q3", "DA"))).toMatchObject({ state: "NOT_YET_LOADED", rule: "AWAITING_BULK_FILE" });
+      expect(shape(cell("2024-Q4", "CONTRACT"))).toEqual({ state: "POSSIBLY_INCOMPLETE", rule: "COUNT_BELOW_NEIGHBOURS", note: null, records: 9, dataThrough: "2024-11-09" });
+      expect(shape(cell("2025-Q3", "CONTRACT"))).toEqual({ state: "CRAWLED_PROVISIONAL", rule: "AWAITING_BULK_FILE", note: null, records: 3, dataThrough: "2025-07-02" });
+      expect(shape(cell("2021-Q1", "AWARD_NOTICE"))).toMatchObject({ state: "NOT_IN_SOURCE", rule: "NO_PRIOR_CALL_BEFORE_BACKFILL" });
+      expect(new Set(whole.grid.map((c) => c.state))).toEqual(new Set(["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL", "NOT_YET_LOADED"]));
+      const cut = (await named("year-2023-grid", "CoveragePage")).coverage;
+      expect([...new Set(cut.grid.map((c) => c.quarter))]).toEqual(["2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4"]);
+      expect(cut.grid).toEqual(whole.grid.filter((c) => c.quarter.startsWith("2023-")));
+      expect(cut.referenceSnapshot).toBe("2026-11-01");
     });
   });
 
