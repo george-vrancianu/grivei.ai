@@ -11,6 +11,11 @@
 		reverse_proxy api:4000
 	}
 
+	# "Check in SEAP": /source/seap/<code> redirects to the public e-licitatie page of a Record (served by the API).
+	handle /source/* {
+		reverse_proxy api:4000
+	}
+
 	# County and UAT outlines: static TopoJSON written by `pipeline rebuild` (never through GraphQL). Same origin, so no CORS.
 	handle /geo/* {
 		root * /srv/geo

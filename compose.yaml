@@ -39,6 +39,8 @@ services:
     environment:
       DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
       PORT: "4000"
+      SEAP_BASE_URL: ${SEAP_BASE_URL:-https://e-licitatie.ro}
+      SEAP_LINK_PUBLIC_BASE: ${SEAP_LINK_PUBLIC_BASE:-}
     depends_on:
       db:
         condition: service_healthy
