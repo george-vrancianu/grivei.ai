@@ -30,6 +30,27 @@ services:
       retries: 20
     # not published: only the API and the pipeline reach it, over the compose network
 
+  # A major upgrade (ADR 0004): a second database on a new volume, built by `rebuild --in-place` against it and checked with `verify`,
+  # then DATABASE_URL is repointed (watchdog/README.md, "Major upgrade"). Not part of `up`: `docker compose --profile upgrade up -d db-next`.
+  db-next:
+    profiles: ["upgrade"]
+    image: ${GRIVEI_DB_NEXT_IMAGE:-paradedb/paradedb:0.26.6-pg18}  # a default, not `:?`: Compose interpolates inactive profiles too, and a required variable would break every command (keep it equal to `db`'s tag)
+    cpus: 8
+    mem_limit: 12g
+    shm_size: 1g
+    environment:
+      POSTGRES_USER: grivei
+      POSTGRES_PASSWORD: ${GRIVEI_DB_PASSWORD:-grivei}
+      POSTGRES_DB: grivei
+    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=4GB"]
+    volumes:
+      - pgdata-next:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grivei -d grivei"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   api:
     build:
       context: .
@@ -83,6 +104,14 @@ services:
       PIPELINE_ARCHIVE: /archive
       PIPELINE_GEO_DIR: /geo
       PIPELINE_HEALTHCHECK_URL: ${GRIVEI_HEALTHCHECK_URL:-}  # healthchecks.io ping URL of `refresh`; empty = no pings
+      # backups (refresh step 5, #82): empty RESTIC_REPOSITORY = skipped with a warning. Password and backend credentials as restic reads them.
+      RESTIC_CACHE_DIR: /tmp/restic-cache
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}  # only this form reaches the container; for RESTIC_PASSWORD_FILE mount the file and set it in an override
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:-}
     volumes:
       - ${GRIVEI_ARCHIVE_DIR:-./archive}:/archive
       - ${GRIVEI_GEO_DIR:-./geo}:/geo
@@ -91,5 +120,6 @@ services:
         condition: service_healthy
 
 volumes:
+  pgdata-next:  # only used by the `upgrade` profile
   # Postgres data: a named volume, which lives on the WSL ext4 disk (never /mnt/c).
   pgdata:

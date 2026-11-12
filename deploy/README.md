@@ -70,6 +70,7 @@ In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at log
 | `GRIVEI_ARCHIVE_DIR` | `./archive` | host directory mounted as the raw archive |
 | `GRIVEI_GEO_DIR` | `./geo` | host directory the pipeline writes the county and UAT TopoJSON to and Caddy serves at `/geo/` (create it first: `mkdir geo`, so it is yours, not root's) |
 | `GRIVEI_HEALTHCHECK_URL` | empty | healthchecks.io ping URL for `refresh` (becomes `PIPELINE_HEALTHCHECK_URL` in the pipeline container); empty = no pings |
+| `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (or `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY`) | empty | the encrypted backup repository of refresh step 5 (#82); empty `RESTIC_REPOSITORY` = no backups, logged. Backup, restore, switchover, rollback and the major-upgrade rebuild: `watchdog/README.md`. `GRIVEI_DB_NEXT_IMAGE` names the new image for the `upgrade` profile |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
 | `SEAP_BASE_URL` | `https://e-licitatie.ro` | the SEAP site the API's `/source/seap/<code>` redirect asks (and redirects to); set on the `api` service, only tests change it |
 | `SEAP_LINK_PUBLIC_BASE` | empty | prefix of the "Check in SEAP" URL a bulk Record's provenance carries (`<base>/source/seap/<code>`); empty = relative, same origin as the app |
