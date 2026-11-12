@@ -98,6 +98,23 @@ _LEGAL_FORMS = frozenset(
 )
 
 
+_ORG_WORDS = frozenset(
+    """asociatia asociere asocierea fundatia consortiul consortium grup grupul societatea compania intreprindere
+    primaria consiliul consiliu universitatea spitalul scoala liceul institutul institut directia ministerul
+    regia cabinet cabinetul biserica parohia comuna orasul municipiul judetul agentia autoritatea
+    cooperativa uniunea federatia sindicatul clubul sportiv international romania group holding trading
+    company limited""".split()
+)
+_TRUNCATED_CNP = re.compile(r"[1-8]\d{11}")
+_ID_CARD = re.compile(r"\d{6}|[A-Z]{2}\d{6}")
+
+
+def _shaped_like_a_person(spelling: str) -> bool:
+    """2 to 5 alphabetic words, none a legal form or an organisation word (`PFA`, `ASOCIATIA`, `PRIMARIA` ...)."""
+    words = name_key_text(spelling).split()
+    return 2 <= len(words) <= 5 and all(w.isalpha() and w not in _LEGAL_FORMS and w not in _ORG_WORDS for w in words)
+
+
 def compare_name(name: str) -> str:
     """The name as compared with ANAF's: `name_key_text` without the legal-form words (SRL, S.R.L., SA, SC, PFA, GmbH ...).
 
@@ -231,6 +248,18 @@ def _loose_id(raw: str) -> str:
     return s.lstrip("0") if s.isdigit() else s
 
 
+def _is_person(spelling: str, raw_id: str | None, kind: str) -> bool:
+    """A winner no CUI ANAF knows and no VAT id resolves, that is an individual all the same (an override, checked before, pins
+    a misclassified company): a truncated CNP (12 digits starting 1-8) whatever the name; an ID card number (6 digits) or series
+    (`XX123456`) or no usable id at all with a name shaped like a person's (see `_shaped_like_a_person`)."""
+    s = re.sub(r"[^0-9A-Z]", "", (raw_id or "").upper())
+    if kind in ("none", "other") and _TRUNCATED_CNP.fullmatch(s):
+        return True
+    if not _shaped_like_a_person(spelling):
+        return False
+    return kind in ("none", "other") or (kind == "cui" and _ID_CARD.fullmatch(s) is not None)
+
+
 class Resolver:
     """Turns a winner (spelling + published id) into its entity. `anaf` maps a CUI ANAF found to its `compare_name`."""
 
@@ -257,6 +286,8 @@ class Resolver:
             return replace(self._overridden(o, spelling), cui_mismatch=mismatch)
         if tax.kind == "foreign_vat" and tax.value:
             return Resolved(key=vat_key(tax.value), identity="NAME_ONLY", foreign_vat_id=tax.value)
+        if spelling and name_key_text(spelling) and _is_person(spelling, raw_id, tax.kind):
+            return NATURAL_PERSON  # an individual published without a CNP: never named either (ADR 0003)
         if spelling and name_key_text(spelling):
             return Resolved(key=name_key(spelling), identity="NAME_ONLY", cui_mismatch=mismatch)
         return Resolved(key=None, identity=None, cui_mismatch=mismatch)  # no name and no usable id: nobody to link

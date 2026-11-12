@@ -502,3 +502,20 @@ def test_the_anaf_step_with_a_skipped_batch_succeeds_with_a_warning_and_a_rerun_
     again = Fake()
     Impl(identity_archive, print, None, None, None, lambda: again.client(), lambda: None).anaf()
     assert [e["cui"] for _, b in again.requests for e in b] == list(range(1_000_100, 1_000_200))
+
+
+def test_the_command_exits_1_and_reports_a_batch_anaf_stayed_unavailable_for(identity_archive, tmp_path, capsys, monkeypatch):
+    def second_batch_down(n, body):
+        if body[0]["cui"] == 1100:
+            return 503, b""
+
+    fake = Fake(script=second_batch_down)
+    monkeypatch.setattr(cli, "AnafClient", lambda endpoint: fake.client())
+    monkeypatch.setattr(cli, "collect_cuis", lambda archive, say=None: set(range(1000, 1300)))
+    status_file = tmp_path / "anaf-progress.json"
+    assert cli.main(["--archive", str(identity_archive.root), "anaf-lookup", "--progress-file", str(status_file)]) == 1
+    out = capsys.readouterr().out
+    assert re.search(rf"{TS} anaf batch 2/3 cuis=100 SKIPPED ", out)
+    assert re.search(rf"{TS} anaf done batches=3 skipped_batches=1 ", out)
+    state = json.loads(status_file.read_text())
+    assert state["batchesFailed"] == 1 and state["state"] == "finished"

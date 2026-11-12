@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from ods_builder import write_ods
+from ods_builder import row_xml, write_ods, write_ods_raw
 from pipeline.bulk import InvalidFile, parse_file
 from pipeline.bulk.readers import read_file
 
@@ -48,3 +48,25 @@ def test_a_file_that_is_not_an_ods_is_invalid(tmp_path):
     path.write_bytes(b"nope")
     with pytest.raises(InvalidFile, match="not a readable ODS"):
         parse_file("fara-anunt", "2026Q2", path)
+
+
+def test_rows_inside_header_rows_and_row_groups_are_read(tmp_path):
+    body = ("<table:table-header-rows>" + row_xml(H) + "</table:table-header-rows>"
+            "<table:table-row-group>" + row_xml(row("CAN1", "A")) + "<table:table-row-group>" + row_xml(row("CAN2", "B"))
+            + "</table:table-row-group></table:table-row-group>" + row_xml(row("CAN3", "C")))
+    records = {r.code for r in parse_file("fara-anunt", "2026Q2", write_ods_raw(tmp_path / "q.ods", body))}
+    assert records == {"CAN1", "CAN2", "CAN3"}
+
+
+@pytest.mark.parametrize(
+    "bad_cell",
+    [
+        '<table:table-cell office:value-type="float"><text:p>1</text:p></table:table-cell>',  # no office:value
+        '<table:table-cell office:value-type="time" office:time-value="P1DT02H00M00S"><text:p>x</text:p></table:table-cell>',  # a day part
+    ],
+    ids=["float-without-value", "time-with-days"],
+)
+def test_a_cell_the_reader_cannot_take_makes_the_file_invalid_not_a_crash(tmp_path, bad_cell):
+    body = row_xml(H) + "<table:table-row>" + bad_cell + "</table:table-row>"
+    with pytest.raises(InvalidFile, match="not a readable ODS"):
+        parse_file("fara-anunt", "2026Q2", write_ods_raw(tmp_path / "q.ods", body))

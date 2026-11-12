@@ -36,3 +36,17 @@ def write_ods(path, sheets: list[list[list]]):
         z.writestr("mimetype", "application/vnd.oasis.opendocument.spreadsheet")
         z.writestr("content.xml", content)
     return path
+
+
+def write_ods_raw(path, table_body: str):
+    """An `.ods` whose one sheet holds `table_body` as written (row groups, header rows, odd cells)."""
+    content = (f'<?xml version="1.0" encoding="UTF-8"?><office:document-content {NS}><office:body><office:spreadsheet>'
+               f'<table:table table:name="Sheet1">{table_body}</table:table></office:spreadsheet></office:body></office:document-content>')
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("mimetype", "application/vnd.oasis.opendocument.spreadsheet")
+        z.writestr("content.xml", content)
+    return path
+
+
+def row_xml(cells) -> str:
+    return "<table:table-row>" + "".join(cell_xml(c) for c in cells) + "</table:table-row>"

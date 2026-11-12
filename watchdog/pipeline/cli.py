@@ -14,6 +14,7 @@ from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
 from .anaf import ENDPOINT as ANAF_ENDPOINT
 from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
 from .archive import Archive, ArchiveError
+from .bulk.records import KINDS
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through, missing_days
@@ -401,18 +402,18 @@ def _load_quarter(archive: Archive, args) -> int:
     if len(quarter) != 6 or quarter[4] != "Q" or not quarter[:4].isdigit() or quarter[5] not in "1234":
         print(f"load-quarter: not a quarter like 2023Q2: {args.quarter!r}", file=sys.stderr)
         return 2
-    held = [u for u in archive.units() if u.unit == quarter and u.kind in ("da", "dan", "contracte", "scna")]
-    restored = archive.requeue(f"/{quarter}/")
-    for path in restored:
-        _log_line(f"requeued {path}")
-    if not held and not restored:
-        print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
-        return 1
-    _log_line(f"load-quarter {quarter}: {len(held) + len(restored)} unit(s) in the archive; the graph is derived whole from the archive, so this is a rebuild")
-    with locked(archive) as got:  # one long run at a time: not beside a refresh or a seed
+    with locked(archive) as got:  # one long run at a time: not beside a refresh or a seed; taken before anything is requeued
         if not got:
             print("load-quarter: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
             return 1
+        held = [u for u in archive.units() if u.unit == quarter and u.kind in KINDS]
+        restored = archive.requeue(f"/{quarter}/")
+        for path in restored:
+            _log_line(f"requeued {path}")
+        if not held and not restored:
+            print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
+            return 1
+        _log_line(f"load-quarter {quarter}: {len(held) + len(restored)} unit(s) in the archive; the graph is derived whole from the archive, so this is a rebuild")
         try:
             _loader(archive, args)()
         except DeterministicError as e:
