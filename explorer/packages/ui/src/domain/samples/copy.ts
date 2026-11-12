@@ -8,6 +8,7 @@ import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
 import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
 import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
+import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
@@ -96,6 +97,17 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
   en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
   ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+};
+
+const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
+  en: {
+    lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
+    regions: { search: "Search", map: "Map", results: "Results" },
+  },
+  ro: {
+    lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
+    regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
+  },
 };
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
@@ -255,6 +267,7 @@ export const sampleCopy = {
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
   entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
   entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
+  mainScreenLayout: (locale: Locale): MainScreenLayoutCopy => mainScreenLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>
     locale === "ro"
       ? {
