@@ -425,3 +425,20 @@ def test_the_cuis_asked_include_those_of_crawled_days(tmp_path):
     assert 2000007 in cuis  # the winner, with its RO prefix
     assert 1000009 in cuis  # the authority
     assert 2000001 not in cuis  # fails the check digit
+
+
+def test_the_cuis_asked_include_those_only_a_backfill_week_holds(tmp_path):
+    """The 2021-22 `fara anunt` notices are in no bulk file; their authority and winners must reach ANAF too (#78 + #66)."""
+    from pipeline.crawl.unitdir import BACKFILL_KIND, UnitWriter
+
+    now = datetime(2026, 11, 12, 9, 0, tzinfo=timezone.utc)
+    archive = Archive(tmp_path / "backfill-only")
+    w = UnitWriter.open(archive, "2021-04-05", now, BACKFILL_KIND)
+    notice = {"caNoticeId": 1, "noticeNo": "CAN1", "procedureId": None, "sysNoticeTypeId": 3, "sysNoticeVersionId": 2,
+              "noticeStateDate": "2021-04-06T10:00:00+03:00", "contractTitle": "Titlu", "contractingAuthorityNameAndFN": "1000009 - AUTORITATE EXEMPLU"}
+    contract = {"caNoticeContractId": 1, "contractNo": "C1", "contractDate": "2021-04-01T00:00:00+03:00", "defaultCurrencyContractValue": 100,
+                "winners": [{"name": "FIRMA SRL", "fiscalNumber": "RO 2000007"}]}
+    w.put("notices-2021-04-05_2021-04-11-p0000.json", json.dumps({"items": [notice], "total": 1, "searchTooLong": False}).encode())
+    w.put("contracts-1-s00000.json", json.dumps({"items": [contract], "total": 1}).encode())
+    w.commit(now, "u", {})
+    assert collect_cuis(archive) >= {1000009, 2000007}

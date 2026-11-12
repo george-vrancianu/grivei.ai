@@ -221,11 +221,12 @@ def collect_cuis(archive: Archive, say: Callable[[str], None] | None = None) -> 
     is skipped here and handled by the next rebuild. A foreign VAT id, a CNP and anything failing the check digit is not asked."""
     from .bulk import KINDS, InvalidFile, parse_file_stats
     from .crawl import KIND as CRAWL_KIND
+    from .crawl.unitdir import BACKFILL_KIND
     from .crawl.records import parse_unit as parse_crawl_unit
 
     units = [
         u for u in archive.units()
-        if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind == CRAWL_KIND))
+        if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))
     ]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     cuis: set[int] = set()

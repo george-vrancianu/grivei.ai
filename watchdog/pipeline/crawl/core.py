@@ -76,7 +76,10 @@ class Crawler:
 
     # ---- one unit -------------------------------------------------------------------------------------------
 
-    def crawl_unit(self, unit: str, first: date, last: date) -> UnitResult:
+    def crawl_unit(self, unit: str, first: date, last: date, *, keep: Callable[[dict], bool] | None = None, meta: dict | None = None) -> UnitResult:
+        """Crawl the notices published between `first` and `last` into `unit`. `keep` overrides the Crawler's hook for this call and
+        `meta` is merged into the manifest's `crawl` block (the backfill tags its weeks with it)."""
+        keep = keep or self.keep
         writer = UnitWriter.open(self.archive, unit, self.now(), self.kind)
         resumed = writer.resumed
         before = self.client.requests_made
@@ -84,7 +87,7 @@ class Crawler:
         rows: dict[Any, dict] = {}
         stats = {"list_pages": 0, "contract_pages": 0}
         self._window(writer, label, first, last, rows, stats)
-        kept = [r for r in rows.values() if self.keep(r)]
+        kept = [r for r in rows.values() if keep(r)]
         contracts = 0
         for k, notice in enumerate(kept, 1):
             contracts += self._contracts(writer, label, notice, stats)
@@ -92,7 +95,8 @@ class Crawler:
                 self._note(f"{label} contracts {k}/{len(kept)} notices")
         extra = {
             "window": [first.isoformat(), last.isoformat()], "notices": len(rows), "kept": len(kept), "listPages": stats["list_pages"],
-            "contractPages": stats["contract_pages"], "contracts": contracts, "keep": getattr(self.keep, "__name__", "custom"),
+            "contractPages": stats["contract_pages"], "contracts": contracts, "keep": getattr(keep, "__name__", "custom"),
+            **(meta or {}),
         }
         path = writer.commit(self.now(), BASE + NOTICE_LIST, extra)  # the manifest, LAST
         return UnitResult(unit, path, len(rows), len(kept), stats["list_pages"], stats["contract_pages"], contracts,

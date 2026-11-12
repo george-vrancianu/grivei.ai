@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "contracte",
+  "unit": "2023Q1",
+  "fetchedAt": "2026-11-12T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-contracte-t1-2023.csv",
+  "via": "Contracte 2023 - T1",
+  "files": [
+    {
+      "name": "raport-contracte-t1-2023.csv",
+      "sha256": "3463990203565e984a8c1930e3e310422cb08d57e69b455c07c4774d800739c1",
+      "bytes": 793
+    }
+  ]
+}
