@@ -11,3 +11,4 @@ export * from "./RecordDetail/index.ts";
 export * from "./EntityOverview/index.ts";
 export * from "./RelationshipsTab/index.ts";
 export * from "./SignalCard/index.ts";
+export * from "./MethodologyPage/index.ts";

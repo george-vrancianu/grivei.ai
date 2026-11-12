@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -83,3 +83,5 @@ export type EntityAliases = EntityHeaderData["aliases"];
 /** A Signal as `SignalFields` selects it: rule, dates, count, authority, suppliers, rule-specific numbers and the filter that reproduces it. */
 export type SignalData = SignalFieldsFragment;
 export type SignalRule = SignalRuleSlug;
+/** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
+export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];
