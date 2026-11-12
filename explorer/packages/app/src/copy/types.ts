@@ -40,7 +40,6 @@ export interface Copy {
     notFound: { title: string; back: string };
     search: { title: string };
     record: { title: string };
-    coverage: { title: string };
     methodology: { title: string };
   };
   /** Badge labels and explanations (they double as filter chips). */

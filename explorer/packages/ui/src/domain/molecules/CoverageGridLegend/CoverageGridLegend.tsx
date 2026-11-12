@@ -1,7 +1,7 @@
-import { Box } from "../../../../../atoms/Box/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { CoverageGridCopy } from "../../coverageGrid.types.ts";
-import { GAP_STATES, RANGE_COLOR, STATE_GLYPHS, stateSx } from "../../coverageGrid.utils.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import type { CoverageGridCopy } from "../../utils/coverageGrid.types.ts";
+import { GAP_STATES, RANGE_COLOR, STATE_GLYPHS, stateSx } from "../../utils/coverageGrid.ts";
 
 export interface CoverageGridLegendProps {
   copy: Pick<CoverageGridCopy, "legend" | "states">;

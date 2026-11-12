@@ -13,7 +13,7 @@ const page = (status: "loading" | "error" | "ready", content?: CoveragePageConte
     return <CoveragePageLayout status={status} content={content} locale={locale} methodologyHref={locale === "ro" ? "/ro/explore/methodology" : "/explore/methodology"} copy={sampleCopy.coveragePageLayout(locale)} />;
   };
 
-/** The whole page on the sample grid: all six states, 2023-24 highlighted, data-through per kind, crawl-only counts, known gaps with reasons, rules, MF snapshot date. */
+/** The whole page on the sample grid: all six states, 2023-24 highlighted among the 19 quarters, data-through per kind, crawl-only counts, known gaps with reasons, rules, MF snapshot date. */
 export const FullPage: Story = { render: page("ready", samplePageContent()) };
 
 /** The contract's "typical-open-window" fixture, no date chip. */
@@ -36,5 +36,5 @@ export const NoGaps: Story = {
 export const Loading: Story = { render: page("loading") };
 export const LoadFailed: Story = { render: page("error") };
 
-/** A window with no quarter of the Source: the grid is replaced by a sentence. */
-export const EmptyWindow: Story = { render: page("ready", fixturePageContent("empty-window")) };
+/** No quarter of the Source is loaded: the grid is replaced by a sentence. */
+export const EmptyGrid: Story = { render: page("ready", fixturePageContent("empty-window")) };

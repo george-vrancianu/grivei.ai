@@ -1,8 +1,10 @@
 import type { RecordFilter } from "@grivei/contract";
-import type { CoveragePageVariables } from "./coveragePage.types.ts";
+import type { GridWindow } from "@grivei/ui";
 
-/** The date chip's window as the `CoveragePage` operation takes it: only the ends the filter has; no date chip, no variables at all. */
-export function coverageVariables(filter: Pick<RecordFilter, "from" | "to">): CoveragePageVariables {
-  const window = { ...(filter.from ? { from: filter.from } : {}), ...(filter.to ? { to: filter.to } : {}) };
-  return Object.keys(window).length === 0 ? {} : { window };
+/**
+ * The date chip's window as the Coverage grid highlights it. The page asks for the whole grid, so the window only marks the columns it
+ * overlaps (the harvest around it stays visible); no date chip, no window, nothing highlighted.
+ */
+export function highlightWindow(filter: Pick<RecordFilter, "from" | "to">): GridWindow | null {
+  return filter.from || filter.to ? { from: filter.from ?? null, to: filter.to ?? null } : null;
 }

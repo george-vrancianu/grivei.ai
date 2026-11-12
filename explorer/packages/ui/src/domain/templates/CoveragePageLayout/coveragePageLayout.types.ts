@@ -1,5 +1,5 @@
 import type { DataThroughDateCopy } from "../../atoms/DataThroughDate/index.ts";
-import type { CoverageGridCopy } from "../../organisms/CoverageGrid/index.ts";
+import type { CoverageGridCopy, GridWindow } from "../../organisms/CoverageGrid/index.ts";
 import type { GapCellData, GapRule, GapState, SourceInfo } from "../../types.ts";
 
 /** What the Coverage page shows, from `CoveragePage` (grid and `sources`); `crawlOnly` on a cell is the UI-side extension (see `GapCellData`). */
@@ -10,8 +10,8 @@ export interface CoveragePageContent {
   sources: readonly SourceInfo[];
   /** MF Lista entităților publice snapshot date (YYYY-MM-DD); null when no list is loaded yet. */
   referenceSnapshot: string | null;
-  /** The window the answer was computed for (echoes the date chip). */
-  window: { from: string | null; to: string | null };
+  /** The date chip's window: the grid's quarters that overlap it are highlighted. The grid itself is the whole harvest, not cut to the window. */
+  dateWindow?: GridWindow | null;
 }
 
 export interface CoveragePageLayoutCopy {

@@ -8,8 +8,10 @@ export type CoveragePageState = { status: "loading" } | { status: "error" } | { 
 type Settled = Exclude<CoveragePageState, { status: "loading" }>;
 
 /**
- * Runs the `CoveragePage` query for a window; another window reads as loading again and the superseded request is cancelled.
- * This is the seam for #90: the Coverage lens's compact grid asks the same operation through this hook.
+ * Runs the `CoveragePage` query; other variables read as loading again and the superseded request is cancelled.
+ * This is the seam for #90: the Coverage lens's compact grid asks the same operation through this hook, with `{}` (the whole grid)
+ * and highlights the date chip's window with `CoverageGridCompact`'s `dateWindow` (see `highlightWindow`). A windowed `CoveragePage`
+ * would hand back only the quarters inside the window, so every column would read as highlighted.
  */
 export function useCoveragePage(variables: CoveragePageVariables): CoveragePageState {
   const client = useClient();

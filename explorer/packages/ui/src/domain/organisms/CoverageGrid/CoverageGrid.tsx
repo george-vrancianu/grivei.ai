@@ -7,16 +7,16 @@ import { TableContainer } from "../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../atoms/TableRow/index.ts";
 import type { GapCellData } from "../../types.ts";
-import { CoverageCell } from "./components/CoverageCell/index.ts";
-import { CoverageGridLegend } from "./components/CoverageGridLegend/index.ts";
-import type { CoverageGridCopy, GridWindow } from "./coverageGrid.types.ts";
-import { RANGE_COLOR, gridShape, kindLabel, parseQuarter, quarterInWindow, windowActive } from "./coverageGrid.utils.ts";
+import { CoverageCell } from "../../molecules/CoverageCell/index.ts";
+import { CoverageGridLegend } from "../../molecules/CoverageGridLegend/index.ts";
+import type { CoverageGridCopy, GridWindow } from "../../utils/coverageGrid.types.ts";
+import { RANGE_COLOR, gridShape, kindLabel, parseQuarter, quarterInWindow, windowActive } from "../../utils/coverageGrid.ts";
 
 export interface CoverageGridProps {
   /** One Source's grid (`coverage.grid`). Quarters run from the earliest to the latest cell, kinds come from the cells. */
   cells: readonly GapCellData[];
   /** The date chip's window: the quarters overlapping it are highlighted. Open ends reach as far as the grid goes; no window highlights nothing. */
-  window?: GridWindow | null;
+  dateWindow?: GridWindow | null;
   locale: Locale;
   copy: CoverageGridCopy;
   /** Hide the legend (a page can show it elsewhere). */
@@ -30,18 +30,18 @@ const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "
  * and carries the state, quarter, kind, Record count, reason and data-through as its accessible name. Columns in the date window are marked
  * (`data-in-range`, `aria-current`). A wide grid scrolls sideways with the kind labels sticky.
  */
-export function CoverageGrid({ cells, window, locale, copy, hideLegend = false }: CoverageGridProps) {
+export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = false }: CoverageGridProps) {
   const { quarters, kinds, at } = gridShape(cells);
-  const active = windowActive(window);
+  const active = windowActive(dateWindow);
   return (
     <Box>
       <TableContainer sx={{ overflowX: "auto" }} tabIndex={0} aria-label={copy.label} role="region">
-        <Table aria-label={copy.label} size="small" sx={{ borderCollapse: "separate", borderSpacing: 2, width: "auto" }}>
+        <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: 2, width: "auto" }}>
           <TableHead>
             <TableRow>
               <TableCell component="th" scope="col" sx={{ ...stickyLabel, zIndex: 3 }}>{copy.kindHeader}</TableCell>
               {quarters.map((quarter) => {
-                const inRange = quarterInWindow(quarter, window);
+                const inRange = quarterInWindow(quarter, dateWindow);
                 const parsed = parseQuarter(quarter);
                 return (
                   <TableCell
@@ -76,7 +76,7 @@ export function CoverageGrid({ cells, window, locale, copy, hideLegend = false }
               <TableRow key={kind}>
                 <TableCell component="th" scope="row" sx={stickyLabel}>{kindLabel(kind, copy)}</TableCell>
                 {quarters.map((quarter) => (
-                  <CoverageCell key={quarter} cell={at(quarter, kind) ?? null} quarter={quarter} kind={kind} inRange={quarterInWindow(quarter, window)} locale={locale} copy={copy} />
+                  <CoverageCell key={quarter} cell={at(quarter, kind) ?? null} quarter={quarter} kind={kind} inRange={quarterInWindow(quarter, dateWindow)} locale={locale} copy={copy} />
                 ))}
               </TableRow>
             ))}

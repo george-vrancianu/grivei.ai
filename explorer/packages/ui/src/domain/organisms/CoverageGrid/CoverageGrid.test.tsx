@@ -18,24 +18,27 @@ describe("the Coverage grid's cells", () => {
   it("names each of the six states with its quarter, kind and Record count", () => {
     render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
     expect(cellOf("2022-Q1", "CONTRACT")).toHaveAccessibleName(/^Contracts, Q1 2022: Loaded\. 17,\d{3} Records\. data through 31 March 2022$/);
-    expect(cellOf("2025-Q2", "DAN")).toHaveAccessibleName(/^Direct purchase notices, Q2 2025: Known gap\. 0 Records\./);
+    expect(cellOf("2025-Q2", "DAN")).toHaveAccessibleName(/^Direct purchase award notifications, Q2 2025: Known gap\. 0 Records\./);
     expect(cellOf("2024-Q4", "CONTRACT")).toHaveAccessibleName(/^Contracts, Q4 2024: Possibly incomplete\. 6,900 Records\. Fewer than 60% of the median row count of the surrounding quarters\./);
     expect(cellOf("2021-Q1", "AWARD_NOTICE")).toHaveAccessibleName(/^Award notices, Q1 2021: Not visible in the source\. 0 Records\./);
     expect(cellOf(CURRENT_QUARTER, "CONTRACT")).toHaveAccessibleName(/^Contracts, Q3 2025: Crawled, provisional\. 3,100 Records\. Awaiting bulk file/);
-    expect(cellOf(CURRENT_QUARTER, "DA")).toHaveAccessibleName(/^Direct purchases, Q3 2025: Not yet loaded\. 5,400 Records\. Awaiting bulk file/);
+    expect(cellOf(CURRENT_QUARTER, "DA")).toHaveAccessibleName(/^Direct purchases, Q3 2025: Not yet loaded\. 0 Records\. Awaiting a bulk file for this quarter and record kind$/);
   });
 
   it("shows the hand-entered note verbatim, and the crawl-only count and data-through where present", () => {
     render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
     expect(cellOf("2025-Q2", "DAN")).toHaveAccessibleName(expect.stringContaining(HAND_ENTERED_NOTE));
     const crawled = cellOf(CURRENT_QUARTER, "CONTRACT");
-    expect(crawled).toHaveAccessibleName(expect.stringContaining("140 of them crawl-only"));
+    expect(crawled).toHaveAccessibleName(expect.stringContaining("140 of them not in bulk data"));
     expect(crawled).toHaveAccessibleName(expect.stringContaining("data through 19 September 2025"));
   });
 
-  it("gives a quarantined cell no reason at all", () => {
+  it("reads a quarantined cell exactly like any other not-yet-loaded cell, so the quarantine is never exposed", () => {
     render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
-    expect(cellOf("2023-Q3", "DA").getAttribute("aria-label")).toBe("Direct purchases, Q3 2023: Not yet loaded. 0 Records");
+    const quarantined = cellOf("2023-Q3", "DA").getAttribute("aria-label");
+    const awaiting = cellOf(CURRENT_QUARTER, "DA").getAttribute("aria-label");
+    expect(quarantined).toBe("Direct purchases, Q3 2023: Not yet loaded. 0 Records. Awaiting a bulk file for this quarter and record kind");
+    expect(awaiting).toBe(quarantined!.replace("Q3 2023", "Q3 2025"));
   });
 
   it("gives each state a mark besides its colour", () => {
@@ -65,7 +68,7 @@ describe("the Coverage grid's cells", () => {
     expect(headers[0]).toBe("Q1 2021");
     expect(headers.at(-1)).toBe("Q3 2025");
     expect(headers).toHaveLength(19);
-    expect(screen.getAllByRole("rowheader").map((h) => h.textContent)).toEqual(["Direct purchases", "Direct purchase notices", "Contracts", "Award notices"]);
+    expect(screen.getAllByRole("rowheader").map((h) => h.textContent)).toEqual(["Direct purchases", "Direct purchase award notifications", "Contracts", "Award notices"]);
   });
 
   it("has a legend with all six states", () => {
@@ -76,8 +79,8 @@ describe("the Coverage grid's cells", () => {
 });
 
 describe("the date range", () => {
-  const marked = (window?: { from?: string | null; to?: string | null }) => {
-    const { unmount } = render(<CoverageGrid cells={cellsBetween(sampleGrid(), "2021-Q1", "2022-Q4")} locale="en" copy={sampleCopy.coverageGrid("en")} {...(window ? { window } : {})} />);
+  const marked = (dateWindow?: { from?: string | null; to?: string | null }) => {
+    const { unmount } = render(<CoverageGrid cells={cellsBetween(sampleGrid(), "2021-Q1", "2022-Q4")} locale="en" copy={sampleCopy.coverageGrid("en")} {...(dateWindow ? { dateWindow } : {})} />);
     const result = screen.getAllByRole("columnheader").filter((h) => h.getAttribute("aria-current") === "true").map((h) => h.dataset["quarter"]);
     const cellsMarked = document.querySelectorAll("td[data-in-range]").length;
     unmount();
@@ -103,7 +106,7 @@ describe("the date range", () => {
   });
 
   it("says in a cell's accessible name that it is in the range, and the legend explains the mark", () => {
-    render(<CoverageGrid cells={sampleGrid()} window={{ from: "2023-01-01", to: "2023-12-31" }} locale="en" copy={sampleCopy.coverageGrid("en")} />);
+    render(<CoverageGrid cells={sampleGrid()} dateWindow={{ from: "2023-01-01", to: "2023-12-31" }} locale="en" copy={sampleCopy.coverageGrid("en")} />);
     expect(cellOf("2023-Q2", "DA")).toHaveAccessibleName(/inside the date range$/);
     expect(cellOf("2024-Q2", "DA")).not.toHaveAccessibleName(/inside the date range/);
     expect(screen.getByText("Inside the date range")).toBeVisible();

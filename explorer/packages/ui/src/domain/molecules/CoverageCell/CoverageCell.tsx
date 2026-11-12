@@ -1,9 +1,9 @@
-import type { Locale } from "../../../../../theme/index.ts";
-import { Box } from "../../../../../atoms/Box/index.ts";
-import { TableCell } from "../../../../../atoms/TableCell/index.ts";
-import type { GapCellData } from "../../../../types.ts";
-import type { CoverageGridCopy } from "../../coverageGrid.types.ts";
-import { RANGE_COLOR, STATE_GLYPHS, cellName, stateSx } from "../../coverageGrid.utils.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { TableCell } from "../../../atoms/TableCell/index.ts";
+import type { GapCellData } from "../../types.ts";
+import type { CoverageGridCopy } from "../../utils/coverageGrid.types.ts";
+import { RANGE_COLOR, STATE_GLYPHS, cellName, kindLabel, stateSx } from "../../utils/coverageGrid.ts";
 
 export interface CoverageCellProps {
   /** Null: the grid has no cell for this quarter and kind. */
@@ -17,7 +17,7 @@ export interface CoverageCellProps {
   copy: CoverageGridCopy;
 }
 
-/** The count as a short figure inside a cell: 18,400 -> "18K". */
+/** The count as a short figure inside a cell: 18,400 -> "18k". */
 const short = (n: number, locale: Locale) => new Intl.NumberFormat(locale === "ro" ? "ro" : "en-GB", { notation: "compact" }).format(n);
 
 /** One cell of the grid: the state's colour, a glyph and border (the non-colour cues), the count, and the full accessible name. */
@@ -25,7 +25,7 @@ export function CoverageCell({ cell, quarter, kind, inRange, compact = false, lo
   const size = compact ? 16 : 52;
   const name = cell
     ? cellName(cell, locale, copy, inRange)
-    : `${copy.kinds[kind] ?? kind}, ${copy.quarterName(quarter)}: ${copy.noCell}`;
+    : `${kindLabel(kind, copy)}, ${copy.quarterName(quarter)}: ${copy.noCell}`;
   return (
     <TableCell
       aria-label={name}

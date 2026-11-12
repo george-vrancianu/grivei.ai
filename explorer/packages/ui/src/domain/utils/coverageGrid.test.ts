@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GapCellData } from "../../types.ts";
-import { crawlOnlyCells, explainedCells, gridShape, kindsOf, quarterBounds, quarterInWindow, quarterSpan, windowActive } from "./coverageGrid.utils.ts";
+import type { GapCellData } from "../types.ts";
+import { crawlOnlyCells, explainedCells, gridShape, kindsOf, quarterBounds, quarterInWindow, quarterSpan, reasonOf, windowActive } from "./coverageGrid.ts";
 
 const cell = (quarter: string, kind: string, state: GapCellData["state"], o: Partial<GapCellData> = {}): GapCellData => ({ quarter, kind, state, rule: null, note: null, records: 0, dataThrough: null, ...o });
 
@@ -46,7 +46,7 @@ describe("the grid's shape", () => {
     expect(gridShape(cells).at("2024-Q2", "DA")).toBeUndefined();
   });
 
-  it("explains the flagged cells (a quarantined one has nothing to explain) and counts crawl-only", () => {
+  it("explains the flagged cells (no Not yet loaded cell, whatever its rule) and counts crawl-only", () => {
     const cells = [
       cell("2024-Q4", "DA", "NOT_YET_LOADED"),
       cell("2024-Q4", "DAN", "NOT_YET_LOADED", { rule: "AWAITING_BULK_FILE" }),
@@ -54,7 +54,27 @@ describe("the grid's shape", () => {
       cell("2024-Q2", "DA", "LOADED"),
       cell("2024-Q1", "DAN", "KNOWN_GAP", { rule: "HAND_ENTERED", note: "n" }),
     ];
-    expect(explainedCells(cells).map((c) => `${c.quarter} ${c.kind}`)).toEqual(["2024-Q1 DAN", "2024-Q4 DAN"]);
+    expect(explainedCells(cells).map((c) => `${c.quarter} ${c.kind}`)).toEqual(["2024-Q1 DAN"]);
     expect(crawlOnlyCells(cells).map((c) => c.crawlOnly)).toEqual([4]);
+  });
+
+  it("lists the crawl-only cells in the page's order: quarter, then SEAP's kind order", () => {
+    const cells = [cell("2024-Q1", "AWARD_NOTICE", "CRAWLED_PROVISIONAL", { crawlOnly: 1 }), cell("2024-Q1", "DA", "CRAWLED_PROVISIONAL", { crawlOnly: 2 }), cell("2024-Q1", "CONTRACT", "CRAWLED_PROVISIONAL", { crawlOnly: 3 })];
+    expect(crawlOnlyCells(cells).map((c) => c.kind)).toEqual(["DA", "CONTRACT", "AWARD_NOTICE"]);
+  });
+});
+
+describe("the reason of a cell", () => {
+  const copy = { rules: { HAND_ENTERED: "hand", COUNT_BELOW_NEIGHBOURS: "count", NO_PRIOR_CALL_BEFORE_BACKFILL: "no call", AWAITING_BULK_FILE: "awaiting, not published" }, notYetLoaded: "awaiting a file" };
+
+  it("is the note verbatim, else the rule's wording, else nothing", () => {
+    expect(reasonOf(cell("2024-Q1", "DAN", "KNOWN_GAP", { rule: "HAND_ENTERED", note: "n" }), copy)).toBe("n");
+    expect(reasonOf(cell("2024-Q1", "DA", "CRAWLED_PROVISIONAL", { rule: "AWAITING_BULK_FILE" }), copy)).toBe("awaiting, not published");
+    expect(reasonOf(cell("2024-Q1", "DA", "LOADED"), copy)).toBeNull();
+  });
+
+  it("is the same sentence for every Not yet loaded cell, with or without a rule", () => {
+    expect(reasonOf(cell("2024-Q1", "DA", "NOT_YET_LOADED"), copy)).toBe("awaiting a file");
+    expect(reasonOf(cell("2024-Q4", "DA", "NOT_YET_LOADED", { rule: "AWAITING_BULK_FILE" }), copy)).toBe("awaiting a file");
   });
 });

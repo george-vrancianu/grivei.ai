@@ -3,7 +3,8 @@
 import { fixtures } from "@grivei/contract/fixtures";
 import type { CoveragePageContent } from "../templates/CoveragePageLayout/index.ts";
 import type { GapCellData, GapState, SourceInfo } from "../types.ts";
-import { quarterSpan } from "../organisms/CoverageGrid/coverageGrid.utils.ts";
+import type { GridWindow } from "../organisms/CoverageGrid/index.ts";
+import { quarterSpan } from "../utils/coverageGrid.ts";
 import { sampleSources } from "./coverageLenses.ts";
 
 export const KINDS = ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"] as const;
@@ -31,7 +32,7 @@ export function sampleGrid({ backfilled = false }: SampleGridOptions = {}): GapC
       const records = base(kind, quarter);
       const through = endOf(quarter);
       if (quarter === CURRENT_QUARTER) {
-        if (kind === "DA" || kind === "DAN") return cell(quarter, kind, "NOT_YET_LOADED", kind === "DA" ? 5_400 : 0, { rule: "AWAITING_BULK_FILE" });
+        if (kind === "DA" || kind === "DAN") return cell(quarter, kind, "NOT_YET_LOADED", 0, { rule: "AWAITING_BULK_FILE" });
         return cell(quarter, kind, "CRAWLED_PROVISIONAL", kind === "CONTRACT" ? 3_100 : 2_050, { rule: "AWAITING_BULK_FILE", dataThrough: "2025-09-19", crawlOnly: kind === "CONTRACT" ? 140 : 35 });
       }
       if (kind === "AWARD_NOTICE" && year <= 2022) {
@@ -54,8 +55,8 @@ export const sampleSeap: SourceInfo[] = [
 ];
 
 /** A whole page's content from the sample grid. */
-export function samplePageContent(window: { from: string | null; to: string | null } = { from: "2023-01-01", to: "2024-12-31" }, options: SampleGridOptions = {}): CoveragePageContent {
-  return { cells: sampleGrid(options), sources: sampleSeap, referenceSnapshot: "2025-08-14", window };
+export function samplePageContent(dateWindow: GridWindow = { from: "2023-01-01", to: "2024-12-31" }, options: SampleGridOptions = {}): CoveragePageContent {
+  return { cells: sampleGrid(options), sources: sampleSeap, referenceSnapshot: "2025-08-14", dateWindow };
 }
 
 /** A Coverage page fixture of the contract as page content (`CoveragePage`: typical-every-gap-state, typical-open-window, extreme-full-grid, empty-window). */
@@ -63,7 +64,7 @@ export function fixturePageContent(name: string): CoveragePageContent {
   const found = fixtures.CoveragePage.find((f) => f.name === name);
   if (!found) throw new Error(`No CoveragePage fixture named ${name}`);
   const { coverage, sources } = found.data;
-  return { cells: coverage.grid, sources, referenceSnapshot: coverage.referenceSnapshot, window: coverage.window };
+  return { cells: coverage.grid, sources, referenceSnapshot: coverage.referenceSnapshot, dateWindow: coverage.window };
 }
 
 /** The cells of the quarters from `from` to `to` (inclusive, "2024-Q1"), for stories that zoom on a stretch of the grid. */

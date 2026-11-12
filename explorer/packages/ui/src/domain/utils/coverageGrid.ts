@@ -1,6 +1,7 @@
-import type { Locale } from "../../../theme/index.ts";
-import type { GapCellData, GapState } from "../../types.ts";
-import { formatDate } from "../../utils/formatDate.ts";
+import type { Locale } from "../../theme/index.ts";
+import type { GapCellData, GapState } from "../types.ts";
+import { formatCount } from "../atoms/ApproxCount/index.ts";
+import { formatDate } from "./formatDate.ts";
 import type { CoverageGridCopy, GridWindow } from "./coverageGrid.types.ts";
 
 export const GAP_STATES: readonly GapState[] = ["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL", "NOT_YET_LOADED"];
@@ -62,21 +63,21 @@ export function quarterBounds(quarter: string): { start: string; end: string } |
   const startMonth = (parsed.q - 1) * 3 + 1;
   const endMonth = startMonth + 2;
   const pad = (n: number) => String(n).padStart(2, "0");
-  const lastDay = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][endMonth - 1]!;
+  const lastDay = [31, 30, 30, 31][parsed.q - 1]!; // Mar, Jun, Sep, Dec
   return { start: `${parsed.year}-${pad(startMonth)}-01`, end: `${parsed.year}-${pad(endMonth)}-${lastDay}` };
 }
 
 /** True when a window restricts anything: at least one end is set. */
-export function windowActive(window: GridWindow | null | undefined): window is GridWindow {
-  return !!window && (!!window.from || !!window.to);
+export function windowActive(dateWindow: GridWindow | null | undefined): dateWindow is GridWindow {
+  return !!dateWindow && (!!dateWindow.from || !!dateWindow.to);
 }
 
 /** A quarter is in the window when it overlaps it; an open end reaches as far as the grid goes. No active window: nothing is highlighted. */
-export function quarterInWindow(quarter: string, window: GridWindow | null | undefined): boolean {
-  if (!windowActive(window)) return false;
+export function quarterInWindow(quarter: string, dateWindow: GridWindow | null | undefined): boolean {
+  if (!windowActive(dateWindow)) return false;
   const bounds = quarterBounds(quarter);
   if (!bounds) return false;
-  return (!window.from || bounds.end >= window.from) && (!window.to || bounds.start <= window.to);
+  return (!dateWindow.from || bounds.end >= dateWindow.from) && (!dateWindow.to || bounds.start <= dateWindow.to);
 }
 
 /** Every quarter from the earliest to the latest in `quarters`, in order, none skipped. */
@@ -107,11 +108,13 @@ export function gridShape(cells: readonly GapCellData[]): { quarters: string[]; 
 export const kindLabel = (kind: string, copy: Pick<CoverageGridCopy, "kinds">): string => copy.kinds[kind] ?? kind;
 
 /**
- * Why a cell is in its state, in words: the hand-entered note verbatim (source data, never translated), else the rule's wording,
- * else nothing. A quarantined cell has neither, and that is the point: the quarantine is never exposed.
+ * Why a cell is in its state, in words: the hand-entered note verbatim (source data, never translated), else one fixed sentence for every
+ * Not yet loaded cell, else the rule's wording, else nothing. A Not yet loaded cell reads the same whatever its rule: a file not published yet
+ * and a file set aside must be indistinguishable (the quarantine is never exposed).
  */
-export function reasonOf(cell: GapCellData, copy: Pick<CoverageGridCopy, "rules">): string | null {
+export function reasonOf(cell: GapCellData, copy: Pick<CoverageGridCopy, "rules" | "notYetLoaded">): string | null {
   if (cell.note) return cell.note;
+  if (cell.state === "NOT_YET_LOADED") return copy.notYetLoaded;
   return cell.rule ? copy.rules[cell.rule] : null;
 }
 
@@ -127,17 +130,24 @@ export function cellName(cell: GapCellData, locale: Locale, copy: CoverageGridCo
   return parts.join(". ");
 }
 
-export const formatCellCount = (n: number, locale: Locale): string => new Intl.NumberFormat(locale === "ro" ? "ro" : "en-GB").format(n);
+/** A Record count as a whole number in the reader's language. */
+export const formatCellCount = (n: number, locale: Locale): string => formatCount(n, false, locale);
 
-/** The cells that need an explanation: flagged states with a reason. Hand-entered gaps, possibly incomplete, not in the source, and not-yet-loaded cells that carry a rule. Ordered by quarter, then kind. */
-export function explainedCells(cells: readonly GapCellData[]): GapCellData[] {
+/** Quarter, then record kind (SEAP's order first), the order the page lists cells in. */
+function byQuarterThenKind(a: GapCellData, b: GapCellData): number {
   const order = (kind: string) => (KIND_ORDER.includes(kind) ? KIND_ORDER.indexOf(kind) : KIND_ORDER.length);
-  return cells
-    .filter((c) => c.state === "KNOWN_GAP" || c.state === "POSSIBLY_INCOMPLETE" || c.state === "NOT_IN_SOURCE" || (c.state === "NOT_YET_LOADED" && c.rule !== null))
-    .sort((a, b) => a.quarter.localeCompare(b.quarter) || order(a.kind) - order(b.kind) || a.kind.localeCompare(b.kind));
+  return a.quarter.localeCompare(b.quarter) || order(a.kind) - order(b.kind) || a.kind.localeCompare(b.kind);
+}
+
+/**
+ * The cells that need an explanation: hand-entered gaps, possibly incomplete, and not in the source, each with its reason or rule.
+ * A Not yet loaded cell is never listed, whatever its rule, so a set-aside file cannot be told from a file not yet published.
+ */
+export function explainedCells(cells: readonly GapCellData[]): GapCellData[] {
+  return cells.filter((c) => c.state === "KNOWN_GAP" || c.state === "POSSIBLY_INCOMPLETE" || c.state === "NOT_IN_SOURCE").sort(byQuarterThenKind);
 }
 
 /** The cells that carry crawl-only Records, in the same order. */
 export function crawlOnlyCells(cells: readonly GapCellData[]): GapCellData[] {
-  return cells.filter((c) => (c.crawlOnly ?? 0) > 0).sort((a, b) => a.quarter.localeCompare(b.quarter) || a.kind.localeCompare(b.kind));
+  return cells.filter((c) => (c.crawlOnly ?? 0) > 0).sort(byQuarterThenKind);
 }

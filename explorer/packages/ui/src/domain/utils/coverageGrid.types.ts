@@ -1,4 +1,4 @@
-import type { GapRule, GapState } from "../../types.ts";
+import type { GapRule, GapState } from "../types.ts";
 
 /** A date window as the date chip gives it: either end can be open (null or absent). */
 export interface GridWindow {
@@ -18,6 +18,8 @@ export interface CoverageGridCopy {
   states: Record<GapState, string>;
   /** Each published rule in words; the possibly-incomplete rule exactly as published. */
   rules: Record<GapRule, string>;
+  /** Why a Not yet loaded cell is that: one sentence for every such cell, whatever its rule (a quarantined file reads the same as a file not published yet). */
+  notYetLoaded: string;
   /** A quarter and kind the grid has no cell for. */
   noCell: string;
   records: (n: number, formatted: string) => string;

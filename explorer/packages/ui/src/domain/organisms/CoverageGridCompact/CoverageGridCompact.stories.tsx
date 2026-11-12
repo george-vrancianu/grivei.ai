@@ -14,7 +14,7 @@ export const Default: Story = {
     const locale = localeOf(globals["locale"]);
     return (
       <Box sx={{ width: 320 }}>
-        <CoverageGridCompact cells={sampleGrid()} window={{ from: "2023-01-01", to: "2024-12-31" }} href={locale === "ro" ? "/ro/explore/coverage?from=2023-01-01" : "/explore/coverage?from=2023-01-01"} locale={locale} copy={sampleCopy.coverageGrid(locale)} />
+        <CoverageGridCompact cells={sampleGrid()} dateWindow={{ from: "2023-01-01", to: "2024-12-31" }} href={locale === "ro" ? "/ro/explore/coverage?from=2023-01-01" : "/explore/coverage?from=2023-01-01"} locale={locale} copy={sampleCopy.coverageGrid(locale)} />
       </Box>
     );
   },

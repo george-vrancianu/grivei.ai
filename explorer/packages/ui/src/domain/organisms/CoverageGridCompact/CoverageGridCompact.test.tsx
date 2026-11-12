@@ -24,8 +24,18 @@ describe("the compact Coverage grid", () => {
     expect(screen.getByRole("region", { name: "Cell states" })).toBeVisible();
   });
 
-  it("marks the columns in the window", () => {
-    render(<CoverageGridCompact cells={sampleGrid()} window={{ from: "2024-01-01", to: "2024-12-31" }} href="/explore/coverage" locale="en" copy={sampleCopy.coverageGrid("en")} />);
+  it("marks the columns in the window, headers included", () => {
+    render(<CoverageGridCompact cells={sampleGrid()} dateWindow={{ from: "2024-01-01", to: "2024-12-31" }} href="/explore/coverage" locale="en" copy={sampleCopy.coverageGrid("en")} />);
     expect(document.querySelectorAll("td[data-in-range]")).toHaveLength(4 * 4);
+    const marked = [...document.querySelectorAll<HTMLElement>("th[aria-current='true']")].map((h) => h.dataset["quarter"]);
+    expect(marked).toEqual(["2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4"]);
+  });
+
+  it("has a header row that names each quarter, with the year shown at each first quarter", () => {
+    render(<CoverageGridCompact cells={sampleGrid()} href="/explore/coverage" locale="en" copy={sampleCopy.coverageGrid("en")} />);
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers).toHaveLength(19 + 1);
+    expect(screen.getByRole("columnheader", { name: "Q3 2023" })).toBeInTheDocument();
+    expect(headers.slice(1).map((h) => h.textContent).filter(Boolean)).toEqual(["2021", "2022", "2023", "2024", "2025"]);
   });
 });

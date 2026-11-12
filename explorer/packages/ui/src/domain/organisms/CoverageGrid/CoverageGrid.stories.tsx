@@ -8,10 +8,10 @@ const meta = { title: "Domain/CoverageGrid" } satisfies Meta<Record<string, unkn
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
-const grid = (cells: readonly GapCellData[], window?: { from?: string | null; to?: string | null }) =>
+const grid = (cells: readonly GapCellData[], dateWindow?: { from?: string | null; to?: string | null }) =>
   ((_args: unknown, { globals }: { globals: Record<string, unknown> }) => {
     const locale = localeOf(globals["locale"]);
-    return <CoverageGrid cells={cells} locale={locale} copy={sampleCopy.coverageGrid(locale)} {...(window ? { window } : {})} />;
+    return <CoverageGrid cells={cells} locale={locale} copy={sampleCopy.coverageGrid(locale)} {...(dateWindow ? { dateWindow } : {})} />;
   }) as Story["render"];
 
 /** All six states in one grid: loaded, the 2021-22 award notices not in the source, the Q2 2025 DAN known gap, 2024-Q4 CONTRACT possibly incomplete, a quarantined DA quarter (not yet loaded, no reason), and the current quarter crawled provisional. The grid is wide: it scrolls sideways, kind labels stay. */
