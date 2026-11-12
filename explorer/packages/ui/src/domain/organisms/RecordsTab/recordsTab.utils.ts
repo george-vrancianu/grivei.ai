@@ -1,16 +1,16 @@
 import type { RecordFilter, SignalRuleSlug } from "@grivei/contract";
-import { toggleBadge, toggleChannel, toggleProcedure, withFields, yearEnd, yearOf, yearStart } from "../../molecules/FilterChips/index.ts";
+import { withFields, yearEnd, yearOf, yearStart } from "../../molecules/FilterChips/index.ts";
 import type { EntityRole } from "../../types.ts";
+
+/** The filter field a counterparty facet sets: an authority's page lists suppliers, a supplier's page lists authorities. */
+export const counterpartyField = (role: EntityRole): "supplier" | "authority" => (role === "authority" ? "supplier" : "authority");
 
 /**
  * The `RecordFilter` fields the facet panel owns: year (`from`/`to`), channel, procedure, signal, badges and the counterparty
  * (`supplier` on an authority's page, `authority` on a supplier's). Every other field passes through untouched.
  */
 export const facetFields = (role: EntityRole) =>
-  ["from", "to", "channel", "procedure", "signal", "badges", role === "authority" ? "supplier" : "authority"] as const satisfies readonly (keyof RecordFilter)[];
-
-/** The filter field a counterparty facet sets: an authority's page lists suppliers, a supplier's page lists authorities. */
-export const counterpartyField = (role: EntityRole): "supplier" | "authority" => (role === "authority" ? "supplier" : "authority");
+  ["from", "to", "channel", "procedure", "signal", "badges", counterpartyField(role)] as const satisfies readonly (keyof RecordFilter)[];
 
 /** True when the filter holds a value the panel owns: there is something to clear. */
 export function hasFacetsOn(filter: RecordFilter, role: EntityRole): boolean {
@@ -27,7 +27,6 @@ export function clearFacets(filter: RecordFilter, role: EntityRole): RecordFilte
   return withFields(filter, patch as RecordFilter);
 }
 
-export { toggleBadge, toggleChannel, toggleProcedure };
 export const toggleSignal = (filter: RecordFilter, signal: SignalRuleSlug): RecordFilter =>
   withFields(filter, { signal: filter.signal === signal ? undefined : signal });
 export const toggleCounterparty = (filter: RecordFilter, role: EntityRole, key: string): RecordFilter => {

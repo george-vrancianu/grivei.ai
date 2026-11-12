@@ -49,6 +49,8 @@ export interface Copy {
     header: EntityHeaderCopy;
     notFound: { title: string; body: string };
     tabBody: { overview: string; relationships: string };
+    /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
+    recordsNoRole: { authority: string; supplier: string };
     /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
     recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & { facets: Omit<RecordsTabCopy["facets"], "badges" | "channels"> };
   };

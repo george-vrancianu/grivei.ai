@@ -2,7 +2,8 @@ import type { Channel, RecordBadge, RecordFilter, SignalRuleSlug } from "@grivei
 import type { BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
 import type { RecordFacetData, EntityRole } from "../../../../types.ts";
 import type { FacetOptionData } from "../FacetGroup/index.ts";
-import { selectedYear, toggleBadge, toggleChannel, toggleCounterparty, toggleProcedure, toggleSignal, toggleYear, counterpartyField } from "../../recordsTab.utils.ts";
+import { toggleBadge, toggleChannel, toggleProcedure } from "../../../../molecules/FilterChips/index.ts";
+import { selectedYear, toggleCounterparty, toggleSignal, toggleYear, counterpartyField } from "../../recordsTab.utils.ts";
 
 export interface FacetPanelCopy {
   /** The panel's accessible name. */

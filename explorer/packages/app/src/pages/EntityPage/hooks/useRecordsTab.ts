@@ -31,7 +31,7 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
       entityHref: (e, role) => pathFor(locale, { name: "entity", entity: role, key: e.key, view: "overview" }),
       recordHref: (record) => pathFor(locale, { name: "record", code: record.code }),
       methodologyHref: pathFor(locale, { name: "methodology" }),
-      suspectHref: recordsHref(locale, entity, entityKey, { filter: { ...filter, badges: ["SUSPECT_VALUE"] } }),
+      suspectHref: recordsHref(locale, entity, entityKey, { filter: { ...filter, badges: [...(filter.badges ?? []).filter((b) => b !== "SUSPECT_VALUE"), "SUSPECT_VALUE"] } }),
       locale,
       copy: {
         heading: own.heading,

@@ -295,6 +295,12 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
     data: { entity: withSeap(w.hachiHeader, { role: "SUPPLIER" as Role, records: { total: zeroTotal, facets: noFacets, records: { count: 0, rows: [] } } }) },
   },
   {
+    name: "authority-read-as-supplier", kind: "empty",
+    description: "an authority-only entity opened on a supplier's Records tab: the entity exists but has no supplier role (seap.role is null)",
+    variables: { key: "4000001", role: "SUPPLIER", limit: 100, offset: 0, filter: {} },
+    data: { entity: withSeap(w.primariaBrasovHeader, null) },
+  },
+  {
     name: "authority-default-page", kind: "typical",
     description: "an authority's Records tab opened without a filter: facets with suppliers as the counterparties",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: {} },

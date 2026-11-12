@@ -145,6 +145,7 @@ export const ro: Copy = {
       overview: "Prezentarea generală nu este construită încă.",
       relationships: "Fila Relații nu este construită încă.",
     },
+    recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",
       facets: {

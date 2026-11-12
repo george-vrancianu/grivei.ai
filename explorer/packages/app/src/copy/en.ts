@@ -140,6 +140,7 @@ export const en: Copy = {
       overview: "The Overview is not built yet.",
       relationships: "The Relationships tab is not built yet.",
     },
+    recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",
       facets: {

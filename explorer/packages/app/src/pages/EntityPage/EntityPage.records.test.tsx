@@ -95,3 +95,14 @@ describe("the Records tab", () => {
     expect(screen.getByRole("link", { name: "Deszăpezire străzi, sezon rece 2023-2024" })).toHaveAttribute("href", "/ro/explore/record/DA12345678");
   });
 });
+
+describe("the Records tab of an entity that lacks the page's role", () => {
+  it("settles on a message instead of loading for ever", async () => {
+    openAt("/explore/supplier/4000001/records");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByText("This entity has no Records as a supplier.")).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "MUNICIPIUL BRAȘOV" })).toBeVisible();
+  });
+});

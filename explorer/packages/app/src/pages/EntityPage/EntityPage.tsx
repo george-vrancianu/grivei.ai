@@ -72,8 +72,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           <div aria-busy={loading}>
             <RecordsTab records={state.records} {...recordsTab} />
           </div>
-        ) : (
+        ) : loading ? (
           <Typography role="status">{t.status.loading}</Typography>
+        ) : (
+          // ready, but the entity has no Records in this role
+          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
         )
       ) : loading ? (
         <Typography role="status">{t.status.loading}</Typography>
