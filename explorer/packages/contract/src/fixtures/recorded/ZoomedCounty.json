@@ -1,0 +1,525 @@
+[
+  {
+    "name": "county-with-unknown-uat-row",
+    "kind": "typical",
+    "description": "Brasov county: five UATs with money and the row for the commune ANAF puts in the county but SIRUTA does not know",
+    "variables": {
+      "filter": {
+        "county": "RO-BV"
+      },
+      "county": "RO-BV"
+    },
+    "data": {
+      "uats": [
+        {
+          "siruta": "880001",
+          "name": "Brașov",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880030",
+          "name": "Râșnov",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880060",
+          "name": "Șinca Nouă",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880010",
+          "name": "Sânpetru",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880050",
+          "name": "Ucea",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        }
+      ],
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "800001",
+            "records": 8,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "uatMap": {
+            "uats": [
+              {
+                "area": "880001",
+                "name": "Brașov",
+                "entities": 2,
+                "total": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880010",
+                "name": "Sânpetru",
+                "entities": 1,
+                "total": {
+                  "awarded": "200001",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880030",
+                "name": "Râșnov",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880050",
+                "name": "Ucea",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880060",
+                "name": "Șinca Nouă",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "unknownUat": {
+              "awarded": "100000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "county-without-unknown-uat-row",
+    "kind": "typical",
+    "description": "Cluj county: every authority has a UAT, so the unknown-UAT row is null",
+    "variables": {
+      "filter": {
+        "county": "RO-CJ"
+      },
+      "county": "RO-CJ"
+    },
+    "data": {
+      "uats": [
+        {
+          "siruta": "990020",
+          "name": "Apahida",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990001",
+          "name": "Cluj-Napoca",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990030",
+          "name": "Huedin",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990010",
+          "name": "I. L. Caragiale",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        }
+      ],
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "360000",
+            "records": 4,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "uatMap": {
+            "uats": [
+              {
+                "area": "990010",
+                "name": "I. L. Caragiale",
+                "entities": 1,
+                "total": {
+                  "awarded": "160000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "990020",
+                "name": "Apahida",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "990030",
+                "name": "Huedin",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "unknownUat": null
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "bucharest-by-sector",
+    "kind": "typical",
+    "description": "Bucharest by its sectors (the UATs of RO-B are the six sectors; only the ones with Records appear)",
+    "variables": {
+      "filter": {
+        "county": "RO-B"
+      },
+      "county": "RO-B"
+    },
+    "data": {
+      "uats": [
+        {
+          "siruta": "179141",
+          "name": "Sector 1",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        },
+        {
+          "siruta": "179150",
+          "name": "Sector 2",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        },
+        {
+          "siruta": "179169",
+          "name": "Sector 3",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        },
+        {
+          "siruta": "179178",
+          "name": "Sector 4",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        },
+        {
+          "siruta": "179187",
+          "name": "Sector 5",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        },
+        {
+          "siruta": "179196",
+          "name": "Sector 6",
+          "county": {
+            "code": "RO-B",
+            "name": "București"
+          }
+        }
+      ],
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "100000",
+            "records": 1,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "uatMap": {
+            "uats": [
+              {
+                "area": "179169",
+                "name": "Sector 3",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "unknownUat": null
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "county-text-query",
+    "kind": "typical",
+    "description": "a text query inside the zoomed county: the UAT sums narrow with the filter",
+    "variables": {
+      "filter": {
+        "q": "comuna",
+        "county": "RO-BV"
+      },
+      "county": "RO-BV"
+    },
+    "data": {
+      "uats": [
+        {
+          "siruta": "880001",
+          "name": "Brașov",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880030",
+          "name": "Râșnov",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880060",
+          "name": "Șinca Nouă",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880010",
+          "name": "Sânpetru",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        },
+        {
+          "siruta": "880050",
+          "name": "Ucea",
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          }
+        }
+      ],
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "500001",
+            "records": 5,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "uatMap": {
+            "uats": [
+              {
+                "area": "880010",
+                "name": "Sânpetru",
+                "entities": 1,
+                "total": {
+                  "awarded": "200001",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880050",
+                "name": "Ucea",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "880060",
+                "name": "Șinca Nouă",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "unknownUat": {
+              "awarded": "100000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "county-no-match",
+    "kind": "empty",
+    "description": "nothing matches in the county: no UAT has money (every one draws grey), no unknown-UAT row",
+    "variables": {
+      "filter": {
+        "q": "zzzzzz",
+        "county": "RO-CJ"
+      },
+      "county": "RO-CJ"
+    },
+    "data": {
+      "uats": [
+        {
+          "siruta": "990020",
+          "name": "Apahida",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990001",
+          "name": "Cluj-Napoca",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990030",
+          "name": "Huedin",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        },
+        {
+          "siruta": "990010",
+          "name": "I. L. Caragiale",
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          }
+        }
+      ],
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "uatMap": {
+            "uats": [],
+            "unknownUat": null
+          }
+        }
+      }
+    }
+  }
+]

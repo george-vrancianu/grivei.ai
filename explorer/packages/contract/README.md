@@ -9,8 +9,8 @@ The explorer's GraphQL contract. The API, the UI library and the app all build a
 | `src/generated/operations.ts` | Operation result and variable types, enums and inputs, for the app. Generated. |
 | `src/generated/schema.ts` | Schema types and resolver types, for the API. Generated. |
 | `generated/persisted-queries.json` | The allowlist: per operation its name, `sha256` and self-contained document (fragments inlined). Generated. |
-| `src/fixtures/` | Mock responses, several per operation (typical, empty, extreme). Hand-written, except the main screen and full-results operations, which are recorded from seam 1 runs (`recorded/`). |
-| `src/fixtures/recorded/` | The API's own answers to `MainScreen` and `FullResults{Authorities,Suppliers,Records}` after a real rebuild of `archive-moneymap` (JSON, typed by `index.ts`). Never edit by hand. |
+| `src/fixtures/` | Mock responses, several per operation (typical, empty, extreme). Hand-written, except the main screen, zoomed-county and full-results operations, which are recorded from seam 1 runs (`recorded/`). |
+| `src/fixtures/recorded/` | The API's own answers to `MainScreen`, `ZoomedCounty` and `FullResults{Authorities,Suppliers,Records}` after a real rebuild of `archive-moneymap` (JSON, typed by `index.ts`). Never edit by hand. |
 | `src/filter-keys.ts` | `RecordFilter` field to URL key table, for the codec (#42). |
 | `src/value-buckets.ts` | The `ValueBucket` edges in bani, and `valueBucketOf`. |
 | `src/validate-response.ts` | Checks a response against an operation: exact keys, nullability, enums, custom scalars, unions. |
@@ -44,9 +44,9 @@ The package exports TypeScript source (no build step); consumers compile it with
 
 ## Recorded fixtures (main screen and full results)
 
-`MainScreen`, `FullResultsAuthorities`, `FullResultsSuppliers` and `FullResultsRecords` are answered from `src/fixtures/recorded/<Operation>.json`: each entry is `{ name, kind, description, variables, data }` as the real API produced it (fixture archive `watchdog/tests/fixtures/archive-moneymap` -> `pipeline rebuild` into a throwaway ParadeDB -> the persisted query). The app's seam 3 tests render against them, so what the UI is tested with is what the API says. A few hand-written fixtures stay beside them for states a small archive cannot produce (pagination past 100 Records, HyperLogLog estimates, every Record state at once); they use variables no recorded case uses.
+`MainScreen`, `ZoomedCounty`, `FullResultsAuthorities`, `FullResultsSuppliers` and `FullResultsRecords` are answered from `src/fixtures/recorded/<Operation>.json`: each entry is `{ name, kind, description, variables, data }` as the real API produced it (fixture archive `watchdog/tests/fixtures/archive-moneymap` -> `pipeline rebuild` into a throwaway ParadeDB -> the persisted query). The app's seam 3 tests render against them, so what the UI is tested with is what the API says. A few hand-written fixtures stay beside them for states a small archive cannot produce (pagination past 100 Records, HyperLogLog estimates, every Record state at once); they use variables no recorded case uses.
 
-The cases (which request, on which archive) are listed in `packages/api/test/recordedCases.ts`. The seam 1 block "recorded fixtures (#83)" asks each of them and fails when an answer differs from the committed JSON, so the two seams cannot drift apart. To re-record after a change to the API, the pipeline or a fixture archive (needs Docker and `watchdog/.venv`; the test starts a `pp37-seam1-*` container capped at 3 GB and removes it):
+The cases (which request, on which archive) are listed in `packages/api/test/recordedCases.ts` (MainScreen and full results) and `recordedZoomCases.ts` (ZoomedCounty, #84). The seam 1 blocks "recorded fixtures (#83)" and "recorded fixtures (#84)" ask each of them and fails when an answer differs from the committed JSON, so the two seams cannot drift apart. To re-record after a change to the API, the pipeline or a fixture archive (needs Docker and `watchdog/.venv`; the test starts a `pp37-seam1-*` container capped at 3 GB and removes it):
 
 ```sh
 cd explorer/packages/api
@@ -54,7 +54,7 @@ RECORD_FIXTURES=1 SEAM1_REQUIRED=1 npx vitest run --pool=forks --maxWorkers=2 te
 git diff ../contract/src/fixtures/recorded   # review what changed, then run the app and ui tests
 ```
 
-To add a case, add a line to `RECORDED_CASES` and re-record. Every answer is validated against its operation before it is written.
+To add a case, add a line to `RECORDED_CASES` (or `RECORDED_ZOOM_CASES`) and re-record. The zoom sends the page's filter without `uat` plus `county`, so a UAT click is a MainScreen case (`county-with-uat`, `bucharest-with-sector`) and needs no ZoomedCounty one. There are no hand-written ZoomedCounty fixtures left: the archive's Bucharest has money in one sector only, the ui samples (`samples/uatMaps.ts`) keep the all-sectors-coloured picture for the map's own stories. Every answer is validated against its operation before it is written.
 
 ## `RecordFilter` and the URL
 
