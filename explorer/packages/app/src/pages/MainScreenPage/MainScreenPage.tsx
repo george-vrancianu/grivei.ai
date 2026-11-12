@@ -1,6 +1,5 @@
-import { chipFieldsOf, DEFAULT_RESULT_TAB, FilterChips, ResultTabs, Stack, toResultTab, Typography, type Locale, type ResultTab } from "@grivei/ui";
+import { chipFieldsOf, DEFAULT_RESULT_TAB, FilterChips, ResultTabs, SearchBar, Stack, toResultTab, Typography, type Locale, type ResultTab } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
-import { SearchField } from "../../components/SearchField/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
@@ -20,7 +19,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       <Typography variant="h4" component="h1">
         {t.main.title}
       </Typography>
-      <SearchField copy={t.searchField} value={filter.q ?? ""} onChange={(q) => setFilter({ q })} />
+      <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
       <FilterChips
         filter={filter}
         onChange={(next) => setFilter(chipFieldsOf(next))}

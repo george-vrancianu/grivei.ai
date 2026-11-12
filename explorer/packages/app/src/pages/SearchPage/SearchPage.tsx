@@ -1,6 +1,5 @@
-import { DEFAULT_RESULT_TAB, FullResults, Stack, toResultTab, Typography } from "@grivei/ui";
+import { DEFAULT_RESULT_TAB, FullResults, SearchBar, Stack, toResultTab, Typography } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
-import { SearchField } from "../../components/SearchField/index.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
@@ -26,7 +25,7 @@ export function SearchPage() {
       <Typography variant="h4" component="h1">
         {t.pages.search.title}
       </Typography>
-      <SearchField copy={t.searchField} value={filter.q ?? ""} onChange={(q) => setFilter({ q })} />
+      <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
       {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}
       {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
       {state.status === "ready" && (

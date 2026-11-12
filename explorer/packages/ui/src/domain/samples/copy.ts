@@ -16,6 +16,7 @@ import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts"
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
+import type { SearchBarCopy } from "../molecules/SearchBar/index.ts";
 import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
@@ -321,7 +322,13 @@ const recordsTab = (locale: Locale): RecordsTabCopy => ({
   pagination: fullResults(locale).pagination,
 });
 
+const searchBar: Record<Locale, SearchBarCopy> = {
+  en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
+  ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
+};
+
 export const sampleCopy = {
+  searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,
   entityRow,
