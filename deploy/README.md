@@ -42,7 +42,7 @@ docker compose run --rm pipeline rebuild
 
 `status` shows how far a running or finished `rebuild` is (it reads `rebuild-progress.json` in the archive root); `rebuild` prints one timestamped line per unit. The operator's full-archive run (nohup, log, kill, rerun) is in `watchdog/README.md`, "Operator: rebuild the graph from the archive for real".
 
-`fetch-bulk` only downloads into the archive; `anaf-lookup` asks ANAF about the CUIs in the archive and archives the answers (resumable; operator steps in `watchdog/README.md`); `rebuild` drops and recreates the `seap` schema and the core's entity tables (`core.entity`, `core.alias`, `core.anaf_company`) from every complete unit in one transaction. Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
+`fetch-bulk` only downloads into the archive; `anaf-lookup` asks ANAF about the CUIs in the archive and archives the answers (resumable; operator steps in `watchdog/README.md`); `rebuild` builds the graph (`seap` and the core's entity tables) into a new database beside the live one and switches over after its checks (`--in-place` drops and recreates them in the live database instead); see `watchdog/README.md`, "Rebuild beside the live database". Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
 
 ## Schedule the refresh
 
@@ -73,6 +73,7 @@ In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at log
 | `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (or `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY`) | empty | the encrypted backup repository of refresh step 5 (#82); empty `RESTIC_REPOSITORY` = no backups, logged. Backup, restore, switchover, rollback and the major-upgrade rebuild: `watchdog/README.md`. `GRIVEI_DB_NEXT_IMAGE` names the new image for the `upgrade` profile |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
 | `SEAP_BASE_URL` | `https://e-licitatie.ro` | the SEAP site the API's `/source/seap/<code>` redirect asks (and redirects to); set on the `api` service, only tests change it |
+| `API_CACHE_MAX_MB` | `300` | API result-cache budget in MB; keep it well under the api's 2 GB `mem_limit` |
 | `SEAP_LINK_PUBLIC_BASE` | empty | prefix of the "Check in SEAP" URL a bulk Record's provenance carries (`<base>/source/seap/<code>`); empty = relative, same origin as the app |
 
 Put overrides in a `.env` file beside `compose.yaml` (gitignored; do not commit secrets).
@@ -88,5 +89,5 @@ cd explorer/packages/api && npx vitest run test/seam1.test.ts   # seam 1, in a t
 ## Notes
 
 - **Routing (Caddyfile):** `/explore/assets/*` are the hashed bundle files; every other path under `/explore*` or `/ro/explore*` gets the SPA's `index.html`. Anything else is the landing page (`/` and `/ro/`).
-- **Upgrades:** a Postgres/ParadeDB upgrade is a rebuild from the archive into a fresh volume beside the old one, then a switch-over (ADR 0004). No in-place `pg_upgrade`.
+- **Upgrades:** a Postgres/ParadeDB upgrade is a rebuild from the archive into a fresh volume beside the old one, then a switchover (ADR 0004). No in-place `pg_upgrade`.
 - **Images are pinned** (`paradedb`, `caddy`, `node`); `python:3.12-slim` floats on the patch level.

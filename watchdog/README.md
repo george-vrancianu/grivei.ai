@@ -197,7 +197,7 @@ nohup python -m pipeline rebuild > ~/grivei-data/rebuild.log 2>&1 &
 With Docker Compose the database is not published to the host, so use the pipeline container instead (archive mounted from `GRIVEI_ARCHIVE_DIR`, `DATABASE_URL` already set; a unit above 2 GB would need a larger `mem_limit` in `compose.yaml`):
 
 ```bash
-cd <repo root> && export GRIVEI_ARCHIVE_DIR=~/grivei-data/raw
+cd <repo root>   # GRIVEI_ARCHIVE_DIR=~/grivei-data/raw is set in .env (not exported)
 nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>&1 &
 ```
 
@@ -241,10 +241,10 @@ With Compose, `docker compose run --rm -T pipeline rollback` etc. The `DATABASE_
 # 1. a second database service on a new volume (compose profile `upgrade`; the tag is the new paradedb image)
 export GRIVEI_DB_NEXT_IMAGE=paradedb/paradedb:<new tag>   # optional for every other command: it defaults to the tag of `db`
 docker compose --profile upgrade up -d db-next
-#    (db and db-next each get up to 12 GB: check `free -g` first; the new volume is grivei_pgdata-next, the old one grivei_pgdata)
+#    (PW below = GRIVEI_DB_PASSWORD from .env; db and db-next each get up to 12 GB: check `free -g` first; the new volume is grivei_pgdata-next, the old one grivei_pgdata)
 # 2. rebuild into it in place (nobody reads it, so there is nothing to lock out); the old stack keeps serving. The rebuild takes the archive
 #    lock, so it cannot run beside the nightly refresh: stop the timer first (`systemctl --user stop grivei-refresh.timer`) so no data lands afterwards.
-nohup docker compose run --rm -T -e DATABASE_URL=postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db-next:5432/grivei pipeline rebuild --in-place >> ~/grivei-data/upgrade.log 2>&1 &
+nohup docker compose run --rm -T -e DATABASE_URL=postgresql://grivei:PW@db-next:5432/grivei pipeline rebuild --in-place >> ~/grivei-data/upgrade.log 2>&1 &
 # 3. check it against the live graph
 docker compose run --rm -T pipeline verify --db postgresql://grivei:PW@db-next:5432/grivei --against postgresql://grivei:PW@db:5432/grivei
 #    If the archive grew since step 2, run step 2 again first (a rebuild into an existing database is rerunnable: it replaces the schemas).

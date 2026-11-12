@@ -4,7 +4,7 @@ For the operator (a human, on the real machine). It proves the Definition of don
 Release 1 (SEAP) on real data: ticket #91 of spec #37. Nothing here runs in CI and no agent can do it: it needs the real services, hours of
 wall clock and a week of waiting.
 
-Every command exists on this branch (`python -m pipeline <verb> --help` for each), except `pipeline validate` (step 4), which comes with ticket #64c. Verb details live in `watchdog/README.md`; this page is the
+Every command exists on this branch (`python -m pipeline <verb> --help` for each). Verb details live in `watchdog/README.md`; this page is the
 order, the costs and the checks. **Durations marked "estimate" were never measured end to end**: the tickets measured pieces, nobody has run the
 whole sequence. Write the real numbers into the closing comment (template at the end).
 
@@ -76,7 +76,7 @@ The national flag comes after the first load (step 7). Check: `uats.csv` and `vi
 
 **Step 6 must not run before this passes.** On the real archive #64c measured 40 of 73 bulk files passing *before* its reader changes (cp1250, pipe-delimited CSV, `.ods`, day-first DA 2021 dates, the 2023-2026 header eras) and 72 of 73 after.
 Without them a seed quarantines about 33 files and still ends "successfully": the first build has no live graph, so the switchover's floor (95% of the live graph) does not apply. The explorer would then be missing about 45% of the files.
-`python -m pipeline validate` is the read-only verb of #64c (`pipeline validate [--kind K] [--match TEXT]`). If `validate --help` says it is an unknown verb, #64c is not merged into your checkout yet: wait for it. **It also needs `docker compose build pipeline` run again from a checkout that has it.**
+`python -m pipeline validate` is the read-only verb of #64c (`pipeline validate [--kind K] [--match TEXT]`). **It needs `docker compose build pipeline` run again from a checkout that has it.**
 
 ```bash
 # read-only by construction (it lists the archive and parses; it never quarantines), and mounted read-only too

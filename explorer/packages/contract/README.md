@@ -7,10 +7,10 @@ The explorer's GraphQL contract. The API, the UI library and the app all build a
 | `schema/schema.graphql` | The SDL (Release 1: SEAP). No prose: slugs, enums, numbers and Romanian source data only. |
 | `operations/*.graphql` | One named query per screen, plus shared fragments. **These are the persisted-query allowlist.** |
 | `src/generated/operations.ts` | Operation result and variable types, enums and inputs, for the app. Generated. |
-| `src/generated/schema.ts` | Schema types and resolver types, for the API. Generated. |
+| `src/generated/schema.ts` | Schema types and resolver types (generated; the API does not import the resolver types yet). |
 | `generated/persisted-queries.json` | The allowlist: per operation its name, `sha256` and self-contained document (fragments inlined). Generated. |
-| `src/fixtures/` | Mock responses, several per operation (typical, empty, extreme). Hand-written, except the main screen, zoomed-county, full-results, entity Overview, Relationships, side-panel Records and Signals (#89) operations, which are recorded from seam 1 runs (`recorded/`). |
-| `src/fixtures/recorded/` | The API's own answers to `MainScreen`, `ZoomedCounty`, `FullResults{Authorities,Suppliers,Records}` (after a real rebuild of `archive-moneymap`), `EntityOverview` (`entity.ts`; several archives), `EntityRelationships` and the side-panel `EntityRecords` (`relationships.ts`) and, under `recorded/signals/`, the Signals answers of #89 (`signals.ts`) (JSON, typed by `index.ts`). Never edit by hand. |
+| `src/fixtures/` | Mock responses, several per operation (typical, empty, extreme). Hand-written, except the main screen, zoomed-county, full-results, entity Overview, Relationships, Records (page and side panel), Record page, Signals (#89) and Coverage (#90: `CoverageLens`, `CoveragePage`) operations, which are recorded from seam 1 runs (`recorded/`). |
+| `src/fixtures/recorded/` | The API's own answers to `MainScreen`, `ZoomedCounty`, `FullResults{Authorities,Suppliers,Records}` (after a real rebuild of `archive-moneymap`), `EntityOverview` (`entity.ts`; several archives), `EntityRelationships` and the side-panel `EntityRecords` (`relationships.ts`), `RecordPage` (`record.ts`), `EntityRecords` (`records.ts`), `CoverageLens` and `CoveragePage` (typed by `index.ts`) and, under `recorded/signals/`, the Signals answers of #89 (`signals.ts`) (JSON, typed by `index.ts`). Never edit by hand. |
 | `src/filter-keys.ts` | `RecordFilter` field to URL key table, for the codec (#42). |
 | `src/value-buckets.ts` | The `ValueBucket` edges in bani, and `valueBucketOf`. |
 | `src/validate-response.ts` | Checks a response against an operation: exact keys, nullability, enums, custom scalars, unions. |
@@ -30,7 +30,7 @@ Generated files are committed. `npm run codegen:check` (part of `check`) fails w
 ```ts
 import type { MainScreenQuery, MainScreenQueryVariables, RecordFilter } from "@grivei/contract";
 import { fixtures } from "@grivei/contract/fixtures";          // mock responses, for stories and tests
-import type { Resolvers } from "@grivei/contract/schema-types"; // for the API
+import type { Resolvers } from "@grivei/contract/schema-types"; // generated resolver types (not used by the API yet)
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 ```
 
@@ -64,7 +64,9 @@ The Record page (#85): `recorded/RecordPage.json`, loaded by `recorded/record.ts
 
 Signals on every screen (#89): `recorded/signals/<Operation>.json`, loaded by `recorded/signals.ts`; cases in `api/test/recordedSignalCases.ts`, block "recorded fixtures (#89)", on three archives (`archive-signals`, `archive-splitting`, `archive-framework-overrun`). The Overviews, Relationships, Record pages, main screen and full-results cases with and without the has-Signals chip are listed there; the Records-tab cases are not: one `EntityRecords` case is derived for each Signal an Overview shows, from that Signal's own `reproduce` (exactly what its link opens), and the block checks that the Records match `signals.records`. `MethodologyBaseRates` is recorded three times with `{}` variables (no archive fills all four rules; the operation has no variables), so tests serve those answers by name. The same `RECORD_FIXTURES=1` command re-records the block (`-t "recorded fixtures .#89"` runs it alone). The Signals the Overview shows are also tied to the ui samples by case name (see `reproduceCase` in `seam1.test.ts`).
 
-To add a case, add a line to `RECORDED_CASES` (or `RECORDED_ENTITY_CASES`, `RECORDED_RECORDS_CASES`, `RECORDED_RECORD_CASES`, `RECORDED_SIGNAL_CASES`, `RECORDED_ZOOM_CASES`) and re-record. The zoom sends the page's filter without `uat` plus `county`, so a UAT click is a MainScreen case (`county-with-uat`, `bucharest-with-sector`) and needs no ZoomedCounty one. There are no hand-written ZoomedCounty fixtures left: the archive's Bucharest has money in one sector only, the ui samples (`samples/uatMaps.ts`) keep the all-sectors-coloured picture for the map's own stories. Every answer is validated against its operation before it is written.
+Coverage (#90): `recorded/CoverageLens.json` and `recorded/CoveragePage.json` (typed by `recorded/index.ts`); cases in `api/test/recordedCoverageCases.ts`, block "recorded fixtures (#90)" (`-t "recorded fixtures .#90"` runs it alone; the same `RECORD_FIXTURES=1` command re-records it). They are asked of one joined world: the placement world, `archive-mf` and `archive-coverage` (every gap state, a quarantined 2022 Q2 DA file), rebuilt as of `--today 2025-09-20`. The lens cases vary the date window; the page cases ask for the whole grid and for 2023. The hand fixtures stay beside them (`coverageLensHand`, `coveragePageHand`) for states the archive cannot show (every gap state at once, an extreme full grid).
+
+To add a case, add a line to `RECORDED_CASES` (or `RECORDED_ENTITY_CASES`, `RECORDED_RECORDS_CASES`, `RECORDED_RELATIONSHIPS_CASES`, `RECORDED_COVERAGE_CASES`, `RECORDED_RECORD_CASES`, `RECORDED_SIGNAL_CASES`, `RECORDED_ZOOM_CASES`) and re-record. The zoom sends the page's filter without `uat` plus `county`, so a UAT click is a MainScreen case (`county-with-uat`, `bucharest-with-sector`) and needs no ZoomedCounty one. There are no hand-written ZoomedCounty fixtures left: the archive's Bucharest has money in one sector only, the ui samples (`samples/uatMaps.ts`) keep the all-sectors-coloured picture for the map's own stories. Every answer is validated against its operation before it is written.
 
 ## `RecordFilter` and the URL
 
