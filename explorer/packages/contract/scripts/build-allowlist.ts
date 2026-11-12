@@ -11,7 +11,9 @@ if (process.argv.includes("--check")) {
   let current = "";
   try {
     current = readFileSync(allowlistPath, "utf8");
-  } catch {}
+  } catch {
+    // no allowlist yet: treated as stale below
+  }
   if (current !== next) {
     console.error("generated/persisted-queries.json is stale: run `npm run codegen` in explorer/packages/contract");
     process.exit(1);
