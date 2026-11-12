@@ -67,12 +67,12 @@ python -m venv .venv              # or: uv venv .venv
 
 `pipeline/` is the explorer's pipeline, grown out of this Connector (ADR 0004): `archive.py` is the raw archive (files unchanged under a
 dated path, a manifest per unit written last, a quarantine area with a reason file), `fetch.py` downloads a bulk file into it,
-`bulk/` reads and validates the DA and DAN bulk files (CSV and XLSX; `headers.py` is the per-quarter header alias table, `values.py` the cell quirks, `records.py` the kind registry), `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`).
+`bulk/` reads and validates the DA, DAN, Contracte and "fără anunț de inițiere" bulk files (CSV and XLSX; `headers.py` is the per-quarter header alias table, `values.py` the cell quirks, `records.py` the kind registry), `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`) and `progress.py` reports on it.
 `datagov.py` is the bulk Connector's fetch half: `python -m pipeline --archive <dir> fetch-datagov [--since-year 2021] [--delay 1]`
 finds the `achizitii-publice-YYYY` datasets on data.gov.ro, archives each quarter's DA, DAN, Contracte and "fără anunț de inițiere"
 file (kinds `da`, `dan`, `contracte`, `fara-anunt`) with the resource identity in the manifest, skips unchanged resources on later
 runs and archives a re-upload as a new dated unit; it prints archived / unchanged / ignored / unclassified / failed.
-Run it with `python -m pipeline --archive <dir> rebuild --db <url>`; Docker and the full runbook are in `../deploy/README.md`.
+Run it with `python -m pipeline --archive <dir> rebuild --db <url>`; Docker and the full runbook are in `../deploy/README.md`. The operator's run over the whole national archive is below.
 Its tests (`tests/test_pipeline_archive.py`, `tests/test_pipeline_datagov.py`, `tests/test_bulk_loader.py` on `tests/fixtures/archive-bulk/`, rebuilt by `tests/fixtures/build_bulk_archive.py`, with the miniature archive in `tests/fixtures/archive/`) need no database; the
 archive -> rebuild -> GraphQL test is in `explorer/packages/api/test/seam1.test.ts`. The legacy JSON-batch loader above is unchanged.
 
@@ -95,6 +95,47 @@ nohup python -m pipeline fetch-datagov > ~/grivei-data/fetch.log 2>&1 &
   next start) or, at worst, a `*.part` file in a unit directory without a manifest; that directory is ignored by `rebuild` and never
   edited, and the file is fetched again into a new `<day>.2` directory. Failed resources are retried by simply rerunning.
 - Rerunning later (new quarters, re-uploads) is the same command; changed files are archived beside the old ones.
+
+## Contracts and award notices: identity, precedence, value
+
+Archived kinds `contracte` (Record kind `CONTRACT`) and `fara-anunt` (`AWARD_NOTICE`), loaded like DA and DAN (header eras in `headers.py`, all or nothing per unit, a failing unit is quarantined, exact duplicate rows dropped). ADR 0002 as amended:
+
+- **Code (the public key `seap.record(code)` takes):** a contract is `<award notice code>~<contract number>`, e.g. `CAN1069731~54202` or `CAN1073017~1398514/1` (the number is kept as published, only runs of blanks collapse; `~` never occurs in a notice code, so the first `~` splits it; a number holding `/` or spaces must be percent-encoded in a URL). An award notice from a "fără anunț" file is its notice code alone, `CAN1139746`. DA and DAN keep their public code.
+- **One Record per identity, across all quarters:** the rows repeated per lot and per winner collapse into it. Its lots (`lot_count`) and winners are attributes. Winners are stored in the order of their first row in the file (`seap.record.winners`, `Party` list in GraphQL).
+- **Precedence:** the version from the most recent notice publication wins (`published_on` is the award notice's publication date). Loading an older file after a newer one changes nothing, so the result does not depend on the order files arrive in. On the same publication date with different content the later file (archive fetch order) wins; identical content changes nothing. A replacement replaces the whole version (its lots and winners, not a merge); Records absent from a re-uploaded file are kept.
+- **Value:** counted once when all lots carry the same value (it is repeated on every lot and winner row), summed over lots when the lot values differ; a row without a lot number is a lot of its own; no value on any row is "no value in SEAP". Within one lot the first value is kept and `value:lot_rows_disagree` goes into `load_notes` (about 0.1 % of contracts in 2025 and 2022). An award notice's value is the sum of its contracts' values. Money is integer bani.
+- **Kept for the counting rule (#65), not applied here:** `concluded_by` (`Incheiat prin`: `Cu acord cadru` / `Cu acord cadru subsecvent` / `Fara acord cadru`), `notice_code`, `initiation_code`, `procedure`. `counted_bani` still equals the value, so framework ceilings are not yet left out of sums.
+- **Dates:** publication (the award notice's) assigns the quarter; the contract date (`Data contract`, earliest among the version's rows) is the award date, falling back to the publication date.
+- Header names were checked on the real 2021 T3 and T4 (CSV), 2022 T1 (pipe CSV) and 2025 T1/T2 (XLSX) files, and the fără-anunț 2025 XLSX. `.xls` files (2021 T1/T2, 2022 T2 to 2023 T1 and others) are not read yet and are quarantined as an unsupported format.
+
+## Operator: rebuild the graph from the archive for real
+
+Loads the whole raw archive (DA, DAN, Contracte, "fără anunț") into the `seap` schema. A rebuild is **rerun from scratch, never resumed** (ADR 0004: the graph is derived from the archive): it drops and recreates schema `seap` and loads everything in one transaction, committed only at the end. If it is killed, loses its connection or fails, the transaction rolls back: the database keeps the previous `seap` schema (or none, on a first run) and nothing is half-loaded. Rerunning the same command starts over and gives the same graph. The one effect that survives a kill is on the archive: a unit that failed validation has already been moved to `<archive>/quarantine/...` (with its `reason.json`), and a rerun does not look at the quarantine. Units are read and loaded one at a time, so memory is about one quarter (the biggest known file, 280 MB of CSV, peaks at about 250 MB; DA quarters of 770k rows about 1.5 GB). While it runs, the transaction holds locks on schema `seap`: the API cannot read `seap` until the commit, so stop the `api` service (or accept that it waits) during a multi-hour run.
+
+```bash
+# once, from a worktree of the integration branch
+cd watchdog
+python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+export PIPELINE_ARCHIVE=~/grivei-data/raw        # the raw archive, outside the repo (the same variable `fetch-datagov` uses)
+export DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME   # a Postgres/ParadeDB you can reach; its `seap` schema is replaced
+
+nohup python -m pipeline rebuild > ~/grivei-data/rebuild.log 2>&1 &
+```
+
+With Docker Compose the database is not published to the host, so use the pipeline container instead (archive mounted from `GRIVEI_ARCHIVE_DIR`, `DATABASE_URL` already set; a unit above 2 GB would need a larger `mem_limit` in `compose.yaml`):
+
+```bash
+cd <repo root> && export GRIVEI_ARCHIVE_DIR=~/grivei-data/raw
+nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>&1 &
+```
+
+- **Log:** `~/grivei-data/rebuild.log`, one timestamped line per unit, flushed at once (`tail -f` it). Lines look like
+  `2026-11-12T10:15:02+0200 rebuild unit 37/412 kind=contracte unit=2023Q2 files=1 rows=124000 records=98000 loaded in 41.2s`,
+  or `... rows=0 records=0 skipped (same file already loaded)` or `... quarantined (headers do not match a DA file)`; first `rebuild start units=412 ...`,
+  last `rebuild done units=412 loaded=... skipped=... quarantined=... records=... in H:MM:SS`, then the summary lines (the quarantined paths). `rows` are data rows read, `records` the Records they became (duplicates and repeated lots and winners collapse). On failure the last line is `rebuild FAILED after N/M units: <error>; nothing was loaded, rerun from scratch`.
+- **Progress:** `python -m pipeline status` (in Compose: `docker compose run --rm pipeline status`) reads the status file, `<archive>/rebuild-progress.json` by default (`--progress-file` or `PIPELINE_PROGRESS_FILE` to move it; it is rewritten through a temporary file and a rename, so it is never half-written). It prints `state: running|finished|failed|interrupted`, `units: 37/412 done (...)`, the unit in progress, the records loaded so far, start and last update, and the last log line. `interrupted` means the file says running but the process is gone (killed): exit code 1, like `failed`. The quickest check without the CLI: `tail -n 2 ~/grivei-data/rebuild.log`.
+- **After a kill or a failure:** nothing to clean up. Look at the last log line or `status`, fix the cause if there is one, and run the same `nohup ...` command again (`>>` appends to the log). Stop a run on purpose with `pkill -f 'pipeline rebuild'` (SIGTERM is turned into a normal failure and rolled back; in Compose, `docker stop` the run container).
+- A run that ends `quarantined` units is a normal success; read `<archive>/quarantine/**/reason.json` for why. Fix the header alias (`pipeline/bulk/headers.py`) or the format support and move the unit back to its place in the archive to load it.
 
 ## The data model, in brief
 

@@ -134,3 +134,38 @@ def test_the_status_command_reads_the_file(run, capsys, tmp_path):
 def test_the_status_file_defaults_to_the_archive_root(tmp_path, capsys):
     assert main(["--archive", str(tmp_path), "status"]) == 1
     assert str(tmp_path / "rebuild-progress.json") in capsys.readouterr().out
+
+
+def test_sigterm_ends_the_rebuild_command_like_a_failure(tmp_path):
+    """`pkill -f 'pipeline rebuild'` must unwind (so the transaction rolls back and the status file says failed), not die mid-air."""
+    import signal
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+
+    watchdog = Path(__file__).resolve().parents[1]
+    script = (
+        "import sys, time\n"
+        "import pipeline.cli as cli\n"
+        "def slow(archive, db, progress):\n"
+        "    progress.start(1, archive.root)\n"
+        "    try:\n"
+        "        time.sleep(60)\n"
+        "    except BaseException as e:\n"
+        "        progress.fail(e)\n"
+        "        raise\n"
+        "cli.rebuild = slow\n"
+        "sys.exit(cli.main(['--archive', sys.argv[1], 'rebuild', '--db', 'postgresql://unused']))\n"
+    )
+    status_file = tmp_path / "rebuild-progress.json"
+    proc = subprocess.Popen([sys.executable, "-c", script, str(tmp_path)], cwd=watchdog, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    deadline = time.time() + 20
+    while not status_file.exists():
+        assert time.time() < deadline and proc.poll() is None, "the rebuild never started"
+        time.sleep(0.05)
+    proc.send_signal(signal.SIGTERM)
+    out, err = proc.communicate(timeout=20)
+    assert proc.returncode == 143 and "Traceback" not in err
+    assert read_status(status_file)["state"] == "failed" and "rebuild FAILED" in out
+    assert effective_state(read_status(status_file)) == "failed"
