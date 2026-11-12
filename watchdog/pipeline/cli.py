@@ -59,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
     placement_cli.add_rebuild_args(r)
 
+    r.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; default: today, UTC; for tests)")
+    r.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV for the Coverage grid (env PIPELINE_KNOWN_GAPS; default: pipeline/coverage/known_gaps.csv)")
     st = sub.add_parser("status", help="show the crawl cursor and data-through dates, and how far a running or finished rebuild, crawl and ANAF lookup are")
     st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="the rebuild's status file, as for rebuild")
     st.add_argument("--crawl-progress-file", default=os.environ.get("PIPELINE_CRAWL_PROGRESS_FILE"), help="the crawl's status file, as for crawl")
@@ -119,8 +121,8 @@ def main(argv: list[str] | None = None) -> int:
         # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
         placement_cli.log_to_stderr()  # the placement step logs every authority it could not match
-        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides,
-                            placement_dir=args.placement_data, geo_dir=args.geo_dir).lines():
+        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
+                            geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps).lines():
             print(line, flush=True)
         return 0
     if args.verb == "anaf-lookup":

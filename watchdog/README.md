@@ -183,6 +183,32 @@ nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>
 - **Bulk vs crawl:** a bulk Record always supersedes a crawled Record of the same identity, whatever the dates and the order the files were fetched in; a crawled Record never replaces a bulk one. Among crawled versions (a re-crawled day) the later publication wins, a tie going to the later fetch. A crawled Record the bulk does not have stays and counts, and is tagged: `CRAWLED_PROVISIONAL` when no bulk file of its kind (Contracte for CONTRACT, "fara anunt" for AWARD_NOTICE) and quarter is loaded, `CRAWL_ONLY` when one is. Both are RecordBadges.
 - **Data-through (`sources`, `pipeline status`):** per Record kind, the latest publication date of the bulk Records (crawled Records' own dates do not count); for CONTRACT and AWARD_NOTICE at least the end of the unbroken run of complete crawl days that starts the day after the kind's last bulk quarter (Contracte for CONTRACT, "fara anunt" for AWARD_NOTICE; with no bulk file, at the first complete crawl day). A crawled day that brought nothing new still means "looked through that day"; a hole after that start stops the date before it, while a day the bulk covers is never a hole. Derived from the archive at every rebuild.
 
+## The Coverage grid (#79)
+
+`pipeline rebuild` ends by computing the SEAP Coverage grid from what it just loaded and from the archive, and stores it in `seap.coverage_cell` (one row per quarter and record kind: `2021-Q1` to the quarter of the rebuild's day, DA, DAN, CONTRACT, AWARD_NOTICE). The API serves it as `coverage(source: SEAP, window).grid`; the window keeps the quarters that overlap it. Code: `pipeline/coverage/` (`grid.py` holds the rules and is pure; `build.py` gathers the facts). Flagged cells (possibly incomplete, not yet loaded because a file was set aside, hand-entered gaps) are logged as `coverage: ...` lines at the end of the rebuild output, never with the quarantine's reason.
+
+State precedence, first match wins:
+
+| # | Condition | State | Rule | Note |
+|---|---|---|---|---|
+| 1 | the cell is in the known-gaps file | `KNOWN_GAP` | `HAND_ENTERED` | the file's reason, verbatim |
+| 2 | a bulk file of the quarter and kind is loaded, and its row count is below 60% of the median of its neighbours | `POSSIBLY_INCOMPLETE` | `COUNT_BELOW_NEIGHBOURS` | |
+| 2 | a bulk file of the quarter and kind is loaded | `LOADED` | | |
+| 3 | AWARD_NOTICE, 2021-22: the backfill's pass 1 has every planned week overlapping the quarter complete | `LOADED` ("covered via e-licitatie") | | |
+| 3 | AWARD_NOTICE, 2021-22, a bulk unit of it was quarantined | `NOT_YET_LOADED` | | |
+| 3 | AWARD_NOTICE, 2021-22, otherwise (contracts awarded without a prior call: in no bulk file) | `NOT_IN_SOURCE` | `NO_PRIOR_CALL_BEFORE_BACKFILL` | |
+| 4 | no bulk file loaded, but provisional crawled Records of the kind exist in the quarter | `CRAWLED_PROVISIONAL` | `AWAITING_BULK_FILE` | |
+| 5 | a bulk unit of it was quarantined | `NOT_YET_LOADED` | none | none: the quarantine and its reason are never shown |
+| 6 | nothing (e.g. DA and DAN of the current quarter) | `NOT_YET_LOADED` | `AWAITING_BULK_FILE` | |
+
+Provisional means crawled and not backfilled: a backfilled Record is crawl-only from the start, so a quarter holding only backfilled Records (a hole between bulk files, e.g. 2023-Q2 to 2024-Q4 of CONTRACT) is `NOT_YET_LOADED` with `AWAITING_BULK_FILE` (or no rule when a file was quarantined), with its Record count. A quarantined file counts as if it did not exist (step 4 applies to a quarantined quarter that has crawled Records). A loaded bulk file always wins over a quarantined re-fetch of the same quarter.
+
+- **The possibly-incomplete rule** (`grid.below_neighbours`, published): a quarter's row count is strictly below 60% of the median row count of its neighbours. The count is the data rows read from the loaded bulk file (the largest one when a quarter was fetched more than once). Neighbours: the up to 2 nearest quarters before and the up to 2 after that have a loaded bulk file of the same kind (quarters without one, and hand-entered gaps, are skipped over; the quarter itself is left out); fewer than 2 neighbours and the rule is not evaluated. The rule runs at every rebuild.
+- **Records** per cell: Records of the kind published in the quarter, bulk and crawled (crawl-only ones included: the spec counts them in the quarter's cell).
+- **Data-through** per cell: loaded, covered and known-gap cells: the latest publication date among the cell's Records (null when none); crawled provisional: the kind's crawl data-through (`seap.crawl_state`, the end of the unbroken run of complete crawl days) but never past the quarter's end, and only when that run starts no later than the quarter's end (else the latest Record date: the crawl never covered the quarter); not yet loaded and not in the source: null.
+- **Known gaps** (`pipeline/coverage/known_gaps.csv`, hand-edited, checked in): `quarter,kind,reason`; quarter `2025-Q2`, kind one of DA, DAN, CONTRACT, AWARD_NOTICE; `#` comments; the reason is shown verbatim (source data, not translated). Seeded with the Q2 2025 DAN mis-upload. `rebuild --known-gaps FILE` or env `PIPELINE_KNOWN_GAPS` points elsewhere (tests); `rebuild --today YYYY-MM-DD` or env `PIPELINE_TODAY` fixes the day that ends the grid (tests; default: today, UTC).
+- **Fixture:** `tests/fixtures/archive-coverage/` (`build_coverage_archive.py`) + `coverage-known-gaps.csv`, rebuilt as of 2025-09-20: a miniature archive with one cell of every state. Tests: `tests/test_coverage_grid.py` (pure), `tests/test_coverage_db.py` (Docker), seam 1 "(#79)" tests.
+
 ## Operator: crawl e-licitatie for real
 
 Fetch only, nothing is loaded; unattended, resumable. Needs the raw archive directory (the same as `fetch-datagov`) and network access to e-licitatie.ro, no database. **Tests never run it against the real service**; this section is for the operator.

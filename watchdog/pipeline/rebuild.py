@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
@@ -31,6 +32,8 @@ from .anaf import iter_companies
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
 from .counting import Estimate, count
+from .coverage import build_coverage, flagged as flagged_cells
+from .coverage import parse_quarter as _parse_quarter
 from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
@@ -59,6 +62,7 @@ class RebuildSummary:
     entities: int = 0
     placement: PlacementSummary | None = None
     geo_line: str | None = None  # the TopoJSON step's one line
+    coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
     quarantined: list[Path] = field(default_factory=list)
     incomplete: list[Path] = field(default_factory=list)
@@ -73,6 +77,7 @@ class RebuildSummary:
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
+        out += self.coverage
         out += [f"quarantined: {p}" for p in self.quarantined]
         out += [f"skipped, incomplete (no valid manifest): {p}" for p in self.incomplete]
         return out
@@ -382,9 +387,13 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 
 
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
-            placement_dir: Path | str | None = None, geo_dir: Path | str | None = None) -> RebuildSummary:
+            placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
+            today: date | None = None, known_gaps_path: Path | str | None = None) -> RebuildSummary:
+    """`today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
     summary = RebuildSummary()
     number = 0
+    today = today or datetime.now(timezone.utc).date()
+    bulk_rows: dict[tuple[str, tuple[int, int]], int] = {}  # (kind, quarter) -> data rows of the largest loaded bulk unit: the possibly-incomplete rule's count
     overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
     try:
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
@@ -394,6 +403,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
             summary.estimates = len(estimates)
             for o in iter_units(archive, summary, progress):
+                if o.status == "loaded" and o.unit.stream == "bulk":
+                    cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
+                    bulk_rows[cell] = max(bulk_rows.get(cell, 0), o.rows)
                 for name, rows in o.files:
                     number += 1
                     crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
@@ -429,6 +441,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             summary.estimates_missing = cur.fetchone()[0]
             build_entities(cur, overrides, summary)
             summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+            summary.coverage = flagged_cells(build_coverage(cur, archive, today, bulk_rows, known_gaps_path))
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
             cur.execute(DATA_THROUGH_SQL)

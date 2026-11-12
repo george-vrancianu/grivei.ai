@@ -31,11 +31,16 @@ export type GapRule =
   | 'HAND_ENTERED'
   | 'NO_PRIOR_CALL_BEFORE_BACKFILL';
 
+/**
+ * A grid cell's state. NOT_YET_LOADED: the bulk file for this quarter and kind is not in the graph yet, either because it has not been
+ * published (rule AWAITING_BULK_FILE) or because the pipeline set it aside (no rule, no note: the reason is never shown).
+ */
 export type GapState =
   | 'CRAWLED_PROVISIONAL'
   | 'KNOWN_GAP'
   | 'LOADED'
   | 'NOT_IN_SOURCE'
+  | 'NOT_YET_LOADED'
   | 'POSSIBLY_INCOMPLETE';
 
 export type MatchableField =
