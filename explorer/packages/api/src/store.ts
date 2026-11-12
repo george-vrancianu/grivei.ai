@@ -102,6 +102,17 @@ export interface TotalRow {
   frameworkCeilings: string;
 }
 
+/** One map area of the Coverage lens (a county as `RO-BV`, or `NATIONAL`) in a window: N of M public entities and the other authorities (#80). */
+export interface CoverageAreaRow {
+  area: string;
+  /** N: MF entities of the area with at least one SEAP Record in the window. */
+  withRecords: number;
+  /** M: MF entities of the area (a national authority is in NATIONAL, not in the county MF files it under). */
+  publicEntities: number;
+  /** Authorities with a Record in the window that are not on the MF list, by our placement. */
+  otherAuthorities: number;
+}
+
 /** One cell of the Coverage grid, as the rebuild stored it. `quarter` is `2024-Q4`; state and rule are the contract's GapState and GapRule. */
 export interface GapCellRow {
   quarter: string;
@@ -159,6 +170,12 @@ export interface Store {
   dataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The SEAP Coverage grid the last rebuild stored (`seap.coverage_cell`), oldest quarter first, kinds in contract order. */
   coverageGrid(): Promise<GapCellRow[]>;
+  /** N, M and the other authorities for every county and NATIONAL (in `counties()` order, NATIONAL last), for the Records dated in the window. */
+  coverageAreas(window: { from: string | null; to: string | null }): Promise<CoverageAreaRow[]>;
+  /** Authorities with a Record in the window that no source places (not in `core.placement`, MF's county notwithstanding), and what they account for. */
+  unplacedAuthorities(window: { from: string | null; to: string | null }): Promise<{ authorities: number; total: TotalRow }>;
+  /** The date of the MF list the last rebuild loaded, or null when none was. */
+  referenceSnapshot(): Promise<string | null>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
   /** An entity tab ranked by matched RON (ties by key), top `limit` from `offset`. */
@@ -545,6 +562,45 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000 }: Postg
           ORDER BY quarter, array_position(ARRAY['DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE'], kind)`,
       );
       return rows as GapCellRow[];
+    },
+    async coverageAreas({ from, to }) {
+      // One pass over the window's Records: an authority counts once however many Records it has. The authority's key is its CUI (= the MF CIF).
+      const { rows } = await pool.query(
+        `WITH rec AS (
+           SELECT DISTINCT authority_key FROM seap.record
+            WHERE authority_key IS NOT NULL AND ($1::date IS NULL OR award_date >= $1::date) AND ($2::date IS NULL OR award_date <= $2::date)),
+         areas AS (SELECT 'RO-' || iso AS area, 0 AS grp, iso AS ord FROM core.county UNION ALL SELECT 'NATIONAL', 1, ''),
+         mf AS (
+           SELECT CASE WHEN e.national THEN 'NATIONAL' WHEN e.county_iso IS NOT NULL THEN 'RO-' || e.county_iso END AS area, (r.authority_key IS NOT NULL) AS has
+             FROM core.mf_entity e LEFT JOIN rec r ON r.authority_key = e.cui),
+         other AS (
+           SELECT CASE WHEN p.national THEN 'NATIONAL' ELSE 'RO-' || p.county_iso END AS area
+             FROM rec r JOIN core.placement p ON p.entity_key = r.authority_key
+            WHERE NOT EXISTS (SELECT 1 FROM core.mf_entity e WHERE e.cui = r.authority_key))
+         SELECT a.area, (SELECT count(*) FROM mf WHERE mf.area = a.area AND mf.has)::int AS "withRecords",
+                (SELECT count(*) FROM mf WHERE mf.area = a.area)::int AS "publicEntities",
+                (SELECT count(*) FROM other WHERE other.area = a.area)::int AS "otherAuthorities"
+           FROM areas a ORDER BY a.grp, a.ord`,
+        [from, to],
+      );
+      return rows as CoverageAreaRow[];
+    },
+    async unplacedAuthorities({ from, to }) {
+      const { rows } = await pool.query(
+        `SELECT count(DISTINCT r.authority_key)::int AS authorities, coalesce(sum(r.counted_bani), 0)::text AS awarded, count(*)::int AS records,
+                (count(*) FILTER (WHERE r.suspect))::int AS suspect_left_out, (count(*) FILTER (WHERE r.value_bani IS NULL))::int AS no_value,
+                coalesce(sum(r.ceiling_bani), 0)::text AS framework_ceilings
+           FROM seap.record r
+          WHERE r.authority_key IS NOT NULL AND ($1::date IS NULL OR r.award_date >= $1::date) AND ($2::date IS NULL OR r.award_date <= $2::date)
+            AND NOT EXISTS (SELECT 1 FROM core.placement p WHERE p.entity_key = r.authority_key)`,
+        [from, to],
+      );
+      const r = rows[0];
+      return { authorities: r.authorities, total: totalOf(r) };
+    },
+    async referenceSnapshot() {
+      const { rows } = await pool.query(`SELECT max(snapshot_date)::text AS d FROM core.mf_snapshot`);
+      return (rows[0]?.d as string | null) ?? null;
     },
     async entity(key) {
       return (await entitiesOf([key])).get(key) ?? null;

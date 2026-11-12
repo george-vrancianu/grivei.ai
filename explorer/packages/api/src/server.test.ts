@@ -6,6 +6,7 @@ import { graphql, parse } from "graphql";
 import type { MainScreenQuery } from "@grivei/contract";
 import { createApi } from "./server.ts";
 import { rootValue } from "./resolvers.ts";
+import { coverageStatus } from "./coverage.ts";
 import type { EntityRow, RecordRow, Store } from "./store.ts";
 
 const entity = (key: string, displayName: string, over: Partial<EntityRow> = {}): EntityRow => ({
@@ -25,6 +26,9 @@ const store: Store = {
   subsequent: async () => [],
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
   coverageGrid: async () => [],
+  coverageAreas: async () => [],
+  unplacedAuthorities: async () => ({ authorities: 0, total: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } }),
+  referenceSnapshot: async () => null,
   searchTotal: async () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
   searchRecords: async () => ({ count: 0, rows: [] }),
@@ -173,8 +177,39 @@ describe("Coverage grid (#79)", () => {
     expect(quarters(await ask({ w: { to: "2021-03-31" } }))).toEqual(["2021-Q1"]);
   });
 
-  it("leaves the counties, the unplaced authorities and the snapshot to #80 (NOT_IMPLEMENTED at the field)", async () => {
-    const r = await graphql({ schema, rootValue: rootValue({ ...store, coverageGrid: async () => grid }), source: "{ coverage(source: SEAP) { counties { status } } }" });
-    expect(r.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
+  it("serves the counties with N, M and the other authorities, the unplaced tile and the snapshot date, one status for the window (#80)", async () => {
+    const areas = [{ area: "RO-BV", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { area: "NATIONAL", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }];
+    const total = { awarded: "100000", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };
+    const seen: unknown[] = [];
+    const custom = { ...store, coverageGrid: async () => grid, referenceSnapshot: async () => "2026-11-01", unplacedAuthorities: async (w: unknown) => (seen.push(w), { authorities: 1, total }),
+      coverageAreas: async (w: unknown) => (seen.push(w), areas) };
+    const r = await graphql({
+      schema, rootValue: rootValue(custom), variableValues: { w: { from: "2021-12-31", to: "2022-04-01" } },
+      source: `query($w: DateRange) { coverage(source: SEAP, window: $w) { counties { county status withRecords publicEntities otherAuthorities }
+        unplacedAuthorities { authorities total { awarded records estimated } } referenceSnapshot } }`,
+    });
+    expect(r.errors).toBeUndefined();
+    expect(r.data).toEqual({ coverage: {
+      counties: [{ county: "RO-BV", status: "HARVESTED", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { county: "NATIONAL", status: "HARVESTED", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }],
+      unplacedAuthorities: { authorities: 1, total: { awarded: "100000", records: 1, estimated: false } }, referenceSnapshot: "2026-11-01" } });
+    expect(seen).toEqual([{ from: "2021-12-31", to: "2022-04-01" }, { from: "2021-12-31", to: "2022-04-01" }]); // the window reaches the store as given
+  });
+});
+
+describe("Coverage status (#80): derived from the grid cells of the window", () => {
+  const cells = (...states: string[]) => states.map((state) => ({ state }));
+  it("is not harvested when the window holds no cell, or every cell is not yet loaded", () => {
+    expect(coverageStatus([])).toBe("NOT_HARVESTED");
+    expect(coverageStatus(cells("NOT_YET_LOADED", "NOT_YET_LOADED"))).toBe("NOT_HARVESTED");
+  });
+  it("is partial when any cell is not yet loaded beside cells that are", () => {
+    expect(coverageStatus(cells("LOADED", "NOT_YET_LOADED"))).toBe("PARTIAL");
+    expect(coverageStatus(cells("KNOWN_GAP", "LOADED", "NOT_YET_LOADED"))).toBe("PARTIAL"); // missing wins over flagged
+  });
+  it("is harvested with known gaps when every cell has data but one is flagged, whatever the flag", () => {
+    for (const state of ["KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL"]) expect(coverageStatus(cells("LOADED", state))).toBe("HARVESTED_WITH_KNOWN_GAPS");
+  });
+  it("is harvested when every cell is loaded", () => {
+    expect(coverageStatus(cells("LOADED", "LOADED"))).toBe("HARVESTED");
   });
 });

@@ -40,6 +40,7 @@ from .crawl.records import parse_unit as parse_crawl_unit
 from .estimates import read_estimates
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
+from .mf.build import MfSummary, build_mf
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .search import create_index, value_bucket, vacuum
@@ -61,6 +62,7 @@ class RebuildSummary:
     estimates_missing: int = 0  # notices with a Record of 1 bn RON or more and no archived answer yet
     entities: int = 0
     placement: PlacementSummary | None = None
+    mf: MfSummary | None = None  # the MF list step (#80)
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
@@ -74,6 +76,8 @@ class RebuildSummary:
         out.append(f"anaf: {self.anaf_found} CUIs found, {self.anaf_not_found} not found (from the archived answers); {self.entities} entities")
         if self.placement is not None:
             out.append(self.placement.line())
+        if self.mf is not None:
+            out.append(self.mf.line())
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
@@ -441,6 +445,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             summary.estimates_missing = cur.fetchone()[0]
             build_entities(cur, overrides, summary)
             summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+            summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
             summary.coverage = flagged_cells(build_coverage(cur, archive, today, bulk_rows, known_gaps_path))
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]

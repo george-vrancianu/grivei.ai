@@ -10,7 +10,7 @@
  * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -18,7 +18,7 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { CoveragePageQuery, EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
@@ -38,6 +38,8 @@ const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UA
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
 const coverageArchive = join(watchdog, "tests/fixtures/archive-coverage"); // one cell of every Coverage grid state, rebuilt as of 2025-09-20 (#79)
 const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
+const mfArchive = join(watchdog, "tests/fixtures/archive-mf"); // the MF list slice for the placement world (#80); copied onto archive-placement
+const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placement fixture's 2023 Q1 has a DA file only: the other three kinds are hand-entered gaps
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
@@ -66,12 +68,15 @@ const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
 const recordPage = allowlist.operations.find((o) => o.name === "RecordPage")!;
 const fullSuppliers = allowlist.operations.find((o) => o.name === "FullResultsSuppliers")!;
 const entityOverview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
+const coveragePage = allowlist.operations.find((o) => o.name === "CoveragePage")!;
 const zoomedCounty = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
 // The authorities of the placement fixture (watchdog/tests/fixtures/build_placement_archive.py): CUIs with valid check digits, invented.
 const P = {
   sanpetru: "51000005", caragiale: "51000102", apahida: "51000200", rasnov: "51000307", sinca: "51000404", brasov: "51000501", bucharest3: "51000609",
   unmatched: "51000706", seap: "51000803", unplaced: "51000900", ministry: "51001000", agency: "51001108", dsp: "51001205", huedin: "51001302",
 } as const;
+// The MF-only entities of the MF fixture slice (watchdog/tests/fixtures/build_mf_archive.py): on the list, with no Record.
+const M = { nationalOnly: "51001809" } as const;
 const schema = loadSchema();
 const EMPTY_FILTER = { filter: {} };
 
@@ -95,6 +100,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
     cpSync(placementArchive, join(scratch, "archive-placement"), { recursive: true });
+    cpSync(placementArchive, join(scratch, "archive-mf"), { recursive: true });
+    cpSync(mfArchive, join(scratch, "archive-mf"), { recursive: true }); // merges: the MF unit lands beside the placement world's units
+    cpSync(placementData, join(scratch, "mf-data"), { recursive: true });
+    appendFileSync(join(scratch, "mf-data/national_authorities.csv"), `${M.nationalOnly},true,false,INSTITUTUL NATIONAL FICTIV,"fictional: an MF-only national institute"\n`);
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
@@ -118,6 +127,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE backfill_b");
     await admin.query("CREATE DATABASE identity_a");
     await admin.query("CREATE DATABASE identity_b");
+    await admin.query("CREATE DATABASE mf_a");
+    await admin.query("CREATE DATABASE mf_b");
+    await admin.query("CREATE DATABASE mf_c");
     await admin.query("CREATE DATABASE placement_a");
     await admin.query("CREATE DATABASE placement_b");
     await admin.query("CREATE DATABASE counting_a");
@@ -853,6 +865,79 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(some.grid).toHaveLength(12);
     expect(some.grid).toEqual(all.grid.filter((c) => ["2024-Q4", "2025-Q1", "2025-Q2"].includes(c.quarter)));
     expect((await coverageGrid("coverage_a", { from: "2025-09-20" })).grid.map((c) => c.quarter)).toEqual(Array(4).fill("2025-Q3"));
+  });
+
+  // ---- Coverage statuses and the MF list (#80) --------------------------------------------------------------------------------
+  // The placement world (14 authorities, each with one DA Record dated 2023-03-11 .. 2023-03-24, in the alphabetical order of their keys) plus the MF slice.
+  type CoverageData = CoveragePageQuery["coverage"];
+  const mfRebuild = (db: string) => rebuild(db, "archive-mf", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, `geo-${db}`), "--today", "2023-09-20", "--known-gaps", mfGaps]);
+  const coverageOf = async (db: string, window: { from?: string; to?: string } | null = null): Promise<CoverageData> => {
+    const variables = { window };
+    const r = await ask(db, coveragePage.sha256, variables);
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(coveragePage.document), r.body.data, variables)).toEqual([]);
+    return (r.body.data as CoveragePageQuery).coverage;
+  };
+  const figures = (c: CoverageData, area: string) => {
+    const { withRecords, publicEntities, otherAuthorities, status } = c.counties.find((x) => x.county === area)!;
+    return { status, n: withRecords, m: publicEntities, other: otherAuthorities };
+  };
+
+  it("serves N of M and the other authorities per county, with national entities in National, and the MF snapshot date (#80)", async () => {
+    const out = mfRebuild("mf_a");
+    expect(out).toContain("mf list: snapshot 2026-11-01, 15 public entities, 3 national, 1 without a county, 1 repeated CUIs dropped");
+    const c = await coverageOf("mf_a");
+    expect(c.referenceSnapshot).toBe("2026-11-01");
+    expect(c.counties).toHaveLength(43); // 42 counties and National
+    expect(c.counties.at(-1)!.county).toBe("NATIONAL");
+    // Brasov: the municipality, two communes and a town have Records, two MF entities have none; the DSP, the county-only commune and the SEAP-placed one are not on the list
+    expect(figures(c, "RO-BV")).toMatchObject({ n: 4, m: 6, other: 3 });
+    // Cluj: two communes and the unplaced authority (MF files it under Cluj) have Records, one entity has none; Huedin is not on the list
+    expect(figures(c, "RO-CJ")).toMatchObject({ n: 3, m: 4, other: 1 });
+    expect(figures(c, "RO-B")).toMatchObject({ n: 1, m: 1, other: 0 }); // the ministry and the agency are MF-filed under Bucuresti but national: not here
+    // National: the ministry (award notice), the agency (reviewed file) and an MF-only institute (reviewed file, no Record)
+    expect(figures(c, "NATIONAL")).toMatchObject({ n: 2, m: 3, other: 0 });
+    expect(figures(c, "RO-AB")).toMatchObject({ n: 0, m: 0, other: 0 }); // a county with nothing on the list
+    // the foreign-mission row (Judet `Strainatate`) and the repeated CIF are in no M
+    expect(c.counties.reduce((sum, x) => sum + x.publicEntities, 0)).toBe(14);
+    // the unplaced authority: no source places it (MF's county does not), its Record is its Total
+    expect(c.unplacedAuthorities).toMatchObject({ authorities: 1, total: { awarded: "100000", records: 1 } });
+  });
+
+  it("derives the status from the grid cells of the window and narrows N and the other authorities with it (#80)", async () => {
+    // 2023 Q1 holds a DA file and three hand-entered gaps: harvested with known gaps. Wider windows reach quarters with nothing loaded: partial.
+    expect(figures(await coverageOf("mf_a", { from: "2023-01-01", to: "2023-03-31" }), "RO-BV")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 4, m: 6, other: 3 });
+    expect((await coverageOf("mf_a", { from: "2023-01-01", to: "2023-06-30" })).counties[0]!.status).toBe("PARTIAL");
+    expect((await coverageOf("mf_a")).counties.every((x) => x.status === "PARTIAL")).toBe(true); // 2021 Q1 .. 2023 Q3, one file loaded
+    // after the file's quarter nothing is loaded, before the grid starts there is no cell: not harvested, and N is zero because no Record is dated there
+    for (const window of [{ from: "2023-07-01", to: "2023-09-20" }, { to: "2020-12-31" }]) {
+      const c = await coverageOf("mf_a", window);
+      expect(c.counties.every((x) => x.status === "NOT_HARVESTED" && x.withRecords === 0 && x.otherAuthorities === 0)).toBe(true);
+      expect(figures(c, "RO-BV").m).toBe(6); // M is the list, not the window
+      expect(c.unplacedAuthorities).toMatchObject({ authorities: 0, total: { records: 0 } });
+    }
+    // a narrower window inside the quarter: only the Records dated 03-11 .. 03-16 (agency, apahida, brasov, bucharest3, caragiale, dsp)
+    const narrow = await coverageOf("mf_a", { from: "2023-03-11", to: "2023-03-16" });
+    expect(narrow.window).toEqual({ from: "2023-03-11", to: "2023-03-16" });
+    expect(figures(narrow, "RO-BV")).toEqual({ status: "HARVESTED_WITH_KNOWN_GAPS", n: 1, m: 6, other: 1 }); // the municipality; the DSP is not on the list
+    expect(figures(narrow, "RO-CJ")).toMatchObject({ n: 2, m: 4, other: 0 }); // the unplaced authority (03-24) and Huedin (03-17) are out
+    expect(figures(narrow, "RO-B")).toMatchObject({ n: 1, m: 1 });
+    expect(figures(narrow, "NATIONAL")).toMatchObject({ n: 1, m: 3, other: 0 }); // the agency only
+    expect(narrow.unplacedAuthorities.authorities).toBe(0);
+  });
+
+  it("gives the same Coverage figures after a second rebuild into a fresh database (#80, ADR 0004)", async () => {
+    mfRebuild("mf_b");
+    expect(await coverageOf("mf_b")).toEqual(await coverageOf("mf_a"));
+    expect(await coverageOf("mf_b", { from: "2023-03-11", to: "2023-03-16" })).toEqual(await coverageOf("mf_a", { from: "2023-03-11", to: "2023-03-16" }));
+  });
+
+  it("serves no snapshot and an empty denominator when no MF list was archived (#80)", async () => {
+    placementRebuild("mf_c", "geo-mf-c"); // the placement world as it is, with no MF unit
+    const c = await coverageOf("mf_c");
+    expect(c.referenceSnapshot).toBeNull();
+    expect(c.counties.every((x) => x.publicEntities === 0 && x.withRecords === 0)).toBe(true);
+    expect(figures(c, "RO-BV").other).toBe(7); // every Brasov authority is "other" without a list
   });
 
   describe("search (#68): archive-search -> rebuild -> MainScreen with a filter", () => {

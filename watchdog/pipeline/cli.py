@@ -24,6 +24,7 @@ from .datagov import fetch_datagov
 from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
+from .mf.fetch import fetch_mf
 from . import placement_cli
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
@@ -108,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--since-year", type=int, default=2021, help="first dataset year (achizitii-publice-YYYY), default 2021")
     g.add_argument("--delay", type=float, default=1.0, help="seconds between requests to data.gov.ro, default 1")
 
+    sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
+
     placement_cli.add_parsers(sub)
 
     args = parser.parse_args(argv)
@@ -174,6 +177,15 @@ def main(argv: list[str] | None = None) -> int:
         logging.getLogger("pipeline").handlers[:] = [handler]  # replace, so repeated calls never stack handlers
         logging.getLogger("pipeline").setLevel(logging.INFO)
         summary = fetch_datagov(archive, since_year=args.since_year, delay=args.delay)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed else 0
+    if args.verb == "fetch-mf":
+        handler = logging.StreamHandler(sys.stderr)  # flushes every record: a nohup log is current line by line
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+        logging.getLogger("pipeline").handlers[:] = [handler]
+        logging.getLogger("pipeline").setLevel(logging.INFO)
+        summary = fetch_mf(archive)
         for line in summary.lines():
             print(line)
         return 1 if summary.failed else 0
