@@ -36,7 +36,7 @@ describe("every route renders its placeholder in both languages", () => {
       openAt(`${prefix}/search`);
       const { unmount } = render(<App client={fixtureClient().client} />);
       expect(screen.getByRole("heading", { level: 1, name: catalogue[locale].pages.search.title })).toBeInTheDocument();
-      expect(await screen.findByRole("heading", { level: 2, name: new RegExp(`^${catalogue[locale].fullResults.heading.suppliers} 3$`) })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { level: 2, name: new RegExp(`^${catalogue[locale].results.tabs.suppliers} 3$`) })).toBeInTheDocument();
       unmount();
     }
   });

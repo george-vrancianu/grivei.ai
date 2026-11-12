@@ -63,10 +63,8 @@ export const ro: Copy = {
     },
   },
   fullResults: {
-    heading: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
     showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
-    empty: { authorities: "Nicio autoritate nu corespunde.", suppliers: "Niciun furnizor nu corespunde.", records: "Nicio înregistrare nu corespunde." },
-    outOfRange: (_pages, formatted) => `Această pagină este după ultima: sunt doar ${formatted} pagini.`,
+    outOfRange: (pages, formatted) => `Această pagină este după ultima: ${pages === 1 ? "există doar 1 pagină" : `sunt doar ${roCount(pages, formatted, "pagină", "pagini")}`}.`,
     firstPage: "Mergi la pagina 1",
     back: "Înapoi la rezultate",
     pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },

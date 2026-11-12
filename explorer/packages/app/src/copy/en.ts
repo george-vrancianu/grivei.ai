@@ -58,10 +58,8 @@ export const en: Copy = {
     },
   },
   fullResults: {
-    heading: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
     showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
-    empty: { authorities: "No authorities match.", suppliers: "No suppliers match.", records: "No Records match." },
-    outOfRange: (_pages, formatted) => `This page is past the end: there are only ${formatted} pages.`,
+    outOfRange: (pages, formatted) => `This page is past the end: there ${pages === 1 ? "is only 1 page" : `are only ${formatted} pages`}.`,
     firstPage: "Go to page 1",
     back: "Back to results",
     pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
