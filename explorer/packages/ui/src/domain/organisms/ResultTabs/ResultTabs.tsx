@@ -1,14 +1,17 @@
-import { Link } from "../../../atoms/Link/index.ts";
+import { useId } from "react";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Tab } from "../../../atoms/Tab/index.ts";
 import { Tabs } from "../../../atoms/Tabs/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { ApproxCount } from "../../atoms/ApproxCount/index.ts";
-import { EntityResultRow, type EntityResultRowCopy } from "../../molecules/EntityResultRow/index.ts";
+import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import type { EntityResultRowCopy } from "../../molecules/EntityResultRow/index.ts";
 import { GoToCard, type GoToCardCopy } from "../../molecules/GoToCard/index.ts";
-import { RecordResultRow, type RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
-import type { EntityRef, EntityResultPage, GoToEntity, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
+import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
+import type { EntityRef, EntityResultPage, EntityRole, GoToEntity, RecordResult, RecordResultPage } from "../../types.ts";
+import { EntityResultList } from "./components/EntityResultList/index.ts";
+import { RecordResultList } from "./components/RecordResultList/index.ts";
+import { ResultTabPanel } from "./components/ResultTabPanel/index.ts";
+import { TabLabel } from "./components/TabLabel/index.ts";
 import { useResultTab } from "./hooks/useResultTab.ts";
 import { goToRole, RESULT_TABS, type ResultTab } from "./resultTabs.utils.ts";
 
@@ -43,22 +46,27 @@ export interface ResultTabsProps {
   copy: ResultTabsCopy;
 }
 
-const tabId = (tab: ResultTab) => `result-tab-${tab}`;
-const panelId = (tab: ResultTab) => `result-tabpanel-${tab}`;
-const listSx = { listStyle: "none", m: 0, p: 0, "& > li + li": { borderTop: 1, borderColor: "divider" } } as const;
-
 /** The results of a search: a pinned "Go to page" card, then Authorities, Suppliers and Records tabs (Suppliers by default). */
 export function ResultTabs(props: ResultTabsProps) {
   const { authorities, suppliers, records, goTo, locale, copy, entityHref, recordHref, showAllHref } = props;
   const [tab, select] = useResultTab(props.tab, props.onTabChange);
+  const uid = useId();
+  const tabId = (name: ResultTab) => `${uid}-tab-${name}`;
+  const panelId = (name: ResultTab) => `${uid}-tabpanel-${name}`;
   const counts: Record<ResultTab, { count: number; estimated: boolean; shown: number }> = {
     authorities: { count: authorities.count, estimated: authorities.countEstimated, shown: authorities.rows.length },
     suppliers: { count: suppliers.count, estimated: suppliers.countEstimated, shown: suppliers.rows.length },
     records: { count: records.count, estimated: false, shown: records.rows.length },
   };
-  const entityPages = { authorities, suppliers };
-  const showAll = showAllHref?.(tab);
-  const active = counts[tab];
+  const showAllLink = (name: ResultTab) => {
+    const href = showAllHref?.(name);
+    return href === undefined ? undefined : { href, text: copy.showAll(counts[name].count, formatCount(counts[name].count, false, locale)) };
+  };
+  const rows = {
+    authorities: <EntityResultList rows={authorities.rows} role="authority" entityHref={entityHref} locale={locale} copy={copy.entityRow} />,
+    suppliers: <EntityResultList rows={suppliers.rows} role="supplier" entityHref={entityHref} locale={locale} copy={copy.entityRow} />,
+    records: <RecordResultList rows={records.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} />,
+  };
 
   return (
     <Stack spacing={2}>
@@ -70,45 +78,23 @@ export function ResultTabs(props: ResultTabsProps) {
             value={name}
             id={tabId(name)}
             aria-controls={panelId(name)}
-            label={
-              <span>
-                {copy.tabs[name]} <ApproxCount count={counts[name].count} estimated={counts[name].estimated} locale={locale} />
-              </span>
-            }
+            label={<TabLabel name={copy.tabs[name]} count={counts[name].count} estimated={counts[name].estimated} locale={locale} />}
           />
         ))}
       </Tabs>
       {RESULT_TABS.map((name) => (
-        <div key={name} role="tabpanel" id={panelId(name)} aria-labelledby={tabId(name)} hidden={name !== tab}>
-          {name === tab && (
-            <>
-              {counts[name].shown === 0 ? (
-                <Typography>{copy.empty[name]}</Typography>
-              ) : name === "records" ? (
-                <Stack component="ul" sx={listSx}>
-                  {records.rows.map((row) => (
-                    <RecordResultRow key={row.record.code} row={row} recordHref={recordHref(row.record)} entityHref={entityHref} locale={locale} copy={copy.recordRow} />
-                  ))}
-                </Stack>
-              ) : (
-                <Stack component="ul" sx={listSx}>
-                  {entityPages[name].rows.map((row) => (
-                    <EntityResultRow
-                      key={row.entity.key}
-                      row={row}
-                      href={entityHref(row.entity, name === "authorities" ? "authority" : "supplier")}
-                      locale={locale}
-                      copy={copy.entityRow}
-                    />
-                  ))}
-                </Stack>
-              )}
-              {showAll && active.count > active.shown && (
-                <Link href={showAll}>{copy.showAll(active.count, active.count.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB"))}</Link>
-              )}
-            </>
-          )}
-        </div>
+        <ResultTabPanel
+          key={name}
+          id={panelId(name)}
+          tabId={tabId(name)}
+          selected={name === tab}
+          shown={counts[name].shown}
+          count={counts[name].count}
+          emptyText={copy.empty[name]}
+          showAll={showAllLink(name)}
+        >
+          {rows[name]}
+        </ResultTabPanel>
       ))}
     </Stack>
   );

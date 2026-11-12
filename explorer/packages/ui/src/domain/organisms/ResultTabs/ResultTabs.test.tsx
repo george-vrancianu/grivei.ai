@@ -92,6 +92,21 @@ describe("ResultTabs", () => {
     expect(within(screen.getByRole("region", { name: "Go to page" })).getByRole("link", { name: /Open the page/ })).toHaveAttribute("href", `/explore/supplier/${key}`);
   });
 
+  it("gives two result tabs on one page their own ids, so aria-controls and aria-labelledby never collide", () => {
+    renderInUi(
+      <>
+        <ResultTabs {...base(resultSamples.typical)} />
+        <ResultTabs {...base(resultSamples.variety)} />
+      </>,
+    );
+    const ids = screen.getAllByRole("tab").map((tab) => tab.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const tab of screen.getAllByRole("tab")) {
+      const panel = document.getElementById(tab.getAttribute("aria-controls")!);
+      expect(panel).toHaveAttribute("aria-labelledby", tab.id);
+    }
+  });
+
   it("has no Go to page card when goTo is null", () => {
     renderInUi(<ResultTabs {...base(resultSamples.typical)} />);
     expect(screen.queryByRole("region", { name: "Go to page" })).toBeNull();

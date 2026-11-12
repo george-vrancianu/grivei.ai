@@ -1,6 +1,7 @@
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { EntityLink, type EntityLinkCopy } from "../../atoms/EntityLink/index.ts";
 import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import type { EntityResult } from "../../types.ts";
@@ -28,7 +29,7 @@ export interface EntityResultRowProps {
 /** A row of the Authorities or Suppliers tab: the entity's name (linked), then "RON matched · n Records · county". */
 export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProps) {
   const { entity, matched } = row;
-  const count = matched.records.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB");
+  const count = formatCount(matched.records, false, locale);
   return (
     <Stack spacing={0.25} component="li" sx={{ py: 1 }}>
       <Typography component="div" variant="subtitle1">
