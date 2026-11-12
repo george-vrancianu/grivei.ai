@@ -21,6 +21,7 @@ import { loadSchema, validateResponse } from "@grivei/contract/node";
 import type { EntityOverviewQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { cancellableQuery } from "../src/search.ts";
+import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -108,6 +109,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE counting_a");
     await admin.query("CREATE DATABASE counting_b");
     await admin.query("CREATE DATABASE search_a");
+    await admin.query("CREATE DATABASE rollup_a");
+    await admin.query("CREATE DATABASE rollup_b");
   });
 
   afterAll(async () => {
@@ -759,7 +762,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("estimates the distinct counts above the exact limit, and flags it", async () => {
       const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
       pools.push(pool);
-      const hll = createApi(postgresStore(pool, { exactGroupLimit: 3 }), schema); // 7 suppliers is above 3 "groups"
+      const hll = createApi(postgresStore(pool, { exactGroupLimit: 3, rollup: false }), schema); // 7 suppliers is above 3 "groups"
       const variables = { filter: {} };
       const r = await hll.respond({ id: mainScreen.sha256, variables });
       expect(r.body.errors).toBeUndefined();
@@ -774,7 +777,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("pages the estimated path too: exactly `limit` rows, no overlap, the same order as the exact path", async () => {
       const pool = new pg.Pool({ connectionString: `${baseUrl}/search_a`, max: 2 });
       pools.push(pool);
-      const hll = postgresStore(pool, { exactGroupLimit: 1 }); // every side is above 1 "group": the terms-aggregation path
+      const hll = postgresStore(pool, { exactGroupLimit: 1, rollup: false }); // every side is above 1 "group": the terms-aggregation path
       const exact = postgresStore(pool);
       const filter = {} as Parameters<typeof hll.searchEntities>[1];
       for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
@@ -810,7 +813,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
 
     it("says plainly that a filter that waits for another ticket is not served yet", async () => {
-      const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", hasSignals: true } });
+      const r = await ask("search_a", mainScreen.sha256, { filter: { q: "stefan", signal: "OVER_CAP" } });
       expect(r.body.errors?.[0]?.extensions?.code).toBe("NOT_IMPLEMENTED");
     });
 
@@ -870,6 +873,140 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         await locker.query("ROLLBACK").catch(() => undefined);
         await locker.end().catch(() => undefined);
       }
+    });
+  });
+
+  describe("filter chips, rollup and result cache (#70)", () => {
+    type Filter = Record<string, unknown>;
+    type Search = MainScreenQuery["seap"]["search"];
+    const YEAR_2023 = { from: "2023-01-01", to: "2023-12-31" };
+    const answer = async (api: ReturnType<typeof createApi>, filter: Filter): Promise<Search> => {
+      const variables = { filter };
+      const r = await api.respond({ id: mainScreen.sha256, variables });
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as MainScreenQuery).seap.search;
+    };
+    const codes = (d: Search) => d.records.rows.map((r) => r.record.code);
+
+    let pool: pg.Pool;
+    let rolled: ReturnType<typeof createApi>; // empty and chips-only states from the rollup
+    let scanned: ReturnType<typeof createApi>; // the same store with the rollup off: the full scan
+
+    beforeAll(() => {
+      rebuild("rollup_a", "archive-search");
+      pool = new pg.Pool({ connectionString: `${baseUrl}/rollup_a`, max: 3 });
+      pools.push(pool);
+      rolled = createApi(postgresStore(pool), schema);
+      scanned = createApi(postgresStore(pool, { rollup: false }), schema);
+    });
+
+    it("narrows the set with each chip", async () => {
+      const total = async (filter: Filter) => (await answer(rolled, filter)).total.records;
+      expect(await total({})).toBe(13);
+      expect(await total({ channel: "CONTRACT" })).toBe(2);
+      expect(await total({ channel: "DIRECT_PURCHASE" })).toBe(11);
+      expect(await total({ from: "2022-01-01", to: "2022-12-31" })).toBe(1); // award year
+      expect(await total(YEAR_2023)).toBe(12);
+      expect(await total({ from: "2023-02-05" })).toBeLessThan(12); // a date that is not a year edge: the scan serves it
+      expect(await total({ to: "2022-12-31" })).toBe(1);
+      expect(await total({ valueBucket: "UP_TO_10K" })).toBe(4);
+      expect(await total({ valueBucket: "UP_TO_135K" })).toBe(7); // 135,060 RON exactly is in it; the Record with no value is in none
+      expect(await total({ valueBucket: "UP_TO_270K" })).toBe(1);
+      expect(await total({ valueBucket: "OVER_1B" })).toBe(0);
+      expect(await total({ procedure: ["Negociere"] })).toBe(1);
+      expect(await total({ procedure: ["Negociere", "Licitatie deschisa"] })).toBe(2);
+      expect(await total({ badges: ["NO_VALUE"] })).toBe(1);
+      expect(await total({ badges: ["CONSORTIUM_SHARE"] })).toBe(2);
+      // combined chips narrow further, and the entity tabs follow the set
+      const both = await answer(rolled, { channel: "DIRECT_PURCHASE", valueBucket: "UP_TO_10K" });
+      expect(codes(both)).toEqual(["DA95000002", "DA95000007"]);
+      expect(both.suppliers.rows.map((r) => r.entity.key)).toEqual(["name-papetarie-alfa-sa", "name-zapada-demo-srl"]);
+    });
+
+    it("wires has-Signals to the has_signals column (false everywhere until Signals exist)", async () => {
+      expect((await answer(rolled, { hasSignals: true })).total.records).toBe(0);
+      expect((await answer(rolled, { hasSignals: false })).total.records).toBe(13);
+      expect((await answer(scanned, { hasSignals: true, q: "deszapezire" })).total.records).toBe(0);
+      await pool.query("UPDATE seap.search SET has_signals = true WHERE record_code = 'DA95000002'"); // what a Signals load will do
+      try {
+        await pool.query("UPDATE seap.rollup_cube SET has_signals = true WHERE value_bucket = 'UP_TO_10K' AND channel = 'DIRECT_PURCHASE' AND award_year = 2023 AND records = 2"); // keep the cube in step for this check
+        expect(codes(await answer(scanned, { hasSignals: true }))).toEqual(["DA95000002"]);
+      } finally {
+        await pool.query("UPDATE seap.search SET has_signals = false");
+        await pool.query("UPDATE seap.rollup_cube SET has_signals = false");
+      }
+    });
+
+    it("answers the empty and chips-only states from the rollup exactly as the full scan does", async () => {
+      const filters: Filter[] = [
+        {}, { q: "SRL" }, { channel: "CONTRACT" }, { channel: "DIRECT_PURCHASE" }, YEAR_2023, { from: "2022-01-01" }, { to: "2022-12-31" },
+        { valueBucket: "UP_TO_10K" }, { valueBucket: "UP_TO_135K" }, { valueBucket: "UP_TO_270K" }, { valueBucket: "OVER_1B" }, { hasSignals: false }, { hasSignals: true },
+        { channel: "CONTRACT", valueBucket: "UP_TO_10K", ...YEAR_2023 }, { channel: "DIRECT_PURCHASE", hasSignals: false, from: "2022-01-01", to: "2023-12-31" },
+        { procedure: ["Negociere"] }, { badges: ["NO_VALUE"] }, { from: "2023-02-05", channel: "DIRECT_PURCHASE" },
+      ];
+      for (const filter of filters) expect(await answer(rolled, filter), JSON.stringify(filter)).toEqual(await answer(scanned, filter));
+      // the Records tab pages and counts the same too
+      const page = (api: ReturnType<typeof createApi>) => api.respond({ id: fullSuppliers.sha256, variables: { filter: { channel: "DIRECT_PURCHASE" }, limit: 2, offset: 2 } });
+      expect(await page(rolled)).toEqual(await page(scanned));
+    });
+
+    it("really reads the rollup for those states, and the scan for a text query", async () => {
+      await pool.query("UPDATE seap.rollup_cube SET records = records * 2");
+      await pool.query("UPDATE seap.rollup_entity SET records = records * 2");
+      try {
+        const empty = await answer(rolled, {});
+        expect(empty.total.records).toBe(26); // not the 13 of the table: served from the (tampered) cube
+        expect(empty.authorities.rows[0]!.matched.records).toBe(2 * (await answer(scanned, {})).authorities.rows[0]!.matched.records);
+        expect((await answer(scanned, {})).total.records).toBe(13);
+        expect((await answer(rolled, { q: "desz" })).total.records).toBe(3); // a text query never reads the rollup
+        expect((await answer(rolled, { procedure: ["Negociere"] })).total.records).toBe(1); // nor does a chip that is not a dimension
+      } finally {
+        await pool.query("UPDATE seap.rollup_cube SET records = records / 2");
+        await pool.query("UPDATE seap.rollup_entity SET records = records / 2");
+      }
+    });
+
+    it("gives equal filters one cache key: sorted chips, folded query, defaults filled", () => {
+      const a = canonicalFilter({ q: "  Șantier S.R.L. ", badges: ["NO_VALUE", "CUI_MISMATCH", "NO_VALUE"], procedure: ["b", "a"] });
+      const b = canonicalFilter({ q: "santier", badges: ["CUI_MISMATCH", "NO_VALUE"], procedure: ["a", "b"], countySide: "AUTHORITY", channel: null });
+      expect(a).toBe(b);
+      expect(canonicalFilter({ hasSignals: false })).not.toBe(canonicalFilter({}));
+      expect(canonicalFilter({ q: "srl" })).toBe(canonicalFilter({}));
+    });
+
+    it("caches by the normalised filter, warms every 2-character prefix, and a load flushes it and rebuilds the rollup", async () => {
+      rebuild("rollup_b", "archive-search");
+      const p = new pg.Pool({ connectionString: `${baseUrl}/rollup_b`, max: 3 });
+      pools.push(p);
+      const cache = cachedStore(postgresStore(p), p, { autoWarm: false });
+      const api = createApi(cache, schema);
+      const first = await answer(api, { q: "Șantier" });
+      expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
+      const misses = cache.stats().misses;
+      expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
+      expect(cache.stats()).toMatchObject({ misses, hits: 4 });
+
+      const started = Date.now();
+      const report = await cache.warm();
+      process.stderr.write(`WARMTIME ${report.prefixes} prefixes ${Date.now() - started} ms\n`);
+      expect(report).toMatchObject({ failed: 0 });
+      expect(report.prefixes).toBeGreaterThan(20);
+      const before = cache.stats();
+      const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 4 });
+      expect(de.total.records).toBeGreaterThan(0);
+      const empty = await answer(api, {});
+      expect(empty.total.records).toBe(13);
+
+      rebuild("rollup_b", "archive-counting"); // a second load with different data into the same database
+      const after = await answer(api, {});
+      expect(cache.stats().flushes).toBe(1);
+      const { rows } = await p.query("SELECT count(*)::int AS n FROM seap.record");
+      expect(after.total.records).toBe(rows[0].n);
+      expect(after.total.records).not.toBe(13);
+      expect(await answer(api, { q: "De" })).not.toEqual(de); // not served from the old generation
+      expect(after).toEqual(await answer(createApi(postgresStore(p, { rollup: false }), schema), {})); // and the rebuilt rollup agrees with the scan
     });
   });
 
