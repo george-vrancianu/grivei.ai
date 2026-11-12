@@ -138,11 +138,17 @@ def _alive(pid: int) -> bool:
     return True
 
 
+def effective_state(status: dict, alive: Callable[[int], bool] = _alive) -> str:
+    """`running` | `finished` | `failed` | `interrupted` (a `running` file whose process is gone: the rebuild was killed)."""
+    state = status.get("state", "unknown")
+    if state in ("running", "starting") and not alive(int(status.get("pid", 0))):
+        return "interrupted"
+    return state
+
+
 def describe(status: dict, alive: Callable[[int], bool] = _alive) -> list[str]:
-    """The lines `pipeline status` prints. A `running` file whose process is gone means the rebuild was killed."""
-    state = status.get("state")
-    if state == "running" and not alive(int(status.get("pid", 0))):
-        state = "interrupted"
+    """The lines `pipeline status` prints."""
+    state = effective_state(status, alive)
     done, total = status.get("done", 0), status.get("total", 0)
     lines = [
         f"state: {state}",

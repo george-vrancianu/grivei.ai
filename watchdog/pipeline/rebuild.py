@@ -200,7 +200,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None) -> 
                     load_records(cur, number, rows)
                     summary.files_loaded += 1
                 if progress:
-                    progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.files), o.rows,
+                    progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                        sum(len(rows) for _, rows in o.files), o.status, o.reason)
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]

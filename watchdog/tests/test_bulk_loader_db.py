@@ -247,3 +247,94 @@ def test_a_second_rebuild_of_the_contracts_fixture_gives_the_same_graph(db, tmp_
     first = dump()
     rebuild(Archive(root), db)
     assert dump() == first
+
+
+# ---- progress and kill safety of a rebuild (ticket #64, operator) --------------------------------------------------------
+
+from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline.cli import main as cli_main  # noqa: E402
+from pipeline.progress import Progress, read_status  # noqa: E402
+
+
+def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db, tmp_path):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    status_file = tmp_path / "progress.json"
+    lines, seen = [], []
+
+    def out(line):
+        lines.append(line)
+        seen.append(read_status(status_file)["done"] if status_file.exists() else None)
+
+    rebuild(Archive(root), db, Progress(status_file, out=out))
+    units = [x for x in lines if " rebuild unit " in x]
+    assert len(units) == 7  # six loaded files and the quarantined one
+    assert re.search(r"rebuild unit 1/7 kind=contracte unit=2021Q3 files=1 rows=2 records=2 loaded in \d+\.\ds$", units[0])
+    assert re.search(r"rebuild unit 3/7 kind=contracte unit=2022Q2 files=1 rows=2 records=2 loaded in", units[2])
+    assert re.search(r"rebuild unit 5/7 kind=contracte unit=2023Q1 files=1 rows=0 records=0 quarantined \(headers do not match a CONTRACT file\)$", units[4])
+    assert re.search(r"rebuild unit 7/7 kind=fara-anunt unit=2025Q1 files=1 rows=4 records=2 loaded", units[6])
+    assert "rebuild done units=7 loaded=6 skipped=0 quarantined=1 records=12 in" in lines[-1]
+    assert seen == [None, 0, 1, 2, 3, 4, 5, 6, 7]  # the file moves with the run: at each line it shows the units done before it
+    status = read_status(status_file)
+    assert (status["state"], status["done"], status["total"], status["loaded"], status["quarantined"], status["records"]) == ("finished", 7, 7, 6, 1, 12)
+
+
+def test_the_rebuild_command_logs_unit_lines_and_writes_the_status_file(db, tmp_path, capsys):
+    root = tmp_path / "archive"
+    shutil.copytree(FIXTURE, root)
+    assert cli_main(["--archive", str(root), "rebuild", "--db", db]) == 0
+    out = capsys.readouterr().out
+    assert len(re.findall(r"^\S+ rebuild unit \d+/7 kind=", out, re.M)) == 7  # 5 loaded, 1 skipped (the same file fetched again), 1 quarantined
+    assert re.search(r"^\S+ rebuild done units=7 loaded=5 skipped=1 quarantined=1 records=13 in ", out, re.M) and "loaded 13 records from 5 file(s)" in out
+    assert re.search(r"kind=da unit=2022Q1 files=1 rows=0 records=0 skipped \(same file already loaded\)$", out, re.M)
+    assert read_status(root / "rebuild-progress.json")["state"] == "finished"  # the default place: the archive root
+    assert cli_main(["--archive", str(root), "status"]) == 0
+    assert "state: finished" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("killed_by", [RuntimeError("connection lost"), SystemExit(143)])  # a failure, and SIGTERM (the CLI turns it into SystemExit)
+def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_gives_the_same_graph(db, tmp_path, monkeypatch, killed_by):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    archive, status_file = Archive(root), tmp_path / "progress.json"
+    rebuild(archive, db)
+    complete = _dump_all(db)
+    assert len(complete[0]) == 12
+
+    # a second rebuild dies in the middle of its third file
+    real, calls = rebuild_module.load_records, []
+
+    def dying(cur, source_file_id, rows):
+        calls.append(source_file_id)
+        if len(calls) == 3:
+            raise killed_by
+        real(cur, source_file_id, rows)
+
+    monkeypatch.setattr(rebuild_module, "load_records", dying)
+    with pytest.raises(type(killed_by)):
+        rebuild(archive, db, Progress(status_file, out=lambda line: None))
+    assert _dump_all(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
+    status = read_status(status_file)
+    assert status["state"] == "failed" and status["done"] == 2 and status["loaded"] == 2
+
+    monkeypatch.setattr(rebuild_module, "load_records", real)
+    rebuild(archive, db, Progress(status_file, out=lambda line: None))  # rerun from scratch
+    assert _dump_all(db) == complete
+    assert read_status(status_file)["state"] == "finished"
+
+
+def test_a_kill_before_the_first_commit_leaves_no_schema_at_all(db, tmp_path, monkeypatch):
+    root = tmp_path / "archive"
+    shutil.copytree(CONTRACTS, root)
+    monkeypatch.setattr(rebuild_module, "load_records", lambda *a: (_ for _ in ()).throw(SystemExit(143)))
+    with pytest.raises(SystemExit):
+        rebuild(Archive(root), db)
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'seap'").fetchone() == (0,)
+
+
+def _dump_all(url):
+    with psycopg.connect(url) as c:
+        return (c.execute("SELECT code, kind, title, value_bani, quarter, winners, source_file_id FROM seap.record ORDER BY code").fetchall(),
+                c.execute("SELECT record_code, winner_position, share_bani FROM seap.search ORDER BY 1, 2").fetchall(),
+                c.execute("SELECT id, kind, unit, sha256 FROM seap.source_file ORDER BY id").fetchall())
