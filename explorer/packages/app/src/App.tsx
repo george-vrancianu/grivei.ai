@@ -1,22 +1,48 @@
+import { useEffect } from "react";
 import { UiProvider } from "@grivei/ui";
+import { AppShell } from "./components/AppShell/index.ts";
+import { catalogue } from "./copy/index.ts";
 import { ClientProvider } from "./graphql/ClientContext.tsx";
 import type { GraphqlClient } from "./graphql/client.ts";
-import { localeFromPath } from "./locale.ts";
-import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
+import { Routes } from "./Routes.tsx";
+import { LocationProvider, useLocation } from "./routing/location.tsx";
+import { pathFor, switchLocalePath } from "./routing/routes.ts";
 
 export interface AppProps {
-  /** The location's pathname; the route split is only the language prefix until the shell (#42) lands. */
-  path: string;
   client?: GraphqlClient;
 }
 
-export function App({ path, client }: AppProps) {
-  const locale = localeFromPath(path);
+function Shell() {
+  const { locale, pathname, search } = useLocation();
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+  const other = locale === "en" ? "ro" : "en";
   return (
     <UiProvider locale={locale}>
-      <ClientProvider {...(client ? { client } : {})}>
-        <MainScreenPage locale={locale} />
-      </ClientProvider>
+      <AppShell
+        copy={catalogue[locale]}
+        switchTo={{ locale: other, href: switchLocalePath(pathname, search, other) }}
+        links={{
+          explore: pathFor(locale, { name: "main" }),
+          search: pathFor(locale, { name: "search" }),
+          coverage: pathFor(locale, { name: "coverage" }),
+          methodology: pathFor(locale, { name: "methodology" }),
+        }}
+      >
+        <Routes />
+      </AppShell>
     </UiProvider>
+  );
+}
+
+/** The app: the browser location is the router state; every page sits in the shell. */
+export function App({ client }: AppProps) {
+  return (
+    <ClientProvider {...(client ? { client } : {})}>
+      <LocationProvider>
+        <Shell />
+      </LocationProvider>
+    </ClientProvider>
   );
 }

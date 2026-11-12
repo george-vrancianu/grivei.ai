@@ -4,7 +4,7 @@ export type UrlEncoding =
   | "text"       // free text, as typed
   | "date"       // YYYY-MM-DD
   | "enum"       // the enum value, lower-cased with hyphens: DIRECT_PURCHASE -> direct-purchase
-  | "boolean"    // true when present
+  | "boolean"    // written as true or false; unset means no filter
   | "key"        // an entity key (CUI, vat-<id>, name-<slug>)
   | "prefix"     // a CPV prefix
   | "map-area"   // RO-BV, NATIONAL, UNPLACED, UNKNOWN_SUPPLIER_COUNTY, as the API names them
@@ -23,7 +23,9 @@ export interface UrlKeySpec {
  * Every field has a key and every filter key is a field; contract tests enforce both.
  * Keys equal the field names so the mapping stays one-to-one and readable in citations:
  *   /explore/authority/<key>/records?signal=splitting&supplier=<key>&cpv=301&from=2024-01-01&to=2024-12-31
- * A field left at its default (countySide = authority) or unset is omitted from the URL.
+ * A field left at its default (countySide = authority) or unset is omitted from the URL. Booleans are the exception to
+ * "true when present": `hasSignals=false` is a distinct, citable value (it filters to Records without Signals) and
+ * round-trips as written, so only `true` and `false` decode and anything else is ignored.
  */
 export const RECORD_FILTER_URL = {
   q: { key: "q", encoding: "text", repeatable: false },

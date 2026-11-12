@@ -9,6 +9,7 @@ import posixpath
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Mapping
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -27,8 +28,12 @@ def fetch_bulk_file(
     via: str,
     now: datetime | None = None,
     timeout: float = 120,
+    origin: Mapping | None = None,
+    same_day: bool = False,
 ) -> Path:
-    """Download `url` and archive it as `seap/bulk/<kind>/<unit>/<today>/<file name from the URL>`."""
+    """Download `url` and archive it as `seap/bulk/<kind>/<unit>/<today>/<file name from the URL>`.
+
+    `origin` and `same_day` are passed to `Archive.write_unit` (the Source's identity of the file; `<day>.N` on a same-day re-fetch)."""
     fetched_at = now or datetime.now(timezone.utc)
     name = posixpath.basename(unquote(urlparse(url).path)) or "download"
     response = requests.get(url, stream=True, timeout=timeout, headers={"User-Agent": USER_AGENT})
@@ -47,7 +52,7 @@ def fetch_bulk_file(
     try:
         return archive.write_unit(
             source="seap", stream="bulk", kind=kind, unit=unit, fetched_at=fetched_at,
-            files={name: tmp_path}, url=url, via=via,
+            files={name: tmp_path}, url=url, via=via, origin=origin, same_day=same_day,
         )
     finally:
         tmp_path.unlink(missing_ok=True)
