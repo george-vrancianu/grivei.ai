@@ -189,6 +189,7 @@ describe("an unknown key", () => {
     unmount();
     openAt("/ro/explore/supplier/name-nobody-has-this-key");
     render(<App client={client} />);
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(/Entitate negăsită|nu a fost găsit/i);
+    expect(await screen.findByRole("heading", { level: 1, name: "Entitatea nu a fost găsită" })).toBeVisible();
+    expect(screen.getByText("Nicio autoritate sau furnizor nu este publicat sub această cheie.")).toBeVisible();
   });
 });

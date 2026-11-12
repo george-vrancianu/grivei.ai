@@ -3,8 +3,10 @@ import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
   authorityHeader,
   bothRolesHeader,
+  curatedHeader,
   deregisteredHeader,
   nameOnlySupplierHeader,
+  nationalAuthorityHeader,
   supplierHeader,
   unplacedAuthorityHeader,
 } from "../../samples/fixtureData.ts";
@@ -39,6 +41,10 @@ export const Supplier = header(supplierHeader, "SUPPLIER");
 export const BothRolesAsAuthority = header(bothRolesHeader, "AUTHORITY");
 /** The same entity read as a supplier. */
 export const BothRolesAsSupplier = header(bothRolesHeader, "SUPPLIER");
+/** Identity curated: the marker shows, and the placement is national. */
+export const CuratedIdentity = header(curatedHeader, "SUPPLIER");
+/** An authority placed nationally, not in a county. */
+export const NationalAuthority = header(nationalAuthorityHeader, "AUTHORITY");
 /** No CUI: says it is identified by name only, and shows its foreign VAT id. */
 export const NameOnlySupplier = header(nameOnlySupplierHeader, "SUPPLIER");
 /** ANAF status RADIERE: a badge. */

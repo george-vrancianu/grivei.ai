@@ -2,15 +2,15 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
-import { manyAliasesOverview as supplierOverview } from "../../../../samples/fixtureData.ts";
+import { manyAliasesOverview } from "../../../../samples/fixtureData.ts";
 import { AppearsInSeapAs } from "./index.ts";
 
-const show = (aliases: typeof supplierOverview.aliases, locale: "en" | "ro" = "en") =>
+const show = (aliases: typeof manyAliasesOverview.aliases, locale: "en" | "ro" = "en") =>
   renderInUi(<AppearsInSeapAs aliases={aliases} locale={locale} copy={sampleCopy.entityOverview(locale).aliases} />, locale);
 
 describe("AppearsInSeapAs", () => {
   it("lists each spelling with its Record count and first and last dates", () => {
-    show(supplierOverview.aliases);
+    show(manyAliasesOverview.aliases);
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(8);
     expect(within(items[0]!).getByText("CONSTRUCȚII TRANSILVANIA S.A.")).toBeVisible();
@@ -18,7 +18,7 @@ describe("AppearsInSeapAs", () => {
   });
 
   it("flags only the name that differs from ANAF", () => {
-    show(supplierOverview.aliases);
+    show(manyAliasesOverview.aliases);
     const items = screen.getAllByRole("listitem");
     expect(within(items[0]!).queryByText("Name differs from ANAF")).toBeNull();
     expect(within(items[3]!).getByText("Name differs from ANAF")).toBeVisible();

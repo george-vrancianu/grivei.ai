@@ -2193,7 +2193,6 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
-
   describe("recorded fixtures (#86): archive-roles + archive-roles-names, archive-signals, archive-moneymap -> rebuild -> the recorded EntityOverview", () => {
     // The app's seam 3 renders the entity pages against these answers, so the two seams stay in step: this block fails when an
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
@@ -2237,7 +2236,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(new Set(asked).size).toBe(asked.length);
     });
 
-    it("gives the cases the numbers they are named for", async () => {
+    it("gives the cases the numbers they are named for", () => {
       const RON = (n: number) => String(n * 100);
       const role = (name: string) => entityOf(name)!.seap.role!;
       const keys = (name: string) => role(name).counterparties.rows.map((r) => r.entity?.key ?? null);

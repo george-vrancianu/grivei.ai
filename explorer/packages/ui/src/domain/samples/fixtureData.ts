@@ -82,6 +82,10 @@ export const authorityHeader = headerOf(fixtures.EntityOverview, "authority-plac
 export const supplierHeader = headerOf(fixtures.EntityOverview, "supplier");
 /** Buys and sells: roles has both (recorded, the supplier page). */
 export const bothRolesHeader = headerOf(fixtures.EntityOverview, "both-roles-supplier-page");
+/** Identity curated and placed nationally (a hand fixture: no archive carries an identity-override file). */
+export const curatedHeader = headerOf(fixtures.EntityOverview, "authority-both-roles");
+/** An authority placed nationally, not in a county (recorded). */
+export const nationalAuthorityHeader = headerOf(fixtures.EntityOverview, "national-authority");
 /** A foreign supplier identified by VAT id, not placed, with SEAP as its source. */
 export const nameOnlySupplierHeader = headerOf(fixtures.EntityOverview, "foreign-vat-supplier");
 /** A deregistered supplier (ANAF status RADIERE). */

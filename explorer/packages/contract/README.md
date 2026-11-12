@@ -97,4 +97,4 @@ Where an operation has `src/fixtures/recorded/<Operation>.json`, its fixtures ar
 cd explorer/packages/api && SEAM1_REQUIRED=1 RECORD_FIXTURES=1 npx vitest run --pool=forks --maxWorkers=2 test/seam1.test.ts -t "recorded fixtures"
 ```
 
-`EntityOverview` (#86): `recorded/EntityOverview.json`, loaded by `recorded/entity.ts`; cases in `api/test/recordedEntityCases.ts`, block "recorded fixtures (#86)". Hand-written fixtures stay beside the recorded ones only for states a small archive cannot cheaply produce (220 counterparties, 30 aliases, a deregistered ANAF status, a curated identity).
+`EntityOverview` (#86): `recorded/EntityOverview.json`, loaded by `recorded/entity.ts`; cases in `api/test/recordedEntityCases.ts`, block "recorded fixtures (#86)". Hand-written fixtures stay beside the recorded ones only for states a small archive cannot cheaply produce (220 counterparties, eight spellings of one name, a deregistered ANAF status, a curated identity; `supplier-typical` stays until the other tabs are recorded).

@@ -22,7 +22,7 @@ export interface RecordedEntityCase {
   variables: Record<string, unknown>;
 }
 
-/** The entities of the two archives (watchdog/tests/fixtures/build_roles_archive.py and build_signals_archive.py), all invented. */
+/** The entities of the three archives (build_roles_archive.py, build_signals_archive.py and build_moneymap_archive.py), all invented. */
 export const ENTITY_KEYS = {
   hospital: "1000017", // SPITALUL EXEMPLU: an authority only
   commune: "1000009", // COMUNA EXEMPLU: an authority only
