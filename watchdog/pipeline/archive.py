@@ -53,6 +53,7 @@ class Unit:
     url: str | None
     via: str | None
     files: tuple[str, ...]
+    origin: Mapping | None = None  # where the Source says the file lives (e.g. the data.gov.ro resource), if recorded
 
     def file_path(self, name: str) -> Path:
         return self.path / name
@@ -87,11 +88,23 @@ class Archive:
         files: Mapping[str, bytes | Path],
         url: str | None = None,
         via: str | None = None,
+        origin: Mapping | None = None,
+        same_day: bool = False,
     ) -> Path:
-        """Store `files` unchanged (name -> bytes, or a path to copy), then write the manifest last."""
+        """Store `files` unchanged (name -> bytes, or a path to copy), then write the manifest last.
+
+        `origin` is free-form identity of the file at its Source (stored as the manifest's `origin`). An existing
+        directory is never touched: by default that is an error; with `same_day` a second fetch on the same UTC day
+        goes to `<day>.2`, `<day>.3`, ... instead.
+        """
         if not files:
             raise ArchiveError("a unit needs at least one file")
         target = self.unit_dir(source, stream, kind, unit, fetched_at)
+        if target.exists() and same_day:
+            n = 2
+            while target.with_name(f"{target.name}.{n}").exists():
+                n += 1
+            target = target.with_name(f"{target.name}.{n}")
         if target.exists():
             raise ArchiveError(f"already archived, never overwritten: {target}")
         target.mkdir(parents=True)
@@ -117,6 +130,8 @@ class Archive:
             "via": via,
             "files": entries,
         }
+        if origin:
+            manifest["origin"] = dict(origin)
         tmp = target / (MANIFEST + ".tmp")
         tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         os.replace(tmp, target / MANIFEST)  # the unit exists from this instant on
@@ -187,6 +202,7 @@ class Archive:
                 url=m.get("url"),
                 via=m.get("via"),
                 files=tuple(names),
+                origin=m.get("origin"),
             )
         except (OSError, ValueError, KeyError, TypeError):
             return None
