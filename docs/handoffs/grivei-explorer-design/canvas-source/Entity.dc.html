@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grivei Explorer: entity page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="min-height: {{minH}}; box-sizing: border-box; display: flex; flex-direction: column; background-color: #0D1014; background-image: radial-gradient(#1A212A 1px, transparent 1px); background-size: 24px 24px; color: #E8EBEF; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<header style="border-bottom: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="Explore.dc.html" style="display: flex; align-items: center; gap: 12px; color: #E8EBEF; text-decoration: none">
+<img src="/_blob/ee31ffcab5b634ba7578ac3a75683fa0" alt="Grivei logo: a Doberman holding a dossier in its mouth" style="display: block; width: 48px; height: 48px">
+<span style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 15px; font-weight: 600">grivei</span>
+<span style="color: #9BA5B1">/ explorer</span>
+</span>
+</a>
+<nav aria-label="Explorer" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px">
+<a href="Explore.dc.html" aria-current="page" style="padding: 12px 0; color: #F2B33D; text-decoration: none">explore</a>
+<a href="Coverage.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">coverage</a>
+<a href="Numbers.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">about the numbers</a>
+<span style="display: flex; gap: 2px; padding: 2px; border: 1px solid #27303B; border-radius: 4px">
+<a href="#en" aria-current="true" style="padding: 9px 12px; border-radius: 3px; background: #27303B; color: #E8EBEF; text-decoration: none">EN</a>
+<a href="#ro" style="padding: 9px 12px; border-radius: 3px; color: #9BA5B1; text-decoration: none">RO</a>
+</span>
+</nav>
+</div>
+</header>
+
+<main style="box-sizing: border-box; width: 100%; max-width: 1400px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #9BA5B1"><a href="Explore.dc.html" style="color: #F2B33D">explore</a> / contracting authority</p>
+<h1 style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -0.02em">MUNICIPIUL BRASOV</h1>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #B8C0CA">
+<span style="padding: 3px 10px; background: #F2B33D; border-radius: 3px; color: #0D1014; font-weight: 600">buys · contracting authority</span>
+<span style="padding: 3px 10px; border: 1px solid #27303B; border-radius: 3px; color: #9BA5B1">sells · no Records as supplier</span>
+<span>CUI 4384206</span>
+<span>Brașov county · Municipiul Brașov · local</span>
+<span style="color: #9BA5B1">placement from ANAF</span>
+</div>
+<p style="margin: 0; font-size: 13px; color: #9BA5B1">Appears in SEAP as <span style="color: #B8C0CA">MUNICIPIUL BRASOV</span> · 1,817 Records · 10 Aug 2020 to 23 Oct 2026</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-wrap: wrap; gap: 0 28px; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px">
+<button type="button" onClick="{{pickO}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; background: transparent; border: 0; border-bottom: 2px solid {{oLine}}; color: {{oInk}}">Overview</button>
+<button type="button" onClick="{{pickR}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; display: flex; align-items: center; gap: 8px; background: transparent; border: 0; border-bottom: 2px solid {{rLine}}; color: {{rInk}}"><span>Records</span><span style="color: #9BA5B1">1,817</span></button>
+<button type="button" onClick="{{pickG}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; background: transparent; border: 0; border-bottom: 2px solid {{gLine}}; color: {{gInk}}">Relationships</button>
+</div>
+<p style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1; overflow-wrap: anywhere">grivei.ai/explore/authority/4384206{{urlTail}}</p>
+</div>
+
+<sc-if value="{{isO}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #B8C0CA">
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 6px; color: #9BA5B1">total awarded <a href="Numbers.dc.html" aria-label="About the numbers: how awarded value is counted" style="display: flex; color: #F2B33D"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></a></span>
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: #F2B33D">2.98 bn RON</span>
+<span>1,796 Records counted · 21 framework ceilings and 5 Records with no value add nothing</span>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<span style="color: #9BA5B1">counterparties</span>
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: #E8EBEF">512</span>
+<span>the largest, COMPREST, holds 18.8% of the total</span>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<span style="color: #9BA5B1">via direct purchase</span>
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: #E8EBEF">3.0%</span>
+<span>88.45M RON in 1,425 direct purchases</span>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<span style="color: #9BA5B1">Signals</span>
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: #E8EBEF">72</span>
+<span>54 no prior publication · 18 splitting · counted, never scored</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px 32px">
+<div style="flex: 1.2 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">Signals · by date of the latest Record</h2>
+<article style="padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<h3 style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 20px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 12px; height: 12px; border-radius: 50%; border: 3px solid #F2B33D"></span><span>No prior publication</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 400; color: #9BA5B1">latest 18 Sep 2026</span></h3>
+<p style="margin: 0; text-wrap: pretty">54 contracts worth 341.05M RON were awarded by negotiation without prior publication, between 22 Dec 2023 and 18 Sep 2026.</p>
+<p style="margin: 0; font-size: 13px; color: #B8C0CA; text-wrap: pretty">The law allows this procedure in set cases, such as urgency, a single possible supplier, or keeping a service running until a new tender ends.</p>
+<p style="margin: 0; display: flex; flex-wrap: wrap; gap: 4px 20px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="EntityRecords.dc.html" style="padding: 6px 0; color: #F2B33D">see the 54 Records →</a>
+<a href="#seap" style="padding: 6px 0; color: #F2B33D">Check in SEAP ↗</a>
+<a href="Numbers.dc.html" style="padding: 6px 0; color: #F2B33D">how this is counted</a>
+</p>
+</article>
+<article style="padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<h3 style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 20px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 12px; height: 12px; border-radius: 50%; border: 3px solid #F2B33D"></span><span>Splitting</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 400; color: #9BA5B1">18 sets · latest 18 Jun 2026</span></h3>
+<p style="margin: 0; text-wrap: pretty">In 18 sets, direct purchases from one supplier in one CPV group fell within 30 days, each at or under the cap and together above it. The largest set: 2 purchases from RECON, 1,338,457 RON, 11 to 14 Apr 2025, against a cap of 900,400 RON for works.</p>
+<p style="margin: 0; font-size: 13px; color: #B8C0CA; text-wrap: pretty">Separate purchases can be lawful when they cover different objects, or needs that could not be planned together.</p>
+<p style="margin: 0; display: flex; flex-wrap: wrap; gap: 4px 20px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="EntityRecords.dc.html" style="padding: 6px 0; color: #F2B33D">see the Records in these sets →</a>
+<a href="#seap" style="padding: 6px 0; color: #F2B33D">Check in SEAP ↗</a>
+<a href="Numbers.dc.html" style="padding: 6px 0; color: #F2B33D">how this is counted</a>
+</p>
+</article>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">largest counted Records</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{largest}}" as="r" hint-placeholder-count="5">
+<li style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 20px; padding: 12px 0; border-top: 1px solid #27303B">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{r.code}} · {{r.date}}</span>
+<a href="Record.dc.html" style="font-weight: 500; line-height: 1.4; color: #E8EBEF; text-decoration: none; text-wrap: pretty">{{r.t}}</a>
+<span style="font-size: 13px; color: #B8C0CA">→ {{r.win}}</span>
+</div>
+<span style="flex: none; margin-left: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.ron}}</span>
+</li>
+</sc-for>
+</ol>
+</section>
+</div>
+
+<div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">counterparties · share of the total awarded</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{parties}}" as="p" hint-placeholder-count="8">
+<li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid #27303B">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px">
+<a href="Entity.dc.html" style="font-weight: 600; color: #E8EBEF; text-decoration: none">{{p.name}}</a>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums"><span style="font-weight: 600">{{p.share}}</span> <span style="color: #9BA5B1">· {{p.ron}} · {{p.sub}}</span></span>
+</div>
+<span aria-hidden="true" style="height: 4px; display: flex; background: #27303B; border-radius: 2px"><span style="width: {{p.bar}}; background: #F2B33D; border-radius: 2px"></span></span>
+</li>
+</sc-for>
+</ol>
+<a href="EntityRelationships.dc.html" style="align-self: flex-start; padding: 10px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">all 512 counterparties, as a graph →</a>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">procedure types</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{procs}}" as="p" hint-placeholder-count="6">
+<li style="display: flex; flex-direction: column; gap: 5px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; font-size: 14px">
+<span>{{p.name}}</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums">{{p.ron}} <span style="color: #9BA5B1">· {{p.n}}</span></span>
+</div>
+<span aria-hidden="true" style="height: 4px; display: flex; background: #27303B; border-radius: 2px"><span style="width: {{p.bar}}; background: #F2B33D; border-radius: 2px"></span></span>
+</li>
+</sc-for>
+</ol>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">consortia · 71 Records won by more than one supplier</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{consortia}}" as="c" hint-placeholder-count="4">
+<li style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 10px 0; border-top: 1px solid #27303B; font-size: 14px">
+<span style="flex: 1 1 240px; min-width: 0; text-wrap: pretty">{{c.names}}</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums">{{c.ron}} <span style="color: #9BA5B1">· {{c.n}}</span></span>
+</li>
+</sc-for>
+</ul>
+</section>
+
+<section style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">framework agreements</h2>
+<p style="margin: 0; text-wrap: pretty">21 framework agreements, ceilings 805.95M RON, reported subsequent contracts 146.56M RON.</p>
+<p style="margin: 0; font-size: 13px; color: #B8C0CA; text-wrap: pretty">Ceilings are shown but never summed. Only the subsequent contracts count toward the total.</p>
+</section>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isR}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<button type="button" aria-label="Remove filter: Signal, no prior publication" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 12px 0 14px; display: flex; align-items: center; gap: 8px; background: #F2B33D; border: 1px solid #F2B33D; border-radius: 20px; color: #0D1014; font-weight: 600"><span>Signal: no prior publication</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">channel</span><span>all</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">procedure</span><span>all</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">year</span><span>all</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">counterparty</span><span>all</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">badges</span><span>any</span></button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding: 16px 0; border-top: 1px solid #27303B; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #B8C0CA">
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 32px; line-height: 1; letter-spacing: -0.02em; color: #F2B33D">341.05M RON</span>
+<span>awarded in 54 Records with this filter</span>
+<span>nothing left out</span>
+<span>of 1,817 Records in all</span>
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 900px; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr) 230px 140px; gap: 0 20px; padding: 8px 0; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>record</span>
+<span>title</span>
+<span>counterparty</span>
+<span style="text-align: right">value</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+<li style="display: grid; grid-template-columns: 150px minmax(0, 1fr) 230px 140px; align-items: start; gap: 0 20px; padding: 12px 0; border-bottom: 1px solid #27303B">
+<div style="display: flex; flex-direction: column; gap: 3px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span style="color: #E8EBEF">{{r.code}}</span>
+<span>{{r.date}}</span>
+</div>
+<div style="min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px">
+<a href="Record.dc.html" style="font-size: 14px; font-weight: 500; line-height: 1.4; color: #E8EBEF; text-decoration: none; text-wrap: pretty">{{r.t}}</a>
+<span style="padding: 2px 8px; display: flex; align-items: center; gap: 6px; border: 1px solid #5C4716; border-radius: 3px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #F2B33D"><span aria-hidden="true" style="box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #F2B33D"></span><span>Signal: no prior publication</span></span>
+</div>
+<a href="Entity.dc.html" style="font-size: 13px; color: #E8EBEF; text-decoration: none">{{r.win}}</a>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: 'IBM Plex Mono', ui-monospace, monospace">
+<span style="font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.ron}}</span>
+<span style="font-size: 12px; color: #9BA5B1">awarded value</span>
+</div>
+</li>
+</sc-for>
+</ol>
+</div>
+</div>
+<p style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #9BA5B1">Records 1 – 7 of 54, by value · <a href="#more" style="color: #F2B33D">next →</a></p>
+</div>
+</sc-if>
+
+<sc-if value="{{isG}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px">
+<div style="flex: 1.3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section style="padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #141920; border: 1px solid #27303B; border-radius: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #F2B33D">top counterparties · pick one to list its Records</h2>
+<div style="position: relative; padding: 24px 24%">
+<div style="position: relative">
+<img src="/_blob/d00c5529b4b44cb76d29fc8f0f4e8e98" alt="Radial graph: Municipiul Brașov at the centre, ten counterparties around it, RS ACTIV picked" style="display: block; width: 100%; height: auto; aspect-ratio: 640 / 560">
+<span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, 34px); padding: 1px 6px; background: #141920; color: #E8EBEF; white-space: nowrap">MUNICIPIUL BRASOV</span>
+<span style="position: absolute; left: 50%; top: 4.2%; transform: translate(-50%, -100%); text-align: center; white-space: nowrap; color: #E8EBEF">COMPREST <span style="color: #9BA5B1">560.81M</span></span>
+<span style="position: absolute; left: 75.2%; top: 13.8%; transform: translate(0, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #F2B33D; font-weight: 600">RS ACTIV <span style="font-weight: 400">431.67M</span></span>
+<span style="position: absolute; left: 88.6%; top: 37%; transform: translate(0, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">BMC TRUCK &amp; BUS <span style="color: #9BA5B1">187.07M</span></span>
+<span style="position: absolute; left: 87.4%; top: 62.5%; transform: translate(0, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">EREN CONS <span style="color: #9BA5B1">89.39M</span></span>
+<span style="position: absolute; left: 72.9%; top: 82.6%; transform: translate(0, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">Synergy Construct <span style="color: #9BA5B1">75.17M</span></span>
+<span style="position: absolute; left: 50%; top: 90.3%; transform: translate(-50%, 0); white-space: nowrap; color: #E8EBEF">UBITECH CONSTRUCȚII SRL <span style="color: #9BA5B1">73.72M</span></span>
+<span style="position: absolute; left: 27.1%; top: 82.6%; transform: translate(-100%, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">CONIM PARTNERS <span style="color: #9BA5B1">73.72M</span></span>
+<span style="position: absolute; left: 12.9%; top: 62.4%; transform: translate(-100%, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">MITHRAS BUILD <span style="color: #9BA5B1">73.72M</span></span>
+<span style="position: absolute; left: 14.5%; top: 38.1%; transform: translate(-100%, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">WI-NOVATION <span style="color: #9BA5B1">3.65M</span></span>
+<span style="position: absolute; left: 28%; top: 18.9%; transform: translate(-100%, -50%); width: max-content; max-width: 57%; line-height: 1.3; color: #E8EBEF">DANINA STAR <span style="color: #9BA5B1">3.20M</span></span>
+</div>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; color: #B8C0CA">
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 22px; height: 3px; background: #F2B33D"></span>contracts</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 22px; height: 3px; background: #8FB8FF"></span>direct purchases</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 22px; height: 0; border-top: 2px dashed #6B7683"></span>won together</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="box-sizing: border-box; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #F2B33D"></span>circle size = RON awarded</li>
+</ul>
+</section>
+
+<section style="padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #141920; border: 1px solid #27303B; border-radius: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #F2B33D">awarded value per month · Jan 2024 to Oct 2026</h2>
+<div aria-hidden="true" style="height: 120px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid #3A4552">
+<sc-for list="{{months}}" as="m" hint-placeholder-count="34">
+<span style="flex: 1; min-width: 0; height: {{m.h}}; background: #F2B33D; border-radius: 2px 2px 0 0"></span>
+</sc-for>
+</div>
+<div style="display: flex; gap: 2px; color: #9BA5B1">
+<span style="flex: 12">2024</span>
+<span style="flex: 12">2025</span>
+<span style="flex: 10">2026</span>
+</div>
+<p style="margin: 0; color: #B8C0CA">tallest month: July 2026, 672M RON · framework ceilings left out</p>
+</section>
+</div>
+
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">picked counterparty</h2>
+<p style="margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px"><a href="Entity.dc.html" style="font-family: 'Space Grotesk', Inter, sans-serif; font-size: 24px; font-weight: 600; color: #E8EBEF; text-decoration: none">RS ACTIV</a><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #B8C0CA">431.67M RON · 25 Records · 10 Signals</span></p>
+<p style="margin: 0 0 8px; font-size: 13px; color: #9BA5B1">Won together with COMPREST, FINCODRUM and RECON. Its share of a consortium Record is an equal split, by convention.</p>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{picked}}" as="r" hint-placeholder-count="5">
+<li style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 16px; padding: 10px 0; border-top: 1px solid #27303B">
+<div style="flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{r.code}} · {{r.date}} · {{r.kind}}</span>
+<a href="Record.dc.html" style="font-size: 14px; line-height: 1.4; color: #E8EBEF; text-decoration: none; text-wrap: pretty">{{r.t}}</a>
+</div>
+<span style="flex: none; margin-left: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.ron}}</span>
+</li>
+</sc-for>
+</ol>
+<a href="EntityRecords.dc.html" style="align-self: flex-start; padding: 10px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">all 25 Records with RS ACTIV →</a>
+</section>
+
+<section style="padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #141920; border: 1px solid #27303B; border-radius: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #F2B33D">Flow lens · where this authority's money goes</h2>
+<img src="/_blob/f65f3d1ec0ce5fb086e0fc78c20adbc5" alt="Map of Romania: awarded value from Municipiul Brașov by supplier county; most stays in Brașov, then București and Ilfov" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+<div style="display: flex; gap: 2px; font-size: 11px; color: #B8C0CA">
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #33290F"></span><span>&lt; 5M</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #5C4716"></span><span>5M</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #8A6A1E"></span><span>25M</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #BE8E2B"></span><span>100M</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #F2B33D"></span><span>400M +</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #1E2630"></span><span>nothing</span></span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<sc-for list="{{flow}}" as="f" hint-placeholder-count="7">
+<li style="display: flex; justify-content: space-between; gap: 14px"><span style="color: #E8EBEF">{{f.name}}</span><span style="font-variant-numeric: tabular-nums; color: #B8C0CA">{{f.ron}}</span></li>
+</sc-for>
+</ol>
+<p style="margin: 0; color: #9BA5B1; text-wrap: pretty">supplier county, RON awarded since 2021 · 23 counties in all · counted by the same rule as every total</p>
+</section>
+</div>
+</div>
+</sc-if>
+
+</main>
+
+<footer style="margin-top: auto; border-top: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document</span>
+<span>Signals are counted, never scored</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tab":{"editor":"enum","default":"overview","options":["overview","records","relationships"]},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+renderVals() {
+const st = this.state || {};
+const tab = st.tab || this.props.tab || 'overview';
+const on = '#F2B33D', ink = '#E8EBEF', dim = '#9BA5B1';
+const salub = 'Contract de delegare a gestiunii contractului privind activități de salubrizare (măturatul, spălatul și stropitul căilor publice din localitate…)';
+const pct = [0, 15, 3, 11, 8, 2, 0, 0, 15, 5, 5, 14, 4, 1, 1, 17, 1, 1, 59, 3, 6, 3, 5, 23, 2, 0, 1, 1, 16, 35, 100, 29, 3, 2];
+return {
+pickO: () => this.setState({ tab: 'overview' }), pickR: () => this.setState({ tab: 'records' }), pickG: () => this.setState({ tab: 'relationships' }),
+oLine: tab === 'overview' ? on : 'transparent', oInk: tab === 'overview' ? ink : dim,
+rLine: tab === 'records' ? on : 'transparent', rInk: tab === 'records' ? ink : dim,
+gLine: tab === 'relationships' ? on : 'transparent', gInk: tab === 'relationships' ? ink : dim,
+isO: tab === 'overview', isR: tab === 'records', isG: tab === 'relationships',
+minH: tab === 'records' ? '1240px' : tab === 'relationships' ? '1800px' : '1900px',
+urlTail: tab === 'records' ? '/records?signal=no-publication' : tab === 'relationships' ? '/relationships?pick=17296459' : '',
+largest: [
+{ code: 'CAN1170738', date: '29 Jul 2025', t: 'Asocierea UBITECH CONSTRUCTII S.R.L. - lider, CONIM PARTNERS S.R.L.-asociat 1, LEVIATAN DESIGN S.R.L…', win: 'UBITECH CONSTRUCȚII SRL + 4 others', ron: '368.59M RON' },
+{ code: 'CAN1172752', date: '14 Jul 2026', t: salub, win: 'COMPREST + RS ACTIV', ron: '328.35M RON' },
+{ code: 'CAN1172752', date: '14 Jul 2026', t: salub, win: 'COMPREST + RS ACTIV', ron: '306.00M RON' },
+{ code: 'CAN1170048', date: '2 Jun 2026', t: 'Achiziția de mijloace de transport nepoluante în Municipiul Brașov și în Zona Metropolitană Brașov', win: 'BMC TRUCK & BUS', ron: '187.07M RON' },
+{ code: 'CAN1172744', date: '5 Aug 2026', t: 'Servicii de proiectare si lucrari executie pentru realizarea obiectivul de investiții: “MODERNIZARE STRAZI – STRADA NARCISELOR, UAT - Municipiul BRAȘOV”', win: 'GEIGER TRANSILVANIA S.R.L. + GEIGER BRASOV', ron: '110.30M RON' }
+],
+parties: [
+['COMPREST', '18.8%', '560.81M', 'Brașov · 21 Records', '100%'], ['RS ACTIV', '14.5%', '431.67M', 'Brașov · 25 Records', '77%'], ['BMC TRUCK & BUS', '6.3%', '187.07M', 'Ilfov · 1 Record', '33.4%'], ['EREN CONS', '3.0%', '89.39M', 'Brașov · 2 Records', '15.9%'],
+['Synergy Construct', '2.5%', '75.17M', 'București · 1 Record', '13.4%'], ['UBITECH CONSTRUCȚII SRL', '2.5%', '73.72M', 'București · 1 Record', '13.1%'], ['CONIM PARTNERS', '2.5%', '73.72M', 'Argeș · 1 Record', '13.1%'], ['MITHRAS BUILD', '2.5%', '73.72M', 'Neamț · 1 Record', '13.1%']
+].map(([name, share, ron, sub, bar]) => ({ name, share, ron, sub, bar })),
+procs: [
+['Licitatie deschisa', '2,159.25M', '222 Records', '100%'], ['Procedura simplificata', '351.18M', '79 Records', '16.3%'], ['Negociere fara publicare prealabila', '341.05M', '54 Records', '15.8%'],
+['Achiziție directă', '88.45M', '1,425 Records', '4.1%'], ['Procedura simplificata proprie', '36.42M', '11 Records', '1.7%'], ['Norme proprii (Anexa 2)', '3.09M', '5 Records', '0.2%']
+].map(([name, ron, n, bar]) => ({ name, ron, n, bar })),
+consortia: [
+['COMPREST + RS ACTIV', '645.91M', '3 Records'], ['UBITECH CONSTRUCȚII SRL + CONIM PARTNERS + COPRAAG ENTREPRENEUR + LEVIATAN DESIGN + MITHRAS BUILD', '368.59M', '1 Record'],
+['GARDEN CENTER GRUP S.R.L. + RO-VERDE LANDSCAPING S.R.L.', '117.64M', '9 Records'], ['GEIGER BRASOV + GEIGER TRANSILVANIA S.R.L.', '110.30M', '1 Record']
+].map(([names, ron, n]) => ({ names, ron, n })),
+rows: [
+['CAN1164837', '23 Dec 2024', 'Servicii de salubrizare si deszapezire a cailor publice din Mun. Brasov-Lot 1+Lot 2', 'COMPREST', '49.08M RON'],
+['CAN1162425', '31 Dec 2025', 'Furnizare energie electrica 2026 - Municipiul Brașov', 'MVM FUTURE ENERGY TECHNOLOGY', '41.31M RON'],
+['CAN1161570', '30 Dec 2025', 'Delegare a gestiunii contractului privind activități de salubrizare și deszăpezire prin contract de servici - Lot 1', 'COMPREST', '34.95M RON'],
+['CAN1161573', '30 Dec 2025', 'Delegare a gestiunii contractului privind activități de salubrizare și deszăpezire prin contract de servici - Lot 2', 'COMPREST', '32.75M RON'],
+['CAN1119324', '22 Dec 2023', 'SERVICII DE SALUBRIZARE SI DESZAPEZIRE A CAILOR PUBLICE DIN MUNICIPIUL BRASOV - Lot 1', 'COMPREST', '29.38M RON'],
+['CAN1119328', '22 Dec 2023', 'SERVICII DE SALUBRIZARE SI DESZAPEZIRE A CAILOR PUBLICE DIN MUNICIPIUL BRASOV - Lot 2', 'COMPREST', '23.67M RON'],
+['CAN1147301', '29 Apr 2025', 'Lot 2 -LUCRĂRI DE ÎNTREȚINERE ȘI REPARAȚII STRĂZI ZONA SUDICA A MUNICIPIULUI BRAȘOV', 'RS ACTIV', '21.76M RON']
+].map(([code, date, t, win, ron]) => ({ code, date, t, win, ron })),
+months: pct.map((p) => ({ h: Math.max(2, Math.round(p * 1.16)) + 'px' })),
+picked: [
+['CAN1172752', '14 Jul 2026', 'with COMPREST', salub, '328.35M RON'], ['CAN1172752', '14 Jul 2026', 'with COMPREST', salub, '306.00M RON'],
+['CAN1147301', '29 Apr 2025', 'no prior publication', 'Lot 2 -LUCRĂRI DE ÎNTREȚINERE ȘI REPARAȚII STRĂZI ZONA SUDICA A MUNICIPIULUI BRAȘOV', '21.76M RON'],
+['CAN1145000', '29 Apr 2025', 'with FINCODRUM and RECON', 'CLucrari de intretinere si reparatie a strazilor din zona nordica a Municipiului Brasov-lot 1', '17.44M RON'],
+['SCNA1098851', '8 Feb 2024', 'consortium of 3', 'Proiectare și execuție construire sanie de vară în Poiana Brașov', '17.15M RON']
+].map(([code, date, kind, t, ron]) => ({ code, date, kind, t, ron })),
+flow: [['Brașov', '1,594.6M RON'], ['București', '489.8M RON'], ['Ilfov', '386.0M RON'], ['Mureș', '86.9M RON'], ['Argeș', '83.9M RON'], ['Neamț', '73.8M RON'], ['county unknown', '61.3M RON']].map(([name, ron]) => ({ name, ron }))
+};
+}
+}
+</script>
+</body>
+</html>

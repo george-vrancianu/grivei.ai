@@ -89,7 +89,7 @@ A contract awarded under a framework agreement ("Cu acord cadru subsecvent"). It
 _Avoid_: call-off, draw-down
 
 **Consortium share**:
-A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
+A supplier's equal share of an award won jointly by several suppliers; a convention for every per-supplier figure (supplier totals, the supplier side of the map, an authority's counterparties), not a fact from the source. The authority's own total counts the award once.
 _Avoid_: split, portion
 
 **Suspect value**:
@@ -122,8 +122,11 @@ _Avoid_: coverage %, completeness score
 
 **Known gap**:
 A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page.
-Cells of the Coverage grid carry one of the states loaded, possibly incomplete (the published rule), known gap (entered by hand), not in source, crawled provisional or not yet loaded; "known gap" as a grid state means the hand-entered kind only.
 _Avoid_: missing data, hole, outage
+
+**Coverage cell state**:
+The state of one Source's records for one quarter and one record kind: loaded, possibly incomplete (the published rule), known gap (entered by hand), not in source, crawled provisional, or not yet loaded. "Known gap" as a cell state means the hand-entered kind only.
+_Avoid_: cell status, quarter status
 
 **Not yet loaded**:
 A Coverage grid cell whose bulk file is not in the graph yet: not published (the current quarter), or set aside; the reader is never told which. Records that exist for it (crawled, backfilled) are still counted.
@@ -136,7 +139,7 @@ _Avoid_: unknown county, orphan
 The lens on an entity page's Relationships tab showing where across Romania its money comes from (supplier) or goes (contracting authority).
 
 **Entity page**:
-The page, with its own URL, for one contracting authority or supplier; it has three tabs over the same data, Overview (the default), Records and Relationships.
+The page, with its own URL, for one entity in one role, as contracting authority or as supplier; an entity with both roles has two, linked to each other, and their numbers are never added together. Each has three tabs over the same data, Overview (the default), Records and Relationships.
 _Avoid_: profile, drawer, detail view
 
 **Overview tab**:

@@ -1,0 +1,53 @@
+/* Generated from tokens.json. */
+:root {
+  --bg: #0D1014; /* page background */
+  --bg-dot: #1A212A; /* dot grid on the page background: 1px dots every 24px */
+  --panel: #141920; /* cards, inputs, the map panel, the Go-to card */
+  --line: #27303B; /* hairlines, row dividers, card borders, bar tracks, the selected segment of a toggle */
+  --line-strong: #3A4552; /* control borders: inputs, filter chips, toggles, tooltips */
+  --text: #E8EBEF; /* primary text */
+  --text-2: #B8C0CA; /* secondary text */
+  --muted: #9BA5B1; /* labels, meta lines, counts beside tabs */
+  --idle: #6B7683; /* hollow marks and dashed lines only; too faint for text */
+  --accent: #F2B33D; /* links, the headline total, active tab, active lens, bars, top map class */
+  --accent-hover: #FFD27A; /* link hover */
+  --on-accent: #0D1014; /* text on an accent fill; search highlight text */
+  --signal-line: #5C4716; /* border of a Signal chip */
+  --direct-purchase: #8FB8FF; /* direct-purchase edges in the counterparty graph */
+  --map-1: #33290F;
+  --map-2: #5C4716;
+  --map-3: #8A6A1E;
+  --map-4: #BE8E2B;
+  --map-5: #F2B33D;
+  --map-none: #1E2630; /* no matching Records, or no purchases in a zoomed county */
+  --map-gap: #141920; /* stroke between areas: the colour of the surface the map sits on */
+  --map-highlight: #E8EBEF; /* outline of the hovered or picked area */
+  --coverage-harvested: #F2B33D;
+  --coverage-known-gap-stripe-a: #BE8E2B;
+  --coverage-known-gap-stripe-b: #3A2F12;
+  --coverage-partial: #55606E;
+  --coverage-not-harvested: #232B35;
+  --coverage-possibly-incomplete: #8A6A1E;
+  --coverage-awaiting-bulk-file: #232B35;
+  --font-display: "Space Grotesk", Inter, system-ui, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-cell: 2px;
+  --radius-chip: 3px;
+  --radius-control: 4px;
+  --radius-card: 6px;
+  --radius-signal-pill: 12px;
+  --radius-filter-pill: 20px;
+  --size-badge-chip: 32px;
+  --size-toggle: 36px;
+  --size-filter-chip: 40px;
+  --size-primary-action: 44px;
+  --size-tab: 48px;
+  --size-search-input: 56px;
+  --size-logo: 48px;
+  --size-bar: 4px;
+  --size-legend-swatch: 10px;
+  --max-width: 1400px;
+  --gutter: clamp(16px, 3vw, 40px);
+  color-scheme: dark;
+}

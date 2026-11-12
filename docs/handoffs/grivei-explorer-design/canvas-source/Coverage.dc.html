@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grivei Explorer: Coverage</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#F2B33D}a:hover{color:#FFD27A}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="min-height: 1560px; box-sizing: border-box; display: flex; flex-direction: column; background-color: #0D1014; background-image: radial-gradient(#1A212A 1px, transparent 1px); background-size: 24px 24px; color: #E8EBEF; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<header style="border-bottom: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="Explore.dc.html" style="display: flex; align-items: center; gap: 12px; color: #E8EBEF; text-decoration: none">
+<img src="/_blob/ee31ffcab5b634ba7578ac3a75683fa0" alt="Grivei logo: a Doberman holding a dossier in its mouth" style="display: block; width: 48px; height: 48px">
+<span style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 15px; font-weight: 600">grivei</span>
+<span style="color: #9BA5B1">/ explorer</span>
+</span>
+</a>
+<nav aria-label="Explorer" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px">
+<a href="Explore.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">explore</a>
+<a href="Coverage.dc.html" aria-current="page" style="padding: 12px 0; color: #F2B33D; text-decoration: none">coverage</a>
+<a href="Numbers.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">about the numbers</a>
+<span style="display: flex; gap: 2px; padding: 2px; border: 1px solid #27303B; border-radius: 4px">
+<a href="#en" aria-current="true" style="padding: 9px 12px; border-radius: 3px; background: #27303B; color: #E8EBEF; text-decoration: none">EN</a>
+<a href="#ro" style="padding: 9px 12px; border-radius: 3px; color: #9BA5B1; text-decoration: none">RO</a>
+</span>
+</nav>
+</div>
+</header>
+
+<main style="box-sizing: border-box; width: 100%; max-width: 1400px; margin: 0 auto; padding: 40px clamp(16px, 3vw, 40px) 48px; display: flex; flex-direction: column; gap: 36px">
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">coverage</p>
+<h1 style="margin: 0; max-width: 900px; font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -0.02em; text-wrap: balance">What the explorer holds, and where it has gaps</h1>
+<p style="margin: 0; max-width: 680px; font-size: 17px; color: #B8C0CA; text-wrap: pretty">A county that shows no money may have bought nothing, or may not be loaded. This page tells the two apart, per Source, per quarter and per kind of Record.</p>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">Sources</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px">
+<li style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; background: #141920; border: 1px solid #F2B33D; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 19px; font-weight: 600"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #F2B33D"></span>SEAP</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #F2B33D">harvested · 2021 Q1 onward</span>
+<span style="font-size: 13px; color: #B8C0CA">Direct purchases, contracts, award notices</span>
+</li>
+<li style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #27303B; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 19px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6B7683"></span>ONRC</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">not harvested</span>
+<span style="font-size: 13px; color: #B8C0CA">Shareholders and administrators</span>
+</li>
+<li style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #27303B; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 19px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6B7683"></span>ANI</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">not harvested</span>
+<span style="font-size: 13px; color: #B8C0CA">Asset and interest declarations</span>
+</li>
+<li style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #27303B; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 19px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6B7683"></span>Ministerul Finanțelor</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">not harvested</span>
+<span style="font-size: 13px; color: #B8C0CA">Balance sheets</span>
+</li>
+<li style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #27303B; border-radius: 6px">
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 19px; font-weight: 600"><span aria-hidden="true" style="box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6B7683"></span>portal.just.ro</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">not harvested</span>
+<span style="font-size: 13px; color: #B8C0CA">Court cases</span>
+</li>
+</ol>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">SEAP · quarter by kind of Record</h2>
+<p style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">quarters follow the publication date · highlighted: the award date chip, 2021 – 2026</p>
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 980px; display: flex; flex-direction: column; gap: 3px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<div style="display: grid; grid-template-columns: 230px repeat(6, minmax(0, 1fr)); gap: 3px; color: #B8C0CA">
+<span></span>
+<span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span>
+</div>
+<div style="display: grid; grid-template-columns: 230px repeat(24, minmax(0, 1fr)); gap: 3px; color: #9BA5B1; font-size: 11px">
+<span></span>
+<sc-for list="{{quarters}}" as="q" hint-placeholder-count="24"><span>{{q.t}}</span></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 230px repeat(24, minmax(0, 1fr)); align-items: center; gap: 3px">
+<span style="color: #E8EBEF">Direct purchases · DA</span>
+<sc-for list="{{da}}" as="c" hint-placeholder-count="24"><span role="img" aria-label="{{c.label}}" style="box-sizing: border-box; height: 30px; display: flex; align-items: center; justify-content: center; background: {{c.bg}}; border: 1px solid {{c.bd}}; border-radius: 2px; color: {{c.ink}}; font-weight: 600">{{c.g}}</span></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 230px repeat(24, minmax(0, 1fr)); align-items: center; gap: 3px">
+<span style="color: #E8EBEF">Direct purchases, offline · DAN</span>
+<sc-for list="{{dan}}" as="c" hint-placeholder-count="24"><span role="img" aria-label="{{c.label}}" style="box-sizing: border-box; height: 30px; display: flex; align-items: center; justify-content: center; background: {{c.bg}}; border: 1px solid {{c.bd}}; border-radius: 2px; color: {{c.ink}}; font-weight: 600">{{c.g}}</span></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 230px repeat(24, minmax(0, 1fr)); align-items: center; gap: 3px">
+<span style="color: #E8EBEF">Contracts · CAN, SCNA</span>
+<sc-for list="{{con}}" as="c" hint-placeholder-count="24"><span role="img" aria-label="{{c.label}}" style="box-sizing: border-box; height: 30px; display: flex; align-items: center; justify-content: center; background: {{c.bg}}; border: 1px solid {{c.bd}}; border-radius: 2px; color: {{c.ink}}; font-weight: 600">{{c.g}}</span></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 230px repeat(24, minmax(0, 1fr)); align-items: center; gap: 3px">
+<span style="color: #E8EBEF">Awards without a prior call</span>
+<sc-for list="{{noc}}" as="c" hint-placeholder-count="24"><span role="img" aria-label="{{c.label}}" style="box-sizing: border-box; height: 30px; display: flex; align-items: center; justify-content: center; background: {{c.bg}}; border: 1px solid {{c.bd}}; border-radius: 2px; color: {{c.ink}}; font-weight: 600">{{c.g}}</span></sc-for>
+</div>
+</div>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #B8C0CA">
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 20px; height: 14px; background: #F2B33D; border-radius: 2px"></span>loaded</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="box-sizing: border-box; width: 20px; height: 14px; border: 1px solid #F2B33D; border-radius: 2px; color: #F2B33D; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center">c</span>crawled, provisional</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 20px; height: 14px; background: #8A6A1E; border-radius: 2px; color: #0D1014; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center">?</span>possibly incomplete</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="box-sizing: border-box; width: 20px; height: 14px; background: repeating-linear-gradient(135deg, #BE8E2B 0 3px, #3A2F12 3px 6px); border: 1px solid #BE8E2B; border-radius: 2px"></span>known gap</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 20px; height: 14px; background: #232B35; border-radius: 2px; color: #9BA5B1; font-size: 10px; display: flex; align-items: center; justify-content: center">…</span>awaiting the bulk file</li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="box-sizing: border-box; width: 20px; height: 14px; border: 1px solid #3A4552; border-radius: 2px; color: #9BA5B1; font-size: 10px; display: flex; align-items: center; justify-content: center">–</span>not in the source</li>
+</ul>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">why each gap is there</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 0 40px">
+<li style="display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid #27303B">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">DAN · 2025 Q2 · known gap</span>
+<span style="text-wrap: pretty">The file on data.gov.ro for this quarter is mis-uploaded and holds no DAN rows. Entered by hand, and reported to the publisher.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid #27303B">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Contracts · 2024 Q4 · possibly incomplete</span>
+<span style="text-wrap: pretty">95,000 rows, against 124,000 to 229,000 in other quarters. Flagged by the published rule: fewer than 60% of the median row count of the surrounding quarters.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid #27303B">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Awards without a prior call · 2021 Q1 to 2022 Q4 · not in the source</span>
+<span style="text-wrap: pretty">The quarterly exports for these years leave out procedures with no prior call. A backfill from e-licitatie.ro will cover them. Until it has run, these contracts are missing from totals and Signals.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid #27303B">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Current quarter · 2026 Q4</span>
+<span style="text-wrap: pretty">Contracts and award notices are crawled every night and stay provisional until the quarterly export lands. Direct purchases are not crawled, so they wait for the bulk file.</span>
+</li>
+</ol>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">data through</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; background: #141920; border: 1px solid #27303B; border-radius: 6px"><dt style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Direct purchases · DA</dt><dd style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 22px; font-weight: 600">30 Sep 2026</dd><dd style="margin: 0; font-size: 13px; color: #B8C0CA">awaiting the next bulk file</dd></div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; background: #141920; border: 1px solid #27303B; border-radius: 6px"><dt style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Direct purchases, offline · DAN</dt><dd style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 22px; font-weight: 600">30 Sep 2026</dd><dd style="margin: 0; font-size: 13px; color: #B8C0CA">awaiting the next bulk file</dd></div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; background: #141920; border: 1px solid #27303B; border-radius: 6px"><dt style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Contracts · CAN, SCNA</dt><dd style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 22px; font-weight: 600">11 Nov 2026</dd><dd style="margin: 0; font-size: 13px; color: #B8C0CA">current quarter crawled, provisional</dd></div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; background: #141920; border: 1px solid #27303B; border-radius: 6px"><dt style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Awards without a prior call</dt><dd style="margin: 0; font-family: 'Space Grotesk', Inter, sans-serif; font-size: 22px; font-weight: 600">11 Nov 2026</dd><dd style="margin: 0; font-size: 13px; color: #B8C0CA">current quarter crawled, provisional</dd></div>
+</dl>
+</section>
+
+<section style="padding: 18px; display: flex; flex-direction: column; gap: 8px; background: #141920; border: 1px solid #27303B; border-radius: 6px">
+<h2 style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: #F2B33D">per county: N of M</h2>
+<p style="margin: 0; max-width: 820px; text-wrap: pretty">On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities, snapshot of [DATE]. An entity without records may simply have bought nothing, so the count is never shown as a percentage.</p>
+<a href="ExploreCoverage.dc.html" style="align-self: flex-start; padding: 6px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">open the Coverage lens on the map →</a>
+</section>
+
+</main>
+
+<footer style="margin-top: auto; border-top: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document</span>
+<span>Signals are counted, never scored</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+const S = {
+ok: { bg: '#F2B33D', bd: '#F2B33D', ink: '#0D1014', g: '', label: 'loaded' },
+crawl: { bg: 'transparent', bd: '#F2B33D', ink: '#F2B33D', g: 'c', label: 'crawled, provisional' },
+maybe: { bg: '#8A6A1E', bd: '#8A6A1E', ink: '#0D1014', g: '?', label: 'possibly incomplete' },
+gap: { bg: 'repeating-linear-gradient(135deg, #BE8E2B 0 3px, #3A2F12 3px 6px)', bd: '#BE8E2B', ink: '#0D1014', g: '', label: 'known gap' },
+wait: { bg: '#232B35', bd: '#232B35', ink: '#9BA5B1', g: '…', label: 'awaiting the bulk file' },
+none: { bg: 'transparent', bd: '#3A4552', ink: '#9BA5B1', g: '–', label: 'not in the source' }
+};
+const names = [];
+for (let y = 2021; y <= 2026; y++) for (let q = 1; q <= 4; q++) names.push(y + ' Q' + q);
+const row = (kind, special) => names.map((n, i) => { const s = S[special[n] || (i === 23 ? special.last : 'ok')]; return { ...s, label: kind + ', ' + n + ': ' + s.label }; });
+const early = {};
+names.slice(0, 8).forEach((n) => { early[n] = 'none'; });
+return {
+quarters: names.map((n) => ({ t: n.slice(5) })),
+da: row('Direct purchases', { last: 'wait' }),
+dan: row('Offline direct purchases', { '2025 Q2': 'gap', last: 'wait' }),
+con: row('Contracts', { '2024 Q4': 'maybe', last: 'crawl' }),
+noc: row('Awards without a prior call', { ...early, last: 'crawl' })
+};
+}
+}
+</script>
+</body>
+</html>
