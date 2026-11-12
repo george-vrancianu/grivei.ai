@@ -5,8 +5,8 @@ import type { Locale } from "../../../theme/index.ts";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import {
-  blankCeilingPage, consortiumNameOnlyPage, consortiumPage, contractRecord, directPurchaseRecord, everyBadgePage, frameworkPage, naturalPersonPage,
-  noValuePage, provisionalPage, subsequentPage, suspectDirectPage, suspectNoEstimatePage, suspectOverEstimatePage,
+  blankCeilingPage, consortiumNameOnlyPage, consortiumPage, contractRecord, directPurchaseRecord, everyBadgePage, frameworkOverrunPage, frameworkPage,
+  naturalPersonPage, noPublicPage, noValuePage, subsequentPage, suspectDirectPage, suspectNoEstimatePage, suspectOverEstimatePage,
 } from "../../samples/fixtureData.ts";
 import type { RecordPageData } from "../../types.ts";
 import { RecordDetail } from "./index.ts";
@@ -30,11 +30,11 @@ describe("RecordDetail", () => {
   it("shows the title as the heading, with date, kind, procedure, contract type and CPV as published", () => {
     show(contractRecord);
     expect(screen.getByRole("heading", { level: 1, name: contractRecord.title })).toBeVisible();
-    expect(screen.getByText("8 November 2023")).toBeVisible();
+    expect(screen.getByText("20 January 2025")).toBeVisible();
     expect(screen.getByText("Contract")).toBeVisible();
-    expect(screen.getByText("Licitație deschisă")).toBeVisible();
-    expect(screen.getByText("Lucrări")).toBeVisible();
-    expect(screen.getByText("45233140-2 Lucrări de drumuri")).toBeVisible();
+    expect(screen.getByText("Licitatie deschisa")).toBeVisible();
+    expect(screen.getByText("Servicii")).toBeVisible();
+    expect(screen.getByText("50720000-8 Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)")).toBeVisible();
   });
 
   it("names a DAN a direct purchase award notification, in both languages", () => {
@@ -48,15 +48,18 @@ describe("RecordDetail", () => {
 
   it("shows the value as published and the counted value", () => {
     show(contractRecord);
-    expect(screen.getByText("Value as published").nextElementSibling).toHaveTextContent("RON 12,800,000.00");
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 12,800,000.00");
+    expect(screen.getByText("Value as published").nextElementSibling).toHaveTextContent("RON 289,637.00");
+    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 289,637.00");
   });
 
   it("links the authority and the winner to their entity pages", () => {
     show(contractRecord);
-    expect(screen.getByRole("link", { name: contractRecord.authority.displayName })).toHaveAttribute("href", `/explore/authority/${contractRecord.authority.key}`);
+    // the subsequent contracts listed below repeat the names: look in the parties' own blocks
+    const authority = within(screen.getByText("Contracting authority").nextElementSibling as HTMLElement);
+    expect(authority.getByRole("link", { name: contractRecord.authority.displayName })).toHaveAttribute("href", `/explore/authority/${contractRecord.authority.key}`);
     const winner = contractRecord.winners[0]!.entity!;
-    expect(screen.getByRole("link", { name: winner.displayName })).toHaveAttribute("href", `/explore/supplier/${winner.key}`);
+    const winners = within(screen.getByText("Winners").nextElementSibling as HTMLElement);
+    expect(winners.getByRole("link", { name: winner.displayName })).toHaveAttribute("href", `/explore/supplier/${winner.key}`);
   });
 
   it("says 'no value in SEAP' for a null value, with nothing to count", () => {
@@ -74,8 +77,8 @@ describe("RecordDetail", () => {
   });
 
   it.each([
-    [suspectDirectPage, "at least ten times the cap in force", "RON 270,120.00"],
-    [suspectOverEstimatePage, "at least a hundred times the estimated value", "RON 40,000,000.00"],
+    [suspectDirectPage, "at least ten times the cap in force", "RON 135,060.00"],
+    [suspectOverEstimatePage, "at least a hundred times the estimated value", "RON 10,000,000.00"],
     [suspectNoEstimatePage, "above 50 bn RON and e-licitatie gives no estimated value", null],
   ])("states the suspect rule and its threshold", (record, rule, threshold) => {
     show(record);
@@ -87,18 +90,20 @@ describe("RecordDetail", () => {
 
   it("shows a consortium's full value, every member and each equal share labelled as a convention", () => {
     show(consortiumPage);
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 30,000,000.00");
+    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 98,800.00");
     const members = screen.getAllByRole("listitem").filter((li) => /\(equal share/.test(li.textContent ?? ""));
     expect(members).toHaveLength(2);
-    for (const member of members) expect(member).toHaveTextContent("equal share RON 15,000,000.00");
+    for (const member of members) expect(member).toHaveTextContent("equal share RON 49,400.00");
     expect(screen.getByText(/counting convention, not a figure SEAP publishes/)).toBeVisible();
   });
 
   it("marks a name-only member as identified by name only, with its share", () => {
     show(consortiumNameOnlyPage);
     const marker = sampleCopy.entityLink("en").nameOnly.label;
-    expect(screen.getAllByText(marker)).toHaveLength(2);
-    expect(screen.getAllByText(/equal share RON 2,250,000.00/)).toHaveLength(2);
+    expect(screen.getAllByText(marker)).toHaveLength(1); // the foreign firm; the CUI firm is linked, the natural person is neither named nor linked
+    expect(screen.getAllByText(/equal share RON 166,666.67/)).toHaveLength(2);
+    expect(screen.getAllByText(/equal share RON 166,666.66/)).toHaveLength(1);
+    expect(screen.getByText("Persoană fizică")).toBeVisible();
   });
 
   it("never names or links a natural-person winner", () => {
@@ -111,15 +116,21 @@ describe("RecordDetail", () => {
   it("shows the framework line with its percentage, and the subsequent contracts", () => {
     show(frameworkPage);
     const framework = section("Framework agreement");
-    expect(framework.getByText("Ceiling RON 100,000,000.00; subsequent contracts reported so far RON 112,400,000.00 (112.4%)")).toBeVisible();
+    expect(framework.getByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeVisible();
     expect(framework.getByRole("heading", { name: "Subsequent contracts" })).toBeVisible();
-    const sub = frameworkPage.framework!.subsequent[0]!;
-    expect(framework.getByRole("link", { name: sub.title })).toHaveAttribute("href", `/explore/record/${sub.code}`);
+    for (const sub of frameworkPage.framework!.subsequent) expect(framework.getByRole("link", { name: sub.title })).toHaveAttribute("href", `/explore/record/${sub.code}`);
+    expect(frameworkPage.framework!.subsequent).toHaveLength(2);
+  });
+
+  it("shows a ratio over 100% as is, and the framework-overrun Signal beside it", () => {
+    show(frameworkOverrunPage);
+    expect(section("Framework agreement").getByText(/\(112.4%\)/)).toBeVisible();
+    expect(section("Signals this Record belongs to").getAllByRole("heading").length).toBeGreaterThan(0);
   });
 
   it("leaves the percentage out when the ceiling is blank", () => {
     show(blankCeilingPage);
-    expect(screen.getByText("Ceiling not published; subsequent contracts reported so far RON 0.00")).toBeVisible();
+    expect(screen.getByText("Ceiling not published; subsequent contracts reported so far RON 500,000.00")).toBeVisible();
     expect(screen.queryByText(/%/)).toBeNull();
   });
 
@@ -134,24 +145,24 @@ describe("RecordDetail", () => {
     const signals = section("Signals this Record belongs to");
     expect(signals.getByRole("heading", { name: "Over cap" })).toBeVisible();
     expect(signals.getByRole("link", { name: directPurchaseRecord.title })).toHaveAttribute("href", `/explore/record/${directPurchaseRecord.code}`);
-    expect(signals.getByText(/1 Record/)).toBeVisible();
+    expect(signals.getByText(/2 Records/)).toBeVisible();
     expect(signals.queryByText(/suspect|fraud|irregular|illegal|risk/i)).toBeNull();
   });
 
   it("shows the provenance verbatim and a Check in SEAP link that opens a new tab", () => {
     show(directPurchaseRecord);
     const provenance = section("Provenance");
-    expect(provenance.getByText("data.gov.ro 2024 Q1 Achiziții directe")).toBeVisible();
+    expect(provenance.getByText("Achizitii directe t1-2023")).toBeVisible();
     expect(provenance.getByText("Published bulk file")).toBeVisible();
-    expect(provenance.getByText("2 October 2024")).toBeVisible();
+    expect(provenance.getByText("15 June 2023")).toBeVisible();
     const link = provenance.getByRole("link", { name: "Check in SEAP" });
-    expect(link).toHaveAttribute("href", directPurchaseRecord.provenance.url!);
+    expect(link).toHaveAttribute("href", "/source/seap/DA98000001"); // a bulk Record's link is the redirect for its code
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
   });
 
   it("says there is no stable public page, instead of a link, when the URL is null", () => {
-    show(provisionalPage);
+    show(noPublicPage);
     const provenance = section("Provenance");
     expect(provenance.queryByRole("link")).toBeNull();
     expect(provenance.getByText("SEAP has no stable public page for this Record yet.")).toBeVisible();
@@ -170,7 +181,7 @@ describe("RecordDetail", () => {
   });
 
   it("renders Romanian", () => {
-    show(frameworkPage, "ro");
+    show(frameworkOverrunPage, "ro");
     expect(screen.getByText("Valoare publicată")).toBeVisible();
     expect(screen.getByText(/Plafon .*contracte subsecvente raportate până acum .* \(112,4\s?%\)/)).toBeVisible();
   });
