@@ -49,3 +49,20 @@ describe.each(["en", "ro"] as const)("the Signal wording catalogue (%s)", (local
     expect(signalTexts(locale).join(" ")).not.toMatch(/[şţ]/);
   });
 });
+
+describe.each(["en", "ro"] as const)("one name and one lawful line per Signal rule (%s)", (locale) => {
+  const c = catalogue[locale];
+
+  it("calls a rule the same on the card, the Records tab's facet, the Record page and the methodology page", () => {
+    for (const rule of SIGNAL_RULES) {
+      const label = c.signalCard.rules[rule].label;
+      expect(c.entityPage.recordsTab.facets.signals[rule]).toBe(label);
+      expect(c.recordPage.signals.rules[rule]).toBe(label);
+      expect(c.methodology.rules[rule].heading).toBe(label);
+    }
+  });
+
+  it("says the lawful explanations of a rule the same on the card and on the methodology page", () => {
+    for (const rule of SIGNAL_RULES) expect(c.methodology.rules[rule].lawful, rule).toBe(c.signalCard.rules[rule].lawful);
+  });
+});
