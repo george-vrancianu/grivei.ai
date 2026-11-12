@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pid": 965172,
+  "host": "deskgiu",
+  "state": "finished",
+  "startedAt": "2026-11-12T05:05:55Z",
+  "updatedAt": "2026-11-12T05:05:55Z",
+  "total": 2,
+  "done": 2,
+  "loaded": 2,
+  "skipped": 0,
+  "quarantined": 0,
+  "records": 13,
+  "current": null,
+  "last": "2026-11-12T07:05:55+0200 rebuild done units=2 loaded=2 skipped=0 quarantined=0 records=13 in 0:00:00",
+  "error": null,
+  "dataThrough": {
+    "CONTRACT": "2023-02-10",
+    "DA": "2023-03-20"
+  }
+}

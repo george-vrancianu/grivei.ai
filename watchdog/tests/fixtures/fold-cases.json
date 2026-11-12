@@ -1,0 +1,27 @@
+{
+  "_comment": "Shared by tests/test_fold.py and explorer/packages/api/src/fold.test.ts: the Python and the TypeScript fold must agree on every case.",
+  "cases": [
+    { "rule": "lower-case", "input": "PRIMĂRIA Brașov", "folded": "primaria brasov" },
+    { "rule": "diacritics: comma-below s and t", "input": "Ștefan Țară", "folded": "stefan tara" },
+    { "rule": "diacritics: cedilla s and t", "input": "Şcoala Ţării", "folded": "scoala tarii" },
+    { "rule": "diacritics: both spellings fold alike", "input": "întreținere întretinere", "folded": "intretinere intretinere" },
+    { "rule": "diacritics: a, a-circumflex, i-circumflex", "input": "ăâî ĂÂÎ", "folded": "aai aai" },
+    { "rule": "punctuation separates words", "input": "Lucrări de drumuri, (reparații); alfa/beta", "folded": "lucrari de drumuri reparatii alfa beta" },
+    { "rule": "a CPV code keeps its digits and its check digit is its own word", "input": "45233140-2", "folded": "45233140 2" },
+    { "rule": "dotted legal form joined then dropped", "input": "ALFA S.R.L.", "folded": "alfa" },
+    { "rule": "dotted legal form without the last dot", "input": "ALFA S.R.L", "folded": "alfa" },
+    { "rule": "dotted legal forms: S.C. and S.A.", "input": "S.C. BETA S.A.", "folded": "beta" },
+    { "rule": "legal form, undotted, in any case", "input": "Gamma sRl", "folded": "gamma" },
+    { "rule": "legal forms: PFA, II, SNC, SCS, SCA, SC, SA", "input": "pfa ii snc scs sca sc sa delta", "folded": "delta" },
+    { "rule": "a legal form inside a word stays", "input": "SRLX sapa asa", "folded": "srlx sapa asa" },
+    { "rule": "only legal forms folds to nothing", "input": "S.R.L.", "folded": "" },
+    { "rule": "only legal forms folds to nothing (several)", "input": "SC SRL SA", "folded": "" },
+    { "rule": "empty folds to nothing", "input": "   ", "folded": "" },
+    { "rule": "RO CUI rewritten to its digits", "input": "RO1000009", "folded": "1000009" },
+    { "rule": "RO CUI, lower case", "input": "ro1000009", "folded": "1000009" },
+    { "rule": "RO CUI in a sentence", "input": "CUI RO12345678 alfa", "folded": "cui 12345678 alfa" },
+    { "rule": "RO that is not a CUI stays", "input": "ro roma ro1 ro12345678901", "folded": "ro roma ro1 ro12345678901" },
+    { "rule": "a dotted word that is not a legal form is split, not joined", "input": "www.exemplu.ro", "folded": "www exemplu ro" },
+    { "rule": "single dotted letters inside a name join", "input": "I.C.A.R. Ionescu", "folded": "icar ionescu" }
+  ]
+}

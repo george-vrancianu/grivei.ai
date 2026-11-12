@@ -23,6 +23,9 @@ const store: Store = {
   framework: async () => null,
   subsequent: async () => [],
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
+  searchTotal: async () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
+  searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
+  searchRecords: async () => ({ count: 0, rows: [] }),
   entity: async () => null,
   aliases: async () => [],
   roles: async () => [],
@@ -91,10 +94,28 @@ describe("MainScreen for the empty filter", () => {
     ]);
   });
 
-  it("says plainly that a filter is not served yet, instead of ignoring it", async () => {
-    const r = await api.respond({ id: mainScreen.sha256, variables: { filter: { q: "hartie" } } });
+  it("says plainly that a filter waiting for another ticket is not served yet, instead of ignoring it", async () => {
+    const r = await api.respond({ id: mainScreen.sha256, variables: { filter: { hasSignals: true } } });
     expect(r.status).toBe(200);
     expect(r.body.errors?.[0]).toMatchObject({ message: expect.stringContaining("not served yet"), extensions: { code: "NOT_IMPLEMENTED" } });
+  });
+
+  it("runs a text filter on the search store, echoing the folded query, and passes the client's abort signal down", async () => {
+    const seen: (AbortSignal | undefined)[] = [];
+    const searching = createApi({
+      ...store,
+      searchTotal: async (_f, o) => (seen.push(o?.signal), { awarded: "5", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
+      searchEntities: async (_s, _f, _p, o) => (seen.push(o?.signal), { count: 1, estimated: true, rows: [{ entity: entity("1000009", "COMUNA"), matched: { awarded: "5", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } }] }),
+    }, schema);
+    const gone = new AbortController();
+    const r = await searching.respond({ id: mainScreen.sha256, variables: { filter: { q: "Ștefan S.R.L." } } }, { signal: gone.signal });
+    expect(r.body.errors).toBeUndefined();
+    const search = (r.body.data as MainScreenQuery).seap.search;
+    expect(search.filter.qFolded).toBe("stefan");
+    expect(search.total.awarded).toBe("5");
+    expect(search.suppliers).toMatchObject({ count: 1, countEstimated: true });
+    expect(seen.length).toBe(3);
+    expect(seen.every((x) => x === gone.signal)).toBe(true);
   });
 
   it("does not leak a database failure to the client", async () => {

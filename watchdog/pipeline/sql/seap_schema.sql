@@ -99,30 +99,43 @@ CREATE TABLE seap.framework (
     ratio            double precision     -- subsequent_bani / ceiling_bani; null when the ceiling is blank
 );
 
--- TODO (search-engine ticket): nothing reads this table yet; the tracer API serves seap.record. It is filled on every
--- rebuild so the search engine starts from real rows.
--- The search table: one row per Record x winner. The tracer fills the columns the empty-filter Total and Records list
--- need and the folded text document; the chip, placement and pg_search columns arrive with the search engine.
+-- The search table (#68): one row per Record x winner, money in integer bani, the share precomputed. `pg_search` (BM25) indexes it
+-- (`seap.search_bm25`, created by `pipeline/search.py` after the load, inside its transaction, and followed by VACUUM ANALYZE of
+-- this table), so the index is part of every load transaction and a load is visible to search only once it commits. Every
+-- column the query filters or sums on is in the index; `doc` is the one folded text document per Record (pipeline/fold.py).
 CREATE TABLE seap.search (
+    id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,  -- the index's key field
     record_code      text NOT NULL REFERENCES seap.record(code),
     winner_position  integer NOT NULL,
-    winners          integer NOT NULL,
+    winners          integer NOT NULL,    -- number of winners of the Record
+    -- chip columns
     channel          text NOT NULL,
     award_date       date NOT NULL,
     award_year       integer NOT NULL,
     value_bani       bigint,
+    value_bucket     text,                -- the ValueBucket enum (contract value-buckets.ts, bani, upper edge inclusive); null = no value
+    has_signals      boolean NOT NULL DEFAULT false,  -- Signals arrive with their own tickets; false until then
+    badges           text[] NOT NULL DEFAULT '{}',    -- the Record's badges (counting, identity, crawl), also the filter chips
+    procedure        text,
+    cpv_code         text,                -- as published (45233140-2): a prefix filter and a text token
+    -- money
     counted_bani     bigint,              -- the Record's counted value (null: not summed); the authority side sums it once per Record
     ceiling_bani     bigint,              -- as on seap.record (once per Record: sum over winner_position = 1 on the authority side)
     suspect          boolean NOT NULL DEFAULT false,  -- as on seap.record
     share_bani       bigint,              -- this winner's equal share of counted_bani (a sole winner has all of it); the supplier side sums it
+    -- placement (#67 fills the county and UAT columns; null until a Source places the entity)
+    authority_key    text,                -- the authority's entity key
     authority_cui    text,
+    authority_county text,                -- ISO 3166-2:RO, e.g. RO-BV
+    authority_uat    text,                -- SIRUTA
     supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
     supplier_key     text,                -- the winner's entity key (core.entity.key); null for a natural person
+    supplier_county  text,
     supplier_spelling text,               -- the winner's name as published on this Record; null for a natural person
     supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
     supplier_curated boolean NOT NULL DEFAULT false,
     supplier_differs boolean NOT NULL DEFAULT false,  -- the spelling differs from ANAF's name under a confirmed CUI
-    doc              text NOT NULL,
-    PRIMARY KEY (record_code, winner_position)
+    doc              text NOT NULL,       -- folded text: title, authority name, every winner's name, CPV code and description, public code, CUIs
+    UNIQUE (record_code, winner_position)
 );
 CREATE INDEX search_award_date_idx ON seap.search (award_date);
