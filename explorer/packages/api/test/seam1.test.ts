@@ -169,8 +169,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   });
 
+  // --in-place: the default is the switchover (#82), which terminates the sessions of the live database; this seam keeps one pool per database and rebuilds under it
   const rebuild = (db: string, archive = "archive", extra: string[] = []) => {
-    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`, ...extra], {
+    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`, "--in-place", ...extra], {
       cwd: watchdog, encoding: "utf8",
     });
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
