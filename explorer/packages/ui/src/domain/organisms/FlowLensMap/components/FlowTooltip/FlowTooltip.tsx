@@ -30,7 +30,7 @@ export function FlowTooltip({ name, total, role, isHome, homeName, locale, copy 
       {isHome ? (
         <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tooltip.homeCounty}</Typography>
       ) : (
-        total && homeName && <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tooltip.direction[role](homeName)}</Typography>
+        total && BigInt(total.awarded) > 0n && homeName && <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tooltip.direction[role](homeName)}</Typography>
       )}
     </>
   );

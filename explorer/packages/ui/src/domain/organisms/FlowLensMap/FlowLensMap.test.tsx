@@ -92,13 +92,34 @@ describe("FlowLensMap arcs", () => {
     setup({ flow: supplierLocalFlow, role: "supplier", home: supplierHome });
     expect(arcs()).toEqual([]);
     expect(Object.keys(radii())).toEqual(["RO-CJ"]);
-    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("All of the money comes from Cluj: a single bubble and no arcs.");
+    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("All of the money placed in a county comes from Cluj: a single bubble and no arcs.");
   });
 
   it("draws no arcs for a local-only authority either", () => {
     setup({ flow: authorityLocalFlow, role: "authority", home: authorityHome });
     expect(arcs()).toEqual([]);
-    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("All of the money goes to suppliers in Brașov");
+    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("All of the money placed in a county goes to suppliers in Brașov");
+  });
+
+  it("does not call a flow local-only when no county holds money but a tile does", () => {
+    const flow = { ...supplierLocalFlow, counties: [], national: supplierNationwideFlow.national };
+    setup({ flow, role: "supplier", home: supplierHome });
+    expect(Object.keys(radii())).toEqual([]);
+    expect(document.querySelector("[data-flow-caption]")).not.toHaveTextContent("single bubble");
+    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("Where this supplier's money comes from");
+  });
+
+  it("limits the local-only caption to the money placed in a county when a tile also holds money", () => {
+    const flow = { ...supplierLocalFlow, national: supplierNationwideFlow.national };
+    setup({ flow, role: "supplier", home: supplierHome });
+    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("All of the money placed in a county comes from Cluj");
+    expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("Money that no county holds is on the tiles");
+  });
+
+  it("claims no direction in the tooltip of a county at zero", async () => {
+    setup();
+    await userEvent.hover(screen.getByRole("button", { name: /^Timiș/ }));
+    expect(screen.getByRole("tooltip")).not.toHaveTextContent("Money flows");
   });
 
   it("draws bubbles only, and says why, without a home county", () => {

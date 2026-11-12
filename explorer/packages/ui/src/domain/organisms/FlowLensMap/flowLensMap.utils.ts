@@ -112,8 +112,8 @@ export function flowMarks(
     if (at) bubbles.push({ code: row.code, x: at[0], y: at[1], r: bubbleRadius(row.awarded, max), awarded: row.awarded });
   }
   const homeAt = home === null ? undefined : centroids.get(home);
-  const homeRadius = bubbles.find((bubble) => bubble.code === home)?.r ?? 0;
   if (home === null || !homeAt) return { bubbles, arcs: [] };
+  const homeRadius = bubbles.find((bubble) => bubble.code === home)?.r ?? 0;
   const others = bubbles.filter((bubble) => bubble.code !== home);
   const arcMax = maxAwarded(others);
   const arcs: FlowArc[] = [];
@@ -128,7 +128,7 @@ export function flowMarks(
   return { bubbles, arcs };
 }
 
-/** True when a flow holds no money anywhere: no county, and no Total on a tile. */
+/** True when a flow holds no money anywhere: no county with awarded value above zero (as for the bubbles), and no Total on a tile with any Record or value (a no-value Record on a tile still shows the map). */
 export function isEmptyFlow(flow: Pick<MoneyMap, "counties" | "national" | "unplaced" | "unknownSupplierCounty">): boolean {
   const zero = (total: { awarded: string; records: number }) => total.records === 0 && BigInt(total.awarded) === 0n;
   return flowRows(flow).length === 0 && zero(flow.national) && (!flow.unplaced || zero(flow.unplaced.total)) && (!flow.unknownSupplierCounty || zero(flow.unknownSupplierCounty));

@@ -45,7 +45,7 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
   // A home county the outlines don't have can't anchor arcs: treated as unknown.
   const homeCode = home !== null && names.has(home) ? home : null;
   const homeName = homeCode === null ? null : (names.get(homeCode) ?? null);
-  const localOnly = rows.every((row) => row.code === homeCode);
+  const localOnly = rows.length > 0 && rows.every((row) => row.code === homeCode);
   if (flow.side !== flowSide(role)) throw new Error(`A ${role}'s Flow lens is drawn on the ${flowSide(role)} side, not ${flow.side}`);
 
   if (isEmptyFlow(flow)) {

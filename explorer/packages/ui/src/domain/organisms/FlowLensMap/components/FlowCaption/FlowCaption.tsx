@@ -6,7 +6,7 @@ export interface FlowCaptionProps {
   role: EntityRole;
   /** The entity's county name; null when it has none (or the map has no outline for it). */
   homeName: string | null;
-  /** Every county's money is in the home county: one bubble, no arcs. */
+  /** Every county that holds money is the home county (and there is one): one bubble, no arcs. Says nothing of the off-map tiles. */
   localOnly: boolean;
   copy: FlowCaptionCopy;
 }

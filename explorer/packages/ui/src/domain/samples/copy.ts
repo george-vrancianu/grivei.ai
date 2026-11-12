@@ -461,8 +461,8 @@ export const sampleCopy = {
               authority: (home) => `Încotro merg banii autorității: furnizori din toată țara, din ${home}.`,
             },
             localOnly: {
-              supplier: (home) => `Toți banii vin din ${home}: un singur cerc, fără arce.`,
-              authority: (home) => `Toți banii merg către furnizori din ${home}: un singur cerc, fără arce.`,
+              supplier: (home) => `Toți banii plasați într-un județ vin din ${home}: un singur cerc, fără arce.`,
+              authority: (home) => `Toți banii plasați într-un județ merg către furnizori din ${home}: un singur cerc, fără arce.`,
             },
             noHome: {
               supplier: "Județul furnizorului nu este cunoscut: doar cercuri, fără arce.",
@@ -493,8 +493,8 @@ export const sampleCopy = {
               authority: (home) => `Where this authority's money goes: suppliers across Romania, flowing out of ${home}.`,
             },
             localOnly: {
-              supplier: (home) => `All of the money comes from ${home}: a single bubble and no arcs.`,
-              authority: (home) => `All of the money goes to suppliers in ${home}: a single bubble and no arcs.`,
+              supplier: (home) => `All of the money placed in a county comes from ${home}: a single bubble and no arcs.`,
+              authority: (home) => `All of the money placed in a county goes to suppliers in ${home}: a single bubble and no arcs.`,
             },
             noHome: {
               supplier: "This supplier's county is not known: bubbles only, no arcs.",
