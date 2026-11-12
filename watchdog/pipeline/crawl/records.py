@@ -23,7 +23,7 @@ from typing import Any
 
 from ..archive import Unit
 from ..bulk import BulkRecord, InvalidFile, Winner
-from ..bulk.values import to_cui
+from ..bulk.values import to_tax_id
 
 # (notice type, legacy form?) -> route under https://e-licitatie.ro/pub/notices/. The SPA (navigateToView) picks the route from
 # sysNoticeTypeId and sysNoticeVersionId; version 1 is the legacy form. Same table as watchdog/sql/002_load_seap.sql
@@ -96,7 +96,7 @@ def _cpv(text: Any) -> tuple[str | None, str | None]:
 def _winners(contract: dict) -> list[Winner]:
     out: list[Winner] = []
     for w in contract.get("winners") or []:
-        cui, _ = to_cui(str(w["fiscalNumber"]) if w.get("fiscalNumber") is not None else None)
+        cui, _ = to_tax_id(str(w["fiscalNumber"]) if w.get("fiscalNumber") is not None else None)
         winner = Winner((w.get("name") or "").strip() or None, cui)
         if (winner.name or winner.cui) and winner not in out:
             out.append(winner)

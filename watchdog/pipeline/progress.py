@@ -159,7 +159,7 @@ def effective_state(status: dict, alive: Callable[[int], bool] = _alive, host: s
     container's python is pid 1, so `status` run in a fresh container would otherwise see a live process for ever.
     """
     state = status.get("state", "unknown")
-    if state in ("running", "starting"):
+    if state in ("running", "starting", "scanning"):
         if status.get("host") != (host if host is not None else socket.gethostname()):
             return "unknown"
         if not alive(int(status.get("pid", 0))):

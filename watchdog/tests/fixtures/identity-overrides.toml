@@ -1,0 +1,12 @@
+# Fictional overrides for the seam 1 / pytest identity fixture (never the shipped file).
+
+[[override]]
+reason = "Fictional: the winner of DA93000012 is published without a CUI; the notice names this association."
+name = "ASOCIEREA PENTRU PODUL EXEMPLU"
+key = "consortium-podul-exemplu"
+display_name = "Asocierea pentru Podul Exemplu"
+
+[[override]]
+reason = "Fictional: the CUI published on DA93000013 is a typo for Destinatar Demo's."
+published_id = "2000058"
+key = "2000066"

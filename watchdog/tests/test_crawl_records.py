@@ -98,11 +98,11 @@ def test_contracts_sharing_a_number_become_one_record_whose_value_adds(tmp_path)
     assert "contract_number:missing" in records["CAN1~"].notes
 
 
-def test_winner_tax_codes_lose_their_RO_prefix_and_a_notice_without_contracts_yields_nothing(tmp_path):
+def test_winner_tax_ids_are_kept_as_published_and_a_notice_without_contracts_yields_nothing(tmp_path):
     _, unit = day_unit(tmp_path, [notice(1), notice(2)], {1: [contract(1)]})
     parsed = parse_unit(unit)
     assert parsed.rows == 2 and [r.code for r in parsed.records["CONTRACT"]] == ["CAN1~C1"]
-    assert [(w.name, w.cui) for w in parsed.records["CONTRACT"][0].winners] == [("FIRMA SRL", "2000001")]
+    assert [(w.name, w.cui) for w in parsed.records["CONTRACT"][0].winners] == [("FIRMA SRL", "RO 2000001")]  # as published: identity.py reads the RO prefix (ADR 0003)
 
 
 @pytest.mark.parametrize("type_id, version, path", [

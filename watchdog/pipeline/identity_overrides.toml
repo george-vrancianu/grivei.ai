@@ -1,0 +1,22 @@
+# The reviewed identity overrides (ADR 0003). Read by `pipeline rebuild`; the ONLY hand curation of identity in the graph.
+# Values are never hand-curated (Data caveats), and nothing here splits a joint venture: an entry names one supplier, a
+# consortium's name is one supplier.
+#
+# An entry is a `[[override]]` table with a reason (required: who/what/why, so a reviewer can check it) and a target `key`:
+#
+#   reason       why this override is right. Required.
+#   published_id a tax id as SEAP publishes it that is wrong (fails the check digit, or belongs to someone else) ...
+#   name         ... or the name of a supplier published without a usable CUI (matched on the whole name, case, diacritics,
+#                punctuation and spacing folded). Exactly one of the two.
+#   key          the entity to attach to: a CUI that passes the check digit (the entity ANAF knows under it), or a pinned key
+#                for a name-only entity (`[a-z][a-z0-9-]*`, e.g. `consortium-example`; not `vat-...` or `name-...`).
+#   display_name optional; the display name of a pinned name-only entity (otherwise its most frequent spelling).
+#
+# An entity an override touches is `identityCurated` and the Records it applied to carry the IDENTITY_CURATED badge.
+# A 13-digit id (a CNP) is refused anywhere in this file. Keep it short and reviewed; a real entry looks like:
+#
+# [[override]]
+# reason = "Fictional example: the winner of CAN0000001 is published without a CUI; the notice's PDF names this company."
+# name = "ASOCIEREA EXEMPLU ALFA-BETA"
+# key = "consortium-exemplu-alfa-beta"
+# display_name = "Asocierea Exemplu Alfa-Beta"

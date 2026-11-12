@@ -72,6 +72,11 @@ def _copy_fixture(tmp_path) -> Archive:
     return Archive(root)
 
 
+def _who(winners):
+    """(name, entity key) of each winner. The fixture CUIs are not in any ANAF answer, so every supplier is name-only (ADR 0003)."""
+    return [(w["name"], w["key"]) for w in winners]
+
+
 def _dump(url):
     with psycopg.connect(url) as c:
         return (c.execute("SELECT code, kind, quarter, award_date, value_bani, authority_cui, supplier_cui, source_file_id FROM seap.record ORDER BY code").fetchall(),
@@ -167,7 +172,7 @@ def test_a_contract_recurring_in_a_later_quarter_is_one_record_with_the_newer_ve
         assert c.execute("SELECT unit, row_count FROM seap.source_file WHERE id = %s", (file_id,)).fetchone() == ("2022Q2", 2)
     # the 2022 Q2 file's version (notice published 2022-05-20): its title, value and winner, and the quarter of that publication
     assert (title, value, counted, quarter, kind, channel) == ("Combustibil (actualizat)", 15000, 15000, "2022Q2", "CONTRACT", "CONTRACT")
-    assert winners == [{"name": "PETROL NOU SA", "cui": "2000005"}]
+    assert _who(winners) == [("PETROL NOU SA", "name-petrol-nou-sa")]
 
 
 def test_reloading_an_older_file_after_a_newer_one_leaves_the_newer_version(db, tmp_path):
@@ -196,7 +201,7 @@ def test_the_result_does_not_depend_on_the_order_the_files_arrive_in(db, tmp_pat
         with psycopg.connect(db) as c:
             dumps.append(c.execute("SELECT code, title, value_bani, quarter, award_date, winners FROM seap.record").fetchall())
             assert c.execute("SELECT count(*) FROM seap.search").fetchone() == (1,)
-    assert dumps[0] == dumps[1] == [("CAN1~C1", "new", 15000, "2022Q2", date(2021, 12, 27), [{"name": "NEW", "cui": "2000005"}])]
+    assert dumps[0] == dumps[1] == [("CAN1~C1", "new", 15000, "2022Q2", date(2021, 12, 27), [{"name": "NEW", "key": "name-new", "identity": "NAME_ONLY", "naturalPerson": False, "curated": False, "differsFromAnaf": False, "cuiMismatch": False}])]
 
 
 def test_the_same_publication_date_with_other_content_goes_to_the_later_file_and_replaces_the_whole_version(db, tmp_path):
@@ -211,20 +216,20 @@ def test_the_same_publication_date_with_other_content_goes_to_the_later_file_and
     assert len(summary.duplicate_files) == 1
     assert _record(db, "CAN1~C1")[1:4] == ("t", 30000, 30000)
     # replaced as a whole: the winners are the second file's, not a merge with the first's
-    assert _record(db, "CAN1~C1")[5] == [{"name": "BETA", "cui": "2000002"}]
+    assert _who(_record(db, "CAN1~C1")[5]) == [("BETA", "name-beta")]
     with psycopg.connect(db) as c:
-        assert c.execute("SELECT winner_position, winners, supplier_cui, share_bani FROM seap.search ORDER BY 1").fetchall() == [(1, 1, "2000002", 30000)]
+        assert c.execute("SELECT winner_position, winners, supplier_cui, share_bani FROM seap.search ORDER BY 1").fetchall() == [(1, 1, None, 30000)]  # CUI 2000002 is no ANAF answer: name-only, no confirmed CUI
 
 
 def test_winners_are_stored_in_published_order_with_one_search_row_each(db, tmp_path):
     root = tmp_path / "archive"
     shutil.copytree(CONTRACTS, root)
     rebuild(Archive(root), db)
-    assert _record(db, "CAN9000002~77/2022")[5] == [{"name": "BETA CHIMIE SRL", "cui": "2000002"}, {"name": "ALFA CHIMIE SRL", "cui": "2000001"}]
-    assert _record(db, "CAN9100002")[5] == [{"name": "CENTRUL TOPMED DEMO", "cui": "6781938"}, {"name": "ASOCIEREA DEMO", "cui": "5555555"}]
+    assert _who(_record(db, "CAN9000002~77/2022")[5]) == [("BETA CHIMIE SRL", "name-beta-chimie-srl"), ("ALFA CHIMIE SRL", "name-alfa-chimie-srl")]
+    assert _who(_record(db, "CAN9100002")[5]) == [("CENTRUL TOPMED DEMO", "name-centrul-topmed-demo"), ("ASOCIEREA DEMO", "name-asocierea-demo")]
     with psycopg.connect(db) as c:
         assert c.execute("SELECT winner_position, winners, supplier_cui, counted_bani, share_bani FROM seap.search WHERE record_code = 'CAN9000002~77/2022' ORDER BY 1").fetchall() == [
-            (1, 2, "2000002", 120025, None), (2, 2, "2000001", 120025, None)]  # an equal share of a consortium's value is the counting rule's (#65)
+            (1, 2, None, 120025, None), (2, 2, None, 120025, None)]  # an equal share of a consortium's value is the counting rule's (#65)
 
 
 def test_a_contracts_value_counts_once_when_its_lots_agree_and_sums_when_they_differ(db, tmp_path):
@@ -304,11 +309,11 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     # a second rebuild dies in the middle of its third file
     real, calls = rebuild_module.load_records, []
 
-    def dying(cur, source_file_id, rows):
+    def dying(cur, source_file_id, rows, resolver=None):
         calls.append(source_file_id)
         if len(calls) == 3:
             raise killed_by
-        real(cur, source_file_id, rows)
+        real(cur, source_file_id, rows, resolver)
 
     monkeypatch.setattr(rebuild_module, "load_records", dying)
     with pytest.raises(type(killed_by)):
