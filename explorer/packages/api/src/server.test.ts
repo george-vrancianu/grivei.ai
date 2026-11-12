@@ -40,6 +40,7 @@ const store: Store = {
   roleFrameworks: async () => ({ count: 0, ceilings: "0", subsequentReported: "0" }),
   roleConsortia: async () => [],
   roleLargest: async () => [],
+  goTo: async () => null,
   entity: async () => null,
   aliases: async () => [],
   roles: async () => [],

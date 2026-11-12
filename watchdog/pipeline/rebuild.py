@@ -349,6 +349,17 @@ SELECT k.key,
 """
 
 
+def _fold_names(cur: psycopg.Cursor, chunk: int = 50_000) -> None:
+    """`core.entity.name_folded` (the Go-to lookup of a name query, #69) from the final display names, folded as every query is."""
+    cur.execute("SELECT key, display_name FROM core.entity")
+    rows = cur.fetchall()
+    for i in range(0, len(rows), chunk):
+        part = rows[i:i + chunk]
+        cur.execute("UPDATE core.entity e SET name_folded = v.f FROM unnest(%s::text[], %s::text[]) AS v(k, f) WHERE e.key = v.k",
+                    ([k for k, _ in part], [fold(n) for _, n in part]))
+    cur.execute("CREATE INDEX entity_name_folded ON core.entity (name_folded) WHERE name_folded <> ''")
+
+
 def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSummary) -> None:
     """`core.entity` and `core.alias` from the loaded Records (ADR 0003). The CUI an ANAF-confirmed supplier is keyed on is
     the same string as `core.anaf_company.cui`, so ANAF's name and status attach by key. ANAF's name goes through the
@@ -362,6 +373,7 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
     for override in (*overrides.by_id.values(), *overrides.by_name.values()):
         if override.display_name:
             cur.execute("UPDATE core.entity SET display_name = %s WHERE key = %s", (override.display_name, override.key))
+    _fold_names(cur)
     cur.execute("SELECT count(*) FROM core.entity")
     summary.entities = cur.fetchone()[0]
 

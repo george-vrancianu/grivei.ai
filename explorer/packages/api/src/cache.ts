@@ -198,7 +198,8 @@ export function cachedStore(
           await store.searchEntities("AUTHORITY", f, PAGE);
           await store.searchEntities("SUPPLIER", f, PAGE);
           await (f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }));
-          statements += 6;
+          if (f.q) await store.goTo(foldTokens(f.q).join(" ")); // the Go-to lookup of the same folded query
+          statements += f.q ? 7 : 6;
         } catch (e) {
           failed++;
           log(`cache warming of ${JSON.stringify(f)} failed: ${(e as Error).message}`);
@@ -226,6 +227,8 @@ export function cachedStore(
     searchTotal: (filter, options) => cached(`total|${canonicalFilter(filter)}`, () => inner.searchTotal(filter, options)),
     searchEntities: (side, filter, p, options) => cached(`${side}|${canonicalFilter(filter)}|${page(p)}`, () => inner.searchEntities(side, filter, p, options)),
     searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, () => inner.searchRecords(filter, p, options)),
+    // the Go-to entity depends on the folded query alone (chips never restrict it), so the key is the folded text
+    goTo: (qFolded, options) => cached(`goto|${qFolded}`, () => inner.goTo(qFolded, options)),
     searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, () => inner.searchMap(side, filter, options)),
     // the county list is tiny and only changes with a load: kept per generation, outside the LRU and the hit/miss counts
     counties: async () => {

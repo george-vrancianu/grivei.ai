@@ -39,6 +39,7 @@ const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UA
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
 const coverageArchive = join(watchdog, "tests/fixtures/archive-coverage"); // one cell of every Coverage grid state, rebuilt as of 2025-09-20 (#79)
 const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
+const gotoArchive = join(watchdog, "tests/fixtures/archive-goto"); // two authorities whose names differ only by a legal form (#69)
 const mfArchive = join(watchdog, "tests/fixtures/archive-mf"); // the MF list slice for the placement world (#80); copied onto archive-placement
 const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placement fixture's 2023 Q1 has a DA file only: the other three kinds are hand-entered gaps
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
@@ -113,6 +114,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
     cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     cpSync(searchArchive, join(scratch, "archive-search"), { recursive: true });
+    cpSync(gotoArchive, join(scratch, "archive-goto"), { recursive: true });
     cpSync(moneyMapArchive, join(scratch, "archive-moneymap"), { recursive: true });
     cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
@@ -146,6 +148,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE coverage_a");
     await admin.query("CREATE DATABASE coverage_b");
     await admin.query("CREATE DATABASE search_a");
+    await admin.query("CREATE DATABASE goto_a");
     await admin.query("CREATE DATABASE moneymap_a");
     await admin.query("CREATE DATABASE moneymap_b");
     await admin.query("CREATE DATABASE rollup_a");
@@ -1351,14 +1354,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
       const misses = cache.stats().misses;
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
-      expect(cache.stats()).toMatchObject({ misses, hits: 5 });
+      expect(cache.stats()).toMatchObject({ misses, hits: 6 }); // total, two tabs, Records, the map, and the Go-to lookup (keyed by the folded query)
 
       const report = await cache.warm();
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
       const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
-      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 5 });
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 6 });
       expect(de.total.records).toBeGreaterThan(0);
       const empty = await answer(api, {});
       expect(empty.total.records).toBe(13);
@@ -1372,6 +1375,84 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(after.total.records).not.toBe(13);
       expect(await answer(api, { q: "De" })).not.toEqual(de); // not served from the old generation
       expect(after).toEqual(await answer(createApi(postgresStore(p, { rollup: false }), schema), {})); // and the rebuilt rollup agrees with the scan
+    });
+  });
+
+  describe("search details (#69): why a Record matched, and the Go-to entity", () => {
+    type Search = MainScreenQuery["seap"]["search"];
+    const ask69 = async (db: string, filter: Record<string, unknown>): Promise<Search> => {
+      const variables = { filter };
+      const r = await ask(db, mainScreen.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as MainScreenQuery).seap.search;
+    };
+    const matched = async (q: string, code: string) => {
+      const row = (await ask69("search_a", { q })).records.rows.find((r) => r.record.code === code);
+      expect(row, `${code} for ${q}`).toBeDefined();
+      return row!.matchedField;
+    };
+
+    beforeAll(() => {
+      rebuild("search_a", "archive-search");
+      rebuild("goto_a", "archive-goto");
+    });
+
+    it("names the matched field, its original text and the highlight ranges, one query per field kind", async () => {
+      // TITLE, with a diacritics case: the query has none, the title has comma-below letters
+      expect(await matched("Ștefan", "DA95000001")).toEqual({ field: "TITLE", text: "Reparații străzi Ștefan cel Mare", highlights: [[17, 23]] });
+      expect(await matched("stefan", "DA95000001")).toEqual({ field: "TITLE", text: "Reparații străzi Ștefan cel Mare", highlights: [[17, 23]] });
+      // the last token is a prefix: highlighted up to what was typed; the CPV description holds it too, the title wins the tie
+      expect(await matched("servicii desz", "DA95000006")).toEqual({ field: "TITLE", text: "Servicii deszapezire drumuri", highlights: [[0, 8], [9, 13]] });
+      expect(await matched("deszapezir", "CAN9500001~1")).toMatchObject({ field: "TITLE", highlights: [[9, 19]] });
+      expect(await matched("spitalul", "DA95000008")).toEqual({ field: "AUTHORITY", text: "SPITALUL EXEMPLU", highlights: [[0, 8]] });
+      expect(await matched("gamma", "CAN9500001~1")).toEqual({ field: "SUPPLIER", text: "GAMMA CONSORT SRL", highlights: [[0, 5]] });
+      expect(await matched("țara", "DA95000001")).toEqual({ field: "SUPPLIER", text: "ŞANTIER ȚARA S.R.L.", highlights: [[8, 12]] }); // the cedilla Ş is in the source, the query has Ț
+      expect(await matched("4523", "DA95000001")).toEqual({ field: "CPV_CODE", text: "45233140-2", highlights: [[0, 4]] });
+      expect(await matched("drumuri", "DA95000001")).toEqual({ field: "CPV_DESCRIPTION", text: "Lucrari de drumuri", highlights: [[11, 18]] });
+      expect(await matched("DA95000003", "DA95000003")).toEqual({ field: "PUBLIC_CODE", text: "DA95000003", highlights: [[0, 10]] });
+      // a CUI, with RO: the identifier wins over the title that holds it too
+      expect(await matched("RO1000017", "DA95000008")).toEqual({ field: "CUI", text: "1000017", highlights: [[0, 7]] });
+    });
+
+    it("has no matched field without a text query, and never one for a natural person", async () => {
+      for (const r of (await ask69("search_a", {})).records.rows) expect(r.matchedField).toBeNull();
+      for (const r of (await ask69("search_a", { channel: "DIRECT_PURCHASE" })).records.rows) expect(r.matchedField).toBeNull();
+      expect((await ask69("search_a", { q: "ionescu" })).records.rows).toEqual([]);
+    });
+
+    it("every returned row names a field", async () => {
+      const r = await ask69("search_a", { q: "desz" });
+      expect(r.records.rows.every((x) => x.matchedField !== null)).toBe(true);
+      expect(r.records.count).toBe(3);
+    });
+
+    const goTo = async (db: string, filter: Record<string, unknown>) => (await ask69(db, filter)).goTo;
+
+    it("sets goTo for an exact CUI, with and without RO", async () => {
+      for (const q of ["1000017", "RO1000017", "ro1000017"]) {
+        const g = await goTo("search_a", { q });
+        expect(g?.key, q).toBe("1000017");
+        expect(g?.seap.roles, q).toEqual(["AUTHORITY"]);
+      }
+    });
+
+    it("sets goTo for exactly one entity's folded name, and ignores the chips", async () => {
+      for (const q of ["SPITALUL EXEMPLU", "spitalul  exemplu", "Spitalul Exemplu"]) expect((await goTo("search_a", { q }))?.key, q).toBe("1000017");
+      expect((await goTo("search_a", { q: "spitalul exemplu", channel: "CONTRACT", from: "2023-02-05" }))?.key).toBe("1000017");
+      expect((await goTo("search_a", { q: "PAPETARIE ALFA S.A." }))?.seap.roles).toEqual(["SUPPLIER"]);
+    });
+
+    it("leaves goTo unset for a non-exact query, a CUI that matches nothing, and a name two entities share", async () => {
+      expect(await goTo("search_a", { q: "spitalul" })).toBeNull(); // a prefix of the name, not the name
+      expect(await goTo("search_a", { q: "exemplu" })).toBeNull();
+      expect(await goTo("search_a", { q: "9999999" })).toBeNull();
+      expect(await goTo("search_a", { q: "RO9999999" })).toBeNull();
+      expect(await goTo("search_a", {})).toBeNull();
+      expect(await goTo("search_a", { q: "SRL" })).toBeNull(); // only a legal form: the empty query
+      const two = await ask69("goto_a", { q: "primaria gemena" });
+      expect(two.goTo).toBeNull();
+      expect(two.authorities.count).toBe(2); // both are found, neither is pinned
     });
   });
 

@@ -1,6 +1,8 @@
 import { GraphQLError } from "graphql";
 import { coverageStatus } from "./coverage.ts";
 import { buildWhere, type SearchFilter } from "./search.ts";
+import { matchedFieldOf } from "./matched.ts";
+import { foldTokens } from "./fold.ts";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
@@ -79,6 +81,17 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
       : null,
   };
 }
+
+/** The texts of a returned Record the query can have matched (never a natural person: they have no name and no entity). */
+const matchSource = (r: RecordRow) => ({
+  code: r.code,
+  title: r.title,
+  authorityName: r.published?.authorityName ?? r.authority.displayName,
+  authorityCui: r.authority.cui,
+  cpvCode: r.published?.cpvCode ?? null,
+  cpvDescription: r.published?.cpvDescription ?? null,
+  winners: r.winners.filter((w) => !w.naturalPerson).map((w) => ({ name: w.name, cui: w.entity?.cui ?? null, foreignVatId: w.entity?.foreignVatId ?? null })),
+});
 
 export function rootValue(store: Store) {
   /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
@@ -196,6 +209,7 @@ export function rootValue(store: Store) {
         rows: page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } })),
       };
     };
+    const queryTokens = foldTokens(filter.q ?? "");
     const echo = (key: string | null | undefined) => (key ? store.entity(key).then((e) => (e ? entityObject(e) : null)) : null);
     return {
       filter: { qFolded: where.qFolded, authority: () => echo(filter.authority), supplier: () => echo(filter.supplier) },
@@ -211,7 +225,12 @@ export function rootValue(store: Store) {
       },
       authorities: entityPage("AUTHORITY"),
       suppliers: entityPage("SUPPLIER"),
-      goTo: null,
+      // the Go-to card depends on the query alone: the chips never restrict it
+      goTo: async (_: unknown, ctx: Ctx) => {
+        if (!where.qFolded) return null;
+        const found = await store.goTo(where.qFolded, { signal: ctx?.signal });
+        return found ? entityObject(found) : null;
+      },
       // a search of one authority lists suppliers, of one supplier lists authorities (an entity role says which itself)
       facets: () => facetsOf(filter, counterparties ?? (filter.authority && !filter.supplier ? "SUPPLIER" : filter.supplier && !filter.authority ? "AUTHORITY" : null)),
       records: async ({ limit, offset, order }: { limit: number; offset: number; order: RecordOrderKey }, ctx: Ctx) => {
@@ -219,7 +238,7 @@ export function rootValue(store: Store) {
         const { count, rows } = where.empty
           ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
           : await store.searchRecords(filter, page, { signal: ctx?.signal });
-        return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: null })) };
+        return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: matchedFieldOf(matchSource(record), queryTokens) })) };
       },
     };
   }
