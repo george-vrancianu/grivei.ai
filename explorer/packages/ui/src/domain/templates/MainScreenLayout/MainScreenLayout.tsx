@@ -1,17 +1,20 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
-import { LensToggle, type LensToggleCopy } from "./components/LensToggle/index.ts";
+import { OptionToggle } from "../../molecules/OptionToggle/index.ts";
 import { useMapLens } from "./hooks/useMapLens.ts";
-import type { MapLens } from "./mainScreenLayout.utils.ts";
+import { MAP_LENSES, type MapLens } from "./mainScreenLayout.utils.ts";
 
 export interface MainScreenLayoutCopy {
-  lens: LensToggleCopy;
+  /** The lens toggle: its accessible name and the name of each lens. */
+  lens: { label: string } & Record<MapLens, string>;
   /** The accessible names of the page's regions. */
-  regions: { search: string; filters: string; map: string; results: string };
+  regions: { search: string; map: string; results: string };
 }
 
-export interface MainScreenLayoutProps {
+export type MainScreenLayoutProps = MainScreenLayoutBase & LensControl;
+
+interface MainScreenLayoutBase {
   /** The search input, on top. */
   search: ReactNode;
   /** The filter chips, under the search. */
@@ -22,11 +25,14 @@ export interface MainScreenLayoutProps {
   summary?: ReactNode;
   /** The result tabs, in the right column. */
   results: ReactNode;
-  /** The shown lens. Leave it out for an uncontrolled template that starts on Money. */
-  lens?: MapLens;
-  onLensChange?: (lens: MapLens) => void;
   copy: MainScreenLayoutCopy;
 }
+
+/**
+ * The shown lens: `lens` and `onLensChange` come as a pair (the page keeps the lens in the URL), or neither
+ * (the template keeps it itself and starts on Money). A `lens` without `onLensChange` would be a toggle that does nothing, so the type rejects it.
+ */
+export type LensControl = { lens: MapLens; onLensChange: (lens: MapLens) => void } | { lens?: undefined; onLensChange?: (lens: MapLens) => void };
 
 /**
  * The layout of the main screen: search and filter chips across the top, then the map (with the lens toggle) beside the results.
@@ -41,13 +47,13 @@ export function MainScreenLayout({ search, filters, maps, summary, results, lens
         <Box component="section" aria-label={copy.regions.search}>
           {search}
         </Box>
-        <Box component="section" aria-label={copy.regions.filters}>
+        <Box>
           {filters}
         </Box>
       </Stack>
       <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 3fr) minmax(0, 2fr)" }, alignItems: "start" }}>
         <Stack component="section" aria-label={copy.regions.map} spacing={2}>
-          <LensToggle lens={shown} onLensChange={select} copy={copy.lens} />
+          <OptionToggle options={MAP_LENSES} value={shown} onChange={select} labels={copy.lens} label={copy.lens.label} />
           {maps[shown]}
         </Stack>
         <Stack component="section" aria-label={copy.regions.results} spacing={2}>

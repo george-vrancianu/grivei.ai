@@ -64,7 +64,7 @@ export const ro: Copy = {
   },
   mainScreenLayout: {
     lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
-    regions: { search: "Căutare", filters: "Filtre", map: "Harta", results: "Rezultate" },
+    regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
   },
   filterChips: {
     label: "Filtre",

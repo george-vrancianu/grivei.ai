@@ -4,12 +4,14 @@ import { useState, type ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { pick } from "../../../workbench/index.ts";
 import { FilterChips } from "../../molecules/FilterChips/index.ts";
+import { TotalFigure } from "../../molecules/TotalFigure/index.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "../../organisms/MoneyLensMap/index.ts";
 import { ResultTabs } from "../../organisms/ResultTabs/index.ts";
 import { ZoomedCountyMap } from "../../organisms/ZoomedCountyMap/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { resultSamples } from "../../samples/fixtureData.ts";
+import { resultSamples, totalTypical } from "../../samples/fixtureData.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { countyUatsTopology } from "../../samples/geo/countyUats.topo.ts";
 import { authoritySide, supplierSide } from "../../samples/moneyMaps.ts";
@@ -34,13 +36,23 @@ function Placeholder({ name, height }: { name: string; height: number }) {
   );
 }
 
-const placeholders = (name: (slot: string) => string): { [slot in "search" | "filters" | "summary" | "results"]: ReactNode } & { maps: Record<MapLens, ReactNode> } => ({
-  search: <Placeholder name={name("Search input")} height={48} />,
-  filters: <Placeholder name={name("Filter chips")} height={40} />,
-  summary: <Placeholder name={name("Total")} height={64} />,
-  results: <Placeholder name={name("Result tabs")} height={420} />,
-  maps: { money: <Placeholder name={name("Money lens map")} height={420} />, coverage: <Placeholder name={name("Coverage lens map")} height={420} /> },
-});
+/** The names of the stand-in organisms, in the story's language. */
+const names = (locale: unknown) =>
+  pick(locale, {
+    en: { search: "Search input", filters: "Filter chips", summary: "Total", results: "Result tabs", money: "Money lens map", coverage: "Coverage lens map" },
+    ro: { search: "Câmp de căutare", filters: "Filtre", summary: "Total", results: "Filele de rezultate", money: "Harta lentilei Bani", coverage: "Harta lentilei Acoperire" },
+  });
+
+const placeholders = (locale: unknown): { [slot in "search" | "filters" | "summary" | "results"]: ReactNode } & { maps: Record<MapLens, ReactNode> } => {
+  const label = names(locale);
+  return {
+    search: <Placeholder name={label.search} height={48} />,
+    filters: <Placeholder name={label.filters} height={40} />,
+    summary: <Placeholder name={label.summary} height={64} />,
+    results: <Placeholder name={label.results} height={420} />,
+    maps: { money: <Placeholder name={label.money} height={420} />, coverage: <Placeholder name={label.coverage} height={420} /> },
+  };
+};
 
 /** The lens lives in the URL in the app; the stories keep it in state so the toggle works. */
 function Screen({ locale, initial = "money", slots }: { locale: Locale; initial?: MapLens; slots: ReturnType<typeof placeholders> }) {
@@ -51,7 +63,7 @@ function Screen({ locale, initial = "money", slots }: { locale: Locale; initial?
 const placeholderStory = (initial?: MapLens): Story => ({
   render: (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
-    return <Screen locale={locale} initial={initial} slots={placeholders((slot) => slot)} />;
+    return <Screen locale={locale} initial={initial} slots={placeholders(locale)} />;
   },
 });
 
@@ -86,9 +98,13 @@ function RealMoney({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
 
 function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
   const [filter, setFilter] = useState<RecordFilter>(ACTIVE);
+  const label = names(locale);
   const slots = {
-    search: <Placeholder name={locale === "ro" ? "Câmp de căutare" : "Search input"} height={48} />,
+    search: <Placeholder name={label.search} height={48} />,
     filters: <FilterChips filter={filter} onChange={setFilter} procedureOptions={PROCEDURES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />,
+    summary: (
+      <TotalFigure total={totalTypical} locale={locale} copy={sampleCopy.total(locale)} methodologyHref="/methodology/" suspectHref="/explore/?badge=SUSPECT_VALUE" />
+    ),
     results: (
       <ResultTabs
         {...resultSamples.typical}
@@ -100,10 +116,10 @@ function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
     ),
     maps: {
       money: <RealMoney locale={locale} zoomed={zoomed} />,
-      coverage: <Placeholder name={locale === "ro" ? "Harta lentilei Acoperire" : "Coverage lens map"} height={420} />,
+      coverage: <Placeholder name={label.coverage} height={420} />,
     },
   };
-  return <Screen locale={locale} slots={{ ...slots, summary: undefined }} />;
+  return <Screen locale={locale} slots={slots} />;
 }
 
 const real = (zoomed: boolean): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} /> });

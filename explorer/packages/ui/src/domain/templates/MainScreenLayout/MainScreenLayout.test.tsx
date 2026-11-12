@@ -17,10 +17,12 @@ const slots = {
 const props = (locale: Locale = "en"): MainScreenLayoutProps => ({ ...slots, copy: sampleCopy.mainScreenLayout(locale) });
 
 describe("MainScreenLayout", () => {
-  it("puts every slot in its own labelled region", () => {
+  it("puts every slot in its place (search, map and results are named regions)", () => {
     renderInUi(<MainScreenLayout {...props()} />);
     expect(within(screen.getByRole("region", { name: "Search" })).getByRole("textbox", { name: "the search" })).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "Filters" })).getByText("the chips")).toBeVisible();
+    expect(screen.getByText("the chips")).toBeVisible();
+    // the filter chips name themselves; a second "Filters" region would be announced twice
+    expect(screen.queryByRole("region", { name: /filter/i })).toBeNull();
     const map = screen.getByRole("region", { name: "Map" });
     expect(within(map).getByRole("group", { name: "Map lens" })).toBeVisible();
     expect(within(map).getByText("the money map")).toBeVisible();
@@ -71,7 +73,7 @@ describe("MainScreenLayout", () => {
 
   it("names the regions and the lenses in Romanian", () => {
     renderInUi(<MainScreenLayout {...props("ro")} />, "ro");
-    for (const name of ["Căutare", "Filtre", "Harta", "Rezultate"]) expect(screen.getByRole("region", { name })).toBeVisible();
+    for (const name of ["Căutare", "Harta", "Rezultate"]) expect(screen.getByRole("region", { name })).toBeVisible();
     expect(screen.getByRole("group", { name: "Lentila hărții" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Bani", pressed: true })).toBeVisible();
     expect(screen.getByRole("button", { name: "Acoperire" })).toBeVisible();

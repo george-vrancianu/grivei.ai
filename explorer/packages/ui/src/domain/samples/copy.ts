@@ -101,11 +101,11 @@ const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
 const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
   en: {
     lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
-    regions: { search: "Search", filters: "Filters", map: "Map", results: "Results" },
+    regions: { search: "Search", map: "Map", results: "Results" },
   },
   ro: {
     lens: { label: "Lentila hărții", money: "Bani", coverage: "Acoperire" },
-    regions: { search: "Căutare", filters: "Filtre", map: "Harta", results: "Rezultate" },
+    regions: { search: "Căutare", map: "Harta", results: "Rezultate" },
   },
 };
 

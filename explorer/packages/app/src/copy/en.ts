@@ -59,7 +59,7 @@ export const en: Copy = {
   },
   mainScreenLayout: {
     lens: { label: "Map lens", money: "Money", coverage: "Coverage" },
-    regions: { search: "Search", filters: "Filters", map: "Map", results: "Results" },
+    regions: { search: "Search", map: "Map", results: "Results" },
   },
   filterChips: {
     label: "Filters",
