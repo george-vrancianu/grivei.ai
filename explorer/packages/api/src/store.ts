@@ -392,6 +392,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
    * - authority side, winners not restricted: every matching row's share sums to the Record's counted value, the Record is counted on its first row;
    * - otherwise (the supplier side, or the filter restricts the winners): each (area, Record) once, with the shares of the winners that matched.
    *   A Record whose winners sit in two counties therefore adds a share to each; the shares were split exactly at the rebuild (the odd bani to the first winner).
+   *   So on the supplier side a Record's `records` count is per county touched (the counts can sum to more than the set's total; the awarded shares are exact),
+   *   and a framework agreement shows its whole ceiling in every county its winners touch (`max(ceiling_bani)` per area and Record; ceilings are shown, never summed).
    */
   async function areaTotals(w: Where, areaCol: string, entityCol: string, grouped: boolean, signal: AbortSignal | undefined): Promise<AreaRow[]> {
     const area = areaCol === "authority_uat" ? `coalesce(${areaCol}, '${NO_UAT}')` : areaCol;
@@ -572,7 +574,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async searchMap(side, filter, { signal } = {}) {
       const w = buildWhere(filter);
-      const rows = await areaTotals(w, side === "AUTHORITY" ? "authority_area" : "supplier_area", side === "AUTHORITY" ? "authority_key" : "supplier_key", side === "SUPPLIER", signal);
+      const rows = await areaTotals(w, side === "AUTHORITY" ? "authority_area" : "supplier_area", side === "AUTHORITY" ? "authority_key" : "supplier_key", side === "SUPPLIER" || w.winnerSide, signal);
       const off = new Map(rows.map((r) => [r.area, r]));
       const unplaced = off.get("UNPLACED");
       return {

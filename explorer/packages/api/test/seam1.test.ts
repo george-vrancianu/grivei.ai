@@ -1278,6 +1278,20 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(sum([...map.counties.map((c) => c.total.awarded), map.unknownSupplierCounty!.awarded])).toBe(BigInt(total.awarded));
     });
 
+    it("an authority-side map under a winner-restricting filter groups per Record: records and awarded still add up (#71)", async () => {
+      const { total, map } = await main({ supplier: "2000104" }); // winner 2 of CAN9800001 and CAN9800004, not the first winner of any Record
+      expect(total).toMatchObject({ awarded: "115000", records: 3 });
+      expect(byArea(map)["RO-BV"]).toEqual(["50000", 1, 1]);
+      const areas = [...map.counties.map((c) => c.total), map.national, ...(map.unplaced ? [map.unplaced.total] : [])];
+      expect(areas.reduce((n, t) => n + t.records, 0)).toBe(total.records);
+      expect(sum(areas.map((t) => t.awarded))).toBe(BigInt(total.awarded));
+    });
+
+    it("names the counties the map lists (#71)", async () => {
+      const { map } = await main({});
+      expect(map.counties.find((c) => c.area === "RO-BV")?.name).toBe("Brașov");
+    });
+
     it("gives the same map on the tracer path and on the search path (#71)", async () => {
       for (const countySide of ["AUTHORITY", "SUPPLIER"]) {
         const empty = await main({ countySide });
