@@ -9,7 +9,7 @@ export const REQUIRED_STATES = [
   "both-roles", "entity-provenance:SEAP", "not-found", "identity-curated", "crawled-provisional",
   "signal:over-cap", "signal:splitting", "signal:framework-overrun", "signal:no-publication",
   "suspect:DIRECT_PURCHASE_10X_CAP", "suspect:CONTRACT_100X_ESTIMATE", "suspect:CONTRACT_OVER_50BN",
-  "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL",
+  "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL", "gap:NOT_YET_LOADED",
   "coverage:HARVESTED", "coverage:HARVESTED_WITH_KNOWN_GAPS", "coverage:PARTIAL", "coverage:NOT_HARVESTED",
 ] as const;
 

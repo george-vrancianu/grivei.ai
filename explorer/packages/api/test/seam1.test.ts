@@ -14,12 +14,13 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:f
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { parse } from "graphql";
+import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
 import type { EntityOverviewQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
+import { rootValue } from "../src/resolvers.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -32,6 +33,8 @@ const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // ba
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
+const coverageArchive = join(watchdog, "tests/fixtures/archive-coverage"); // one cell of every Coverage grid state, rebuilt as of 2025-09-20 (#79)
+const coverageGaps = join(watchdog, "tests/fixtures/coverage-known-gaps.csv");
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -81,6 +84,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
     cpSync(countingArchive, join(scratch, "archive-counting"), { recursive: true });
+    cpSync(coverageArchive, join(scratch, "archive-coverage"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -103,6 +107,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE identity_b");
     await admin.query("CREATE DATABASE counting_a");
     await admin.query("CREATE DATABASE counting_b");
+    await admin.query("CREATE DATABASE coverage_a");
+    await admin.query("CREATE DATABASE coverage_b");
   });
 
   afterAll(async () => {
@@ -640,6 +646,66 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     };
     rebuild("counting_b", "archive-counting");
     expect(await snapshot("counting_b")).toEqual(await snapshot("counting_a"));
+  });
+
+  // ---- the Coverage grid (#79) ---------------------------------------------------------------------------------------------
+  // The persisted CoveragePage also selects #80's fields (counties, unplaced authorities, snapshot), which are not served yet, so the grid is asked
+  // for through an ad-hoc query against the same resolvers (the grid fields are the ones CoveragePage selects).
+  interface GridCell { quarter: string; kind: string; state: string; rule: string | null; note: string | null; records: number; dataThrough: string | null }
+  const GRID_QUERY = `query($w: DateRange) { coverage(source: SEAP, window: $w) { source { id } window { from to } grid { quarter kind state rule note records dataThrough } } }`;
+  const coverageGrid = async (db: string, window?: { from?: string; to?: string }) => {
+    await ask(db, mainScreen.sha256); // makes the database's pool
+    const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${db}`)!;
+    const r = await graphql({ schema, source: GRID_QUERY, rootValue: rootValue(postgresStore(pool)), variableValues: { w: window } });
+    expect(r.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(GRID_QUERY), r.data, { w: window })).toEqual([]);
+    return (r.data as { coverage: { window: { from: string | null; to: string | null }; grid: GridCell[] } }).coverage;
+  };
+  const rebuildCoverage = (db: string) => rebuild(db, "archive-coverage", ["--today", "2025-09-20", "--known-gaps", coverageGaps]);
+
+  it("serves every Coverage grid state from the fixture miniature archive (#79)", async () => {
+    const out = rebuildCoverage("coverage_a");
+    expect(out).toContain("coverage: 2024-Q4 CONTRACT possibly incomplete");
+    const { grid } = await coverageGrid("coverage_a");
+    expect(grid).toHaveLength(19 * 4); // 2021 Q1 .. 2025 Q3, four kinds
+    const cell = (quarter: string, kind: string) => grid.find((c) => c.quarter === quarter && c.kind === kind)!;
+    const shape = ({ state, rule, note, records, dataThrough }: GridCell) => ({ state, rule, note, records, dataThrough });
+
+    expect(shape(cell("2022-Q1", "DA"))).toEqual({ state: "LOADED", rule: null, note: null, records: 3, dataThrough: "2022-03-31" }); // a bulk file
+    expect(shape(cell("2021-Q2", "AWARD_NOTICE"))).toEqual({ state: "LOADED", rule: null, note: null, records: 2, dataThrough: "2021-05-06" }); // covered via e-licitatie
+    expect(shape(cell("2025-Q2", "DAN"))).toEqual({
+      state: "KNOWN_GAP", rule: "HAND_ENTERED", records: 0, dataThrough: null,
+      note: "Fișier încărcat greșit (fixture), conținutul nu corespunde trimestrului; raportat la sursă, trimestrul rămâne gol", // verbatim, diacritics and comma included
+    });
+    // the 2024 Q4 Contracte shape, scaled down: 9 rows against neighbours 12, 18, 23, 15 (median 16.5, 60% = 9.9): flagged by the rule, not by hand
+    expect(shape(cell("2024-Q4", "CONTRACT"))).toEqual({ state: "POSSIBLY_INCOMPLETE", rule: "COUNT_BELOW_NEIGHBOURS", note: null, records: 9, dataThrough: "2024-11-09" });
+    expect(["2024-Q2", "2024-Q3", "2025-Q1", "2025-Q2"].map((q) => cell(q, "CONTRACT").state)).toEqual(["LOADED", "LOADED", "LOADED", "LOADED"]);
+    expect(cell("2025-Q2", "CONTRACT").records).toBe(16); // 15 file rows + 1 crawl-only Record
+    expect(shape(cell("2021-Q1", "AWARD_NOTICE"))).toEqual({ state: "NOT_IN_SOURCE", rule: "NO_PRIOR_CALL_BEFORE_BACKFILL", note: null, records: 0, dataThrough: null });
+    expect(cell("2021-Q3", "AWARD_NOTICE")).toMatchObject({ state: "NOT_IN_SOURCE", records: 1 }); // one backfilled week is not the quarter
+    expect(shape(cell("2025-Q3", "CONTRACT"))).toEqual({ state: "CRAWLED_PROVISIONAL", rule: "AWAITING_BULK_FILE", note: null, records: 3, dataThrough: "2025-07-02" });
+    expect(shape(cell("2025-Q3", "AWARD_NOTICE"))).toEqual({ state: "CRAWLED_PROVISIONAL", rule: "AWAITING_BULK_FILE", note: null, records: 2, dataThrough: "2025-07-02" });
+    expect(shape(cell("2022-Q2", "DA"))).toEqual({ state: "NOT_YET_LOADED", rule: null, note: null, records: 0, dataThrough: null }); // the quarantined file
+    expect(shape(cell("2025-Q3", "DA"))).toEqual({ state: "NOT_YET_LOADED", rule: "AWAITING_BULK_FILE", note: null, records: 0, dataThrough: null }); // direct purchases await the bulk file
+    expect(new Set(grid.map((c) => c.state))).toEqual(new Set(["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL", "NOT_YET_LOADED"]));
+    // a quarantined unit's reason is never served
+    expect(JSON.stringify(grid)).not.toMatch(/header|quarantin|reason|unknown/i);
+  });
+
+  it("gives the same grid after a second rebuild, with the failing unit already in quarantine (#79, ADR 0004)", async () => {
+    rebuildCoverage("coverage_b");
+    expect(await coverageGrid("coverage_b")).toEqual(await coverageGrid("coverage_a"));
+  });
+
+  it("narrows the grid to the quarters that overlap the window, and serves all of it without one (#79)", async () => {
+    const all = await coverageGrid("coverage_a");
+    expect(all.window).toEqual({ from: null, to: null });
+    const some = await coverageGrid("coverage_a", { from: "2024-11-15", to: "2025-04-01" });
+    expect(some.window).toEqual({ from: "2024-11-15", to: "2025-04-01" });
+    expect([...new Set(some.grid.map((c) => c.quarter))]).toEqual(["2024-Q4", "2025-Q1", "2025-Q2"]);
+    expect(some.grid).toHaveLength(12);
+    expect(some.grid).toEqual(all.grid.filter((c) => ["2024-Q4", "2025-Q1", "2025-Q2"].includes(c.quarter)));
+    expect((await coverageGrid("coverage_a", { from: "2025-09-20" })).grid.map((c) => c.quarter)).toEqual(Array(4).fill("2025-Q3"));
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
