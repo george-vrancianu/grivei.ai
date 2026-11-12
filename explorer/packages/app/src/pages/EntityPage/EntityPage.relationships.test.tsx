@@ -27,7 +27,7 @@ describe("the Relationships tab of an authority", () => {
     expect(sent).toMatchObject([{ operation: "EntityRelationships", variables: { key: "1000017", role: "AUTHORITY", filter: {} } }]);
     expect(screen.getByRole("heading", { level: 2, name: "Relationships" })).toBeVisible();
     expect(node(/ALFA DEMO SRL/)).toHaveAttribute("aria-pressed", "false");
-        expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
     expect(within(panel()).getByText(/Pick a counterparty/)).toBeVisible();
   });
 
@@ -58,6 +58,8 @@ describe("the Relationships tab of an authority", () => {
   it("names the natural person's row without a link, and never offers it for picking", async () => {
     await opened(AUTHORITY);
     expect(screen.getAllByText("Persoană fizică").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /Persoană fizică/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Persoană fizică/ })).toBeNull();
   });
 
   it("says so when the entity has no counterparties in the filter", async () => {

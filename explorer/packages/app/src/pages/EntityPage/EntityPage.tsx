@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
-import { LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
+import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
@@ -54,7 +54,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
     );
   }
   const loading = state.status === "loading";
-  const flowCopy = { ...t.entityPage.relationships.flow, map: { ...t.moneyLensMap.map, ...t.entityPage.relationships.flow.map }, tiles: t.moneyLensMap.tiles };
+  const flowCopy = flowLensCopy(t);
   const entity = state.entity;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");

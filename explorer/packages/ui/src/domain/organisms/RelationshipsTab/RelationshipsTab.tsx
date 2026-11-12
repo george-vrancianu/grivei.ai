@@ -6,7 +6,7 @@ import type { Locale } from "../../../theme/index.ts";
 import type {
   CounterpartyRecordsData, EntityRef, EntityRole, RecordResult, RelationshipsCounterparties, RelationshipsTimeline,
 } from "../../types.ts";
-import { counterpartyField } from "../RecordsTab/recordsTab.utils.ts";
+import { counterpartyRole } from "../RecordsTab/recordsTab.utils.ts";
 import { CounterpartyGraph } from "./components/CounterpartyGraph/index.ts";
 import { CounterpartyPanel } from "./components/CounterpartyPanel/index.ts";
 import { GraphLegend } from "./components/GraphLegend/index.ts";
@@ -102,7 +102,7 @@ export function RelationshipsTab({
           counterparty={picked}
           records={sidePanel}
           loading={sidePanelLoading}
-          counterpartyRole={counterpartyField(role)}
+          counterpartyRole={counterpartyRole(role)}
           onClose={() => onSelect(null)}
           paging={sidePanelPaging}
           onNavigate={onNavigate}

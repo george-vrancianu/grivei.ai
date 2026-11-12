@@ -2,8 +2,11 @@ import type { RecordFilter, SignalRuleSlug } from "@grivei/contract";
 import { withFields, yearEnd, yearOf, yearStart } from "../../molecules/FilterChips/index.ts";
 import type { EntityRole } from "../../types.ts";
 
-/** The filter field a counterparty facet sets: an authority's page lists suppliers, a supplier's page lists authorities. */
-export const counterpartyField = (role: EntityRole): "supplier" | "authority" => (role === "authority" ? "supplier" : "authority");
+/** The role of the counterparty on an entity's page: an authority's page lists suppliers, a supplier's page lists authorities. */
+export const counterpartyRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
+
+/** The filter field a counterparty facet sets: named after the counterparty's role. */
+export const counterpartyField = (role: EntityRole): "supplier" | "authority" => (counterpartyRole(role) === "supplier" ? "supplier" : "authority");
 
 /**
  * The `RecordFilter` fields the facet panel owns: year (`from`/`to`), channel, procedure, signal, badges and the counterparty

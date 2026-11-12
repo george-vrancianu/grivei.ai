@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fixtures } from "@grivei/contract/fixtures";
 import { catalogue } from "../../copy/index.ts";
 import { testCountyTopology } from "../../testing/countyTopology.ts";
-import { FlowLensSection, type FlowLensSectionProps } from "./index.ts";
+import { flowLensCopy, FlowLensSection, type FlowLensSectionProps } from "./index.ts";
 
 const meta: Meta<Record<string, unknown>> = { title: "App/FlowLensSection" };
 export default meta;
@@ -24,7 +24,7 @@ function render(name: string, role: FlowLensSectionProps["role"], props: Partial
         role={role}
         topology={{ status: "ready", topology: testCountyTopology }}
         locale={locale}
-        copy={{ ...t.entityPage.relationships.flow, map: { ...t.moneyLensMap.map, ...t.entityPage.relationships.flow.map }, tiles: t.moneyLensMap.tiles }}
+        copy={flowLensCopy(t)}
         status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
         {...props}
       />
