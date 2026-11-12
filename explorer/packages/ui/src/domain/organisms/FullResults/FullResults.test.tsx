@@ -88,9 +88,14 @@ describe("FullResults", () => {
 
   it("an estimated count that overshoots: an in-range page with no rows says it is past the end", () => {
     show(authorities(70_000, [], true), 5);
-    expect(screen.getByText(/This page is past the end/)).toBeInTheDocument();
+    expect(screen.getByText("There are no results on this page: the count above is an estimate.")).toBeInTheDocument();
+    expect(screen.queryByText(/past the end/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to page 1" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("the no-rows sentence is available in Romanian", () => {
+    expect(sampleCopy.fullResults("ro").noRowsHere).toBe("Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.");
   });
 
   it("the past-the-end sentence is singular for one page", () => {

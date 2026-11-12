@@ -23,7 +23,9 @@ export interface FullResultsCopy {
   empty: Record<ResultTab, string>;
   /** A page number past the last page; `pages` is the last page, `formatted` the same in the locale's number format. */
   outOfRange: (pages: number, formatted: string) => string;
-  /** The link back to page 1 beside `outOfRange`. */
+  /** A page inside the page count that came back with no rows: the (estimated) count overshot. */
+  noRowsHere: string;
+  /** The link back to page 1 beside `outOfRange` and `noRowsHere`. */
   firstPage: string;
   /** The link back to the main screen's result tabs. */
   back: string;
@@ -90,7 +92,7 @@ export function FullResults({
       {count === 0 && <PageNotice text={copy.empty[tab]} />}
       {pastTheEnd && (
         <PageNotice
-          text={copy.outOfRange(pages, formatCount(pages, false, locale))}
+          text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}
           link={{ href: pageHref(1), text: copy.firstPage }}
           onNavigate={onNavigate}
         />

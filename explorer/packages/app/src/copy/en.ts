@@ -60,6 +60,7 @@ export const en: Copy = {
   fullResults: {
     showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
     outOfRange: (pages, formatted) => `This page is past the end: there ${pages === 1 ? "is only 1 page" : `are only ${formatted} pages`}.`,
+    noRowsHere: "There are no results on this page: the count above is an estimate.",
     firstPage: "Go to page 1",
     back: "Back to results",
     pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
