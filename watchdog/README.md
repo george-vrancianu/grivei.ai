@@ -88,11 +88,11 @@ export PIPELINE_ARCHIVE=~/grivei-data/raw && mkdir -p "$PIPELINE_ARCHIVE"
 nohup python -m pipeline fetch-datagov > ~/grivei-data/fetch.log 2>&1 &
 ```
 
-- Python: `python3 -m venv` fails on this machine (no `ensurepip` for Python 3.14), so the venv is made with `uv venv --python 3.12` and
-  packages go in with `uv pip install -r requirements.txt` (plain `pip` inside the venv also works once it exists).
+- Python: `python3 -m venv` fails on hosts where Python 3.14 has no `ensurepip`, so the venv is made with `uv venv --python 3.12` and
+  packages go in with `uv pip install -r requirements.txt` (a uv venv has no `pip` unless made with `uv venv --seed`).
 - Progress: `tail -f ~/grivei-data/fetch.log`. One timestamped line per resource (`archived` with its size, `unchanged`, `out-of-scope` for kinds we do not want (DPS invitations, initiation notices),
   `unclassified` for names no rule knows, `conflict` when a resource's name and URL name different kinds (it is not archived: look at it),
-  `superseded` for the XLS of a quarter whose CSV is fetched, `failed` with the reason), then the summary (`archived: N ...`). Exit code 1 means at least one failure. `du -sh $PIPELINE_ARCHIVE` shows the size.
+  `superseded` for the other resources of a quarter whose preferred one (CSV, then XLSX, then XLS; else the newest) is fetched, including older same-format duplicates; a quarter already archived keeps its resource, `failed` with the reason), then the summary (`archived: N ...`). Exit code 1 means at least one failure. `du -sh $PIPELINE_ARCHIVE` shows the size.
 - Resume: kill it if you must (`pkill -f 'pipeline fetch-datagov'`) and run the same command again (append with `>>` to keep the log).
   Everything already archived is skipped without a download. A download cut short leaves only a `.download-*` scratch file (removed on the
   next start) or, at worst, a `*.part` file in a unit directory without a manifest; that directory is ignored by `rebuild` and never

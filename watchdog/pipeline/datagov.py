@@ -21,6 +21,9 @@ else (a changed marker, or a new resource id for a quarter already archived) is 
 old ones, which are never touched; a re-upload on the same UTC day goes to `<day>.2`. If a quarter has several resources of
 one kind (CSV and XLS both, before mid-2024) only the preferred format is fetched: CSV, then XLSX, then XLS (the API's
 `format`, else the extension of the URL or of the name); the others are logged `superseded` and never archived as units.
+Sticky choice: when one of the resources of a quarter is already archived, the extension guess is
+off for that quarter (only the API's `format` ranks), so a rerun cannot promote a sibling with an odd `format` and
+archive the quarter again as a duplicate.
 
 This module only fetches. It never loads: `rebuild` is a separate step, so files are in the archive before any load.
 """
@@ -192,15 +195,27 @@ def _origin(dataset: dict, resource: dict) -> dict:
     }
 
 
-def _format_rank(resource: dict) -> int:
+def _format_rank(resource: dict, *, guess: bool = True) -> int:
+    """Position of the resource's format in FORMAT_PREFERENCE (lower is better). With `guess`, a missing or odd `format`
+    falls back to the extension of the URL or of the name; without it only the API's `format` counts (the ranking of the
+    first run, kept for quarters that are already archived)."""
     fmt = (resource.get("format") or "").lower().lstrip(".")
-    if fmt not in FORMAT_PREFERENCE:  # no usable `format`: the extension of the file or of the name
+    if guess and fmt not in FORMAT_PREFERENCE:  # no usable `format`: the extension of the file or of the name
         for text in (urlparse(resource.get("url") or "").path, resource.get("name") or ""):
             ext = posixpath.splitext(unquote(text).strip().lower())[1].lstrip(".")
             if ext in FORMAT_PREFERENCE:
                 fmt = ext
                 break
     return FORMAT_PREFERENCE.index(fmt) if fmt in FORMAT_PREFERENCE else len(FORMAT_PREFERENCE)
+
+
+def _is_unchanged(markers: dict[str, dict], resource: dict, origin: dict | None = None) -> bool:
+    """True when this resource id is archived with the same marker the API gives now."""
+    known = markers.get(resource["id"])
+    if not known:
+        return False
+    origin = origin or _origin({}, resource)
+    return all(known.get(k) == origin[k] for k in MARKER)
 
 
 def _say(status: str, item: Item, detail: str = "") -> None:
@@ -286,9 +301,13 @@ def fetch_datagov(
 
         for (kind, unit), candidates in sorted(chosen.items()):
             candidates.sort(key=lambda r: str(r.get("last_modified") or ""), reverse=True)  # newest first ...
-            candidates.sort(key=_format_rank)  # ... then preferred format first (stable)
+            # A quarter that already has an archived resource keeps the first run's ranking (API `format` only):
+            # guessing the format from the extension must never promote a sibling and re-archive the quarter as a duplicate.
+            guess = not any(r["id"] in markers for r in candidates)
+            rank = lambda r: _format_rank(r, guess=guess)  # noqa: E731
+            candidates.sort(key=rank)  # ... then preferred format first (stable)
             for other in candidates[1:]:
-                same = _format_rank(other) == _format_rank(candidates[0])
+                same = rank(other) == rank(candidates[0])
                 summary.ignored.append(Item(
                     dataset=name, resource_id=other["id"], name=(other.get("name") or "").strip(), kind=kind, unit=unit,
                     reason="an older resource of the same file is skipped" if same
@@ -298,8 +317,7 @@ def fetch_datagov(
             resource = candidates[0]
             origin = _origin(dataset, resource)
             item = Item(dataset=name, resource_id=resource["id"], name=origin["resourceName"], kind=kind, unit=unit)
-            known = markers.get(resource["id"])
-            if known and all(known.get(k) == origin[k] for k in MARKER):
+            if _is_unchanged(markers, resource, origin):
                 summary.unchanged.append(item)
                 _say("unchanged", item, "already archived, same marker")
                 continue

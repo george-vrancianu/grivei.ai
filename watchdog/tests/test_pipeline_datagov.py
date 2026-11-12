@@ -436,4 +436,18 @@ def test_rerun_over_an_archive_of_the_real_first_run_skips_them_and_adds_only_ne
     second = run(archive, now=DAY2)
     assert [(i.kind, i.unit) for i in second.archived] == [("da", "2026Q2")]
     assert len(second.unchanged) == 4 and len(net.downloads()) == 1
-    assert before == sorted(u.path for u in archive.units() if u.path in before)  # nothing re-archived under a new unit
+    assert len(archive.units()) == len(before) + 1  # nothing re-archived under a new unit
+
+
+def test_an_archived_quarter_is_never_re_archived_because_a_sibling_now_ranks_higher_by_its_extension(net, archive):
+    xls = resource("r-x", "Achizitii directe T 1 - 2026", "da1.xls", fmt="XLS")
+    serve(net, xls)
+    assert [i.resource_id for i in run(archive).archived] == ["r-x"]
+    before = len(archive.units())
+    sibling = resource("r-s", "Achizitii directe T 1 - 2026", "da1.csv", fmt="")
+    serve(net, sibling, xls)
+    net.requests.clear()
+    second = run(archive, now=DAY2)
+    assert second.archived == [] and net.downloads() == [] and len(archive.units()) == before
+    assert [i.resource_id for i in second.unchanged] == ["r-x"]
+    assert [i.resource_id for i in second.ignored] == ["r-s"]
