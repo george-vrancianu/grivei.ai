@@ -7,8 +7,8 @@ A public-money watchdog: Romanian public sources joined into one graph of instit
 ### Sources and ingestion
 
 **Source**:
-A public registry Grivei.ai draws data from (SEAP, ANI, ONRC, Ministerul Finanțelor, portal.just.ro, ANAF).
-_Avoid_: directory, public directory, database
+One public dataset Grivei.ai draws data from (SEAP, ANI, ONRC, the Ministerul Finanțelor balance sheets, portal.just.ro, ANAF). A Source is a dataset, not a publisher: the Ministerul Finanțelor list of public entities and its balance sheets are two Sources.
+_Avoid_: directory, public directory, database, registry
 
 **Reference source**:
 A Source used only to enrich the graph (placing entities, confirming identity, counting what coverage is measured against), never explorable on its own, such as ANAF or the Ministerul Finanțelor list of public entities; it joins through the first Release that needs it, never as a Release of its own.
@@ -57,7 +57,7 @@ A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), ide
 _Avoid_: unknown supplier, unidentified supplier
 
 **Natural-person supplier**:
-An individual who wins a record; shown only as "Persoană fizică", never named, never given an entity page.
+An individual who wins a record; shown only as "Persoană fizică", never named, never given an entity page; on the supplier side of the map their money sits in a tile of its own.
 _Avoid_: PFA (when any individual is meant), person (alone)
 
 **Alias**:
@@ -69,8 +69,12 @@ A reviewed, reasoned correction to which supplier a record is attached; the enti
 _Avoid_: manual merge, fix, mapping
 
 **Record**:
-One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
+One SEAP entry in the graph, either a direct purchase (DA or DAN) or a contract with its lots and winners, with its own page and source link. A contract is identified by its award notice and its contract number, because one award notice can publish several contracts. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
+
+**Award notice**:
+The SEAP document that publishes the award of one or more contracts; it is where a contract comes from, not a Record of its own.
+_Avoid_: notice (alone), CAN (in prose)
 
 **Awarded value**:
 The value a record was awarded at, in RON, as published; the only money measure the explorer sums. It is not what was paid, and later contract modifications are not included.
@@ -81,7 +85,7 @@ The maximum value of a framework agreement; shown on its record but never summed
 _Avoid_: framework value, contract value (for a framework agreement)
 
 **Consortium share**:
-A supplier's equal share of an award won jointly by several suppliers; a convention for supplier-side totals, not a fact from the source. The authority side counts the award once.
+A supplier's equal share of an award won jointly by several suppliers; a convention for every per-supplier figure (supplier totals, the supplier side of the map, an authority's counterparties), not a fact from the source. The authority's own total counts the award once.
 _Avoid_: split, portion
 
 **Suspect value**:
@@ -106,25 +110,33 @@ _Avoid_: mode, layer, view
 The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier). Zoomed into a county, it colours each UAT the same way.
 
 **Coverage lens**:
-The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. Grey means not harvested, never no spending.
+The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. The dark neutral means not harvested, never no spending.
 
 **Coverage status**:
 One of harvested, harvested with known gaps, partial, or not harvested, for one Source in one county.
 _Avoid_: coverage %, completeness score
 
 **Known gap**:
-A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page.
+A period and record kind for which a Source's records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason; shown on the Coverage lens and its page. Any coverage cell that is a known gap or possibly incomplete makes its county "harvested with known gaps".
 _Avoid_: missing data, hole, outage
+
+**Coverage cell state**:
+The state of one Source's records for one quarter and one record kind: loaded, crawled provisional, possibly incomplete, known gap, awaiting the bulk file, or not in the source. A file held back from loading shows as awaiting the bulk file.
+_Avoid_: cell status, quarter status
 
 **Unplaced authority**:
 A contracting authority that neither ANAF nor SEAP places in a county; it sits in its own tile beside the map, with its records and their value. An authority whose county is known but whose UAT isn't is not an unplaced authority; the zoomed county lists it in a row of its own.
 _Avoid_: unknown county, orphan
 
+**Unknown supplier county**:
+Where the supplier side of the map puts money won by suppliers it cannot place (foreign firms, name-only and unplaced suppliers), in its own tile beside the map. Natural-person suppliers have a tile of their own, never this one.
+_Avoid_: unplaced supplier, abroad
+
 **Flow lens**:
 The lens on an entity page's Relationships tab showing where across Romania its money comes from (supplier) or goes (contracting authority).
 
 **Entity page**:
-The page, with its own URL, for one contracting authority or supplier; it has three tabs over the same data, Overview (the default), Records and Relationships.
+The page, with its own URL, for one entity in one role, as contracting authority or as supplier; an entity with both roles has two, linked to each other, and their numbers are never added together. Each has three tabs over the same data, Overview (the default), Records and Relationships.
 _Avoid_: profile, drawer, detail view
 
 **Overview tab**:
@@ -138,4 +150,4 @@ _Avoid_: ledger
 The entity page's view of how money moves between the entity and its counterparties: a counterparty graph, a monthly timeline and the Flow lens.
 
 **Record page**:
-The page, with its own URL, for one SEAP record (a contract or a direct purchase), linking to its source document.
+The page, with its own URL, for one SEAP record (a contract or a direct purchase), linking to its source document. An award notice's code alone opens the list of its contracts.

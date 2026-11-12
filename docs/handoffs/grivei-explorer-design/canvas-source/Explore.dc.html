@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grivei Explorer: main screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="min-height: {{minH}}; box-sizing: border-box; display: flex; flex-direction: column; background-color: #0D1014; background-image: radial-gradient(#1A212A 1px, transparent 1px); background-size: 24px 24px; color: #E8EBEF; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<header style="border-bottom: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="Explore.dc.html" style="display: flex; align-items: center; gap: 12px; color: #E8EBEF; text-decoration: none">
+<img src="/_blob/ee31ffcab5b634ba7578ac3a75683fa0" alt="Grivei logo: a Doberman holding a dossier in its mouth" style="display: block; width: 48px; height: 48px">
+<span style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 15px; font-weight: 600">grivei</span>
+<span style="color: #9BA5B1">/ explorer</span>
+</span>
+</a>
+<nav aria-label="Explorer" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px">
+<a href="Explore.dc.html" aria-current="page" style="padding: 12px 0; color: #F2B33D; text-decoration: none">explore</a>
+<a href="Coverage.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">coverage</a>
+<a href="Numbers.dc.html" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">about the numbers</a>
+<span style="display: flex; gap: 2px; padding: 2px; border: 1px solid #27303B; border-radius: 4px">
+<a href="#en" aria-current="true" style="padding: 9px 12px; border-radius: 3px; background: #27303B; color: #E8EBEF; text-decoration: none">EN</a>
+<a href="#ro" style="padding: 9px 12px; border-radius: 3px; color: #9BA5B1; text-decoration: none">RO</a>
+</span>
+</nav>
+</div>
+</header>
+
+<main style="box-sizing: border-box; width: 100%; max-width: 1400px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="q-explore" style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">search SEAP · national · 2021 onward</label>
+<div style="box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 6px 0 18px; background: #141920; border: 1px solid #3A4552; border-radius: 6px">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9BA5B1" stroke-width="2" stroke-linecap="round" style="flex: none"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+<input id="q-explore" type="search" value="{{v.q}}" onChange="{{noop}}" placeholder="Search in Romanian: deszăpezire, a company name, a CUI, a CPV code" style="flex: 1; min-width: 0; height: 56px; padding: 0; background: transparent; border: 0; outline: 0; color: #E8EBEF; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 20px">
+<button type="button" aria-label="Clear search" onClick="{{goEmpty}}" style="font: inherit; cursor: pointer; flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #9BA5B1"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<p style="margin: 0; font-size: 13px; color: #9BA5B1; text-wrap: pretty">The data is in Romanian. Try <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #B8C0CA">deszăpezire</span>, a company name, a CUI with or without RO, or a CPV prefix such as <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #B8C0CA">45</span>. Diacritics, case and legal forms (SRL, SA) are ignored.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">award date</span><span>{{v.date}}</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">channel</span><span>direct purchase + contract</span></button>
+<button type="button" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span style="color: #9BA5B1">value</span><span>any</span></button>
+<button type="button" aria-pressed="false" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: #141920; border: 1px solid #3A4552; border-radius: 20px; color: #E8EBEF"><span aria-hidden="true" style="box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #F2B33D"></span><span>has Signals</span></button>
+<sc-if value="{{isZoom}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{goEmpty}}" aria-label="Remove county filter Brașov" style="font: inherit; cursor: pointer; min-height: 40px; padding: 0 12px 0 14px; display: flex; align-items: center; gap: 8px; background: #F2B33D; border: 1px solid #F2B33D; border-radius: 20px; color: #0D1014; font-weight: 600"><span>county: Brașov</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<span style="padding-right: 6px; color: #9BA5B1">caveat badges</span>
+<sc-for list="{{badges}}" as="b" hint-placeholder-count="10">
+<button type="button" aria-pressed="false" style="font: inherit; cursor: pointer; min-height: 32px; padding: 0 10px; background: transparent; border: 1px solid #27303B; border-radius: 4px; color: #B8C0CA; font-size: 12px">{{b.t}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; padding: 18px 0; border-top: 1px solid #27303B; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #B8C0CA">
+<p style="margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px">
+<span style="font-family: 'Space Grotesk', Inter, sans-serif; font-weight: 600; font-size: 40px; line-height: 1; letter-spacing: -0.02em; color: #F2B33D">{{v.total}}</span>
+<span>awarded value</span>
+<a href="Numbers.dc.html" aria-label="About the numbers: how awarded value is counted" style="display: flex; align-self: center; color: #F2B33D"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></a>
+</p>
+<span>{{v.records}}</span>
+<a href="Results.dc.html" style="color: #F2B33D">{{v.suspect}}</a>
+<span>{{v.novalue}}</span>
+<span>{{v.ceilings}}</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px">
+
+<section aria-label="Map" style="flex: 1 1 520px; min-width: 0; box-sizing: border-box; padding: 16px; display: flex; flex-direction: column; gap: 14px; background: #141920; border: 1px solid #27303B; border-radius: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+<div role="group" aria-label="Lens" style="display: flex; gap: 2px; padding: 2px; border: 1px solid #3A4552; border-radius: 4px">
+<button type="button" onClick="{{lensMoney}}" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 14px; background: {{monBg}}; border: 0; border-radius: 3px; color: {{monInk}}; font-weight: 600">Money</button>
+<button type="button" onClick="{{lensCov}}" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 14px; background: {{covBg}}; border: 0; border-radius: 3px; color: {{covInk}}; font-weight: 600">Coverage</button>
+</div>
+<div role="group" aria-label="County side" style="display: flex; gap: 2px; padding: 2px; border: 1px solid #3A4552; border-radius: 4px">
+<button type="button" aria-pressed="true" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 12px; background: #27303B; border: 0; border-radius: 3px; color: #E8EBEF">authority county</button>
+<button type="button" aria-pressed="false" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 12px; background: transparent; border: 0; border-radius: 3px; color: #9BA5B1">supplier county</button>
+</div>
+</div>
+
+<div style="position: relative">
+<sc-if value="{{mapQuery}}" hint-placeholder-val="{{true}}">
+<img src="/_blob/f6e2b59577794ff79be7426bd7bce512" alt="Map of Romania: awarded value of matching Records by authority county, Brașov highlighted" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+</sc-if>
+<sc-if value="{{mapQ3}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/3d6651a396df4d88139f3877994b12ec" alt="Map of Romania: awarded value by authority county, 1 July to 30 September 2026, Brașov highlighted" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+</sc-if>
+<sc-if value="{{mapGoto}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/e683b30d12302adbcd3c5bfd0299e3bb" alt="Map of Romania: only Brașov has matching Records" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+</sc-if>
+<sc-if value="{{mapCov}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/a709ca9d281d293ef56a6bf419b687d3" alt="Map of Romania: coverage status per county, with one mark per Source" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+</sc-if>
+<sc-if value="{{mapBv}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/c346fbb3265262370178258a57337603" alt="Map of Brașov county: awarded value by locality, Municipiul Brașov highlighted" style="display: block; width: 100%; height: auto; aspect-ratio: 1000 / 713">
+</sc-if>
+<div style="position: absolute; left: {{tipX}}; top: {{tipY}}; transform: translate(-50%, -112%); box-sizing: border-box; width: max-content; max-width: 270px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: #0D1014; border: 1px solid #3A4552; border-radius: 4px; font-size: 12px; line-height: 1.5">
+<span style="font-weight: 600; color: #E8EBEF">{{tipName}}</span>
+<sc-for list="{{tipLines}}" as="l" hint-placeholder-count="1">
+<span style="color: #B8C0CA">{{l.t}}</span>
+</sc-for>
+<sc-if value="{{canZoom}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{goZoom}}" style="font: inherit; cursor: pointer; align-self: flex-start; min-height: 32px; margin-top: 4px; padding: 0 10px; background: transparent; border: 1px solid #F2B33D; border-radius: 3px; color: #F2B33D">open Brașov →</button>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{isMoney}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="color: #9BA5B1">{{v.legCap}}</span>
+<div style="display: flex; gap: 2px; font-size: 11px; color: #B8C0CA">
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #33290F"></span><span>{{v.l0}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #5C4716"></span><span>{{v.l1}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #8A6A1E"></span><span>{{v.l2}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #BE8E2B"></span><span>{{v.l3}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #F2B33D"></span><span>{{v.l4}}</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span aria-hidden="true" style="height: 10px; background: #1E2630"></span><span>{{v.lNone}}</span></span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<sc-for list="{{v.tiles}}" as="t" hint-placeholder-count="2">
+<button type="button" style="font: inherit; cursor: pointer; flex: 1 1 220px; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: #0D1014; border: 1px solid #27303B; border-radius: 4px; color: #E8EBEF; text-align: left">
+<span style="color: #9BA5B1">{{t.label}}</span>
+<span style="font-size: 15px; font-weight: 600">{{t.ron}}</span>
+<span style="font-size: 12px; color: #B8C0CA">{{t.sub}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isCov}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="color: #9BA5B1">SEAP coverage per county · follows the award date chip</span>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 8px 16px; font-size: 12px; color: #B8C0CA">
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 22px; height: 12px; background: #F2B33D"></span><span>harvested</span></li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 22px; height: 12px; background: repeating-linear-gradient(135deg, #BE8E2B 0 3px, #3A2F12 3px 6px)"></span><span>harvested, with known gaps</span></li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 22px; height: 12px; background: #55606E"></span><span>partial</span></li>
+<li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 22px; height: 12px; background: #232B35; border: 1px solid #3A4552; box-sizing: border-box"></span><span>not harvested</span></li>
+</ul>
+<p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 12px; color: #B8C0CA">
+<span style="color: #9BA5B1">one mark per Source</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="box-sizing: border-box; width: 9px; height: 9px; border-radius: 50%; background: #F2B33D"></span>SEAP</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="box-sizing: border-box; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #6B7683"></span>ONRC, ANI, Ministerul Finanțelor, portal.just.ro: not harvested yet</span>
+</p>
+<a href="Coverage.dc.html" style="align-self: flex-start; padding: 6px 0; color: #F2B33D">open the Coverage page: quarters, gaps and reasons →</a>
+</div>
+</sc-if>
+
+<p style="margin: 0; font-size: 12px; line-height: 1.6; color: #9BA5B1; text-wrap: pretty">data through · direct purchases 30 Sep 2026, awaiting the next bulk file · contracts 11 Nov 2026, current quarter crawled, provisional</p>
+</section>
+
+<section aria-label="Results" style="flex: 1.15 1 520px; min-width: 0; display: flex; flex-direction: column">
+<sc-if value="{{isGoto}}" hint-placeholder-val="{{false}}">
+<a href="Entity.dc.html" style="margin-bottom: 14px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; background: #141920; border: 1px solid #F2B33D; border-radius: 6px; color: #E8EBEF; text-decoration: none">
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #F2B33D">go to page · your search is exactly one CUI</span>
+<span style="font-size: 18px; font-weight: 600">RS ACTIV</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">supplier · CUI 17296459 · Brașov</span>
+</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">open supplier page →</span>
+</a>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 0 28px; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px">
+<button type="button" onClick="{{pickA}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; display: flex; align-items: center; gap: 8px; background: transparent; border: 0; border-bottom: 2px solid {{aLine}}; color: {{aInk}}"><span>Authorities</span><span style="color: #9BA5B1">{{v.nA}}</span></button>
+<button type="button" onClick="{{pickS}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; display: flex; align-items: center; gap: 8px; background: transparent; border: 0; border-bottom: 2px solid {{sLine}}; color: {{sInk}}"><span>Suppliers</span><span style="color: #9BA5B1">{{v.nS}}</span></button>
+<button type="button" onClick="{{pickR}}" style="font: inherit; cursor: pointer; min-height: 48px; padding: 0; display: flex; align-items: center; gap: 8px; background: transparent; border: 0; border-bottom: 2px solid {{rLine}}; color: {{rInk}}"><span>Records</span><span style="color: #9BA5B1">{{v.nR}}</span></button>
+</div>
+<p style="margin: 0; padding: 12px 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{rankedBy}}</p>
+
+<sc-if value="{{showEntities}}" hint-placeholder-val="{{true}}">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{entities}}" as="e" hint-placeholder-count="8">
+<li style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 12px 0; border-bottom: 1px solid #27303B">
+<span style="flex: none; width: 24px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{e.rank}}</span>
+<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<a href="Entity.dc.html" style="font-size: 15px; font-weight: 600; color: #E8EBEF; text-decoration: none">{{e.name}}</a>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{e.sub}}</span>
+</div>
+<sc-if value="{{e.hasSig}}" hint-placeholder-val="{{false}}">
+<a href="EntityRecords.dc.html" style="padding: 4px 10px; display: flex; align-items: center; gap: 6px; border: 1px solid #5C4716; border-radius: 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #F2B33D; text-decoration: none"><span aria-hidden="true" style="box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #F2B33D"></span><span>{{e.sig}}</span></a>
+</sc-if>
+<div style="flex: 0 0 150px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{e.ron}}</span>
+<span aria-hidden="true" style="width: 150px; height: 4px; display: flex; justify-content: flex-end; background: #27303B; border-radius: 2px"><span style="width: {{e.bar}}; background: #F2B33D; border-radius: 2px"></span></span>
+</div>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+
+<sc-if value="{{showRecords}}" hint-placeholder-val="{{false}}">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{records}}" as="r" hint-placeholder-count="5">
+<li style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 20px; padding: 14px 0; border-bottom: 1px solid #27303B">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span style="padding: 2px 8px; border: 1px solid #3A4552; border-radius: 3px; color: #E8EBEF">{{r.ch}}</span>
+<span>{{r.code}}</span>
+<span>{{r.date}}</span>
+<span>{{r.proc}}</span>
+</div>
+<a href="Record.dc.html" style="font-weight: 500; line-height: 1.4; color: #E8EBEF; text-decoration: none; text-wrap: pretty">{{r.pre}}<mark style="background: #F2B33D; color: #0D1014">{{r.hit}}</mark>{{r.post}}</a>
+<sc-if value="{{r.hasField}}" hint-placeholder-val="{{false}}">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #B8C0CA">matched in {{r.field}}<sc-if value="{{r.hasX}}" hint-placeholder-val="{{false}}">: {{r.xpre}}<mark style="background: #F2B33D; color: #0D1014">{{r.xhit}}</mark>{{r.xpost}}</sc-if></span>
+</sc-if>
+<span style="font-size: 13px; color: #B8C0CA">{{r.auth}} → {{r.win}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<sc-if value="{{r.hasB1}}" hint-placeholder-val="{{false}}"><span style="padding: 2px 8px; border: 1px solid #27303B; border-radius: 3px; color: #B8C0CA">{{r.b1}}</span></sc-if>
+<sc-if value="{{r.hasB2}}" hint-placeholder-val="{{false}}"><span style="padding: 2px 8px; border: 1px solid #27303B; border-radius: 3px; color: #B8C0CA">{{r.b2}}</span></sc-if>
+<sc-if value="{{r.hasSig}}" hint-placeholder-val="{{false}}"><a href="Numbers.dc.html" style="padding: 2px 8px; display: flex; align-items: center; gap: 6px; border: 1px solid #5C4716; border-radius: 3px; color: #F2B33D; text-decoration: none"><span aria-hidden="true" style="box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #F2B33D"></span><span>{{r.sig}}</span></a></sc-if>
+</div>
+</div>
+<div style="flex: none; margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: 'IBM Plex Mono', ui-monospace, monospace">
+<span style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.ron}}</span>
+<span style="font-size: 12px; color: #9BA5B1">{{r.note}}</span>
+</div>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+
+<a href="Results.dc.html" style="align-self: flex-start; padding: 14px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">{{showAll}} →</a>
+</section>
+
+</div>
+</main>
+
+<footer style="margin-top: auto; border-top: 1px solid #27303B; background: #0D1014">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document</span>
+<span>Signals are counted, never scored</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","default":"query","options":["query","empty","goto","coverage","zoom"]},"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+renderVals() {
+const st = this.state || {};
+const view0 = st.view || this.props.view || 'query';
+const base = view0 === 'coverage' ? 'query' : view0;
+const lens = st.lens || (view0 === 'coverage' ? 'coverage' : 'money');
+const ent = (rows) => rows.map(([name, sub, ron, bar, sig], i) => ({ name, sub, ron, bar, sig, hasSig: !!sig, rank: String(i + 1).padStart(2, '0') }));
+const rec = (rows) => rows.map((r) => ({ ch: 'Contract', note: 'awarded value', hit: '', post: '', auth: 'MUNICIPIUL BRASOV', ...r, hasField: !!r.field, hasX: !!r.xhit, hasB1: !!r.b1, hasB2: !!r.b2, hasSig: !!r.sig }));
+const cpvX = { field: 'CPV', xpre: '90610000-6 Servicii de curatare si maturare a ', xhit: 'strazi', xpost: 'lor' };
+const cuiX = { field: 'supplier CUI', xpre: '', xhit: '17296459', xpost: '' };
+const sig = 'Signal: no prior publication';
+const R = {
+ceil: { code: 'CAN1145000', date: '5 Mar 2025', proc: 'Licitatie deschisa', pre: 'Lot 1 -LUCRĂRI DE ÎNTREȚINERE ȘI REPARAȚII ', hit: 'STRĂZI', post: ' ZONA NORDICĂ A MUNICIPIULUI BRAȘOV.', win: 'STRACO HOLDING + 5 others', ron: '352.43M RON', note: 'ceiling, not summed', b1: 'Framework ceiling', b2: 'Consortium share' },
+salub: { code: 'CAN1172752', date: '14 Jul 2026', proc: 'Licitatie deschisa', pre: 'Contract de delegare a gestiunii contractului privind activități de salubrizare (măturatul, spălatul și stropitul căilor publice din localitate…)', win: 'COMPREST + RS ACTIV', ron: '328.35M RON', b1: 'Consortium share' },
+nopub: { code: 'CAN1147301', date: '29 Apr 2025', proc: 'Negociere fara publicare prealabila', pre: 'Lot 2 -LUCRĂRI DE ÎNTREȚINERE ȘI REPARAȚII ', hit: 'STRĂZI', post: ' ZONA SUDICA A MUNICIPIULUI BRAȘOV', win: 'RS ACTIV', ron: '21.76M RON', sig },
+subs: { code: 'CAN1145000', date: '29 Apr 2025', proc: 'Licitatie deschisa', pre: 'CLucrari de intretinere si reparatie a ', hit: 'strazi', post: 'lor din zona nordica a Municipiului Brasov-lot 1', win: 'RS ACTIV + FINCODRUM + RECON', ron: '17.44M RON', b1: 'Subsequent contract', b2: 'Consortium share' },
+da: { ch: 'Direct purchase', code: 'DA35638732', date: '30 Apr 2024', proc: 'Achiziție directă', pre: 'SERVICII DE IDENTIFICARE STARE TEHNICĂ INFRASTRUCTURĂ ', hit: 'STRĂZI', post: ' ÎN MUNICIPIUL BRASOV', win: 'CREATIVE MEDIA', ron: '249,000 RON' },
+ubi: { code: 'CAN1170738', date: '29 Jul 2025', proc: 'Licitatie deschisa', pre: 'Asocierea UBITECH CONSTRUCTII S.R.L. - lider, CONIM PARTNERS S.R.L.-asociat 1, LEVIATAN DESIGN S.R.L…', win: 'UBITECH CONSTRUCȚII SRL + 4 others', ron: '368.59M RON', b1: 'Consortium share' },
+termo: { code: 'CAN1165435', date: '1 Apr 2026', proc: 'Licitatie deschisa', pre: 'Lucrări (proiectare și execuție) de reabilitare a rețelei de termoficare aferente proiectului…', auth: 'MUNICIPIUL TIMISOARA', win: 'CONSTRUCTII ERBASU + 4 others', ron: '211.50M RON', b1: 'Consortium share' },
+bmc: { code: 'CAN1170048', date: '2 Jun 2026', proc: 'Licitatie deschisa', pre: 'Achiziția de mijloace de transport nepoluante în Municipiul Brașov și în Zona Metropolitană Brașov', win: 'BMC TRUCK & BUS', ron: '187.07M RON' }
+};
+const S_PROTO = ent([
+['COMPREST', '21 Records · Brașov · CUI 1095130', '560.81M RON', '100%'],
+['RS ACTIV', '25 Records · Brașov · CUI 17296459', '431.67M RON', '77%'],
+['PORR CONSTRUCT', '4 Records · București · CUI 16601724', '283.89M RON', '50.6%'],
+['SYLC CON TRANS', '4 Records · Arad · CUI 16356935', '210.69M RON', '37.6%'],
+['BMC TRUCK & BUS', '1 Record · Ilfov · CUI 14442959', '187.07M RON', '33.4%'],
+['ENERGOMONTAJ', '2 Records · București · CUI 1555468', '107.59M RON', '19.2%'],
+['EREN CONS', '2 Records · Brașov · CUI 17203875', '89.39M RON', '15.9%']
+]);
+const R_PROTO = rec([R.ubi, R.salub, R.termo, R.bmc]);
+const Q3 = { date: '1 Jul – 30 Sep 2026', suspect: '[n] suspect-value Records left out', novalue: '[n] with no value in SEAP', ceilings: 'framework ceilings shown, not summed: [x] RON', nS: '≈ [n]', tab: 'authorities', S: S_PROTO, R: R_PROTO };
+const VIEWS = {
+query: { q: 'strazi', date: '2021 – 2026', total: '30.83 bn RON', records: '148,220 Records', suspect: '37 suspect-value Records left out', novalue: '1,204 with no value in SEAP', ceilings: 'framework ceilings shown, not summed: 12.4 bn RON',
+nA: '3,012', nS: '≈ 71,300', nR: '148,220', tab: 'suppliers', map: 'query', tipX: '53.2%', tipY: '53.7%', tipName: 'Brașov', tip: ['1.63 bn RON awarded'],
+legCap: 'RON awarded, matching Records · by authority county', l0: '< 150M', l1: '150M', l2: '300M', l3: '600M', l4: '1.2 bn +', lNone: 'no match',
+tiles: [{ label: 'National authorities · off the map', ron: '6.18 bn RON', sub: '3,410 Records · ministries, agencies, national companies' }, { label: 'Unplaced authorities', ron: '41.3M RON', sub: '96 Records · 14 authorities with no county in ANAF or SEAP' }],
+A: ent([['MUNICIPIUL BRASOV', '41 Records · Brașov · CUI 4384206', '1,633.89M RON', '100%', '14 Signals'], ['ADMINISTRATIA STRAZILOR BUCURESTI', '312 Records · București · matched in name', '1,284.60M RON', '78.6%'], ['MUNICIPIUL CLUJ-NAPOCA', '188 Records · Cluj', '612.40M RON', '37.5%'], ['MUNICIPIUL CONSTANTA', '143 Records · Constanța', '540.15M RON', '33.1%'], ['MUNICIPIUL IASI', '201 Records · Iași', '498.72M RON', '30.5%'], ['MUNICIPIUL ORADEA', '96 Records · Bihor', '455.08M RON', '27.9%']]),
+S: ent([['RS ACTIV', '20 Records · Brașov · CUI 17296459', '503.74M RON', '100%', '7 Signals'], ['COMPREST', '7 Records · Brașov · CUI 1095130', '487.01M RON', '96.7%', '5 Signals'], ['FINCODRUM', '11 Records · Brașov · CUI 24796449', '119.56M RON', '23.7%'], ['RECON', '11 Records · Brașov · CUI 3623887', '119.56M RON', '23.7%'], ['STRACO HOLDING', '2 Records · București · CUI 21711634', '95.40M RON', '18.9%'], ['EURO STRADA', '2 Records · Brașov · CUI 6538816', '95.40M RON', '18.9%'], ['MIRACONS', '2 Records · Brașov · CUI 17373748', '95.40M RON', '18.9%'], ['GEIGER TRANSILVANIA S.R.L.', '1 Record · Mureș · CUI 8844358', '55.15M RON', '10.9%'], ['GEIGER BRASOV', '1 Record · Brașov · CUI 14873188', '55.15M RON', '10.9%'], ['STUDIO ARCA', '1 Record · Timiș · CUI 11560224', '6.91M RON', '1.4%']]),
+R: rec([{ ...R.ceil, field: 'title' }, { ...R.salub, ...cpvX }, { ...R.nopub, field: 'title' }, { ...R.subs, field: 'title' }, { ...R.da, field: 'title' }]) },
+empty: { ...Q3, q: '', total: '96.55 bn RON', records: '549,951 Records', nA: '13,298', nR: '549,951', map: 'q3', tipX: '53.2%', tipY: '53.7%', tipName: 'Brașov', tip: ['2.05 bn RON awarded', '19,599 Records · 393 authorities'], canZoom: true,
+legCap: 'RON awarded · by authority county', l0: '< 400M', l1: '400M', l2: '800M', l3: '1.6 bn', l4: '3.2 bn +', lNone: 'nothing',
+tiles: [{ label: 'National authorities · off the map', ron: '41.95 bn RON', sub: '16,301 Records · 214 ministries, agencies and national companies' }, { label: 'Unplaced authorities', ron: '0 RON', sub: 'every authority in this period has a county' }],
+A: ent([['COMPANIA NATIONALA DE CAI FERATE "CFR" SA', '100 Records · National', '16,613.39M RON', '100%'], ['COMPANIA NATIONALA DE INVESTITII "C.N.I." SA', '422 Records · National', '8,585.77M RON', '51.7%'], ['COMPANIA NAŢIONALĂ DE INVESTIŢII RUTIERE S.A.', '50 Records · National', '3,731.26M RON', '22.5%'], ['UNITATEA MILITARA 02523', '17 Records · București', '2,749.03M RON', '16.5%'], ['SOCIETATEA NAŢIONALĂ DE TRANSPORT GAZE NATURALE TRANSGAZ SA', '85 Records · National', '2,634.31M RON', '15.9%'], ['MUNICIPIUL BUCUREŞTI', '53 Records · București', '2,496.36M RON', '15%'], ['MUNICIPIUL ORADEA', '150 Records · Bihor', '1,490.23M RON', '9%'], ['MUNICIPIUL CRAIOVA', '45 Records · Dolj', '1,420.17M RON', '8.5%']]) },
+zoom: { ...Q3, q: '', total: '2.05 bn RON', records: '19,599 Records', nA: '393', nR: '19,599', map: 'bv', tipX: '61.9%', tipY: '67%', tipName: 'Municipiul Brașov', tip: ['1.82 bn RON awarded', '12,104 Records · 169 authorities'],
+legCap: 'RON awarded · by locality in Brașov county · log scale', l0: '< 0.5M', l1: '0.5M', l2: '2M', l3: '8M', l4: '32M +', lNone: 'no purchases',
+tiles: [{ label: 'National authorities seated in Brașov', ron: '172.40M RON', sub: '108 Records · 5 authorities, counted in the National tile and not on this map' }],
+A: ent([['MUNICIPIUL BRASOV', '172 Records · Municipiul Brașov · CUI 4384206', '1,306.21M RON', '100%'], ['COMPANIA APA BRASOV SA', '493 Records · Municipiul Brașov · CUI 1096128', '367.10M RON', '28.1%'], ['COMUNA HARMAN', '24 Records · Hărman · CUI 4833941', '27.78M RON', '2.1%'], ['DIRECTIA GENERALA REGIONALA A FINANTELOR PUBLICE BRASOV', '151 Records · Municipiul Brașov · CUI 4317495', '27.42M RON', '2.1%'], ['MUNICIPIUL SACELE', '67 Records · Săcele', '19.94M RON', '1.5%'], ['SPITALUL CLINIC JUDETEAN DE URGENTA BRASOV', '801 Records · Municipiul Brașov', '16.16M RON', '1.2%'], ['MUNICIPIUL FAGARAS', '128 Records · Făgăraș', '14.48M RON', '1.1%'], ['ORASUL PREDEAL', '70 Records · Predeal', '11.90M RON', '0.9%']]) },
+goto: { q: '17296459', date: '2021 – 2026', total: '814.38M RON', records: '25 Records', suspect: '[n] suspect-value Records left out', novalue: '[n] with no value in SEAP', ceilings: '3 framework ceilings shown, not summed: 625.90M RON',
+nA: '1', nS: '6', nR: '25', tab: 'suppliers', map: 'goto', tipX: '53.2%', tipY: '53.7%', tipName: 'Brașov', tip: ['814.38M RON awarded', 'the only county with matching Records'],
+legCap: 'RON awarded, matching Records · by authority county', l0: '< 150M', l1: '150M', l2: '300M', l3: '600M', l4: '1.2 bn +', lNone: 'no match',
+tiles: [{ label: 'National authorities · off the map', ron: '0 RON', sub: 'no matching Records' }, { label: 'Unplaced authorities', ron: '0 RON', sub: 'no matching Records' }],
+A: ent([['MUNICIPIUL BRASOV', '25 Records · Brașov · CUI 4384206', '814.38M RON', '100%', '10 Signals']]),
+S: ent([['RS ACTIV', '25 Records · Brașov · CUI 17296459', '431.67M RON', '100%', '10 Signals'], ['COMPREST', '3 Records · Brașov · CUI 1095130', '322.95M RON', '74.8%'], ['FINCODRUM', '9 Records · Brașov · CUI 24796449', '24.16M RON', '5.6%'], ['RECON', '9 Records · Brașov · CUI 3623887', '24.16M RON', '5.6%'], ['JOSEF WIEGAND GMBH & CO KG', '1 Record · county unknown · identified by VAT id', '5.72M RON', '1.3%'], ['PLANIMOB CAD', '1 Record · Cluj', '5.72M RON', '1.3%']]),
+R: rec([{ ...R.salub, ...cuiX }, { ...R.nopub, hit: '', pre: 'Lot 2 -LUCRĂRI DE ÎNTREȚINERE ȘI REPARAȚII STRĂZI ZONA SUDICA A MUNICIPIULUI BRAȘOV', post: '', ...cuiX }, { ...R.subs, hit: '', pre: 'CLucrari de intretinere si reparatie a strazilor din zona nordica a Municipiului Brasov-lot 1', post: '', ...cuiX }]) }
+};
+const v = VIEWS[base] || VIEWS.query;
+const tab = st.tab || v.tab;
+const cov = lens === 'coverage';
+const map = cov ? 'cov' : v.map;
+const on = '#F2B33D', ink = '#E8EBEF', dim = '#9BA5B1';
+const noun = tab === 'authorities' ? [v.nA, 'authorities'] : tab === 'records' ? [v.nR, 'Records'] : [v.nS, 'suppliers'];
+const go = (view) => () => this.setState({ view, lens: 'money', tab: undefined });
+return {
+v, noop: () => {}, minH: view0 === 'query' ? '1640px' : '1440px',
+goEmpty: go('empty'), goZoom: go('zoom'),
+lensMoney: () => this.setState({ lens: 'money' }), lensCov: () => this.setState({ lens: 'coverage' }),
+pickA: () => this.setState({ tab: 'authorities' }), pickS: () => this.setState({ tab: 'suppliers' }), pickR: () => this.setState({ tab: 'records' }),
+monBg: cov ? 'transparent' : on, monInk: cov ? '#B8C0CA' : '#0D1014', covBg: cov ? on : 'transparent', covInk: cov ? '#0D1014' : '#B8C0CA',
+aLine: tab === 'authorities' ? on : 'transparent', aInk: tab === 'authorities' ? ink : dim,
+sLine: tab === 'suppliers' ? on : 'transparent', sInk: tab === 'suppliers' ? ink : dim,
+rLine: tab === 'records' ? on : 'transparent', rInk: tab === 'records' ? ink : dim,
+isZoom: base === 'zoom', isGoto: base === 'goto', isMoney: !cov, isCov: cov,
+mapQuery: map === 'query', mapQ3: map === 'q3', mapGoto: map === 'goto', mapCov: map === 'cov', mapBv: map === 'bv',
+tipX: cov ? '53.2%' : v.tipX, tipY: cov ? '53.7%' : v.tipY, tipName: cov ? 'Brașov' : v.tipName, canZoom: !cov && !!v.canZoom,
+tipLines: (cov ? ['SEAP: harvested, with known gaps', '[N] of [M] public entities have SEAP records since 2021, plus [K] other contracting authorities.', 'An entity without records may simply have bought nothing.'] : v.tip).map((t) => ({ t })),
+showEntities: tab !== 'records', showRecords: tab === 'records',
+entities: tab === 'authorities' ? v.A : v.S, records: v.R,
+rankedBy: tab === 'records' ? 'top 50 by value' : 'top 50 by RON of matching Records',
+showAll: 'Show all ' + noun[0] + ' ' + noun[1],
+badges: ['Framework ceiling', 'Subsequent contract', 'Consortium share', 'Suspect value', 'No value', 'CUI mismatch', 'Name differs from ANAF', 'Identity curated', 'Crawled, provisional', 'Crawl-only'].map((t) => ({ t }))
+};
+}
+}
+</script>
+</body>
+</html>

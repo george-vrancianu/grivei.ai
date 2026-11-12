@@ -17,3 +17,7 @@ A SEAP supplier is one entity per CUI, and a CUI counts only when it passes the 
 - Branches, group companies and merged companies stay separate entities. ANAF status (`RADIERE`, `FUZIUNE`) is badged. Parent/subsidiary and successor links come later as graph edges between entities, never as merges.
 - A reviewed **identity override** file, versioned in the repo with a reason per entry, can attach a record's supplier to an identity. It is meant for the top no-CUI mega-contracts and obvious wrong CUIs. It never splits a joint venture. This is the only hand curation of identity. Values are never hand-curated (see [Data caveats](https://github.com/george-vrancianu/grivei.ai/issues/23)).
 - `norm_cui` must stop turning foreign ids into digit strings, and the name fallback in `upsert_entity` goes.
+
+## Amended 2026-11-12: contracting authorities take ANAF's name too
+
+The display-name rule applies to every entity in either role, not only to suppliers. A contracting authority shows ANAF's current name with comma-below diacritics, or its most frequent SEAP spelling when ANAF has no entry. Its SEAP spellings are listed under "Appears in SEAP as".
