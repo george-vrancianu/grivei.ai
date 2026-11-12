@@ -26,7 +26,7 @@ from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
-from . import placement_cli
+from . import acceptance_cli, placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
 from .refresh.ledger import LEDGER_NAME
@@ -167,10 +167,13 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--snapshot", default="latest", help="a snapshot id (default: the latest of that kind)")
 
     placement_cli.add_parsers(sub)
+    acceptance_cli.add_parsers(sub)
 
     args = parser.parse_args(argv)
     archive = Archive(args.archive)
     if (code := placement_cli.run(archive, args)) is not None:
+        return code
+    if (code := acceptance_cli.run(archive, args)) is not None:
         return code
     if args.verb == "rebuild":
         if not args.db:

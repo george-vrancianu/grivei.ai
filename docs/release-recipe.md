@@ -92,6 +92,8 @@ A Release is done when:
 - all of its user-facing copy is bilingual (EN default, RO at `/ro/`);
 - its refresh steps have run unattended for a week with no alert.
 
+Release 1's own run of this list (the real rebuild, the latency benchmark, the validation fixture, the unattended week) is in [release-1-runbook.md](release-1-runbook.md).
+
 ## First reuse (Release 2 only)
 
 The second Source is the first to reuse the generic parts, so Release 2 also builds, once:
