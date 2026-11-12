@@ -35,6 +35,7 @@ from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
+from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 
 SQL_DIR = Path(__file__).parent / "sql"
@@ -49,6 +50,8 @@ class RebuildSummary:
     anaf_found: int = 0  # CUIs the archived ANAF answers confirm
     anaf_not_found: int = 0  # CUIs ANAF was asked about and does not know
     entities: int = 0
+    placement: PlacementSummary | None = None
+    geo_line: str | None = None  # the TopoJSON step's one line
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
     quarantined: list[Path] = field(default_factory=list)
     incomplete: list[Path] = field(default_factory=list)
@@ -56,6 +59,10 @@ class RebuildSummary:
     def lines(self) -> list[str]:
         out = [f"loaded {self.records} records from {self.files_loaded} file(s)"]
         out.append(f"anaf: {self.anaf_found} CUIs found, {self.anaf_not_found} not found (from the archived answers); {self.entities} entities")
+        if self.placement is not None:
+            out.append(self.placement.line())
+        if self.geo_line:
+            out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
         out += [f"quarantined: {p}" for p in self.quarantined]
         out += [f"skipped, incomplete (no valid manifest): {p}" for p in self.incomplete]
@@ -333,7 +340,8 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
     summary.entities = cur.fetchone()[0]
 
 
-def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None) -> RebuildSummary:
+def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
+            placement_dir: Path | str | None = None, geo_dir: Path | str | None = None) -> RebuildSummary:
     summary = RebuildSummary()
     number = 0
     overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
@@ -370,6 +378,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 if through:
                     cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
             build_entities(cur, overrides, summary)
+            summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
             cur.execute(DATA_THROUGH_SQL)
@@ -383,6 +392,13 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         if progress:
             progress.fail(e)
         raise
+    # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
+    from .geo.topo import build_topojson
+
+    try:
+        summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
+    except Exception as e:  # the graph is loaded; the outlines can be rebuilt on their own with `pipeline geo-topojson`
+        summary.geo_line = f"geo: TopoJSON failed ({type(e).__name__}: {e}); the graph is loaded, rerun `pipeline geo-topojson`"
     if progress:
         progress.finish(summary.records, data_through)
     return summary

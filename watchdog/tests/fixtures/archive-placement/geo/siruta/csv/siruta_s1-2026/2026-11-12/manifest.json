@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "source": "geo",
+  "stream": "siruta",
+  "kind": "csv",
+  "unit": "siruta_s1-2026",
+  "fetchedAt": "2026-11-12T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/siruta_s1_2026.csv",
+  "via": null,
+  "files": [
+    {
+      "name": "siruta_s1_2026.csv",
+      "sha256": "a4381e3960edfa574b64c69263d07af1cc6b68f9ad3af2f047449d6a2ca54429",
+      "bytes": 1731
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "siruta_s1-2026"
+  }
+}

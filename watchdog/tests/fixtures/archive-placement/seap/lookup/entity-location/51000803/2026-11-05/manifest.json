@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "lookup",
+  "kind": "entity-location",
+  "unit": "51000803",
+  "fetchedAt": "2026-11-05T09:00:00Z",
+  "url": null,
+  "via": null,
+  "files": [
+    {
+      "name": "by-cif.json",
+      "sha256": "00c2590a8418460196d5efd273297e6bfdcfbbd09751ebdeae25b1ef07fbb992",
+      "bytes": 135
+    },
+    {
+      "name": "request.json",
+      "sha256": "d08c5b2d8d03e9196f00cd7e711990830f2fafe82b9a262dbcbce0060acc0181",
+      "bytes": 114
+    },
+    {
+      "name": "view.json",
+      "sha256": "008516f96fde7685679bcc30874a5135d3885150d330a10bd50dcc8c1fbef110",
+      "bytes": 303
+    }
+  ]
+}

@@ -22,6 +22,7 @@ from .crawl.backfill import FIRST_DAY as BACKFILL_FIRST_DAY, LAST_DAY_2021_22 as
 from .crawl.backfill_progress import DEFAULT_BACKFILL_STATUS_NAME, BackfillProgress, describe_backfill
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
+from . import placement_cli
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
 
@@ -54,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="the reviewed identity override file (env PIPELINE_IDENTITY_OVERRIDES; default: pipeline/identity_overrides.toml)")
     r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
+    placement_cli.add_rebuild_args(r)
 
     st = sub.add_parser("status", help="show the crawl cursor and data-through dates, and how far a running or finished rebuild, crawl and ANAF lookup are")
     st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="the rebuild's status file, as for rebuild")
@@ -97,15 +99,21 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--since-year", type=int, default=2021, help="first dataset year (achizitii-publice-YYYY), default 2021")
     g.add_argument("--delay", type=float, default=1.0, help="seconds between requests to data.gov.ro, default 1")
 
+    placement_cli.add_parsers(sub)
+
     args = parser.parse_args(argv)
     archive = Archive(args.archive)
+    if (code := placement_cli.run(archive, args)) is not None:
+        return code
     if args.verb == "rebuild":
         if not args.db:
             parser.error("--db or DATABASE_URL is required")
         status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
         # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
-        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides).lines():
+        placement_cli.log_to_stderr()  # the placement step logs every authority it could not match
+        for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides,
+                            placement_dir=args.placement_data, geo_dir=args.geo_dir).lines():
             print(line, flush=True)
         return 0
     if args.verb == "anaf-lookup":

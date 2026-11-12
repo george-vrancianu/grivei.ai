@@ -1,0 +1,3 @@
+cui,national,override,name,reason
+51001108,true,false,AGENTIA NATIONALA DEMO,"fictional: a national agency with only direct purchases, no award notice"
+51001205,false,true,DIRECTIA DE SANATATE PUBLICA DEMO,"fictional: a county unit; the notice says central, the file overrides it"
