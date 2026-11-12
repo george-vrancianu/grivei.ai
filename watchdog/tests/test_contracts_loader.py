@@ -235,7 +235,7 @@ def test_quirk_numeric_cuis_dates_and_mangled_cuis_in_the_xlsx(planned):
     _, by_file = planned
     x25 = first_file(by_file, "contracte", "2025Q1")
     assert x25["CAN9000010~21"].authority_cui == "4267117" and x25["CAN9000010~21"].winners[0].cui == "18165761"
-    assert x25["CAN9000010~133"].winners[0].cui == "18165761"  # text `RO 18165761`
+    assert x25["CAN9000010~133"].winners[0].cui == "RO 18165761"  # text `RO 18165761`, kept as published
     assert x25["CAN9000010~133"].value_bani == 62183650  # a float cell 621836.5 RON
     assert x25["CAN9000011~A 7"].winners[0].cui is None and "supplier_cui:scientific_notation" in x25["CAN9000011~A 7"].notes
 

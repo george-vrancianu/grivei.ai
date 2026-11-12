@@ -148,7 +148,7 @@ def test_sigterm_ends_the_rebuild_command_like_a_failure(tmp_path):
     script = (
         "import sys, time\n"
         "import pipeline.cli as cli\n"
-        "def slow(archive, db, progress):\n"
+        "def slow(archive, db, progress, **kw):\n"
         "    progress.start(1, archive.root)\n"
         "    try:\n"
         "        time.sleep(60)\n"

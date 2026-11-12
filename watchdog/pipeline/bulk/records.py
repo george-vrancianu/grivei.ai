@@ -104,10 +104,10 @@ def _build_direct(label: str, f: dict[str, values.Cell]) -> BulkRecord:
         return bani
 
     def cui(field: str) -> str | None:
-        digits, note = values.to_cui(f.get(field))
+        tax_id, note = values.to_tax_id(f.get(field))
         if note:
             notes.append(f"{field}:{note}")
-        return digits
+        return tax_id
 
     code, published = values.text(f.get("code")), values.to_date(f.get("published_on"))
     if not code or published is None:
@@ -172,10 +172,10 @@ def _build_contract_row(label: str, f: dict[str, values.Cell]) -> ContractRow:
     notes: list[str] = []
 
     def cui(field: str) -> str | None:
-        digits, note = values.to_cui(f.get(field))
+        tax_id, note = values.to_tax_id(f.get(field))
         if note:
             notes.append(f"{field}:{note}")
-        return digits
+        return tax_id
 
     bani, mangled = values.to_bani(f.get("value"))
     if mangled:

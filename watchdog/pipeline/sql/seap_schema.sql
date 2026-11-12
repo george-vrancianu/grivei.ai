@@ -1,5 +1,5 @@
 -- The `seap` schema: SEAP's typed Record table and search table, joined to the shared core only through entity keys
--- (a CUI today). Derived data: `pipeline rebuild` drops and recreates it from the raw archive (ADR 0004). Money is
+-- (core.entity.key). Derived data: `pipeline rebuild` drops and recreates it from the raw archive (ADR 0004). Money is
 -- integer bani everywhere it is summed.
 DROP SCHEMA IF EXISTS seap CASCADE;
 CREATE SCHEMA seap;
@@ -27,10 +27,11 @@ CREATE TABLE seap.record (
     channel          text NOT NULL CHECK (channel IN ('DIRECT_PURCHASE', 'CONTRACT')),
     title            text NOT NULL,
     state            text,
-    authority_cui    text,
+    authority_cui    text,                -- the authority's normalised CUI, when it passes the check digit
+    authority_key    text,                -- its entity key (core.entity.key): the CUI, else `name-<slug>`
     authority_name   text NOT NULL,
-    supplier_cui     text,
-    supplier_name    text,
+    supplier_cui     text,                -- the first winner's ANAF-confirmed CUI (its entity key), else null
+    supplier_name    text,                -- the first winner's spelling; null for a natural person (ADR 0003)
     cpv_code         text,
     cpv_description  text,
     contract_type    text,                -- Furnizare / Servicii / Lucrari, as published (DAN)
@@ -41,9 +42,12 @@ CREATE TABLE seap.record (
     value_bani       bigint,              -- null = no value in SEAP
     counted_bani     bigint,              -- null = not summed (no value; later: suspect, framework ceiling)
     load_notes       text[] NOT NULL DEFAULT '{}',  -- quirks seen on load, e.g. 'supplier_cui:scientific_notation'
-    -- Winners in their published (file row) order: [{"name": ..., "cui": ...}, ...]. A DA or DAN has its one supplier.
-    -- supplier_cui / supplier_name above are the first winner.
+    -- Winners in their published (file row) order: [{"name", "key", "identity", "naturalPerson", "curated", "differsFromAnaf",
+    -- "cuiMismatch"}, ...]. A DA or DAN has its one supplier. `key` joins core.entity; a natural person has no key and no
+    -- name, and the published id (a CNP) is never stored (ADR 0003). supplier_cui / supplier_name above are the first winner.
     winners          jsonb NOT NULL DEFAULT '[]',
+    -- Identity badges (ADR 0003): CUI_MISMATCH, NAME_DIFFERS_FROM_ANAF, IDENTITY_CURATED.
+    badges           text[] NOT NULL DEFAULT '{}',
     -- Contracts and award notices (null / empty for DA and DAN). Kept for the counting rule (#65): the framework
     -- column and the award notice a subsequent contract links to its framework by.
     notice_code      text,                -- the award notice (CAN / SCNA ...)
@@ -70,7 +74,12 @@ CREATE TABLE seap.search (
     counted_bani     bigint,
     share_bani       bigint,
     authority_cui    text,
-    supplier_cui     text,
+    supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
+    supplier_key     text,                -- the winner's entity key (core.entity.key); null for a natural person
+    supplier_spelling text,               -- the winner's name as published on this Record; null for a natural person
+    supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
+    supplier_curated boolean NOT NULL DEFAULT false,
+    supplier_differs boolean NOT NULL DEFAULT false,  -- the spelling differs from ANAF's name under a confirmed CUI
     doc              text NOT NULL,
     PRIMARY KEY (record_code, winner_position)
 );
