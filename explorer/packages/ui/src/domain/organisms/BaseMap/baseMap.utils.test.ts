@@ -22,6 +22,25 @@ describe("createColorScale", () => {
     expect(scale.color(100)).toBe(scale.ramp(2)[1]);
   });
 
+  it("linear: starts at zero, so the largest of close values is not the only dark one", () => {
+    const scale = createColorScale("linear", [300, 310]);
+    expect(scale.domain).toEqual([0, 310]);
+    expect(scale.color(300)).not.toBe(scale.color(0));
+    expect(createColorScale("linear", [-5, 10]).domain).toEqual([-5, 10]);
+  });
+
+  it("takes a fixed domain when a lens gives one", () => {
+    const scale = createColorScale("linear", [1, 2], [0, 100]);
+    expect(scale.domain).toEqual([0, 100]);
+    expect(scale.color(100)).toBe(scale.ramp(2)[1]);
+  });
+
+  it("log: reports zeros so a legend can mark its low end", () => {
+    expect(createColorScale("log", [0, 5]).hasNonPositive).toBe(true);
+    expect(createColorScale("log", [1, 5]).hasNonPositive).toBe(false);
+    expect(createColorScale("linear", [0, 5]).hasNonPositive).toBe(false);
+  });
+
   it("log: spans the smallest positive value to the largest and spaces by ratio", () => {
     const scale = createColorScale("log", [0, 1, 10, 100, null]);
     expect(scale.domain).toEqual([1, 100]);

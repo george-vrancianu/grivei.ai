@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import type { MapFeature } from "../../baseMap.types.ts";
-import { AreaPath } from "./AreaPath.tsx";
+import { AreaPath } from "./components/AreaPath/index.ts";
 
 export type MapCanvasProps = {
   features: readonly MapFeature[];
@@ -15,10 +16,12 @@ export type MapCanvasProps = {
   tooltipId: string;
   onSelect: ((code: string) => void) | undefined;
   onActivate: (code: string | null) => void;
+  /** Marks drawn over the areas, in the SVG's coordinate space; they never take pointer events. */
+  overlay?: ReactNode;
 };
 
 /** The responsive SVG: one focusable path per area, the selected one drawn last so its outline is not hidden by neighbours. */
-export function MapCanvas({ features, paths, width, height, label, fillOf, labelOf, selected, activeCode, tooltipId, onSelect, onActivate }: MapCanvasProps) {
+export function MapCanvas({ features, paths, width, height, label, fillOf, labelOf, selected, activeCode, tooltipId, onSelect, onActivate, overlay }: MapCanvasProps) {
   const ordered = [...features].sort((a, b) => Number(a.properties.code === selected) - Number(b.properties.code === selected));
   return (
     <Box
@@ -54,6 +57,7 @@ export function MapCanvas({ features, paths, width, height, label, fillOf, label
           />
         );
       })}
+      {overlay && <g pointerEvents="none">{overlay}</g>}
     </Box>
   );
 }

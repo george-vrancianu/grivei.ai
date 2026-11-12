@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import type { Topology } from "topojson-specification";
 import type { ProjectionKind } from "../baseMap.types.ts";
-import { featuresOf, projectFeatures, type readArea } from "../baseMap.utils.ts";
+import { featuresOf, projectFeatures, type AreaReader } from "../baseMap.utils.ts";
 
 /** Features and projected paths, recomputed only when the outlines, size or projection change. */
 export function useBaseMapGeometry(
   topology: Topology,
-  options: { object?: string | undefined; readArea?: typeof readArea | undefined; width: number; height: number; projection: ProjectionKind },
+  options: { object?: string | undefined; readArea?: AreaReader | undefined; width: number; height: number; projection: ProjectionKind },
 ) {
   const { object, readArea: reader, width, height, projection } = options;
   return useMemo(() => {

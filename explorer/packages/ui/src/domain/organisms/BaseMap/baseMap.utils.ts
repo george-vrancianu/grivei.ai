@@ -13,8 +13,10 @@ export type AreaValues = Readonly<Record<string, number | null | undefined>>;
 
 export type ColorScale = {
   kind: ColorScaleKind;
-  /** Smallest and largest value the scale spans (for a log scale, the smallest positive value); null when no area has a usable value. */
+  /** What the scale spans; null when no area has a usable value. Linear: zero (or the minimum, if negative) up to the maximum, so colour tracks absolute size. Log: the smallest positive value up to the maximum. */
   domain: readonly [number, number] | null;
+  /** True for a log scale when some value is zero or negative: those take the lowest colour, so a legend should mark its low end as "at most". */
+  hasNonPositive: boolean;
   /** Colour for a value; null, undefined and non-finite values get NO_DATA_COLOR. */
   color: (value: number | null | undefined) => string;
   /** Evenly spaced colours along the scale, for a legend gradient. */
@@ -25,13 +27,19 @@ export type ColorScale = {
 const rampColor = (t: number) => interpolateBlues(0.15 + 0.85 * t);
 
 /**
- * A colour scale over the given values. Linear spans min..max. Log spans the smallest positive value..max and copes with zeros:
+ * A colour scale over the given values. Linear spans 0..max (or min..max when something is negative), so the palest colour means zero, not "the smallest area"; `domain` overrides the span for lenses that compare maps. Log spans the smallest positive value..max and copes with zeros:
  * a zero (or negative) value is not log-scaled, it takes the lowest colour. Missing values are never scaled: they are grey.
  */
-export function createColorScale(kind: ColorScaleKind, values: readonly (number | null | undefined)[]): ColorScale {
+export function createColorScale(
+  kind: ColorScaleKind,
+  values: readonly (number | null | undefined)[],
+  fixedDomain?: readonly [number, number],
+): ColorScale {
   const finite = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   const candidates = kind === "log" ? finite.filter((value) => value > 0) : finite;
-  const domain = candidates.length > 0 ? ([Math.min(...candidates), Math.max(...candidates)] as const) : null;
+  const lower = kind === "linear" ? Math.min(0, ...candidates) : Math.min(...candidates);
+  const derived = candidates.length > 0 ? ([lower, Math.max(...candidates)] as const) : null;
+  const domain = fixedDomain ?? derived;
 
   const position = (value: number): number => {
     if (!domain) return 0;
@@ -44,23 +52,27 @@ export function createColorScale(kind: ColorScaleKind, values: readonly (number 
   return {
     kind,
     domain,
+    hasNonPositive: kind === "log" && finite.some((value) => value <= 0),
     color: (value) => (typeof value === "number" && Number.isFinite(value) ? rampColor(position(value)) : NO_DATA_COLOR),
     ramp: (steps) => Array.from({ length: steps }, (_, i) => rampColor(steps === 1 ? 0 : i / (steps - 1))),
   };
 }
 
+/** Reads `{ code, name }` from a raw feature. */
+export type AreaReader = (raw: { id?: string | number; properties?: Record<string, unknown> | null }) => { code: string; name: string };
+
 /** Default area reader: the convention is feature properties `{ code, name }` (code = ISO 3166-2:RO or SIRUTA). */
-export function readArea(raw: { id?: string | number; properties?: Record<string, unknown> | null }): { code: string; name: string } {
+export const readArea: AreaReader = (raw) => {
   const props = raw.properties ?? {};
   const code = props["code"] ?? raw.id;
   if (code === undefined || code === null) throw new Error("A map outline has no `code` property or id");
   return { code: String(code), name: typeof props["name"] === "string" ? props["name"] : String(code) };
-}
+};
 
 /** The features of one TopoJSON object (the first when `object` is omitted), each reduced to `{ code, name }` properties. */
 export function featuresOf(
   topology: Topology,
-  options: { object?: string; readArea?: typeof readArea } = {},
+  options: { object?: string; readArea?: AreaReader } = {},
 ): MapFeature[] {
   const name = options.object ?? Object.keys(topology.objects)[0];
   const object = name === undefined ? undefined : topology.objects[name];
@@ -72,9 +84,12 @@ export function featuresOf(
     type: "Feature",
     id: item.id,
     geometry: item.geometry,
-    properties: read(item as Parameters<typeof readArea>[0]),
+    properties: read(item as Parameters<AreaReader>[0]),
   }));
 }
+
+/** Projects a [longitude, latitude] to SVG coordinates (null when it falls outside the projection). */
+export type ProjectPoint = (lonLat: [number, number]) => [number, number] | null;
 
 /** Path strings for the features, with a projection fitted to all of them inside `width` x `height` (minus `padding`). */
 export function projectFeatures(
@@ -82,7 +97,7 @@ export function projectFeatures(
   width: number,
   height: number,
   options: { projection?: ProjectionKind; padding?: number } = {},
-): { paths: Map<string, string>; centroids: Map<string, [number, number]> } {
+): { paths: Map<string, string>; centroids: Map<string, [number, number]>; project: ProjectPoint } {
   const padding = options.padding ?? 4;
   const projection = options.projection === "mercator" ? geoMercator() : geoConicConformal().parallels([44, 48]).rotate([-25, 0]);
   const collection: GeoPermissibleObjects = { type: "FeatureCollection", features: [...features] };
@@ -100,5 +115,6 @@ export function projectFeatures(
     paths.set(item.properties.code, path(item) ?? "");
     centroids.set(item.properties.code, path.centroid(item));
   }
-  return { paths, centroids };
+  const project: ProjectPoint = (lonLat) => projection(lonLat) ?? null;
+  return { paths, centroids, project };
 }

@@ -60,12 +60,14 @@ export const sampleCopy = {
           legendTitle: "Valoare contractată",
           noData: "Fără date",
           areaLabel: (name, value) => `${name}: ${value}`,
+          atMost: (value) => `până la ${value}`,
         }
       : {
           mapLabel: "Map of counties",
           legendTitle: "Contracted value",
           noData: "No data",
           areaLabel: (name, value) => `${name}: ${value}`,
+          atMost: (value) => `up to ${value}`,
         },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"

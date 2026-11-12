@@ -12,7 +12,10 @@ export type AreaPathProps = {
   onActivate: (code: string | null) => void;
 };
 
-/** One area: a button for keyboard and screen-reader users (Enter and Space select), hover and focus show its tooltip. */
+/**
+ * One area. With `onSelect` it is a button (Enter and Space select); without, an image, so nothing that does nothing is announced as a button.
+ * Either way it is focusable, and hover and focus show its tooltip.
+ */
 export function AreaPath({ code, d, fill, label, selected, active, describedBy, onSelect, onActivate }: AreaPathProps) {
   const onKeyDown = (event: KeyboardEvent<SVGPathElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -24,10 +27,10 @@ export function AreaPath({ code, d, fill, label, selected, active, describedBy, 
     <path
       d={d}
       fill={fill}
-      role="button"
+      role={onSelect ? "button" : "img"}
       tabIndex={0}
       aria-label={label}
-      aria-pressed={selected}
+      aria-pressed={onSelect ? selected : undefined}
       aria-describedby={describedBy}
       data-code={code}
       data-active={active}

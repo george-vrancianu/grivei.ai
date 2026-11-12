@@ -8,10 +8,12 @@ export type LegendProps = {
   scale: ColorScale;
   /** Formats the two ends of the scale. */
   formatValue: (value: number) => string;
+  /** Labels the low end of a log scale that holds zeros ("up to ..."). */
+  atMost: (valueText: string) => string;
 };
 
 /** The colour bar with its smallest and largest value, and the grey no-data swatch with its label. */
-export function Legend({ title, noDataLabel, scale, formatValue }: LegendProps) {
+export function Legend({ title, noDataLabel, scale, formatValue, atMost }: LegendProps) {
   const gradient = `linear-gradient(to right, ${scale.ramp(9).join(", ")})`;
   return (
     <Box component="section" aria-label={title} sx={{ minWidth: 200, maxWidth: 320 }}>
@@ -22,7 +24,7 @@ export function Legend({ title, noDataLabel, scale, formatValue }: LegendProps) 
         <>
           <Box aria-hidden sx={{ height: 10, borderRadius: 0.5, backgroundImage: gradient, mt: 0.5 }} />
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="caption">{formatValue(scale.domain[0])}</Typography>
+            <Typography variant="caption">{scale.hasNonPositive ? atMost(formatValue(scale.domain[0])) : formatValue(scale.domain[0])}</Typography>
             <Typography variant="caption">{formatValue(scale.domain[1])}</Typography>
           </Box>
         </>
