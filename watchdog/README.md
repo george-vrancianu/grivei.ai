@@ -513,6 +513,16 @@ Expected cost, from the earlier tickets' real runs and estimates: `fetch-datagov
 
 Then enable the nightly schedule: `deploy/README.md`, "Schedule the refresh" (systemd user timer at 03:00 and on boot with `Persistent=true`, and the Windows logon task that keeps WSL up).
 
+## Release 1 acceptance (#91): `bench`, `check-fixture`, `check-week`
+
+The operator's order, costs and checklist for the real national rebuild, the latency gate and the unattended week are in [`docs/release-1-runbook.md`](../docs/release-1-runbook.md). The three verbs behind its acceptance steps:
+
+- `pipeline bench --db URL [--repetitions 5] [--threshold-ms 500] [--db-cpus 8] [--json FILE] [--only TEXT] [--queries FILE] [--strict-maps]`: the keystroke benchmark (`pipeline/bench.py`, default queries `pipeline/bench_queries.json`). Runs the statements the API issues for one keystroke (total, both Money-lens sides, both entity tabs, the Records tab) in parallel, cold then warm, and prints a table and writes JSON (median, p95, max per query, task and statement; the CPUs of the client and the declared vCPUs of the database). The empty and chips-only states must read the rollup tables (checked with `EXPLAIN`). Exit 1 if any query is over the threshold. `--api-url URL --operation-id SHA` times the persisted `MainScreen` operation of a running API instead (first request = cache miss, repeats = cache hits).
+- `pipeline check-fixture --db URL [--batch FILE ...]`: the Brasov/Timisoara crawl batches (`data/raw/seap_*_2024_2026.json`) against the bulk-loaded graph: matched/total DAs and contracts inside the loaded bulk quarters; exit 1 above the allowed misses.
+- `pipeline check-week [--through DAY] [--days 7] [--strict]`: seven consecutive UTC days of refresh runs in `<archive>/refresh-ledger.json` with no alert; exit 1 otherwise.
+
+Tests: `tests/test_bench.py` and `tests/test_acceptance.py` (no database), `tests/test_bench_db.py` (a capped `pp37-pytest-*` ParadeDB container, the `archive-search` fixture rebuilt).
+
 ## The data model, in brief
 
 | Layer | Tables | Role |
