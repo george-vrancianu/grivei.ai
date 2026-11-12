@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { EntityHeader, EntityPageLayout, RecordsTab, Stack, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, RecordsTab, Stack, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
@@ -7,6 +7,7 @@ import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHrefs } from "./entityPage.utils.ts";
 import { useEntityPage } from "./hooks/useEntityPage.ts";
+import { useOverviewTab } from "./hooks/useOverviewTab.ts";
 import { useRecordsTab } from "./hooks/useRecordsTab.ts";
 
 export interface EntityPageProps {
@@ -17,13 +18,14 @@ export interface EntityPageProps {
   view: EntityView;
 }
 
-/** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. The tab bodies are filled by their own tickets. */
+/** `/explore/<authority|supplier>/<key>[/records|/relationships]`: the entity's header and the open tab. The Records and Overview tabs are filled; Relationships is not built yet. */
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
   const { filter, page, order, signalOrder } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
+  const overviewTab = useOverviewTab(locale, routeRole, entityKey);
 
   if (state.status === "error") {
     return (
@@ -80,6 +82,13 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         )
       ) : loading ? (
         <Typography role="status">{t.status.loading}</Typography>
+      ) : view === "overview" ? (
+        state.overview && entity ? (
+          <EntityOverview overview={state.overview} aliases={entity.aliases} {...overviewTab} />
+        ) : (
+          // ready, but the entity has nothing in this role
+          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+        )
       ) : (
         <Typography>{t.entityPage.tabBody[view]}</Typography>
       )}

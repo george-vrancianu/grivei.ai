@@ -8,6 +8,7 @@ export * from "./Chip/index.ts";
 export * from "./CircularProgress/index.ts";
 export * from "./Grid/index.ts";
 export * from "./IconButton/index.ts";
+export * from "./LinearProgress/index.ts";
 export * from "./Link/index.ts";
 export * from "./Stack/index.ts";
 export * from "./Tab/index.ts";
