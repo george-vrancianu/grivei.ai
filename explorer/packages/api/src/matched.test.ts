@@ -42,12 +42,28 @@ describe("highlightRanges (offsets into the original text)", () => {
   });
 });
 
+describe("dotted initials glued to a word", () => {
+  it("highlights like the fold tokenises", () => {
+    const text = "C.N.ADMINISTRATIA PORTURILOR";
+    expect(slices(text, highlightRanges(text, ["administratia"]))).toEqual(["ADMINISTRATIA"]);
+    expect(slices(text, highlightRanges(text, ["cn"]))).toEqual(["C.N"]);
+    expect(highlightRanges("S.C.ALFA S.R.L.", ["c"])).toEqual([]);
+  });
+  it("does not cut a combining mark off the end of a highlight", () => {
+    const text = "cas\u0061\u0306 mare"; // "ă" decomposed
+    expect(highlightRanges(text, ["casa"])).toEqual([[0, 5]]);
+  });
+});
+
 describe("matchedFieldOf", () => {
   const source: MatchSource = {
     code: "DA95000008", title: "Consumabile birou RO1000017", authorityName: "SPITALUL EXEMPLU", authorityCui: "1000017",
     cpvCode: "30197000-6", cpvDescription: "Articole de papetarie",
     winners: [{ name: "PAPETARIE ALFA SA", cui: "2000007", foreignVatId: null }],
   };
+  it("names the authority for a dotted prefix glued to its name", () => {
+    expect(matchedFieldOf({ ...source, authorityName: "C.N.ADMINISTRATIA PORTURILOR MARITIME", title: "Lucrari" }, ["cn"])).toMatchObject({ field: "AUTHORITY", highlights: [[0, 3]] });
+  });
   it("is null without a text query", () => expect(matchedFieldOf(source, [])).toBeNull());
   it("reports the field with most query tokens, then by priority", () => {
     expect(matchedFieldOf(source, ["consumabile", "birou"])).toEqual({ field: "TITLE", text: source.title, highlights: [[0, 11], [12, 17]] });

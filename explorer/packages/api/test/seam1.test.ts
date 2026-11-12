@@ -1409,7 +1409,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect((await ask69("search_a", { q: "ionescu" })).records.rows).toEqual([]);
     });
 
-    it("is computed for the returned page only", async () => {
+    it("every returned row names a field", async () => {
       const r = await ask69("search_a", { q: "desz" });
       expect(r.records.rows.every((x) => x.matchedField !== null)).toBe(true);
       expect(r.records.count).toBe(3);

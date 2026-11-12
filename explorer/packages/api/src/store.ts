@@ -642,11 +642,11 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async goTo(qFolded, { signal } = {}) {
       if (!qFolded) return null;
-      // a lone number is a CUI (RO<digits> was folded to its digits) and only that; anything else is a folded name
+      // a lone number is a CUI (RO<digits> was folded to its digits) and only that (a CUI entity's key is its CUI, so the PK finds it); anything else is a folded name
       const isCui = /^\d{2,10}$/.test(qFolded);
       const found = await cancellableQuery<{ key: string }>(
         pool, signal,
-        isCui ? `SELECT key FROM core.entity WHERE cui = $1 LIMIT 2` : `SELECT key FROM core.entity WHERE name_folded = $1 LIMIT 2`,
+        isCui ? `SELECT key FROM core.entity WHERE key = $1 AND identity = 'CUI' LIMIT 2` : `SELECT key FROM core.entity WHERE name_folded = $1 AND name_folded <> '' LIMIT 2`,
         [qFolded],
       );
       if (found.rows.length !== 1) return null;

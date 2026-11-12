@@ -53,6 +53,7 @@ export function locateTokens(text: string): LocatedToken[] {
   let at = 0;
   for (const original of text) {
     const folded = original.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+    if (!folded && units.length) units[units.length - 1]!.end = at + original.length; // a lone combining mark belongs to the letter before it
     for (const ch of folded) units.push({ ch, start: at, end: at + original.length });
     at += original.length;
   }
@@ -66,7 +67,9 @@ export function locateTokens(text: string): LocatedToken[] {
       dots.push(j + 1);
       j += 2;
     }
-    if (dots.length && !(units[j + 1] && ALNUM.test(units[j + 1]!.ch))) for (const d of dots) dropped.add(d);
+    // like the fold's regex, which backs off one pair when the run is glued to a word ("s.c.alfa" joins "s.c" only)
+    if (units[j + 1] && ALNUM.test(units[j + 1]!.ch)) dots.pop();
+    for (const d of dots) dropped.add(d);
   }
   // 4: split on everything that is not a letter or a digit
   const out: LocatedToken[] = [];
