@@ -38,11 +38,6 @@ describe("TotalFigure", () => {
     expect(screen.queryByText(/no value/)).toBeNull();
     expect(screen.queryByText(/ceilings/)).toBeNull();
   });
-  it("shows suspect Records as plain text when no link target is given", () => {
-    renderInUi(<TotalFigure total={{ ...empty, suspectLeftOut: 2 }} locale="en" copy={sampleCopy.total("en")} methodologyHref="/m/" />);
-    expect(screen.getByText("2 suspect values left out")).toBeVisible();
-    expect(screen.queryByRole("link", { name: /suspect/ })).toBeNull();
-  });
   it("shows an extreme total with an estimated Record count", () => {
     renderInUi(<TotalFigure total={{ ...totalExtreme, estimated: true }} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText(/^RON\s90,071,992,547,409,930$/)).toBeVisible();

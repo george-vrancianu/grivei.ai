@@ -30,4 +30,10 @@ describe("PartyName", () => {
     expect(container).toHaveTextContent(/^Persoană fizică$/);
     expect(container.querySelector("a")).toBeNull();
   });
+  it("renders nothing for a non-person party with neither entity nor published name", () => {
+    const bare = { ...cuiParty, entity: null, publishedName: null };
+    const { container } = renderInUi(<PartyName party={bare} entityHref={hrefOf} copy={copy} />);
+    expect(container.querySelector("span")).toBeNull();
+    expect(container).toBeEmptyDOMElement();
+  });
 });

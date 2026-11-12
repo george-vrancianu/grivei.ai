@@ -4,9 +4,9 @@ import type {
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
-export type Bani = string;
 export type { RecordBadge };
 export type Total = TotalFieldsFragment;
+export type Bani = Total["awarded"];
 export type EntityRef = EntityRefFragment;
 export type Party = PartyFieldsFragment;
 export type DataThrough = DataThroughFieldsFragment["dataThrough"][number];

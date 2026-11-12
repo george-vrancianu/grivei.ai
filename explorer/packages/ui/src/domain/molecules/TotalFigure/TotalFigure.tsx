@@ -29,8 +29,8 @@ export interface TotalFigureProps {
   copy: TotalFigureCopy;
   /** The methodology page; the ⓘ links here. */
   methodologyHref: string;
-  /** Where the suspect Records are listed. Without it the suspect line is plain text. */
-  suspectHref?: string;
+  /** Where the suspect Records are listed; required, so a Total can never leave them out without a way to see them. */
+  suspectHref: string;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface TotalFigureProps {
  */
 export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref }: TotalFigureProps) {
   const parts = leftOut(total);
-  const count = (n: number) => new Intl.NumberFormat(locale).format(n);
+  const count = (n: number) => formatCount(n, false, locale);
   return (
     <Stack spacing={0.25}>
       <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline" }}>
@@ -55,11 +55,7 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
       </Typography>
       {parts.suspect > 0 && (
         <Typography variant="body2">
-          {suspectHref ? (
-            <Link href={suspectHref}>{copy.suspectLeftOut(parts.suspect, count(parts.suspect))}</Link>
-          ) : (
-            copy.suspectLeftOut(parts.suspect, count(parts.suspect))
-          )}
+          <Link href={suspectHref}>{copy.suspectLeftOut(parts.suspect, count(parts.suspect))}</Link>
         </Typography>
       )}
       {parts.noValue > 0 && (

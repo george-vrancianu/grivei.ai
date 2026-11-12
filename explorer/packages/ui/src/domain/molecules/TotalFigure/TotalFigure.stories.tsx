@@ -21,7 +21,7 @@ export const Typical: Story = { render };
 export const LeftOutEverything: Story = { args: { total: totalWithLeftOut }, render };
 export const NationalScale: Story = { args: { total: totalNational }, render };
 /** More bani than Number.MAX_SAFE_INTEGER, an estimated Record count. */
-export const Extreme: Story = { args: { total: totalExtreme, suspectHref: undefined }, render };
+export const Extreme: Story = { args: { total: totalExtreme }, render };
 export const Empty: Story = {
   args: { total: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false } },
   render,
