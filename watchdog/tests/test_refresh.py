@@ -342,6 +342,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "rebuild", fake_rebuild)
     monkeypatch.setenv("PIPELINE_CRAWL_START", (today - timedelta(days=3)).isoformat())
     monkeypatch.setenv("PIPELINE_CRAWL_DELAY", "0")
+    monkeypatch.setenv("PIPELINE_REBUILD_IN_PLACE", "1")  # the fake rebuild has no database to switch
     monkeypatch.delenv("PIPELINE_HEALTHCHECK_URL", raising=False)
     return eli, loads, day
 

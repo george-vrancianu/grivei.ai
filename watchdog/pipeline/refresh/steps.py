@@ -26,6 +26,8 @@ class Impl:
     anaf_client: Callable[[], AnafClient]
     load_fn: Callable[[], object]  # -> RebuildSummary; raises DeterministicError when there is no database to load into
     backfill_fn: Callable[[], int] | None = None
+    backup_fn: Callable[[], StepResult] | None = None  # the raw archive to restic (backup.py); None = not wired, skipped
+    pgdump_fn: Callable[[], StepResult] | None = None
     crawl_delay: float = 0.35
     crawl_start: date | None = None  # PIPELINE_CRAWL_START: where a first crawl with no cursor starts
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
@@ -70,3 +72,9 @@ class Impl:
         if self.backfill_fn() != 0:
             raise TransientError("backfill stopped before every week was complete; rerun to resume")
         return StepResult({})
+
+    def backup(self) -> StepResult:
+        return self.backup_fn() if self.backup_fn else StepResult({"skipped": "not configured"})
+
+    def pgdump(self) -> StepResult:
+        return self.pgdump_fn() if self.pgdump_fn else StepResult({"skipped": "not configured"})

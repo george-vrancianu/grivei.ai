@@ -28,11 +28,13 @@ from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
 from . import placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
-from .refresh.engine import DeterministicError, locked, refresh_steps
+from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
 from .refresh.ledger import LEDGER_NAME
 from .refresh.steps import Impl
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
+from . import backup as backup_module
+from . import switchover
 
 DEFAULT_ARCHIVE = os.environ.get("PIPELINE_ARCHIVE", "/archive")
 
@@ -64,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
     placement_cli.add_rebuild_args(r)
+    r.add_argument("--in-place", action="store_true", default=bool(os.environ.get("PIPELINE_REBUILD_IN_PLACE")), help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE; for a new, empty database, e.g. a major upgrade)")
 
     r.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; default: today, UTC; for tests)")
     r.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV for the Coverage grid (env PIPELINE_KNOWN_GAPS; default: pipeline/coverage/known_gaps.csv)")
@@ -124,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; for tests)")
         p.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV (env PIPELINE_KNOWN_GAPS)")
         placement_cli.add_rebuild_args(p)
+        p.add_argument("--in-place", action="store_true", default=bool(os.environ.get("PIPELINE_REBUILD_IN_PLACE")), help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE; for a new, empty database, e.g. a major upgrade)")
 
     rf = sub.add_parser("refresh", help="the nightly run (#81): crawl, data.gov.ro + MF list, ANAF, load; each step only when due, under one lock; healthchecks pings")
     load_args(rf)
@@ -140,6 +144,22 @@ def main(argv: list[str] | None = None) -> int:
     lq = sub.add_parser("load-quarter", help="load one quarter again from the archive, without downloading: requeue its quarantined files, then rebuild")
     lq.add_argument("quarter", help="e.g. 2023Q2")
     load_args(lq)
+
+    for verb, text in (("rollback", "swap the database back to the graph from before the last switchover (and back again)"),
+                       ("cleanup", "drop the old graph kept by the last switchover (<db>_prev) and any unfinished or refused build (<db>_next)")):
+        sub.add_parser(verb, help=text).add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL of the live database (env DATABASE_URL)")
+    vf = sub.add_parser("verify", help="run the switchover checks on a database (e.g. a major-upgrade rebuild in a new volume) and exit 1 if any fail")
+    vf.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL of the graph to check (env DATABASE_URL)")
+    vf.add_argument("--against", help="Postgres URL of the graph it would replace (its Record count is the floor)")
+
+    bk = sub.add_parser("backup", help="back up now (the refresh does it on schedule): the raw archive and/or a pg_dump into the restic repository (env RESTIC_REPOSITORY)")
+    bk.add_argument("what", nargs="?", choices=("archive", "dump", "all"), default="all")
+    bk.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL to dump (env DATABASE_URL)")
+    rs = sub.add_parser("restore", help="restore from the restic repository: `restore archive DIR` into a new directory, `restore dump` into an empty database (--db)")
+    rs.add_argument("what", choices=("archive", "dump"))
+    rs.add_argument("target", nargs="?", help="the new directory for `archive`")
+    rs.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL of the empty database for `dump`")
+    rs.add_argument("--snapshot", default="latest", help="a snapshot id (default: the latest of that kind)")
 
     placement_cli.add_parsers(sub)
 
@@ -158,10 +178,16 @@ def main(argv: list[str] | None = None) -> int:
             if not got:
                 print("rebuild: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
                 return 1
-            for line in rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                                geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps).lines():
+            try:
+                summary = _rebuild_beside(archive, args, Progress(status_file), _log_line)
+            except switchover.SwitchoverRefused as e:
+                print(f"rebuild: the new graph failed its checks, nothing switched: {e}", file=sys.stderr)
+                return 1
+            for line in summary.lines():
                 print(line, flush=True)
         return 0
+    if args.verb in ("rollback", "cleanup", "verify", "backup", "restore"):
+        return _operate(archive, args, parser)
     if args.verb == "anaf-lookup":
         status_file = Path(args.progress_file) if args.progress_file else archive.root / ANAF_STATUS_NAME
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
@@ -234,6 +260,61 @@ def _log_line(line: str) -> None:
     print(f"{stamp_now()} {line}", flush=True)
 
 
+def _rebuild_beside(archive: Archive, args, progress: Progress, say):
+    """The rebuild every verb shares: into a fresh database beside the live one, checked, then switched over (switchover.py);
+    `--in-place` rebuilds into the database itself (it locks it for the whole load)."""
+    def build(url: str):
+        return rebuild(archive, url, progress, overrides_path=args.identity_overrides, placement_dir=args.placement_data,
+                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps)
+    if args.in_place:
+        return build(args.db)
+    return switchover.build_and_switch(args.db, build, say=say)
+
+
+def _operate(archive: Archive, args, parser) -> int:
+    """`rollback`, `cleanup`, `verify`, `backup`, `restore`: one-shot operator verbs, timestamped lines on stdout."""
+    if args.verb in ("rollback", "cleanup", "verify") and not args.db:
+        parser.error("--db or DATABASE_URL is required")
+    if args.verb == "rollback":
+        try:
+            switchover.rollback(args.db, _log_line)
+        except LookupError as e:
+            print(f"rollback: {e}", file=sys.stderr)
+            return 1
+    elif args.verb == "cleanup":
+        switchover.cleanup(args.db, _log_line)
+    elif args.verb == "verify":
+        failures = switchover.check_graph(args.db, args.against)
+        for f in failures:
+            _log_line(f"verify: FAILED: {f}")
+        _log_line("verify: FAILED" if failures else "verify: all checks passed")
+        return 1 if failures else 0
+    else:
+        restic = backup_module.Restic()
+        try:
+            if args.verb == "backup":
+                if not restic.configured:
+                    print("backup: RESTIC_REPOSITORY is not set", file=sys.stderr)
+                    return 1
+                if args.what in ("archive", "all"):
+                    _log_line(f"backup archive: {backup_module.backup_archive(archive, restic, _log_line).counts}")
+                if args.what in ("dump", "all"):
+                    _log_line(f"backup dump: {backup_module.backup_dump(args.db, restic, _log_line).counts}")
+            elif args.what == "archive":
+                if not args.target:
+                    parser.error("restore archive needs the new directory to restore into")
+                _log_line(f"restored the archive into {backup_module.restore_archive(restic, Path(args.target), args.snapshot)}")
+            else:
+                if not args.db:
+                    parser.error("restore dump needs --db (an empty database)")
+                backup_module.restore_dump(restic, args.db, args.snapshot)
+                _log_line("restored the dump")
+        except (DeterministicError, TransientError, LookupError, FileExistsError, RuntimeError) as e:
+            print(f"{args.verb}: {e}", file=sys.stderr)
+            return 1
+    return 0
+
+
 def _loader(archive: Archive, args):
     """A callable that rebuilds the graph from the archive with the verb's options (a refresh, a seed or load-quarter)."""
     def load():
@@ -241,8 +322,10 @@ def _loader(archive: Archive, args):
             raise DeterministicError("no database: pass --db or set DATABASE_URL")
         status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
         placement_cli.log_to_stderr()
-        summary = rebuild(archive, args.db, Progress(status_file), overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                          geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps)
+        try:
+            summary = _rebuild_beside(archive, args, Progress(status_file), _log_line)
+        except switchover.SwitchoverRefused as e:  # the live graph keeps serving; a human looks (deterministic: the same archive fails the same way)
+            raise DeterministicError(f"the new graph failed its checks, nothing switched, the live graph keeps serving: {e}") from e
         for line in summary.lines():
             _log_line(line)
         return summary
@@ -257,6 +340,8 @@ def _impl(archive: Archive, args) -> Impl:
 
     return Impl(archive, _log_line, lambda delay, log: make_client(delay, log), lambda a: fetch_datagov(a), lambda a: fetch_mf(a),
                 lambda: AnafClient(endpoint=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT)), _loader(archive, args), backfill, crawl_delay=args.delay,
+                backup_fn=lambda: backup_module.backup_archive(archive, backup_module.Restic(), _log_line),
+                pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
                 crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None)
 
 

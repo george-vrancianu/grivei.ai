@@ -63,6 +63,8 @@ python -m venv .venv              # or: uv venv .venv
 .venv/bin/pytest
 ```
 
+Backups (`tests/test_backup.py`, #82) need restic: `restic` on the PATH, or `PIPELINE_RESTIC_BIN`, or the official image pulled once (`docker pull restic/restic:0.18.1`; `tests/tools/restic-docker.sh` runs it capped and removed); skipped without any. The switchover tests (`tests/test_switchover_db.py`) use the same one capped ParadeDB container as the other `*_db` tests.
+
 ## The pipeline (explorer)
 
 `pipeline/` is the explorer's pipeline, grown out of this Connector (ADR 0004): `archive.py` is the raw archive (files unchanged under a
@@ -167,14 +169,14 @@ nohup python -m pipeline estimates >> ~/grivei-data/estimates.log 2>&1 &
 
 ## Operator: rebuild the graph from the archive for real
 
-Loads the whole raw archive (DA, DAN, Contracte, "fără anunț" and the crawled days) into the `seap` schema. A rebuild is **rerun from scratch, never resumed** (ADR 0004: the graph is derived from the archive): it drops and recreates schema `seap` and the core's entity tables (`core.entity`, `core.alias`, `core.anaf_company`: identities from the archived ANAF answers, see "Supplier identity") and loads everything in one transaction, committed only at the end. If it is killed, loses its connection or fails, the transaction rolls back: the database keeps the previous `seap` schema (or none, on a first run) and nothing is half-loaded. Rerunning the same command starts over and gives the same graph. The one effect that survives a kill is on the archive: a unit that failed validation has already been moved to `<archive>/quarantine/...` (with its `reason.json`), and a rerun does not look at the quarantine. Units are read and loaded one at a time, so memory is about one quarter (the biggest known file, 280 MB of CSV, peaks at about 250 MB; DA quarters of 770k rows about 1.5 GB). While it runs, the transaction holds locks on schema `seap`: the API cannot read `seap` until the commit, so stop the `api` service (or accept that it waits) during a multi-hour run.
+Loads the whole raw archive (DA, DAN, Contracte, "fără anunț" and the crawled days) into the `seap` schema. A rebuild is **rerun from scratch, never resumed** (ADR 0004: the graph is derived from the archive): it builds a fresh `seap` schema and the core's entity tables (in the new database; with `--in-place` it drops and recreates them in the live one) (`core.entity`, `core.alias`, `core.anaf_company`: identities from the archived ANAF answers, see "Supplier identity") and loads everything in one transaction, committed only at the end. If it is killed, loses its connection or fails, the transaction rolls back: the live database keeps the previous graph (or none, on a first run) and nothing is half-loaded (a killed beside-build leaves a `<db>_next` that the next build drops). Rerunning the same command starts over and gives the same graph. The one effect that survives a kill is on the archive: a unit that failed validation has already been moved to `<archive>/quarantine/...` (with its `reason.json`), and a rerun does not look at the quarantine. Units are read and loaded one at a time, so memory is about one quarter (the biggest known file, 280 MB of CSV, peaks at about 250 MB; DA quarters of 770k rows about 1.5 GB). By default (#82) the rebuild runs **beside the live database** and switches over after its checks, so the API keeps reading the old graph while it runs (see "Rebuild beside the live database" below); `--in-place` (or `PIPELINE_REBUILD_IN_PLACE=1`) loads into the database itself, where the transaction holds exclusive locks on schema `seap` until the commit and the API cannot read it (only for a new, empty database).
 
 ```bash
 # once, from a worktree of the integration branch
 cd watchdog
 python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
 export PIPELINE_ARCHIVE=~/grivei-data/raw        # the raw archive, outside the repo (the same variable `fetch-datagov` uses)
-export DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME   # a Postgres/ParadeDB you can reach; its `seap` schema is replaced
+export DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME   # a Postgres/ParadeDB you can reach; the role must be able to CREATE DATABASE (compose: grivei is the superuser)
 
 nohup python -m pipeline rebuild > ~/grivei-data/rebuild.log 2>&1 &
 ```
@@ -193,6 +195,72 @@ nohup docker compose run --rm -T pipeline rebuild > ~/grivei-data/rebuild.log 2>
 - **Progress:** `python -m pipeline status` (in Compose: `docker compose run --rm pipeline status`) reads the status file, `<archive>/rebuild-progress.json` by default (`--progress-file` or `PIPELINE_PROGRESS_FILE` to move it; it is rewritten through a temporary file and a rename, so it is never half-written). It prints `state: running|finished|failed|interrupted`, `units: 37/412 done (...)`, the unit in progress, the records loaded so far, start and last update, and the last log line. `interrupted` means the file says running but the process is gone (killed): exit code 1, like `failed`. The file records the process id and the host name (the container id in Docker), and a process is only looked for on the same host: from another host or container (a fresh `docker compose run --rm pipeline status`, where every python is pid 1) it prints `running? (cannot see the process from here)` and how long ago the file was last updated (it is written at least once per unit, so a stale time means the rebuild was killed, e.g. out of memory), exit code 0. The quickest check without the CLI: `tail -n 2 ~/grivei-data/rebuild.log`.
 - **After a kill or a failure:** nothing to clean up. Look at the last log line or `status`, fix the cause if there is one, and run the same `nohup ...` command again (`>>` appends to the log). Stop a run on purpose with `pkill -f 'pipeline rebuild'` (SIGTERM is turned into a normal failure and rolled back; in Compose, `docker stop` the run container).
 - A run that ends `quarantined` units is a normal success; read `<archive>/quarantine/**/reason.json` for why. Fix the header alias (`pipeline/bulk/headers.py`) or the format support, then `pipeline requeue [--match TEXT]` moves the quarantined units (all, or those whose path or reason contains TEXT, e.g. `--match "unsupported file format"`) back into the archive, and the next rebuild reads them again. Units quarantined by an older build because `.xls` was unsupported need `requeue --match "unsupported file format"` once.
+
+## Rebuild beside the live database, switchover, rollback, cleanup (#82)
+
+`pipeline rebuild`, `load-quarter`, the refresh's `load` step and the seed's `load` step all do the same (`pipeline/switchover.py`):
+
+1. drop a leftover `<db>_next` of an earlier killed or refused build, `CREATE DATABASE <db>_next`, `CREATE EXTENSION pg_search` in it;
+2. run the rebuild into `<db>_next` (a full copy of the graph beside the live one; the live `<db>` is not touched and keeps serving);
+3. **checks** on `<db>_next`: Records loaded; at least one search row per Record; entities built; the load generation (`seap.rollup_meta`) present; the BM25 index present and agreeing with the table (`id @@@ pdb.all()` count = row count); and not fewer than 95% of the Records of the graph it would replace (the archive is append-only, so a shrink means a quarter failed to load);
+4. if they pass, **switchover**: `ALTER DATABASE <db> ALLOW_CONNECTIONS false`, terminate its sessions, rename `<db>` to `<db>_prev` (replacing the previous fallback) and `<db>_next` to `<db>`. That is two renames: the API's pool sees refused connections for well under a second and reconnects to the new graph; its result cache notices the new load generation and flushes. (In-flight requests at that instant fail once; the API logs idle connections it lost instead of crashing.) A database rename moves the BM25 index with it: nothing is re-indexed.
+5. if a check fails: nothing switches, `<db>` keeps serving, `<db>_next` stays for a look (`psql .../<db>_next`), the CLI exits 1 (refresh: a deterministic failure, `/fail` ping), the log has one `CHECK FAILED: ...` line per check.
+
+```bash
+nohup .venv/bin/python -m pipeline rebuild >> ~/grivei-data/rebuild.log 2>&1 &   # as before: line-oriented, timestamped, rerun from scratch if it dies
+.venv/bin/python -m pipeline rollback     # swap <db> and <db>_prev: the graph from before the last switchover serves again; run it again to undo the rollback
+.venv/bin/python -m pipeline cleanup      # drop <db>_prev and <db>_next once you are happy (they are kept until then, and replaced by the next switchover)
+.venv/bin/python -m pipeline verify --db URL [--against LIVE_URL]   # the same checks on any database; exit 1 if any fail
+```
+
+With Compose, `docker compose run --rm -T pipeline rollback` etc. The `DATABASE_URL` database must have its own name (not `postgres`) and the role must be allowed to create databases and terminate sessions (`grivei` is the superuser). The old graph is the fallback until the next successful switchover or `cleanup`; **the next nightly switchover replaces `<db>_prev`**, so roll back before then. Disk: the live graph, the old graph and the one being built, three copies for the length of a build when a fallback is kept (`cleanup` first if the disk is tight).
+
+**Major upgrade (new Postgres/ParadeDB version, ADR 0004): a rebuild into a new volume.** There is no in-place `pg_upgrade`; the graph is derived, so build a fresh one on the new version and repoint.
+
+```bash
+# 1. a second database service on a new volume (compose profile `upgrade`; the tag is the new paradedb image)
+export GRIVEI_DB_NEXT_IMAGE=paradedb/paradedb:<new tag>
+docker compose --profile upgrade up -d db-next
+# 2. rebuild into it in place (nobody reads it, so there is nothing to lock out); the old stack keeps serving
+nohup docker compose run --rm -T -e DATABASE_URL=postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db-next:5432/grivei pipeline rebuild --in-place >> ~/grivei-data/upgrade.log 2>&1 &
+# 3. check it against the live graph
+docker compose run --rm -T pipeline verify --db postgresql://grivei:PW@db-next:5432/grivei --against postgresql://grivei:PW@db:5432/grivei
+# 4. switch: stop the API and the timer, point `db` at the new volume/tag in compose.yaml (or the DATABASE_URL of api and pipeline at db-next), start again
+systemctl --user stop grivei-refresh.timer; docker compose stop api
+#    edit compose.yaml (image tag; volume) -> docker compose up -d db api web ; systemctl --user start grivei-refresh.timer
+# 5. keep the old volume (`docker volume ls`: grivei_pgdata) as the fallback until the new one has run a few nights; then `docker volume rm` it
+```
+
+If `verify` fails, nothing has changed: the old stack never stopped. The fallback is the old volume itself (point compose back at it). A restored `pg_dump` is not used for an upgrade (a dump from one major version restores on a newer one, but a rebuild is the supported path and checks itself).
+
+## Backups and restore (#82)
+
+Refresh steps `backup` (nightly) and `pgdump` (weekly), `pipeline/backup.py`. Both go to **one encrypted restic repository** on object storage; restic encrypts and deduplicates client-side, so the bucket holds no plaintext. The raw archive is the only data that cannot be fetched again (SEAP and ANAF keep no history), so it is the backup that matters; the graph is derived from it, and the dump only saves the hours of a rebuild.
+
+Configure with restic's own environment (the pipeline container gets them from compose; put them in the systemd unit's environment file, never in the repo):
+
+| Variable | Meaning |
+| --- | --- |
+| `RESTIC_REPOSITORY` | e.g. `s3:https://<endpoint>/<bucket>/grivei`, `b2:<bucket>:grivei`, or a local path. **Unset = both steps skip with a logged `WARNING ... NOT backed up`** |
+| `RESTIC_PASSWORD` or `RESTIC_PASSWORD_FILE` | the repository password. Required once a repository is set; **losing it loses the backups** (store it apart from the bucket) |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` / `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY` | the backend's credentials |
+| `PIPELINE_RESTIC_BIN`, `PIPELINE_PG_DUMP`, `PIPELINE_PG_RESTORE` | the executables (defaults `restic`, `pg_dump`, `pg_restore`; the pipeline image carries restic and the PostgreSQL 18 client) |
+
+- The repository is created on first use. `backup` snapshots `<archive>` (everything but `refresh.lock`) tagged `archive`, host `grivei`; `pgdump` streams `pg_dump --format=custom` straight into `restic backup --stdin` (file `grivei.dump`, tag `pgdump`; nothing is written to disk, and a dump whose `pg_dump` fails is removed, never a restore candidate). After each, `restic forget --prune --keep-daily 7 --keep-weekly 5 --keep-monthly 12` per tag (spec default taken: retention of 7 daily, 5 weekly, 12 monthly).
+- Failures follow the refresh's classes: a network or restic error is transient (retried, alert after more than 2 failed runs), a missing binary or password is deterministic (`/fail` at once).
+- Run now: `pipeline backup [archive|dump|all]` (needs `RESTIC_REPOSITORY`; do not run beside a refresh).
+
+**Restore.**
+
+```bash
+# the raw archive into a NEW directory (refuses a non-empty one); then use it as PIPELINE_ARCHIVE
+.venv/bin/python -m pipeline restore archive ~/grivei-data/raw-restored [--snapshot ID]
+# the graph from the weekly dump, into an EMPTY database, instead of a multi-hour rebuild
+.venv/bin/python -m pipeline restore dump --db postgresql://USER:PW@HOST:5432/EMPTYDB [--snapshot ID]
+# or plain restic: restic snapshots; restic restore latest --tag archive --target DIR
+```
+
+The test (`tests/test_backup.py`) restores a local encrypted repository and compares the restored tree with the archive byte for byte. Rehearse a restore from the real bucket once after configuring it (`restore archive` into a scratch directory and compare with `diff -r`), and again after any change of credentials: an untested backup is not one.
 
 ## Crawled Records: identity, precedence, provenance
 
@@ -372,9 +440,11 @@ Tests: `pytest tests/test_placement.py` (rules, generator, TopoJSON, fetch and l
 | `crawl` | e-licitatie catch-up from the cursor plus the 3-day trailing re-crawl (`pipeline crawl`) | no success today |
 | `datagov` | data.gov.ro bulk files (`fetch-datagov`) and the MF list (`fetch-mf`) | 7 days since its last success |
 | `anaf` | ANAF for new CUIs, plus the 365-day re-check (`anaf-lookup --recheck-after-days 365`) | the archive gained units (other than ANAF answers) since its last success, or 7 days passed |
-| `load` | `rebuild` (new or re-uploaded files, requeued units; evaluates the possibly-incomplete rule into the Coverage grid) | the archive's units changed since its last load, or it never ran |
+| `load` | `rebuild` beside the live database, checked, then switched over (new or re-uploaded files, requeued units; evaluates the possibly-incomplete rule into the Coverage grid) | the archive's units changed since its last load, or it never ran |
+| `backup` | `restic backup` of the raw archive to the encrypted repository (#82) | no success today |
+| `pgdump` | `pg_dump` of the graph into the same repository (#82) | 7 days since its last success |
 
-A second trigger the same day (the on-boot one after the 03:00 one) finds nothing due and exits 0 after a success ping; a trigger while a run holds the lock logs it and exits 0 (no ping, no ledger entry). A step that failed has no success, so it is due again at the next trigger. **Deviation from the spec's step order:** ANAF runs before the load (the spec lists load, then ANAF), because the load reads the archived ANAF answers: placement and identity are right on the first load after new CUIs arrive instead of one night later. Step 5 of the spec (restic of the archive, `pg_dump` weekly) is #82's: it is one more `Step` appended in `pipeline/refresh/engine.py::refresh_steps`.
+A second trigger the same day (the on-boot one after the 03:00 one) finds nothing due and exits 0 after a success ping; a trigger while a run holds the lock logs it and exits 0 (no ping, no ledger entry). A step that failed has no success, so it is due again at the next trigger. **Deviation from the spec's step order:** ANAF runs before the load (the spec lists load, then ANAF), because the load reads the archived ANAF answers: placement and identity are right on the first load after new CUIs arrive instead of one night later. Step 5 of the spec (#82) is the last two rows: see "Backups and restore". With `RESTIC_REPOSITORY` unset they log a warning and skip, and stay due, so configuring it takes effect at the next trigger.
 
 **Ledger.** `<archive>/refresh-ledger.json` (rewritten whole through a temp name and a rename): every run (id, kind `refresh` or `seed`, trigger, start, end, status `ok|failed|interrupted`, the alert it raised) and every step (start, end, status, attempts, failure class, counts, the archive unit directories it created, warnings, error). A run still `running` when the next takes the lock was killed and is closed `interrupted`.
 
@@ -409,7 +479,7 @@ nohup .venv/bin/python -m pipeline seed --backfill >> ~/grivei-data/seed.log 2>&
 
 Expected cost, from the earlier tickets' real runs and estimates: `fetch-datagov` tens of minutes to hours (several GB, about 1 s between requests, low CPU and memory); `anaf-lookup` a few minutes of scanning (one file at a time) plus about 600 requests at 1 per second, under an hour, light; `rebuild` hours (about 860 records/s; about 250 MB for the biggest CSV, about 1.5 GB for a 770k-row DA quarter, so keep 2 GB or more for it); the backfill crawl many hours at 0.35 s per request. The seed holds the single lock, so a `refresh` timer firing meanwhile logs "another run holds the lock" and does nothing.
 
-**The rebuild holds an exclusive lock on schema `seap` for its whole transaction (hours on a national archive):** the API cannot read `seap` until the commit. Stop the `api` service during a seed's load, or accept the wait. A rebuild into a fresh database beside the live one, checked and then switched over, is #82's (backups and rebuild switchover); this ticket leaves it alone. **The nightly `refresh` will do this every night.** The crawl adds a new day unit and re-crawls the trailing 3 days as new dated directories, so the archive changes every night, `load` is due every night, and each load is a full rebuild: hours (the national archive at about 860 records/s) with the exclusive `seap` lock held, so the public API stalls for those hours until #82's switchover lands. Choose one until then: (a) accept the nightly window (the 03:00 timer makes it a night-time stall), or (b) stop `api` around the timer, for example `ExecStartPre=/usr/bin/docker compose stop api` and `ExecStopPost=/usr/bin/docker compose start api` as a drop-in of `grivei-refresh.service`. Plan the first scheduled night after the seed finishes.
+**The load no longer stalls the API (#82).** The rebuild runs into a fresh database beside the live one and swaps it in after its checks ("Rebuild beside the live database"), so a seed's load and the nightly refresh's load leave the public API reading the old graph until the swap, which is a moment. It needs about twice the database size in disk during the build (the old graph is kept as `<db>_prev` until the next switchover or `pipeline cleanup`). The old advice to stop `api` around the timer is obsolete.
 
 **Stops at the first failure.** A seed that fails a step (after that step's retries) stops there; the steps after it did not run, and the same command resumes at the failed step. A `refresh` keeps going after a failed step (its due rules compare fingerprints, so the next run repairs it).
 

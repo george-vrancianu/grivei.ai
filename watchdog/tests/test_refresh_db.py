@@ -38,7 +38,7 @@ def test_a_quarantined_file_is_a_warning_in_the_run_and_not_yet_loaded_in_the_pu
     assert cell == ("NOT_YET_LOADED", None, None, 0, None)  # public: not yet loaded, no reason, no through-date
     assert read_status(status_file)["dataThrough"]["DA"] == "2022-03-31"  # the kind's public data-through stays at the last loaded quarter (Q1), not moved by the quarantined Q2
     assert any("quarantine: 1 open" in line for line in quarantine_lines(archive))
-    assert Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"][-1]["counts"]["quarantined"] == 1
+    assert next(s for s in Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"] if s["name"] == "load")["counts"]["quarantined"] == 1
 
     again = run_refresh(archive, impl, pinger=Pinger(None), now=clock.now, sleep=clock.sleep, say=lambda _: None)
-    assert [s["name"] for s in again.run["steps"]] == []  # the quarantine moved a unit, but the load that moved it recorded the new state
+    assert [s["name"] for s in again.run["steps"]] == ["backup", "pgdump"]  # (only the unconfigured backup steps, due until configured) # the quarantine moved a unit, but the load that moved it recorded the new state
