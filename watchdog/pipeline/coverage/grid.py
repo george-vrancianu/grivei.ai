@@ -12,9 +12,12 @@ State precedence, first match wins (kind and quarter are the cell's):
       the backfill's pass 1 covers the whole quarter  LOADED               rule null ("covered via e-licitatie")
       else, a bulk file of it was quarantined         NOT_YET_LOADED       rule null
       else                                            NOT_IN_SOURCE        rule NO_PRIOR_CALL_BEFORE_BACKFILL
- 4. crawled Records exist (no bulk file loaded)       CRAWLED_PROVISIONAL  rule AWAITING_BULK_FILE
+ 4. provisional crawled Records exist (no bulk file) CRAWLED_PROVISIONAL  rule AWAITING_BULK_FILE
  5. a bulk file of it was quarantined                 NOT_YET_LOADED       rule null, no note (the quarantine and its reason stay private)
  6. nothing                                           NOT_YET_LOADED       rule AWAITING_BULK_FILE
+
+Provisional = crawled and not backfilled: a backfilled Record (crawl-only from the start) does not make its quarter provisional, so a hole
+quarter holding only backfilled Records falls through to step 5 or 6, with its Record count.
 
 A quarantined file is "as if it did not exist" for steps 4 and 6 (a quarter that is quarantined but has crawled Records is crawled
 provisional); only the rule differs when nothing else is there.
@@ -22,7 +25,7 @@ provisional); only the rule differs when nothing else is there.
 Per cell: `records` = Records of the kind whose publication quarter it is (bulk and crawled, crawl-only ones included, spec l.224).
 `data_through` = loaded or covered cell: the latest publication date among those Records (null when there are none); crawled
 provisional cell: the kind's crawl data-through (the end of the unbroken run of complete crawl days), never past the quarter's end,
-else the latest Record date; known gap: the latest Record date, if any; NOT_YET_LOADED, NOT_IN_SOURCE: null.
+when that run starts no later than the quarter's end, else (a hole quarter the run never covered) the latest Record date; known gap: the latest Record date, if any; NOT_YET_LOADED, NOT_IN_SOURCE: null.
 """
 from __future__ import annotations
 
@@ -105,6 +108,7 @@ class CellFacts:
     records: int = 0  # Records of the kind published in the quarter, any way they were obtained
     crawled: int = 0  # of them, via the crawl (provisional and crawl-only, and the backfill's)
     latest: date | None = None  # the latest publication date among them
+    provisional: int = 0  # of the crawled ones, those still provisional (no bulk file of the kind and quarter, not backfilled)
 
 
 @dataclass
@@ -114,6 +118,7 @@ class Inputs:
     quarantined: set[tuple[str, Quarter]] = field(default_factory=set)  # a bulk unit of it sits in the quarantine area
     facts: dict[tuple[str, Quarter], CellFacts] = field(default_factory=dict)
     crawl_through: dict[str, date] = field(default_factory=dict)  # per crawled kind
+    crawl_from: dict[str, date] = field(default_factory=dict)  # per crawled kind: where its unbroken run of crawl days starts
     backfilled: set[Quarter] = field(default_factory=set)  # the 2021-22 quarters whose every backfill week is complete
     known_gaps: dict[tuple[str, Quarter], str] = field(default_factory=dict)  # (kind, quarter) -> the operator's reason
 
@@ -161,9 +166,12 @@ def _cell(inputs: Inputs, eligible: dict[Quarter, int], q: Quarter, kind: str) -
         if key in inputs.quarantined:
             return cell("NOT_YET_LOADED")
         return cell("NOT_IN_SOURCE", "NO_PRIOR_CALL_BEFORE_BACKFILL")
-    if facts.crawled:
-        through = inputs.crawl_through.get(kind)
-        return cell("CRAWLED_PROVISIONAL", "AWAITING_BULK_FILE", through=min(through, last_day(q)) if through else facts.latest)
+    if facts.provisional:
+        through, start = inputs.crawl_through.get(kind), inputs.crawl_from.get(kind)
+        # the run covers the quarter only when it starts no later than the quarter's end; a quarter before it (a hole between bulk
+        # files, filled by the backfill or a stray crawl) was not crawled through, so it claims only its latest Record
+        covered = through is not None and start is not None and start <= last_day(q)
+        return cell("CRAWLED_PROVISIONAL", "AWAITING_BULK_FILE", through=min(through, last_day(q)) if covered else facts.latest)
     if key in inputs.quarantined:
         return cell("NOT_YET_LOADED")
     return cell("NOT_YET_LOADED", "AWAITING_BULK_FILE")

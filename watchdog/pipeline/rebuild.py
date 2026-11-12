@@ -33,7 +33,7 @@ from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
 from .counting import Estimate, count
 from .coverage import build_coverage, flagged as flagged_cells
-from .coverage.grid import parse_quarter as _parse_quarter
+from .coverage import parse_quarter as _parse_quarter
 from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit

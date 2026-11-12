@@ -122,15 +122,17 @@ def test_a_partly_backfilled_2021_22_quarter_is_still_not_in_the_source():
 
 
 def test_crawled_records_without_a_bulk_file_are_provisional_through_the_crawl_data_through():
-    g = grid(facts={("CONTRACT", Q("2025Q3")): CellFacts(4, 4, D("2025-07-02")), ("AWARD_NOTICE", Q("2025Q3")): CellFacts(2, 2, D("2025-07-02"))},
-             crawl_through={"CONTRACT": D("2025-09-18"), "AWARD_NOTICE": D("2025-07-02")})
+    g = grid(facts={("CONTRACT", Q("2025Q3")): CellFacts(4, 4, D("2025-07-02"), 4), ("AWARD_NOTICE", Q("2025Q3")): CellFacts(2, 2, D("2025-07-02"), 2)},
+             crawl_through={"CONTRACT": D("2025-09-18"), "AWARD_NOTICE": D("2025-07-02")},
+             crawl_from={"CONTRACT": D("2025-07-01"), "AWARD_NOTICE": D("2025-07-01")})
     c = g["2025-Q3", "CONTRACT"]
     assert (c.state, c.rule, c.records, c.data_through) == ("CRAWLED_PROVISIONAL", "AWAITING_BULK_FILE", 4, D("2025-09-18"))
     assert g["2025-Q3", "AWARD_NOTICE"].data_through == D("2025-07-02")
 
 
 def test_provisional_data_through_never_passes_the_end_of_the_quarter():
-    g = grid(facts={("CONTRACT", Q("2025Q2")): CellFacts(1, 1, D("2025-06-30"))}, crawl_through={"CONTRACT": D("2025-09-18")})
+    g = grid(facts={("CONTRACT", Q("2025Q2")): CellFacts(1, 1, D("2025-06-30"), 1)}, crawl_through={"CONTRACT": D("2025-09-18")},
+             crawl_from={"CONTRACT": D("2025-04-01")})
     assert g["2025-Q2", "CONTRACT"].data_through == D("2025-06-30")
 
 
@@ -148,7 +150,7 @@ def test_a_quarantined_file_is_not_yet_loaded_with_no_rule_no_note_and_no_data_t
 
 
 def test_a_quarantined_quarter_with_crawled_records_looks_as_if_the_file_did_not_exist():
-    g = grid(quarantined={("CONTRACT", Q("2025Q3"))}, facts={("CONTRACT", Q("2025Q3")): CellFacts(1, 1, D("2025-07-01"))}, crawl_through={"CONTRACT": D("2025-07-02")})
+    g = grid(quarantined={("CONTRACT", Q("2025Q3"))}, facts={("CONTRACT", Q("2025Q3")): CellFacts(1, 1, D("2025-07-01"), 1)}, crawl_through={"CONTRACT": D("2025-07-02")})
     assert g["2025-Q3", "CONTRACT"].state == "CRAWLED_PROVISIONAL"
 
 
@@ -188,3 +190,37 @@ def test_a_bad_known_gaps_entry_is_refused(tmp_path, text):
     f.write_text(text, encoding="utf-8")
     with pytest.raises(ValueError):
         load_known_gaps(f)
+
+
+# ---- hole quarters: crawled Records the crawl run did not start at (review S1) -----------------------------------------------
+
+
+def hole_grid():
+    """Bulk 2023-Q1 and 2025-Q2, backfilled (crawl-only) Records in 2024-Q1, the crawl run starting 2025-07-01 and going through 2025-09-01."""
+    facts = {}
+    for kind in ("CONTRACT", "AWARD_NOTICE"):
+        facts[(kind, Q("2024Q1"))] = CellFacts(6, 6, D("2024-03-20"), 0)  # backfilled: crawl-only, none provisional
+    facts[("CONTRACT", Q("2025Q3"))] = CellFacts(2, 2, D("2025-07-03"), 2)
+    return grid(
+        bulk_rows={(k, q): 10 for k in ("CONTRACT", "AWARD_NOTICE") for q in (Q("2023Q1"), Q("2025Q2"))}, facts=facts,
+        crawl_through={"CONTRACT": D("2025-09-01"), "AWARD_NOTICE": D("2025-09-01")},
+        crawl_from={"CONTRACT": D("2025-07-01"), "AWARD_NOTICE": D("2025-07-01")},
+    )
+
+
+@pytest.mark.parametrize("kind", ["CONTRACT", "AWARD_NOTICE"])
+def test_a_hole_quarter_with_only_crawl_only_records_is_not_yet_loaded_with_no_data_through_claim(kind):
+    c = hole_grid()["2024-Q1", kind]
+    assert (c.state, c.rule, c.records, c.data_through) == ("NOT_YET_LOADED", "AWAITING_BULK_FILE", 6, None)
+
+
+def test_a_provisional_cell_in_the_run_keeps_the_crawl_data_through():
+    c = hole_grid()["2025-Q3", "CONTRACT"]
+    assert (c.state, c.data_through) == ("CRAWLED_PROVISIONAL", D("2025-09-01"))
+
+
+def test_provisional_records_in_a_hole_quarter_use_their_latest_date_not_the_crawl_data_through():
+    g = grid(facts={("CONTRACT", Q("2024Q1")): CellFacts(3, 3, D("2024-02-02"), 3)}, crawl_through={"CONTRACT": D("2025-09-01")},
+             crawl_from={"CONTRACT": D("2025-07-01")})
+    c = g["2024-Q1", "CONTRACT"]
+    assert (c.state, c.data_through) == ("CRAWLED_PROVISIONAL", D("2024-02-02"))

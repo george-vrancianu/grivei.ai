@@ -10,6 +10,7 @@ import psycopg
 
 from ..archive import QUARANTINE_DIR, Archive
 from ..bulk import KINDS as BULK_KINDS
+from ..crawl.unitdir import CRAWLED_KINDS, crawl_run_start
 from ..crawl.backfill import FIRST_DAY, LAST_DAY_2021_22, PASS_2021_22, Week, complete_weeks, is_complete, week_windows
 from .grid import Cell, CellFacts, Inputs, Quarter, compute_grid, first_day, last_day, parse_quarter, quarters_to
 from .known_gaps import load_known_gaps
@@ -43,8 +44,8 @@ def backfilled_quarters(archive: Archive) -> set[Quarter]:
 
 
 def read_facts(cur: psycopg.Cursor) -> dict[tuple[str, Quarter], CellFacts]:
-    cur.execute("SELECT kind, quarter, count(*), count(*) FILTER (WHERE via = 'CRAWL'), max(published_on) FROM seap.record GROUP BY kind, quarter")
-    return {(kind, parse_quarter(quarter)): CellFacts(records, crawled, latest) for kind, quarter, records, crawled, latest in cur.fetchall()}
+    cur.execute("SELECT kind, quarter, count(*), count(*) FILTER (WHERE via = 'CRAWL'), max(published_on), count(*) FILTER (WHERE crawl_status = 'PROVISIONAL') FROM seap.record GROUP BY kind, quarter")
+    return {(kind, parse_quarter(quarter)): CellFacts(records, crawled, latest, provisional) for kind, quarter, records, crawled, latest, provisional in cur.fetchall()}
 
 
 def gather(cur: psycopg.Cursor, archive: Archive, today: date, bulk_rows: dict[tuple[str, Quarter], int], known_gaps_path: Path | str | None = None) -> Inputs:
@@ -56,6 +57,7 @@ def gather(cur: psycopg.Cursor, archive: Archive, today: date, bulk_rows: dict[t
         quarantined=quarantined_cells(archive) - set(bulk_rows),
         facts=read_facts(cur),
         crawl_through=dict(cur.fetchall()),
+        crawl_from={kind: start for kind, bulk_kind in CRAWLED_KINDS.items() if (start := crawl_run_start(archive, bulk_kind)) is not None},
         backfilled=backfilled_quarters(archive),
         known_gaps=load_known_gaps(known_gaps_path),
     )
