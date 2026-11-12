@@ -4,6 +4,7 @@ import type {
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
   EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, RecordPageQuery, RecordPageQueryVariables,
+  ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
@@ -28,3 +29,4 @@ export const FullResultsAuthorities = operation<FullResultsAuthoritiesQuery, Ful
 export const FullResultsSuppliers = operation<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables>("FullResultsSuppliers");
 export const FullResultsRecords = operation<FullResultsRecordsQuery, FullResultsRecordsQueryVariables>("FullResultsRecords");
 export const RecordPage = operation<RecordPageQuery, RecordPageQueryVariables>("RecordPage");
+export const ZoomedCounty = operation<ZoomedCountyQuery, ZoomedCountyQueryVariables>("ZoomedCounty");

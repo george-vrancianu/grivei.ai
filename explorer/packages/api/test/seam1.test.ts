@@ -26,6 +26,7 @@ import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
 import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
+import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
@@ -158,6 +159,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE moneymap_a");
     await admin.query("CREATE DATABASE moneymap_b");
     await admin.query("CREATE DATABASE recorded_a");
+    await admin.query("CREATE DATABASE recorded_zoom");
     await admin.query("CREATE DATABASE rollup_a");
     await admin.query("CREATE DATABASE rollup_b");
     await admin.query("CREATE DATABASE roles_a");
@@ -2039,6 +2041,49 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect([none.total.records, none.records.count, none.goTo]).toEqual([0, 0, null]);
       const county = await search("county-authority-side");
       expect(county.total.records).toBeLessThan(national.total.records);
+    });
+  });
+
+  describe("recorded fixtures (#84): archive-moneymap -> rebuild -> the contract's recorded ZoomedCounty responses", () => {
+    // Same convention as #83: fails when an answer drifts from the committed JSON, `RECORD_FIXTURES=1` rewrites it.
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const file = resolve(here, "../../contract/src/fixtures/recorded/ZoomedCounty.json");
+    const op = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
+    type Zoom = { uats: { siruta: string }[]; seap: { search: { total: { records: number }; uatMap: { uats: { area: string; total: { records: number } }[]; unknownUat: { records: number } | null } } } };
+
+    beforeAll(() => {
+      rebuild("recorded_zoom", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-zoom")]);
+    });
+
+    const answer = async (c: (typeof RECORDED_ZOOM_CASES)[number]) => {
+      const r = await ask("recorded_zoom", op.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(op.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+
+    it("every recorded ZoomedCounty case is what the API answers now", async () => {
+      const recorded = [];
+      for (const c of RECORDED_ZOOM_CASES) recorded.push(await answer(c));
+      if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+    });
+
+    it("gives the cases the states they are named for", async () => {
+      const zoom = async (name: string) => ((await answer(RECORDED_ZOOM_CASES.find((c) => c.name === name)!)).data as Zoom);
+      const bv = await zoom("county-with-unknown-uat-row");
+      expect(bv.seap.search.uatMap.uats.length).toBeGreaterThan(1);
+      expect(bv.seap.search.uatMap.unknownUat?.records).toBeGreaterThan(0);
+      expect((await zoom("county-without-unknown-uat-row")).seap.search.uatMap.unknownUat).toBeNull();
+      const b = await zoom("bucharest-by-sector");
+      expect(b.uats.map((u) => u.siruta)).toEqual(["179141", "179150", "179169", "179178", "179187", "179196"]); // the six sectors
+      expect(b.seap.search.uatMap.uats.map((u) => u.area)).toEqual(["179169"]); // only Sector 3 has Records: the others draw grey
+      const narrowed = await zoom("county-text-query");
+      expect(narrowed.seap.search.total.records).toBeLessThan(bv.seap.search.total.records);
+      const none = await zoom("county-no-match");
+      expect([none.seap.search.total.records, none.seap.search.uatMap.uats, none.seap.search.uatMap.unknownUat]).toEqual([0, [], null]);
+      expect(none.uats.length).toBeGreaterThan(0); // the county's UATs are still listed: they all draw grey
     });
   });
 

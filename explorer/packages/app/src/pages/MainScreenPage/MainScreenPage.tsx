@@ -3,14 +3,16 @@ import {
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
+import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
 import { TotalSummary } from "../../components/TotalSummary/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
-import { useCountyTopology } from "../../geo/index.ts";
+import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
+import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
 
 /**
  * `/explore/` and `/ro/explore/`: the main screen for the filter in the URL. One `MainScreen` query per filter feeds the
@@ -22,6 +24,10 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const { filter, tab, lens, update, setFilter } = useUrlState();
   const state = useMainScreen({ filter });
   const topology = useCountyTopology();
+  // A county on the authority side zooms into its UATs: a second query beside MainScreen for the same filter, and the county's own outlines.
+  const zoomed = zoomedCountyOf(filter);
+  const zoom = useZoomedCounty(zoomed === null ? null : zoomVariables(filter, zoomed));
+  const uatTopology = useUatTopology(zoomed);
   const search = state.status === "ready" ? state.data.seap.search : null;
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   const side: CountySide = filter.countySide ?? "AUTHORITY";
@@ -48,17 +54,35 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       }
       maps={{
         money: (
-          <MoneyLensSection
-            map={search?.map ?? null}
-            loading={state.status === "loading"}
-            topology={topology}
-            county={filter.county ?? undefined}
-            side={side}
-            onChange={({ county, side: nextSide }) => setFilter({ county, ...(nextSide ? { countySide: nextSide === "AUTHORITY" ? undefined : nextSide } : {}) })}
-            locale={locale}
-            copy={t.moneyLensMap}
-            status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
-          />
+          zoomed !== null ? (
+            <ZoomedCountySection
+              county={zoomed}
+              data={zoom.status === "ready" ? zoom.data : null}
+              loading={zoom.status === "loading"}
+              failed={zoom.status === "error"}
+              topology={uatTopology}
+              uat={filter.uat ?? undefined}
+              onSelectUat={(siruta) => setFilter({ uat: uatAfterClick(filter.uat ?? undefined, siruta) })}
+              onClearUat={() => setFilter({ uat: undefined })}
+              onBack={() => setFilter({ county: undefined, uat: undefined })}
+              locale={locale}
+              copy={t.zoomedCounty}
+              status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+            />
+          ) : (
+            <MoneyLensSection
+              map={search?.map ?? null}
+              loading={state.status === "loading"}
+              topology={topology}
+              county={filter.county ?? undefined}
+              side={side}
+              // A UAT belongs to the county it was chosen in (and to the authority side): any other county or side drops it.
+              onChange={({ county, side: nextSide }) => setFilter({ county, uat: undefined, ...(nextSide ? { countySide: nextSide === "AUTHORITY" ? undefined : nextSide } : {}) })}
+              locale={locale}
+              copy={t.moneyLensMap}
+              status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
+            />
+          )
         ),
         // The Coverage lens is wired by its own page (#90); until then its slot says so.
         coverage: <Typography>{t.pages.placeholder}</Typography>,
