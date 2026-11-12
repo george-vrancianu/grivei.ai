@@ -10,6 +10,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** What an AreaTotal is for: a MapArea on the county map, or a SIRUTA on the zoomed county. Kept apart from MapArea so a SIRUTA is never a valid `RecordFilter.county`. */
+  AreaKey: { input: string; output: string; }
   /** Integer bani (1/100 RON), serialised as a decimal string so no sum loses precision in JSON. */
   Bani: { input: string; output: string; }
   /** ISO 3166-2:RO, e.g. RO-BV, RO-B. */
@@ -34,7 +36,7 @@ export type Alias = {
 export type AreaTotal = {
   __typename?: 'AreaTotal';
   /** A county code (county map) or a SIRUTA (zoomed county). */
-  area: Scalars['MapArea']['output'];
+  area: Scalars['AreaKey']['output'];
   /** Distinct entities behind the total on the lens's side (the optional circle per UAT). */
   entities: Scalars['Int']['output'];
   name: Scalars['String']['output'];
@@ -53,7 +55,7 @@ export type Consortium = {
 
 export type Counterparty = {
   __typename?: 'Counterparty';
-  /** Null for natural-person suppliers (shown as 'Persoană fizică'). */
+  /** Null for natural-person suppliers (shown as 'Persoană fizică'), who are never named or linked. */
   entity: Maybe<Entity>;
   hasSignals: Scalars['Boolean']['output'];
   naturalPerson: Scalars['Boolean']['output'];
@@ -120,6 +122,7 @@ export type Cpv = {
 export type DataThrough = {
   __typename?: 'DataThrough';
   date: Scalars['Date']['output'];
+  /** A record kind of the Source. A plain string because kinds belong to each Source (ADR 0005); SEAP's are SeapRecordKind. */
   kind: Scalars['String']['output'];
 };
 
@@ -146,6 +149,8 @@ export type Entity = {
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
   placement: Maybe<Placement>;
+  /** Where the name and ANAF status came from and when we fetched them: the ANAF lookup, or SEAP when ANAF has no answer. */
+  provenance: Array<Provenance>;
   /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
   seap: SeapEntity;
 };
@@ -210,13 +215,22 @@ export type FrameworkSummary = {
 export type GapCell = {
   __typename?: 'GapCell';
   dataThrough: Maybe<Scalars['Date']['output']>;
+  /** A record kind of the Source (SEAP: SeapRecordKind). A plain string because kinds belong to each Source (ADR 0005). */
   kind: Scalars['String']['output'];
+  /** The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated. */
+  note: Maybe<Scalars['String']['output']>;
   quarter: Scalars['String']['output'];
-  /** Written reason (hand-entered gap) or the rule that flagged it. */
-  reason: Maybe<Scalars['String']['output']>;
   records: Scalars['Int']['output'];
+  /** The published rule that explains the state. The frontend's catalogue words it in both languages. */
+  rule: Maybe<GapRule>;
   state: GapState;
 };
+
+export type GapRule =
+  | 'AWAITING_BULK_FILE'
+  | 'COUNT_BELOW_NEIGHBOURS'
+  | 'HAND_ENTERED'
+  | 'NO_PRIOR_CALL_BEFORE_BACKFILL';
 
 export type GapState =
   | 'CRAWLED_PROVISIONAL'
@@ -277,7 +291,7 @@ export type Party = {
   /** Null for a natural person: never named, never linked. */
   entity: Maybe<Entity>;
   naturalPerson: Scalars['Boolean']['output'];
-  /** Name as published on this Record (an Alias of `entity`). */
+  /** Name as published on this Record (an Alias of `entity`). Null when `naturalPerson`: a person is never named (ADR 0003). */
   publishedName: Maybe<Scalars['String']['output']>;
   /** Equal consortium share, when the Record has more than one winner. */
   share: Maybe<Scalars['Bani']['output']>;
@@ -300,17 +314,24 @@ export type Placement = {
   uat: Maybe<Uat>;
 };
 
-/** Where a shown fact came from. Every Record has one; entity facts carry theirs. */
+/** Where a shown fact came from. Every Record has one; so does every Entity (the ANAF lookup, or SEAP when ANAF has no answer). */
 export type Provenance = {
   __typename?: 'Provenance';
   /** When we fetched it (from the raw archive). */
   fetchedAt: Scalars['DateTime']['output'];
+  kind: ProvenanceKind;
   source: SourceId;
   /** Public page in the Source; null only when the Source has no stable public URL. */
   url: Maybe<Scalars['String']['output']>;
-  /** Which file/notice it came from, as the Source names it (e.g. data.gov.ro 2024 Q3 Contracte; e-licitatie crawl). */
-  via: Scalars['String']['output'];
+  /** Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API lookup, which `kind` already says. */
+  via: Maybe<Scalars['String']['output']>;
 };
+
+/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup). */
+export type ProvenanceKind =
+  | 'API'
+  | 'BULK'
+  | 'CRAWL';
 
 export type Query = {
   __typename?: 'Query';
@@ -397,7 +418,7 @@ export type RecordFilterEcho = {
   supplier: Maybe<Entity>;
 };
 
-/** Output twin of RecordFilter (GraphQL inputs can't be outputs). */
+/** Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use. */
 export type RecordFilterValue = {
   __typename?: 'RecordFilterValue';
   authority: Maybe<Scalars['ID']['output']>;
@@ -513,7 +534,7 @@ export type SeapRole = {
   counterparties: CounterpartyPage;
   /** Share of the total via direct purchase. */
   directPurchaseShare: Scalars['Float']['output'];
-  /** Flow lens: where the money comes from (supplier) or goes (authority). */
+  /** Flow lens, drawn on the counterparty's side: a supplier's page shows where across Romania its money comes from (side AUTHORITY, with the Unplaced tile); an authority's shows where it goes (side SUPPLIER, with the unknown-supplier-county bucket). */
   flow: MoneyMap;
   frameworks: FrameworkSummary;
   largestRecords: Array<SeapRecord>;
@@ -597,12 +618,12 @@ export type SeapSearch = {
   filter: RecordFilterEcho;
   /** Pinned 'Go to page' card: set only when q is an exact CUI or one entity's folded name and exactly one entity matches. */
   goTo: Maybe<Entity>;
-  /** Money lens, county level. `side` defaults to the filter's countySide. */
+  /** Money lens, county level, on the side the filter's countySide names (the URL is the only source of the side). */
   map: MoneyMap;
   records: RecordResultPage;
   suppliers: EntityResultPage;
   total: Total;
-  /** Money lens, zoomed county: UAT choropleth. */
+  /** Money lens, zoomed county: UAT choropleth. Authority side only: UATs place authorities (the search carries a supplier's county, never its UAT). */
   uatMap: UatMap;
 };
 
@@ -610,11 +631,6 @@ export type SeapSearch = {
 export type SeapSearchAuthoritiesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-export type SeapSearchMapArgs = {
-  side?: InputMaybe<CountySide>;
 };
 
 
@@ -633,7 +649,6 @@ export type SeapSearchSuppliersArgs = {
 
 export type SeapSearchUatMapArgs = {
   county: Scalars['CountyCode']['input'];
-  side?: InputMaybe<CountySide>;
 };
 
 /**
@@ -763,7 +778,7 @@ export type SuspectRule =
 export type Total = {
   __typename?: 'Total';
   awarded: Scalars['Bani']['output'];
-  /** True when `records` is an estimate rather than an exact count. Distinct entity counts carry their own flag: EntityResultPage.countEstimated. */
+  /** True only when `records` is approximated, which exact counts and the rollup never do today: the flag is reserved for a future approximate path. Distinct entity counts (the HyperLogLog ones) carry their own flag: EntityResultPage.countEstimated. */
   estimated: Scalars['Boolean']['output'];
   /** Framework ceilings in the set, never summed (for the 'ceilings X' line). */
   frameworkCeilings: Scalars['Bani']['output'];
@@ -812,6 +827,10 @@ export type UnplacedTile = {
  *   UP_TO_9M     <= 9,004,000     10x the works cap: top of the over-cap Signal band
  *   UP_TO_1B     <= 1,000,000,000 1 bn RON: where contract values start being checked for suspect values
  *   OVER_1B      >  1,000,000,000
+ *
+ * The counting rule checks contracts "of 1 bn RON or more"; because upper edges are
+ * inclusive, exactly 1 bn sits in UP_TO_1B. A bucket is a chip, not the rule, so the
+ * one-value difference is accepted.
  *
  * The edges are mirrored, in bani, by VALUE_BUCKETS in the contract package.
  */
@@ -911,6 +930,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   Alias: ResolverTypeWrapper<Alias>;
+  AreaKey: ResolverTypeWrapper<Scalars['AreaKey']['output']>;
   AreaTotal: ResolverTypeWrapper<AreaTotal>;
   Bani: ResolverTypeWrapper<Scalars['Bani']['output']>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
@@ -939,6 +959,7 @@ export type ResolversTypes = {
   FrameworkOverrunNumbers: ResolverTypeWrapper<FrameworkOverrunNumbers>;
   FrameworkSummary: ResolverTypeWrapper<FrameworkSummary>;
   GapCell: ResolverTypeWrapper<GapCell>;
+  GapRule: GapRule;
   GapState: GapState;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
@@ -953,6 +974,7 @@ export type ResolversTypes = {
   Period: ResolverTypeWrapper<Period>;
   Placement: ResolverTypeWrapper<Placement>;
   Provenance: ResolverTypeWrapper<Provenance>;
+  ProvenanceKind: ProvenanceKind;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   RecordBadge: RecordBadge;
   RecordFacets: ResolverTypeWrapper<RecordFacets>;
@@ -993,6 +1015,7 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Alias: Alias;
+  AreaKey: Scalars['AreaKey']['output'];
   AreaTotal: AreaTotal;
   Bani: Scalars['Bani']['output'];
   Boolean: Scalars['Boolean']['output'];
@@ -1065,8 +1088,12 @@ export type AliasResolvers<ContextType = any, ParentType extends ResolversParent
   records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
 
+export interface AreaKeyScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['AreaKey'], any> {
+  name: 'AreaKey';
+}
+
 export type AreaTotalResolvers<ContextType = any, ParentType extends ResolversParentTypes['AreaTotal'] = ResolversParentTypes['AreaTotal']> = {
-  area?: Resolver<ResolversTypes['MapArea'], ParentType, ContextType>;
+  area?: Resolver<ResolversTypes['AreaKey'], ParentType, ContextType>;
   entities?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
@@ -1151,6 +1178,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   identityCurated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
+  provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapEntity'], ParentType, ContextType>;
 };
 
@@ -1194,9 +1222,10 @@ export type FrameworkSummaryResolvers<ContextType = any, ParentType extends Reso
 export type GapCellResolvers<ContextType = any, ParentType extends ResolversParentTypes['GapCell'] = ResolversParentTypes['GapCell']> = {
   dataThrough?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  note?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   quarter?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  rule?: Resolver<Maybe<ResolversTypes['GapRule']>, ParentType, ContextType>;
   state?: Resolver<ResolversTypes['GapState'], ParentType, ContextType>;
 };
 
@@ -1257,9 +1286,10 @@ export type PlacementResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type ProvenanceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Provenance'] = ResolversParentTypes['Provenance']> = {
   fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['ProvenanceKind'], ParentType, ContextType>;
   source?: Resolver<ResolversTypes['SourceId'], ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  via?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
@@ -1357,7 +1387,7 @@ export type SeapSearchResolvers<ContextType = any, ParentType extends ResolversP
   facets?: Resolver<ResolversTypes['RecordFacets'], ParentType, ContextType>;
   filter?: Resolver<ResolversTypes['RecordFilterEcho'], ParentType, ContextType>;
   goTo?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType>;
-  map?: Resolver<ResolversTypes['MoneyMap'], ParentType, ContextType, Partial<SeapSearchMapArgs>>;
+  map?: Resolver<ResolversTypes['MoneyMap'], ParentType, ContextType>;
   records?: Resolver<ResolversTypes['RecordResultPage'], ParentType, ContextType, RequireFields<SeapSearchRecordsArgs, 'limit' | 'offset' | 'order'>>;
   suppliers?: Resolver<ResolversTypes['EntityResultPage'], ParentType, ContextType, RequireFields<SeapSearchSuppliersArgs, 'limit' | 'offset'>>;
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
@@ -1451,6 +1481,7 @@ export type UnplacedTileResolvers<ContextType = any, ParentType extends Resolver
 
 export type Resolvers<ContextType = any> = {
   Alias?: AliasResolvers<ContextType>;
+  AreaKey?: GraphQLScalarType;
   AreaTotal?: AreaTotalResolvers<ContextType>;
   Bani?: GraphQLScalarType;
   Consortium?: ConsortiumResolvers<ContextType>;

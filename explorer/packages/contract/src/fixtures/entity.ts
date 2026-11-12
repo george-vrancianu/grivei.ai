@@ -39,6 +39,22 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     }) },
   },
   {
+    name: "supplier-signals-by-value", kind: "typical",
+    description: "the Signals list ordered by RON (VALUE_DESC) and read from the first row: the over-cap Signal outranks the splitting one",
+    variables: { key: "30000001", role: "SUPPLIER", filter: {}, signalOrder: "VALUE_DESC", signalOffset: 0 },
+    data: { entity: withSeap(w.hachiHeader, {
+      role: "SUPPLIER" as Role,
+      total: total({ awarded: ron(3_400_000), records: 49 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(3_400_000), records: 49 }) }] },
+      directPurchaseShare: 1,
+      procedures: [{ value: "Achiziție directă", total: total({ awarded: ron(3_400_000), records: 49 }) }],
+      consortia: [],
+      frameworks: noFramework,
+      largestRecords: [w.rDirect],
+      signals: { count: 2, rows: [w.sOverCap, w.sSplitting] },
+    }) },
+  },
+  {
     name: "authority-both-roles", kind: "typical",
     description: "an entity that buys and sells (roles has both), identity curated, with a framework and a framework-overrun Signal",
     variables: { key: "4000002", role: "AUTHORITY", filter: { from: "2021-01-01" } },
@@ -63,8 +79,8 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     variables: { key: "vat-DE811128135", role: "SUPPLIER" },
     data: { entity: withSeap(w.foreignFirmHeader, {
       role: "SUPPLIER" as Role,
-      total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }) }] },
+      total: total({ awarded: ron(2_290_000), records: 3, noValue: 1 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_290_000), records: 3, noValue: 1 }) }] },
       directPurchaseShare: 0,
       procedures: [{ value: "Negociere fără publicare prealabilă", total: total({ awarded: "0", records: 1, noValue: 1 }) }],
       consortia: [],
@@ -103,12 +119,12 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
 ];
 
 const facetsFull = {
-  channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(250_000), records: 2 }) }],
-  procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(250_000), records: 2 }) }],
-  year: [{ value: "2024", total: total({ awarded: ron(250_000), records: 2 }) }],
-  signal: [{ value: "SPLITTING", total: total({ awarded: ron(250_000), records: 2 }) }],
+  channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
+  procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(290_000), records: 2 }) }],
+  year: [{ value: "2024", total: total({ awarded: ron(290_000), records: 2 }) }],
+  signal: [{ value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) }],
   badge: [],
-  counterparty: [{ entity: w.hachi, matched: total({ awarded: ron(250_000), records: 2 }) }],
+  counterparty: [{ entity: w.hachi, matched: total({ awarded: ron(290_000), records: 2 }) }],
 };
 const noFacets = { channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] };
 
@@ -123,9 +139,9 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
     data: { entity: withSeap(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
-        total: total({ awarded: ron(250_000), records: 2 }),
+        total: total({ awarded: ron(290_000), records: 2 }),
         facets: facetsFull,
-        records: { count: 2, rows: [{ record: w.rSplit2 }, { record: w.rSplit1 }] },
+        records: { count: 2, rows: [w.rSplit2, w.rSplit1].map((record) => ({ record, matchedField: null })) },
       },
     }) },
   },
@@ -138,7 +154,7 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
       records: {
         total: total({ awarded: ron(24_300_000), records: 5, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
         facets: { ...facetsFull, badge: [{ value: "SUSPECT_VALUE", total: total({ awarded: "0", records: 1, suspectLeftOut: 1 }) }, { value: "NO_VALUE", total: total({ awarded: "0", records: 1, noValue: 1 }) }] },
-        records: { count: 5, rows: [w.rFrameworkCeiling, w.rConsortium, w.rSuspect, w.rNoValue, w.rNaturalPerson].map((record) => ({ record })) },
+        records: { count: 5, rows: [w.rFrameworkCeiling, w.rConsortium, w.rSuspect, w.rNoValue, w.rNaturalPerson].map((record) => ({ record, matchedField: null })) },
       },
     }) },
   },
@@ -156,8 +172,9 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
 ];
 
 type RelCounterparties = NonNullable<NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["counterparties"]>;
-const flowSupplier: MoneyMapFieldsFragment = moneyMap({
-  side: "SUPPLIER",
+// A supplier's Flow lens is drawn on the authority side: where in Romania its money comes from.
+const flowOfSupplier: MoneyMapFieldsFragment = moneyMap({
+  side: "AUTHORITY",
   counties: [
     { area: "RO-BV", name: "Brașov", entities: 1, total: total({ awarded: ron(2_800_000), records: 40 }) },
     { area: "RO-SB", name: "Sibiu", entities: 1, total: total({ awarded: ron(600_000), records: 9 }) },
@@ -182,11 +199,11 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
         ],
       } satisfies RelCounterparties,
       timeline: [
-        { month: "2024-01", total: total({ awarded: ron(142_000), records: 1 }) },
+        { month: "2024-01", total: total({ awarded: ron(300_000), records: 1 }) },
         { month: "2024-02", total: zeroTotal },
-        { month: "2024-07", total: total({ awarded: ron(250_000), records: 2 }) },
+        { month: "2024-07", total: total({ awarded: ron(290_000), records: 2 }) },
       ],
-      flow: flowSupplier,
+      flow: flowOfSupplier,
     }) },
   },
   {

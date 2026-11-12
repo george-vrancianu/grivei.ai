@@ -24,7 +24,8 @@ const checks: Record<string, (v: string) => boolean> = {
   Date: isCalendarDate,
   DateTime: (v) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v) && isCalendarDate(v.slice(0, 10)),
   CountyCode: (v) => COUNTY_CODES.includes(v),
-  MapArea: (v) => COUNTY_CODES.includes(v) || (OFF_MAP_AREAS as readonly string[]).includes(v) || /^\d{1,7}$/.test(v),
+  MapArea: (v) => COUNTY_CODES.includes(v) || (OFF_MAP_AREAS as readonly string[]).includes(v),
+  AreaKey: (v) => checks.MapArea!(v) || /^\d{1,7}$/.test(v),
   Siruta: (v) => /^\d{1,7}$/.test(v),
 };
 

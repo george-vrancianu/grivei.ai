@@ -31,6 +31,11 @@ export const entityRow = (ref: EntityRefFragment, placement: EntityRowFieldsFrag
   ...ref, anafStatus, placement,
 });
 
+/** The ANAF lookup every entity header is traced to. */
+export const anafLookup: EntityHeaderFieldsFragment["provenance"][number] = {
+  source: "ANAF", url: null, via: null, kind: "API", fetchedAt: "2024-10-01T05:00:00Z",
+};
+
 export const entityHeader = (
   row: EntityRowFieldsFragment,
   o: Partial<Omit<EntityHeaderFieldsFragment, keyof EntityRowFieldsFragment>> = {},
@@ -40,6 +45,7 @@ export const entityHeader = (
   foreignVatId: null,
   identityCurated: false,
   aliases: [],
+  provenance: [anafLookup],
   seap: { roles: ["SUPPLIER"] },
   ...o,
 });

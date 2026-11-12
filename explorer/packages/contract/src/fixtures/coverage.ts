@@ -2,22 +2,11 @@ import type {
   CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables,
   CoverageStatus, GapState,
 } from "../generated/operations.ts";
-import { dataThrough, ron, total, zeroTotal } from "./builders.ts";
+import { ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import * as w from "./world.ts";
 
-const sources: CoverageLensQuery["sources"] = [
-  dataThrough({
-    id: "SEAP", name: "SEAP", harvested: true,
-    dataThrough: [
-      { kind: "DA", date: "2024-09-30" }, { kind: "DAN", date: "2024-09-30" },
-      { kind: "CONTRACT", date: "2024-09-30" }, { kind: "AWARD_NOTICE", date: "2024-11-30" },
-    ],
-  }),
-  dataThrough({ id: "ONRC", name: "ONRC" }),
-  dataThrough({ id: "ANI", name: "ANI" }),
-  dataThrough({ id: "MFINANTE", name: "Ministerul Finanțelor" }),
-  dataThrough({ id: "JUST", name: "portal.just.ro" }),
-];
+const { sources } = w;
 
 const county = (code: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number) =>
   ({ county: code, status, withRecords, publicEntities, otherAuthorities });
@@ -64,13 +53,13 @@ export const coverageLens: FixtureSet<CoverageLensQuery, CoverageLensQueryVariab
 const states: GapState[] = ["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL"];
 type Cell = NonNullable<CoveragePageQuery["coverage"]>["grid"][number];
 const cell = (quarter: string, kind: string, state: GapState, records: number, o: Partial<Cell> = {}): Cell => ({
-  quarter, kind, state, reason: null, records, dataThrough: null, ...o,
+  quarter, kind, state, rule: null, note: null, records, dataThrough: null, ...o,
 });
 
 export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariables> = [
   {
     name: "typical-every-gap-state", kind: "typical",
-    description: "a quarter x kind grid showing every gap state, with written reasons, the current quarter crawled-provisional and the 2021-22 no-prior-call contracts not in the source",
+    description: "a quarter x kind grid showing every gap state, with a published rule (and, for the hand-entered gap, the gap file's own note), the current quarter crawled-provisional and the 2021-22 no-prior-call contracts not in the source",
     variables: { window: { from: "2021-01-01", to: "2024-12-31" } },
     data: {
       sources,
@@ -78,11 +67,11 @@ export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariab
         window: { from: "2021-01-01", to: "2024-12-31" },
         counties,
         grid: [
-          cell("2021-Q1", "CONTRACT", "NOT_IN_SOURCE", 0, { reason: "Contracts awarded without a prior call are not visible in the source before the backfill" }),
-          cell("2022-Q3", "DA", "KNOWN_GAP", 0, { reason: "ADR export for this quarter was republished without direct purchases" }),
-          cell("2023-Q2", "DAN", "POSSIBLY_INCOMPLETE", 4_210, { reason: "Record count is under half the neighbouring quarters" }),
+          cell("2021-Q1", "CONTRACT", "NOT_IN_SOURCE", 0, { rule: "NO_PRIOR_CALL_BEFORE_BACKFILL" }),
+          cell("2022-Q3", "DA", "KNOWN_GAP", 0, { rule: "HAND_ENTERED", note: "Exportul ADR pentru acest trimestru a fost republicat fără achizițiile directe" }),
+          cell("2023-Q2", "DAN", "POSSIBLY_INCOMPLETE", 4_210, { rule: "COUNT_BELOW_NEIGHBOURS" }),
           cell("2024-Q3", "CONTRACT", "LOADED", 18_400, { dataThrough: "2024-09-30" }),
-          cell("2024-Q4", "DA", "CRAWLED_PROVISIONAL", 0, { reason: "awaiting bulk file" }),
+          cell("2024-Q4", "DA", "CRAWLED_PROVISIONAL", 0, { rule: "AWAITING_BULK_FILE" }),
           cell("2024-Q4", "AWARD_NOTICE", "CRAWLED_PROVISIONAL", 2_900, { dataThrough: "2024-11-30" }),
         ],
         unplacedAuthorities: unplaced,
@@ -101,7 +90,7 @@ export const coveragePage: FixtureSet<CoveragePageQuery, CoveragePageQueryVariab
         counties,
         grid: Array.from({ length: 16 }, (_, q) => ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].map((kind, k) => {
           const state = states[(q + k) % states.length]!;
-          return cell(`${2021 + Math.floor(q / 4)}-Q${(q % 4) + 1}`, kind, state, state === "LOADED" ? 1_000 + q : 0, state === "LOADED" ? {} : { reason: "see methodology" });
+          return cell(`${2021 + Math.floor(q / 4)}-Q${(q % 4) + 1}`, kind, state, state === "LOADED" ? 1_000 + q : 0, state === "LOADED" ? {} : { rule: "COUNT_BELOW_NEIGHBOURS" });
         })).flat(),
         unplacedAuthorities: unplaced,
         referenceSnapshot: "2024-09-15",

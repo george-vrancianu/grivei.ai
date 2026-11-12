@@ -3,11 +3,7 @@ query FullResultsAuthorities($filter: RecordFilter!, $limit: Int!, $offset: Int!
   seap {
     search(filter: $filter) {
       total { ...TotalFields }
-      authorities(limit: $limit, offset: $offset) {
-        count
-        countEstimated
-        rows { entity { ...EntityRowFields } matched { ...TotalFields } }
-      }
+      authorities(limit: $limit, offset: $offset) { ...EntityResultPageFields }
     }
   }
 }
@@ -16,11 +12,7 @@ query FullResultsSuppliers($filter: RecordFilter!, $limit: Int!, $offset: Int!) 
   seap {
     search(filter: $filter) {
       total { ...TotalFields }
-      suppliers(limit: $limit, offset: $offset) {
-        count
-        countEstimated
-        rows { entity { ...EntityRowFields } matched { ...TotalFields } }
-      }
+      suppliers(limit: $limit, offset: $offset) { ...EntityResultPageFields }
     }
   }
 }
@@ -29,13 +21,7 @@ query FullResultsRecords($filter: RecordFilter!, $limit: Int!, $offset: Int!, $o
   seap {
     search(filter: $filter) {
       total { ...TotalFields }
-      records(limit: $limit, offset: $offset, order: $order) {
-        count
-        rows {
-          record { ...RecordRowFields }
-          matchedField { field text highlights }
-        }
-      }
+      records(limit: $limit, offset: $offset, order: $order) { ...RecordResultFields }
     }
   }
 }

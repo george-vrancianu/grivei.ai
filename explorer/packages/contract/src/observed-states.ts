@@ -5,14 +5,22 @@
 export const REQUIRED_STATES = [
   "national", "unplaced", "unknown-supplier-county", "unknown-uat",
   "natural-person", "name-only-supplier", "consortium", "framework", "subsequent-contract",
-  "suspect-value", "no-value", "estimated-total", "estimated-count",
+  "suspect-value", "no-value", "estimated-count",
   "both-roles", "not-found", "identity-curated", "crawled-provisional",
   "signal:over-cap", "signal:splitting", "signal:framework-overrun", "signal:no-publication",
+  "suspect:DIRECT_PURCHASE_10X_CAP", "suspect:CONTRACT_100X_ESTIMATE", "suspect:CONTRACT_OVER_50BN",
   "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL",
   "coverage:HARVESTED", "coverage:HARVESTED_WITH_KNOWN_GAPS", "coverage:PARTIAL", "coverage:NOT_HARVESTED",
 ] as const;
 
 export type State = (typeof REQUIRED_STATES)[number];
+
+const SIGNAL_OF_NUMBERS: Record<string, string> = {
+  OverCapNumbers: "over-cap",
+  SplittingNumbers: "splitting",
+  FrameworkOverrunNumbers: "framework-overrun",
+  NoPublicationNumbers: "no-publication",
+};
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
@@ -32,8 +40,12 @@ export function observedStates(data: unknown): Set<string> {
     if (Array.isArray(o.consortia) && o.consortia.length > 0) seen.add("consortium");
     if (typeof o.state === "string") seen.add(`gap:${o.state}`);
     if (typeof o.status === "string") seen.add(`coverage:${o.status}`);
-    if (typeof o.rule === "string") seen.add(`signal:${o.rule.toLowerCase().replaceAll("_", "-")}`);
-    if (o.estimated === true) seen.add("estimated-total");
+    // A Signal is shown by its numbers card, so read the rule off `numbers`, not off any field called `rule`
+    // (a Record row's signal marker and a suspect flag also carry one).
+    if (key === "numbers" && typeof o.__typename === "string" && o.__typename in SIGNAL_OF_NUMBERS) {
+      seen.add(`signal:${SIGNAL_OF_NUMBERS[o.__typename]}`);
+    }
+    if (key === "suspect" && typeof o.rule === "string") seen.add(`suspect:${o.rule}`);
     if (o.countEstimated === true) seen.add("estimated-count");
     if (Array.isArray(o.roles) && o.roles.length > 1) seen.add("both-roles");
     if (o.identityCurated === true) seen.add("identity-curated");
@@ -54,7 +66,7 @@ export function observedStates(data: unknown): Set<string> {
   const root = data as { [k: string]: Json };
   visit(root as Json, "");
   // an absent entity or record is the not-found state
-  const top = JSON.stringify(data);
-  if (/"entity":null/.test(top.slice(0, 20)) || /"record":null/.test(top.slice(0, 30))) seen.add("not-found");
+  const seap = root.seap as { record?: Json } | null | undefined;
+  if (root.entity === null || seap?.record === null) seen.add("not-found");
   return seen;
 }

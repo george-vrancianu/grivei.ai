@@ -33,7 +33,7 @@ import type { Resolvers } from "@grivei/contract/schema-types"; // for the API
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 ```
 
-The package exports TypeScript source (no build step); consumers compile it with their own toolchain. Custom scalars are plain strings in TypeScript: `Bani` (integer bani as a decimal string, so sums never lose precision), `Date` (`YYYY-MM-DD`), `DateTime` (ISO, UTC), `MapArea`, `CountyCode`, `Siruta`.
+The package exports TypeScript source (no build step); consumers compile it with their own toolchain. Custom scalars are plain strings in TypeScript: `Bani` (integer bani as a decimal string, so sums never lose precision), `Date` (`YYYY-MM-DD`), `DateTime` (ISO, UTC), `MapArea`, `AreaKey`, `CountyCode`, `Siruta`.
 
 ## Adding or changing an operation
 
@@ -43,7 +43,7 @@ The package exports TypeScript source (no build step); consumers compile it with
 
 ## `RecordFilter` and the URL
 
-`RecordFilter` is the URL's search state, field for field. `RECORD_FILTER_URL` lists each field's query-string key and encoding (enum values are lower-cased with hyphens in URLs: `DIRECT_PURCHASE` is `direct-purchase`, `FRAMEWORK_OVERRUN` is `framework-overrun`). `tab` and `page` are URL state outside the filter (`URL_ONLY_KEYS`). A test fails if a field has no key or a key has no field.
+`RecordFilter` is the URL's search state, field for field. `RECORD_FILTER_URL` lists each field's query-string key and encoding (enum values are lower-cased with hyphens in URLs: `DIRECT_PURCHASE` is `direct-purchase`, `FRAMEWORK_OVERRUN` is `framework-overrun`). `tab`, `page` and the sort orders (`order`, `signalOrder`) are URL state outside the filter (`URL_ONLY_KEYS`). A test fails if a field has no key or a key has no field.
 
 ## `ValueBucket` edges
 
@@ -69,7 +69,7 @@ The caps and 10x rule come from the counting rule (#23) in the Release 1 spec. T
 | Q2 | What goes in `RecordFilter`? | The 15 fields of the draft, nothing else; `tab`, `page`, `order`, `limit`, `offset` are arguments or URL-only state | The filter is the matching set; paging and ordering do not change it. Keeps the 1:1 URL mapping honest. |
 | Q3 | How are bani serialised? | Decimal string (`Bani`), typed `string` in TypeScript | JSON numbers lose precision above 2^53; the fixtures include a sum above it. |
 | Q4 | Paging for the result tabs | Offset/limit with `count`; ranked by matched awarded value, ties by key; limit capped at 200 server-side | Spec: "offset/limit with a count everywhere"; the full-results view pages through every Record. |
-| Q5 | Where does the "estimated" flag live? | `Total.estimated` (the `records` count) and a new `EntityResultPage.countEstimated` (the HyperLogLog distinct count) | The estimate is on distinct entity counts, which a `Total` does not carry; each count says for itself. |
+| Q5 | Where does the "estimated" flag live? | `Total.estimated` (kept from the spec, false in every fixture: Record counts are exact today) and a new `EntityResultPage.countEstimated` (the HyperLogLog distinct count) | The estimate is on distinct entity counts, which a `Total` does not carry; each count says for itself. |
 | Q6 | Geography roots | Keep `counties` and `uats(county)` as keys and names; geometry stays static TopoJSON. Bucharest's UATs are its six sectors | Geometry is not data the API serves (ADR 0001, county-geometry prototype). |
 | Q7 | `caveatAnchors` (Romanian copy for "why this badge") | Removed. Added `SeapRecord.suspect { rule threshold }` with a `SuspectRule` enum | "No copy in the API": the catalogue maps each badge and rule to its methodology anchor. The Record page still needs to know which suspect rule fired and its numbers. |
 
@@ -80,4 +80,10 @@ Changes the screens needed beyond the markers:
 - `MoneyMap.unplaced` is an `UnplacedTile { authorities, total }` (the tile shows an authority count); `Coverage.unplacedAuthorities` likewise.
 - `uatMap` returns `UatMap { uats, unknownUat }`: the "known county, unknown UAT" row. `AreaTotal.entities` feeds the optional circle per UAT.
 - `ValueBucket` is the preset list above.
+- `GapCell` carries `rule: GapRule` (a slug the catalogue words) and `note` (the gap file's own text, source data, only for `HAND_ENTERED`), not a prose `reason`.
+- The Money lens side is the filter's `countySide` only: `MoneyMap` and `UatMap` take no `side` argument and the operations no `$side` variable. The zoomed county is authority-side only (UATs place authorities; the search table carries a supplier's county, never its UAT), so `RecordFilter.uat` and `uatMap` are too. A supplier's Flow lens is drawn on the authority side, an authority's on the supplier side.
+- `Entity.provenance` (the ANAF lookup, or SEAP) and `Provenance.kind` (`BULK`, `CRAWL`, `API`); `via` is the file title as the Source publishes it, null when there is none.
+- `AreaTotal.area` is an `AreaKey` (county, off-map tile or SIRUTA), so a SIRUTA is never a valid `RecordFilter.county`.
+- Entity Overview Signals take `signalOrder` and `signalOffset`.
+- Shared fragments `EntityResultPageFields` and `RecordResultFields`; the Entity Records tab also selects `matchedField`.
 - Three full-results operations (one per tab) rather than one with `@include` flags.

@@ -15,7 +15,7 @@ query CoveragePage($window: DateRange) {
   coverage(source: SEAP, window: $window) {
     window { from to }
     counties { county status withRecords publicEntities otherAuthorities }
-    grid { quarter kind state reason records dataThrough }
+    grid { quarter kind state rule note records dataThrough }
     unplacedAuthorities { authorities total { ...TotalFields } }
     referenceSnapshot
   }

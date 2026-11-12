@@ -8,6 +8,7 @@ const scalars = {
   Date: "string",
   DateTime: "string",
   MapArea: "string",
+  AreaKey: "string",
   CountyCode: "string",
   Siruta: "string",
 };

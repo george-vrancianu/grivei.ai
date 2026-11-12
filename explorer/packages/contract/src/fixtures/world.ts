@@ -3,8 +3,24 @@
 // codes are made up. SEAP's own vocabulary (procedure names, CPV, document kinds) is real.
 import type { SignalFieldsFragment } from "../generated/operations.ts";
 import {
-  entityHeader, entityRef, entityRow, party, placeInCounty, placeNational, record, reproduce, ron,
+  dataThrough, entityHeader, entityRef, entityRow, party, placeInCounty, placeNational, record, reproduce, ron,
 } from "./builders.ts";
+
+// ---- sources (the same data-through dates on every screen) ----------------
+
+export const sources = [
+  dataThrough({
+    id: "SEAP", name: "SEAP", harvested: true,
+    dataThrough: [
+      { kind: "DA", date: "2024-09-30" }, { kind: "DAN", date: "2024-09-30" },
+      { kind: "CONTRACT", date: "2024-09-30" }, { kind: "AWARD_NOTICE", date: "2024-11-30" },
+    ],
+  }),
+  dataThrough({ id: "ONRC", name: "ONRC" }),
+  dataThrough({ id: "ANI", name: "ANI" }),
+  dataThrough({ id: "MFINANTE", name: "Ministerul Finanțelor" }),
+  dataThrough({ id: "JUST", name: "portal.just.ro" }),
+];
 
 // ---- entities ------------------------------------------------------------
 
@@ -61,7 +77,7 @@ export const drumariiHeader = entityHeader(drumariiRow, {
 
 export const rDirect = record({
   code: "DA12345678", title: "Deszăpezire străzi, sezon rece 2023-2024", date: "2024-01-19", kind: "DA",
-  channel: "DIRECT_PURCHASE", procedure: "Achiziție directă", value: ron(142_000), counted: ron(142_000),
+  channel: "DIRECT_PURCHASE", procedure: "Achiziție directă", value: ron(300_000), counted: ron(300_000),
   authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "OVER_CAP" }],
 });
 export const rDirectSmall = record({
@@ -83,7 +99,7 @@ export const rConsortiumNameOnly = record({
   code: "CAN1170002", title: "Furnizare echipamente imagistice", date: "2024-02-27", kind: "CONTRACT", channel: "CONTRACT",
   procedure: "Licitație deschisă", value: ron(4_500_000), counted: ron(4_500_000), badges: ["CONSORTIUM_SHARE"],
   authority: spitalSibiu,
-  winners: [party(foreignFirm, { share: ron(2_250_000) }), party(asociere, { share: ron(2_250_000) })],
+  winners: [party(foreignFirm, { share: ron(2_290_000) }), party(asociere, { share: ron(2_290_000) })],
 });
 export const rFrameworkCeiling = record({
   code: "CAN1160100", title: "Acord-cadru lucrări de întreținere drumuri naționale", date: "2022-06-30", kind: "CONTRACT",
@@ -120,11 +136,11 @@ export const rMismatch = record({
   authority: primariaBrasov, winners: [party(primariaBrasov)],
 });
 export const rSplit1 = record({
-  code: "DA12370001", title: "Lucrări de întreținere spații verzi (1)", date: "2024-07-01", value: ron(120_000), counted: ron(120_000),
+  code: "DA12370001", title: "Servicii de întreținere spații verzi (1)", date: "2024-07-01", value: ron(150_000), counted: ron(150_000),
   procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "SPLITTING" }],
 });
 export const rSplit2 = record({
-  code: "DA12370002", title: "Lucrări de întreținere spații verzi (2)", date: "2024-07-19", value: ron(130_000), counted: ron(130_000),
+  code: "DA12370002", title: "Servicii de întreținere spații verzi (2)", date: "2024-07-19", value: ron(140_000), counted: ron(140_000),
   procedure: "Achiziție directă", authority: primariaBrasov, winners: [party(hachi)], signals: [{ rule: "SPLITTING" }],
 });
 
@@ -133,13 +149,13 @@ export const rSplit2 = record({
 export const sOverCap: SignalFieldsFragment = {
   rule: "OVER_CAP", date: "2024-01-19", firstDate: "2024-01-19", recordCount: 1, dataThrough: "2024-11-30",
   authority: primariaBrasov, suppliers: [hachi],
-  numbers: { __typename: "OverCapNumbers", value: ron(142_000), cap: ron(135_060), multiple: 1.05 },
+  numbers: { __typename: "OverCapNumbers", value: ron(300_000), cap: ron(270_120), multiple: 1.11 },
   reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" }),
 };
 export const sSplitting: SignalFieldsFragment = {
   rule: "SPLITTING", date: "2024-07-19", firstDate: "2024-07-01", recordCount: 2, dataThrough: "2024-11-30",
   authority: primariaBrasov, suppliers: [hachi],
-  numbers: { __typename: "SplittingNumbers", purchases: 2, sum: ron(250_000), cap: ron(270_120), cpvGroup: "770", from: "2024-07-01", to: "2024-07-19" },
+  numbers: { __typename: "SplittingNumbers", purchases: 2, sum: ron(290_000), cap: ron(270_120), cpvGroup: "770", from: "2024-07-01", to: "2024-07-19" },
   reproduce: reproduce({ authority: "4000001", supplier: "30000001", signal: "SPLITTING", cpv: "770", from: "2024-07-01", to: "2024-07-19" }),
 };
 export const sFrameworkOverrun: SignalFieldsFragment = {

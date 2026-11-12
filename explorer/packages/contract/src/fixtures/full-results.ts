@@ -24,7 +24,7 @@ export const fullResultsAuthorities: FixtureSet<FullResultsAuthoritiesQuery, Ful
     name: "extreme-estimated", kind: "extreme", description: "a huge matching set: the distinct count is a HyperLogLog estimate",
     variables: { filter: {}, limit: 50, offset: 0 },
     data: { seap: { search: {
-      total: total({ awarded: ron(86_000_000_000), records: 410_000, estimated: true }),
+      total: total({ awarded: ron(86_000_000_000), records: 410_000 }),
       authorities: { count: 70_000, countEstimated: true, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }) }] },
     } } },
   },
@@ -44,7 +44,7 @@ export const fullResultsSuppliers: FixtureSet<FullResultsSuppliersQuery, FullRes
       suppliers: { count: 3, countEstimated: false, rows: [
         { entity: w.constructiiRow, matched: total({ awarded: ron(30_000_000), records: 20 }) },
         { entity: w.drumariiRow, matched: total({ awarded: ron(15_000_000), records: 1 }) },
-        { entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 1, noValue: 1 }) },
+        { entity: w.foreignFirmRow, matched: total({ awarded: ron(2_290_000), records: 1, noValue: 1 }) },
       ] },
     } } },
   },
@@ -70,10 +70,10 @@ export const fullResultsRecords: FixtureSet<FullResultsRecordsQuery, FullResults
     name: "by-date-matched-field", kind: "typical", description: "ordered by date, with the matched field highlighted on each row",
     variables: { filter: { q: "spatii verzi" }, limit: 100, offset: 0, order: "DATE_DESC" },
     data: { seap: { search: {
-      total: total({ awarded: ron(250_000), records: 2 }),
+      total: total({ awarded: ron(290_000), records: 2 }),
       records: { count: 2, rows: [
-        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Lucrări de întreținere spații verzi (2)", highlights: [[26, 32], [33, 38]] } },
-        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Lucrări de întreținere spații verzi (1)", highlights: [[26, 32], [33, 38]] } },
+        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (2)", highlights: [[24, 30], [31, 36]] } },
+        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (1)", highlights: [[24, 30], [31, 36]] } },
       ] },
     } } },
   },
@@ -83,10 +83,10 @@ export const fullResultsRecords: FixtureSet<FullResultsRecordsQuery, FullResults
     data: { seap: { search: { total: zeroTotal, records: { count: 0, rows: [] } } } },
   },
   {
-    name: "extreme-estimated-total", kind: "extreme", description: "millions of Records; the Total's count is an estimate",
+    name: "extreme-large-set", kind: "extreme", description: "millions of Records, counted exactly",
     variables: { filter: {}, limit: 100, offset: 99_900, order: "DATE_ASC" },
     data: { seap: { search: {
-      total: total({ awarded: ron(86_000_000_000), records: 2_400_000, estimated: true }),
+      total: total({ awarded: ron(86_000_000_000), records: 2_400_000 }),
       records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: null }] },
     } } },
   },

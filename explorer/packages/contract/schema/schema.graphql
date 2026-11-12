@@ -67,7 +67,7 @@ input RecordFilter {
 
   # map clicks
   county: MapArea                 # a county, NATIONAL, UNPLACED or UNKNOWN_SUPPLIER_COUNTY
-  uat: Siruta                     # zoomed-county click
+  uat: Siruta                     # zoomed-county click; a UAT of the authority's county (the zoomed county is authority-side only)
   countySide: CountySide = AUTHORITY
 
   # entity-scoped (Records tab, Signal URLs)
@@ -97,12 +97,19 @@ Records with no value match no bucket. Edges in RON, with their source:
   UP_TO_1B     <= 1,000,000,000 1 bn RON: where contract values start being checked for suspect values
   OVER_1B      >  1,000,000,000
 
+The counting rule checks contracts "of 1 bn RON or more"; because upper edges are
+inclusive, exactly 1 bn sits in UP_TO_1B. A bucket is a chip, not the rule, so the
+one-value difference is accepted.
+
 The edges are mirrored, in bani, by VALUE_BUCKETS in the contract package.
 """
 enum ValueBucket { UP_TO_10K UP_TO_135K UP_TO_270K UP_TO_900K UP_TO_9M UP_TO_1B OVER_1B }
 
 "A county ISO 3166-2:RO code, or one of the off-map tiles."
 scalar MapArea   # "RO-BV" | "NATIONAL" | "UNPLACED" | "UNKNOWN_SUPPLIER_COUNTY"
+
+"What an AreaTotal is for: a MapArea on the county map, or a SIRUTA on the zoomed county. Kept apart from MapArea so a SIRUTA is never a valid `RecordFilter.county`."
+scalar AreaKey
 
 # =====================================================================
 #  Search result: one matching set, many views of it
@@ -114,11 +121,11 @@ type SeapSearch {
 
   total: Total!
 
-  "Money lens, county level. `side` defaults to the filter's countySide."
-  map(side: CountySide): MoneyMap!
+  "Money lens, county level, on the side the filter's countySide names (the URL is the only source of the side)."
+  map: MoneyMap!
 
-  "Money lens, zoomed county: UAT choropleth."
-  uatMap(county: CountyCode!, side: CountySide): UatMap!
+  "Money lens, zoomed county: UAT choropleth. Authority side only: UATs place authorities (the search carries a supplier's county, never its UAT)."
+  uatMap(county: CountyCode!): UatMap!
 
   "Result tabs, ranked by matched awarded value (ties by key). Offset/limit paging; the server caps limit at 200. Main screen asks limit: 50."
   authorities(limit: Int = 50, offset: Int = 0): EntityResultPage!
@@ -157,7 +164,7 @@ type Total {
   noValue: Int!
   "Framework ceilings in the set, never summed (for the 'ceilings X' line)."
   frameworkCeilings: Bani!
-  "True when `records` is an estimate rather than an exact count. Distinct entity counts carry their own flag: EntityResultPage.countEstimated."
+  "True only when `records` is approximated, which exact counts and the rollup never do today: the flag is reserved for a future approximate path. Distinct entity counts (the HyperLogLog ones) carry their own flag: EntityResultPage.countEstimated."
   estimated: Boolean!
 }
 
@@ -179,7 +186,7 @@ type UnplacedTile {
 
 type AreaTotal {
   "A county code (county map) or a SIRUTA (zoomed county)."
-  area: MapArea!
+  area: AreaKey!
   name: String!
   total: Total!
   "Distinct entities behind the total on the lens's side (the optional circle per UAT)."
@@ -251,16 +258,20 @@ type FacetCount { value: String!, total: Total! }
 
 enum SourceId { SEAP ANAF ONRC ANI MFINANTE JUST }
 
-"Where a shown fact came from. Every Record has one; entity facts carry theirs."
+"Where a shown fact came from. Every Record has one; so does every Entity (the ANAF lookup, or SEAP when ANAF has no answer)."
 type Provenance {
   source: SourceId!
   "Public page in the Source; null only when the Source has no stable public URL."
   url: String
-  "Which file/notice it came from, as the Source names it (e.g. data.gov.ro 2024 Q3 Contracte; e-licitatie crawl)."
-  via: String!
+  "Which file or notice it came from, exactly as the Source titles it (source data, shown verbatim, never translated; e.g. data.gov.ro 2024 Q3 Contracte). Null when there is no file title: a crawl or an API lookup, which `kind` already says."
+  via: String
+  kind: ProvenanceKind!
   "When we fetched it (from the raw archive)."
   fetchedAt: DateTime!
 }
+
+"How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup)."
+enum ProvenanceKind { BULK CRAWL API }
 
 type Source {
   id: SourceId!
@@ -271,6 +282,7 @@ type Source {
 }
 
 type DataThrough {
+  "A record kind of the Source. A plain string because kinds belong to each Source (ADR 0005); SEAP's are SeapRecordKind."
   kind: String!
   date: Date!
 }
@@ -294,6 +306,8 @@ type Entity {
   anafStatus: String
   identityCurated: Boolean!
   placement: Placement
+  "Where the name and ANAF status came from and when we fetched them: the ANAF lookup, or SEAP when ANAF has no answer."
+  provenance: [Provenance!]!
   "Spellings under which this entity was published, with dates. Never used to merge."
   aliases: [Alias!]!
 
@@ -354,7 +368,7 @@ type SeapRole {
 
   # Relationships tab
   timeline(filter: RecordFilter, counterparty: ID): [MonthTotal!]!
-  "Flow lens: where the money comes from (supplier) or goes (authority)."
+  "Flow lens, drawn on the counterparty's side: a supplier's page shows where across Romania its money comes from (side AUTHORITY, with the Unplaced tile); an authority's shows where it goes (side SUPPLIER, with the unknown-supplier-county bucket)."
   flow(filter: RecordFilter): MoneyMap!
 }
 
@@ -368,7 +382,7 @@ type CounterpartyPage {
 }
 
 type Counterparty {
-  "Null for natural-person suppliers (shown as 'Persoană fizică')."
+  "Null for natural-person suppliers (shown as 'Persoană fizică'), who are never named or linked."
   entity: Entity
   naturalPerson: Boolean!
   total: Total!
@@ -473,7 +487,7 @@ type Party {
   "Null for a natural person: never named, never linked."
   entity: Entity
   naturalPerson: Boolean!
-  "Name as published on this Record (an Alias of `entity`)."
+  "Name as published on this Record (an Alias of `entity`). Null when `naturalPerson`: a person is never named (ADR 0003)."
   publishedName: String
   "Equal consortium share, when the Record has more than one winner."
   share: Bani
@@ -533,7 +547,7 @@ type SplittingNumbers { purchases: Int!, sum: Bani!, cap: Bani!, cpvGroup: Strin
 type FrameworkOverrunNumbers { ceiling: Bani!, subsequent: Bani!, ratio: Float! }
 type NoPublicationNumbers { procedure: String! }
 
-"Output twin of RecordFilter (GraphQL inputs can't be outputs)."
+"Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use."
 type RecordFilterValue {
   authority: ID
   supplier: ID
@@ -581,13 +595,18 @@ enum CoverageStatus { HARVESTED HARVESTED_WITH_KNOWN_GAPS PARTIAL NOT_HARVESTED 
 
 type GapCell {
   quarter: String!                   # "2024-Q4"
-  kind: String!                      # DA, DAN, CONTRACT, AWARD_NOTICE
+  "A record kind of the Source (SEAP: SeapRecordKind). A plain string because kinds belong to each Source (ADR 0005)."
+  kind: String!
   state: GapState!
-  "Written reason (hand-entered gap) or the rule that flagged it."
-  reason: String
+  "The published rule that explains the state. The frontend's catalogue words it in both languages."
+  rule: GapRule
+  "The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated."
+  note: String
   records: Int!
   dataThrough: Date
 }
+
+enum GapRule { AWAITING_BULK_FILE NO_PRIOR_CALL_BEFORE_BACKFILL COUNT_BELOW_NEIGHBOURS HAND_ENTERED }
 
 enum GapState { LOADED KNOWN_GAP POSSIBLY_INCOMPLETE NOT_IN_SOURCE CRAWLED_PROVISIONAL }
 

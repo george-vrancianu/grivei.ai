@@ -48,6 +48,8 @@ describe("validateResponse", () => {
     const data = { seap: { search: { total: { records: 1 } } } };
     expect(check(V, data, { f: { county: "RO-BV" } })).toEqual([]);
     expect(check(V, data, { f: { county: "RO-XX" } }).join("\n")).toMatch(/variables/);
+    expect(check(V, data, { f: { county: "12345" } }).join("\n"), "a SIRUTA is not a county").toMatch(/variables/);
+    expect(check(V, data, { f: { county: "UNPLACED" } })).toEqual([]);
     expect(check(V, data, {}).join("\n")).toMatch(/variables/);
   });
 });

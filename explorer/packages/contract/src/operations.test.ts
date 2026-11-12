@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { Kind, parse, print, validate, visit } from "graphql";
+import { isObjectType, parse, print, validate, visit } from "graphql";
 import { describe, expect, it } from "vitest";
 import { allowlistPath, schemaPath } from "./paths.ts";
 import { buildAllowlist, fragmentMap, loadDefinitions, operationDefinitions, persistedOperations } from "./operations.ts";
@@ -39,9 +39,32 @@ describe("operations", () => {
     visit(defs, { FragmentSpread: (s) => void used.add(s.name.value) });
     expect([...fragmentMap(defs).keys()].filter((f) => !used.has(f))).toEqual([]);
   });
-  it("select no copy: the schema has no field whose job is prose", () => {
-    const s = readFileSync(schemaPath, "utf8");
-    expect(s).not.toMatch(/\b(label|sentence|explanation|caveat\w*)\s*:/i);
+  it("select no copy: every free-text String field in the schema is one of the known source-data or identifier fields", () => {
+    // A new String field is a decision: is it Romanian source data or an identifier (add it here),
+    // or prose (it belongs in the frontend's bilingual catalogue, as a slug, enum or number)?
+    const allowed = new Set([
+      "RecordFilter.q", "RecordFilter.cpv", "RecordFilter.procedure",
+      "RecordFilterEcho.qFolded", "RecordFilterValue.cpv",
+      "Provenance.url", "Provenance.via",
+      "Source.name", "DataThrough.kind", "GapCell.kind", "GapCell.quarter", "GapCell.note",
+      "Entity.displayName", "Entity.cui", "Entity.foreignVatId", "Entity.anafStatus",
+      "Placement.locality", "Alias.name",
+      "Party.publishedName", "Cpv.code", "Cpv.description",
+      "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
+      "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name", "SignalNumbers.procedure",
+      "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
+    ]);
+    const found: string[] = [];
+    for (const type of Object.values(schema.getTypeMap())) {
+      if (type.name.startsWith("__") || !isObjectType(type)) continue;
+      for (const field of Object.values(type.getFields())) {
+        if (String(field.type).replace(/[[\]!]/g, "") === "String") found.push(`${type.name}.${field.name}`);
+      }
+    }
+    expect(found.filter((f) => !allowed.has(f))).toEqual([]);
+  });
+  it("has no field whose job is prose", () => {
+    expect(readFileSync(schemaPath, "utf8")).not.toMatch(/^\s*(label|sentence|explanation|reason|caveat\w*)\s*:/im);
   });
 });
 
@@ -54,7 +77,6 @@ describe("persisted-query allowlist", () => {
       expect(o.sha256).toMatch(/^[0-9a-f]{64}$/);
       expect(print(parse(o.document))).toBe(o.document.trimEnd());
       expect(operationDefinitions(parse(o.document))).toHaveLength(1);
-      expect(parse(o.document).definitions.filter((d) => d.kind === Kind.FRAGMENT_DEFINITION).length).toBeGreaterThanOrEqual(0);
     }
   });
   it("validates every document on its own against the schema", () => {

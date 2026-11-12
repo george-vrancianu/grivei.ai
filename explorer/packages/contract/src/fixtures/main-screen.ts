@@ -1,22 +1,11 @@
 import type {
   MainScreenQuery, MainScreenQueryVariables, ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "../generated/operations.ts";
-import { dataThrough, moneyMap, ron, total, zeroTotal } from "./builders.ts";
+import { moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
 import * as w from "./world.ts";
 
-type Sources = MainScreenQuery["sources"];
-const sources: Sources = [
-  dataThrough({
-    id: "SEAP", name: "SEAP", harvested: true,
-    dataThrough: [
-      { kind: "DA", date: "2024-09-30" }, { kind: "DAN", date: "2024-09-30" },
-      { kind: "CONTRACT", date: "2024-09-30" }, { kind: "AWARD_NOTICE", date: "2024-11-30" },
-    ],
-  }),
-  dataThrough({ id: "ONRC", name: "ONRC" }),
-  dataThrough({ id: "ANI", name: "ANI" }),
-];
+const { sources } = w;
 
 const emptyFilter = { qFolded: null, authority: null, supplier: null };
 
@@ -25,7 +14,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
     name: "typical-text-county",
     kind: "typical",
     description: "q=deszapezire in Brașov, authority side: map, Go-to card absent, ranked tabs, matched field highlighted",
-    variables: { filter: { q: "deszapezire", county: "RO-BV", from: "2024-01-01" }, side: "AUTHORITY" },
+    variables: { filter: { q: "deszapezire", county: "RO-BV", from: "2024-01-01" } },
     data: {
       sources,
       seap: {
@@ -87,7 +76,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
     name: "supplier-side-unknown-county",
     kind: "typical",
     description: "county side SUPPLIER: the unknown-supplier-county bucket, a Go-to card for an exact CUI",
-    variables: { filter: { q: "30000001", countySide: "SUPPLIER" }, side: "SUPPLIER" },
+    variables: { filter: { q: "30000001", countySide: "SUPPLIER" } },
     data: {
       sources,
       seap: {
@@ -119,9 +108,9 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
         search: {
           filter: { qFolded: "contract", authority: null, supplier: null },
           total: total({ awarded: ron(60_000_000), records: 11, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
-          map: moneyMap({ national: total({ awarded: ron(52_000_000), records: 6 }), unplaced: { authorities: 1, total: total({ awarded: ron(36_000), records: 1 }) } }),
+          map: moneyMap({ national: total({ awarded: ron(52_000_000), records: 6 }), unplaced: { authorities: 1, total: total({ awarded: ron(12_000), records: 1 }) } }),
           goTo: null,
-          authorities: { count: 5, countEstimated: false, rows: [{ entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(36_000), records: 1 }) }] },
+          authorities: { count: 5, countEstimated: false, rows: [{ entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1 }) }] },
           suppliers: { count: 6, countEstimated: false, rows: [{ entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 2, noValue: 1 }) }] },
           records: { count: 11, rows: [
             w.rConsortium, w.rConsortiumNameOnly, w.rFrameworkCeiling, w.rSubsequent, w.rSuspect, w.rNoValue,
@@ -134,16 +123,16 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
   {
     name: "extreme-estimated-counts",
     kind: "extreme",
-    description: "very large numbers and HyperLogLog estimates: Total.estimated and countEstimated both true; a sum above 2^53 bani, which only survives as a string",
+    description: "very large numbers and HyperLogLog estimates: countEstimated true on both tabs; a sum above 2^53 bani, which only survives as a string",
     variables: { filter: { q: "ro" } },
     data: {
       sources,
       seap: {
         search: {
           filter: { qFolded: "ro", authority: null, supplier: null },
-          total: total({ awarded: "9007199254740993000", records: 2_400_000, suspectLeftOut: 4_100, noValue: 88_000, frameworkCeilings: ron(900_000_000_000), estimated: true }),
+          total: total({ awarded: "9007199254740993000", records: 2_400_000, suspectLeftOut: 4_100, noValue: 88_000, frameworkCeilings: ron(900_000_000_000) }),
           map: moneyMap({
-            counties: [{ area: "RO-B", name: "București", entities: 12_000, total: total({ awarded: "9007199254740993", records: 1_000_000, estimated: true }) }],
+            counties: [{ area: "RO-B", name: "București", entities: 12_000, total: total({ awarded: "9007199254740993", records: 1_000_000 }) }],
             national: total({ awarded: ron(1), records: 1 }),
           }),
           goTo: null,
@@ -158,7 +147,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
     name: "empty-no-match",
     kind: "empty",
     description: "a query nothing matches: zero totals, no tiles, no rows, no Go-to card",
-    variables: { filter: { q: "zzzzzz" }, side: "AUTHORITY" },
+    variables: { filter: { q: "zzzzzz" } },
     data: {
       sources,
       seap: {
@@ -183,7 +172,7 @@ export const zoomedCounty: FixtureSet<ZoomedCountyQuery, ZoomedCountyQueryVariab
     name: "typical-brasov",
     kind: "typical",
     description: "UAT choropleth for Brașov: some UATs bought, one is absent (grey), an unknown-UAT row",
-    variables: { filter: { county: "RO-BV" }, county: "RO-BV", side: "AUTHORITY" },
+    variables: { filter: { county: "RO-BV" }, county: "RO-BV" },
     data: {
       uats: [uat("40198", "Brașov"), uat("40302", "Codlea"), uat("40081", "Bran")],
       seap: {
@@ -219,10 +208,10 @@ export const zoomedCounty: FixtureSet<ZoomedCountyQuery, ZoomedCountyQueryVariab
     },
   },
   {
-    name: "empty-supplier-side",
+    name: "empty-county-no-purchases",
     kind: "empty",
-    description: "supplier side with nothing in the county: every UAT grey, no unknown-UAT row",
-    variables: { filter: { county: "RO-SB", countySide: "SUPPLIER" }, county: "RO-SB", side: "SUPPLIER" },
+    description: "a county where no authority bought anything in the filter: every UAT grey, no unknown-UAT row",
+    variables: { filter: { county: "RO-SB", from: "2019-01-01", to: "2019-12-31" }, county: "RO-SB" },
     data: {
       uats: [uat("143450", "Sibiu", { code: "RO-SB", name: "Sibiu" })],
       seap: { search: { total: zeroTotal, uatMap: { uats: [], unknownUat: null } } },

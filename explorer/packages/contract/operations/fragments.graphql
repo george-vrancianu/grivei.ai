@@ -39,6 +39,7 @@ fragment ProvenanceFields on Provenance {
   source
   url
   via
+  kind
   fetchedAt
 }
 
@@ -108,5 +109,22 @@ fragment EntityHeaderFields on Entity {
   foreignVatId
   identityCurated
   aliases { name records first last differsFromAnaf }
+  provenance { ...ProvenanceFields }
   seap { roles }
+}
+
+# A ranked tab of entities: the rows and whether the distinct count is an estimate.
+fragment EntityResultPageFields on EntityResultPage {
+  count
+  countEstimated
+  rows { entity { ...EntityRowFields } matched { ...TotalFields } }
+}
+
+# A page of Records, each with the text that matched the query.
+fragment RecordResultFields on RecordResultPage {
+  count
+  rows {
+    record { ...RecordRowFields }
+    matchedField { field text highlights }
+  }
 }

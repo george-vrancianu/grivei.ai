@@ -9,7 +9,7 @@ type Page = NonNullable<RecordPageQuery["seap"]["record"]>;
 
 const provenance = (o: Partial<Page["provenance"]> = {}): Page["provenance"] => ({
   source: "SEAP", url: "https://e-licitatie.ro/pub/notices/contract-notices/view/100000",
-  via: "data.gov.ro 2024 Q1 Contracte", fetchedAt: "2024-10-02T06:15:00Z", ...o,
+  via: "data.gov.ro 2024 Q1 Contracte", kind: "BULK", fetchedAt: "2024-10-02T06:15:00Z", ...o,
 });
 
 /** A Signal with the Records it consists of, as the Record page lists them. */
@@ -58,6 +58,8 @@ export const recordPage: RecordFixtures = [
     })),
   fx("suspect-value", "extreme", "a suspect value: shown, flagged by the 10x-cap rule, left out of sums", "DA12399999",
     page(w.rSuspect, { suspect: { rule: "DIRECT_PURCHASE_10X_CAP", threshold: ron(270_120) } })),
+  fx("suspect-contract-over-estimate", "extreme", "a contract of 1 bn RON or more at 100x its e-licitatie estimate: shown, flagged, left out of sums", "CAN1198888",
+    page({ ...w.rSuspect, code: "CAN1198888", kind: "CONTRACT", channel: "CONTRACT", value: ron(5_000_000_000) }, { suspect: { rule: "CONTRACT_100X_ESTIMATE", threshold: ron(40_000_000) } })),
   fx("suspect-contract-no-estimate", "extreme", "a contract above 50 bn RON with no estimate", "CAN1199999",
     page({ ...w.rSuspect, code: "CAN1199999", kind: "CONTRACT", channel: "CONTRACT", value: ron(80_000_000_000) }, { suspect: { rule: "CONTRACT_OVER_50BN", threshold: null } })),
   fx("no-value", "typical", "no value in SEAP, a no-publication Signal", "SCNA700123",
@@ -67,6 +69,6 @@ export const recordPage: RecordFixtures = [
   fx("splitting-signal", "typical", "a Record inside a splitting Signal, which lists its Records", "DA12370002",
     page(w.rSplit2, { signals: [signal(w.sSplitting, [w.rSplit1, w.rSplit2])] })),
   fx("provisional-and-mismatch", "typical", "crawled provisional with no stable public URL, plus the CUI-mismatch and name badges", "CAN1190777",
-    page({ ...w.rProvisional, badges: ["CRAWLED_PROVISIONAL", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWL_ONLY"] }, { provenance: provenance({ url: null, via: "e-licitatie crawl", fetchedAt: "2024-11-21T02:00:00Z" }) })),
+    page({ ...w.rProvisional, badges: ["CRAWLED_PROVISIONAL", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWL_ONLY"] }, { provenance: provenance({ url: null, via: null, kind: "CRAWL", fetchedAt: "2024-11-21T02:00:00Z" }) })),
   fx("not-found", "empty", "no Record under that code", "CAN0000000", null),
 ];

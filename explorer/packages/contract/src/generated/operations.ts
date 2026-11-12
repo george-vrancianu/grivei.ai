@@ -25,6 +25,12 @@ export type EntityIdentity =
   | 'CUI'
   | 'NAME_ONLY';
 
+export type GapRule =
+  | 'AWAITING_BULK_FILE'
+  | 'COUNT_BELOW_NEIGHBOURS'
+  | 'HAND_ENTERED'
+  | 'NO_PRIOR_CALL_BEFORE_BACKFILL';
+
 export type GapState =
   | 'CRAWLED_PROVISIONAL'
   | 'KNOWN_GAP'
@@ -40,6 +46,12 @@ export type MatchableField =
   | 'PUBLIC_CODE'
   | 'SUPPLIER'
   | 'TITLE';
+
+/** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (the ANAF lookup). */
+export type ProvenanceKind =
+  | 'API'
+  | 'BULK'
+  | 'CRAWL';
 
 export type RecordBadge =
   | 'CONSORTIUM_SHARE'
@@ -91,6 +103,10 @@ export type SeapRecordKind =
   | 'DA'
   | 'DAN';
 
+export type SignalOrder =
+  | 'DATE_DESC'
+  | 'VALUE_DESC';
+
 export type SignalRuleSlug =
   | 'FRAMEWORK_OVERRUN'
   | 'NO_PUBLICATION'
@@ -124,6 +140,10 @@ export type SuspectRule =
  *   UP_TO_1B     <= 1,000,000,000 1 bn RON: where contract values start being checked for suspect values
  *   OVER_1B      >  1,000,000,000
  *
+ * The counting rule checks contracts "of 1 bn RON or more"; because upper edges are
+ * inclusive, exactly 1 bn sits in UP_TO_1B. A bucket is a chip, not the rule, so the
+ * one-value difference is accepted.
+ *
  * The edges are mirrored, in bani, by VALUE_BUCKETS in the contract package.
  */
 export type ValueBucket =
@@ -147,12 +167,14 @@ export type CoveragePageQueryVariables = Exact<{
 }>;
 
 
-export type CoveragePageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { referenceSnapshot: string | null, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, reason: string | null, records: number, dataThrough: string | null }>, unplacedAuthorities: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } } };
+export type CoveragePageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { referenceSnapshot: string | null, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, rule: GapRule | null, note: string | null, records: number, dataThrough: string | null }>, unplacedAuthorities: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } } };
 
 export type EntityOverviewQueryVariables = Exact<{
   key: string | number;
   role: Role;
   filter?: RecordFilter | null | undefined;
+  signalOrder?: SignalOrder | null | undefined;
+  signalOffset?: number | null | undefined;
 }>;
 
 
@@ -161,7 +183,7 @@ export type EntityOverviewQuery = { entity: { cui: string | null, foreignVatId: 
               | { __typename: 'NoPublicationNumbers', procedure: string }
               | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
               | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
-            , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
+            , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
 
 export type EntityRecordsQueryVariables = Exact<{
   key: string | number;
@@ -173,7 +195,7 @@ export type EntityRecordsQueryVariables = Exact<{
 }>;
 
 
-export type EntityRecordsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, records: { total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, facets: { channel: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, procedure: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, year: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, signal: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, badge: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, counterparty: Array<{ entity: { key: string, displayName: string, identity: EntityIdentity }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> } }> } } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
+export type EntityRecordsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, records: { total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, facets: { channel: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, procedure: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, year: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, signal: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, badge: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, counterparty: Array<{ entity: { key: string, displayName: string, identity: EntityIdentity }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> } } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
 
 export type EntityRelationshipsQueryVariables = Exact<{
   key: string | number;
@@ -183,7 +205,7 @@ export type EntityRelationshipsQueryVariables = Exact<{
 }>;
 
 
-export type EntityRelationshipsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, wonTogether: boolean, hasSignals: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, viaDirectPurchase: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, viaContract: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, timeline: Array<{ month: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, flow: { side: CountySide, counties: Array<{ area: string, name: string, entities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, national: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, unplaced: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } | null, unknownSupplierCounty: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } | null } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
+export type EntityRelationshipsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, wonTogether: boolean, hasSignals: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, viaDirectPurchase: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, viaContract: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, timeline: Array<{ month: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, flow: { side: CountySide, counties: Array<{ area: string, name: string, entities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, national: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, unplaced: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } | null, unknownSupplierCounty: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } | null } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
 
 export type TotalFieldsFragment = { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean };
 
@@ -193,7 +215,7 @@ export type EntityRowFieldsFragment = { anafStatus: string | null, key: string, 
 
 export type PartyFieldsFragment = { naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null };
 
-export type ProvenanceFieldsFragment = { source: SourceId, url: string | null, via: string, fetchedAt: string };
+export type ProvenanceFieldsFragment = { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string };
 
 export type RecordRowFieldsFragment = { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> };
 
@@ -225,7 +247,11 @@ export type DataThroughFieldsFragment = { id: SourceId, name: string, harvested:
 
 export type RecordFacetsFieldsFragment = { channel: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, procedure: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, year: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, signal: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, badge: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, counterparty: Array<{ entity: { key: string, displayName: string, identity: EntityIdentity }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> };
 
-export type EntityHeaderFieldsFragment = { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, seap: { roles: Array<Role> }, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null };
+export type EntityHeaderFieldsFragment = { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, seap: { roles: Array<Role> }, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null };
+
+export type EntityResultPageFieldsFragment = { count: number, countEstimated: boolean, rows: Array<{ entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> };
+
+export type RecordResultFieldsFragment = { count: number, rows: Array<{ record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> };
 
 export type FullResultsAuthoritiesQueryVariables = Exact<{
   filter: RecordFilter;
@@ -257,7 +283,6 @@ export type FullResultsRecordsQuery = { seap: { search: { total: { awarded: stri
 
 export type MainScreenQueryVariables = Exact<{
   filter: RecordFilter;
-  side?: CountySide | null | undefined;
 }>;
 
 
@@ -266,7 +291,6 @@ export type MainScreenQuery = { sources: Array<{ id: SourceId, name: string, har
 export type ZoomedCountyQueryVariables = Exact<{
   filter: RecordFilter;
   county: string;
-  side?: CountySide | null | undefined;
 }>;
 
 
@@ -282,7 +306,7 @@ export type RecordPageQueryVariables = Exact<{
 }>;
 
 
-export type RecordPageQuery = { seap: { record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, contractType: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, cpv: { code: string, description: string } | null, suspect: { rule: SuspectRule, threshold: string | null } | null, provenance: { source: SourceId, url: string | null, via: string, fetchedAt: string }, framework: { ceiling: string | null, subsequentReported: string, ratio: number | null, agreement: { code: string, title: string } | null, subsequent: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> }> } | null, signals: Array<{ rule: SignalRuleSlug, date: string, firstDate: string, recordCount: number, dataThrough: string, records: Array<{ code: string, title: string, date: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge> }>, authority: { key: string, displayName: string, identity: EntityIdentity }, suppliers: Array<{ key: string, displayName: string, identity: EntityIdentity }>, numbers:
+export type RecordPageQuery = { seap: { record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, contractType: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, cpv: { code: string, description: string } | null, suspect: { rule: SuspectRule, threshold: string | null } | null, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }, framework: { ceiling: string | null, subsequentReported: string, ratio: number | null, agreement: { code: string, title: string } | null, subsequent: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug }> }> } | null, signals: Array<{ rule: SignalRuleSlug, date: string, firstDate: string, recordCount: number, dataThrough: string, records: Array<{ code: string, title: string, date: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge> }>, authority: { key: string, displayName: string, identity: EntityIdentity }, suppliers: Array<{ key: string, displayName: string, identity: EntityIdentity }>, numbers:
           | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
           | { __typename: 'NoPublicationNumbers', procedure: string }
           | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }

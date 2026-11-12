@@ -44,7 +44,9 @@ export const RECORD_FILTER_URL = {
 } as const satisfies Record<keyof RecordFilter, UrlKeySpec>;
 
 /**
- * URL state that is not part of `RecordFilter`: which result tab / entity tab is open
- * and which page of it. They shape the view, not the matching set.
+ * URL state that is not part of `RecordFilter`: which result tab / entity tab is open,
+ * which page of it, and how its rows are sorted (`order`: RecordOrder on Records lists;
+ * `signalOrder`: SignalOrder on the entity Overview). They shape the view, not the
+ * matching set, but a citation must reproduce them. Signal paging is not citable.
  */
-export const URL_ONLY_KEYS = { tab: "tab", page: "page" } as const;
+export const URL_ONLY_KEYS = { tab: "tab", page: "page", order: "order", signalOrder: "signalOrder" } as const;
