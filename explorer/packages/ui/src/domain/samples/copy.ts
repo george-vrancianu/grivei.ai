@@ -6,11 +6,14 @@ import type { EntityLinkCopy } from "../atoms/EntityLink/index.ts";
 import type { DataThroughDateCopy } from "../atoms/DataThroughDate/index.ts";
 import type { PartyNameCopy } from "../atoms/PartyName/index.ts";
 import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
+import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
+import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
+import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
   en: {
@@ -50,13 +53,59 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
   },
 };
 
+const entityHeader: Record<Locale, EntityHeaderCopy> = {
+  en: {
+    identity: {
+      cui: "CUI",
+      foreignVatId: "Foreign VAT ID",
+      nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
+      identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+    },
+    anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
+    placement: {
+      label: "Location",
+      national: "National",
+      unplaced: { label: "Unplaced", explanation: "Neither ANAF nor SEAP places this entity in a county." },
+      placedBy: (source) => `placed by ${source}`,
+    },
+    source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
+    roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+  },
+  ro: {
+    identity: {
+      cui: "CUI",
+      foreignVatId: "Cod TVA străin",
+      nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
+      identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
+    },
+    anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
+    placement: {
+      label: "Locație",
+      national: "Național",
+      unplaced: { label: "Neplasată", explanation: "Nici ANAF, nici SEAP nu plasează această entitate într-un județ." },
+      placedBy: (source) => `plasată de ${source}`,
+    },
+    source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
+    roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+  },
+};
+
+const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
+  en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+};
+
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
+
+/** Romanian count noun: "1 înregistrare", "5 înregistrări", "20 de înregistrări" (the "de" rule for 0 and 20+, except 1 to 19 mod 100). */
+const roCount = (n: number, f: string, one: string, many: string) =>
+  n === 1 ? `${f} ${one}` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} ${many}` : `${f} de ${many}`;
 
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
-        records: (n, f) => (n === 1 ? `${f} înregistrare` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} înregistrări` : `${f} de înregistrări`),
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
         noCounty: "județ necunoscut",
         entityLink: entityLink.ro,
@@ -139,6 +188,8 @@ export const sampleCopy = {
   entityLink: (locale: Locale): EntityLinkCopy => entityLink[locale],
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
+  entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
+  entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>
     locale === "ro"
       ? {
@@ -155,11 +206,41 @@ export const sampleCopy = {
           areaLabel: (name, value) => `${name}: ${value}`,
           atMost: (value) => `up to ${value}`,
         },
+  moneyLensMap: (locale: Locale): MoneyLensMapCopy => {
+    const map = sampleCopy.baseMap(locale);
+    return locale === "ro"
+      ? {
+          map: { ...map, legendTitle: "Valoare atribuită" },
+          side: { label: "Arată județele după", authority: "Autorități", supplier: "Furnizori" },
+          tiles: {
+            heading: "În afara hărții",
+            national: "Național",
+            unplaced: "Autorități neplasate",
+            unknownSupplierCounty: "Județ necunoscut al furnizorului",
+            unplacedAuthorities: (n, f) => roCount(n, f, "autoritate fără județ", "autorități fără județ"),
+            records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+            suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
+          },
+        }
+      : {
+          map: { ...map, legendTitle: "Awarded value" },
+          side: { label: "Show counties by", authority: "Authorities", supplier: "Suppliers" },
+          tiles: {
+            heading: "Off the map",
+            national: "National",
+            unplaced: "Unplaced authorities",
+            unknownSupplierCounty: "Unknown supplier county",
+            unplacedAuthorities: (n, f) => `${f} ${plural(n, "authority without a county", "authorities without a county")}`,
+            records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+            suspectLeftOut: (n, f) => `${f} ${plural(n, "suspect value left out", "suspect values left out")}`,
+          },
+        };
+  },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {
-          records: (n, f) => `${f} ${plural(n, "înregistrare", "înregistrări")}`,
-          suspectLeftOut: (n, f) => `${f} ${plural(n, "valoare suspectă exclusă", "valori suspecte excluse")}`,
+          records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+          suspectLeftOut: (n, f) => roCount(n, f, "valoare suspectă exclusă", "valori suspecte excluse"),
           noValue: (n, f) => `${f} ${plural(n, "înregistrare fără valoare", "înregistrări fără valoare")}`,
           frameworkCeilings: (amount) => `Plafoane de acorduri-cadru nenumărate: ${amount}`,
           methodology: "Cum se calculează acest total",

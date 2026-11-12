@@ -1,7 +1,8 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  DataThroughFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
-  RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, TotalFieldsFragment,
+  DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment,
+  EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
+  TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -24,3 +25,12 @@ export type MatchedField = NonNullable<RecordResult["matchedField"]>;
 export type MatchableField = MatchedField["field"];
 /** The role an entity page is opened in (the app's `/authority/...` and `/supplier/...` routes). */
 export type EntityRole = "authority" | "supplier";
+/** The Money lens's map: `seap.search.map` and the Flow lens's `flow`. */
+export type MoneyMap = MoneyMapFieldsFragment;
+
+/** What an Entity page's header shows (`EntityHeaderFields`). */
+export type EntityHeaderData = EntityHeaderFieldsFragment;
+/** The contract's `Role` (AUTHORITY | SUPPLIER) an Entity page asks for; `EntityRole` above is the lowercase URL segment. */
+export type EntityPageRole = Role;
+/** The three tabs of an Entity page; each has its own URL. */
+export type EntityPageView = "overview" | "records" | "relationships";

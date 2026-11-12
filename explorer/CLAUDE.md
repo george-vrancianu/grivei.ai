@@ -24,7 +24,7 @@ Place each component at the lowest level that fits:
 
 Components up to templates are **presentational**: they take data through props, typed from the generated GraphQL contract types, and never fetch. Only pages run queries. That is what lets every component be built and mocked on its own in the workbench, before its backend exists.
 
-Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/`, `molecules/` and `organisms/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
+Domain displays (typed from `@grivei/contract`) live in the UI library under `packages/ui/src/domain/`: `atoms/`, `molecules/`, `organisms/` and `templates/`, each in the one-folder-per-component shape below. They take every user-facing string through a typed `copy` prop (the app passes its catalogue); `domain/samples/` holds story-only sample copy and fixture picks.
 
 ## One folder per component
 
@@ -70,3 +70,7 @@ The shared map every lens builds on (Money, zoomed county, Coverage, Flow). It h
 - Extension points for lenses (the map itself stays lens-free): `colorOf(code)` overrides the numeric fill (a categorical colour; null = grey), `describeArea({code,name,value})` replaces the value text in the accessible name and default tooltip (a category name; null = the formatted value), `legend` replaces the numeric legend (a categorical one that owns its no-data swatch), `renderOverlay({ centroids, project, width, height })` draws marks (a circle per UAT, a mark per Source) inside the SVG over the areas, pointer events off. Stories: `CategoricalFill`, `OverlayCircles`.
 - Pure helpers (`createColorScale`, `featuresOf`) are exported for lenses that need the same colours elsewhere.
 - Story and test outlines are invented (`domain/samples/geo/`, built by `packages/ui/scripts/build-geo-fixtures.ts`).
+
+## The Money lens map (`domain/organisms/MoneyLensMap`)
+
+`MoneyLensMap` is the county-level Money lens on the base map. Presentational: `map: MoneyMap`, `topology`, `selected?: MapArea`, `onSelect(area)`, `side` + `onSideChange(side)` (the URL's `countySide` is the only source of the side), `locale`, `copy: MoneyLensMapCopy` (`map`, `side`, `tiles`). A county click emits its code; a tile click emits `NATIONAL`, `UNPLACED` or `UNKNOWN_SUPPLIER_COUNTY`. Counties are coloured on a linear scale from the awarded bani (colour only; every shown amount is the exact Bani string through `formatMoney`). Reusable pieces: `MapTile` (a toggle-button tile), `SideToggle`, `OffMapTiles` (National always; Unplaced and unknown-supplier-county only when the map has them), `moneyMapValues`, `totalsByCounty`.

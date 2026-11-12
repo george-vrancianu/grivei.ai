@@ -11,15 +11,9 @@ afterEach(() => window.history.replaceState(null, "", "/"));
 
 const here = () => window.location.pathname + window.location.search;
 
-/** Each route (path after the language prefix) with the heading its placeholder shows, per language. */
+/** Each placeholder route (path after the language prefix) with the heading it shows, per language. The entity pages are real: see pages/EntityPage. */
 const ROUTES = [
   { path: "search", en: catalogue.en.pages.search.title, ro: catalogue.ro.pages.search.title },
-  { path: "authority/4305857", en: catalogue.en.pages.authority.overview, ro: catalogue.ro.pages.authority.overview, detail: "4305857" },
-  { path: "authority/4305857/records", en: catalogue.en.pages.authority.records, ro: catalogue.ro.pages.authority.records, detail: "4305857" },
-  { path: "authority/4305857/relationships", en: catalogue.en.pages.authority.relationships, ro: catalogue.ro.pages.authority.relationships, detail: "4305857" },
-  { path: "supplier/name-popescu-srl", en: catalogue.en.pages.supplier.overview, ro: catalogue.ro.pages.supplier.overview, detail: "name-popescu-srl" },
-  { path: "supplier/name-popescu-srl/records", en: catalogue.en.pages.supplier.records, ro: catalogue.ro.pages.supplier.records, detail: "name-popescu-srl" },
-  { path: "supplier/name-popescu-srl/relationships", en: catalogue.en.pages.supplier.relationships, ro: catalogue.ro.pages.supplier.relationships, detail: "name-popescu-srl" },
   { path: "record/CAN1170001", en: catalogue.en.pages.record.title, ro: catalogue.ro.pages.record.title, detail: "CAN1170001" },
   { path: "coverage", en: catalogue.en.pages.coverage.title, ro: catalogue.ro.pages.coverage.title },
   { path: "methodology", en: catalogue.en.pages.methodology.title, ro: catalogue.ro.pages.methodology.title },
@@ -59,18 +53,18 @@ describe("every route renders its placeholder in both languages", () => {
 
 describe("the EN/RO switch", () => {
   it("keeps the route and its query string, both ways", async () => {
-    openAt("/explore/authority/4305857/records?q=pod&signal=splitting&page=2&tab=records");
+    openAt("/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
     render(<App client={fixtureClient().client} />);
-    expect(screen.getByTestId("language-switch")).toHaveAttribute("href", "/ro/explore/authority/4305857/records?q=pod&signal=splitting&page=2&tab=records");
+    expect(screen.getByTestId("language-switch")).toHaveAttribute("href", "/ro/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.en.language.switchLabel }));
-    expect(here()).toBe("/ro/explore/authority/4305857/records?q=pod&signal=splitting&page=2&tab=records");
-    expect(screen.getByRole("heading", { level: 1, name: catalogue.ro.pages.authority.records })).toBeInTheDocument();
+    expect(here()).toBe("/ro/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
+    expect(screen.getByRole("heading", { level: 1, name: catalogue.ro.pages.record.title })).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("ro");
 
     await userEvent.click(screen.getByRole("link", { name: catalogue.ro.language.switchLabel }));
-    expect(here()).toBe("/explore/authority/4305857/records?q=pod&signal=splitting&page=2&tab=records");
-    expect(screen.getByRole("heading", { level: 1, name: catalogue.en.pages.authority.records })).toBeInTheDocument();
+    expect(here()).toBe("/explore/record/CAN1170001?q=pod&signal=splitting&page=2&tab=records");
+    expect(screen.getByRole("heading", { level: 1, name: catalogue.en.pages.record.title })).toBeInTheDocument();
   });
 
   it("works from the main screen too", async () => {
