@@ -34,6 +34,7 @@ const store: Store = {
   searchMap: async () => ({ counties: [], national: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }, unplaced: null, unknownSupplierCounty: null }),
   searchUatMap: async () => ({ uats: [], unknownUat: null }),
   searchRecords: async () => ({ count: 0, rows: [] }),
+  goTo: async () => null,
   entity: async () => null,
   aliases: async () => [],
   roles: async () => [],

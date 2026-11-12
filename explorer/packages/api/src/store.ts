@@ -83,6 +83,8 @@ export interface RecordRow {
   crawlStatus: "PROVISIONAL" | "CRAWL_ONLY" | null;
   /** How we obtained it: BULK (a published file, `via` its title as the Source gives it) or CRAWL (`via` null); when we fetched it (ISO, UTC, from the archive); `url` is the public page a crawled Record had built at load time (null for a bulk Record: its link is the /source/seap redirect, added by the resolver). */
   provenance: { kind: "BULK" | "CRAWL"; via: string | null; fetchedAt: string; url: string | null };
+  /** The texts as the Source published them (the authority's name and the CPV), which the search document is built from: what "why it matched" highlights (#69). Absent on a stand-in row. */
+  published?: { authorityName: string | null; cpvCode: string | null; cpvDescription: string | null };
 }
 
 /** One Record for its page: the list row plus what only the page shows. */
@@ -213,6 +215,11 @@ export interface Store {
   searchEntities(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, page: { limit: number; offset: number }, options?: SearchOptions): Promise<EntityPage>;
   /** The Records tab: each matching Record once. */
   searchRecords(filter: SearchFilter, page: { limit: number; offset: number; order: RecordOrderKey }, options?: SearchOptions): Promise<{ count: number; rows: RecordRow[] }>;
+  /**
+   * The Go-to entity of a folded query (the `fold` of the reader's text): the one entity whose CUI is the query (a single
+   * number) or whose folded name is the query, and null when none or more than one does (#69).
+   */
+  goTo(qFolded: string, options?: SearchOptions): Promise<EntityRow | null>;
   /** An entity by its URL key (a CUI, `vat-<id>`, `name-<slug>` or a pinned key), or null. */
   entity(key: string): Promise<EntityRow | null>;
   /** Its spellings, most used first. */
@@ -310,6 +317,8 @@ interface RawRecord {
   counted: string | null;
   authority_key: string | null;
   authority_name: string;
+  cpv_code?: string | null;
+  cpv_description?: string | null;
   winners: unknown;
   badges: string[];
   suspect_rule: NonNullable<RecordRow["suspect"]>["rule"] | null;
@@ -325,7 +334,7 @@ const WINDOW_SQL = "($1::date IS NULL OR award_date >= $1::date) AND ($2::date I
 
 const RECORD_COLUMNS = `code, title, award_date::text AS date, kind, channel, procedure, value_bani::text AS value, counted_bani::text AS counted,
   authority_key, authority_name, winners, badges, suspect_rule, suspect_threshold_bani::text AS suspect_threshold, crawl_status,
-  via AS record_via, url, source_file_id`;
+  via AS record_via, url, source_file_id, cpv_code, cpv_description`;
 
 /** The area key of the authorities with a county but no UAT (their `authority_uat` is null). */
 const NO_UAT = "";
@@ -423,6 +432,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       badges: r.badges ?? [],
       suspect: r.suspect_rule ? { rule: r.suspect_rule, threshold: r.suspect_threshold } : null,
       crawlStatus: r.crawl_status ?? null,
+      published: { authorityName: r.authority_name ?? null, cpvCode: r.cpv_code ?? null, cpvDescription: r.cpv_description ?? null },
       provenance: {
         kind: r.record_via === "CRAWL" ? "CRAWL" : "BULK",
         via: fileOf(r.source_file_id).via,
@@ -725,6 +735,18 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
           ORDER BY quarter, array_position(ARRAY['DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE'], kind)`,
       );
       return rows as GapCellRow[];
+    },
+    async goTo(qFolded, { signal } = {}) {
+      if (!qFolded) return null;
+      // a lone number is a CUI (RO<digits> was folded to its digits) and only that (a CUI entity's key is its CUI, so the PK finds it); anything else is a folded name
+      const isCui = /^\d{2,10}$/.test(qFolded);
+      const found = await cancellableQuery<{ key: string }>(
+        pool, signal,
+        isCui ? `SELECT key FROM core.entity WHERE key = $1 AND identity = 'CUI' LIMIT 2` : `SELECT key FROM core.entity WHERE name_folded = $1 AND name_folded <> '' LIMIT 2`,
+        [qFolded],
+      );
+      if (found.rows.length !== 1) return null;
+      return (await entitiesOf([found.rows[0]!.key])).get(found.rows[0]!.key) ?? null;
     },
     async coverageAreas({ from, to }) {
       // One pass over the window's Records: an authority counts once however many Records it has. The authority's key is its CUI (= the MF CIF).
