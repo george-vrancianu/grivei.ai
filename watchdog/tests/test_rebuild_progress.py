@@ -164,7 +164,7 @@ def test_sigterm_ends_the_rebuild_command_like_a_failure(tmp_path):
         "        progress.fail(e)\n"
         "        raise\n"
         "cli.rebuild = slow\n"
-        "sys.exit(cli.main(['--archive', sys.argv[1], 'rebuild', '--db', 'postgresql://unused']))\n"
+        "sys.exit(cli.main(['--archive', sys.argv[1], 'rebuild', '--in-place', '--db', 'postgresql://unused']))\n"
     )
     status_file = tmp_path / "rebuild-progress.json"
     proc = subprocess.Popen([sys.executable, "-c", script, str(tmp_path)], cwd=watchdog, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
