@@ -1,7 +1,7 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
   DataThroughFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
-  RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, TotalFieldsFragment,
+  MoneyMapFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -24,3 +24,5 @@ export type MatchedField = NonNullable<RecordResult["matchedField"]>;
 export type MatchableField = MatchedField["field"];
 /** The role an entity page is opened in (the app's `/authority/...` and `/supplier/...` routes). */
 export type EntityRole = "authority" | "supplier";
+/** The Money lens's map: `seap.search.map` and the Flow lens's `flow`. */
+export type MoneyMap = MoneyMapFieldsFragment;

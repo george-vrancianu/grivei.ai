@@ -11,6 +11,7 @@ import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts"
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
+import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 
 const badges: Record<Locale, BadgeCopy> = {
   en: {
@@ -155,6 +156,34 @@ export const sampleCopy = {
           areaLabel: (name, value) => `${name}: ${value}`,
           atMost: (value) => `up to ${value}`,
         },
+  moneyLensMap: (locale: Locale): MoneyLensMapCopy => {
+    const map = sampleCopy.baseMap(locale);
+    return locale === "ro"
+      ? {
+          map: { ...map, legendTitle: "Valoare atribuită" },
+          side: { label: "Arată județele după", authority: "Autorități", supplier: "Furnizori" },
+          tiles: {
+            heading: "În afara hărții",
+            national: "Național",
+            unplaced: "Autorități neplasate",
+            unknownSupplierCounty: "Județ necunoscut al furnizorului",
+            unplacedAuthorities: (n, f) => `${f} ${plural(n, "autoritate fără județ", "autorități fără județ")}`,
+            records: (n, f) => `${f} ${plural(n, "înregistrare", "înregistrări")}`,
+          },
+        }
+      : {
+          map: { ...map, legendTitle: "Awarded value" },
+          side: { label: "Show counties by", authority: "Authorities", supplier: "Suppliers" },
+          tiles: {
+            heading: "Off the map",
+            national: "National",
+            unplaced: "Unplaced authorities",
+            unknownSupplierCounty: "Unknown supplier county",
+            unplacedAuthorities: (n, f) => `${f} ${plural(n, "authority without a county", "authorities without a county")}`,
+            records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+          },
+        };
+  },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {
