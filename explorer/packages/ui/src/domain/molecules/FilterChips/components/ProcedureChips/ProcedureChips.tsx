@@ -1,7 +1,7 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
-import { ToggleChip } from "../ToggleChip/index.ts";
+import { ChipGroup } from "../../../ChipGroup/index.ts";
+import { ToggleChip } from "../../../ToggleChip/index.ts";
 
 export interface ProcedureChipsProps {
   /** Procedure names as SEAP publishes them (Romanian, in both languages). */

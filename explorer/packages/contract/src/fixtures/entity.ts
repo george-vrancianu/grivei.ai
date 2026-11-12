@@ -168,6 +168,44 @@ const facetsFull = {
   badge: [],
   counterparty: [{ entity: w.hachi, matched: total({ awarded: ron(290_000), records: 2 }) }],
 };
+const facetsOfSupplier = {
+  channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(590_000), records: 3 }) }],
+  procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(590_000), records: 3 }) }],
+  year: [{ value: "2024", total: total({ awarded: ron(590_000), records: 3 }) }],
+  signal: [
+    { value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) },
+    { value: "OVER_CAP", total: total({ awarded: ron(300_000), records: 1 }) },
+  ],
+  badge: [],
+  counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(590_000), records: 3 }) }],
+};
+const facetsOfAuthority = {
+  channel: [
+    { value: "DIRECT_PURCHASE", total: total({ awarded: ron(693_400), records: 5 }) },
+    { value: "CONTRACT", total: total({ awarded: ron(12_800_000), records: 1 }) },
+  ],
+  procedure: [
+    { value: "Achiziție directă", total: total({ awarded: ron(693_400), records: 5 }) },
+    { value: "Licitație deschisă", total: total({ awarded: ron(12_800_000), records: 1 }) },
+  ],
+  year: [
+    { value: "2024", total: total({ awarded: ron(598_400), records: 4 }) },
+    { value: "2023", total: total({ awarded: ron(12_895_000), records: 2 }) },
+  ],
+  signal: [
+    { value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) },
+    { value: "OVER_CAP", total: total({ awarded: ron(300_000), records: 1 }) },
+  ],
+  badge: [
+    { value: "CUI_MISMATCH", total: total({ awarded: ron(95_000), records: 1 }) },
+    { value: "NAME_DIFFERS_FROM_ANAF", total: total({ awarded: ron(95_000), records: 1 }) },
+  ],
+  counterparty: [
+    { entity: w.hachi, matched: total({ awarded: ron(598_400), records: 4 }) },
+    { entity: w.constructii, matched: total({ awarded: ron(12_800_000), records: 1 }) },
+  ],
+};
+const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
 const noFacets = { channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] };
 
 export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
@@ -208,8 +246,93 @@ export const entityRecords: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVar
       role: "SUPPLIER" as Role,
       records: {
         total: total({ awarded: ron(590_000), records: 3 }),
-        facets: facetsFull,
+        facets: facetsOfSupplier,
         records: { count: 3, rows: [w.rDirect, w.rSplit2, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+      },
+    }) },
+  },
+  {
+    name: "supplier-signal-splitting", kind: "typical",
+    description: "a supplier's Records tab after the Splitting facet: the total and the rows follow the filter",
+    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { signal: "SPLITTING" } },
+    data: { entity: withSeap(w.hachiHeader, {
+      role: "SUPPLIER" as Role,
+      records: {
+        total: total({ awarded: ron(290_000), records: 2 }),
+        facets: { ...facetsOfSupplier, signal: [facetsOfSupplier.signal[0]!], channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
+          counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(290_000), records: 2 }) }] },
+        records: rowsOf(w.rSplit2, w.rSplit1),
+      },
+    }) },
+  },
+  {
+    name: "supplier-several-facets", kind: "typical",
+    description: "a supplier's Records tab with a year, the channel, a Signal and one authority on: the filter the panel builds by several choices",
+    variables: {
+      key: "30000001", role: "SUPPLIER", limit: 100, offset: 0,
+      filter: { from: "2024-01-01", to: "2024-12-31", channel: "DIRECT_PURCHASE", signal: "SPLITTING", authority: "4000001" },
+    },
+    data: { entity: withSeap(w.hachiHeader, {
+      role: "SUPPLIER" as Role,
+      records: {
+        total: total({ awarded: ron(290_000), records: 2 }),
+        facets: {
+          channel: [{ value: "DIRECT_PURCHASE", total: total({ awarded: ron(290_000), records: 2 }) }],
+          procedure: [{ value: "Achiziție directă", total: total({ awarded: ron(290_000), records: 2 }) }],
+          year: [{ value: "2024", total: total({ awarded: ron(290_000), records: 2 }) }],
+          signal: [{ value: "SPLITTING", total: total({ awarded: ron(290_000), records: 2 }) }],
+          badge: [],
+          counterparty: [{ entity: w.primariaBrasov, matched: total({ awarded: ron(290_000), records: 2 }) }],
+        },
+        records: rowsOf(w.rSplit2, w.rSplit1),
+      },
+    }) },
+  },
+  {
+    name: "supplier-contract-no-matches", kind: "empty",
+    description: "a supplier with no Records won through a Contract: the Contract facet is on and matches nothing (zero total, empty facets)",
+    variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { channel: "CONTRACT" } },
+    data: { entity: withSeap(w.hachiHeader, { role: "SUPPLIER" as Role, records: { total: zeroTotal, facets: noFacets, records: { count: 0, rows: [] } } }) },
+  },
+  {
+    name: "authority-default-page", kind: "typical",
+    description: "an authority's Records tab opened without a filter: facets with suppliers as the counterparties",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: {} },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(13_493_400), records: 6 }),
+        facets: facetsOfAuthority,
+        records: rowsOf(w.rContract, w.rDirect, w.rSplit1, w.rSplit2, w.rMismatch, w.rDirectSmall),
+      },
+    }) },
+  },
+  {
+    name: "authority-one-supplier", kind: "typical",
+    description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { supplier: "30000001" } },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(598_400), records: 4 }),
+        facets: { ...facetsOfAuthority, channel: [facetsOfAuthority.channel[0]!], procedure: [facetsOfAuthority.procedure[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
+        records: rowsOf(w.rDirect, w.rSplit1, w.rSplit2, w.rDirectSmall),
+      },
+    }) },
+  },
+  {
+    name: "authority-estimated-total", kind: "extreme",
+    description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 1 of many",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { to: "2030-12-31" } },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
+        facets: {
+          ...facetsOfAuthority,
+          channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
+        },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
       },
     }) },
   },
