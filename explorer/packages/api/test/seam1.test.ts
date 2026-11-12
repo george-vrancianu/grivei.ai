@@ -28,6 +28,7 @@ const fixtureArchive = join(watchdog, "tests/fixtures/archive");
 const bulkArchive = join(watchdog, "tests/fixtures/archive-bulk"); // DA + DAN: renamed headers, quirks, a quarantined file (#63)
 const contractsArchive = join(watchdog, "tests/fixtures/archive-contracts"); // Contracte + "fara anunt": recurring contract, lots, winners (#64)
 const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bulk file + crawl days: superseded, crawl-only, provisional, re-crawl, an unfinished day (#77)
+const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
@@ -76,6 +77,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(bulkArchive, join(scratch, "archive-bulk"), { recursive: true });
     cpSync(contractsArchive, join(scratch, "archive-contracts"), { recursive: true });
     cpSync(crawlArchive, join(scratch, "archive-crawl"), { recursive: true });
+    cpSync(backfillArchive, join(scratch, "archive-backfill"), { recursive: true });
     cpSync(identityArchive, join(scratch, "archive-identity"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
@@ -93,6 +95,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE contracts_b");
     await admin.query("CREATE DATABASE crawl_a");
     await admin.query("CREATE DATABASE crawl_b");
+    await admin.query("CREATE DATABASE backfill_a");
+    await admin.query("CREATE DATABASE backfill_b");
     await admin.query("CREATE DATABASE identity_a");
     await admin.query("CREATE DATABASE identity_b");
   });
@@ -358,6 +362,77 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(await snapshot("crawl_a")).toEqual(first);
     rebuild("crawl_b", "archive-crawl");
     expect(await snapshot("crawl_b")).toEqual(first);
+  });
+
+  const backfillRecord = async (code: string) => {
+    const r = await ask("backfill_a", recordPage.sha256, { code });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(recordPage.document), r.body.data, { code })).toEqual([]);
+    return (r.body.data as RecordPageQuery).seap.record;
+  };
+
+  it("loads backfilled Records into the totals with crawl provenance and the procedure type, and lets the 2023+ bulk supersede (#78)", async () => {
+    const out = rebuild("backfill_a", "archive-backfill");
+    expect(out).toContain("loaded 7 records from");
+    expect(out).toContain("skipped, incomplete"); // the 2021 week that was killed before its manifest
+
+    // 2021-22: awards without a prior call, as crawled (value as of the crawl date), counted although the bulk has no 2021-22 file of the kind
+    expect(await backfillRecord("CAN9400001")).toMatchObject({
+      kind: "AWARD_NOTICE", channel: "CONTRACT", procedure: "Negociere fara publicare prealabila", value: "350050", counted: "350050", date: "2021-04-02",
+      badges: ["CRAWL_ONLY"], winners: [{ publishedName: "AVOCATI DEMO" }],
+      provenance: { source: "SEAP", kind: "CRAWL", via: null, url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/94000011", fetchedAt: "2026-11-11T09:00:00Z" },
+    });
+    expect(await backfillRecord("CAN9400002")).toMatchObject({ procedure: "Procedura simplificata proprie", value: "5000000", provenance: { kind: "CRAWL", fetchedAt: "2026-11-11T09:00:00Z" } });
+    expect(await backfillRecord("CAN9400004")).toMatchObject({
+      kind: "AWARD_NOTICE", procedure: "Norme proprii (Anexa 2)", value: "1200000", date: "2022-12-27", provenance: { kind: "CRAWL", fetchedAt: "2026-11-12T09:00:00Z" },
+    });
+    // listed but dropped (it has a procedure), and a week without a manifest: neither is in the graph
+    expect(await backfillRecord("CAN9400003")).toBeNull();
+    expect(await backfillRecord("CAN9400003~M-1")).toBeNull();
+    expect(await backfillRecord("CAN9400009")).toBeNull();
+
+    // 2023-today pass: the bulk (fetched after the backfill) has the same identity with another value and wins; the one it lacks survives
+    // (Pass 2 only lists a week once its bulk is archived, so a Record is superseded only when a bulk file is fetched or re-uploaded later: not a selection bug.)
+    expect(await backfillRecord("CAN9300001~B-1")).toMatchObject({
+      kind: "CONTRACT", value: "15000000", counted: "15000000", badges: [], provenance: { kind: "BULK", via: "Contracte 2023 - T1", url: null },
+    });
+    expect(await backfillRecord("CAN9300002~B-2")).toMatchObject({
+      kind: "CONTRACT", value: "2000050", badges: ["CRAWL_ONLY"], provenance: { kind: "CRAWL", fetchedAt: "2026-11-11T09:00:00Z" },
+    });
+
+    // the totals count every Record once: 3 backfilled 2021-22 + the backfilled survivor + 3 bulk (the superseded one counted once)
+    const main = await ask("backfill_a", mainScreen.sha256);
+    expect(main.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), main.body.data, EMPTY_FILTER)).toEqual([]);
+    const data = main.body.data as MainScreenQuery;
+    expect(data.seap.search.total).toMatchObject({ awarded: "24280100", records: 7, noValue: 0 }); // 350050 + 5000000 + 1200000 + 2000050 + 15000000 + 30000 + 700000
+
+    // `no-publication` (#74) selects award notices by procedure type. The API has no procedure filter yet (a non-empty filter is NOT_IMPLEMENTED),
+    // so this asserts what the Records list carries for the rule to select on: the kind and the procedure, on the backfilled Records only
+    const rows = data.seap.search.records.rows.map((x) => x.record);
+    expect(rows.filter((r) => r.kind === "AWARD_NOTICE" && r.procedure === "Negociere fara publicare prealabila").map((r) => r.code)).toEqual(["CAN9400001"]);
+    expect(rows.filter((r) => r.kind === "AWARD_NOTICE").map((r) => [r.code, r.procedure]).sort()).toEqual([
+      ["CAN9300011", "Norme proprii (Anexa 2B)"], ["CAN9400001", "Negociere fara publicare prealabila"], ["CAN9400002", "Procedura simplificata proprie"],
+      ["CAN9400004", "Norme proprii (Anexa 2)"],
+    ]);
+
+    // the backfill is not the nightly crawl: no crawl day, so the data-through dates are the bulk's alone (the backfilled 2021-22 dates do not move them)
+    expect(data.sources).toEqual([{ id: "SEAP", name: "SEAP", harvested: true, dataThrough: [{ kind: "AWARD_NOTICE", date: "2023-01-05" }, { kind: "CONTRACT", date: "2023-01-06" }] }]);
+  });
+
+  it("gives identical responses after a second rebuild of the backfill archive, over it and into a fresh database (#78, ADR 0004)", async () => {
+    const codes = ["CAN9400001", "CAN9400002", "CAN9400003", "CAN9400004", "CAN9400009", "CAN9300001~B-1", "CAN9300002~B-2", "CAN9300003~B-3", "CAN9300011"];
+    const snapshot = async (db: string) => {
+      const out: unknown[] = [JSON.stringify(await ask(db, mainScreen.sha256))];
+      for (const code of codes) out.push(JSON.stringify(await ask(db, recordPage.sha256, { code })));
+      return out;
+    };
+    rebuild("backfill_a", "archive-backfill");
+    const first = await snapshot("backfill_a");
+    rebuild("backfill_a", "archive-backfill");
+    expect(await snapshot("backfill_a")).toEqual(first);
+    rebuild("backfill_b", "archive-backfill");
+    expect(await snapshot("backfill_b")).toEqual(first);
   });
 
   // ---- supplier identity (#66, ADR 0003) ----------------------------------------------------------------------------------

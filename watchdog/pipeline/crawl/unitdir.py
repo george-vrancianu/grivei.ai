@@ -27,6 +27,8 @@ from typing import Any
 from ..archive import MANIFEST, MANIFEST_VERSION, Archive, _format_time, _parse_time, sha256_of
 
 SOURCE, STREAM, KIND = "seap", "crawl", "award-notices"
+BACKFILL_KIND = "award-notices-backfill"  # #78: the one-off backfill's own kind directory: it never moves the nightly cursor (KIND's days)
+VIA = {BACKFILL_KIND: "backfill"}  # the manifest's `via` per kind (default "crawl")
 PART = ".part"
 
 
@@ -178,7 +180,7 @@ class UnitWriter:
             entries.append({"name": f.name, "sha256": sha256_of(f), "bytes": f.stat().st_size})
         manifest = {
             "version": MANIFEST_VERSION, "source": SOURCE, "stream": STREAM, "kind": self.kind, "unit": self.unit,
-            "fetchedAt": _format_time(fetched_at), "url": url, "via": "crawl", "files": entries, "crawl": extra,
+            "fetchedAt": _format_time(fetched_at), "url": url, "via": VIA.get(self.kind, "crawl"), "files": entries, "crawl": extra,
         }
         tmp = self.dir / (MANIFEST + ".tmp")
         tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

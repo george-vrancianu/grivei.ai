@@ -32,7 +32,7 @@ from .anaf import iter_companies
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
 from .crawl import KIND as CRAWL_KIND
-from .crawl.unitdir import CRAWLED_KINDS, contiguous_through as crawl_through
+from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
 from .progress import Progress
@@ -200,7 +200,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
     """
     summary.incomplete = archive.incomplete()
-    units = [u for u in archive.units() if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind == CRAWL_KIND))]
+    units = [u for u in archive.units() if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     if progress:
         progress.start(len(units), archive.root)
@@ -351,17 +351,19 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                         (number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
                          sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
-                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), o.unit.stream),
+                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream),
                     )
                     load_records(cur, number, rows, resolver)
                     summary.files_loaded += 1
                 if progress:
                     progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                        sum(len(rows) for _, rows in o.files), o.status, o.reason)
-            # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match)
+            # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
+            # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
             cur.execute(
                 """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
                        SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
+                   OR (SELECT f.stream FROM seap.source_file f WHERE f.id = r.source_file_id) = 'backfill'
                    THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
             for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
                 through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
