@@ -8,6 +8,8 @@ import * as w from "./world.ts";
 const { sources } = w;
 
 const emptyFilter = { qFolded: null, authority: null, supplier: null };
+/** Procedure names as SEAP publishes them (the chips offer these). */
+const procedureFacet = [{ value: "Achiziție directă" }, { value: "Licitație deschisă" }, { value: "Negociere fără publicare prealabilă" }];
 
 export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> = [
   {
@@ -29,6 +31,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
             national: total({ awarded: "0", records: 0 }),
           }),
           goTo: null,
+          facets: { procedure: procedureFacet },
           authorities: { count: 2, countEstimated: false, rows: [
             { entity: w.primariaBrasovRow, matched: total({ awarded: ron(1_020_000), records: 6 }) },
             { entity: w.spitalSibiuRow, matched: total({ awarded: ron(400_000), records: 3 }) },
@@ -65,6 +68,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
             unplaced: { authorities: 17, total: total({ awarded: ron(12_000_000), records: 130 }) },
           }),
           goTo: null,
+          facets: { procedure: procedureFacet },
           authorities: { count: 5_100, countEstimated: false, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }) }] },
           suppliers: { count: 41_000, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(1_800_000_000), records: 320 }) }] },
           records: { count: 410_000, rows: [{ record: w.rConsortium, matchedField: null }] },
@@ -90,6 +94,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
             unknownSupplierCounty: total({ awarded: ron(300_000), records: 1 }),
           }),
           goTo: { ...w.hachi, seap: { roles: ["SUPPLIER"] } },
+          facets: { procedure: procedureFacet },
           authorities: { count: 1, countEstimated: false, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
           suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
           records: { count: 5, rows: [{ record: w.rDirect, matchedField: { field: "CUI", text: "30000001", highlights: [[0, 8]] } }] },
@@ -110,6 +115,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
           total: total({ awarded: ron(60_000_000), records: 11, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
           map: moneyMap({ national: total({ awarded: ron(52_000_000), records: 6 }), unplaced: { authorities: 1, total: total({ awarded: ron(12_000), records: 1 }) } }),
           goTo: null,
+          facets: { procedure: procedureFacet },
           authorities: { count: 5, countEstimated: false, rows: [{ entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1 }) }] },
           suppliers: { count: 6, countEstimated: false, rows: [{ entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 2, noValue: 1 }) }] },
           records: { count: 11, rows: [
@@ -136,6 +142,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
             national: total({ awarded: ron(1), records: 1 }),
           }),
           goTo: null,
+          facets: { procedure: procedureFacet },
           authorities: { count: 66_000, countEstimated: true, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1), records: 1 }) }] },
           suppliers: { count: 240_000, countEstimated: true, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1), records: 1 }) }] },
           records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Consumabile birotică", highlights: [[0, 2]] } }] },
@@ -156,6 +163,7 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
           total: zeroTotal,
           map: moneyMap(),
           goTo: null,
+          facets: { procedure: procedureFacet },
           authorities: { count: 0, countEstimated: false, rows: [] },
           suppliers: { count: 0, countEstimated: false, rows: [] },
           records: { count: 0, rows: [] },

@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
+import { VALUE_BUCKETS } from "@grivei/contract";
 import { RECORD_BADGES, type BadgeCopy } from "@grivei/ui";
 import { catalogue } from "./index.ts";
 import type { Copy } from "./types.ts";
@@ -71,5 +72,24 @@ describe("Romanian counts", () => {
   it("puts 'de' before the noun phrase for the other counts too", () => {
     expect(catalogue.ro.total.suspectLeftOut(20, "20")).toBe("20 de valori suspecte excluse");
     expect(catalogue.ro.total.noValue(3, "3")).toBe("3 înregistrări fără valoare");
+  });
+});
+
+/** The RON edge as the copy writes it: grouped digits, or "1 bn"/"1 mld." for a billion. */
+const ron = (bani: string, locale: "en" | "ro"): string => {
+  const n = BigInt(bani) / 100n;
+  if (n === 1_000_000_000n) return locale === "en" ? "1 bn" : "1 mld.";
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, locale === "en" ? "," : ".");
+};
+
+describe.each(["en", "ro"] as const)("value bucket labels (%s)", (locale) => {
+  it("name the band's edges from VALUE_BUCKETS: lower edge (the previous bucket's) and inclusive upper edge", () => {
+    const options = catalogue[locale].filterChips.valueBucket.options;
+    VALUE_BUCKETS.forEach((edge, i) => {
+      const label = options[edge.bucket];
+      const lower = i === 0 ? null : (VALUE_BUCKETS[i - 1]?.upToBani ?? null);
+      if (lower !== null) expect(label, `${edge.bucket} lower`).toContain(ron(lower, locale));
+      if (edge.upToBani !== null) expect(label, `${edge.bucket} upper`).toContain(ron(edge.upToBani, locale));
+    });
   });
 });

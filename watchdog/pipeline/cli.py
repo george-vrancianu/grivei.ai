@@ -4,11 +4,14 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import signal
 import sys
+from pathlib import Path
 
 from .archive import Archive
 from .datagov import fetch_datagov
 from .fetch import fetch_bulk_file
+from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status
 from .rebuild import rebuild
 
 DEFAULT_ARCHIVE = os.environ.get("PIPELINE_ARCHIVE", "/archive")
@@ -21,6 +24,11 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("rebuild", help="derive the seap schema from the raw archive into the database")
     r.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
+    r.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"),
+                   help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
+
+    st = sub.add_parser("status", help="show how far a running or finished rebuild is (reads its status file)")
+    st.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help="as for rebuild")
 
     f = sub.add_parser("fetch-bulk", help="download one bulk file into the raw archive (no loading)")
     f.add_argument("--url", required=True)
@@ -37,9 +45,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.verb == "rebuild":
         if not args.db:
             parser.error("--db or DATABASE_URL is required")
-        for line in rebuild(archive, args.db).lines():
-            print(line)
+        status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
+        # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
+        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+        for line in rebuild(archive, args.db, Progress(status_file)).lines():
+            print(line, flush=True)
         return 0
+    if args.verb == "status":
+        status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
+        status = read_status(status_file)
+        if status is None:
+            print(f"no rebuild status at {status_file}")
+            return 1
+        for line in describe(status):
+            print(line)
+        return 1 if effective_state(status) in ("failed", "interrupted") else 0
     if args.verb == "fetch-bulk":
         print(fetch_bulk_file(archive, url=args.url, kind=args.kind, unit=args.unit, via=args.via))
         return 0
