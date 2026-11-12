@@ -9,3 +9,4 @@ export * from "./RecordsTab/index.ts";
 export * from "./FlowLensMap/index.ts";
 export * from "./RecordDetail/index.ts";
 export * from "./EntityOverview/index.ts";
+export * from "./RelationshipsTab/index.ts";

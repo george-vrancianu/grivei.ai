@@ -22,6 +22,7 @@ import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
+import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
@@ -441,6 +442,69 @@ const recordsTab = (locale: Locale): RecordsTabCopy => ({
   pagination: fullResults(locale).pagination,
 });
 
+const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
+  const base = { entityLink: entityLink[locale], recordRow: recordRow(locale), pagination: fullResults(locale).pagination };
+  return locale === "ro"
+    ? {
+        ...base,
+        heading: "Relații",
+        recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+        graph: {
+          label: "Graful principalelor contrapărți",
+          naturalPerson: "Persoană fizică",
+          unknown: "Contraparte neidentificată",
+          node: (p) =>
+            `${p.name}, ${p.amount}, ${p.records}; ${p.contract} prin contracte, ${p.directPurchase} prin achiziții directe` +
+            `${p.wonTogether ? "; câștigat împreună" : ""}${p.hasSignals ? "; are Semnale" : ""}${p.selected ? "; ales" : ""}`,
+          more: (n, f) => `încă ${roCount(n, f, "contraparte", "contrapărți")}`,
+          empty: "Nicio contraparte pentru filtrele alese.",
+          consortiumNote:
+            "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
+        },
+        legend: {
+          title: "Legendă", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie albastră: mai ales contracte",
+          directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
+        },
+        timeline: {
+          heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
+        },
+        panel: {
+          label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
+          total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
+        },
+      }
+    : {
+        ...base,
+        heading: "Relationships",
+        recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
+        graph: {
+          label: "Graph of the top counterparties",
+          naturalPerson: "Persoană fizică",
+          unknown: "Unidentified counterparty",
+          node: (p) =>
+            `${p.name}, ${p.amount}, ${p.records}; ${p.contract} via contracts, ${p.directPurchase} via direct purchases` +
+            `${p.wonTogether ? "; won together" : ""}${p.hasSignals ? "; has Signals" : ""}${p.selected ? "; picked" : ""}`,
+          more: (n, formatted) => `${formatted} more ${n === 1 ? "counterparty" : "counterparties"}`,
+          empty: "No counterparties for the chosen filters.",
+          consortiumNote:
+            "A consortium's money is split equally among its members, by convention; a Record's full value is on its own page.",
+        },
+        legend: {
+          title: "Legend", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Blue line: mostly contracts",
+          directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
+        },
+        timeline: {
+          heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
+        },
+        panel: {
+          label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
+          total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
+        },
+      };
+};
+
 const searchBar: Record<Locale, SearchBarCopy> = {
   en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
@@ -514,6 +578,7 @@ export const sampleCopy = {
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,
+  relationshipsTab,
   entityRow,
   recordRow,
   goTo,
