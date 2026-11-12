@@ -1,15 +1,17 @@
-// Mock fixtures: one set per persisted operation, hand-written, typed by the generated operation types
+// Mock fixtures: one set per persisted operation (hand-written, or recorded from seam 1 where recorded/ has the operation), typed by the generated operation types
 // and validated against the schema and the operation in CI (fixtures.test.ts).
 import type { Fixture } from "./types.ts";
 import { coverageLens, coveragePage } from "./coverage.ts";
-import { entityOverview, entityRecords, entityRelationships } from "./entity.ts";
+import { entityOverviewHand, entityRecords, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
 import { mainScreenHand, zoomedCounty } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
 import { recordPage } from "./record-page.ts";
+import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
+export { recordedEntityOverview } from "./recorded/entity.ts";
 export { recordedMainScreen, recordedFullResultsAuthorities, recordedFullResultsSuppliers, recordedFullResultsRecords } from "./recorded/index.ts";
 
 /**
@@ -23,7 +25,7 @@ export const fixtures = {
   FullResultsAuthorities: [...recordedFullResultsAuthorities, ...fullResultsAuthoritiesHand],
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...fullResultsRecordsHand],
-  EntityOverview: entityOverview,
+  EntityOverview: [...recordedEntityOverview, ...entityOverviewHand],
   EntityRecords: entityRecords,
   EntityRelationships: entityRelationships,
   RecordPage: recordPage,

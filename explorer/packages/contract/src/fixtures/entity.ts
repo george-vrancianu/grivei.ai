@@ -15,7 +15,14 @@ const emptyOverview = (role: Role) => ({
   procedures: [], consortia: [], frameworks: noFramework, largestRecords: [], signals: { count: 0, rows: [] },
 });
 
-export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQueryVariables> = [
+/**
+ * The EntityOverview states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityOverview.json`):
+ * 220 counterparties ("and N more"), eight spellings of one name, an ANAF status of RADIERE, a curated identity with a framework and
+ * a framework-overrun Signal, asked with a date filter.
+ * `supplier-typical` stays until #87 and #88 record the Records and Relationships tabs: it is the one entity (30000001) whose three
+ * tabs all exist as fixtures, so the tab-navigation tests (Overview -> Records) walk it.
+ */
+export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQueryVariables> = [
   {
     name: "supplier-typical", kind: "typical",
     description: "a supplier with Signals, a consortium, a framework line, aliases (one differing from ANAF) and a natural-person-free counterparty list",
@@ -39,22 +46,6 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
     }) },
   },
   {
-    name: "supplier-signals-by-value", kind: "typical",
-    description: "the Signals list ordered by RON (VALUE_DESC) and read from the first row: the over-cap Signal outranks the splitting one",
-    variables: { key: "30000001", role: "SUPPLIER", filter: {}, signalOrder: "VALUE_DESC", signalOffset: 0 },
-    data: { entity: withSeap(w.hachiHeader, {
-      role: "SUPPLIER" as Role,
-      total: total({ awarded: ron(3_400_000), records: 49 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(3_400_000), records: 49 }) }] },
-      directPurchaseShare: 1,
-      procedures: [{ value: "Achiziție directă", total: total({ awarded: ron(3_400_000), records: 49 }) }],
-      consortia: [],
-      frameworks: noFramework,
-      largestRecords: [w.rDirect],
-      signals: { count: 2, rows: [w.sOverCap, w.sSplitting] },
-    }) },
-  },
-  {
     name: "authority-both-roles", kind: "typical",
     description: "an entity that buys and sells (roles has both), identity curated, with a framework and a framework-overrun Signal",
     variables: { key: "4000002", role: "AUTHORITY", filter: { from: "2021-01-01" } },
@@ -71,22 +62,6 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
       frameworks: { count: 4, ceilings: ron(100_000_000), subsequentReported: ron(112_400_000) },
       largestRecords: [w.rConsortium, w.rSubsequent],
       signals: { count: 1, rows: [w.sFrameworkOverrun] },
-    }) },
-  },
-  {
-    name: "name-only-supplier-no-publication", kind: "typical",
-    description: "a name-only foreign supplier (identified by VAT id), one no-publication Signal, no CUI",
-    variables: { key: "vat-DE811128135", role: "SUPPLIER" },
-    data: { entity: withSeap(w.foreignFirmHeader, {
-      role: "SUPPLIER" as Role,
-      total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }) }] },
-      directPurchaseShare: 0,
-      procedures: [{ value: "Negociere fără publicare prealabilă", total: total({ awarded: "0", records: 1, noValue: 1 }) }],
-      consortia: [],
-      frameworks: noFramework,
-      largestRecords: [w.rNoValue],
-      signals: { count: 1, rows: [w.sNoPublication] },
     }) },
   },
   {
@@ -148,59 +123,6 @@ export const entityOverview: FixtureSet<EntityOverviewQuery, EntityOverviewQuery
       largestRecords: [w.rConsortium, w.rSubsequent, w.rDirect],
       signals: { count: 3, rows: [w.sFrameworkOverrun] },
     }) },
-  },
-  {
-    name: "authority-typical", kind: "typical",
-    description: "an authority placed in a county and UAT, no filter: the entity page's default Overview for an authority",
-    variables: { key: "4000001", role: "AUTHORITY", filter: {} },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
-      ...emptyOverview("AUTHORITY"),
-      total: total({ awarded: ron(2_800_000), records: 40 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.hachi, naturalPerson: false, total: total({ awarded: ron(2_800_000), records: 40 }) }] },
-      largestRecords: [w.rDirect],
-    }) },
-  },
-  {
-    name: "both-roles-supplier-side", kind: "typical",
-    description: "the entity that buys and sells, read as a supplier (no filter): the role switch's other side",
-    variables: { key: "4000002", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.cnairHeader, {
-      ...emptyOverview("SUPPLIER"),
-      total: total({ awarded: ron(1_500_000), records: 3 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(1_500_000), records: 3 }) }] },
-    }) },
-  },
-  {
-    name: "name-only-supplier-no-filter", kind: "typical",
-    description: "the name-only foreign supplier read with an empty filter, as the page asks for it",
-    variables: { key: "vat-DE811128135", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.foreignFirmHeader, {
-      ...emptyOverview("SUPPLIER"),
-      total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }),
-      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.spitalSibiu, naturalPerson: false, total: total({ awarded: ron(2_250_000), records: 3, noValue: 1 }) }] },
-    }) },
-  },
-  {
-    name: "unplaced-authority", kind: "empty",
-    description: "an authority neither ANAF nor SEAP places in a county (Unplaced), with no Records in the filter",
-    variables: { key: "4000005", role: "AUTHORITY", filter: {} },
-    data: { entity: withSeap(w.autoritateNeplasataHeader, emptyOverview("AUTHORITY")) },
-  },
-  {
-    name: "unknown-key-no-filter", kind: "empty", description: "no entity under that key, asked with an empty filter as the page does",
-    variables: { key: "name-does-not-exist", role: "SUPPLIER", filter: {} },
-    data: { entity: null },
-  },
-  {
-    name: "role-without-records-in-filter", kind: "empty",
-    description: "the entity exists, but the side-panel filter matches none of its Records: zero totals, no counterparties, no Signals",
-    variables: { key: "4000001", role: "AUTHORITY", filter: { from: "2019-01-01", to: "2019-12-31" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, emptyOverview("AUTHORITY")) },
-  },
-  {
-    name: "unknown-key", kind: "empty", description: "no entity under that key: the page shows not-found",
-    variables: { key: "name-does-not-exist", role: "SUPPLIER" },
-    data: { entity: null },
   },
 ];
 

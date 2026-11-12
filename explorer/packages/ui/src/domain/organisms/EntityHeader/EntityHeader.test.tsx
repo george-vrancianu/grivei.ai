@@ -5,6 +5,7 @@ import { sampleCopy } from "../../samples/copy.ts";
 import {
   authorityHeader,
   bothRolesHeader,
+  curatedEntity,
   deregisteredHeader,
   nameOnlySupplierHeader,
   supplierHeader,
@@ -32,9 +33,9 @@ function show(entity: EntityHeaderData, role: EntityPageRole, locale: Locale = "
 describe("EntityHeader", () => {
   it("shows an authority's name as the heading, its CUI and where it is placed", () => {
     show(authorityHeader, "AUTHORITY");
-    expect(screen.getByRole("heading", { level: 1, name: "MUNICIPIUL BRAȘOV" })).toBeVisible();
-    expect(screen.getByText("4000001")).toBeVisible();
-    expect(screen.getByText("Brașov, Brașov")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "COMUNA SANPETRU" })).toBeVisible();
+    expect(screen.getByText("51000005")).toBeVisible();
+    expect(screen.getByText("Sânpetru, Brașov")).toBeVisible();
     expect(screen.getByText("(placed by ANAF)")).toBeVisible();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
@@ -43,15 +44,15 @@ describe("EntityHeader", () => {
     show(nameOnlySupplierHeader, "SUPPLIER");
     expect(screen.getByText("Identified by name only")).toBeVisible();
     expect(screen.getByText("Foreign VAT ID")).toBeVisible();
-    expect(screen.getByText("DE811128135")).toBeVisible();
+    expect(screen.getByText("BG103029862")).toBeVisible();
     expect(screen.queryByText("CUI")).not.toBeInTheDocument();
-    expect(screen.getByText("Name and status from SEAP, fetched 1 October 2024")).toBeVisible();
+    expect(screen.getByText("Name and status from SEAP, fetched 15 September 2023")).toBeVisible();
   });
 
   it("says it in Romanian", () => {
     show(nameOnlySupplierHeader, "SUPPLIER", "ro");
     expect(screen.getByText("Identificat doar după denumire")).toBeVisible();
-    expect(screen.getByText("Denumire și stare de la SEAP, preluate la 1 octombrie 2024")).toBeVisible();
+    expect(screen.getByText("Denumire și stare de la SEAP, preluate la 15 septembrie 2023")).toBeVisible();
   });
 
   it("badges an ANAF status that is not active, and a CUI supplier in good standing gets no badge", () => {
@@ -63,7 +64,7 @@ describe("EntityHeader", () => {
   });
 
   it("marks a curated identity", () => {
-    show(bothRolesHeader, "SUPPLIER");
+    show(curatedEntity, "SUPPLIER"); // curation needs an override file the recorded archives do not carry: the hand fixture
     expect(screen.getByText("Identity curated")).toBeVisible();
     expect(screen.getByText("National")).toBeVisible();
   });

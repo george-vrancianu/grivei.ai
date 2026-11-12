@@ -76,14 +76,18 @@ function headerOf(set: EntityHeaderFixtureSet, name: string): EntityHeaderData {
   if (!entity) throw new Error(`Fixture ${name} has no entity`);
   return entity;
 }
-/** An authority placed in a county and UAT. */
-export const authorityHeader = headerOf(fixtures.EntityOverview, "authority-typical");
+/** An authority placed in a county and UAT (recorded). */
+export const authorityHeader = headerOf(fixtures.EntityOverview, "authority-placed-in-uat");
 /** A supplier with CUI, aliases and ANAF provenance. */
-export const supplierHeader = headerOf(fixtures.EntityOverview, "supplier-typical");
-/** Buys and sells: roles has both, national placement, identity curated. */
-export const bothRolesHeader = headerOf(fixtures.EntityOverview, "both-roles-supplier-side");
+export const supplierHeader = headerOf(fixtures.EntityOverview, "supplier");
+/** Buys and sells: roles has both (recorded, the supplier page). */
+export const bothRolesHeader = headerOf(fixtures.EntityOverview, "both-roles-supplier-page");
+/** Identity curated and placed nationally (a hand fixture: no archive carries an identity-override file). */
+export const curatedHeader = headerOf(fixtures.EntityOverview, "authority-both-roles");
+/** An authority placed nationally, not in a county (recorded). */
+export const nationalAuthorityHeader = headerOf(fixtures.EntityOverview, "national-authority");
 /** A foreign supplier identified by VAT id, not placed, with SEAP as its source. */
-export const nameOnlySupplierHeader = headerOf(fixtures.EntityOverview, "name-only-supplier-no-filter");
+export const nameOnlySupplierHeader = headerOf(fixtures.EntityOverview, "foreign-vat-supplier");
 /** A deregistered supplier (ANAF status RADIERE). */
 export const deregisteredHeader = headerOf(fixtures.EntityOverview, "deregistered-supplier-extreme-concentration");
 /** An authority neither ANAF nor SEAP places in a county. */
@@ -163,18 +167,18 @@ const overviewOf = (name: string) => {
   const entity = named(fixtures.EntityOverview, name).data.entity!;
   return { overview: entity.seap.role as EntityOverviewData, aliases: entity.aliases as EntityAliases };
 };
-/** An authority with one counterparty, no Signals, a Total with no caveats. */
-export const authorityOverview = overviewOf("authority-typical");
+/** An authority with five counterparties (a natural person among them), consortia, a framework line, a Total that left things out, no Signals (recorded). */
+export const authorityOverview = overviewOf("authority");
 /** An authority with 220 counterparties (four rows sent, one a natural person), a consortium and a framework line. */
 export const authorityManyCounterpartiesOverview = overviewOf("authority-many-counterparties");
-/** A supplier with Signals, a consortium, a Total that left things out and aliases (one differing from ANAF). */
-export const supplierOverview = overviewOf("supplier-typical");
+/** A supplier with Signals, a consortium and a Total that left things out (recorded). */
+export const supplierOverview = overviewOf("supplier-with-signals");
 /** A supplier SEAP spells eight ways, no Signals. */
 export const manyAliasesOverview = overviewOf("supplier-many-aliases");
-/** An authority with nothing in the filter. */
-export const emptyOverview = overviewOf("unplaced-authority");
-/** A name-only foreign supplier whose one Record has no value. */
-export const nameOnlyOverview = overviewOf("name-only-supplier-no-filter");
+/** An authority with nothing in the filter (recorded). */
+export const emptyOverview = overviewOf("authority-nothing-in-filter");
+/** A name-only supplier (no tax id published), one counterparty (recorded). */
+export const nameOnlyOverview = overviewOf("name-only-supplier");
 
 // ---- the Relationships tab (`EntityRelationships` and `EntityRecords` fixtures) ----------------------------------
 

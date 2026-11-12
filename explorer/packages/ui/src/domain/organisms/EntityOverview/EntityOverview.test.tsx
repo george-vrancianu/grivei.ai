@@ -31,15 +31,15 @@ describe("the Overview tab", () => {
   it("shows the headline numbers of a supplier", () => {
     show(supplierOverview, "supplier");
     const headline = screen.getByRole("list", { name: "Headline numbers" });
-    expect(within(headline).getByText("RON 3,400,000")).toBeVisible();
-    expect(within(headline).getByText("The largest holds 82% of the total")).toBeVisible();
-    expect(within(headline).getByText("64%")).toBeVisible();
+    expect(within(headline).getByText("RON 5,761,440")).toBeVisible();
+    expect(within(headline).getByText("The largest holds 66.7% of the total")).toBeVisible();
+    expect(within(headline).getByText("93.6%")).toBeVisible();
     expect(within(headline).getByText("1 suspect value left out")).toBeVisible();
   });
 
   it("puts the Signals the slot holds under a heading with their count, and says so when there are none", () => {
     show(supplierOverview, "supplier", "en", <p>the cards</p>);
-    expect(screen.getByRole("heading", { name: "Signals (2)" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Signals (6)" })).toBeVisible();
     expect(screen.getByText("the cards")).toBeVisible();
   });
 

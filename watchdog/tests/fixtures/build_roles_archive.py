@@ -155,8 +155,30 @@ def build_edge() -> None:
     entries = [anaf_entry(int(cui), name) for name, cui in companies]
     archive_batch(a, [int(cui) for _, cui in companies], date(2026, 11, 2), anaf_response(entries, []), at(2026, 11, 2, 8))
 
+OUT_NAMES = Path(__file__).parent / "archive-roles-names"
+LOCAL = ("FURNIZOR LOCAL SRL", "")  # published with a name and no tax id: a name-only supplier (`name-furnizor-local-srl`)
+BALKAN = ("BALKAN DEMO OOD", "BG103029862")  # a foreign VAT id: a name-only supplier keyed `vat-bg103029862`
+
+
+def build_names() -> None:
+    """`archive-roles-names/` (ticket #86): one more DA quarter, merged onto `archive-roles` to give the commune (1000009) name-only suppliers.
+
+      DA96200001  commune -> FURNIZOR LOCAL SRL (no tax id)        2023-04-10  12,000 RON
+      DA96200002  commune -> FURNIZOR LOCAL SRL                    2023-05-02   8,000
+      DA96200003  commune -> BALKAN DEMO OOD (VAT id BG103029862)  2023-05-20  30,000
+    """
+    if OUT_NAMES.exists():
+        shutil.rmtree(OUT_NAMES)
+    a = Archive(OUT_NAMES)
+    das = [da("DA96200001", "2023-04-10", "12000", COMUNA, LOCAL), da("DA96200002", "2023-05-02", "8000", COMUNA, LOCAL),
+           da("DA96200003", "2023-05-20", "30000", COMUNA, BALKAN)]
+    a.write_unit(source="seap", stream="bulk", kind="da", unit="2023Q2", fetched_at=at(2023, 9, 15),
+                 files={"raport-achizitii-directe-t2-2023.csv": ("\n".join([DA_HEADER, *das]) + "\n").encode()},
+                 via="Achizitii directe 2023 - T2", url="https://data.gov.ro/fixture/raport-achizitii-directe-t2-2023.csv")
+
 
 if __name__ == "__main__":
     build()
     build_edge()
-    print(f"wrote {OUT} and {OUT_EDGE}")
+    build_names()
+    print(f"wrote {OUT}, {OUT_EDGE} and {OUT_NAMES}")

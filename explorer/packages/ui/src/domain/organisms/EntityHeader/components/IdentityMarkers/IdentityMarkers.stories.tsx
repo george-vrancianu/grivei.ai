@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
-import { bothRolesHeader, nameOnlySupplierHeader, supplierHeader } from "../../../../samples/fixtureData.ts";
+import { curatedHeader, nameOnlySupplierHeader, supplierHeader } from "../../../../samples/fixtureData.ts";
 import { IdentityMarkers } from "./index.ts";
 
 const meta = { title: "Domain/EntityHeader/IdentityMarkers", component: IdentityMarkers } satisfies Meta<Record<string, unknown>>;
@@ -12,5 +12,5 @@ const markers = (entity: typeof supplierHeader): Story => ({
 });
 
 export const Cui = markers(supplierHeader);
-export const Curated = markers(bothRolesHeader);
+export const Curated = markers(curatedHeader);
 export const NameOnlyWithForeignVatId = markers(nameOnlySupplierHeader);
