@@ -2,7 +2,7 @@
 // shown with the same invented world every screen uses. Nothing here ships in the app.
 import { fixtures } from "@grivei/contract/fixtures";
 import type { RecordFilter } from "@grivei/contract";
-import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordPageData, RecordsTabData } from "../types.ts";
+import type { Party, Total, EntityRef, DataThrough, RecordBadge, EntityHeaderData, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsTimeline, CounterpartyRecordsData } from "../types.ts";
 
 function named<T extends { name: string }>(set: readonly T[], name: string): T {
   const found = set.find((fixture) => fixture.name === name);
@@ -157,3 +157,39 @@ export const everyBadgePage: RecordPageData = {
   ...provisionalPage,
   badges: ["FRAMEWORK_CEILING", "SUBSEQUENT_CONTRACT", "CONSORTIUM_SHARE", "SUSPECT_VALUE", "NO_VALUE", "CUI_MISMATCH", "NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED", "CRAWLED_PROVISIONAL", "CRAWL_ONLY"],
 };
+
+// ---- the Relationships tab (`EntityRelationships` and `EntityRecords` fixtures) ----------------------------------
+
+type RelationshipsSample = {
+  entity: EntityHeaderData;
+  counterparties: RelationshipsCounterparties;
+  timeline: RelationshipsTimeline;
+};
+function relationships(name: string): RelationshipsSample {
+  const entity = named(fixtures.EntityRelationships, name).data.entity!;
+  const role = entity.seap.role!;
+  return { entity, counterparties: role.counterparties, timeline: role.timeline };
+}
+const panelOf = (name: string): CounterpartyRecordsData => {
+  const { total, records } = recordsOf(name);
+  return { total, records };
+};
+/** An authority with seven counterparties shown of twelve: contracts, direct purchases, a mix, a Signal ring and a natural person. */
+export const authorityTypicalRelationships = relationships("authority-typical-view");
+/** The same tab with the contract supplier picked: its months. */
+export const authorityTypicalPickedTimeline = named(fixtures.EntityRelationships, "authority-typical-picked").data.entity!.seap.role!.timeline;
+/** Records with that contract supplier (authority 4000001, supplier 30000002). */
+export const authorityPickedPanel = panelOf("authority-one-supplier-contract");
+/** Records with the direct-purchase supplier (authority 4000001, supplier 30000001): four Records. */
+export const authorityDirectSupplierPanel = panelOf("authority-one-supplier");
+/** An authority with a single counterparty. */
+export const oneCounterpartyRelationships = relationships("authority-one-counterparty");
+/** A supplier that mostly bids in consortia: many won-together edges. */
+export const consortiumHeavyRelationships = relationships("supplier-consortium-heavy");
+/** An authority whose only counterparty is a natural person. */
+export const naturalPersonRelationships = relationships("authority-natural-person-only");
+/** A supplier with one authority, picked: its months and Records. */
+export const supplierPickedRelationships = relationships("supplier-picked-authority");
+export const supplierPickedPanel = panelOf("supplier-one-authority");
+/** No counterparties at all. */
+export const emptyRelationships = relationships("no-relationships");

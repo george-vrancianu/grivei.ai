@@ -4,5 +4,5 @@ export * from "./atoms/index.ts";
 export * from "./molecules/index.ts";
 export * from "./organisms/index.ts";
 export * from "./templates/index.ts";
-export type { EntityHeaderData, EntityPageRole, EntityPageView, RecordPageData, RecordsTabData } from "./types.ts";
+export type { EntityHeaderData, EntityPageRole, EntityPageView, RecordPageData, RecordsTabData, RelationshipsCounterparties, RelationshipsCounterparty, RelationshipsTimeline, CounterpartyRecordsData } from "./types.ts";
 export { followLink } from "./utils/followLink.ts";

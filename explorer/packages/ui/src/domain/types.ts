@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, EntityRecordsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   TotalFieldsFragment,
 } from "@grivei/contract";
@@ -51,6 +51,15 @@ export type SourceInfo = CoverageLens["sources"][number];
 export type RecordsTabData = NonNullable<NonNullable<EntityRecordsQuery["entity"]>["seap"]["role"]>["records"];
 /** The Records tab's facet counts. */
 export type RecordFacetData = RecordsTabData["facets"];
+
+/** What the Relationships tab's graph shows (`EntityRelationships`): the role's `counterparties` (the top 30 by money, with their count and top share). */
+export type RelationshipsCounterparties = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["counterparties"];
+/** One counterparty of the graph: the Entity (null for a natural person or an unlinked winner), its money by channel and its markers. */
+export type RelationshipsCounterparty = RelationshipsCounterparties["rows"][number];
+/** The tab's monthly timeline (`timeline`): one Total per month, "YYYY-MM". */
+export type RelationshipsTimeline = NonNullable<NonNullable<EntityRelationshipsQuery["entity"]>["seap"]["role"]>["timeline"];
+/** The Records with the picked counterparty: the `total` and `records` of an `EntityRecords` result filtered to that counterparty. */
+export type CounterpartyRecordsData = Pick<RecordsTabData, "total" | "records">;
 
 /** A Record as its page shows it (`RecordPage`'s `seap.record`, never null here). */
 export type RecordPageData = NonNullable<RecordPageQuery["seap"]["record"]>;
