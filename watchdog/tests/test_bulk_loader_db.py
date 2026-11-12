@@ -89,7 +89,7 @@ def test_the_fixture_archive_loads_da_and_dan_and_the_same_file_twice_changes_no
         assert c.execute("SELECT count(*) FROM seap.search").fetchone() == (13,)
         assert c.execute("SELECT load_notes FROM seap.record WHERE code = 'DAN9100022'").fetchone() == (["value:scientific_notation", "supplier_cui:scientific_notation"],)
         # DAN9100002 is in two quarters' files: it is there once, from the first
-        assert c.execute("SELECT count(*), min(source_file_id) FROM seap.record WHERE code = 'DAN9100002'").fetchone()[0] == 1
+        assert c.execute("SELECT count(*), min(source_file_id) FROM seap.record WHERE code = 'DAN9100002'").fetchone() == (1, 3)
     first = _dump(db)
     # the very same files again, as a re-upload on a later day (a new fetch of the same unit)
     for kind, unit, day in (("dan", "2024Q1", "2024-06-20"), ("dan", "2025Q1", "2025-06-20")):

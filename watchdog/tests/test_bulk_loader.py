@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from datetime import datetime, timezone
+
 from pipeline.archive import Archive
 from pipeline.bulk import InvalidFile, parse_file
 from pipeline.bulk.headers import DAN, DA, norm_header, resolve
@@ -230,3 +232,29 @@ def test_cui_is_a_clean_digit_string(cell, expected):
 @pytest.mark.parametrize("cell, expected", [("03/28/2022", date(2022, 3, 28)), ("01/02/2024 22:03:37", date(2024, 1, 2)), ("2024-01-02T10:00:00Z", date(2024, 1, 2)), (45658.6, date(2025, 1, 1)), ("", None)])
 def test_dates(cell, expected):
     assert to_date(cell) == expected
+
+
+# ---- fixes from review ---------------------------------------------------------------------------------------------
+
+
+def test_a_stray_form_feed_or_nel_inside_a_da_field_does_not_split_the_line(archive, tmp_path):
+    _, da22 = _file(archive, "da", "2022Q1")
+    f = tmp_path / "x.csv"
+    f.write_text(da22.read_text(encoding="utf-8").replace("Hartie A4", "Hartie\x0c A4\x85 alba"), encoding="utf-8", newline="")
+    rows = {r.code: r for r in parse_file("da", "2022Q1", f)}
+    assert rows["DA91000001"].title == "Hartie\x0c A4\x85 alba" and len(rows) == 4
+
+
+def test_a_unit_that_fails_leaves_its_files_free_to_load_from_a_later_unit(tmp_path):
+    a = Archive(tmp_path / "a")
+    t = lambda m: datetime(2024, m, 1, 9, tzinfo=timezone.utc)
+    _, good = _file(Archive(FIXTURE), "dan", "2024Q1")
+    head = good.read_text(encoding="utf-8").splitlines()[0]
+    first = good.read_bytes()
+    # one unit holding two files, the second bad: the whole unit is quarantined ...
+    a.write_unit(source="seap", stream="bulk", kind="dan", unit="2024Q1", fetched_at=t(5), files={"a.csv": first, "b.csv": (head + "\nonly,three,fields\n").encode()}, via="v")
+    # ... so the same bytes as its first file, in a later unit, still load
+    a.write_unit(source="seap", stream="bulk", kind="dan", unit="2024Q1", fetched_at=t(6), files={"a.csv": first}, via="v")
+    p = plan(a)
+    assert len(p.summary.quarantined) == 1 and p.summary.duplicate_files == []
+    assert [(u.fetched_at.month, name) for u, name, _ in p.files] == [(6, "a.csv")]

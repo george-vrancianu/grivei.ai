@@ -108,24 +108,29 @@ def parse_file(kind: str, unit: str, path: Path) -> list[BulkRecord]:
     """Read and validate one file of `kind` ('da', 'dan') from quarter `unit`. Raises InvalidFile; never a partial result."""
     spec = KINDS[kind]
     header, rows = read_file(path)
-    columns = headers.resolve(spec.table, spec.label, unit, header)
+    try:
+        columns = headers.resolve(spec.table, spec.label, unit, header)
 
-    seen: set[BulkRecord] = set()
-    by_code: dict[str, BulkRecord] = {}
-    for number, cells in rows:
-        if len(cells) != len(columns):
-            raise InvalidFile(f"line {number}: {len(cells)} fields, expected {len(columns)}", [f"line {number}: {len(cells)} fields, expected {len(columns)}"])
-        fields = {c: cell for c, cell in zip(columns, cells) if c}
-        try:
-            record = spec.build(spec.label, fields)
-        except ValueError as e:
-            raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
-        if record in seen:  # an exact duplicate row
-            continue
-        seen.add(record)
-        earlier = by_code.get(record.code)
-        if earlier is None or record.published_on >= earlier.published_on:
-            by_code[record.code] = record
-    if not by_code:
-        raise InvalidFile("no data rows")
+        seen: set[BulkRecord] = set()
+        by_code: dict[str, BulkRecord] = {}
+        for number, cells in rows:
+            if len(cells) != len(columns):
+                raise InvalidFile(f"line {number}: {len(cells)} fields, expected {len(columns)}", [f"line {number}: {len(cells)} fields, expected {len(columns)}"])
+            fields = {c: cell for c, cell in zip(columns, cells) if c}
+            try:
+                record = spec.build(spec.label, fields)
+            except ValueError as e:
+                raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
+            if record in seen:  # an exact duplicate row
+                continue
+            seen.add(record)
+            earlier = by_code.get(record.code)
+            if earlier is None or record.published_on >= earlier.published_on:
+                by_code[record.code] = record
+        if not by_code:
+            raise InvalidFile("no data rows")
+    finally:
+        close = getattr(rows, "close", None)
+        if close:
+            close()  # an XLSX workbook is an open file
     return list(by_code.values())

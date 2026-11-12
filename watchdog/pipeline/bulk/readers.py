@@ -8,15 +8,17 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable
 
 from .errors import InvalidFile
 from .values import Cell
 
+_LINE_BREAK = re.compile(r"\r\n|\n|\r")
 Header = list[str]
-Rows = Iterator[tuple[int, list[Cell]]]  # (line or row number in the file, cells)
+Rows = Iterable[tuple[int, list[Cell]]]  # may have a close()  # (line or row number in the file, cells)
 
 
 def split_pipe_row(line: str, expected: int | None = None) -> list[str]:
@@ -78,7 +80,7 @@ def _read_csv(path: Path) -> tuple[Header, Rows]:
     if not content.strip():
         raise InvalidFile("empty file")
     if content.lstrip().startswith("|"):
-        lines = [ln for ln in content.splitlines() if ln.strip()]
+        lines = [ln for ln in _LINE_BREAK.split(content) if ln.strip()]  # not splitlines(): it also splits on \x0c, \x85, \u2028...
         try:
             header = split_pipe_row(lines[0])
         except ValueError as e:
@@ -130,9 +132,25 @@ def _read_xlsx(path: Path) -> tuple[Header, Rows]:
         width -= 1  # trailing blank header cells are not columns
     header = [str(c).strip() if c is not None else "" for c in first[:width]]
 
-    def xlsx_rows() -> Rows:
+    return header, _XlsxRows(workbook, raw, width)
+
+
+class _XlsxRows:
+    """The data rows of an open read-only workbook. `close()` releases the file even if iteration never started."""
+
+    def __init__(self, workbook, raw, width: int) -> None:
+        self._workbook, self._raw, self._width = workbook, raw, width
+
+    def __iter__(self) -> Rows:
+        return self._rows()
+
+    def close(self) -> None:
+        self._workbook.close()
+
+    def _rows(self) -> Rows:
+        width = self._width
         try:
-            for number, row in enumerate(raw, start=2):
+            for number, row in enumerate(self._raw, start=2):
                 cells = list(row)
                 if all(c is None or (isinstance(c, str) and not c.strip()) for c in cells):
                     continue
@@ -141,6 +159,4 @@ def _read_xlsx(path: Path) -> tuple[Header, Rows]:
                     raise InvalidFile(f"row {number}: {len(cells)} cells, header has {width}", [f"row {number}: wider than the header"])
                 yield number, cells[:width] + [None] * (width - len(cells))
         finally:
-            workbook.close()
-
-    return header, xlsx_rows()
+            self.close()
