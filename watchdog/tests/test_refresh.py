@@ -71,6 +71,8 @@ class FakeImpl:
     def datagov(self): return self._step("datagov")
     def anaf(self): return self._step("anaf")
     def load(self): return self._step("load")
+    def backup(self): return StepResult({"n": 1})  # not recorded in `ran`: the tests of the other steps list those
+    def pgdump(self): return StepResult({"n": 1})
 
 
 @pytest.fixture
@@ -112,7 +114,7 @@ def test_a_first_run_runs_every_step_in_order_crawl_datagov_anaf_load_and_pings_
     assert (result.status, result.exit_code) == ("ok", 0)
     assert impl.ran == ["crawl", "datagov", "anaf", "load"]  # ANAF before the load: the load reads the archived answers
     assert pings.urls == ["https://hc.example/ping/abc"]  # a success ping, not /fail
-    assert "4 step(s) ran" in pings.calls[0][1]
+    assert "6 step(s) ran" in pings.calls[0][1]
 
 
 def test_a_duplicate_trigger_finds_nothing_due_and_still_pings_success(go, impl, clock, pings):
@@ -156,7 +158,7 @@ def test_the_ledger_records_each_step_with_times_counts_and_the_archive_paths_it
     go()
     run = Ledger(archive.root / "refresh-ledger.json").runs[-1]
     crawl = run["steps"][0]
-    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "anaf", "load"])
+    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "anaf", "load", "backup", "pgdump"])
     assert crawl["status"] == "ok" and crawl["counts"] == {"n": 1} and crawl["ended"] and crawl["touched"] == ["crawl/s/k/u1/2026-11-12"]
 
 
@@ -275,7 +277,7 @@ def test_a_suspicious_success_loads_and_warns_in_the_success_ping(go, impl, ping
     assert result.status == "ok" and result.alert is None
     assert pings.urls == ["https://hc.example/ping/abc"]  # not /fail
     assert "suspicious success" in pings.calls[0][1] and "load: quarantined" in pings.calls[0][1]
-    assert Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"][-1]["warnings"]
+    assert next(st for st in Ledger(archive.root / "refresh-ledger.json").runs[-1]["steps"] if st["name"] == "load")["warnings"]
 
 
 def test_no_healthcheck_url_means_no_pings_and_a_log_line(archive, impl, clock, caplog):
@@ -342,6 +344,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "rebuild", fake_rebuild)
     monkeypatch.setenv("PIPELINE_CRAWL_START", (today - timedelta(days=3)).isoformat())
     monkeypatch.setenv("PIPELINE_CRAWL_DELAY", "0")
+    monkeypatch.setenv("PIPELINE_REBUILD_IN_PLACE", "1")  # the fake rebuild has no database to switch
     monkeypatch.delenv("PIPELINE_HEALTHCHECK_URL", raising=False)
     return eli, loads, day
 
@@ -366,7 +369,7 @@ def test_refresh_at_the_cli_crawls_loads_and_status_shows_runs_cursor_data_throu
     assert f"crawl cursor: {yesterday}" in status
     assert "data through (as of this rebuild): CONTRACT 2026-11-10, DA 2022-06-30" in status
     assert "quarantine: 1 open" in status and "seap/bulk/da/2022Q2" in status and "header mismatch (fixture)" in status
-    assert "refresh: due now: nothing" in status
+    assert "refresh: due now: backup" in status and "pgdump" in status  # not configured here (no RESTIC_REPOSITORY): due until it is, nothing else is
 
 
 def test_refresh_without_a_database_is_a_deterministic_failure_that_pings_fail(cli_world, archive, monkeypatch, capsys):
@@ -490,3 +493,17 @@ def test_rebuild_and_load_quarter_refuse_to_run_while_a_refresh_holds_the_lock(c
         assert cli.main(["--archive", str(archive.root), "rebuild", "--db", "postgresql://x/y"]) == 1
         assert cli.main(["--archive", str(archive.root), "load-quarter", "2022Q2", "--db", "postgresql://x/y"]) == 1
     assert loads == [] and "holds the archive's lock" in capsys.readouterr().err
+
+
+def test_rollback_and_cleanup_refuse_to_run_while_a_refresh_holds_the_lock(cli_world, archive, monkeypatch, capsys):
+    from pipeline import switchover
+    from pipeline.refresh.engine import locked
+    touched = []
+    monkeypatch.setattr(switchover, "rollback", lambda *a, **k: touched.append("rollback"))
+    monkeypatch.setattr(switchover, "cleanup", lambda *a, **k: touched.append("cleanup"))
+    with locked(archive) as got:
+        assert got
+        for verb in ("rollback", "cleanup"):  # a cleanup mid-build would drop the database being built; a rollback would race the swap
+            assert cli.main(["--archive", str(archive.root), verb, "--db", "postgresql://x/y"]) == 1
+    assert touched == [] and "holds the archive's lock" in capsys.readouterr().err
+    assert cli.main(["--archive", str(archive.root), "cleanup", "--db", "postgresql://x/y"]) == 0 and touched == ["cleanup"]

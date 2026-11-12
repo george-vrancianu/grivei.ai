@@ -30,6 +30,10 @@ _Avoid_: launch, release (when going public is meant)
 Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
 _Avoid_: cache, dump, backup
 
+**Switchover**:
+Replacing the served graph with a freshly rebuilt one: the rebuild is built into a database beside the live one, must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
+_Avoid_: migration, cutover (for a rebuild that locks the live database)
+
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
 _Avoid_: last updated, freshness
