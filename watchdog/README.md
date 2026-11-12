@@ -67,9 +67,9 @@ python -m venv .venv              # or: uv venv .venv
 
 `pipeline/` is the explorer's pipeline, grown out of this Connector (ADR 0004): `archive.py` is the raw archive (files unchanged under a
 dated path, a manifest per unit written last, a quarantine area with a reason file), `fetch.py` downloads a bulk file into it,
-`da_bulk.py` parses a direct-purchase bulk file, `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`).
+`bulk/` reads and validates the DA and DAN bulk files (CSV and XLSX; `headers.py` is the per-quarter header alias table, `values.py` the cell quirks, `records.py` the kind registry), `rebuild.py` derives the `seap` schema from the archive (`sql/seap_schema.sql`).
 Run it with `python -m pipeline --archive <dir> rebuild --db <url>`; Docker and the full runbook are in `../deploy/README.md`.
-Its tests (`tests/test_pipeline_archive.py`, with the miniature archive in `tests/fixtures/archive/`) need no database; the
+Its tests (`tests/test_pipeline_archive.py`, `tests/test_bulk_loader.py` on `tests/fixtures/archive-bulk/`, rebuilt by `tests/fixtures/build_bulk_archive.py`, with the miniature archive in `tests/fixtures/archive/`) need no database; the
 archive -> rebuild -> GraphQL test is in `explorer/packages/api/test/seam1.test.ts`. The legacy JSON-batch loader above is unchanged.
 
 ## The data model, in brief

@@ -18,13 +18,14 @@ import { parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { MainScreenQuery } from "@grivei/contract";
+import type { MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { postgresStore } from "../src/store.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
 const fixtureArchive = join(watchdog, "tests/fixtures/archive");
+const bulkArchive = join(watchdog, "tests/fixtures/archive-bulk"); // DA + DAN: renamed headers, quirks, a quarantined file (#63)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
 const container = `pp37-seam1-${process.pid}`;
@@ -49,6 +50,7 @@ if (reason && process.env.SEAM1_REQUIRED) throw new Error(`seam 1 is required bu
 if (reason) console.warn(`seam 1 skipped: ${reason}`);
 
 const mainScreen = allowlist.operations.find((o) => o.name === "MainScreen")!;
+const recordPage = allowlist.operations.find((o) => o.name === "RecordPage")!;
 const schema = loadSchema();
 const EMPTY_FILTER = { filter: {} };
 
@@ -66,6 +68,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     process.on("exit", cleanup); // also when the run is killed half way
     scratch = mkdtempSync(join(here, "..", ".seam1-"));
     cpSync(fixtureArchive, join(scratch, "archive"), { recursive: true }); // a rebuild may quarantine: never touch the checked-in archive
+    cpSync(bulkArchive, join(scratch, "archive-bulk"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -76,6 +79,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await waitForPostgres(admin);
     await admin.query("CREATE DATABASE rebuild_a");
     await admin.query("CREATE DATABASE rebuild_b");
+    await admin.query("CREATE DATABASE bulk_a");
   });
 
   afterAll(async () => {
@@ -85,8 +89,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   });
 
-  const rebuild = (db: string) => {
-    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, "archive"), "rebuild", "--db", `${baseUrl}/${db}`], {
+  const rebuild = (db: string, archive = "archive") => {
+    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`], {
       cwd: watchdog, encoding: "utf8",
     });
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
@@ -141,6 +145,41 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(JSON.stringify(b)).toBe(JSON.stringify(a));
     rebuild("rebuild_a"); // and a rebuild over the same database
     expect(JSON.stringify(await ask("rebuild_a", mainScreen.sha256))).toBe(JSON.stringify(a));
+  });
+
+  it("serves a DA and a DAN by public code through the persisted RecordPage operation (#63)", async () => {
+    const out = rebuild("bulk_a", "archive-bulk");
+    expect(out).toContain("loaded 13 records from 5 file(s)");
+    expect(out).toContain("quarantined:"); // the 2023 Q2 DA file has unknown headers
+    const variables = (code: string) => ({ code });
+    const page = async (code: string) => {
+      const r = await ask("bulk_a", recordPage.sha256, variables(code));
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(recordPage.document), r.body.data, variables(code))).toEqual([]);
+      return (r.body.data as RecordPageQuery).seap.record;
+    };
+
+    // a DA whose title holds a `|`, loaded from a pipe-shaped CSV
+    expect(await page("DA91000002")).toMatchObject({
+      code: "DA91000002", title: "Tub PVC 3|4 toli", date: "2022-03-29", kind: "DA", channel: "DIRECT_PURCHASE", value: "30000", counted: "30000",
+      authority: { displayName: "SCOALA GIMNAZIALA EXEMPLU", identity: "CUI", key: "1000002" },
+      winners: [{ publishedName: "CURAT EXEMPLU SRL", entity: { key: "2000001" } }],
+      provenance: { source: "SEAP", kind: "BULK", via: "Achizitii directe 2022 - T1", fetchedAt: "2022-06-15T09:00:00Z" },
+    });
+    // a DAN from the 2024 CSV: "5,089" is 5089 RON, award date from `Data atribuire`
+    expect(await page("DAN9100001")).toMatchObject({
+      code: "DAN9100001", title: "SERVICII VULCANIZARE", date: "2024-01-02", kind: "DAN", channel: "DIRECT_PURCHASE", value: "508900",
+      contractType: "Servicii", cpv: { code: "50112200-5", description: "Servicii de intretinere a automobilelor (Rev.2)" },
+      winners: [{ publishedName: "S.C. BODIMPEX S.R.L.", entity: { key: "8499780" } }],
+      provenance: { via: "Notificari de atribuire la cumpararea directa T I 2024" },
+    });
+    // a DAN from the 2025 XLSX: numeric CUIs come out as clean digit strings
+    expect(await page("DAN9100020")).toMatchObject({
+      kind: "DAN", value: "37313", authority: { key: "18308578" }, winners: [{ entity: { key: "12458924" } }],
+    });
+    // a Record from the quarantined file, and an unknown code: no such Record
+    expect(await page("DA91000099")).toBeNull();
+    expect(await page("DAN0000000")).toBeNull();
   });
 
   it("refuses a query that is not on the allowlist, even against loaded data", async () => {
