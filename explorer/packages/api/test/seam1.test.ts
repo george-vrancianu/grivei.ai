@@ -2419,6 +2419,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       sameAsFacet("authority-channel-contract", "authority", "channel", "CONTRACT");
       sameAsFacet("authority-procedure", "authority", "procedure", "Negociere");
       sameAsFacet("authority-year-2024", "authority", "year", "2024");
+      sameAsFacet("authority-year-2023", "authority", "year", "2023");
+      expect(recordsOf("authority-contract-in-2023").total.records).toBe(facet("authority-channel-contract", "year", "2023")!.records); // a second facet, counted in the first's panel
       sameAsFacet("authority-badge-suspect-value", "authority", "badge", "SUSPECT_VALUE");
       sameAsFacet("supplier-channel-contract", "supplier", "channel", "CONTRACT");
       sameAsFacet("authority-signal-over-cap", "authority-with-signals", "signal", "OVER_CAP");
@@ -2443,7 +2445,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(several.total.records).toBeLessThan(recordsOf("authority-channel-contract").total.records);
       expect(several.total.records).toBeLessThan(recordsOf("authority-counterparty").total.records);
       expect(several.records.rows).toHaveLength(several.total.records);
-      expect(rows("authority-several-facets").every((r) => r.channel === "CONTRACT" && r.date.startsWith("2023"))).toBe(true);
+      expect(rows("authority-several-facets").every((r) => r.channel === "CONTRACT" && r.date?.startsWith("2023"))).toBe(true);
       // a filter that matches nothing leaves zeros and an empty panel, not a missing role
       expect(recordsOf("authority-nothing-in-filter")).toMatchObject({
         total: { awarded: "0", records: 0 }, records: { count: 0, rows: [] },

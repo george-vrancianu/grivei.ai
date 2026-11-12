@@ -172,7 +172,6 @@ const facetsOfAuthority = {
   ],
 };
 const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
-const noFacets = { channel: [], procedure: [], year: [], signal: [], badge: [], counterparty: [] };
 
 /**
  * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`):
