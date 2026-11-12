@@ -39,7 +39,9 @@ export function createColorScale(
   const candidates = kind === "log" ? finite.filter((value) => value > 0) : finite;
   const lower = kind === "linear" ? Math.min(0, ...candidates) : Math.min(...candidates);
   const derived = candidates.length > 0 ? ([lower, Math.max(...candidates)] as const) : null;
-  const domain = fixedDomain ?? derived;
+  // A log scale cannot start at zero or below: such a fixed domain is ignored and the span is derived.
+  const usableFixed = fixedDomain && !(kind === "log" && fixedDomain[0] <= 0) ? fixedDomain : undefined;
+  const domain = usableFixed ?? derived;
 
   const position = (value: number): number => {
     if (!domain) return 0;

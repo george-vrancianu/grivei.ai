@@ -20,7 +20,7 @@ export type BaseMapProps = {
   values: AreaValues;
   /** Colour scale: `linear`, or `log` (zeros are not log-scaled: they take the lowest colour, and the legend marks its low end "up to"). */
   scale?: ColorScaleKind;
-  /** Fixes the colour scale's span instead of deriving it from the values (e.g. to compare two maps). Linear and log as `scale`. */
+  /** Fixes the colour scale's span instead of deriving it from the values (e.g. to compare two maps). Linear and log as `scale`; a log domain whose lower bound is zero or less is ignored. */
   domain?: readonly [number, number];
   /**
    * Formats a value for the tooltip, the area's accessible name and the legend ends. `code` is the area it is for, so a lens can look up
@@ -31,6 +31,8 @@ export type BaseMapProps = {
   colorOf?: (code: string) => string | null | undefined;
   /** Replaces the numeric legend (e.g. a categorical one). It owns its no-data swatch. */
   legend?: ReactNode;
+  /** Replaces the value text in each area's accessible name and default tooltip (e.g. "Harvested" for a categorical lens that has no number). Null or undefined falls back to the formatted value, or `copy.noData` when the area has none. */
+  describeArea?: (area: AreaInfo) => string | null | undefined;
   /** Marks drawn in the SVG over the areas, with pointer events off (e.g. a circle per UAT). */
   renderOverlay?: (context: MapOverlayContext) => ReactNode;
   /** Replaces the tooltip's default content (name and formatted value). */
@@ -53,8 +55,25 @@ export type BaseMapProps = {
  * a hover and focus tooltip, click and keyboard selection, and a slot beside the map for off-map tiles.
  */
 export function BaseMap({
-  topology, object, readArea: reader, values, domain, scale: scaleKind = "linear", formatValue, colorOf, legend, renderOverlay, renderTooltip, onSelect, selected, tiles, copy,
-  width = 640, height = 420, projection = "conic",
+  topology,
+  object,
+  readArea: reader,
+  values,
+  domain,
+  scale: scaleKind = "linear",
+  formatValue,
+  colorOf,
+  describeArea,
+  legend,
+  renderOverlay,
+  renderTooltip,
+  onSelect,
+  selected,
+  tiles,
+  copy,
+  width = 640,
+  height = 420,
+  projection = "conic",
 }: BaseMapProps) {
   const tooltipId = useId();
   const [activeCode, setActiveCode] = useActiveArea();
@@ -65,9 +84,9 @@ export function BaseMap({
     const value = values[code];
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   };
-  const textOf = (code: string) => {
+  const textOf = (code: string, name: string) => {
     const value = valueOf(code);
-    return value === null ? copy.noData : formatValue(value, code);
+    return describeArea?.({ code, name, value }) ?? (value === null ? copy.noData : formatValue(value, code));
   };
   const legendValue = (value: number) => {
     const holder = features.find((f) => valueOf(f.properties.code) === value);
@@ -87,7 +106,7 @@ export function BaseMap({
             height={height}
             label={copy.mapLabel}
             fillOf={(code) => (colorOf ? (colorOf(code) ?? NO_DATA_COLOR) : scale.color(valueOf(code)))}
-            labelOf={(area) => copy.areaLabel(area.properties.name, textOf(area.properties.code))}
+            labelOf={(area) => copy.areaLabel(area.properties.name, textOf(area.properties.code, area.properties.name))}
             selected={selected}
             activeCode={activeCode}
             tooltipId={tooltipId}
@@ -99,7 +118,7 @@ export function BaseMap({
             <MapTooltip id={tooltipId} left={(anchor[0] / width) * 100} top={(anchor[1] / height) * 100}>
               {renderTooltip
                 ? renderTooltip({ code: active.properties.code, name: active.properties.name, value: valueOf(active.properties.code) })
-                : copy.areaLabel(active.properties.name, textOf(active.properties.code))}
+                : copy.areaLabel(active.properties.name, textOf(active.properties.code, active.properties.name))}
             </MapTooltip>
           )}
         </Box>

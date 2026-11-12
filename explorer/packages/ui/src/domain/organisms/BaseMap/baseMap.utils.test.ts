@@ -90,3 +90,11 @@ describe("featuresOf and projectFeatures", () => {
     }
   });
 });
+
+describe("createColorScale with an unusable fixed log domain", () => {
+  it("ignores a fixed log domain that starts at zero, so no colour is invalid", () => {
+    const scale = createColorScale("log", [10, 1000], [0, 1000]);
+    expect(scale.domain).toEqual([10, 1000]);
+    expect(scale.color(100)).not.toContain("NaN");
+  });
+});

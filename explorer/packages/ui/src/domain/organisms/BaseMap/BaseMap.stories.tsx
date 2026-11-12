@@ -95,6 +95,7 @@ export const CategoricalFill: Story = {
             topology={countiesTopology}
             values={{}}
             colorOf={(code) => (statusByCounty[code] ? statusColors[statusByCounty[code]] : null)}
+            describeArea={({ code }) => (statusByCounty[code] ? names[statusByCounty[code]] : null)}
             legend={legend}
             {...base}
           />

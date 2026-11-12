@@ -127,6 +127,19 @@ describe("BaseMap", () => {
     expect(screen.queryByRole("region", { name: "Contracted value" })).not.toBeInTheDocument();
   });
 
+  it("names areas after their category when the lens describes them", async () => {
+    const user = userEvent.setup();
+    setup({
+      values: {},
+      colorOf: (code) => (code === "RO-CJ" ? "#2e7d32" : null),
+      describeArea: ({ code }) => (code === "RO-CJ" ? "Harvested" : null),
+    });
+    expect(screen.getByRole("button", { name: "Cluj: Harvested" })).toHaveAttribute("fill", "#2e7d32");
+    expect(screen.getByRole("button", { name: "Brașov: No data" })).toBeVisible();
+    await user.hover(screen.getByRole("button", { name: "Cluj: Harvested" }));
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Cluj: Harvested");
+  });
+
   it("draws overlay marks at projected area centres, without taking pointer events", () => {
     const seen: { width: number; height: number; codes: string[]; projected: boolean }[] = [];
     setup({
