@@ -4,6 +4,10 @@ Reads only units with a complete manifest, oldest fetch first, and loads each fi
 every registered kind: DA, DAN). A file that fails
 validation is moved to the quarantine area with a reason file and loads nothing. The whole rebuild is one transaction,
 so a failed rebuild leaves the previous schema in place, and the same archive always gives the same database.
+
+A re-uploaded file loads like any file and per-code precedence decides (ADR 0002, 2026-11-11 amendment): the later
+publication wins, an older re-upload cannot overwrite newer data, and a quarter is never replaced wholesale, so records
+absent from a re-upload are kept.
 """
 from __future__ import annotations
 
@@ -110,19 +114,21 @@ def plan(archive: Archive) -> Plan:
     loaded: set[tuple[str, str]] = set()  # (kind, sha256) of files already planned
     for unit in units:
         parsed = []
+        keys = []  # recorded as loaded only once the whole unit validates
         try:
             for name in unit.files:
                 path = unit.file_path(name)
                 key = (unit.kind, sha256_of(path))
-                if key in loaded:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
+                if key in loaded or key in keys:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
                     summary.duplicate_files.append(path)
                     continue
                 parsed.append((unit, name, parse_file(unit.kind, unit.unit, path)))
-                loaded.add(key)
+                keys.append(key)
         except InvalidFile as e:
             summary.quarantined.append(archive.quarantine(unit, e.reason, [p for p in e.problems if p]))
             continue  # all or nothing: none of this unit's files load
         files.extend(parsed)
+        loaded.update(keys)
     return Plan(files, summary)
 
 
