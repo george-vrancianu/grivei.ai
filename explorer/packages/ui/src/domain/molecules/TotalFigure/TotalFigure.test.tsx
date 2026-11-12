@@ -23,8 +23,8 @@ describe("TotalFigure", () => {
   });
   it("shows the awarded value and the Record count", () => {
     renderInUi(<TotalFigure total={totalTypical} locale="en" copy={sampleCopy.total("en")} {...base} />);
-    expect(screen.getByText(/^RON\s1,420,000$/)).toBeVisible();
-    expect(screen.getByText("9 Records")).toBeVisible();
+    expect(screen.getByText(/^RON\s7,600$/)).toBeVisible();
+    expect(screen.getByText("8 Records")).toBeVisible();
   });
   it("shows no-value Records and framework ceilings, and stays silent about zero parts", () => {
     renderInUi(<TotalFigure total={totalWithLeftOut} locale="en" copy={sampleCopy.total("en")} {...base} />);

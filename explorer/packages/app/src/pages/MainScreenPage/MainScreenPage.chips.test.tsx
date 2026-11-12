@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { decodeUrlState } from "../../urlState/codec.ts";
+import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -12,14 +13,15 @@ const queryOf = () => new URLSearchParams(window.location.search);
 const filterInUrl = (): RecordFilter => decodeUrlState(window.location.search).filter;
 const opened = async (url: string) => {
   openAt(url);
-  render(<App client={fixtureClient().client} />);
+  render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
   return screen.findByRole("region", { name: /^(Filters|Filtre)$/ });
 };
 const chips = () => screen.getByRole("region", { name: "Filters" });
 
 describe("the filter chips on the main screen", () => {
   it("shows no chip on for the plain URL, and offers the procedures the API listed", async () => {
-    await opened("/explore/");
+    // the hand-written `records-variety` fixture: the recorded runs have no procedure facet (the API serves it for one entity's set only)
+    await opened("/explore/?q=contract");
     expect(within(chips()).queryAllByRole("button", { pressed: true })).toHaveLength(0);
     expect(await within(chips()).findByRole("button", { name: "Licitație deschisă", pressed: false })).toBeVisible();
     expect(within(chips()).getByRole("button", { name: "Achiziție directă" })).toBeVisible();
@@ -39,7 +41,7 @@ describe("the filter chips on the main screen", () => {
 
   it("shows the chips in Romanian at /ro/explore/", async () => {
     openAt("/ro/explore/?channel=contract&hasSignals=false");
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
     expect(within(bar).getByRole("button", { name: "Contract", pressed: true })).toBeVisible();
     expect(within(bar).getByRole("button", { name: "Elimină Fără Semnale" })).toBeVisible();
@@ -61,13 +63,13 @@ describe("the filter chips on the main screen", () => {
   });
 
   it("writes years as Jan 1 and Dec 31, and procedures as published", async () => {
-    await opened("/explore/");
+    await opened("/explore/?q=contract"); // see above: the hand-written fixture that lists procedures
     const user = userEvent.setup();
     await user.selectOptions(screen.getByRole("combobox", { name: "From year" }), "2022");
     await user.selectOptions(screen.getByRole("combobox", { name: "To year" }), "2024");
     await user.click(await within(chips()).findByRole("button", { name: "Negociere fără publicare prealabilă" }));
     await waitFor(() =>
-      expect(filterInUrl()).toEqual({ from: "2022-01-01", to: "2024-12-31", procedure: ["Negociere fără publicare prealabilă"] }),
+      expect(filterInUrl()).toEqual({ q: "contract", from: "2022-01-01", to: "2024-12-31", procedure: ["Negociere fără publicare prealabilă"] }),
     );
   });
 

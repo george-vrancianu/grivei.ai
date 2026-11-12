@@ -7,101 +7,11 @@ import * as w from "./world.ts";
 
 const { sources } = w;
 
-const emptyFilter = { qFolded: null, authority: null, supplier: null };
 /** Procedure names as SEAP publishes them (the chips offer these). */
 const procedureFacet = [{ value: "Achiziție directă" }, { value: "Licitație deschisă" }, { value: "Negociere fără publicare prealabilă" }];
 
-export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> = [
-  {
-    name: "typical-text-county",
-    kind: "typical",
-    description: "q=deszapezire in Brașov, authority side: map, Go-to card absent, ranked tabs, matched field highlighted",
-    variables: { filter: { q: "deszapezire", county: "RO-BV", from: "2024-01-01" } },
-    data: {
-      sources,
-      seap: {
-        search: {
-          filter: { ...emptyFilter, qFolded: "deszapezire" },
-          total: total({ awarded: ron(1_420_000), records: 9, suspectLeftOut: 1, noValue: 1 }),
-          map: moneyMap({
-            counties: [
-              { area: "RO-BV", name: "Brașov", entities: 4, total: total({ awarded: ron(1_020_000), records: 6 }) },
-              { area: "RO-SB", name: "Sibiu", entities: 1, total: total({ awarded: ron(400_000), records: 3 }) },
-            ],
-            national: total({ awarded: "0", records: 0 }),
-          }),
-          goTo: null,
-          facets: { procedure: procedureFacet },
-          authorities: { count: 2, countEstimated: false, rows: [
-            { entity: w.primariaBrasovRow, matched: total({ awarded: ron(1_020_000), records: 6 }) },
-            { entity: w.spitalSibiuRow, matched: total({ awarded: ron(400_000), records: 3 }) },
-          ] },
-          suppliers: { count: 2, countEstimated: false, rows: [
-            { entity: w.hachiRow, matched: total({ awarded: ron(1_020_000), records: 6 }) },
-            { entity: w.constructiiRow, matched: total({ awarded: ron(400_000), records: 3 }) },
-          ] },
-          records: { count: 9, rows: [
-            { record: w.rDirect, matchedField: { field: "TITLE", text: "Deszăpezire străzi, sezon rece 2023-2024", highlights: [[0, 10]] } },
-            { record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Deszăpezire căi de acces", highlights: [[0, 10]] } },
-          ] },
-        },
-      },
-    },
-  },
-  {
-    name: "empty-search-national",
-    kind: "typical",
-    description: "no filter: national totals, the National and Unplaced tiles, national top tabs",
-    variables: { filter: {} },
-    data: {
-      sources,
-      seap: {
-        search: {
-          filter: emptyFilter,
-          total: total({ awarded: ron(86_000_000_000), records: 410_000, suspectLeftOut: 312, noValue: 5_400, frameworkCeilings: ron(40_000_000_000) }),
-          map: moneyMap({
-            counties: [
-              { area: "RO-B", name: "București", entities: 900, total: total({ awarded: ron(14_000_000_000), records: 60_000 }) },
-              { area: "RO-BV", name: "Brașov", entities: 310, total: total({ awarded: ron(2_100_000_000), records: 11_000 }) },
-            ],
-            national: total({ awarded: ron(51_000_000_000), records: 90_000 }),
-            unplaced: { authorities: 17, total: total({ awarded: ron(12_000_000), records: 130 }) },
-          }),
-          goTo: null,
-          facets: { procedure: procedureFacet },
-          authorities: { count: 5_100, countEstimated: false, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }) }] },
-          suppliers: { count: 41_000, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(1_800_000_000), records: 320 }) }] },
-          records: { count: 410_000, rows: [{ record: w.rConsortium, matchedField: null }] },
-        },
-      },
-    },
-  },
-  {
-    name: "supplier-side-unknown-county",
-    kind: "typical",
-    description: "county side SUPPLIER: the unknown-supplier-county bucket, a Go-to card for an exact CUI",
-    variables: { filter: { q: "30000001", countySide: "SUPPLIER" } },
-    data: {
-      sources,
-      seap: {
-        search: {
-          filter: { qFolded: "30000001", authority: null, supplier: w.hachi },
-          total: total({ awarded: ron(1_200_000), records: 5 }),
-          map: moneyMap({
-            side: "SUPPLIER",
-            counties: [{ area: "RO-BV", name: "Brașov", entities: 1, total: total({ awarded: ron(900_000), records: 4 }) }],
-            national: zeroTotal,
-            unknownSupplierCounty: total({ awarded: ron(300_000), records: 1 }),
-          }),
-          goTo: { ...w.hachi, seap: { roles: ["SUPPLIER"] } },
-          facets: { procedure: procedureFacet },
-          authorities: { count: 1, countEstimated: false, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
-          suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1_200_000), records: 5 }) }] },
-          records: { count: 5, rows: [{ record: w.rDirect, matchedField: { field: "CUI", text: "30000001", highlights: [[0, 8]] } }] },
-        },
-      },
-    },
-  },
+/** What a recorded run cannot produce (a record state of every kind, counts a fixture archive cannot reach). The rest is `recorded/`. */
+export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariables> = [
   {
     name: "records-variety",
     kind: "typical",
@@ -146,27 +56,6 @@ export const mainScreen: FixtureSet<MainScreenQuery, MainScreenQueryVariables> =
           authorities: { count: 66_000, countEstimated: true, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1), records: 1 }) }] },
           suppliers: { count: 240_000, countEstimated: true, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1), records: 1 }) }] },
           records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Consumabile birotică", highlights: [[0, 2]] } }] },
-        },
-      },
-    },
-  },
-  {
-    name: "empty-no-match",
-    kind: "empty",
-    description: "a query nothing matches: zero totals, no tiles, no rows, no Go-to card",
-    variables: { filter: { q: "zzzzzz" } },
-    data: {
-      sources,
-      seap: {
-        search: {
-          filter: { qFolded: "zzzzzz", authority: null, supplier: null },
-          total: zeroTotal,
-          map: moneyMap(),
-          goTo: null,
-          facets: { procedure: procedureFacet },
-          authorities: { count: 0, countEstimated: false, rows: [] },
-          suppliers: { count: 0, countEstimated: false, rows: [] },
-          records: { count: 0, rows: [] },
         },
       },
     },

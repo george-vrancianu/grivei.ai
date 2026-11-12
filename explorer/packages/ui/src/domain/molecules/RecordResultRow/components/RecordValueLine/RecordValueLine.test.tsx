@@ -9,7 +9,7 @@ const copy = sampleCopy.recordRow("en");
 describe("RecordValueLine", () => {
   it("shows the value, the date in a time element and the badges", () => {
     const { container } = renderInUi(<RecordValueLine record={highlightedRecord.record} locale="en" copy={copy} />);
-    expect(container).toHaveTextContent("RON 300,000");
+    expect(container).toHaveTextContent("RON 5,000");
     expect(container.querySelector("time")).toHaveAttribute("datetime", highlightedRecord.record.date!);
   });
 

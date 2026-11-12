@@ -1,0 +1,1302 @@
+[
+  {
+    "name": "empty-filter",
+    "kind": "typical",
+    "description": "Records, first page, no filter, the default order",
+    "variables": {
+      "filter": {},
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "2130001",
+            "records": 18,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "records": {
+            "count": 18,
+            "rows": [
+              {
+                "record": {
+                  "code": "CAN9800003~1",
+                  "title": "Sistem informatic",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "500000",
+                  "counted": "500000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001000",
+                    "displayName": "MINISTERUL EXEMPLULUI",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "CAN9800001~1",
+                  "title": "Drum comunal",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "100001",
+                  "counted": "100001",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": "50001",
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "50000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000001",
+                  "title": "Achizitie DA94000001",
+                  "date": "2023-03-11",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001108",
+                    "displayName": "AGENTIA NATIONALA DEMO",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000002",
+                  "title": "Achizitie DA94000002",
+                  "date": "2023-03-12",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000200",
+                    "displayName": "COMUNA APAHIDA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000003",
+                  "title": "Achizitie DA94000003",
+                  "date": "2023-03-13",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000004",
+                  "title": "Achizitie DA94000004",
+                  "date": "2023-03-14",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000609",
+                    "displayName": "PRIMARIA SECTORULUI 3",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000005",
+                  "title": "Achizitie DA94000005",
+                  "date": "2023-03-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000006",
+                  "title": "Achizitie DA94000006",
+                  "date": "2023-03-16",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001205",
+                    "displayName": "DIRECTIA DE SANATATE PUBLICA DEMO",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000007",
+                  "title": "Achizitie DA94000007",
+                  "date": "2023-03-17",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001302",
+                    "displayName": "ORAS HUEDIN",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000008",
+                  "title": "Achizitie DA94000008",
+                  "date": "2023-03-18",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001000",
+                    "displayName": "MINISTERUL EXEMPLULUI",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000009",
+                  "title": "Achizitie DA94000009",
+                  "date": "2023-03-19",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000010",
+                  "title": "Achizitie DA94000010",
+                  "date": "2023-03-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000011",
+                  "title": "Achizitie DA94000011",
+                  "date": "2023-03-21",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000803",
+                    "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000012",
+                  "title": "Achizitie DA94000012",
+                  "date": "2023-03-22",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000013",
+                  "title": "Achizitie DA94000013",
+                  "date": "2023-03-23",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000706",
+                    "displayName": "COMUNA FARA NUME",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "DA94000014",
+                  "title": "Achizitie DA94000014",
+                  "date": "2023-03-24",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000900",
+                    "displayName": "ASOCIATIA FARA ADRESA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "CAN9800004~1",
+                  "title": "Mobilier",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "70000",
+                  "counted": "70000",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000900",
+                    "displayName": "ASOCIATIA FARA ADRESA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": true,
+                      "publishedName": null,
+                      "share": "35000",
+                      "entity": null
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "35000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              },
+              {
+                "record": {
+                  "code": "CAN9800002~1",
+                  "title": "Scoala",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "60000",
+                  "counted": "60000",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "30000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "BALKAN TRADING OOD",
+                      "share": "30000",
+                      "entity": {
+                        "key": "vat-bg103029862",
+                        "displayName": "BALKAN TRADING OOD",
+                        "identity": "NAME_ONLY"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "text-query-by-date",
+    "kind": "typical",
+    "description": "a text query, ordered by date, with the matched field on each row",
+    "variables": {
+      "filter": {
+        "q": "comuna"
+      },
+      "limit": 50,
+      "offset": 0,
+      "order": "DATE_DESC"
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "760001",
+            "records": 8,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "records": {
+            "count": 8,
+            "rows": [
+              {
+                "record": {
+                  "code": "DA94000013",
+                  "title": "Achizitie DA94000013",
+                  "date": "2023-03-23",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000706",
+                    "displayName": "COMUNA FARA NUME",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA FARA NUME",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000012",
+                  "title": "Achizitie DA94000012",
+                  "date": "2023-03-22",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA SINCA NOUA",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000011",
+                  "title": "Achizitie DA94000011",
+                  "date": "2023-03-21",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000803",
+                    "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA UCEA SPITAL ASIMILAT",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000010",
+                  "title": "Achizitie DA94000010",
+                  "date": "2023-03-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA SANPETRU",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000005",
+                  "title": "Achizitie DA94000005",
+                  "date": "2023-03-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA I.L. CARAGIALE",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000002",
+                  "title": "Achizitie DA94000002",
+                  "date": "2023-03-12",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000200",
+                    "displayName": "COMUNA APAHIDA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA APAHIDA",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "CAN9800001~1",
+                  "title": "Drum comunal",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "100001",
+                  "counted": "100001",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": "50001",
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "50000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "TITLE",
+                  "text": "Drum comunal",
+                  "highlights": [
+                    [
+                      5,
+                      11
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "CAN9800002~1",
+                  "title": "Scoala",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "60000",
+                  "counted": "60000",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "30000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "BALKAN TRADING OOD",
+                      "share": "30000",
+                      "entity": {
+                        "key": "vat-bg103029862",
+                        "displayName": "BALKAN TRADING OOD",
+                        "identity": "NAME_ONLY"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA I.L. CARAGIALE",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "text-query-with-county",
+    "kind": "typical",
+    "description": "a text query inside a clicked county",
+    "variables": {
+      "filter": {
+        "q": "comuna",
+        "county": "RO-BV"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "500001",
+            "records": 5,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "records": {
+            "count": 5,
+            "rows": [
+              {
+                "record": {
+                  "code": "CAN9800001~1",
+                  "title": "Drum comunal",
+                  "date": "2023-02-20",
+                  "kind": "CONTRACT",
+                  "channel": "CONTRACT",
+                  "procedure": "Licitatie deschisa",
+                  "value": "100001",
+                  "counted": "100001",
+                  "badges": [
+                    "CONSORTIUM_SHARE"
+                  ],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": "50001",
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    },
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "CLUJ DEMO CONSTRUCT SRL",
+                      "share": "50000",
+                      "entity": {
+                        "key": "2000104",
+                        "displayName": "CLUJ DEMO CONSTRUCT SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "TITLE",
+                  "text": "Drum comunal",
+                  "highlights": [
+                    [
+                      5,
+                      11
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000010",
+                  "title": "Achizitie DA94000010",
+                  "date": "2023-03-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA SANPETRU",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000011",
+                  "title": "Achizitie DA94000011",
+                  "date": "2023-03-21",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000803",
+                    "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA UCEA SPITAL ASIMILAT",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000012",
+                  "title": "Achizitie DA94000012",
+                  "date": "2023-03-22",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA SINCA NOUA",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              },
+              {
+                "record": {
+                  "code": "DA94000013",
+                  "title": "Achizitie DA94000013",
+                  "date": "2023-03-23",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000706",
+                    "displayName": "COMUNA FARA NUME",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": {
+                  "field": "AUTHORITY",
+                  "text": "COMUNA FARA NUME",
+                  "highlights": [
+                    [
+                      0,
+                      6
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "empty-no-match",
+    "kind": "empty",
+    "description": "no Record matches",
+    "variables": {
+      "filter": {
+        "q": "zzzzzz"
+      },
+      "limit": 50,
+      "offset": 0
+    },
+    "data": {
+      "seap": {
+        "search": {
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false
+          },
+          "records": {
+            "count": 0,
+            "rows": []
+          }
+        }
+      }
+    }
+  }
+]

@@ -7,7 +7,7 @@ const meta = { title: "App/TotalSummary", component: TotalSummary } satisfies Me
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const national = fixtures.MainScreen.find((f) => f.name === "empty-search-national")!.data.seap.search.total;
+const national = fixtures.MainScreen.find((f) => f.name === "empty-filter-national")!.data.seap.search.total;
 
 export const National: Story = {
   // copy and locale follow the toolbar's language in `render`; the args only satisfy the types

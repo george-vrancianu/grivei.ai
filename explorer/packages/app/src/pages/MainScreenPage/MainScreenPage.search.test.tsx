@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { createClient, type GraphqlClient } from "../../graphql/client.ts";
+import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -21,7 +22,7 @@ describe.each([
 ])("typing on $page", ({ url }) => {
   it("puts the query in the URL once after the debounce, replacing the history entry", async () => {
     openAt(url);
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const before = window.history.length;
     const replace = vi.spyOn(window.history, "replaceState");
     const push = vi.spyOn(window.history, "pushState");
@@ -36,7 +37,7 @@ describe.each([
 
   it("drops q at once-after-the-debounce when the box is cleared, then does not search for one character", async () => {
     openAt(`${url}?q=contract`);
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     await userEvent.clear(box());
     await waitFor(() => expect(window.location.search).toBe(""));
     const replace = vi.spyOn(window.history, "replaceState");
@@ -48,7 +49,7 @@ describe.each([
 
   it("follows the URL when it changes from outside (Back)", async () => {
     openAt(`${url}?q=contract`);
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     expect(box()).toHaveValue("contract");
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -59,14 +60,14 @@ describe.each([
 describe("the placeholder", () => {
   it("tells English readers that the data is in Romanian", () => {
     openAt("/explore/");
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     expect(box()).toHaveAttribute("placeholder", expect.stringContaining("Romanian"));
     expect(box()).toHaveAttribute("placeholder", expect.stringContaining("deszăpezire"));
   });
 
   it("is in Romanian at /ro/explore/", () => {
     openAt("/ro/explore/");
-    render(<App client={fixtureClient().client} />);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const romanianBox = screen.getByRole("searchbox", { name: catalogue.ro.searchBar.label });
     expect(romanianBox).toHaveAttribute("placeholder", catalogue.ro.searchBar.placeholder);
     expect(catalogue.ro.searchBar.placeholder).toContain("deszăpezire");
@@ -93,7 +94,7 @@ describe("a stale response", () => {
   ])("never overwrites a newer one (%s)", async (url, typed) => {
     openAt(url);
     const { client, held } = heldClient();
-    render(<App client={client} />);
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
     await waitFor(() => expect(held).toHaveLength(1));
     await userEvent.type(box(), typed);
     await waitFor(() => expect(held).toHaveLength(2));
@@ -129,7 +130,7 @@ describe("a superseded request", () => {
           signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
         }),
     });
-    render(<App client={client} />);
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
     await waitFor(() => expect(signals).toHaveLength(1));
     expect(signals[0]?.aborted).toBe(false);
 
@@ -144,7 +145,7 @@ describe("a superseded request", () => {
     openAt("/explore/");
     const signals: AbortSignal[] = [];
     const client = createClient({ fetch: (_i, init) => new Promise(() => void signals.push(init?.signal as AbortSignal)) });
-    const { unmount } = render(<App client={client} />);
+    const { unmount } = render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
     await waitFor(() => expect(signals).toHaveLength(1));
     unmount();
     expect(signals[0]?.aborted).toBe(true);

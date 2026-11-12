@@ -62,14 +62,14 @@ describe("the URL <-> RecordFilter codec", () => {
   });
 
   it("round-trips the tab, the page and both orders, with the whole filter", () => {
-    const query = `${Object.values(QUERY_OF_FIELD).join("&")}&tab=${"records"}&page=3&order=value-desc&signalOrder=date-desc`;
+    const query = `${Object.values(QUERY_OF_FIELD).join("&")}&tab=${"records"}&page=3&order=value-desc&signalOrder=date-desc&lens=coverage`;
     const state = decodeUrlState(`?${query}`);
-    expect(state).toMatchObject({ tab: "records", page: 3, order: "VALUE_DESC", signalOrder: "DATE_DESC" });
+    expect(state).toMatchObject({ tab: "records", page: 3, order: "VALUE_DESC", signalOrder: "DATE_DESC", lens: "coverage" });
     expect(encodeUrlState(state)).toBe(`?${query}`);
   });
 
   it("covers exactly the contract's URL-only keys", () => {
-    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc");
+    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc&lens=coverage");
     expect(Object.keys(state).filter((k) => k !== "filter").sort()).toEqual(Object.keys(URL_ONLY_KEYS).sort());
   });
 
@@ -82,6 +82,20 @@ describe("the URL <-> RecordFilter codec", () => {
   it("ignores unknown keys and malformed values instead of passing them on", () => {
     const state = decodeUrlState("?utm=1&from=yesterday&cpv=abc&uat=x&county=ro-bv&channel=Direct%20Purchase&page=0&page=-1&tab=A%20B&hasSignals=yes");
     expect(state).toEqual({ filter: {} });
+  });
+
+  it("round-trips the map lens, and leaves out the Money default", () => {
+    expect(roundTrip("lens=coverage")).toBe("?lens=coverage");
+    expect(decodeUrlState("?lens=coverage")).toEqual({ filter: {}, lens: "coverage" });
+    expect(decodeUrlState("?lens=money")).toEqual({ filter: {} });
+    expect(encodeUrlState({ filter: {}, lens: "money" })).toBe("");
+    expect(decodeUrlState("?lens=Not%20A%20Lens")).toEqual({ filter: {} }); // malformed: ignored
+  });
+
+  it("round-trips the county and the county side through the URL, in canonical order after the other filter fields", () => {
+    expect(roundTrip("q=comuna&county=RO-BV&countySide=supplier")).toBe("?q=comuna&county=RO-BV&countySide=supplier");
+    expect(roundTrip("county=UNPLACED")).toBe("?county=UNPLACED");
+    expect(roundTrip("countySide=authority")).toBe(""); // the default is left out
   });
 
   it("keeps hasSignals=false distinct from unset", () => {

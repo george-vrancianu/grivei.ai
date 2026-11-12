@@ -14,12 +14,17 @@ export interface UrlState {
   order?: RecordOrder;
   /** `SignalOrder` of the Signals list. */
   signalOrder?: SignalOrder;
+  /** The main screen's map lens as written (`coverage`); the default, `money`, is left out of the URL. */
+  lens?: string;
 }
 
 export const EMPTY_URL_STATE: UrlState = { filter: {} };
 
 /** The one default a `RecordFilter` field has: the Money lens counts the authority's county unless asked otherwise. */
 const DEFAULTS: Partial<Record<keyof RecordFilter, string>> = { countySide: "AUTHORITY" };
+
+/** The map lens the URL leaves out. Mirrors `DEFAULT_MAP_LENS` of the UI library, which the codec does not import. */
+const DEFAULT_LENS = "money";
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PATTERNS: Record<Exclude<UrlEncoding, "boolean" | "enum" | "text">, RegExp> = {
@@ -80,6 +85,8 @@ export function decodeUrlState(search: string): UrlState {
   if (order !== null) state.order = (enumFromUrl(order) ?? undefined) as RecordOrder | undefined;
   const signalOrder = params.get(URL_ONLY_KEYS.signalOrder);
   if (signalOrder !== null) state.signalOrder = (enumFromUrl(signalOrder) ?? undefined) as SignalOrder | undefined;
+  const lens = params.get(URL_ONLY_KEYS.lens);
+  if (lens !== null && SLUG.test(lens) && lens !== DEFAULT_LENS) state.lens = lens;
   if (state.order === undefined) delete state.order;
   if (state.signalOrder === undefined) delete state.signalOrder;
   return state;
@@ -87,7 +94,7 @@ export function decodeUrlState(search: string): UrlState {
 
 /**
  * URL state into a query string with a leading `?` ("" when there is nothing to say). Keys come out in one canonical
- * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder); unset fields and the
+ * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens); unset fields and the
  * default `countySide` are left out.
  */
 export function encodeUrlState(state: UrlState): string {
@@ -105,6 +112,7 @@ export function encodeUrlState(state: UrlState): string {
   if (state.page !== undefined && state.page > 1) params.set(URL_ONLY_KEYS.page, String(state.page));
   if (state.order) params.set(URL_ONLY_KEYS.order, enumToUrl(state.order));
   if (state.signalOrder) params.set(URL_ONLY_KEYS.signalOrder, enumToUrl(state.signalOrder));
+  if (state.lens && state.lens !== DEFAULT_LENS) params.set(URL_ONLY_KEYS.lens, state.lens);
   const text = params.toString();
   return text === "" ? "" : `?${text}`;
 }
