@@ -12,8 +12,8 @@ whole sequence. Write the real numbers into the closing comment (template at the
 
 ```bash
 cd <repo root>                          # a stable checkout of the integration branch, not a throwaway worktree
-umask 077 && printf 'GRIVEI_ARCHIVE_DIR=%s/grivei-data/raw\nGRIVEI_DB_PASSWORD=<a password>\n' "$HOME" > .env   # ONE file, not `export`: compose reads `.env` beside compose.yaml in every shell and in the timer's run (WorkingDirectory); the archive is outside the repo; `.env` is gitignored
-docker compose config | grep -E 'DATABASE_URL|/archive'   # from a fresh shell: the password you chose and ~/grivei-data/raw must show
+(umask 077; printf 'GRIVEI_ARCHIVE_DIR=%s/grivei-data/raw\nGRIVEI_DB_PASSWORD=<a password>\n' "$HOME" > .env)   # ONE file, not `export`: compose reads `.env` beside compose.yaml in every shell and in the timer's run (WorkingDirectory); the archive is outside the repo; `.env` is gitignored
+docker compose --profile pipeline config | grep -E 'DATABASE_URL|grivei-data'   # from a fresh shell: the password you chose in both URLs and `source: .../grivei-data/raw` must show; the `pipeline` profile is needed or the pipeline service is left out
 mkdir -p ~/grivei-data/raw ~/grivei-data/bench geo   # `geo` (GRIVEI_GEO_DIR, default ./geo) must exist and be yours before `docker compose up`: Docker would create it as root and the pipeline (uid 1000) could not write the TopoJSON
 P="docker compose run --rm -T pipeline"  # the pipeline container: 2 CPUs, 2 GB, archive at /archive, DATABASE_URL set to the compose db
 ```
@@ -54,7 +54,7 @@ nohup sh -c 'docker compose run --rm -T pipeline fetch-datagov && docker compose
 Expected (estimate): tens of minutes to a few hours, several GB (`du -sh ~/grivei-data/raw`), about 1 s between requests, low CPU and memory. Exit 1 means at least
 one resource failed. Resume: rerun the same command; everything archived is skipped, a cut download leaves only a scratch file. Progress: `tail -f ~/grivei-data/fetch.log`
 (one line per resource). Look at every `unclassified` and `conflict` line: the Q2 2025 DAN file is a known mis-upload (a hand-entered known gap).
-**Wait for it before step 4 or 6:** the log shows the `fetch-mf` summary and `pgrep -f 'pipeline fetch'` prints nothing. A fetch still running would be validated half done, and beside a `seed` it is the forbidden `fetch-datagov` beside a seed.
+**Wait for it before step 4 or 6:** the log shows the `fetch-mf` summary and `pgrep -f 'pipeline fetch'` prints nothing (or the `fetch-datagov` summary with `failed:` lines and an empty `pgrep`: fetch-mf never ran; rerun step 2). A fetch still running would be validated half done, and beside a `seed` it is the forbidden `fetch-datagov` beside a seed.
 **If a seed is already under way** (an earlier attempt with the venv: `seed --backfill`, stopped at ANAF), step 2 and the ANAF part may be done already: do steps 3 and 4 first (the geography and #64c are what that run lacked); step 6's command then resumes the same ledger, and so does the venv form of it.
 
 ### 3. The geography: SIRUTA, ANCPI polygons, the placement tables
@@ -170,7 +170,7 @@ otherwise): run it again after the next `fetch-datagov`.
 ### 9. Enable the nightly schedule, backups and the dead-man's switch
 
 1. healthchecks.io: a check with period 1 day, grace 3 days; its ping URL goes in `GRIVEI_HEALTHCHECK_URL` (in `.env`).
-2. Backups (refresh steps `backup`, `pgdump`; restic, one encrypted repository on object storage): `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the backend credentials (`AWS_*` or `B2_*`) in the `.env` of the Conventions: compose passes them to the container for every run, by hand or by the timer. `~/grivei-data/refresh.env` (deploy/README.md) may stay as it is or be left out: the unit's `docker compose run` reads `.env` from its `WorkingDirectory`; if you keep both, the same keys must not differ (`GRIVEI_DB_PASSWORD` belongs in `.env`, never only in a shell). Check from a fresh shell: `docker compose config | grep -E 'DATABASE_URL|/archive|RESTIC_REPOSITORY'`.
+2. Backups (refresh steps `backup`, `pgdump`; restic, one encrypted repository on object storage): `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the backend credentials (`AWS_*` or `B2_*`) in the `.env` of the Conventions: compose passes them to the container for every run, by hand or by the timer. `~/grivei-data/refresh.env` (deploy/README.md) may stay as it is or be left out: the unit's `docker compose run` reads `.env` from its `WorkingDirectory`; if you keep both, the same keys must not differ (`GRIVEI_DB_PASSWORD` belongs in `.env`, never only in a shell). Check from a fresh shell (a non-empty `RESTIC_REPOSITORY` must show): `docker compose --profile pipeline config | grep -E 'DATABASE_URL|grivei-data|RESTIC_REPOSITORY'`.
    Unset = both steps skip with a warning and **the week would not be a backed-up week**. Try once: `$P backup all`, then rehearse a restore into a scratch directory with the container
    (it has restic >= 0.17; make the directory first: `mkdir -p ~/grivei-data/raw-restored`): `docker compose run --rm -T -v ~/grivei-data/raw-restored:/restore pipeline restore archive /restore/r`, then `diff -r ~/grivei-data/raw ~/grivei-data/raw-restored/r`
    (expect differences for what was written after the backup: the ledger, progress files, a newer crawl day; run the rehearsal right after `$P backup all`, before the timer is enabled, to keep them few)

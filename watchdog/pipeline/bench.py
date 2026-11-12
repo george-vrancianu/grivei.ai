@@ -697,6 +697,8 @@ def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, 
             f = q["filter"]
             state = state_of(f)
             check = conn is not None and state in SCAN_STATES
+            if check:
+                time.sleep(STATS_LAG_S)  # the statistics the previous request left unpublished must not land in this state's window
             allowed = calibrate_scans(conn, f) if check else 0
             before = scan_counts(conn) if check else None
             first, _ = api_request(url, op_id, f)

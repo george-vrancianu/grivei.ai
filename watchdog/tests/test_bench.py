@@ -313,3 +313,22 @@ def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_mea
     entry = _entry("chips", 40, 40, scans={"search": 1, "allowed": 3, "need_rollup": True, "cube": 0, "entity": 0}, scan_ok=False)
     ok, why = verdict(entry, 500)
     assert not ok and "barely read" in why
+
+
+def test_api_mode_waits_for_the_statistics_of_the_previous_request_before_it_opens_a_checked_state(monkeypatch):
+    events = []
+    monkeypatch.setattr(bench, "api_request", lambda url, op_id, f, timeout=60.0: (events.append(("req", f.get("q"))) or 5.0, {}))
+    monkeypatch.setattr(bench.time, "sleep", lambda s: events.append(("sleep", s)))
+    monkeypatch.setattr(bench, "calibrate_scans", lambda conn, f: events.append(("calibrate", None)) or 1)
+    monkeypatch.setattr(bench, "scan_counts", lambda conn: events.append(("counts", None)) or {"seap.search": 0, "seap.rollup_cube": 0, "seap.rollup_entity": 0})
+
+    class Conn:
+        def close(self):
+            pass
+
+    import psycopg
+
+    monkeypatch.setattr(psycopg, "connect", lambda *a, **k: Conn())
+    bench.run_api("http://api/graphql", "id1", [{"label": "t", "filter": {"q": "ma re"}}, {"label": "e", "filter": {}}], repetitions=1, db_url="postgresql://x")
+    first_calibrate = events.index(("calibrate", None))
+    assert ("sleep", bench.STATS_LAG_S) in events[:first_calibrate] and ("req", "ma re") in events[:first_calibrate]
