@@ -56,6 +56,7 @@ const rolesEdgeArchive = join(watchdog, "tests/fixtures/archive-roles-edge"); //
 const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
 const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
 const splittingArchive = join(watchdog, "tests/fixtures/archive-splitting"); // the splitting rule: a trigger, a 31-day near miss, merging windows, a cap change, left-out cases (#75)
+const frameworkOverrunArchive = join(watchdog, "tests/fixtures/archive-framework-overrun"); // the framework-overrun rule: a crossing, exactly 110%, 90%, a blank ceiling, a pre-2021 framework, summed ceilings (#76)
 const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
 const image = process.env.PARADEDB_IMAGE ?? readImagePin();
@@ -138,6 +139,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
     cpSync(signalsArchive, join(scratch, "archive-signals"), { recursive: true });
     cpSync(splittingArchive, join(scratch, "archive-splitting"), { recursive: true });
+    cpSync(frameworkOverrunArchive, join(scratch, "archive-framework-overrun"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -179,6 +181,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE roles_edge");
     await admin.query("CREATE DATABASE signals_a");
     await admin.query("CREATE DATABASE splitting_a");
+    await admin.query("CREATE DATABASE framework_overrun_a");
   });
 
   afterAll(async () => {
@@ -2115,7 +2118,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     beforeAll(() => {
       const out = rebuild(DB, "archive-signals");
-      expect(out).toContain("signals: OVER_CAP 7, SPLITTING 0, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal; the splitting rule (#75) finds none here (its own fixture is archive-splitting)
+      expect(out).toContain("signals: OVER_CAP 7, SPLITTING 0, FRAMEWORK_OVERRUN 0, NO_PUBLICATION 5"); // one Signal per authority and day: the Records of a day are one Signal; splitting (#75) and framework-overrun (#76) find none here (their own fixtures are archive-splitting and archive-framework-overrun)
     });
 
     const op = async (o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
@@ -2145,6 +2148,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         { slug: "OVER_CAP", window: { from: "2022-01-01", to: null }, baseRate: 2 / 3, baseRateYear: 2023, dataThrough: "2024-03-20" },
         // the splitting rule (#75) reads the same direct purchases and finds no Signal in this fixture (its own is archive-splitting)
         { slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-03-20" },
+        // framework-overrun (#76) reads Contracte (CONTRACT Records): this fixture has no framework agreement, so no Signal; the window starts with its first Contracte (2023; the rule's
+        // 2021 floor only matters when older ones are loaded, as in archive-framework-overrun), the year is the latest complete one it has Records for (2023: the Contracte of 2024 are not complete)
+        { slug: "FRAMEWORK_OVERRUN", window: { from: "2023-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-02-01" },
         // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
         { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
       ]);
@@ -2607,7 +2613,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
 
     beforeAll(() => {
-      expect(rebuild(DB, "archive-splitting")).toContain("signals: OVER_CAP 2, SPLITTING 6, NO_PUBLICATION 0");
+      expect(rebuild(DB, "archive-splitting")).toContain("signals: OVER_CAP 2, SPLITTING 6, FRAMEWORK_OVERRUN 0, NO_PUBLICATION 0");
     });
 
     const op = async (o: { sha256: string; document: string }, variables: Record<string, unknown>) => {
@@ -2713,6 +2719,151 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const data = await op(methodology, {});
       const rule = (data.signalRules as { slug: string; window: { from: string; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).find((r) => r.slug === "SPLITTING");
       expect(rule).toEqual({ slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 1, baseRateYear: 2022, dataThrough: "2023-09-10" });
+    });
+  });
+
+  describe("framework-overrun (#76): archive-framework-overrun -> rebuild -> Signals, reproduce, filters", () => {
+    type Repro = { authority: string | null; supplier: string | null; signal: string | null; cpv: string | null; from: string | null; to: string | null };
+    type Sig = { rule: string; date: string; firstDate: string; recordCount: number; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Repro; records?: { code: string }[] };
+    const DB = "framework_overrun_a";
+    const S = "1000017";
+    const C = "1000009";
+    const N = "2000031";
+    const ALFA = "2000007";
+    const BETA = "2000015";
+    const GAMMA = "2000023";
+    const RON = (n: number) => String(Math.round(n * 100));
+    const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+
+    beforeAll(() => {
+      expect(rebuild(DB, "archive-framework-overrun")).toContain("signals: OVER_CAP 0, SPLITTING 0, FRAMEWORK_OVERRUN 5, NO_PUBLICATION 0");
+    });
+
+    const op = async (o: { sha256: string; document: string }, variables: Record<string, unknown>) => {
+      const r = await ask(DB, o.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(o.document), r.body.data, variables)).toEqual([]);
+      return r.body.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const signals = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await op(entityOverview, { key, role, filter, signalOrder: "DATE_DESC", signalOffset: 0 })).entity.seap.role.signals as { count: number; rows: Sig[] };
+    const overruns = async (key: string, role: string, filter: Record<string, unknown> = {}) =>
+      (await signals(key, role, { signal: "FRAMEWORK_OVERRUN", ...filter })).rows.filter((s) => s.rule === "FRAMEWORK_OVERRUN");
+    const doc = (source: string, variableValues: Record<string, unknown> = {}) => {
+      const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${DB}`)!;
+      return graphql({ schema, source, rootValue: rootValue(postgresStore(pool, { rollup: true })), variableValues }).then((r) => {
+        expect(r.errors).toBeUndefined();
+        return r.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    };
+    const range = (s: Sig) => `${s.firstDate}..${s.date}`;
+
+    it("a crossing: the subsequent contract that pushes the sum over 110% dates the Signal; later subsequent contracts are not its Records but are in its numbers (#76)", async () => {
+      const [x1, x7] = (await overruns(S, "AUTHORITY")).sort((a, b) => b.date.localeCompare(a.date)); // newest first: 03-05, then 02-20
+      expect(x1).toMatchObject({ rule: "FRAMEWORK_OVERRUN", firstDate: "2023-01-10", date: "2023-03-05", recordCount: 4 }); // the ceiling and the first three subsequent contracts, not the 03-20 one
+      expect(x1!.suppliers.map((s) => s.key)).toEqual([ALFA]);
+      // ceiling 1,000,000; all four subsequent contracts reported = 1,250,000: the numbers describe the framework as reported, the Records stop at the crossing
+      expect(x1!.numbers).toEqual({ __typename: "FrameworkOverrunNumbers", ceiling: RON(1_000_000), subsequent: RON(1_250_000), ratio: 1.25 });
+      expect(x1!.reproduce).toEqual({ authority: S, supplier: ALFA, signal: "FRAMEWORK_OVERRUN", cpv: null, from: "2023-01-10", to: "2023-03-05" });
+      expect(x7).toMatchObject({ firstDate: "2023-01-15", date: "2023-02-20", recordCount: 2 });
+      expect(x7!.numbers).toMatchObject({ ceiling: RON(1_000_000), subsequent: RON(1_200_000), ratio: 1.2 });
+      expect(x7!.reproduce).toMatchObject({ supplier: BETA });
+    });
+
+    it("the same numbers as the Record page's framework link (seap.framework), from the ceiling and from a subsequent contract (#76)", async () => {
+      const page = async (code: string) => (await op(recordPage, { code })).seap.record;
+      for (const code of ["CAN9700001~1", "CAN9700001~4"]) {
+        const r = await page(code);
+        expect(r.framework).toMatchObject({ ceiling: RON(1_000_000), subsequentReported: RON(1_250_000), ratio: 1.25 });
+        expect(r.signals.map((s: Sig) => s.rule)).toEqual(["FRAMEWORK_OVERRUN"]);
+        expect(r.signals[0].numbers).toMatchObject({ ceiling: RON(1_000_000), subsequent: RON(1_250_000), ratio: 1.25 });
+        expect(r.signals[0].records.map((x: { code: string }) => x.code).sort()).toEqual(["CAN9700001~1", "CAN9700001~2", "CAN9700001~3", "CAN9700001~4"]);
+      }
+      expect((await page("CAN9700001~5")).signals).toEqual([]); // after the crossing: reported, not a member
+    });
+
+    it("negatives: exactly 110%, 90%, a blank ceiling and a pre-2021 framework make no Signal (#76)", async () => {
+      const all = async (key: string, role: string) => (await overruns(key, role)).map((s) => s.reproduce.authority + " " + range(s)).sort();
+      expect(await all(S, "AUTHORITY")).toEqual([`${S} 2023-01-10..2023-03-05`, `${S} 2023-01-15..2023-02-20`]); // CAN9700002 (exactly 110%) is not there
+      // the commune: CAN9700003 (90%) and CAN9700004 (blank ceiling, 5,000,000 of subsequent contracts) are not Signals; only CAN9700008 is
+      expect(await all(C, "AUTHORITY")).toEqual([`${C} 2023-01-02..2023-02-05`]);
+      // CNAIR: CAN9700005 is a 2020 framework with 1,500,000 of 2023 subsequent contracts (150%): not a Signal; CAN9700006 and CAN9700009 are
+      expect(await all(N, "AUTHORITY")).toEqual([`${N} 2023-01-03..2023-01-03`, `${N} 2023-01-05..2023-02-20`]);
+      const page = async (code: string) => (await op(recordPage, { code })).seap.record;
+      for (const code of ["CAN9700002~1", "CAN9700002~2", "CAN9700003~1", "CAN9700003~3", "CAN9700004~1", "CAN9700004~2", "CAN9700005~1", "CAN9700005~2", "CAN9700005~3"]) {
+        expect((await page(code)).signals, code).toEqual([]);
+      }
+      // the pre-2021 and blank-ceiling frameworks are still frameworks for the counting rule: the Record page shows their link
+      expect((await page("CAN9700005~2")).framework).toMatchObject({ ceiling: RON(1_000_000), subsequentReported: RON(1_500_000), ratio: 1.5 });
+      expect((await page("CAN9700004~2")).framework).toMatchObject({ ceiling: null, ratio: null });
+    });
+
+    it("several ceilings are summed; several suppliers leave the supplier out of the filter; a consortium subsequent contract too (#76)", async () => {
+      const n = (await overruns(N, "AUTHORITY")).find((s) => s.firstDate === "2023-01-05")!;
+      expect(n).toMatchObject({ firstDate: "2023-01-05", date: "2023-02-20", recordCount: 4 }); // both ceilings, BETA's 700,000 subsequent contract and the crossing GAMMA one
+      expect(n!.numbers).toMatchObject({ ceiling: RON(1_000_000), subsequent: RON(1_200_000), ratio: 1.2 });
+      expect(n!.suppliers.map((s) => s.key).sort()).toEqual([ALFA, BETA, GAMMA]);
+      expect(n!.reproduce).toEqual({ authority: N, supplier: null, signal: "FRAMEWORK_OVERRUN", cpv: null, from: "2023-01-05", to: "2023-02-20" });
+      const [c] = await overruns(C, "AUTHORITY");
+      expect(c!.numbers).toMatchObject({ ceiling: RON(500_000), subsequent: RON(570_000), ratio: 1.14 });
+      expect(c!.suppliers.map((s) => s.key).sort()).toEqual([ALFA, GAMMA]);
+      expect(c!.reproduce.supplier).toBeNull();
+    });
+
+    it("subsequent contracts signed by another authority under the notice count, as on the Record page; the Signal is the concluder's alone (#76)", async () => {
+      // CAN9700009: concluded by CNAIR (ceiling 1,000,000), its only subsequent contract (1,200,000) signed by the commune
+      const [x9] = (await overruns(N, "AUTHORITY")).filter((s) => s.firstDate === "2023-01-03");
+      expect(x9).toMatchObject({ date: "2023-01-03", recordCount: 1 }); // the crossing contract (2023-03-01) is the other authority's, not a Record: dated by its latest Record, the ceiling
+      expect(x9!.numbers).toEqual({ __typename: "FrameworkOverrunNumbers", ceiling: RON(1_000_000), subsequent: RON(1_200_000), ratio: 1.2 }); // the Record page's numbers
+      expect(x9!.reproduce).toEqual({ authority: N, supplier: ALFA, signal: "FRAMEWORK_OVERRUN", cpv: null, from: "2023-01-03", to: "2023-01-03" }); // `to` is the last member's day
+      expect((await overruns(C, "AUTHORITY")).map((s) => s.firstDate)).toEqual(["2023-01-02"]); // not a Signal of the commune
+      const page = async (code: string) => (await op(recordPage, { code })).seap.record;
+      expect((await page("CAN9700009~1")).signals.map((s: Sig) => s.rule)).toEqual(["FRAMEWORK_OVERRUN"]);
+      const off = await page("CAN9700009~2");
+      expect(off.signals).toEqual([]);
+      expect(off.framework).toMatchObject({ ceiling: RON(1_000_000), subsequentReported: RON(1_200_000), ratio: 1.2 });
+    });
+
+    it("a Signal is on its authority's and its suppliers' pages; the filter and the facet count it (#76)", async () => {
+      const where = async (key: string) => (await overruns(key, "SUPPLIER")).map((s) => `${s.reproduce.authority} ${range(s)}`).sort();
+      expect(await where(ALFA)).toEqual([`${C} 2023-01-02..2023-02-05`, `${S} 2023-01-10..2023-03-05`, `${N} 2023-01-05..2023-02-20`, `${N} 2023-01-03..2023-01-03`].sort());
+      expect(await where(BETA)).toEqual([`${S} 2023-01-15..2023-02-20`, `${N} 2023-01-05..2023-02-20`].sort());
+      expect(await where(GAMMA)).toEqual([`${C} 2023-01-02..2023-02-05`, `${N} 2023-01-05..2023-02-20`].sort());
+      const total = async (f: Record<string, unknown>) =>
+        (await doc(`query($f: RecordFilter!) { seap { search(filter: $f) { total { records } } } }`, { f })).seap.search.total.records as number;
+      expect(await total({ signal: "FRAMEWORK_OVERRUN" })).toBe(14); // 4 + 2 + 4 + 3 + 1 Records
+      expect(await total({ signal: "FRAMEWORK_OVERRUN", authority: S })).toBe(6);
+      expect(await total({ signal: "FRAMEWORK_OVERRUN", authority: S, supplier: ALFA })).toBe(4);
+      expect(await total({ signal: "OVER_CAP" })).toBe(0);
+      const tab = (await op(entityRecords, { key: S, role: "AUTHORITY", filter: {}, limit: 5, offset: 0 })).entity.seap.role.records as { facets: { signal: { value: string; total: { records: number } }[] } };
+      expect(Object.fromEntries(tab.facets.signal.map((f) => [f.value, f.total.records]))).toEqual({ FRAMEWORK_OVERRUN: 6 });
+    });
+
+    it("running a Signal's reproduce filter returns exactly its Records, for every framework-overrun Signal (#76)", async () => {
+      const q = `query($k: ID!, $role: Role!) { entity(key: $k) { seap { role(role: $role) { signals(limit: 200) { rows { rule date reproduce { authority supplier signal cpv from to }
+          records(limit: 200) { code date } } } } } } }`;
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
+      const seen = new Set<string>();
+      for (const [k, role] of [[S, "AUTHORITY"], [C, "AUTHORITY"], [N, "AUTHORITY"], [ALFA, "SUPPLIER"], [BETA, "SUPPLIER"], [GAMMA, "SUPPLIER"]] as const) {
+        const { entity } = await doc(q, { k, role });
+        for (const s of entity.seap.role.signals.rows as { rule: string; date: string; reproduce: Record<string, string | null>; records: { code: string; date: string | null }[] }[]) {
+          const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+          const found = (await doc(search, { f: filter })).seap.search.records;
+          expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
+          expect(found.count).toBe(s.records.length);
+          expect(s.date, JSON.stringify(s.reproduce)).toBe(s.records.map((r) => r.date!).sort().at(-1)); // dated by its latest Record, never by a contract that is not one
+          expect(s.reproduce.to).toBe(s.date);
+          seen.add(JSON.stringify(s.reproduce));
+        }
+      }
+      expect(seen.size).toBe(5); // one per overrun framework; the two of the hospital overlap in dates and are told apart by the supplier
+    });
+
+    it("signalRules: the window starts on 2021-01-01 although a 2020 file is loaded; the base rate counts the authorities that had Contracte in 2023 (#76)", async () => {
+      const data = await op(methodology, {});
+      const rule = (data.signalRules as { slug: string; window: { from: string; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).find((r) => r.slug === "FRAMEWORK_OVERRUN");
+      // 3 authorities have a Contracte Record in 2023 (no complete year in the window before the data-through year 2023, so 2023 stands in; the 2020 Records are before the window); all 3 have a Signal
+      expect(rule).toEqual({ slug: "FRAMEWORK_OVERRUN", window: { from: "2021-01-01", to: null }, baseRate: 1, baseRateYear: 2023, dataThrough: "2023-03-20" });
     });
   });
 
