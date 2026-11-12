@@ -69,7 +69,7 @@ describe("the URL <-> RecordFilter codec", () => {
   });
 
   it("covers exactly the contract's URL-only keys", () => {
-    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc&lens=coverage");
+    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc&lens=coverage&counterparty=30000002");
     expect(Object.keys(state).filter((k) => k !== "filter").sort()).toEqual(Object.keys(URL_ONLY_KEYS).sort());
   });
 
@@ -82,6 +82,12 @@ describe("the URL <-> RecordFilter codec", () => {
   it("ignores unknown keys and malformed values instead of passing them on", () => {
     const state = decodeUrlState("?utm=1&from=yesterday&cpv=abc&uat=x&county=ro-bv&channel=Direct%20Purchase&page=0&page=-1&tab=A%20B&hasSignals=yes");
     expect(state).toEqual({ filter: {} });
+  });
+
+  it("round-trips the picked counterparty after the lens, and ignores a malformed key", () => {
+    expect(roundTrip("lens=flow&counterparty=30000002")).toBe("?lens=flow&counterparty=30000002");
+    expect(decodeUrlState("?counterparty=30000002")).toEqual({ filter: {}, counterparty: "30000002" });
+    expect(decodeUrlState("?counterparty=a%20b")).toEqual({ filter: {} });
   });
 
   it("round-trips the map lens, and leaves out the Money default", () => {

@@ -473,7 +473,7 @@ export const entityRelationships: FixtureSet<EntityRelationshipsQuery, EntityRel
   {
     name: "authority-flow-national", kind: "typical",
     description: "an authority's Flow lens: money going to supplier counties, with the unknown-supplier-county bucket",
-    variables: { key: "4000002", role: "AUTHORITY" },
+    variables: { key: "4000002", role: "AUTHORITY", filter: {} },
     data: { entity: withSeap(w.cnairHeader, {
       role: "AUTHORITY" as Role,
       counterparties: { count: 1, topShare: 1, rows: [{ entity: w.drumarii, naturalPerson: false, total: total({ awarded: ron(112_400_000), records: 13 }), viaDirectPurchase: zeroTotal, viaContract: total({ awarded: ron(112_400_000), records: 13 }), wonTogether: false, hasSignals: true }] },

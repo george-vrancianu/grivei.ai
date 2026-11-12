@@ -44,6 +44,8 @@ export interface RelationshipsTabProps {
   recordHref: (record: RecordResult["record"]) => string;
   /** A slot in the toolbar for the Flow lens toggle (#52's map is the caller's to place). */
   flowToggle?: ReactNode;
+  /** The Flow lens map: when given, it takes the graph's place (with its legend); the timeline and the side panel stay. */
+  flowMap?: ReactNode;
   locale: Locale;
   copy: RelationshipsTabCopy;
 }
@@ -66,7 +68,7 @@ const otherRole = (role: EntityRole): EntityRole => (role === "authority" ? "sup
  */
 export function RelationshipsTab({
   entity, role, counterparties, timeline, selectedTimeline = null, selected, onSelect, sidePanel, sidePanelLoading = false, sidePanelPaging,
-  onNavigate, entityHref, recordHref, flowToggle, locale, copy,
+  onNavigate, entityHref, recordHref, flowToggle, flowMap, locale, copy,
 }: RelationshipsTabProps) {
   const rows = counterparties.rows;
   const pickedRow = selected === null ? null : (rows.find((row) => row.entity?.key === selected && !row.naturalPerson) ?? null);
@@ -81,8 +83,8 @@ export function RelationshipsTab({
       </Box>
       <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(280px, 380px)" }, alignItems: "start" }}>
         <Stack spacing={2}>
-          <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />
-          {rows.length > 0 && (
+          {flowMap ?? <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />}
+          {!flowMap && rows.length > 0 && (
             <>
               <GraphLegend copy={copy.legend} hasWonTogether={rows.some((row) => row.wonTogether)} hasSignals={rows.some((row) => row.hasSignals)} />
               {rows.some((row) => row.wonTogether) && <Typography variant="caption" color="text.secondary">{copy.graph.consortiumNote}</Typography>}
