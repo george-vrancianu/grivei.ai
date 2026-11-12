@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  DataThroughFieldsFragment, EntityRefFragment, MainScreenQuery, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
+  DataThroughFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment, EntityRowFieldsFragment, PartyFieldsFragment,
   MoneyMapFieldsFragment, RecordBadge, RecordResultFieldsFragment, RecordRowFieldsFragment, TotalFieldsFragment,
 } from "@grivei/contract";
 
@@ -26,3 +26,7 @@ export type MatchableField = MatchedField["field"];
 export type EntityRole = "authority" | "supplier";
 /** The Money lens's map: `seap.search.map` and the Flow lens's `flow`. */
 export type MoneyMap = MoneyMapFieldsFragment;
+/** The zoomed county's UAT map: `seap.search.uatMap(county:)`, authority side only. */
+export type UatMap = ZoomedCountyQuery["seap"]["search"]["uatMap"];
+/** A UAT's SIRUTA code: what a click on the zoomed county emits (the `RecordFilter.uat` value). */
+export type Siruta = string;

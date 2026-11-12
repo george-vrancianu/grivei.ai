@@ -4,3 +4,4 @@ export { SideToggle, type SideToggleProps } from "./components/SideToggle/index.
 export { OffMapTiles, type OffMapTilesProps } from "./components/OffMapTiles/index.ts";
 export { OFF_MAP_TILE_AREAS, type CountySide, type MapArea, type MoneyLensMapCopy, type OffMapTilesCopy, type SideToggleCopy } from "./moneyLensMap.types.ts";
 export { moneyMapValues, totalsByCounty } from "./moneyLensMap.utils.ts";
+export { AreaFigures, type AreaFiguresProps } from "./components/AreaFigures/index.ts";
