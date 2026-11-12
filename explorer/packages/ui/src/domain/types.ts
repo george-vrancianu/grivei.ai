@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  TotalFieldsFragment,
+  SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 /** Integer bani (1/100 RON) as a decimal string. */
@@ -79,3 +79,7 @@ export type OverviewProcedure = EntityOverviewData["procedures"][number];
 export type OverviewFrameworks = EntityOverviewData["frameworks"];
 /** Every spelling of an Entity's name in SEAP ("Appears in SEAP as"). */
 export type EntityAliases = EntityHeaderData["aliases"];
+
+/** A Signal as `SignalFields` selects it: rule, dates, count, authority, suppliers, rule-specific numbers and the filter that reproduces it. */
+export type SignalData = SignalFieldsFragment;
+export type SignalRule = SignalRuleSlug;

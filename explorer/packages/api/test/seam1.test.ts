@@ -10,6 +10,8 @@
  * Python (psycopg) is missing. Env: PIPELINE_PYTHON (default watchdog/.venv/bin/python), PARADEDB_IMAGE, SEAM1_REQUIRED (fail instead of skip).
  */
 import { execFileSync, spawnSync } from "node:child_process";
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +29,8 @@ import { postgresStore } from "../src/store.ts";
 import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
+import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
+import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -2629,6 +2633,157 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const data = await op(methodology, {});
       const rule = (data.signalRules as { slug: string; window: { from: string; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).find((r) => r.slug === "SPLITTING");
       expect(rule).toEqual({ slug: "SPLITTING", window: { from: "2022-01-01", to: null }, baseRate: 1, baseRateYear: 2022, dataThrough: "2023-09-10" });
+    });
+  });
+
+  describe("recorded fixtures (#85): seven small archives -> rebuild -> the recorded RecordPage", () => {
+    // The app's seam 3 renders the Record page against these answers, so the two seams stay in step: this block fails when an answer
+    // drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
+    const recording = process.env.RECORD_FIXTURES === "1";
+    const file = resolve(here, "../../contract/src/fixtures/recorded/RecordPage.json");
+    const ARCHIVES = {
+      counting: { db: "record_counting", dir: "archive-counting", extra: [] as string[] },
+      contracts: { db: "record_contracts", dir: "archive-contracts", extra: [] as string[] },
+      bulk: { db: "record_bulk", dir: "archive-bulk", extra: [] as string[] },
+      identity: { db: "record_identity", dir: "archive-identity", extra: ["--identity-overrides", identityOverrides] },
+      crawl: { db: "record_crawl", dir: "archive-crawl", extra: [] as string[] },
+      signals: { db: "record_signals", dir: "archive-signals", extra: [] as string[] },
+      splitting: { db: "record_splitting", dir: "archive-splitting", extra: [] as string[] },
+    };
+
+    beforeAll(async () => {
+      for (const a of Object.values(ARCHIVES)) {
+        await admin.query(`CREATE DATABASE ${a.db}`);
+        rebuild(a.db, a.dir, a.extra);
+      }
+    });
+
+    const answer = async (c: RecordedRecordCase) => {
+      const r = await ask(ARCHIVES[c.archive].db, recordPage.sha256, c.variables);
+      expect(r.status, c.name).toBe(200);
+      expect(r.body.errors, c.name).toBeUndefined();
+      expect(validateResponse(schema, parse(recordPage.document), r.body.data, c.variables), c.name).toEqual([]);
+      return { name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data };
+    };
+    const answers = new Map<string, Awaited<ReturnType<typeof answer>>>();
+    beforeAll(async () => {
+      for (const c of RECORDED_RECORD_CASES) answers.set(c.name, await answer(c));
+    });
+    const recordOf = (name: string) => (answers.get(name)!.data as RecordPageQuery).seap.record!;
+
+    it("RecordPage: every recorded case is what the API answers now", () => {
+      const recorded = RECORDED_RECORD_CASES.map((c) => answers.get(c.name)!);
+      if (recording) writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      // through JSON, so undefined and key order do not matter
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+    });
+
+    it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
+      const asked = RECORDED_RECORD_CASES.map((c) => c.variables.code);
+      expect(new Set(asked).size).toBe(asked.length);
+      expect(new Set(RECORDED_RECORD_CASES.map((c) => c.name)).size).toBe(asked.length);
+    });
+
+    it("answers every Record kind, and the states the Record page names, with the facts they are named for", () => {
+      const R = (n: number) => bani(n);
+      const kinds = RECORDED_RECORD_CASES.filter((c) => c.name !== "not-found").map((c) => recordOf(c.name).kind);
+      expect([...new Set(kinds)].sort()).toEqual(["AWARD_NOTICE", "CONTRACT", "DA", "DAN"]);
+      // value as published and counted value; a suspect one is shown, flagged by its rule and threshold, not counted
+      expect(recordOf("direct-purchase-counted")).toMatchObject({ kind: "DA", value: R(1_350_599), counted: R(1_350_599), badges: [], suspect: null, framework: null });
+      expect(recordOf("direct-purchase-counted").signals.map((x) => x.rule)).toEqual(["OVER_CAP"]); // 9.99999x the cap: counted, and an over-cap Signal lists it
+      expect(recordOf("direct-purchase-suspect")).toMatchObject({ value: R(2_000_000), counted: null, badges: ["SUSPECT_VALUE"], suspect: { rule: "DIRECT_PURCHASE_10X_CAP", threshold: R(135_060) } });
+      expect(recordOf("contract-suspect-over-estimate")).toMatchObject({ kind: "CONTRACT", counted: null, suspect: { rule: "CONTRACT_100X_ESTIMATE", threshold: R(10_000_000) } });
+      expect(recordOf("contract-suspect-no-estimate")).toMatchObject({ counted: null, suspect: { rule: "CONTRACT_OVER_50BN", threshold: null } });
+      // no value in SEAP
+      expect(recordOf("direct-purchase-no-value")).toMatchObject({ value: null, counted: null, badges: ["NO_VALUE"], suspect: null });
+      // a framework agreement and what hangs on it; a subsequent contract points back; a blank ceiling has no ratio
+      const framework = recordOf("framework-agreement");
+      expect(framework).toMatchObject({ value: R(10_000_000), counted: null, badges: ["FRAMEWORK_CEILING"] });
+      expect(framework.framework).toMatchObject({ agreement: null, ceiling: R(10_000_000), subsequentReported: R(5_000_000), ratio: 0.5 });
+      expect(framework.framework!.subsequent.map((s) => s.code)).toEqual(["CAN9800001~2", "CAN9800001~3"]);
+      expect(recordOf("subsequent-contract")).toMatchObject({ counted: R(4_000_000), badges: ["SUBSEQUENT_CONTRACT"], framework: { agreement: { code: "CAN9800001~1" }, ratio: 0.5 } });
+      expect(recordOf("framework-blank-ceiling").framework).toMatchObject({ ceiling: null, subsequentReported: R(500_000), ratio: null });
+      // a consortium: the full value once, equal shares summing back to it; a natural person among the members is unnamed and unlinked
+      const trio = recordOf("consortium-with-natural-person");
+      expect(trio).toMatchObject({ value: "100000", counted: "100000", badges: ["CONSORTIUM_SHARE"] });
+      expect(trio.winners.map((w) => w.share)).toEqual(["33334", "33333", "33333"]);
+      expect(trio.winners.map((w) => [w.naturalPerson, w.publishedName, w.entity?.key ?? null])).toEqual([[false, "ALFA DEMO SRL", "name-alfa-demo-srl"], [true, null, null], [false, "BALKAN TRADING OOD", "vat-bg103029862"]]);
+      expect(recordOf("award-notice-consortium")).toMatchObject({ kind: "AWARD_NOTICE", value: "9880000", counted: "9880000", badges: ["CONSORTIUM_SHARE"] });
+      expect(recordOf("award-notice-consortium").winners.map((w) => w.share)).toEqual(["4940000", "4940000"]);
+      expect(recordOf("framework-consortium")).toMatchObject({ kind: "CONTRACT", counted: null, badges: ["FRAMEWORK_CEILING", "CONSORTIUM_SHARE"], framework: { ceiling: "120025", ratio: 0, subsequent: [] } });
+      // a subsequent contract whose framework is in the archive, under a code with a slash
+      expect(recordOf("contract-code-with-slash")).toMatchObject({ badges: ["SUBSEQUENT_CONTRACT"], framework: { agreement: { code: "CAN9000010~21" } } });
+      // identity: a natural person is never named; mismatch, differing name, curation
+      expect(recordOf("natural-person-winner").winners).toEqual([expect.objectContaining({ naturalPerson: true, publishedName: null, entity: null })]);
+      expect(recordOf("cui-mismatch").badges).toEqual(["CUI_MISMATCH"]);
+      expect(recordOf("name-differs-from-anaf").badges).toEqual(["NAME_DIFFERS_FROM_ANAF"]);
+      expect(recordOf("identity-curated").badges).toEqual(["NAME_DIFFERS_FROM_ANAF", "IDENTITY_CURATED"]);
+      expect(recordOf("consortium-name-only-members").winners.map((w) => [w.naturalPerson, w.entity?.key ?? null])).toEqual([[false, "2000007"], [true, null], [false, "vat-bg103029862"]]);
+      // crawled Records: provisional or crawl-only, with the notice's own page as the link and no bulk file behind them
+      expect(recordOf("crawl-only")).toMatchObject({ badges: ["CRAWL_ONLY"], provenance: { kind: "CRAWL", via: null, url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000012", fetchedAt: "2026-11-11T09:00:00Z" } });
+      expect(recordOf("crawled-provisional")).toMatchObject({ badges: ["CRAWLED_PROVISIONAL"], provenance: { kind: "CRAWL", url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013", fetchedAt: "2026-11-12T09:00:00Z" } });
+      expect(recordOf("crawled-request-for-quotation").provenance.url).toBe("https://e-licitatie.ro/pub/notices/ca-notices/view-rfq/92000014");
+      expect(recordOf("bulk-over-crawl")).toMatchObject({ badges: [], provenance: { kind: "BULK", via: "Contracte 2026 - T1" } });
+      // Signals: the Record lists its Signals with their Records and numbers
+      const over = recordOf("over-cap-signal");
+      expect(over.signals).toHaveLength(1);
+      expect(over.signals[0]).toMatchObject({ rule: "OVER_CAP", recordCount: 2, numbers: { __typename: "OverCapNumbers" } });
+      expect(over.signals[0]!.records.map((r) => r.code).sort()).toEqual(["DA98000001", "DA98000002"]);
+      expect(recordOf("signal-natural-person").signals.map((s) => s.rule)).toEqual(["OVER_CAP"]);
+      expect(recordOf("signal-natural-person").winners[0]).toMatchObject({ naturalPerson: true, publishedName: null, entity: null });
+      expect(recordOf("no-publication-signal")).toMatchObject({ kind: "AWARD_NOTICE", badges: ["CRAWL_ONLY"], signals: [{ rule: "NO_PUBLICATION" }], provenance: { kind: "CRAWL" } });
+      expect(recordOf("no-publication-signal").signals[0]!.numbers).toEqual({ __typename: "NoPublicationNumbers", procedure: "Negociere fara publicare prealabila" });
+      const split = recordOf("splitting-signal");
+      expect(split.signals).toHaveLength(1);
+      expect(split.signals[0]).toMatchObject({ rule: "SPLITTING", recordCount: 3, numbers: { __typename: "SplittingNumbers", purchases: 3 } });
+      expect(split.signals[0]!.records.map((r) => r.code).sort()).toEqual(["DA97000005", "DA97000006", "DA97000007"]);
+      // an unknown code is no Record
+      expect((answers.get("not-found")!.data as RecordPageQuery).seap.record).toBeNull();
+    });
+
+    it("gives every bulk Record the redirect path for its code as the Check-in-SEAP link, and the redirect reaches the page of its notice type (seam 2 fake upstream)", async () => {
+      const upstream: Server = createServer((req, res) => {
+        const chunks: Buffer[] = [];
+        req.on("data", (x: Buffer) => chunks.push(x));
+        req.on("end", () => {
+          const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as Record<string, string>;
+          const row = req.url?.includes("GetDirectAcquisitionList")
+            ? { directAcquisitionId: 111, uniqueIdentificationCode: body.uniqueIdentificationCode }
+            : req.url?.includes("GetDaAwardNoticeList")
+              ? { daAwardNoticeId: 333, noticeNo: body.noticeNo }
+              : { caNoticeId: 222, noticeNo: body.number, sysNoticeTypeId: body.number?.startsWith("SCNA") ? 18 : 3, sysNoticeVersionId: 2 };
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ total: 1, items: [row] }));
+        });
+      });
+      await new Promise<void>((r) => upstream.listen(0, "127.0.0.1", r));
+      const upstreamBase = `http://127.0.0.1:${(upstream.address() as AddressInfo).port}`;
+      const server = await createApi({} as never, schema, { seapLink: createSeapLink({ baseUrl: upstreamBase }) }).listen(0, "127.0.0.1");
+      const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+      try {
+        const bulk = RECORDED_RECORD_CASES.map((c) => ({ c, r: (answers.get(c.name)!.data as RecordPageQuery).seap.record })).filter((x) => x.r?.provenance.kind === "BULK");
+        expect(bulk.length).toBeGreaterThan(15);
+        const pages: Record<string, string> = {};
+        for (const { c, r } of bulk) {
+          const code = r!.code;
+          expect(code, c.name).toBe(c.variables.code);
+          // the link the page shows is the redirect path of the Record's code (url-encoded as a path segment)
+          expect(r!.provenance.url, c.name).toBe(seapLinkUrl(code));
+          expect(r!.provenance.url, c.name).toBe(`/source/seap/${encodeURIComponent(code)}`);
+          const res = await fetch(`${base}${r!.provenance.url}`, { redirect: "manual" });
+          expect(res.status, c.name).toBe(302);
+          pages[code] = res.headers.get("location")!.replace(upstreamBase, "");
+        }
+        expect(pages["DA94000002"]).toBe("/pub/direct-acquisition/view/111");
+        expect(pages["DAN9100001"]).toBe("/pub/direct-acquisition/award-notice/view/333");
+        expect(pages["CAN9800001~1"]).toBe("/pub/notices/ca-notices/view-c/222");
+        expect(pages["CAN9000010~1398514/1"]).toBe("/pub/notices/ca-notices/view-c/222"); // `~number` dropped: the notice's page
+        expect(pages["CAN9100002"]).toBe("/pub/notices/ca-notices/view-c/222");
+      } finally {
+        server.close();
+        server.closeAllConnections();
+        await new Promise<void>((r) => upstream.close(() => r()));
+      }
     });
   });
 

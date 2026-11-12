@@ -265,4 +265,44 @@ export const en: Copy = {
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
     },
   },
+  /** The Signal card, its compact badge and the wording of each rule: label, sentence with the numbers filled in, lawful explanations. */
+  signalCard: {
+    rules: {
+      OVER_CAP: {
+        label: "Over cap",
+        sentence: (n) => `One direct purchase was awarded for ${n.value}, ${n.multiple} times the direct-purchase cap of ${n.cap}.`,
+        lawful: "Possible lawful explanations: a call-off under a framework agreement, an exception in the law, or a data-entry error in the value or the type of the Record.",
+      },
+      SPLITTING: {
+        label: "Splitting",
+        sentence: (n) => `${n.purchases} direct purchases in CPV group ${n.cpvGroup} between ${n.from} and ${n.to} add up to ${n.sum}, above the single-purchase cap of ${n.cap}.`,
+        lawful: "Possible lawful explanations: separate needs, separate budget lines, or unrelated items that share a CPV group.",
+      },
+      FRAMEWORK_OVERRUN: {
+        label: "Framework overrun",
+        sentence: (n) => `Subsequent contracts reported under one framework agreement add up to ${n.subsequent}, against a ceiling of ${n.ceiling}: ${n.ratio} of it.`,
+        lawful: "Possible lawful explanations: indexation of prices, or modifications the law allows.",
+      },
+      NO_PUBLICATION: {
+        label: "No publication",
+        sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
+        lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
+      },
+    },
+    compact: { text: (label, when) => `${label}, ${when}` },
+    date: (when) => `Latest Record: ${when}`,
+    records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+    parties: {
+      authority: "Contracting authority",
+      suppliers: "Suppliers",
+      moreSuppliers: (_n, f) => `and ${f} more`,
+      entityLink,
+    },
+    links: {
+      reproduce: (n, f) => (n === 1 ? "See the Record" : `See the ${f} Records`),
+      seap: { check: "Check in SEAP", checkEach: "Check each Record in SEAP" },
+      methodology: "How this Signal is detected",
+    },
+  },
+
 };

@@ -196,6 +196,37 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     }) },
   },
   {
+    name: "authority-signal-splitting-reproduction", kind: "typical",
+    description: "the Records tab a splitting Signal's reproducing link opens, as the app asks for it (no explicit order): authority page, signal + supplier + CPV group + dates",
+    variables: {
+      key: "4000001", role: "AUTHORITY", limit: 100, offset: 0,
+      filter: { signal: "SPLITTING", supplier: "30000001", cpv: "770", from: "2024-07-01", to: "2024-07-19" },
+    },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(290_000), records: 2 }),
+        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
+        records: rowsOf(w.rSplit2, w.rSplit1),
+      },
+    }) },
+  },
+  {
+    name: "authority-signal-over-cap-reproduction", kind: "typical",
+    description: "the Records tab an over-cap Signal's reproducing link opens: authority page, signal + the one day (no supplier, as the pipeline writes it)",
+    variables: {
+      key: "4000001", role: "AUTHORITY", limit: 100, offset: 0,
+      filter: { signal: "OVER_CAP", from: "2024-01-19", to: "2024-01-19" },
+    },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(300_000), records: 1 }),
+        facets: { ...facetsOfAuthority, signal: [facetsOfAuthority.signal[1]!] },
+        records: rowsOf(w.rDirect),
+      },
+    }) },
+  },
     name: "supplier-signal-splitting", kind: "typical",
     description: "a supplier's Records tab after the Splitting facet: the total and the rows follow the filter",
     variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { signal: "SPLITTING" } },
