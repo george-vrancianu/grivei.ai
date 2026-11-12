@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "contracte",
+  "unit": "2020Q4",
+  "fetchedAt": "2021-03-20T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-contracte-t4-2020.csv",
+  "via": "Contracte t4-2020",
+  "files": [
+    {
+      "name": "raport-contracte-t4-2020.csv",
+      "sha256": "c9d59d1bf268888ef68a2bb2c0c82a57656890a3be9b0b4da5f83c9d5ee807cb",
+      "bytes": 563
+    }
+  ]
+}

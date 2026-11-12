@@ -18,7 +18,7 @@ type if they are not there yet (the API maps `numbers` jsonb to that type by slu
 The base rate (story 80) is the fraction of contracting authorities, among those the rule could see (an authority with at least one
 Record of the rule's kinds in the year), that have at least one Signal of the rule dated in `baseRateYear`: the latest calendar year
 before the data-through year that the rule has Records for (a complete year), else the latest year it has. The window starts on 1 January
-of the first year the rule has Records for and is open at the end (`dataThrough` says how far the data goes).
+of the first year the rule has Records for (never before the rule's optional `WINDOW_FROM`, e.g. framework-overrun's 2021-01-01) and is open at the end (`dataThrough` says how far the data goes).
 """
 from __future__ import annotations
 
@@ -28,13 +28,13 @@ from types import ModuleType
 import psycopg
 from psycopg.types.json import Jsonb
 
-from . import no_publication, over_cap, splitting
+from . import framework_overrun, no_publication, over_cap, splitting
 from .common import Hit
 
 # The contract's SignalRuleSlug order. Every rule is a module with SLUG, KINDS, WHERE and detect.
-RULES: tuple[ModuleType, ...] = (over_cap, splitting, no_publication)
+RULES: tuple[ModuleType, ...] = (over_cap, splitting, framework_overrun, no_publication)
 
-ROW_COLUMNS = "code, kind, channel, authority_key, award_date, value_bani, counted_bani, suspect, cpv_code, contract_type, procedure, winners"
+ROW_COLUMNS = "code, kind, channel, authority_key, award_date, value_bani, counted_bani, suspect, cpv_code, contract_type, procedure, winners, notice_code, framework_role, ceiling_bani"
 
 
 def _rows(cur: psycopg.Cursor, where: str, order_by: str = "code"):
@@ -96,8 +96,8 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
         year, with_signal, seen = rate
         cur.execute(
             "INSERT INTO seap.signal_rule (slug, window_from, window_to, base_rate, base_rate_year, data_through, authorities, with_signal) "
-            "VALUES (%s, make_date((SELECT min(extract(year FROM award_date))::int FROM seap.record WHERE kind = ANY(%s)), 1, 1), NULL, %s, %s, %s, %s, %s)",
-            (rule.SLUG, list(rule.KINDS), with_signal / seen if seen else 0.0, year, through, seen, with_signal),
+            "VALUES (%s, GREATEST(make_date((SELECT min(extract(year FROM award_date))::int FROM seap.record WHERE kind = ANY(%s)), 1, 1), %s::date), NULL, %s, %s, %s, %s, %s)",
+            (rule.SLUG, list(rule.KINDS), getattr(rule, "WINDOW_FROM", date.min), with_signal / seen if seen else 0.0, year, through, seen, with_signal),
         )
     # the search rows carry the rule slugs of their Record: the signal and has-Signals filters read them, the rollup copies has_signals
     cur.execute(

@@ -127,3 +127,19 @@ def test_signals_are_visible_only_when_the_load_commits_and_a_failed_load_keeps_
     with pytest.raises(RuntimeError):  # fails after the Signals were built: the previous Signals stay
         load(built, tmp_path, "archive-roles")
     assert q(built, count) == previous
+
+
+def test_framework_overrun_through_a_rebuild_matches_seap_framework_and_floors_its_window_at_2021(db, tmp_path):
+    """#76: the rule's sums are made from the streamed Records; they must equal `seap.framework` (the counting rule's own table). The fixture
+    has a 2020 Contracte file, yet the rule's window starts on 2021-01-01 (`WINDOW_FROM`)."""
+    load(db, tmp_path, "archive-framework-overrun")
+    signals = q(db, "SELECT authority_key, first_date, last_date, record_count, numbers FROM seap.signal WHERE rule = 'FRAMEWORK_OVERRUN' ORDER BY last_date, authority_key")
+    assert [(a, f, ld, n) for a, f, ld, n, _ in signals] == [
+        ("1000009", date(2023, 1, 2), date(2023, 2, 5), 3), ("1000017", date(2023, 1, 15), date(2023, 2, 20), 2),
+        ("2000031", date(2023, 1, 5), date(2023, 2, 20), 4), ("1000017", date(2023, 1, 10), date(2023, 3, 5), 4)]
+    by_notice = {r[0]: r for r in q(db, "SELECT notice_code, ceiling_bani, subsequent_bani, ratio FROM seap.framework")}
+    for notice, number in (("CAN9700001", signals[3][4]), ("CAN9700007", signals[1][4]), ("CAN9700006", signals[2][4]), ("CAN9700008", signals[0][4])):
+        _, ceiling, subsequent, ratio = by_notice[notice]
+        assert number == {"ceiling": str(ceiling), "subsequent": str(subsequent), "ratio": ratio}
+    assert q(db, "SELECT window_from FROM seap.signal_rule WHERE slug = 'FRAMEWORK_OVERRUN'") == [(date(2021, 1, 1),)]
+    assert q(db, "SELECT DISTINCT notice_code FROM seap.record r JOIN seap.signal_member m ON m.record_code = r.code ORDER BY 1") == [(f"CAN970000{n}",) for n in (1, 6, 7, 8)]
