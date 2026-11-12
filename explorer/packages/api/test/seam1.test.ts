@@ -552,15 +552,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     expect(trio!.winners.map((w) => [w.naturalPerson, w.publishedName, w.share])).toEqual([
       [false, "ALFA DEMO SRL", "33334"], [true, null, "33333"], [false, "BALKAN TRADING OOD", "33333"]]); // the person takes a slot, and no name
     expect(trio!.winners.reduce((sum, w) => sum + BigInt(w.share!), 0n)).toBe(BigInt(trio!.value!));
-    // the same award is counted once in the authority-side total (above); the supplier side reads the shares
-    const pool = new pg.Pool({ connectionString: `${baseUrl}/counting_a`, max: 1 });
-    pools.push(pool);
-    const rows = (await pool.query(
-      `SELECT r.code FROM seap.record r JOIN seap.search s ON s.record_code = r.code
-        GROUP BY r.code, r.counted_bani HAVING coalesce(sum(s.share_bani), 0) <> coalesce(r.counted_bani, 0)`)).rows;
-    expect(rows).toEqual([]);
-    const supplier = (await pool.query("SELECT coalesce(sum(share_bani), 0)::text AS total FROM seap.search WHERE record_code = 'CAN9800006~1' AND supplier_key = 'name-alfa-demo-srl'")).rows;
-    expect(supplier).toEqual([{ total: "33334" }]);
+    // The supplier-side invariant (sum of share_bani = counted_bani per Record) is checked on the tables in tests/test_counting_db.py:
+    // nothing in the API serves a supplier-side Total yet. TODO: assert it here through entity.seap.role(SUPPLIER).total once served.
   });
 
   it("gives identical responses after a second rebuild of the counting archive into a fresh database (#65, ADR 0004)", async () => {

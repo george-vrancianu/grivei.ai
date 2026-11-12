@@ -97,6 +97,16 @@ def test_a_framework_ceiling_is_shown_with_its_badge_and_never_summed_while_subs
     assert contract(300_000_00, None).badges == ()
 
 
+def test_the_ceiling_and_the_suspect_flag_are_decided_here_and_stored_for_the_totals_to_sum():
+    assert (contract(10_000_000_00, "Cu acord cadru").ceiling_bani, contract(10_000_000_00, "Cu acord cadru").suspect) == (10_000_000_00, False)
+    assert contract(4_000_000_00, "Cu acord cadru subsecvent").ceiling_bani is None
+    assert contract(300_000_00, None).ceiling_bani is None
+    assert contract(None, "Cu acord cadru").ceiling_bani is None  # a blank ceiling has no amount
+    # a suspect ceiling is left out as suspect, not shown as a ceiling
+    big = count("CONTRACT", 200_000_000_000_00, D("2023-03-01"), None, None, "Cu acord cadru", "CAN1", 1, {"CAN1": Estimate(None)})
+    assert (big.suspect, big.ceiling_bani, big.counted_bani) == (True, None, None)
+
+
 def test_a_ceiling_with_no_value_has_both_badges_and_is_not_summed():
     assert contract(None, "Cu acord cadru").badges == ("FRAMEWORK_CEILING", "NO_VALUE")
 

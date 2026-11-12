@@ -236,11 +236,11 @@ export function postgresStore(pool: pg.Pool): Store {
   return {
     async total() {
       const { rows } = await pool.query(
-        // The counting rule was applied when the graph was built: this only adds up what it stored (counted_bani, one decision per Record).
+        // The counting rule was applied when the graph was built: this only sums and counts what it stored (counted_bani, suspect, ceiling_bani), with no rule predicate here.
         `SELECT coalesce(sum(counted_bani), 0)::text AS awarded, count(*)::int AS records,
-                (count(*) FILTER (WHERE suspect_rule IS NOT NULL))::int AS suspect_left_out,
+                (count(*) FILTER (WHERE suspect))::int AS suspect_left_out,
                 (count(*) FILTER (WHERE value_bani IS NULL))::int AS no_value,
-                coalesce(sum(value_bani) FILTER (WHERE framework_role = 'CEILING' AND suspect_rule IS NULL), 0)::text AS framework_ceilings
+                coalesce(sum(ceiling_bani), 0)::text AS framework_ceilings
            FROM seap.record`,
       );
       const r = rows[0];

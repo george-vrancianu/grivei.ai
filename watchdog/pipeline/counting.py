@@ -1,7 +1,7 @@
 """The counting rule (#23, #65): the one place that decides what a Record adds to a sum.
 
 `count()` runs once per Record while the rebuild loads it, and its answer is stored (`seap.record.counted_bani`, the badges,
-the suspect rule, `seap.search.share_bani`). The API only sums what is stored; it never re-derives any of this.
+the suspect rule, `seap.search.share_bani`, the suspect flag and the ceiling amount). The API only sums and counts what is stored (counted_bani, suspect, ceiling_bani); it never re-derives any of this.
 
 What the rule says (GLOSSARY: Awarded value, Framework ceiling, Consortium share, Suspect value):
 
@@ -108,7 +108,9 @@ class Estimate:
 class Counted:
     value_bani: int | None  # null = no value in SEAP (blank or zero)
     counted_bani: int | None  # null = not summed
-    badges: tuple[str, ...]  # counting badges, in the contract's enum order
+    badges: tuple[str, ...]  # counting badges, in the order of the contract's RecordBadge enum
+    suspect: bool  # the rule left it out as a suspect value (stored, so a Total counts it without re-deriving the rule)
+    ceiling_bani: int | None  # a framework ceiling's value when it is not suspect, else null (stored: the Total's frameworkCeilings sums it)
     framework_role: str | None
     suspect_rule: str | None
     suspect_threshold_bani: int | None  # the cap in force, or the estimated value; null for CONTRACT_OVER_50BN
@@ -152,6 +154,7 @@ def count(
             elif not known.bani and value_bani > CONTRACT_NO_ESTIMATE_ABOVE:
                 rule, threshold = RULE_50BN, None
     counted = None if value_bani is None or rule or role == FRAMEWORK_CEILING else value_bani
+    ceiling = value_bani if role == FRAMEWORK_CEILING and not rule else None
     badges = [
         *(["FRAMEWORK_CEILING"] if role == FRAMEWORK_CEILING else []),
         *(["SUBSEQUENT_CONTRACT"] if role == FRAMEWORK_SUBSEQUENT else []),
@@ -160,7 +163,7 @@ def count(
         *(["NO_VALUE"] if value_bani is None else []),
     ]
     return Counted(
-        value_bani=value_bani, counted_bani=counted, badges=tuple(badges), framework_role=role, suspect_rule=rule,
+        value_bani=value_bani, counted_bani=counted, badges=tuple(badges), suspect=rule is not None, ceiling_bani=ceiling, framework_role=role, suspect_rule=rule,
         suspect_threshold_bani=threshold, notes=tuple(notes),
         shares=tuple(split_evenly(value_bani, winners)) if value_bani is not None and winners > 1 else (),
         counted_shares=tuple(split_evenly(counted, max(winners, 1))) if counted is not None else (),

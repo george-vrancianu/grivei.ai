@@ -92,6 +92,16 @@ def test_a_consortium_counts_once_on_the_authority_side_and_its_shares_sum_back_
     assert q(url, "SELECT sum(counted_bani) FROM seap.record WHERE code LIKE 'CAN98000%%'")[0][0] == q(url, "SELECT sum(share_bani) FROM seap.search WHERE record_code LIKE 'CAN98000%%'")[0][0]
 
 
+def test_the_stored_columns_alone_give_every_total_field(built):
+    """suspect and ceiling are decided at load and stored on both tables, so a Total over seap.search needs no rule predicate."""
+    url, _ = built
+    assert q(url, "SELECT count(*) FROM seap.record WHERE suspect <> (suspect_rule IS NOT NULL)") == [(0,)]
+    assert q(url, "SELECT count(*) FROM seap.record WHERE ceiling_bani IS DISTINCT FROM CASE WHEN framework_role = 'CEILING' AND suspect_rule IS NULL THEN value_bani END") == [(0,)]
+    # the same totals from the search table's first winner row (the authority side counts a Record once)
+    assert q(url, "SELECT count(*) FILTER (WHERE suspect), sum(ceiling_bani), sum(counted_bani) FROM seap.search WHERE winner_position = 1") == \
+        q(url, "SELECT count(*) FILTER (WHERE suspect), sum(ceiling_bani), sum(counted_bani) FROM seap.record")
+
+
 def test_contracts_of_a_billion_or_more_are_checked_against_the_archived_estimate_only(built):
     url, summary = built
     assert record(url, "CAN9810001~1")[:5] == (120_000_000_000, None, ["SUSPECT_VALUE"], "CONTRACT_100X_ESTIMATE", 10_000_000 * RON)

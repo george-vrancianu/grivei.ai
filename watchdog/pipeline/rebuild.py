@@ -99,7 +99,7 @@ def _search_doc(r: BulkRecord, authority: Resolved, winners: list[tuple[str | No
 _CONTENT = (
     "kind", "channel", "title", "state", "authority_cui", "authority_key", "authority_name", "supplier_cui", "supplier_name", "cpv_code",
     "cpv_description", "contract_type", "published_on", "quarter", "award_date", "estimated_bani", "value_bani",
-    "counted_bani", "framework_role", "suspect_rule", "suspect_threshold_bani", "load_notes", "winners", "badges", "notice_code", "contract_numbers", "procedure", "concluded_by",
+    "counted_bani", "ceiling_bani", "suspect", "framework_role", "suspect_rule", "suspect_threshold_bani", "load_notes", "winners", "badges", "notice_code", "contract_numbers", "procedure", "concluded_by",
     "initiation_code", "lot_count", "via", "url", "ca_notice_id", "sys_notice_type_id", "sys_notice_version_id",
 )
 _UPSERT = f"""
@@ -165,7 +165,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 cpv_code=r.cpv_code, cpv_description=r.cpv_description,
                 contract_type=r.contract_type, published_on=r.published_on, quarter=r.quarter, award_date=r.award_date,
                 estimated_bani=r.estimated_bani, value_bani=counted.value_bani, counted_bani=counted.counted_bani,
-                framework_role=counted.framework_role, suspect_rule=counted.suspect_rule,
+                ceiling_bani=counted.ceiling_bani, suspect=counted.suspect, framework_role=counted.framework_role, suspect_rule=counted.suspect_rule,
                 suspect_threshold_bani=counted.suspect_threshold_bani,
                 load_notes=list(dict.fromkeys((*r.notes, *counted.notes))),
                 winners=Jsonb([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
@@ -187,11 +187,11 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
             keyed = w is not None and not w.natural_person
             cur.execute(
                 """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani,
-                       counted_bani, share_bani, authority_cui, supplier_cui, supplier_key, supplier_spelling, supplier_vat,
+                       counted_bani, ceiling_bani, suspect, share_bani, authority_cui, supplier_cui, supplier_key, supplier_spelling, supplier_vat,
                        supplier_curated, supplier_differs, doc)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
-                 counted.value_bani, counted.counted_bani, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.cui,
+                 counted.value_bani, counted.counted_bani, counted.ceiling_bani, counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.cui,
                  w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
                  w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc),
             )
@@ -361,11 +361,11 @@ _FRAMEWORKS = """
 INSERT INTO seap.framework (notice_code, agreement_code, ceiling_bani, subsequent_bani, subsequent_count, ratio)
 SELECT notice_code,
        min(code) FILTER (WHERE framework_role = 'CEILING'),
-       sum(value_bani) FILTER (WHERE framework_role = 'CEILING' AND suspect_rule IS NULL),
+       sum(ceiling_bani),
        coalesce(sum(counted_bani) FILTER (WHERE framework_role = 'SUBSEQUENT'), 0),
        count(*) FILTER (WHERE framework_role = 'SUBSEQUENT'),
        coalesce(sum(counted_bani) FILTER (WHERE framework_role = 'SUBSEQUENT'), 0)::float8
-         / nullif(sum(value_bani) FILTER (WHERE framework_role = 'CEILING' AND suspect_rule IS NULL), 0)
+         / nullif(sum(ceiling_bani), 0)
   FROM seap.record WHERE framework_role IS NOT NULL AND notice_code IS NOT NULL GROUP BY notice_code
 """
 

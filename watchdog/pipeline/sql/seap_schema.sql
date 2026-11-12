@@ -44,6 +44,8 @@ CREATE TABLE seap.record (
     -- The counting rule (#65, pipeline/counting.py), decided once at load: what the Record adds to a sum. Null = not summed
     -- (no value, a suspect value or a framework ceiling); else = value_bani. Every Total sums this column and nothing else.
     counted_bani     bigint,
+    ceiling_bani     bigint,              -- a framework ceiling's value when it is not suspect, else null; the Total's frameworkCeilings sums it
+    suspect          boolean NOT NULL DEFAULT false,  -- the rule left it out as a suspect value (= suspect_rule IS NOT NULL)
     framework_role   text CHECK (framework_role IN ('CEILING', 'SUBSEQUENT')),  -- `Incheiat prin`: Cu acord cadru | ... subsecvent
     suspect_rule     text CHECK (suspect_rule IN ('DIRECT_PURCHASE_10X_CAP', 'CONTRACT_100X_ESTIMATE', 'CONTRACT_OVER_50BN')),
     suspect_threshold_bani bigint,        -- the cap in force, or the estimated value (null for CONTRACT_OVER_50BN)
@@ -110,6 +112,8 @@ CREATE TABLE seap.search (
     award_year       integer NOT NULL,
     value_bani       bigint,
     counted_bani     bigint,              -- the Record's counted value (null: not summed); the authority side sums it once per Record
+    ceiling_bani     bigint,              -- as on seap.record (once per Record: sum over winner_position = 1 on the authority side)
+    suspect          boolean NOT NULL DEFAULT false,  -- as on seap.record
     share_bani       bigint,              -- this winner's equal share of counted_bani (a sole winner has all of it); the supplier side sums it
     authority_cui    text,
     supplier_cui     text,                -- the winner's ANAF-confirmed CUI (= supplier_key then), else null
