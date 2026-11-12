@@ -258,3 +258,35 @@ def test_a_unit_that_fails_leaves_its_files_free_to_load_from_a_later_unit(tmp_p
     p = plan(a)
     assert len(p.summary.quarantined) == 1 and p.summary.duplicate_files == []
     assert [(u.fetched_at.month, name) for u, name, _ in p.files] == [(6, "a.csv")]
+
+
+# ---- the layout #62 fetch-datagov writes is the layout the loader reads --------------------------------------------
+
+def test_an_archive_written_by_fetch_datagov_loads(tmp_path, monkeypatch):
+    from pipeline import datagov, fetch
+
+    src = FIXTURE / "seap/bulk/da/2022Q1/2022-06-15/raport-achizitii-directe-t1-2022.csv"
+    url = "https://data.gov.ro/dataset/ds/resource/r-da/download/raport-achizitii-directe-t1-2022.csv"
+
+    class Resp:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"success": True, "result": {"name": "achizitii-publice-2022", "id": "id-2022", "resources": [
+                {"id": "r-da", "name": "Achizitii directe 2022 T1", "format": "CSV", "size": 1, "hash": "",
+                 "last_modified": "2022-06-01T00:00:00.000000", "url": url}]}}
+
+        def iter_content(self, chunk_size):
+            yield src.read_bytes()
+
+    monkeypatch.setattr(fetch.requests, "get", lambda u, **kw: Resp())
+    archive = Archive(tmp_path / "archive")
+    datagov.fetch_datagov(archive, since_year=2022, now=datetime(2026, 11, 1, tzinfo=timezone.utc), delay=0)
+    assert (archive.root / "seap/bulk/da/2022Q1").is_dir()
+    p = plan(archive)
+    assert p.summary.quarantined == [] and p.summary.files_loaded == 0
+    assert sum(len(rows) for _, _, rows in p.files) > 0
+    assert {unit.kind for unit, _, _ in p.files} == {"da"}
