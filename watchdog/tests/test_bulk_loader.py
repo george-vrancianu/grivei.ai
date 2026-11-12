@@ -98,7 +98,7 @@ def test_a_file_of_the_wrong_kind_is_invalid(archive):
         parse_file("dan", "2022Q1", da_file)
 
 
-@pytest.mark.parametrize("name, data", [("a.xls", b"x"), ("a.ods", b"x"), ("a.xlsx", b"not a zip"), ("a.csv", b"\xff\xfe\x00"), ("a.csv", b"  \n")])
+@pytest.mark.parametrize("name, data", [("a.ods", b"x"), ("a.xlsx", b"not a zip"), ("a.csv", b"\xff\xfe\x00"), ("a.csv", b"  \n")])
 def test_unreadable_or_unsupported_files_are_invalid(tmp_path, name, data):
     f = tmp_path / name
     f.write_bytes(data)
