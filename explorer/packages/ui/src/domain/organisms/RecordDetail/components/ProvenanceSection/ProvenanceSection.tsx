@@ -1,7 +1,7 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordPageData } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
@@ -33,10 +33,7 @@ export interface ProvenanceSectionProps {
 export function ProvenanceSection({ provenance, locale, copy }: ProvenanceSectionProps) {
   const { source, url, via, kind, fetchedAt } = provenance;
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+    <Panel heading={copy.heading} level="h2">
       <Box component="dl" sx={factsSx}>
         <dt>{copy.source}</dt>
         <dd>{source}</dd>
@@ -64,6 +61,6 @@ export function ProvenanceSection({ provenance, locale, copy }: ProvenanceSectio
           {copy.noPublicPage(source)}
         </Typography>
       )}
-    </Stack>
+    </Panel>
   );
 }

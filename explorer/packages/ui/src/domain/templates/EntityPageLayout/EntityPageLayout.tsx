@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
-import { layout } from "../../../theme/tokens.ts";
+import { pageSx } from "../../utils/pageSx.ts";
 import type { EntityPageView } from "../../types.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { EntityTabNav, type EntityTabNavCopy } from "./components/EntityTabNav/index.ts";
@@ -30,7 +30,7 @@ export interface EntityPageLayoutProps {
 /** The layout of an Entity page: the header, the three tabs as links with their counts, the citable address, and the open tab's body. It fetches nothing and knows no router. */
 export function EntityPageLayout({ header, view, tabHrefs, tabCounts, citeUrl, onNavigate, copy, children }: EntityPageLayoutProps) {
   return (
-    <Stack component="main" spacing={2.5} sx={{ pt: 3, pb: 5, px: layout.gutter, maxWidth: layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" }}>
+    <Stack component="main" spacing={2.5} sx={pageSx}>
       {header}
       <Stack spacing={0.75}>
         <EntityTabNav view={view} hrefs={tabHrefs} counts={tabCounts} onNavigate={onNavigate} copy={copy} />

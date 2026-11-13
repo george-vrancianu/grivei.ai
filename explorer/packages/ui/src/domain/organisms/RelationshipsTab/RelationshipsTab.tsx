@@ -12,7 +12,7 @@ import { CounterpartyGraph } from "./components/CounterpartyGraph/index.ts";
 import { CounterpartyPanel } from "./components/CounterpartyPanel/index.ts";
 import { GraphLegend } from "./components/GraphLegend/index.ts";
 import { MonthlyTimeline } from "./components/MonthlyTimeline/index.ts";
-import { Panel } from "./components/Panel/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import type { RelationshipsTabCopy } from "./relationshipsTab.types.ts";
 
 export type { RelationshipsTabCopy, CounterpartyGraphCopy, GraphLegendCopy, MonthlyTimelineCopy, CounterpartyPanelCopy, NodeNameParts } from "./relationshipsTab.types.ts";

@@ -1,8 +1,8 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import { withNodes } from "../../../../utils/withNodes.tsx";
 import type { RecordPageData } from "../../../../types.ts";
 import { followLink } from "../../../../utils/followLink.ts";
@@ -30,10 +30,7 @@ export interface SuspectNoteProps {
 export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy }: SuspectNoteProps) {
   const { threshold } = suspect;
   return (
-    <Stack component="section" spacing={0.5} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+    <Panel heading={copy.heading} level="h2">
       <Typography>{withNodes((amount) => copy.rules[suspect.rule](threshold === null ? null : amount), [threshold === null ? null : <MoneyAmount bani={threshold} locale={locale} showBani />])}</Typography>
       <Typography variant="body2" color="text.secondary">
         {copy.leftOut}{" "}
@@ -41,6 +38,6 @@ export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy
           {copy.methodology}
         </Link>
       </Typography>
-    </Stack>
+    </Panel>
   );
 }

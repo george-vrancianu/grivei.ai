@@ -5,6 +5,7 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordSignal } from "../../../../types.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { SignalList } from "../../../SignalList/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
@@ -38,9 +39,7 @@ export function SignalsSection({ signals, recordHref, onNavigate, renderCard, lo
   if (signals.length === 0) return null;
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+      <SectionHeading>{copy.heading}</SectionHeading>
       <SignalList
         signals={signals}
         locale={locale}

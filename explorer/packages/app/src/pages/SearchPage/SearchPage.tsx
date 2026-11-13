@@ -1,6 +1,8 @@
-import { DEFAULT_RESULT_TAB, FullResults, SearchBar, Stack, toResultTab, Typography } from "@grivei/ui";
+import { DEFAULT_RESULT_TAB, FullResults, SearchBar, toResultTab, Typography } from "@grivei/ui";
+import { PageShell } from "../../components/PageShell/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
+import { currentUrl } from "../../routing/currentUrl.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
@@ -10,7 +12,7 @@ import { FULL_RESULTS_PAGE_SIZE, useFullResults } from "./hooks/useFullResults.t
 export function SearchPage() {
   const t = useCopy();
   const { locale } = useLocation();
-  const { filter, tab: tabParam, page = 1, order, setFilter } = useUrlState();
+  const { filter, tab: tabParam, page = 1, order, setFilter, update } = useUrlState();
   const tab = toResultTab(tabParam);
   const state = useFullResults({ tab, filter, page, order });
   const here = pathFor(locale, { name: "search" });
@@ -21,8 +23,8 @@ export function SearchPage() {
     `${here}${encodeUrlState({ filter, ...tabState, ...(order ? { order } : {}), ...(target > 1 ? { page: target } : {}) })}`;
   const backHref = `${pathFor(locale, { name: "main" })}${encodeUrlState({ filter, ...tabState })}`;
   return (
-    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h4" component="h1">
+    <PageShell>
+      <Typography variant="h1" sx={(theme) => ({ maxWidth: theme.graf.layout.titleMaxWidth })}>
         {t.pages.search.title}
       </Typography>
       <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
@@ -37,12 +39,16 @@ export function SearchPage() {
           // Page links change state within this page (replace); leaving it, as "Back to results" does, is a step of its own (push).
           onNavigate={(href) => navigate(href, href.split("?")[0] === here ? "replace" : "push")}
           backHref={backHref}
+          citeUrl={currentUrl()}
+          order={order}
+          // a different order is a different list: it starts at page 1 (the codec drops `page`)
+          onOrderChange={(next) => update({ order: next, page: undefined })}
           entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
           recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
           locale={locale}
           copy={{ ...t.fullResults, heading: t.results.tabs, empty: t.results.empty, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
         />
       )}
-    </Stack>
+    </PageShell>
   );
 }

@@ -18,6 +18,7 @@ const sample =
         pageSize={3}
         pageHref={(n) => `/explore/search?tab=${results.tab}${n > 1 ? `&page=${n}` : ""}`}
         backHref="/explore/"
+        citeUrl={`https://grivei.ai/explore/search?tab=${results.tab}${page > 1 ? `&page=${page}` : ""}`}
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(record) => `/explore/record/${record.code}`}
         locale={locale}
@@ -39,8 +40,11 @@ export const AuthoritiesFirstPage: Story = { render: sample(authorities(fullResu
 export const AuthoritiesMiddlePage: Story = { render: sample(authorities(fullResultsAuthorityRows), 2) };
 /** The last page holds the rest: two rows of three. */
 export const AuthoritiesLastPage: Story = { render: sample(authorities(fullResultsAuthorityRows.slice(0, 2)), 3) };
-export const RecordsFirstPage: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 4)), 1, { pageSize: 4 }) };
-export const RecordsMiddlePage: Story = { render: sample(records(fullResultsRecords.rows.slice(4, 8)), 2, { pageSize: 4 }) };
+/** The Records tab: the order control beside the heading, the citable address under it, the Record rows, the pager. */
+export const RecordsFirstPage: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 4)), 1, { pageSize: 4, order: "VALUE_DESC", onOrderChange: () => {} }) };
+/** Ordered by date, newest first (the control follows the URL's `order`). */
+export const RecordsByDate: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 4)), 1, { pageSize: 4, order: "DATE_DESC", onOrderChange: () => {} }) };
+export const RecordsMiddlePage: Story = { render: sample(records(fullResultsRecords.rows.slice(4, 8)), 2, { pageSize: 4, onOrderChange: () => {} }) };
 /** The last page holds the rest: three of four (the fixture has no rows to spare, so these repeat the first page's). */
 export const RecordsLastPage: Story = { render: sample(records(fullResultsRecords.rows.slice(0, 3)), 3, { pageSize: 4 }) };
 /** Many pages: first, last and the neighbours of the current page, with gaps between. */
@@ -53,6 +57,8 @@ export const EstimatedCount: Story = { render: sample({ tab: "authorities", page
 export const SinglePage: Story = { render: sample({ tab: "authorities", page: { count: 3, countEstimated: false, rows: fullResultsAuthorityRows } }, 1) };
 /** A stale URL: the page is past the last, with a way back to page 1. */
 export const PageOutOfRange: Story = { render: sample({ tab: "records", page: { count: 11, rows: [] } }, 9, { pageSize: 4 }) };
+/** No Records match: the order control stays, the notice says so. */
+export const EmptyRecords: Story = { render: sample({ tab: "records", page: { count: 0, rows: [] } }, 1, { onOrderChange: () => {} }) };
 export const Empty: Story = { render: sample({ tab: "suppliers", page: { count: 0, countEstimated: false, rows: [] } }, 1) };
 /** An estimated count that overshoots: the page is inside the estimated pages but holds no rows, so it reads as past the end. */
 export const EstimatedCountOvershoots: Story = {

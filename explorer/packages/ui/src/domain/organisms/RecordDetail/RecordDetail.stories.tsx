@@ -20,6 +20,7 @@ const detail =
     return (
       <RecordDetail
         record={record}
+        citeUrl={`https://grivei.ai/explore/record/${record.code}`}
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(code) => `/explore/record/${code}`}
         methodologyHref="/explore/methodology"
@@ -46,6 +47,8 @@ const detail =
 
 /** A direct purchase (DA) just under ten times the cap: counted, and listed by an over-cap Signal. */
 export const DirectPurchase: Story = { render: detail(directPurchaseRecord) };
+/** A direct purchase award notification (DAN): the channel tag over the title, the long kind name in the Record's panel (in Romanian it is the longest label on the page; check it wraps at 390 px). */
+export const DirectPurchaseAwardNotification: Story = { render: detail({ ...directPurchaseRecord, kind: "DAN" }) };
 /** A contract (a subsequent one, under a code with a slash) with its procedure, type and CPV, and the framework line. */
 export const Contract: Story = { render: detail(contractRecord) };
 /** A consortium (an award notice): the full value, each member's equal share and the note that shares are a convention. */

@@ -9,6 +9,14 @@ const ron = (bani: string, locale: "en" | "ro"): string => {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, locale === "en" ? "," : ".");
 };
 
+describe("Romanian consortium size (samples)", () => {
+  const of = (n: number) => sampleCopy.recordDetail("ro").parties.consortiumOf(n, String(n));
+  it("takes 'de' before the plural from 20 up", () => {
+    expect(of(6)).toBe("consorțiu de 6 membri");
+    expect(of(20)).toBe("consorțiu de 20 de membri");
+  });
+});
+
 describe.each(["en", "ro"] as const)("value bucket labels (%s)", (locale) => {
   it("name the band's edges from VALUE_BUCKETS: lower edge (the previous bucket's) and inclusive upper edge", () => {
     const options = sampleCopy.filterChips(locale).valueBucket.options;

@@ -10,7 +10,7 @@ import type { Bani, EntityRef, EntityRole, OverviewCounterparties } from "../../
 import { formatPercent } from "../../../../utils/formatPercent.ts";
 import { listSx } from "../../../../utils/listSx.ts";
 import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
-import { ShareBar } from "../ShareBar/index.ts";
+import { ShareBar } from "../../../../atoms/ShareBar/index.ts";
 import { counterpartyRole, shareOfTotal } from "../../entityOverview.utils.ts";
 
 export interface CounterpartiesCopy {

@@ -4,6 +4,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { type } from "../../../theme/tokens.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { fitSize } from "../../utils/fitSize.ts";
 import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
 import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import { withNodes } from "../../utils/withNodes.tsx";
@@ -36,14 +37,6 @@ export interface TotalFigureProps {
   suspectHref: string;
 }
 
-
-/**
- * The total's size: the theme's `total` size at most, shrinking with the width of the box the Total sits in (a container query unit), so the
- * longest amount ("RON 99,999,999,999": 18 characters of Plex Mono, about 0.6 em each, never breaks) fits at any width, a 390 px phone included.
- * 9cqi x 18 x 0.6 = 97% of the box. Where `cqi` is unknown the declaration is dropped and the theme's size stands.
- */
-const FIT_SIZE = `clamp(18px, 9cqi, ${type.total.size})`;
-
 /**
  * A Total: the awarded value and what it left out. A Total always says what it left out,
  * so the parts that are zero are the ones that stay silent.
@@ -55,7 +48,7 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
     <Stack spacing={0.75} sx={{ containerType: "inline-size" }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap", columnGap: 1.5 }} useFlexGap>
         {/* The one accent-coloured number on the screen: the `total` variant. */}
-        <Typography variant="total" component="p" sx={{ fontSize: FIT_SIZE, overflowWrap: "anywhere" }}>
+        <Typography variant="total" component="p" sx={{ fontSize: fitSize(type.total.size), overflowWrap: "anywhere" }}>
           <MoneyAmount bani={total.awarded} locale={locale} />
         </Typography>
         <Link href={methodologyHref} aria-label={copy.methodology} underline="none" sx={neutralLinkSx}>

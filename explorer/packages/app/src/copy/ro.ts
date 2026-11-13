@@ -118,6 +118,8 @@ export const ro: Copy = {
     noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
     firstPage: "Mergi la pagina 1",
     back: "Înapoi la rezultate",
+    cite: { label: "Citează această vizualizare", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } },
+    order: { label: "ordine", options: { VALUE_DESC: "valoare, de la cea mai mare", DATE_DESC: "dată, cele mai noi întâi", DATE_ASC: "dată, cele mai vechi întâi" } },
     pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
   },
   mainScreenLayout: {
@@ -234,6 +236,7 @@ export const ro: Copy = {
     heading: {
       kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
       facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      panel: "Înregistrarea",
     },
     value: {
       published: "Valoare publicată",
@@ -249,6 +252,7 @@ export const ro: Copy = {
     parties: {
       authority: "Autoritate contractantă",
       winners: "Câștigători",
+      consortiumOf: (n, formatted) => `consorțiu de ${roCount(n, formatted, "membru", "membri")}`,
       share: (amount) => `parte egală ${amount}`,
       convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
     },
@@ -269,6 +273,7 @@ export const ro: Copy = {
       agreement: "Atribuit în baza acordului-cadru",
       subsequentHeading: "Contracte subsecvente",
     },
+    cite: { label: "Adresa acestei înregistrări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } },
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",

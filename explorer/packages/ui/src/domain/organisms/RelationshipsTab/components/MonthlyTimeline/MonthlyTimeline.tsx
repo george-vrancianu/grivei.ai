@@ -12,7 +12,7 @@ import type { RelationshipsTimeline } from "../../../../types.ts";
 import type { MonthlyTimelineCopy } from "../../relationshipsTab.types.ts";
 import { TIMELINE_COLOR, TIMELINE_DIMMED_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
 import { formatMonth } from "../../../../utils/formatDate.ts";
-import { Panel } from "../Panel/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import { visuallyHidden } from "../../../../utils/visuallyHidden.ts";
 
 export interface MonthlyTimelineProps {
