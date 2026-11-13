@@ -408,6 +408,7 @@ export const en: Copy = {
       },
     },
     signalPages: { label: "Signal pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
+    signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",

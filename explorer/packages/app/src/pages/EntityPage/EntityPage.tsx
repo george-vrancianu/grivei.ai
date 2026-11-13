@@ -1,5 +1,5 @@
 import type { RecordFilter } from "@grivei/contract";
-import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -100,29 +100,43 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           // ready, but the entity has no Records in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
-      ) : loading ? (
-        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : view === "overview" ? (
         state.overview && entity ? (
-          <EntityOverview overview={state.overview} aliases={entity.aliases} signals={
-              <SignalList
-                signals={state.overview.signals.rows}
-                locale={locale}
-                renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
-                pagination={{
-                  page: page ?? 1,
-                  pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
-                  // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
-                  pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), page: n }),
-                  onNavigate: (href) => navigate(href, "replace"),
-                  copy: t.entityPage.signalPages,
-                }}
-              />
-            } {...overviewTab} />
+          // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
+          <div aria-busy={loading}>
+            <EntityOverview overview={state.overview} aliases={entity.aliases}
+              signalsToolbar={
+                <SignalOrderToggle
+                  value={signalOrder ?? "DATE_DESC"}
+                  // by date is the default, so it is left out of the URL; a different order starts again at page 1 (from Signals page 2 the window scrolls to the top, as the page links do)
+                  onChange={(next) => update({ signalOrder: next === "DATE_DESC" ? undefined : next, page: undefined })}
+                  copy={t.entityPage.signalOrder}
+                />
+              }
+              signals={
+                <SignalList
+                  signals={state.overview.signals.rows}
+                  locale={locale}
+                  renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
+                  pagination={{
+                    page: page ?? 1,
+                    pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
+                    // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
+                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), page: n }),
+                    onNavigate: (href) => navigate(href, "replace"),
+                    copy: t.entityPage.signalPages,
+                  }}
+                />
+              } {...overviewTab} />
+          </div>
+        ) : loading ? (
+          <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (
           // ready, but the entity has nothing in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
+      ) : loading ? (
+        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : state.relationships && entity ? (
         <>
           {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}

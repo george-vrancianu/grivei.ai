@@ -24,16 +24,18 @@ export interface EntityPageRequest {
 
 export type EntityPageState =
   /** `entity` is the header of the same entity (same key and role) from the tab before, so the page can keep it on screen. Null on a first load. */
-  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: null; relationships: null }
+  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; relationships: null }
   | { status: "error" }
   /**
    * `entity` is null when no entity has that key. `records` is the Records tab's data (null on the other tabs, or when the role has none);
-   * `overview` is the Overview tab's and `relationships` the Relationships tab's (each null on the other tabs, or when the entity lacks the page's role). The Overview does not keep the last one while loading: its numbers follow the filter.
+   * `overview` is the Overview tab's and `relationships` the Relationships tab's (each null on the other tabs, or when the entity lacks the page's role). While loading, the Overview keeps the last one of the same entity and filter, so a new Signals order or page leaves the page, its focus and scroll in place; a different entity or filter shows loading, since its numbers follow the filter.
    */
   | { status: "ready"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; relationships: RelationshipsData | null };
 type Settled = Exclude<EntityPageState, { status: "loading" }>;
 /** The entity a request is about: the header is the same across its tabs. */
 const subjectOf = (r: EntityPageRequest) => `${r.role}:${r.key}`;
+/** What an Overview's numbers follow: the entity and the filter. The Signals order and page change only the list. */
+const overviewScopeOf = (r: EntityPageRequest) => `${subjectOf(r)}:${JSON.stringify(r.filter)}`;
 
 interface Fetched {
   entity: EntityHeaderData | null;
@@ -66,7 +68,8 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
   const key = JSON.stringify(request);
   const subject = subjectOf(request);
   const [settled, setSettled] = useState<{ key: string; state: Settled } | null>(null);
-  const [last, setLast] = useState<{ subject: string; entity: EntityHeaderData; records: RecordsTabData | null } | null>(null);
+  const scope = request.view === "overview" ? overviewScopeOf(request) : null;
+  const [last, setLast] = useState<{ subject: string; entity: EntityHeaderData; records: RecordsTabData | null; overview: { scope: string; data: EntityOverviewData } | null } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,15 +77,15 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
       .then(({ entity, records, overview, relationships }) => {
         setSettled({ key, state: { status: "ready", entity, records, overview, relationships } });
         // the last Records of this entity stay on screen while the next filter loads (the panel keeps its place and focus)
-        if (entity) setLast((before) => ({ subject, entity, records: records ?? (before?.subject === subject ? before.records : null) }));
+        if (entity) setLast((before) => ({ subject, entity, records: records ?? (before?.subject === subject ? before.records : null), overview: overview && scope ? { scope, data: overview } : null }));
       })
       .catch(() => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
       });
     return () => controller.abort();
-  }, [client, key, subject]);
+  }, [client, key, subject, scope]);
 
   if (settled?.key === key) return settled.state;
   const same = last?.subject === subject ? last : null;
-  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: null, relationships: null };
+  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: scope && same?.overview?.scope === scope ? same.overview.data : null, relationships: null };
 }

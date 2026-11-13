@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { pick } from "../../../workbench/index.ts";
-import { OptionToggle } from "../../molecules/OptionToggle/index.ts";
+import { SignalOrderToggle } from "../../molecules/SignalOrderToggle/index.ts";
 import { StateNote } from "../../molecules/StateNote/index.ts";
 import { SignalCard } from "../SignalCard/index.ts";
 import { SignalList } from "../SignalList/index.ts";
@@ -36,10 +36,9 @@ function SignalCards({ overview, locale }: { overview: EntityOverviewData; local
   );
 }
 
-/** Stands in for the order toggle (#107), to show where the slot sits. */
+/** The order toggle the app puts in the slot above the Signals list. */
 function SignalOrderSample({ locale }: { locale: "en" | "ro" }) {
-  const labels = { DATE_DESC: pick(locale, { en: "by date", ro: "după dată" }), VALUE_DESC: pick(locale, { en: "by RON", ro: "după RON" }) };
-  return <OptionToggle options={["DATE_DESC", "VALUE_DESC"] as const} value="DATE_DESC" onChange={() => {}} labels={labels} label={pick(locale, { en: "Order Signals", ro: "Ordinea Semnalelor" })} />;
+  return <SignalOrderToggle value="DATE_DESC" onChange={() => {}} copy={sampleCopy.signalOrder(locale)} />;
 }
 
 const overviewStory =
@@ -82,7 +81,7 @@ export const UncountedRecordsFilteredOut: Story = {
     "supplier",
   ),
 };
-/** The slot above the Signals list holds a control (here a stand-in for the order toggle). */
+/** The slot above the Signals list holds a control (here the order toggle). */
 export const SignalsToolbarSlot: Story = { render: overviewStory(supplierOverview, "supplier", true, true) };
 
 const words = {

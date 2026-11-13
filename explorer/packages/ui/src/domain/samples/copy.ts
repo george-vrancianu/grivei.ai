@@ -33,6 +33,7 @@ import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
 import type { SignalCountChipCopy } from "../molecules/SignalCountChip/index.ts";
+import type { SignalOrderToggleCopy } from "../molecules/SignalOrderToggle/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const copyLink: Record<Locale, CopyLinkButtonCopy> = {
@@ -290,6 +291,11 @@ const signalCount = (locale: Locale): SignalCountChipCopy =>
   locale === "ro"
     ? { label: (n, f) => roCount(n, f, "Semnal", "Semnale"), forEntity: (name) => `, ${name}` }
     : { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}`, forEntity: (name) => `, ${name}` };
+
+const signalOrder = (locale: Locale): SignalOrderToggleCopy =>
+  locale === "ro"
+    ? { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } }
+    : { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } };
 
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
@@ -740,6 +746,7 @@ export const sampleCopy = {
   relationshipsTab,
   entityRow,
   signalCount,
+  signalOrder,
   recordRow,
   goTo,
   resultTabs,
