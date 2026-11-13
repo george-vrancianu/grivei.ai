@@ -32,6 +32,7 @@ import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.t
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
+import type { SignalCountChipCopy } from "../molecules/SignalCountChip/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
 const copyLink: Record<Locale, CopyLinkButtonCopy> = {
@@ -285,6 +286,11 @@ const plural = (n: number, one: string, other: string) => (n === 1 ? one : other
 const roCount = (n: number, f: string, one: string, many: string) =>
   n === 1 ? `${f} ${one}` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} ${many}` : `${f} de ${many}`;
 
+const signalCount = (locale: Locale): SignalCountChipCopy =>
+  locale === "ro"
+    ? { label: (n, f) => roCount(n, f, "Semnal", "Semnale") }
+    : { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}` };
+
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
@@ -294,6 +300,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
         national: "național",
         noCounty: "județ necunoscut",
         entityLink: entityLink.ro,
+        signals: signalCount("ro"),
       }
     : {
         matched: "matched",
@@ -302,6 +309,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
         national: "national",
         noCounty: "county unknown",
         entityLink: entityLink.en,
+        signals: signalCount("en"),
       };
 
 const recordRow = (locale: Locale): RecordResultRowCopy =>
@@ -727,6 +735,7 @@ export const sampleCopy = {
   recordsTab,
   relationshipsTab,
   entityRow,
+  signalCount,
   recordRow,
   goTo,
   resultTabs,

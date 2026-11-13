@@ -42,6 +42,7 @@ const store: Store = {
   roleLargest: async () => [],
   signalRules: async () => [],
   roleSignals: async () => ({ count: 0, rows: [] }),
+  entitySignalCounts: async () => new Map(),
   signalRecords: async () => [],
   goTo: async () => null,
   entity: async () => null,
@@ -208,6 +209,86 @@ describe("areaShare on Record rows (#103)", () => {
     expect(rows).toEqual([["CAN1", "1500"], ["DA4", null]]);
     const plain = await api.respond({ id: mainScreen.sha256, variables: EMPTY });
     expect((plain.body.data as MainScreenQuery).seap.search.records.rows.map((x) => x.areaShare)).toEqual([null, null]);
+  });
+});
+
+describe("signalCount on entity rows (#104)", () => {
+  // a small world of Signals: each has an authority and the winners of its Records (consortium members included); both the chip's count and
+  // the Overview's Signals are made from it, as the signal store makes both from the same Signal tables
+  const signals = [
+    { id: 1, authority: "1000001", suppliers: ["2000001"] },
+    { id: 2, authority: "1000001", suppliers: ["2000001", "2000002"] }, // a consortium
+    { id: 3, authority: "1000002", suppliers: ["2000002"] },
+  ];
+  const authorities = ["1000001", "1000002", "1000003"]; // the last has none
+  const suppliers = ["2000001", "2000002", "2000003"]; // the last has none
+  type Filter = { authority?: string | null; supplier?: string | null };
+  const inScope = (f: Filter) => signals.filter((g) => (!f.authority || g.authority === f.authority) && (!f.supplier || g.suppliers.includes(f.supplier)));
+  const total0 = { awarded: "5", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };
+  const asked: { side: string; keys: string[] }[] = [];
+  const modelStore: Store = {
+    ...store,
+    searchEntities: async (side) => ({
+      count: 3, estimated: false,
+      rows: (side === "AUTHORITY" ? authorities : suppliers).map((k) => ({ entity: entity(k, `E ${k}`), matched: total0 })),
+    }),
+    entitySignalCounts: async (side, _f, keys) => {
+      asked.push({ side, keys });
+      return new Map(keys.map((k) => [k, inScope(side === "AUTHORITY" ? { authority: k } : { supplier: k }).length]).filter(([, n]) => (n as number) > 0) as [string, number][]);
+    },
+    roleSignals: async (f) => ({ count: inScope(f).length, rows: [] }),
+    entity: async (k) => entity(k, `E ${k}`),
+    roles: async (k) => (k.startsWith("1") ? ["AUTHORITY"] : ["SUPPLIER"]),
+  };
+  const modelApi = createApi(modelStore, schema);
+  const overview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
+  const counts = async () => {
+    const r = await modelApi.respond({ id: mainScreen.sha256, variables: EMPTY });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY)).toEqual([]);
+    const search = (r.body.data as MainScreenQuery).seap.search;
+    const by = (rows: typeof search.authorities.rows) => rows.map((x) => [x.entity.key, x.signalCount] as const);
+    return { authorities: by(search.authorities.rows), suppliers: by(search.suppliers.rows) };
+  };
+
+  it("counts an authority's Signals on the Authorities tab and a supplier's on the Suppliers tab, 0 for an entity with none", async () => {
+    const { authorities: a, suppliers: s } = await counts();
+    expect(a).toEqual([["1000001", 2], ["1000002", 1], ["1000003", 0]]);
+    expect(s).toEqual([["2000001", 2], ["2000002", 2], ["2000003", 0]]); // 2000002 is a consortium member of Signal 2
+  });
+
+  it("asks the store once per tab, for the page's keys only", async () => {
+    asked.length = 0;
+    await counts();
+    expect(asked).toEqual([{ side: "AUTHORITY", keys: authorities }, { side: "SUPPLIER", keys: suppliers }]);
+  });
+
+  it("is not asked for when the query does not select it", async () => {
+    asked.length = 0;
+    const r = await graphql({ schema, rootValue: rootValue(modelStore), source: "{ seap { search(filter: {}) { authorities(limit: 3) { rows { entity { key } } } } } }" });
+    expect(r.errors).toBeUndefined();
+    expect(asked).toEqual([]);
+  });
+
+  it("agrees with the Signals count the entity's Overview shows for the same role and an empty filter", async () => {
+    const { authorities: a, suppliers: s } = await counts();
+    for (const [key, n] of [...a.map(([k, n]) => [k, n, "AUTHORITY"] as const), ...s.map(([k, n]) => [k, n, "SUPPLIER"] as const)].map(([k, n, role]) => [[k, role], n] as const)) {
+      const variables = { key: key[0], role: key[1], filter: null };
+      const r = await modelApi.respond({ id: overview.sha256, variables });
+      expect(r.body.errors, key.join()).toBeUndefined();
+      const role = (r.body.data as { entity: { seap: { role: { signals: { count: number } } } } }).entity.seap.role;
+      expect(role.signals.count, key.join()).toBe(n);
+    }
+  });
+
+  it("is served for the counterparty facet's entities too", async () => {
+    const r = await graphql({
+      schema, rootValue: rootValue(modelStore),
+      source: "{ seap { search(filter: { authority: \"1000001\" }) { facets { counterparty { entity { key } signalCount } } } } }",
+    });
+    expect(r.errors).toBeUndefined();
+    const rows = (r.data as { seap: { search: { facets: { counterparty: { entity: { key: string }; signalCount: number }[] } } } }).seap.search.facets.counterparty;
+    expect(rows.map((x) => [x.entity.key, x.signalCount])).toEqual([["2000001", 2], ["2000002", 2], ["2000003", 0]]); // the suppliers of the authority, counted on their side
   });
 });
 

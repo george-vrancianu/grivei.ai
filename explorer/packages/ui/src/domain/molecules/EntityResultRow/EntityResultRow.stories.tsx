@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { resultSamples } from "../../samples/fixtureData.ts";
+import { resultSamples, signalRowSamples } from "../../samples/fixtureData.ts";
 import { EntityResultRow } from "./index.ts";
 
 const meta = { title: "Domain/EntityResultRow", component: EntityResultRow } satisfies Meta<Record<string, unknown>>;
@@ -23,3 +23,15 @@ export const NoCounty: Story = {
   render: (_a, { globals }) => list([...resultSamples.variety.suppliers.rows, ...resultSamples.variety.authorities.rows], localeOf(globals["locale"])),
 };
 export const HugeAmount: Story = { render: (_a, { globals }) => list(resultSamples.estimated.suppliers.rows, localeOf(globals["locale"])) };
+/** An authority with Signals in the filter (the chip, linking to its Overview's Signals section) next to one without (no chip). */
+export const WithAndWithoutSignals: Story = {
+  render: (_a, { globals }) => (
+    <Stack component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+      {signalRowSamples.authorities.rows.map((row) => (
+        <EntityResultRow key={row.entity.key} row={row} href={`/explore/authority/${row.entity.key}`} locale={localeOf(globals["locale"])} copy={sampleCopy.entityRow(localeOf(globals["locale"]))} />
+      ))}
+    </Stack>
+  ),
+};
+/** A supplier with several Signals: the plural count (Romanian "2 Semnale"). */
+export const SeveralSignals: Story = { render: (_a, { globals }) => list(signalRowSamples.suppliers.rows, localeOf(globals["locale"])) };

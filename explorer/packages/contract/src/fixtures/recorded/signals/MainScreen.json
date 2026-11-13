@@ -130,7 +130,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 8
               },
               {
                 "entity": {
@@ -147,7 +148,8 @@
                   "noValue": 1,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 3
               },
               {
                 "entity": {
@@ -172,7 +174,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 1
               }
             ]
           },
@@ -203,7 +206,8 @@
                   "noValue": 1,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 6
               },
               {
                 "entity": {
@@ -228,7 +232,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 5
               },
               {
                 "entity": {
@@ -253,7 +258,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 1
               },
               {
                 "entity": {
@@ -270,7 +276,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 1
               }
             ]
           },
@@ -1141,7 +1148,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1158,7 +1166,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1183,7 +1192,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -1214,7 +1224,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1239,7 +1250,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1264,7 +1276,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1281,7 +1294,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },

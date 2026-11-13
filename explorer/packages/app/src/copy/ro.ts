@@ -92,6 +92,7 @@ export const ro: Copy = {
       national: "național",
       noCounty: "județ necunoscut",
       entityLink,
+      signals: { label: (n, f) => roCount(n, f, "Semnal", "Semnale") },
     },
     recordRow: {
       noValue: "fără valoare",

@@ -164,6 +164,15 @@ export type EntityResult = {
   entity: Entity;
   /** This entity's share of the matching set: consortium shares on the supplier side. */
   matched: Total;
+  /**
+   * How many Signals this entity has in the matching set, on the side of the tab it is listed in: the Signals with at least one
+   * Record in the filter's set where the entity is the authority (Authorities tab) or a winner (Suppliers tab, consortium members
+   * included). It is the number the entity page's Overview shows beside "Signals" when the same filter is applied there. The
+   * entity page's own filter starts empty (a search is not carried over), so the Overview opens on every Signal of the entity and
+   * can list more than this count says; with no filter on the main screen the two agree. Never a score: a count, 0 when there are
+   * none (never null).
+   */
+  signalCount: Scalars['Int']['output'];
 };
 
 export type EntityResultPage = {
@@ -1200,6 +1209,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
 export type EntityResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['EntityResult'] = ResolversParentTypes['EntityResult']> = {
   entity?: Resolver<ResolversTypes['Entity'], ParentType, ContextType>;
   matched?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
+  signalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
 
 export type EntityResultPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['EntityResultPage'] = ResolversParentTypes['EntityResultPage']> = {

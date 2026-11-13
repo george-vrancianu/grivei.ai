@@ -248,6 +248,7 @@ export function cachedStore(
     // Signals (#74): every argument is in the key; the ordinal is only good for one load and the cache is flushed on every load
     signalRules: () => cached("signal-rules", () => inner.signalRules()),
     roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, () => inner.roleSignals(filter, p, options)),
+    entitySignalCounts: (side, filter, keys, options) => cached(`signal-counts|${side}|${canonicalFilter(filter)}|${keys.join(",")}`, () => inner.entitySignalCounts(side, filter, keys, options)),
     signalRecords: (ordinal, p) => cached(`signal-records|${ordinal}|${page(p)}`, () => inner.signalRecords(ordinal, p)),
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),

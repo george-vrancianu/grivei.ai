@@ -62,6 +62,8 @@ export const resultSamples = {
   goTo: pick(goToSearch),
   empty: pick(emptySearch.seap.search),
 };
+/** Entity rows with Signals in the filter (counts 1 and 2) next to one without (the hand "supplier-county-consortium-share"): the "n Signals" chip's states. */
+export const signalRowSamples = pick(named(fixtures.MainScreen, "supplier-county-consortium-share").data.seap.search);
 /** A single-winner Record row whose title matched the query, with its highlighted range (the recorded "text-query-title-match"). */
 export const highlightedRecord = named(fixtures.MainScreen, "text-query-title-match").data.seap.search.records.rows[0]!;
 /** The consortium Record of the variety fixture, with no matched field (an empty query). */
