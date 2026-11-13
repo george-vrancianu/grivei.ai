@@ -1,4 +1,4 @@
-import { Box, type Locale } from "@grivei/ui";
+import { ToggleButton, ToggleButtonGroup, type Locale } from "@grivei/ui";
 import type { Copy } from "../../copy/index.ts";
 import { AppLink } from "../AppLink/index.ts";
 
@@ -10,27 +10,20 @@ export interface LanguageSwitchProps {
   href: string;
 }
 
-const segment = { display: "flex", alignItems: "center", minHeight: 36, px: 1.5, borderRadius: "3px" } as const;
-
-/** The EN/RO switch: the current language marked, and one plain link to the same page in the other language. */
+/**
+ * The EN/RO switch, one segmented control like the lens and side toggles: the current language is the selected segment (a label),
+ * the other a plain link to the same page in that language.
+ */
 export function LanguageSwitch({ copy, to, href }: LanguageSwitchProps) {
   const current = to === "ro" ? "en" : "ro";
   return (
-    <Box sx={(theme) => ({ display: "flex", gap: "2px", p: "2px", border: 1, borderColor: "divider", borderRadius: `${theme.graf.radius.control}px` })}>
-      <Box component="span" lang={current} aria-current="true" sx={(theme) => ({ ...segment, ...theme.graf.states.selected, boxShadow: "none", fontFamily: theme.graf.font.mono, fontSize: 13 })}>
+    <ToggleButtonGroup>
+      <ToggleButton component="span" role={undefined} tabIndex={-1} value={current} selected lang={current} aria-current="true">
         {copy.current}
-      </Box>
-      <AppLink
-        href={href}
-        hrefLang={to}
-        lang={to}
-        aria-label={copy.switchLabel}
-        data-testid="language-switch"
-        underline="none"
-        sx={(theme) => ({ ...segment, color: theme.palette.text.disabled, fontFamily: theme.graf.font.mono, fontSize: 13, "&:hover": theme.graf.states.hover, "&:active": theme.graf.states.pressed })}
-      >
+      </ToggleButton>
+      <ToggleButton component={AppLink} href={href} hrefLang={to} lang={to} aria-label={copy.switchLabel} data-testid="language-switch" underline="none" value={to}>
         {copy.switchTo}
-      </AppLink>
-    </Box>
+      </ToggleButton>
+    </ToggleButtonGroup>
   );
 }

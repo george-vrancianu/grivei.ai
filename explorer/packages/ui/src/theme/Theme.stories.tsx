@@ -63,7 +63,7 @@ export const States: Story = {
       </Stack>
       <Stack direction="row" sx={{ gap: 1, flexWrap: "wrap" }}>
         <Chip clickable variant="outlined" label={pick(globals["locale"], { en: "Filter chip", ro: "Filtru" })} />
-        <Chip clickable color="primary" label={pick(globals["locale"], { en: "Selected filter", ro: "Filtru ales" })} />
+        <Chip clickable variant="outlined" aria-pressed="true" label={pick(globals["locale"], { en: "Selected filter", ro: "Filtru ales" })} />
         <Chip clickable size="small" variant="outlined" label={pick(globals["locale"], { en: "Badge chip", ro: "Insignă" })} />
       </Stack>
       <ToggleButtonGroup exclusive value="a" aria-label={pick(globals["locale"], { en: "Toggle", ro: "Comutator" })}>

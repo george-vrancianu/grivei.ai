@@ -22,6 +22,10 @@ describe("the theme is built from the tokens", () => {
     expect(palette.background.default).toBe(color.bg);
     expect(palette.background.paper).toBe(color.panel);
     expect(palette.primary.main).toBe(color.accent);
+    expect(palette.primary.light).toBe(color.accentHover);
+    expect(palette.primary.dark).toBe(color.accentPressed);
+    expect(palette.secondary.main).toBe(color.text2);
+    expect(palette.secondary.contrastText).toBe(color.bg);
     expect(palette.primary.contrastText).toBe(color.onAccent);
     expect(palette.text.primary).toBe(color.text);
     expect(palette.text.secondary).toBe(color.text2);
@@ -59,6 +63,14 @@ describe("the theme is built from the tokens", () => {
   });
 });
 
+/** Every `color` value in a nested style object (the component overrides and variants): the text colours of the controls. */
+function textColours(node: unknown, path = "components"): [string, string][] {
+  if (typeof node !== "object" || node === null) return [];
+  return Object.entries(node).flatMap(([key, value]) =>
+    key === "color" && typeof value === "string" ? [[path, value] as [string, string]] : textColours(value, `${path}.${key}`),
+  );
+}
+
 describe("contrast on the dark ground", () => {
   const readable = [
     ["text", color.text],
@@ -90,6 +102,12 @@ describe("contrast on the dark ground", () => {
       const colour = (style as { color?: unknown }).color;
       if (typeof colour === "string") expect(colour.toLowerCase(), `typography.${name}`).not.toBe(idle);
     }
+  });
+
+  it("keeps idle off every control's text: no component override colours text with it", () => {
+    const found = textColours(theme.components);
+    expect(found.length).toBeGreaterThan(5);
+    for (const [path, value] of found) expect(value.toLowerCase(), path).not.toBe(color.idle.toLowerCase());
   });
 
   it("states no hex of its own for text: every typography colour is a token", () => {

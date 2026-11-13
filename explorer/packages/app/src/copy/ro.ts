@@ -71,8 +71,8 @@ export const ro: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Principal", explore: "Explorează", search: "Căutare", coverage: "Acoperire", methodology: "Despre cifre" },
   footer: {
-    provenance: "sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și crawl-ul e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă",
-    signals: "Semnalele sunt numărate, niciodată punctate",
+    provenance: "sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și colectarea de pe e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă",
+    signals: "Semnalele sunt numărate, niciodată notate cu un scor",
   },
   language: { current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },

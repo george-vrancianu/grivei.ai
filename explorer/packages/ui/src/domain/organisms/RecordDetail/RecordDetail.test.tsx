@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { sentence } from "../../../testing/sentence.ts";
 import { renderInUi } from "../../../testing/render.tsx";
 import type { Locale } from "../../../theme/index.ts";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
@@ -141,8 +142,8 @@ describe("RecordDetail", () => {
     show(consortiumNameOnlyPage);
     const marker = sampleCopy.entityLink("en").nameOnly.label;
     expect(screen.getAllByText(marker)).toHaveLength(1); // the foreign firm; the CUI firm is linked, the natural person is neither named nor linked
-    expect(screen.getAllByText(/equal share RON 166,666.67/)).toHaveLength(2);
-    expect(screen.getAllByText(/equal share RON 166,666.66/)).toHaveLength(1);
+    expect(screen.getAllByText(sentence(/equal share RON 166,666.67/))).toHaveLength(2);
+    expect(screen.getAllByText(sentence(/equal share RON 166,666.66/))).toHaveLength(1);
     expect(screen.getByText("Persoană fizică")).toBeVisible();
   });
 
@@ -156,7 +157,7 @@ describe("RecordDetail", () => {
   it("shows the framework line with its percentage, and the subsequent contracts", () => {
     show(frameworkPage);
     const framework = section("Framework agreement");
-    expect(framework.getByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeVisible();
+    expect(framework.getByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeVisible();
     expect(framework.getByRole("heading", { name: "Subsequent contracts" })).toBeVisible();
     for (const sub of frameworkPage.framework!.subsequent) expect(framework.getByRole("link", { name: sub.title })).toHaveAttribute("href", `/explore/record/${sub.code}`);
     expect(frameworkPage.framework!.subsequent).toHaveLength(2);
@@ -170,7 +171,7 @@ describe("RecordDetail", () => {
 
   it("leaves the percentage out when the ceiling is blank", () => {
     show(blankCeilingPage);
-    expect(screen.getByText("Ceiling not published; subsequent contracts reported so far RON 500,000.00")).toBeVisible();
+    expect(screen.getByText(sentence("Ceiling not published; subsequent contracts reported so far RON 500,000.00"))).toBeVisible();
     expect(screen.queryByText(/%/)).toBeNull();
   });
 
@@ -223,6 +224,6 @@ describe("RecordDetail", () => {
   it("renders Romanian", () => {
     show(frameworkOverrunPage, "ro");
     expect(screen.getByText("Valoare publicată")).toBeVisible();
-    expect(screen.getByText(/Plafon .*contracte subsecvente raportate până acum .* \(125\s?%\)/)).toBeVisible();
+    expect(screen.getByText(sentence(/Plafon .*contracte subsecvente raportate până acum .* \(125\s?%\)/))).toBeVisible();
   });
 });

@@ -36,7 +36,7 @@ export function Header({ copy, switchTo, links, current }: HeaderProps) {
       >
         <AppLink href={links.explore} underline="none" sx={(theme) => ({ display: "flex", alignItems: "center", gap: 1.5, color: theme.palette.text.primary, "&:hover": { color: theme.palette.text.primary } })}>
           <Box component="img" src={logoUrl} alt="" sx={(theme) => ({ display: "block", width: theme.graf.size.logo, height: theme.graf.size.logo })} />
-          <Typography variant="subtitle1" component="span" sx={(theme) => ({ fontFamily: theme.graf.font.mono })}>
+          <Typography variant="button" component="span" sx={{ color: "inherit" }}>
             {copy.brand}
           </Typography>
         </AppLink>
@@ -48,9 +48,8 @@ export function Header({ copy, switchTo, links, current }: HeaderProps) {
               underline="none"
               {...(current === item ? { "aria-current": "page" as const } : {})}
               sx={(theme) => ({
+                ...theme.typography.label,
                 py: 1.5,
-                fontFamily: theme.graf.font.mono,
-                fontSize: 13,
                 color: theme.palette.text.secondary,
                 "&:hover": { color: theme.palette.text.primary, textDecoration: "underline" },
                 "&[aria-current='page']": { color: theme.palette.primary.main },

@@ -11,7 +11,7 @@ export interface ToggleChipProps {
   size?: "small" | "medium";
 }
 
-/** A filter chip that is on or off: a button with `aria-pressed`, filled when on, outlined when off. */
+/** A filter chip that is on or off: a button with `aria-pressed`, always outlined; the theme marks the pressed one with the shared selected treatment. */
 export function ToggleChip({ label, pressed, onToggle, description, size = "medium" }: ToggleChipProps) {
   const chip = (
     <Chip
@@ -20,8 +20,7 @@ export function ToggleChip({ label, pressed, onToggle, description, size = "medi
       clickable
       aria-pressed={pressed}
       onClick={onToggle}
-      variant={pressed ? "filled" : "outlined"}
-      color="primary"
+      variant="outlined"
     />
   );
   return description ? (

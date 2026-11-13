@@ -33,6 +33,3 @@ export const map = {
 
 /** The layout limits of a page. */
 export const layout = tokensJson.layout;
-
-/** The dot grid on the page background: one dot every 24 px, in `bgDot`. */
-export const dotGridSize = 24;

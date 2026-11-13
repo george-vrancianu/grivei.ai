@@ -21,7 +21,7 @@ export function createGriveiTheme(locale: Locale = "en"): Theme {
     {
       palette: {
         mode: "dark",
-        primary: { main: color.accent, light: color.accentHover, dark: color.accentHover, contrastText: color.onAccent },
+        primary: { main: color.accent, light: color.accentHover, dark: color.accentPressed, contrastText: color.onAccent },
         secondary: { main: color.text2, contrastText: color.bg },
         background: { default: color.bg, paper: color.panel },
         text: { primary: color.text, secondary: color.text2, disabled: color.muted },

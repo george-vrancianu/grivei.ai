@@ -84,11 +84,16 @@ describe("the header and the footer", () => {
     expect(nav("en").queryAllByRole("link").filter((link) => link.hasAttribute("aria-current"))).toEqual([]);
   });
 
-  it("shows the language switch in the header", () => {
-    openAt("/explore/");
-    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
-    expect(within(screen.getByRole("banner")).getByTestId("language-switch")).toHaveTextContent("RO");
-    expect(within(screen.getByRole("banner")).getByText("EN")).toHaveAttribute("aria-current", "true");
+  it("shows the language switch in the header, in both languages", () => {
+    for (const [locale, other, prefix] of [["en", "ro", "/explore/"], ["ro", "en", "/ro/explore/"]] as const) {
+      openAt(prefix);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const banner = within(screen.getByRole("banner"));
+      expect(banner.getByRole("link", { name: catalogue[locale].language.switchLabel })).toHaveTextContent(catalogue[locale].language.switchTo);
+      expect(banner.getByText(catalogue[locale].language.current)).toHaveAttribute("aria-current", "true");
+      expect(catalogue[other].language.current).toBe(catalogue[locale].language.switchTo);
+      unmount();
+    }
   });
 
   it("states where the data comes from and that Signals are never scored, in both languages", () => {

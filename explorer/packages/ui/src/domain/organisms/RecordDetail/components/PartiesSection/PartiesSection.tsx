@@ -4,7 +4,8 @@ import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import type { EntityRef, EntityRole, RecordPageData } from "../../../../types.ts";
 import { isConsortium } from "../../recordDetail.utils.ts";
 import { factsSx } from "../facts.ts";
@@ -48,7 +49,7 @@ export function PartiesSection({ record, entityHref, locale, copy }: PartiesSect
                 {consortium && party.share !== null && (
                   <Typography component="span" variant="body2" color="text.secondary">
                     {" "}
-                    ({copy.share(formatMoney(party.share, locale, { showBani: true }))})
+                    ({withNodes(copy.share, [<MoneyAmount bani={party.share} locale={locale} showBani />])})
                   </Typography>
                 )}
               </li>

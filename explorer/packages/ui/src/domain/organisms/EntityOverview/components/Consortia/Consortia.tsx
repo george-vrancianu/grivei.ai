@@ -3,7 +3,8 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import { MoneyAmount, formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, OverviewConsortium } from "../../../../types.ts";
@@ -47,7 +48,7 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
                   {member.share !== null && (
                     <Typography component="span" variant="body2" color="text.secondary">
                       {" "}
-                      ({copy.share(formatMoney(member.share, locale))})
+                      ({withNodes(copy.share, [<MoneyAmount bani={member.share} locale={locale} />])})
                     </Typography>
                   )}
                 </Box>

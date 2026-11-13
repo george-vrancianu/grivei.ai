@@ -1,6 +1,6 @@
 import type { Components, Theme } from "@mui/material/styles";
 import { focusRing, hover, pressed, selected } from "./states.ts";
-import { color, dotGridSize, font, map, radius, size } from "./tokens.ts";
+import { color, font, radius, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
@@ -19,7 +19,7 @@ export const components: Components<Theme> = {
       body: {
         backgroundColor: color.bg,
         backgroundImage: `radial-gradient(${color.bgDot} 1px, transparent 1px)`,
-        backgroundSize: `${dotGridSize}px ${dotGridSize}px`,
+        backgroundSize: `${size.dotGrid}px ${size.dotGrid}px`,
       },
       "::selection": { backgroundColor: color.accent, color: color.onAccent },
     },
@@ -38,7 +38,7 @@ export const components: Components<Theme> = {
         [selectedState]: selected,
         "&.MuiButton-containedPrimary": {
           "&:hover": { backgroundColor: color.accentHover, color: color.onAccent },
-          "&:active": { backgroundColor: map.ramp[3], color: color.onAccent },
+          "&:active": { backgroundColor: color.accentPressed, color: color.onAccent },
           [selectedState]: { backgroundColor: color.accent, color: color.onAccent, boxShadow: `inset 0 0 0 2px ${color.text}` },
         },
       },
@@ -78,7 +78,7 @@ export const components: Components<Theme> = {
         textUnderlineOffset: "0.2em",
         borderRadius: radius.cell,
         "&:hover": { color: color.accentHover },
-        "&:active": { color: map.ramp[3] },
+        "&:active": { color: color.accentPressed },
         "&:focus-visible": focusRing,
       },
     },
@@ -88,18 +88,17 @@ export const components: Components<Theme> = {
     styleOverrides: {
       root: {
         fontFamily: font.mono,
-        fontSize: "13px",
+        fontSize: type.label.size,
         "&.MuiChip-clickable:hover": { backgroundColor: color.line },
         "&.MuiChip-clickable:active": { backgroundColor: color.lineStrong },
         "&.MuiChip-clickable.MuiChip-colorPrimary:hover": { backgroundColor: color.accentHover },
-        "&.MuiChip-clickable.MuiChip-colorPrimary:active": { backgroundColor: map.ramp[3] },
+        "&.MuiChip-clickable.MuiChip-colorPrimary:active": { backgroundColor: color.accentPressed },
         "&.MuiChip-sizeSmall .MuiChip-label": { paddingLeft: 10, paddingRight: 10 },
         "&.MuiChip-sizeSmall.MuiChip-outlined": { borderColor: color.line, color: color.text2 },
-        "&.MuiChip-outlinedPrimary": { borderColor: color.accent, color: color.accent },
-        "&[aria-pressed='true'].MuiChip-outlined": selected,
+        "&.MuiChip-root[aria-pressed='true']": selected,
       },
       sizeMedium: { height: size.filterChip, borderRadius: radius.filterPill },
-      sizeSmall: { height: size.badgeChip, borderRadius: radius.chip, fontSize: "12px", ...touchTarget },
+      sizeSmall: { height: size.badgeChip, borderRadius: radius.chip, fontSize: type.meta.size, ...touchTarget },
       outlined: { borderColor: color.lineStrong, color: color.text },
       label: { paddingLeft: 14, paddingRight: 14 },
     },
@@ -125,8 +124,8 @@ export const components: Components<Theme> = {
         padding: "0 2px",
         marginRight: 28,
         fontFamily: font.mono,
-        fontSize: "14px",
-        fontWeight: 400,
+        fontSize: type.tab.size,
+        fontWeight: type.tab.weight,
         color: color.muted,
         "&:hover": { color: color.text },
         "&:active": { color: color.text, backgroundColor: color.line },
@@ -146,8 +145,8 @@ export const components: Components<Theme> = {
   MuiTable: { defaultProps: { size: "small" } },
   MuiTableCell: {
     styleOverrides: {
-      root: { borderBottomColor: color.line, fontSize: "14px" },
-      head: { fontFamily: font.mono, fontSize: "12px", fontWeight: 400, color: color.muted, backgroundColor: "transparent" },
+      root: { borderBottomColor: color.line, fontSize: type.small.max },
+      head: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.muted, backgroundColor: "transparent" },
     },
   },
   MuiTableRow: {
@@ -169,7 +168,7 @@ export const components: Components<Theme> = {
   MuiTooltip: {
     defaultProps: { arrow: true },
     styleOverrides: {
-      tooltip: { backgroundColor: color.bg, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: "12px", lineHeight: 1.5, color: color.text2 },
+      tooltip: { backgroundColor: color.bg, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.meta.lineHeight, color: color.text2 },
       arrow: { color: color.bg, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
     },
   },

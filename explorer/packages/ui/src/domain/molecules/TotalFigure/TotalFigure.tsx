@@ -3,7 +3,8 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
-import { MoneyAmount, formatMoney } from "../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../utils/withNodes.tsx";
 import type { Total } from "../../types.ts";
 import { leftOut } from "./totalFigure.utils.ts";
 
@@ -65,7 +66,7 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
       )}
       {parts.hasCeilings && (
         <Typography variant="body2" color="text.secondary">
-          {copy.frameworkCeilings(formatMoney(total.frameworkCeilings, locale))}
+          {withNodes(copy.frameworkCeilings, [<MoneyAmount bani={total.frameworkCeilings} locale={locale} />])}
         </Typography>
       )}
     </Stack>
