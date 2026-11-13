@@ -30,3 +30,7 @@ Grivei.ai names a person only when they are tied to public money. That means one
 ## Amended 2026-11-12: Investigations are covered by the Go-live conditions
 
 ADR 0010 adds Investigations, whose private Findings are handed to journalists. Before the first Investigation is published, the lawyer review and the DPIA above must also cover Investigations, their Findings and the hand-offs. This posture binds both the public part and the Findings.
+
+## Amended 2026-11-13: the conditions bar publishing Restricted content, not Go-live
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) splits person-level data into a public tier (people as a single official source publishes them in a role tied to public money) and Restricted content, shown only in a Private view. Go-live needs only a privacy notice with a correction contact. The controller entity, lawyer's review, DPIA, corrections path on person pages and `noindex` move to a later decision: publishing Restricted content to the anonymous public. The Naming threshold is dropped; natural-person suppliers are named on the Record only (ADR 0003). The "Never named" list, no inferred relationships, and no CNPs still bind everywhere, the Private view included.

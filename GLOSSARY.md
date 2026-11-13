@@ -23,8 +23,16 @@ An increment of the explorer that makes one more Source explorable, with its own
 _Avoid_: version, phase
 
 **Go-live**:
-The moment the explorer becomes public at grivei.ai, with its legal posture settled and a public host; Releases before it run locally.
+The moment the explorer becomes public at grivei.ai on a public host, with Restricted content hidden and a privacy notice published; Releases before it run locally.
 _Avoid_: launch, release (when going public is meant)
+
+**Restricted**:
+Said of content shown only in a Private view: person-level data beyond the people an official source publishes in a role tied to public money (links joining people across Sources, Signals whose rule joins through people, court parties), and every Investigation.
+_Avoid_: sensitive, hidden, private data
+
+**Private view**:
+The explorer with Restricted content shown, on a local host or behind a login; never the open public host.
+_Avoid_: admin mode, internal view, staging
 
 **Raw archive**:
 Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
@@ -77,7 +85,7 @@ An organisation named by a Source without a CUI that no confirmed match attaches
 _Avoid_: name-only entity, unmatched entity, orphan
 
 **Natural-person supplier**:
-An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", with no entity page, unless the public money they receive reaches the Naming threshold, which makes them a Named person.
+An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); named as published on each record they win, with no entity page, and never merged with another record by name.
 _Avoid_: PFA (when any individual is meant), person (alone)
 
 **Alias**:
@@ -125,7 +133,7 @@ One published rule that produces Signals (for example, possible splitting of dir
 _Avoid_: Signal type, check, test
 
 **Named person**:
-A person Grivei.ai shows by name: someone with a role in an official register (administrator, legal representative, associate or shareholder) in an organisation that receives public money in the graph, an official acting in their role, or an individual whose own public money reaches the Naming threshold. Everyone else in a Source stays unnamed.
+A person Grivei.ai shows by name: someone with a role in an official register (administrator, legal representative, associate or shareholder) in an organisation that receives public money in the graph, an official acting in their role, or an individual an official source publishes as receiving public money directly. Everyone else in a Source stays unnamed.
 _Avoid_: PEP, subject, person of interest
 
 **Person key**:
@@ -139,10 +147,6 @@ _Avoid_: likely match, probable link, namesake
 **Unlinked role holder**:
 A Named person with a register role but no birth date; named on that organisation's page only, with no person page and no link to anyone.
 _Avoid_: unknown person, anonymous administrator
-
-**Naming threshold**:
-The total public money an individual must receive directly (as a natural-person supplier or a fund recipient) before they are named.
-_Avoid_: cutoff, limit
 
 **Party role**:
 A Named person's public, dated tie to a party: a candidacy or mandate on its list in a named election. Never party membership, which no Source publishes.
@@ -210,7 +214,7 @@ The page, with its own URL, for one SEAP record (a contract or a direct purchase
 ### Investigations
 
 **Investigation**:
-A written case Grivei.ai builds itself, opened by a person from a Signal (or from a tip tied to an entity) and worked across Sources and their source documents; every fact in it is cited, it ends Explained or Unexplained, and it has a public part only after Editor sign-off. It is re-opened only on a new fact, as a new version. It is not a Source and never a Release.
+A written case Grivei.ai builds itself, opened by a person from a Signal (or from a tip tied to an entity) and worked across Sources and their source documents; every fact in it is cited, it ends Explained or Unexplained, it is Restricted, and it has a public part only after Editor sign-off. It is re-opened only on a new fact, as a new version. It is not a Source and never a Release.
 _Avoid_: own source, case file, story, report
 
 **Editor sign-off**:

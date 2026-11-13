@@ -56,3 +56,7 @@ NGOs, homeowner associations and other legal persons that ONRC doesn't register 
 - **Snapshots:** a record is matched against the yearly snapshot nearest its date, falling back to the current one.
 - **Struck-off NGOs** are mostly missing from the list. A name it doesn't find stays an unattached name, and each Source's data caveats state the gap.
 - **Release:** it joins with the first Release that needs it, EU funds in the planned order. PNRR already gives CUIs.
+
+## Amended 2026-11-13: the hand-check gates serving links, not Go-live
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) removes the per-Source checks from Go-live. The hand-check of about 200 confirmed links stays as a data-quality condition: a Source's confirmed name links are served only after it.
