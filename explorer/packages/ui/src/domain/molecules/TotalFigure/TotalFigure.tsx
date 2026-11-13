@@ -2,8 +2,12 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { type } from "../../../theme/tokens.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
-import { MoneyAmount, formatMoney } from "../../atoms/MoneyAmount/index.ts";
+import { fitSize } from "../../utils/fitSize.ts";
+import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
+import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../utils/withNodes.tsx";
 import type { Total } from "../../types.ts";
 import { leftOut } from "./totalFigure.utils.ts";
 
@@ -41,33 +45,38 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
   const parts = leftOut(total);
   const count = (n: number) => formatCount(n, false, locale);
   return (
-    <Stack spacing={0.25}>
-      <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline" }}>
-        <Typography variant="h5" component="p">
+    <Stack spacing={0.75} sx={{ containerType: "inline-size" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap", columnGap: 1.5 }} useFlexGap>
+        {/* The one accent-coloured number on the screen: the `total` variant. */}
+        <Typography variant="total" component="p" sx={{ fontSize: fitSize(type.total.size), overflowWrap: "anywhere" }}>
           <MoneyAmount bani={total.awarded} locale={locale} />
         </Typography>
-        <Link href={methodologyHref} aria-label={copy.methodology} underline="none">
+        <Link href={methodologyHref} aria-label={copy.methodology} underline="none" sx={neutralLinkSx}>
           ⓘ
         </Link>
       </Stack>
-      <Typography variant="body2" color="text.secondary">
-        {copy.records(total.records, formatCount(total.records, total.estimated, locale))}
-      </Typography>
-      {parts.suspect > 0 && (
-        <Typography variant="body2">
-          <Link href={suspectHref}>{copy.suspectLeftOut(parts.suspect, count(parts.suspect))}</Link>
+      <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", columnGap: 3.5, rowGap: 0.5, alignItems: "baseline" }}>
+        <Typography variant="label" component="p" color="text.secondary">
+          {copy.records(total.records, formatCount(total.records, total.estimated, locale))}
         </Typography>
-      )}
-      {parts.noValue > 0 && (
-        <Typography variant="body2" color="text.secondary">
-          {copy.noValue(parts.noValue, count(parts.noValue))}
-        </Typography>
-      )}
-      {parts.hasCeilings && (
-        <Typography variant="body2" color="text.secondary">
-          {copy.frameworkCeilings(formatMoney(total.frameworkCeilings, locale))}
-        </Typography>
-      )}
+        {parts.suspect > 0 && (
+          <Typography variant="label" component="p">
+            <Link href={suspectHref} sx={neutralLinkSx}>
+              {copy.suspectLeftOut(parts.suspect, count(parts.suspect))}
+            </Link>
+          </Typography>
+        )}
+        {parts.noValue > 0 && (
+          <Typography variant="label" component="p" color="text.secondary">
+            {copy.noValue(parts.noValue, count(parts.noValue))}
+          </Typography>
+        )}
+        {parts.hasCeilings && (
+          <Typography variant="label" component="p" color="text.secondary">
+            {withNodes(copy.frameworkCeilings, [<MoneyAmount bani={total.frameworkCeilings} locale={locale} />])}
+          </Typography>
+        )}
+      </Stack>
     </Stack>
   );
 }

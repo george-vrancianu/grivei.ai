@@ -2,8 +2,9 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
+import { ceilingRecord, consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
 import type { RecordResult } from "../../types.ts";
+import { formatMoney } from "../../atoms/MoneyAmount/moneyAmount.utils.ts";
 import { RecordResultRow } from "./index.ts";
 
 const entityHref = (entity: { key: string }, role: string) => `/explore/${role}/${entity.key}`;
@@ -45,6 +46,22 @@ describe("RecordResultRow Signal badges", () => {
 });
 
 describe("RecordResultRow", () => {
+  it("is two columns: the meta line and title on the left, the value over its caption on the right", () => {
+    renderRow(highlightedRecord);
+    const { record } = highlightedRecord;
+    expect(screen.getByText(record.code)).toBeVisible();
+    expect(screen.getByText(record.channel === "CONTRACT" ? "Contract" : "Direct purchase")).toBeVisible();
+    expect(screen.getByText("awarded value")).toBeVisible();
+    const value = screen.getByText("RON 5,000");
+    const title = screen.getByRole("link", { name: record.title });
+    expect(title.compareDocumentPosition(value) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("says 'ceiling, not summed' under the value of a framework ceiling", () => {
+    renderRow(ceilingRecord);
+    expect(screen.getByText("ceiling, not summed")).toBeVisible();
+  });
+
   it("links the title to the Record page and shows value, date and authority", () => {
     const { container } = renderRow(highlightedRecord);
     const { record } = highlightedRecord;
@@ -114,5 +131,16 @@ describe("RecordResultRow", () => {
     const { container } = renderRow(highlightedRecord, "ro");
     expect(container).toHaveTextContent("Potrivit în titlu:");
     expect(container).toHaveTextContent("5.000 RON");
+  });
+});
+
+describe("RecordResultRow in-county share line (#103)", () => {
+  it.each(["en", "ro"] as const)("shows the share under the full value, labelled, only when the row has one (%s)", (locale) => {
+    const share = consortiumRecord.record.winners[0]!.share!;
+    const { container, unmount } = renderRow({ ...consortiumRecord, areaShare: share }, locale);
+    const line = container.querySelector("[data-area-share]");
+    expect(line?.textContent).toBe(sampleCopy.recordRow(locale).areaShare(formatMoney(share, locale, { showBani: true })));
+    unmount();
+    expect(renderRow({ ...consortiumRecord, areaShare: null }, locale).container.querySelector("[data-area-share]")).toBeNull();
   });
 });

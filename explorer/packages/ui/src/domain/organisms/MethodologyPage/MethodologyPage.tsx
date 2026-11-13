@@ -1,4 +1,6 @@
 import type { Locale } from "../../../theme/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { layout } from "../../../theme/tokens.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { SignalRuleBaseRate, type SignalRuleBaseRateCopy } from "../../molecules/SignalRuleBaseRate/index.ts";
@@ -15,6 +17,8 @@ export interface MethodologyRuleCopy extends MethodologySectionCopy {
 }
 
 export interface MethodologyPageCopy {
+  /** The mono amber line above the title. */
+  eyebrow: string;
   title: string;
   intro: string;
   /** The table of contents' name: "On this page". */
@@ -55,31 +59,50 @@ export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavig
     ...SIGNAL_RULES.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
   ];
   return (
-    <Stack component="article" spacing={3} sx={{ maxWidth: 800 }}>
-      <Stack spacing={1}>
-        <Typography variant="h4" component="h1">
-          {copy.title}
-        </Typography>
-        <Typography>{copy.intro}</Typography>
-      </Stack>
+    <Box
+      sx={{
+        pt: 5,
+        pb: 8,
+        px: layout.gutter,
+        maxWidth: layout.maxWidth,
+        width: "100%",
+        boxSizing: "border-box",
+        mx: "auto",
+        display: "grid",
+        gap: 5,
+        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: `${layout.contentsColumn}px minmax(0, 1fr)` },
+        alignItems: "start",
+      }}
+    >
       <MethodologyContents label={copy.contents} entries={contents} sectionHref={sectionHref} {...(onNavigate ? { onNavigate } : {})} />
-      {METHODOLOGY_SECTIONS.map((key) => (
-        <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} copy={copy.sections[key]} />
-      ))}
-      <MethodologySection id={METHODOLOGY_ANCHORS.signals} copy={copy.signals}>
-        <Stack spacing={3} sx={{ mt: 2 }}>
-          {SIGNAL_RULES.map((rule) => (
-            <MethodologySection key={rule} id={signalAnchor(rule)} level={3} copy={copy.rules[rule]}>
-              {baseRates.status === "ready" ? (
-                <SignalRuleBaseRate status="ready" rule={baseRates.rules.find((r) => r.slug === rule) ?? null} locale={locale} copy={copy.baseRate} />
-              ) : (
-                <SignalRuleBaseRate status={baseRates.status} locale={locale} copy={copy.baseRate} />
-              )}
-              <Typography sx={{ mt: 1 }}>{copy.rules[rule].lawful}</Typography>
-            </MethodologySection>
-          ))}
+      <Stack component="article" spacing={4.5} sx={{ maxWidth: layout.articleMaxWidth, minWidth: 0 }}>
+        <Stack spacing={1.5}>
+          <Typography variant="label" component="p" color="primary.main" sx={{ m: 0 }}>
+            {copy.eyebrow}
+          </Typography>
+          <Typography variant="h1" component="h1" sx={{ textWrap: "balance" }}>
+            {copy.title}
+          </Typography>
+          <Typography variant="lead" sx={{ textWrap: "pretty" }}>{copy.intro}</Typography>
         </Stack>
-      </MethodologySection>
-    </Stack>
+        {METHODOLOGY_SECTIONS.map((key) => (
+          <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]} />
+        ))}
+        <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals}>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            {SIGNAL_RULES.map((rule) => (
+              <MethodologySection key={rule} id={signalAnchor(rule)} level={3} locale={locale} copy={copy.rules[rule]}>
+                {baseRates.status === "ready" ? (
+                  <SignalRuleBaseRate status="ready" rule={baseRates.rules.find((r) => r.slug === rule) ?? null} locale={locale} copy={copy.baseRate} />
+                ) : (
+                  <SignalRuleBaseRate status={baseRates.status} locale={locale} copy={copy.baseRate} />
+                )}
+                <Typography sx={{ mt: 1, color: "text.secondary" }}>{copy.rules[rule].lawful}</Typography>
+              </MethodologySection>
+            ))}
+          </Stack>
+        </MethodologySection>
+      </Stack>
+    </Box>
   );
 }

@@ -6,8 +6,9 @@ import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { authoritySide, authoritySideNoUnplaced, supplierSide } from "../../samples/moneyMaps.ts";
 import type { MoneyMap } from "../../types.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "./index.ts";
+import { onPanel } from "../../../workbench/index.ts";
 
-const meta = { title: "Domain/MoneyLensMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/MoneyLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

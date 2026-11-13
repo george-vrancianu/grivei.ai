@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
+import { sentence } from "../../testing/sentence.ts";
 
 function open(url: string) {
   openAt(url);
@@ -71,7 +72,8 @@ describe("a Record page", () => {
 
   it("opens a contract by its code: title, kind, procedure, values, authority and winner", async () => {
     const { record } = await openRecorded("contract-single-winner");
-    expect(screen.getByText("Contract")).toBeInTheDocument();
+    expect(within(screen.getByRole("heading", { level: 1 }).parentElement!).getByText("Contract")).toBeInTheDocument(); // the channel tag over the title
+    expect(valueOf("Kind")).toHaveTextContent("Contract");
     expect(screen.getByText("Licitatie deschisa")).toBeInTheDocument();
     expect(valueOf("Value as published")).toHaveTextContent("RON 150.00");
     expect(valueOf("Counted value")).toHaveTextContent("RON 150.00");
@@ -97,7 +99,7 @@ describe("a Record page", () => {
     await openRecorded("award-notice-consortium");
     expect(screen.getByText("Award notice")).toBeInTheDocument();
     expect(valueOf("Counted value")).toHaveTextContent("RON 98,800.00");
-    expect(screen.getAllByText(/equal share RON 49,400.00/)).toHaveLength(2);
+    expect(screen.getAllByText(sentence(/equal share RON 49,400.00/))).toHaveLength(2);
   });
 
   it("links the authority and the winner to their pages, in the language's prefix", async () => {
@@ -110,7 +112,7 @@ describe("a Record page", () => {
   it("shows a consortium's full value, each member's equal share and the convention label; a natural person among them is unnamed", async () => {
     await openRecorded("consortium-with-natural-person");
     expect(valueOf("Counted value")).toHaveTextContent("RON 1,000.00");
-    expect(screen.getAllByText(/equal share RON 333.3[34]/)).toHaveLength(3);
+    expect(screen.getAllByText(sentence(/equal share RON 333.3[34]/))).toHaveLength(3);
     expect(screen.getByText(/counting convention, not a figure SEAP publishes/)).toBeInTheDocument();
     const winners = within(screen.getByText("Winners").nextElementSibling as HTMLElement);
     expect(winners.getByText(/Persoană fizică/)).toBeInTheDocument();
@@ -127,12 +129,14 @@ describe("a Record page", () => {
 
   it("shows the framework line with its percentage and lists the subsequent contracts, with links that keep the code's encoding", async () => {
     await openRecorded("framework-agreement");
-    expect(screen.getByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeInTheDocument();
+    expect(screen.getByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeInTheDocument();
     const framework = region("Framework agreement");
     const hrefs = framework.getAllByRole("link").map((l) => l.getAttribute("href")).filter((h) => h?.startsWith("/explore/record/"));
     expect(hrefs).toEqual(["/explore/record/CAN9800001~2", "/explore/record/CAN9800001~3"]);
     expect(valueOf("Counted value")).toHaveTextContent("a framework ceiling is not money awarded");
-    expect(screen.getByText("Framework ceiling")).toBeInTheDocument();
+    // the badge is over the title, and the value card says the ceiling is not summed
+    expect(within(screen.getByRole("heading", { level: 1 }).parentElement!).getByText("Framework ceiling")).toBeInTheDocument();
+    expect(screen.getByText("ceiling, not summed")).toBeInTheDocument();
   });
 
   it("points a subsequent contract back to its framework agreement, and a click follows it without a page load", async () => {
@@ -143,12 +147,12 @@ describe("a Record page", () => {
     expect(back).toHaveAttribute("href", "/explore/record/CAN9800001~1");
     await userEvent.setup().click(back);
     expect(window.location.pathname).toBe("/explore/record/CAN9800001~1");
-    expect(await screen.findByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeInTheDocument();
+    expect(await screen.findByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeInTheDocument();
   });
 
   it("leaves the percentage out when the framework's ceiling is blank", async () => {
     await openRecorded("framework-blank-ceiling");
-    expect(screen.getByText("Ceiling not published; subsequent contracts reported so far RON 500,000.00")).toBeInTheDocument();
+    expect(screen.getByText(sentence("Ceiling not published; subsequent contracts reported so far RON 500,000.00"))).toBeInTheDocument();
     expect(screen.queryByText(/%/)).toBeNull();
     expect(valueOf("Value as published")).toHaveTextContent("No value in SEAP");
   });
@@ -265,6 +269,26 @@ describe("a Record page", () => {
     await userEvent.setup().click(region("Signals this Record belongs to").getByRole("link", { name: "Achizitie DA98000002" }));
     expect(window.location.pathname).toBe("/explore/record/DA98000002");
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
+  });
+});
+
+describe("a Record page's citable address and Check in SEAP button", () => {
+  it.each([
+    ["/explore", "Copy link", "Link copied", "Check in SEAP"],
+    ["/ro/explore", "Copiază linkul", "Link copiat", "Verifică în SEAP"],
+  ])("shows the Record's URL under the title and copies it (%s)", async (prefix, button, done, checkIn) => {
+    const record = recorded("contract-single-winner");
+    open(pathOf(record.code, prefix));
+    const title = await screen.findByRole("heading", { level: 1, name: record.title });
+    const header = within(title.parentElement!);
+    const url = `${window.location.origin}${pathOf(record.code, prefix)}`;
+    expect(header.getByText(url.replace(/^https?:\/\//, ""))).toBeVisible();
+    // the primary button leads to the Source, like the provenance link
+    expect(header.getByRole("link", { name: checkIn })).toHaveAttribute("href", record.provenance.url!);
+
+    await userEvent.setup().click(header.getByRole("button", { name: button }));
+    expect(await header.findByText(done)).toBeVisible();
+    expect(await navigator.clipboard.readText()).toBe(url);
   });
 });
 

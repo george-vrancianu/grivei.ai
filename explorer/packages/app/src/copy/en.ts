@@ -65,25 +65,35 @@ const signalCard: Copy["signalCard"] = {
 export const en: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Main", explore: "Explore", search: "Search", coverage: "Coverage", methodology: "About the numbers" },
-  language: { switchTo: "Română", switchLabel: "Romanian version of this page" },
+  footer: {
+    provenance: "source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document",
+    signals: "Signals are counted, never scored",
+  },
+  language: { groupLabel: "Language", current: "EN", switchTo: "RO", switchLabel: "Romanian version of this page" },
   status: { loading: "Loading…", failed: "The data could not be loaded." },
   main: { title: "Explore public spending", total: "Total awarded", mapUnavailable: "The map could not be loaded." },
-  searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
+  sourceEyebrow: { search: "search", scope: "national", period: "2021 onward" },
+  searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", hint: "The data is in Romanian. Try deszăpezire, a company name, a CUI with or without RO, or a CPV prefix such as 45. Diacritics, case and legal forms (SRL, SA) are ignored.", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   results: {
     label: "Results",
     tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
     empty: { authorities: "No authorities match.", suppliers: "No suppliers match.", records: "No Records match." },
+    emptyLink: "Check what has been harvested",
     showAll: (_n, formatted) => `Show all ${formatted}`,
     goTo: { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" },
     entityRow: {
       matched: "matched",
+      cui: "CUI",
       records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
       national: "national",
       noCounty: "county unknown",
       entityLink,
+      signals: { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}`, forEntity: (name) => `, ${name}` },
     },
     recordRow: {
       noValue: "no value",
+      valueCaption: { awarded: "awarded value", ceiling: "ceiling, not summed" },
+      channel: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
       consortium: {
         label: "consortium",
         explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",
@@ -97,6 +107,7 @@ export const en: Copy = {
       },
       badges,
       party: { naturalPerson: "Persoană fizică", entityLink },
+      areaShare: (amount) => `Consortium share in the selection: ${amount}`,
     },
   },
   fullResults: {
@@ -105,6 +116,8 @@ export const en: Copy = {
     noRowsHere: "There are no results on this page: the count above is an estimate.",
     firstPage: "Go to page 1",
     back: "Back to results",
+    cite: { label: "Cite this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } },
+    order: { label: "order", options: { VALUE_DESC: "value, high to low", DATE_DESC: "date, newest first", DATE_ASC: "date, oldest first" } },
     pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
   },
   mainScreenLayout: {
@@ -133,6 +146,7 @@ export const en: Copy = {
       NOT_HARVESTED: "Not harvested",
     },
     noStatus: "No coverage status",
+    nationalCaption: (source) => `${source} is harvested nationally; gaps apply to every county`,
     marks: {
       title: "One mark per Source",
       harvested: (source) => `${source}: coloured by the county's status`,
@@ -220,6 +234,7 @@ export const en: Copy = {
     heading: {
       kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+      panel: "The Record",
     },
     value: {
       published: "Value as published",
@@ -235,6 +250,7 @@ export const en: Copy = {
     parties: {
       authority: "Contracting authority",
       winners: "Winners",
+      consortiumOf: (_n, formatted) => `consortium of ${formatted}`,
       share: (amount) => `equal share ${amount}`,
       convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
     },
@@ -255,6 +271,7 @@ export const en: Copy = {
       agreement: "Awarded under the framework agreement",
       subsequentHeading: "Subsequent contracts",
     },
+    cite: { label: "Address of this Record", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } },
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
@@ -274,7 +291,7 @@ export const en: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+    layout: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
       identity: {
         cui: "CUI",
@@ -290,7 +307,18 @@ export const en: Copy = {
         placedBy: (source) => `placed by ${source}`,
       },
       source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
-      roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+      roles: {
+        label: "Roles of this entity",
+        authority: "buys · contracting authority",
+        supplier: "sells · supplier",
+        none: { AUTHORITY: "buys · no Records as authority", SUPPLIER: "sells · no Records as supplier" },
+      },
+      seapNames: {
+        label: "Appears in SEAP as",
+        records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+        range: (first, last) => `${first} to ${last}`,
+        more: (_n, f) => `and ${f} more`,
+      },
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     relationships: {
@@ -299,6 +327,7 @@ export const en: Copy = {
         heading: "Relationships",
         recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
         graph: {
+          heading: "Top counterparties · pick one to list its Records",
           label: "Graph of the top counterparties",
           naturalPerson: "Persoană fizică",
           unknown: "Unidentified counterparty",
@@ -311,15 +340,15 @@ export const en: Copy = {
             "A consortium's money is split equally among its members, by convention; a Record's full value is on its own page.",
         },
         legend: {
-          title: "Legend", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Blue line: mostly contracts",
-          directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
+          title: "Legend", edgeColour: "An edge's colour is the channel holding the most RON with that counterparty.", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Amber line: contracts",
+          directPurchase: "Blue line: direct purchases", wonTogether: "Dashed line: won together", signals: "Amber ring: has Signals",
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
           total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
         },
       },
@@ -379,9 +408,11 @@ export const en: Copy = {
       },
     },
     signalPages: { label: "Signal pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
+    signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",
+      table: { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
       facets: {
         label: "Filter by facet",
         groups: {
@@ -393,12 +424,14 @@ export const en: Copy = {
         signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
+      onlyMatching: { query: (q) => `only Records matching “${q}”`, filters: "only Records matching the search's filters" },
     },
   },
   signalCard,
   methodology: methodologyEn,
   /** The Coverage page (`/explore/coverage`) and the compact grid on the Coverage lens. */
   coverage: {
+    eyebrow: "coverage",
     title: "Coverage",
     intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
     grid: {
@@ -426,6 +459,7 @@ export const en: Copy = {
       crawlOnly: (n, f) => `${f} of them not in bulk data`,
       dataThrough: (date) => `data through ${date}`,
       inRange: "inside the date range",
+      windowNote: "quarters follow the publication date · highlighted: the award date chip",
       legend: { title: "Cell states", range: "Inside the date range" },
       seePage: "See the Coverage page",
     },
@@ -466,6 +500,11 @@ export const en: Copy = {
         NOT_YET_LOADED: "The bulk file for this quarter and record kind is not in the data yet.",
       },
       methodology: "How the numbers are counted",
+    },
+    perCounty: {
+      heading: "per county: N of M",
+      body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+      lensLink: "open the Coverage lens on the map →",
     },
     snapshot: {
       heading: "Public entities list",

@@ -11,8 +11,8 @@ export interface CoverageSectionProps {
 export function CoverageSection({ title, children }: CoverageSectionProps) {
   const id = useId();
   return (
-    <Box component="section" aria-labelledby={id}>
-      <Typography variant="h5" component="h2" id={id} gutterBottom>{title}</Typography>
+    <Box component="section" aria-labelledby={id} sx={{ display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
+      <Typography variant="label" component="h2" id={id} color="primary.main" sx={{ fontWeight: 500 }}>{title}</Typography>
       {children}
     </Box>
   );

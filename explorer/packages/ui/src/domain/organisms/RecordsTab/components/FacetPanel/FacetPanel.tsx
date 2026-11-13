@@ -1,5 +1,5 @@
 import type { RecordFilter } from "@grivei/contract";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { EntityRole, RecordFacetData } from "../../../../types.ts";
 import { FacetGroup } from "../FacetGroup/index.ts";
@@ -19,10 +19,10 @@ export interface FacetPanelProps {
 /** The Records tab's side panel: facets by Signal, channel, procedure, year, counterparty and badge, each value with its count. Controlled. */
 export function FacetPanel({ facets, filter, role, onFilterChange, locale, copy }: FacetPanelProps) {
   return (
-    <Stack component="aside" aria-label={copy.label} spacing={2}>
+    <Box component="aside" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "16px 28px" }}>
       {facetGroups(facets, filter, role, copy, onFilterChange).map((group) => (
         <FacetGroup key={group.id} title={group.title} options={group.options} optionText={copy.option} locale={locale} />
       ))}
-    </Stack>
+    </Box>
   );
 }

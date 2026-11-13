@@ -2,6 +2,7 @@ import { Card } from "../../../atoms/Card/index.ts";
 import { CardContent } from "../../../atoms/CardContent/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
+import { color } from "../../../theme/tokens.ts";
 import type { EntityRef } from "../../types.ts";
 
 export interface GoToCardCopy {
@@ -24,9 +25,9 @@ export interface GoToCardProps {
 /** The pinned "Go to page" card above the result tabs: the entity, how it is identified, and a link to its page. */
 export function GoToCard({ entity, href, copy }: GoToCardProps) {
   return (
-    <Card component="section" variant="outlined" aria-label={copy.heading}>
+    <Card component="section" variant="outlined" aria-label={copy.heading} sx={{ borderColor: color.accent }}>
       <CardContent>
-        <Typography variant="overline" component="h2">
+        <Typography variant="meta" component="h2" sx={{ color: color.accent }}>
           {copy.heading}
         </Typography>
         <Typography variant="h6" component="p">

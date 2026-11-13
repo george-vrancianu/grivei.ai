@@ -125,7 +125,7 @@ fragment EntityHeaderFields on Entity {
 fragment EntityResultPageFields on EntityResultPage {
   count
   countEstimated
-  rows { entity { ...EntityRowFields } matched { ...TotalFields } }
+  rows { entity { ...EntityRowFields } matched { ...TotalFields } signalCount }
 }
 
 # A page of Records, each with the text that matched the query.
@@ -134,5 +134,6 @@ fragment RecordResultFields on RecordResultPage {
   rows {
     record { ...RecordRowFields }
     matchedField { field text highlights }
+    areaShare
   }
 }

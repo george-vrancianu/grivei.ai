@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { Stack } from "../../../atoms/Stack/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
+import { pick } from "../../../workbench/index.ts";
+import { SignalOrderToggle } from "../../molecules/SignalOrderToggle/index.ts";
+import { StateNote } from "../../molecules/StateNote/index.ts";
+import { SignalCard } from "../SignalCard/index.ts";
+import { SignalList } from "../SignalList/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
   authorityManyCounterpartiesOverview, authorityOverview, emptyOverview, manyAliasesOverview, nameOnlyOverview, recordRows, supplierOverview,
@@ -13,21 +16,33 @@ const meta = { title: "Domain/EntityOverview", component: EntityOverview } satis
 export default meta;
 type Story = StoryObj;
 
-/** A minimal neutral stand-in for the Signal cards (their own organism fills the slot): the rule and the Records count. */
-function SignalPlaceholder({ overview }: { overview: EntityOverviewData }): ReactNode {
+/** The Signal cards the app puts in the slot: a `SignalList` of `SignalCard`s. */
+function SignalCards({ overview, locale }: { overview: EntityOverviewData; locale: "en" | "ro" }): ReactNode {
   return (
-    <Stack component="ul" sx={{ m: 0, pl: 2 }}>
-      {overview.signals.rows.map((signal) => (
-        <Typography key={`${signal.rule}-${signal.date}`} component="li">
-          {signal.rule} · {signal.recordCount}
-        </Typography>
-      ))}
-    </Stack>
+    <SignalList
+      signals={overview.signals.rows}
+      locale={locale}
+      renderItem={(signal) => (
+        <SignalCard
+          signal={signal}
+          reproduceHref={`/explore/authority/${signal.authority.key}/records`}
+          methodologyHref="/explore/methodology"
+          entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
+          locale={locale}
+          copy={sampleCopy.signalCard(locale)}
+        />
+      )}
+    />
   );
 }
 
+/** The order toggle the app puts in the slot above the Signals list. */
+function SignalOrderSample({ locale }: { locale: "en" | "ro" }) {
+  return <SignalOrderToggle value="DATE_DESC" onChange={() => {}} copy={sampleCopy.signalOrder(locale)} />;
+}
+
 const overviewStory =
-  (data: { overview: EntityOverviewData; aliases: EntityAliases }, role: EntityRole, withSignals = true): Story["render"] =>
+  (data: { overview: EntityOverviewData; aliases: EntityAliases }, role: EntityRole, withSignals = true, toolbar = false): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
     return (
@@ -41,7 +56,8 @@ const overviewStory =
         suspectHref="?badges=suspect-value"
         locale={locale}
         copy={sampleCopy.entityOverview(locale)}
-        signals={withSignals ? <SignalPlaceholder overview={data.overview} /> : undefined}
+        signals={withSignals ? <SignalCards overview={data.overview} locale={locale} /> : undefined}
+        signalsToolbar={toolbar ? <SignalOrderSample locale={locale} /> : undefined}
       />
     );
   };
@@ -65,3 +81,14 @@ export const UncountedRecordsFilteredOut: Story = {
     "supplier",
   ),
 };
+/** The slot above the Signals list holds a control (here the order toggle). */
+export const SignalsToolbarSlot: Story = { render: overviewStory(supplierOverview, "supplier", true, true) };
+
+const words = {
+  loading: { en: "Loading…", ro: "Se încarcă…" },
+  error: { en: "The data could not be loaded.", ro: "Datele nu au putut fi încărcate." },
+};
+/** The Overview while its data loads: the page puts a loading note where the tab would be. */
+export const Loading: Story = { render: (_args, { globals }) => <StateNote kind="loading">{pick(globals["locale"], words.loading)}</StateNote> };
+/** The Overview's data could not be loaded: an error note, never red. */
+export const Failed: Story = { render: (_args, { globals }) => <StateNote kind="error">{pick(globals["locale"], words.error)}</StateNote> };

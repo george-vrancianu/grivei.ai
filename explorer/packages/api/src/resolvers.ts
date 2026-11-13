@@ -182,6 +182,16 @@ export function rootValue(store: Store) {
    * the panel would be a scan of everything. `counterparties` names the side the counterparty facet lists (an entity page knows its own);
    * the facet offers the alternatives, so the counterparty already picked is dropped from the filter it is computed on.
    */
+  /**
+   * The rows of an entity page of a tab (or the counterparty facet): `signalCount` (#104) is read only when the query selects it, once for the whole page of
+   * `side` and the filter (one grouped query on the page's keys), so the page query itself is not changed.
+   */
+  function entityResults(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, hits: EntityHit[], ctx: Ctx) {
+    let counts: Promise<Map<string, number>> | undefined;
+    const countOf = (key: string) => (counts ??= store.entitySignalCounts(side, filter, hits.map((h) => h.entity.key), { signal: ctx?.signal })).then((m) => m.get(key) ?? 0);
+    return hits.map((h) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched }, signalCount: () => countOf(h.entity.key) }));
+  }
+
   function facetsOf(filter: SearchFilter, counterparties: "AUTHORITY" | "SUPPLIER" | null) {
     const scoped = !!(filter.authority || filter.supplier);
     const rows = (dimension: "channel" | "procedure" | "year" | "badge" | "signal") => async (_: unknown, ctx: Ctx) =>
@@ -196,7 +206,7 @@ export function rootValue(store: Store) {
         if (!scoped || !counterparties) return [];
         const open = counterparties === "SUPPLIER" ? { ...filter, supplier: undefined } : { ...filter, authority: undefined };
         const page = await store.searchEntities(counterparties, open, { limit: 10, offset: 0 }, { signal: ctx?.signal });
-        return page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } }));
+        return entityResults(counterparties, open, page.rows, ctx);
       },
     };
   }
@@ -210,7 +220,7 @@ export function rootValue(store: Store) {
       return {
         count: page.count,
         countEstimated: page.estimated,
-        rows: page.rows.map((h: EntityHit) => ({ entity: entityObject(h.entity), matched: { ...zeroTotal(), ...h.matched } })),
+        rows: entityResults(side, filter, page.rows, ctx),
       };
     };
     const queryTokens = foldTokens(filter.q ?? "");
@@ -242,7 +252,16 @@ export function rootValue(store: Store) {
         const { count, rows } = where.empty
           ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
           : await store.searchRecords(filter, page, { signal: ctx?.signal });
-        return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: matchedFieldOf(matchSource(record), queryTokens) })) };
+        // areaShare (#103): only after a supplier-side county click, and only for a Record with several winners (a single winner's share is the whole value)
+        const inArea = filter.countySide === "SUPPLIER" && !!filter.county;
+        return {
+          count,
+          rows: rows.map((record) => ({
+            record: recordRow(record),
+            matchedField: matchedFieldOf(matchSource(record), queryTokens),
+            areaShare: inArea && record.winners.length > 1 ? (record.areaShare ?? null) : null,
+          })),
+        };
       },
     };
   }

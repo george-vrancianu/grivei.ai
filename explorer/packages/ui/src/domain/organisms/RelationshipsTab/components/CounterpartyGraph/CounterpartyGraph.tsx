@@ -1,13 +1,14 @@
 import type { KeyboardEvent } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { Locale } from "../../../../../theme/index.ts";
+import { grafStates, type Locale } from "../../../../../theme/index.ts";
+import { color, font } from "../../../../../theme/tokens.ts";
 import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import type { EntityRef, RelationshipsCounterparties } from "../../../../types.ts";
 import type { CounterpartyGraphCopy, RelationshipsTabCopy } from "../../relationshipsTab.types.ts";
 import {
-  CENTRE_COLOR, CENTRE_RADIUS, FOCUS_COLOR, GRAPH_HEIGHT, GRAPH_WIDTH, SELECTED_STROKE, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
+  CENTRE_COLOR, CENTRE_RADIUS, GRAPH_HEIGHT, GRAPH_WIDTH, NODE_FILL, SELECTED_STROKE, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
 } from "../../relationshipsTab.utils.ts";
 
 export interface CounterpartyGraphProps {
@@ -28,7 +29,7 @@ const shorten = (text: string) => (text.length > MAX_LABEL ? `${text.slice(0, MA
 
 /**
  * The radial graph: the entity in the centre and its top counterparties around it. Node area = money, edge and node colour = the channel
- * that carries more of it, dashed edge = won together, orange ring = has Signals. React draws the SVG; D3 supplies the scales and the layout maths.
+ * holding the most RON with that counterparty, dashed edge = won together, amber ring = has Signals. React draws the SVG; D3 supplies the scales and the layout maths.
  * A node with an Entity is a button (click, Enter or Space picks it, picking it again clears the pick); a natural person is only a labelled mark.
  */
 export function CounterpartyGraph({ entity, counterparties, selected, onSelect, locale, copy }: CounterpartyGraphProps) {
@@ -67,7 +68,12 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
         role="group"
         aria-label={copy.graph.label}
         viewBox={`${-GRAPH_WIDTH / 2} ${-GRAPH_HEIGHT / 2} ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
-        sx={{ width: "100%", height: "auto", maxHeight: 520, display: "block", "& [role=button]": { cursor: "pointer" }, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none" }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" } }}
+        sx={{
+          width: "100%", height: "auto", maxHeight: 520, display: "block", color: color.text, fontFamily: font.mono,
+          "& [role=button]": { cursor: "pointer" },
+          // Unpicked nodes only: the hover stroke (1.5) would otherwise override the picked node's selection stroke (3) while the pointer is on it.
+          "& [role=button][aria-pressed=false]:hover circle[data-radius]": grafStates.mapArea.hover, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none", ...grafStates.mapArea.focus }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" },
+        }}
       >
         {nodes.map((node, i) => (
           <line
@@ -77,13 +83,14 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
             data-won-together={node.row.wonTogether}
             x1={0} y1={0} x2={node.x} y2={node.y}
             stroke={channelColor(node.channel)}
-            strokeWidth={node.key !== null && node.key === selected ? 4 : 2}
-            strokeOpacity={selected !== null && node.key !== selected ? 0.45 : 0.9}
+            strokeWidth={node.edgeWidth}
+            strokeLinecap="round"
+            strokeOpacity={selected !== null && node.key !== selected ? 0.45 : 1}
             strokeDasharray={node.row.wonTogether ? WON_TOGETHER_DASH : undefined}
           />
         ))}
         <circle r={CENTRE_RADIUS} fill={CENTRE_COLOR} data-centre />
-        <text y={CENTRE_RADIUS + 14} textAnchor="middle" fontSize={12} fontWeight={600} fill="currentColor">{shorten(entity.displayName)}</text>
+        <text y={CENTRE_RADIUS + 14} textAnchor="middle" fontSize={12} fontWeight={600} fill="currentColor" stroke={color.panel} strokeWidth={4} paintOrder="stroke">{shorten(entity.displayName)}</text>
         {nodes.map((node, i) => {
           const isSelected = node.key !== null && node.key === selected;
           const label = copy.graph.node(nameParts(node, isSelected));
@@ -104,9 +111,9 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
               <title>{label}</title>
               {node.row.hasSignals && <circle r={node.r + 5} fill="none" stroke={SIGNAL_RING_COLOR} strokeWidth={3} data-ring />}
               {/* A ring outside the node and its Signal ring, shown on keyboard focus only: selection (fill and stroke) never draws it. */}
-              {pickable && <circle r={node.r + 9} fill="none" stroke={FOCUS_COLOR} strokeWidth={3} strokeDasharray="2 3" data-focus-ring />}
-              <circle r={node.r} fill={channelColor(node.channel)} fillOpacity={isSelected ? 1 : 0.7} stroke={isSelected ? SELECTED_STROKE : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 1.5} data-radius={node.r} />
-              <text y={node.r + (pickable ? LABEL_BELOW_FOCUS_RING : node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" aria-hidden="true">{shorten(nameOf(node))}</text>
+              {pickable && <circle r={node.r + 9} fill="none" data-focus-ring />}
+              <circle r={node.r} fill={isSelected ? channelColor(node.channel) : NODE_FILL} stroke={isSelected ? SELECTED_STROKE : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 2} data-radius={node.r} />
+              <text y={node.r + (pickable ? LABEL_BELOW_FOCUS_RING : node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" stroke={color.panel} strokeWidth={4} paintOrder="stroke" aria-hidden="true">{shorten(nameOf(node))}</text>
             </g>
           );
         })}

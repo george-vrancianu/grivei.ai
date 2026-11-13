@@ -10,7 +10,7 @@ Nothing in this folder is production code. It is a reference to build from.
 index.html            list of every screen, opens in a browser
 screens/              13 static snapshots, one per screen state
 screenshots/          the same 13 as PNG at 1440 px, plus two at 390 px
-tokens/               tokens.json, tokens.css, mui-theme.draft.ts
+tokens/               tokens.css (reference); tokens.json moved to the UI library, see tokens/README.md
 assets/               logo and the map and graph images used in the screens
 fonts/                the font files from site/fonts, fonts.css, licences
 canvas-source/        the design's own source files (.dc.html)
@@ -20,7 +20,7 @@ README.md             how to preview
 ## How to use it
 
 - `screens/*.html` are the visual reference. Every style is inline, so exact sizes, spacing and colours can be read off any element. Do not copy the markup into the app: build each part as a UI library component, as `explorer/CLAUDE.md` and ADR 0006 require.
-- `tokens/` feeds the MUI theme in the UI library (#40). `mui-theme.draft.ts` type-checks on its own but was never compiled against `@mui/material`.
+- `tokens.json` now lives in `explorer/packages/ui/src/theme/` and the MUI theme is built from it (#96); the draft theme is gone. See `tokens/README.md`.
 - `canvas-source/` shows how each state was produced: the data arrays and the small state logic at the bottom of each file. It is useful when writing stories. It is not React code for the app. `Explore.dc.html` holds all five main-screen states behind one `view` setting, and `Entity.dc.html` holds the three tabs behind one `tab` setting.
 - The snapshots are static. Tabs and toggles do not switch; each state is its own file. Header and row links do move between the files.
 
@@ -48,7 +48,7 @@ The header (logo, explore / coverage / about the numbers, EN / RO) is the app sh
 
 ## Tokens
 
-`tokens/tokens.json` is the source; `tokens.css` is generated from it. The first ten colours and the three font stacks have the same names and values as `:root` in `site/styles.css`.
+`explorer/packages/ui/src/theme/tokens.json` is the source (moved from `tokens/` in #96); `tokens/tokens.css` is the old generated copy. The first ten colours and the three font stacks have the same names and values as `:root` in `site/styles.css`.
 
 | Token | Value | Contrast |
 |---|---|---|

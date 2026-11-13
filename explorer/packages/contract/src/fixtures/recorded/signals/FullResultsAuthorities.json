@@ -40,7 +40,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 8
               },
               {
                 "entity": {
@@ -57,7 +58,8 @@
                   "noValue": 1,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 3
               },
               {
                 "entity": {
@@ -82,7 +84,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 1
               }
             ]
           }

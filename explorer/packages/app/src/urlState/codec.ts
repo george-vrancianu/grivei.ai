@@ -18,6 +18,11 @@ export interface UrlState {
   lens?: string;
   /** The Entity key picked on an Entity page's Relationships tab. */
   counterparty?: string;
+  /**
+   * The search an entity link was followed from (the query and chips), kept apart from `filter`: the entity page opens unfiltered and
+   * offers "only Records matching ..." while this is present (#106). Absent when empty.
+   */
+  carried?: RecordFilter;
 }
 
 export const EMPTY_URL_STATE: UrlState = { filter: {} };
@@ -66,9 +71,8 @@ function encodeValue(encoding: UrlEncoding, value: string | number | boolean): s
 
 const FIELDS = Object.entries(RECORD_FILTER_URL) as [keyof RecordFilter, UrlKeySpec][];
 
-/** The query string (with or without a leading `?`) into URL state. Unknown keys and malformed values are ignored. */
-export function decodeUrlState(search: string): UrlState {
-  const params = new URLSearchParams(search);
+/** The filter's fields of already-split query parameters (the same reading for the URL and for a carried search). */
+function decodeFilter(params: URLSearchParams): RecordFilter {
   const filter: Record<string, unknown> = {};
   for (const [field, spec] of FIELDS) {
     const values = params
@@ -78,7 +82,26 @@ export function decodeUrlState(search: string): UrlState {
     if (values.length === 0) continue;
     filter[field] = spec.repeatable ? values : values[0];
   }
-  const state: UrlState = { filter: filter as RecordFilter };
+  return filter as RecordFilter;
+}
+
+/** The filter's parameters, in the contract's order; unset fields and the default `countySide` are left out. */
+function appendFilter(params: URLSearchParams, filter: RecordFilter): void {
+  for (const [field, spec] of FIELDS) {
+    const raw = filter[field];
+    if (raw === undefined || raw === null) continue;
+    const list = (Array.isArray(raw) ? raw : [raw]) as (string | number | boolean)[];
+    for (const value of list) {
+      if (DEFAULTS[field] === value || value === "") continue;
+      params.append(spec.key, encodeValue(spec.encoding, value));
+    }
+  }
+}
+
+/** The query string (with or without a leading `?`) into URL state. Unknown keys and malformed values are ignored. */
+export function decodeUrlState(search: string): UrlState {
+  const params = new URLSearchParams(search);
+  const state: UrlState = { filter: decodeFilter(params) };
   const tab = params.get(URL_ONLY_KEYS.tab);
   if (tab !== null && SLUG.test(tab)) state.tab = tab;
   const page = params.get(URL_ONLY_KEYS.page);
@@ -91,6 +114,12 @@ export function decodeUrlState(search: string): UrlState {
   if (lens !== null && SLUG.test(lens) && lens !== DEFAULT_LENS) state.lens = lens;
   const counterparty = params.get(URL_ONLY_KEYS.counterparty);
   if (counterparty !== null && PATTERNS.key.test(counterparty)) state.counterparty = counterparty;
+  const carried = params.get(URL_ONLY_KEYS.carried);
+  if (carried !== null) {
+    // only the filter's keys count: a carried search never nests another state (tab, page, a carried search of its own)
+    const filter = decodeFilter(new URLSearchParams(carried));
+    if (Object.keys(filter).length > 0) state.carried = filter;
+  }
   if (state.order === undefined) delete state.order;
   if (state.signalOrder === undefined) delete state.signalOrder;
   return state;
@@ -98,26 +127,23 @@ export function decodeUrlState(search: string): UrlState {
 
 /**
  * URL state into a query string with a leading `?` ("" when there is nothing to say). Keys come out in one canonical
- * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens, counterparty); unset fields and the
+ * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens, counterparty, carried); unset fields and the
  * default `countySide` are left out.
  */
 export function encodeUrlState(state: UrlState): string {
   const params = new URLSearchParams();
-  for (const [field, spec] of FIELDS) {
-    const raw = state.filter[field];
-    if (raw === undefined || raw === null) continue;
-    const list = (Array.isArray(raw) ? raw : [raw]) as (string | number | boolean)[];
-    for (const value of list) {
-      if (DEFAULTS[field] === value || value === "") continue;
-      params.append(spec.key, encodeValue(spec.encoding, value));
-    }
-  }
+  appendFilter(params, state.filter);
   if (state.tab) params.set(URL_ONLY_KEYS.tab, state.tab);
   if (state.page !== undefined && state.page > 1) params.set(URL_ONLY_KEYS.page, String(state.page));
   if (state.order) params.set(URL_ONLY_KEYS.order, enumToUrl(state.order));
   if (state.signalOrder) params.set(URL_ONLY_KEYS.signalOrder, enumToUrl(state.signalOrder));
   if (state.lens && state.lens !== DEFAULT_LENS) params.set(URL_ONLY_KEYS.lens, state.lens);
   if (state.counterparty) params.set(URL_ONLY_KEYS.counterparty, state.counterparty);
+  if (state.carried) {
+    const carried = new URLSearchParams();
+    appendFilter(carried, state.carried);
+    if (carried.size > 0) params.set(URL_ONLY_KEYS.carried, carried.toString());
+  }
   const text = params.toString();
   return text === "" ? "" : `?${text}`;
 }

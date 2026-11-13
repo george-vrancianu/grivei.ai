@@ -20,7 +20,7 @@ export function CoverageGridLegend({ copy, condensed = false, showRange = false 
       <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexWrap: "wrap", columnGap: condensed ? 1.5 : 2.5, rowGap: 0.5 }}>
         {GAP_STATES.map((state) => (
           <Box component="li" key={state} data-state={state} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <Box aria-hidden sx={{ ...stateSx(state), width: size, height: size, display: "grid", placeItems: "center", fontSize: condensed ? 9 : 11, flex: "none" }}>
+            <Box aria-hidden sx={{ ...stateSx(state), width: size, height: size, display: "grid", placeItems: "center", fontSize: condensed ? 9 : 11, fontWeight: 600, flex: "none" }}>
               {STATE_GLYPHS[state]}
             </Box>
             <Typography variant="caption">{copy.states[state]}</Typography>

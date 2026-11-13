@@ -4,6 +4,7 @@ import type { Locale } from "../../../../../theme/index.ts";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityRole, RecordResult, RecordRow } from "../../../../types.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { countedRecords } from "../../entityOverview.utils.ts";
 
 export interface LargestRecordsCopy {
@@ -24,12 +25,10 @@ export interface LargestRecordsProps {
 
 /** The largest counted Records. Only counted Records are listed, whatever the API sends: a Record with no counted value (suspect, framework ceiling) is filtered out. */
 export function LargestRecords({ records, entityHref, recordHref, locale, copy }: LargestRecordsProps) {
-  const rows = countedRecords(records).map((record) => ({ record, matchedField: null }));
+  const rows = countedRecords(records).map((record) => ({ record, matchedField: null, areaShare: null }));
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+      <SectionHeading>{copy.heading}</SectionHeading>
       {rows.length === 0 ? (
         <Typography color="text.secondary">{copy.empty}</Typography>
       ) : (

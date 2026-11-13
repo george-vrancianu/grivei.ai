@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { UiProvider } from "@grivei/ui";
-import { AppShell } from "./components/AppShell/index.ts";
+import { AppShell, type NavItem } from "./components/AppShell/index.ts";
 import { catalogue } from "./copy/index.ts";
 import { CountyTopologyProvider, UatTopologyProvider, type LoadCountyTopology, type LoadUatTopology } from "./geo/index.ts";
 import { ClientProvider } from "./graphql/ClientContext.tsx";
 import type { GraphqlClient } from "./graphql/client.ts";
 import { Routes } from "./Routes.tsx";
 import { LocationProvider, useLocation } from "./routing/location.tsx";
-import { pathFor, switchLocalePath } from "./routing/routes.ts";
+import { pathFor, switchLocalePath, type Route } from "./routing/routes.ts";
 
 export interface AppProps {
   client?: GraphqlClient;
@@ -17,8 +17,24 @@ export interface AppProps {
   loadUatTopology?: LoadUatTopology;
 }
 
+/** The nav item a page belongs to: entity and Record pages are part of exploring; an unknown path has none. */
+function navItemOf(route: Route): NavItem | null {
+  switch (route.name) {
+    case "main":
+    case "entity":
+    case "record":
+      return "explore";
+    case "search":
+    case "coverage":
+    case "methodology":
+      return route.name;
+    case "not-found":
+      return null;
+  }
+}
+
 function Shell() {
-  const { locale, pathname, search, hash } = useLocation();
+  const { locale, pathname, search, hash, route } = useLocation();
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
@@ -27,6 +43,7 @@ function Shell() {
     <UiProvider locale={locale}>
       <AppShell
         copy={catalogue[locale]}
+        current={navItemOf(route)}
         switchTo={{ locale: other, href: switchLocalePath(pathname, search, other, hash) }}
         links={{
           explore: pathFor(locale, { name: "main" }),

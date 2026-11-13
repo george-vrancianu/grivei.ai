@@ -21,6 +21,8 @@ export interface ResultTabsCopy {
   tabs: Record<ResultTab, string>;
   /** One sentence per tab for a tab with no rows. */
   empty: Record<ResultTab, string>;
+  /** The link under an empty tab's sentence (to the Coverage lens); shown only when the caller gives `emptyHref`. It must not suggest that nothing was spent: it is about what was harvested. */
+  emptyLink: string;
   /** "Show all n" link text, for the optional `showAllHref`; `formatted` is the count in the locale's number format. */
   showAll: (n: number, formatted: string) => string;
   goTo: GoToCardCopy;
@@ -39,16 +41,22 @@ export interface ResultTabsProps {
   onTabChange?: (tab: ResultTab) => void;
   /** Entity page URL for an entity in a role, built by the caller (language prefix, route). */
   entityHref: (entity: EntityRef, role: EntityRole) => string;
+  /** Entity page URL for the pinned "Go to page" card; leave it out and the card uses `entityHref`. For a caller whose entity links carry context the card's exact match does not need. */
+  goToHref?: (entity: EntityRef, role: EntityRole) => string;
   recordHref: (record: RecordResult["record"]) => string;
   /** Where "show all" goes for a tab (the full-results view); the link shows only when it returns a URL and the tab has more rows than shown. */
   showAllHref?: (tab: ResultTab) => string | undefined;
+  /** Where an empty tab's link (`copy.emptyLink`) goes (the Coverage lens, built by the caller); absent = no link. */
+  emptyHref?: string;
+  /** A plain click on a link goes here instead of loading the page; leave it out and the browser follows the links. */
+  onNavigate?: (href: string) => void;
   locale: Locale;
   copy: ResultTabsCopy;
 }
 
 /** The results of a search: a pinned "Go to page" card, then Authorities, Suppliers and Records tabs (Suppliers by default). */
 export function ResultTabs(props: ResultTabsProps) {
-  const { authorities, suppliers, records, goTo, locale, copy, entityHref, recordHref, showAllHref } = props;
+  const { authorities, suppliers, records, goTo, locale, copy, entityHref, goToHref = entityHref, recordHref, showAllHref, emptyHref, onNavigate } = props;
   const [tab, select] = useResultTab(props.tab, props.onTabChange);
   const uid = useId();
   const tabId = (name: ResultTab) => `${uid}-tab-${name}`;
@@ -70,7 +78,7 @@ export function ResultTabs(props: ResultTabsProps) {
 
   return (
     <Stack spacing={2}>
-      {goTo && <GoToCard entity={goTo} href={entityHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
+      {goTo && <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
       <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label}>
         {RESULT_TABS.map((name) => (
           <Tab
@@ -91,6 +99,8 @@ export function ResultTabs(props: ResultTabsProps) {
           shown={counts[name].shown}
           count={counts[name].count}
           emptyText={copy.empty[name]}
+          emptyLink={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }}
+          onNavigate={onNavigate}
           showAll={showAllLink(name)}
         >
           {rows[name]}

@@ -9,8 +9,9 @@ import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import type { EntityRole, MoneyMap } from "../../types.ts";
 import type { MapArea } from "../MoneyLensMap/index.ts";
 import { FlowLensMap } from "./index.ts";
+import { onPanel } from "../../../workbench/index.ts";
 
-const meta = { title: "Domain/FlowLensMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/FlowLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

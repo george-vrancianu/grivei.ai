@@ -2,6 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { resultSamples } from "../../samples/fixtureData.ts";
 import { ResultTabs, toResultTab, type ResultTab, type ResultTabsProps } from "./index.ts";
@@ -80,6 +81,13 @@ describe("ResultTabs", () => {
     expect(card.compareDocumentPosition(screen.getByRole("tablist")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("links the Go to page card with goToHref when the caller gives one, while the rows keep entityHref", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.goTo)} goToHref={(entity, role) => `/plain/${role}/${entity.key}`} />);
+    const entity = resultSamples.goTo.goTo!;
+    expect(within(screen.getByRole("region", { name: "Go to page" })).getByRole("link", { name: /Open the page/ })).toHaveAttribute("href", `/plain/supplier/${entity.key}`);
+    expect(screen.getAllByRole("link").some((l) => l.getAttribute("href")?.startsWith("/explore/"))).toBe(true);
+  });
+
   it("opens the Go to page entity in the role its SEAP roles name, not the role of the rows shown", () => {
     const { key, displayName, identity } = resultSamples.goTo.goTo!;
     const authorityOnly = { key: "name-not-in-rows", displayName, identity, seap: { roles: ["AUTHORITY" as const] } };
@@ -122,12 +130,31 @@ describe("ResultTabs", () => {
     expect(screen.getByRole("tabpanel")).toHaveTextContent("No Records.");
   });
 
+  it.each(["en", "ro"] as const)("links every empty tab to emptyHref with the catalogue's link text (%s), and not without it", async (locale) => {
+    const copy = sampleCopy.resultTabs(locale);
+    const user = userEvent.setup();
+    const { unmount } = renderInUi(<ResultTabs {...base(resultSamples.empty, locale)} emptyHref="/explore/?lens=coverage" />);
+    for (const tab of [copy.tabs.suppliers, copy.tabs.authorities, copy.tabs.records]) {
+      await user.click(screen.getByRole("tab", { name: new RegExp(`^${tab}`) }));
+      expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: copy.emptyLink })).toHaveAttribute("href", "/explore/?lens=coverage");
+    }
+    unmount();
+    renderInUi(<ResultTabs {...base(resultSamples.empty, locale)} />);
+    expect(screen.queryByRole("link", { name: copy.emptyLink })).toBeNull();
+  });
+
   it("offers 'show all' only when the caller gives a URL and there are more rows than shown", () => {
     const { unmount } = renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
     expect(screen.getByRole("link", { name: "Show all 240,000" })).toHaveAttribute("href", "/explore/search?tab=suppliers");
     unmount();
     renderInUi(<ResultTabs {...base(resultSamples.variety)} tab="records" showAllHref={() => undefined} />);
     expect(screen.queryByRole("link", { name: /^Show all/ })).toBeNull();
+  });
+
+  it("keeps the 'show all' link neutral: amber is for the headline Total alone", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.accent.slice(i, i + 2), 16));
+    expect(getComputedStyle(screen.getByRole("link", { name: "Show all 240,000" })).color).not.toBe(`rgb(${r}, ${g}, ${b})`);
   });
 
   it("reads in Romanian", () => {

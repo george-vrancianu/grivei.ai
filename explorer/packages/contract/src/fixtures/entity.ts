@@ -4,9 +4,11 @@ import type {
 } from "../generated/operations.ts";
 import { entityHeader, entityRef, moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import { recordedEntityRecords } from "./recorded/records.ts";
 import * as w from "./world.ts";
 
 type Role = "AUTHORITY" | "SUPPLIER";
+type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
 
 /** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
@@ -166,7 +168,25 @@ const facetsOfAuthority = {
     { entity: w.constructii, matched: total({ awarded: ron(12_800_000), records: 1 }) },
   ],
 };
-const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
+const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null, areaShare: null })) });
+
+/**
+ * The recorded unfiltered Records of an entity narrowed to `rows`, as the answer to `filter` (#106's "only Records matching ...": the search an
+ * entity link carries, applied as the Records tab's filter). Test data: the rows are recorded ones and the total follows them (their count and
+ * values); the facets stay the unfiltered ones. A text query cannot be evaluated here, so its fixtures take the first `n` rows as placeholders.
+ */
+function narrowed(key: string, role: Role, filter: EntityRecordsQueryVariables["filter"], rows: number | ((row: Row) => boolean), name: string, description: string): FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables>[number] {
+  const full = recordedEntityRecords.find((f) => f.variables.key === key && f.variables.role === role && Object.keys(f.variables.filter ?? {}).length === 0 && !f.variables.order)!;
+  const records = full.data.entity!.seap.role!.records!;
+  const picked = typeof rows === "number" ? records.records.rows.slice(0, rows) : records.records.rows.filter(rows);
+  const n = picked.length;
+  const awarded = picked.reduce((sum, r) => sum + BigInt(r.record.value ?? 0), 0n).toString();
+  return {
+    name, kind: "typical", description,
+    variables: { key, role, limit: 100, offset: 0, filter },
+    data: { entity: { ...full.data.entity!, seap: { ...full.data.entity!.seap, role: { ...full.data.entity!.seap.role!, records: { ...records, total: total({ awarded, records: n }), records: { count: n, rows: picked } } } } } },
+  } as FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables>[number];
+}
 
 /**
  * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`,
@@ -174,6 +194,9 @@ const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, r
  * three counterparty-picked ones belong to the Relationships tab's side panel (#88 records them).
  */
 export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
+  narrowed("2000007", "SUPPLIER", { q: "comuna" }, 3, "supplier-carried-query", "a supplier's Records tab narrowed to the search an entity link carried: a text query only (#106)"),
+  narrowed("2000007", "SUPPLIER", { q: "comuna", channel: "DIRECT_PURCHASE" }, (r) => ["DA96000005", "DA96000001"].includes(r.record.code), "supplier-carried-query-and-chip", "a supplier's Records tab narrowed to a carried text query and a channel chip (#106)"),
+  narrowed("2000007", "SUPPLIER", { channel: "DIRECT_PURCHASE" }, (r) => r.record.channel === "DIRECT_PURCHASE", "supplier-carried-chip", "a supplier's Records tab narrowed to a carried channel chip, no query (#106)"),
   {
     name: "authority-one-supplier", kind: "typical",
     description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",
@@ -184,6 +207,19 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
         total: total({ awarded: ron(598_400), records: 4 }),
         facets: { ...facetsOfAuthority, channel: [facetsOfAuthority.channel[0]!], procedure: [facetsOfAuthority.procedure[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
         records: rowsOf(w.rDirect, w.rSplit1, w.rSplit2, w.rDirectSmall),
+      },
+    }) },
+  },
+  {
+    name: "authority-text-search", kind: "typical",
+    description: "an authority's Records tab with a text search (RecordFilter.q): the row says which field matched and where (matchedField)",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "deszăpezire" } },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(300_000), records: 1 }),
+        facets: { ...facetsOfAuthority, channel: [facetsOfAuthority.channel[0]!], procedure: [facetsOfAuthority.procedure[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
+        records: { count: 1, rows: [{ record: w.rDirect, matchedField: { field: "TITLE", text: "Deszăpezire străzi, sezon rece 2023-2024", highlights: [[0, 11]] }, areaShare: null }] },
       },
     }) },
   },
@@ -199,7 +235,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
           ...facetsOfAuthority,
           channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
         },
-        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null, areaShare: null })) },
       },
     }) },
   },
@@ -215,7 +251,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
           ...facetsOfAuthority,
           channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
         },
-        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null, areaShare: null })) },
       },
     }) },
   },

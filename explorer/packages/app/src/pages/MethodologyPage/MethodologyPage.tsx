@@ -1,6 +1,7 @@
-import { MethodologyPage as MethodologyPageView, Stack, type Locale } from "@grivei/ui";
+import { Box, MethodologyPage as MethodologyPageView, type Locale } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
+import { decodeHash } from "../../routing/decodeHash.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
 import { useMethodologyBaseRates } from "./hooks/useMethodologyBaseRates.ts";
 
@@ -13,9 +14,9 @@ export function MethodologyPage({ locale }: MethodologyPageProps) {
   const t = useCopy();
   const { hash } = useLocation();
   const baseRates = useMethodologyBaseRates();
-  const anchor = decodeAnchor(hash);
+  const anchor = decodeHash(hash);
   return (
-    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box component="main">
       <MethodologyPageView
         baseRates={baseRates}
         anchor={anchor}
@@ -25,16 +26,6 @@ export function MethodologyPage({ locale }: MethodologyPageProps) {
         locale={locale}
         copy={t.methodology}
       />
-    </Stack>
+    </Box>
   );
-}
-
-/** The fragment as an element id, or null for none or a malformed one. */
-function decodeAnchor(hash: string): string | null {
-  if (hash.length < 2) return null;
-  try {
-    return decodeURIComponent(hash.slice(1));
-  } catch {
-    return null;
-  }
 }

@@ -11,8 +11,12 @@ import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.t
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
+import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
+import type { CiteLineCopy } from "../molecules/CiteLine/index.ts";
+import type { CopyLinkButtonCopy } from "../molecules/CopyLinkButton/index.ts";
+import type { OrderSelectCopy } from "../molecules/OrderSelect/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
@@ -28,13 +32,27 @@ import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.t
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
+import type { SignalCountChipCopy } from "../molecules/SignalCountChip/index.ts";
+import type { SignalOrderToggleCopy } from "../molecules/SignalOrderToggle/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
-const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
+const copyLink: Record<Locale, CopyLinkButtonCopy> = {
+  en: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" },
+  ro: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" },
+};
+const citeThisView = (locale: Locale): CiteLineCopy => ({ label: locale === "ro" ? "Citează această vizualizare" : "Cite this view", copyLink: copyLink[locale] });
+const citeThisRecord = (locale: Locale): CiteLineCopy => ({ label: locale === "ro" ? "Adresa acestei înregistrări" : "Address of this Record", copyLink: copyLink[locale] });
+const orderSelect = (locale: Locale): OrderSelectCopy =>
+  locale === "ro"
+    ? { label: "ordine", options: { VALUE_DESC: "valoare, de la cea mai mare", DATE_DESC: "dată, cele mai noi întâi", DATE_ASC: "dată, cele mai vechi întâi" } }
+    : { label: "order", options: { VALUE_DESC: "value, high to low", DATE_DESC: "date, newest first", DATE_ASC: "date, oldest first" } };
+
+const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">> = {
   en: {
     heading: {
       kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+      panel: "The Record",
     },
     value: {
       published: "Value as published",
@@ -50,6 +68,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     parties: {
       authority: "Contracting authority",
       winners: "Winners",
+      consortiumOf: (_n, formatted) => `consortium of ${formatted}`,
       share: (amount) => `equal share ${amount}`,
       convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
     },
@@ -92,6 +111,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     heading: {
       kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
       facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      panel: "Înregistrarea",
     },
     value: {
       published: "Valoare publicată",
@@ -107,6 +127,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     parties: {
       authority: "Autoritate contractantă",
       winners: "Câștigători",
+      consortiumOf: (n, formatted) => `consorțiu de ${roCount(n, formatted, "membru", "membri")}`,
       share: (amount) => `parte egală ${amount}`,
       convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
     },
@@ -201,7 +222,18 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       placedBy: (source) => `placed by ${source}`,
     },
     source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
-    roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+    roles: {
+      label: "Roles of this entity",
+      authority: "buys · contracting authority",
+      supplier: "sells · supplier",
+      none: { AUTHORITY: "buys · no Records as authority", SUPPLIER: "sells · no Records as supplier" },
+    },
+    seapNames: {
+      label: "Appears in SEAP as",
+      records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      range: (first, last) => `${first} to ${last}`,
+      more: (_n, f) => `and ${f} more`,
+    },
   },
   ro: {
     identity: {
@@ -218,13 +250,24 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       placedBy: (source) => `plasată de ${source}`,
     },
     source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
-    roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+    roles: {
+      label: "Rolurile entității",
+      authority: "cumpără · autoritate contractantă",
+      supplier: "vinde · furnizor",
+      none: { AUTHORITY: "cumpără · nicio înregistrare ca autoritate", SUPPLIER: "vinde · nicio înregistrare ca furnizor" },
+    },
+    seapNames: {
+      label: "Apare în SEAP ca",
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+      range: (first, last) => `${first} până la ${last}`,
+      more: (_n, f) => `și încă ${f}`,
+    },
   },
 };
 
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
-  en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
-  ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+  en: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
 };
 
 const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
@@ -244,27 +287,43 @@ const plural = (n: number, one: string, other: string) => (n === 1 ? one : other
 const roCount = (n: number, f: string, one: string, many: string) =>
   n === 1 ? `${f} ${one}` : n === 0 || (n % 100 >= 1 && n % 100 <= 19) ? `${f} ${many}` : `${f} de ${many}`;
 
+const signalCount = (locale: Locale): SignalCountChipCopy =>
+  locale === "ro"
+    ? { label: (n, f) => roCount(n, f, "Semnal", "Semnale"), forEntity: (name) => `, ${name}` }
+    : { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}`, forEntity: (name) => `, ${name}` };
+
+const signalOrder = (locale: Locale): SignalOrderToggleCopy =>
+  locale === "ro"
+    ? { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } }
+    : { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } };
+
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
+        cui: "CUI",
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
         noCounty: "județ necunoscut",
         entityLink: entityLink.ro,
+        signals: signalCount("ro"),
       }
     : {
         matched: "matched",
+        cui: "CUI",
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
         national: "national",
         noCounty: "county unknown",
         entityLink: entityLink.en,
+        signals: signalCount("en"),
       };
 
 const recordRow = (locale: Locale): RecordResultRowCopy =>
   locale === "ro"
     ? {
         noValue: "fără valoare",
+        valueCaption: { awarded: "valoare atribuită", ceiling: "plafon, neadunat" },
+        channel: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         consortium: {
           label: "asociere",
           explanation: "Se afișează valoarea integrală a contractului. Fiecare membru al asocierii are o parte egală, după convenție, nu o sumă publicată.",
@@ -278,9 +337,12 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
         },
         badges: badges.ro,
         party: { naturalPerson: "Persoană fizică", entityLink: entityLink.ro },
+        areaShare: (amount) => `Parte din asociere în selecție: ${amount}`,
       }
     : {
         noValue: "no value",
+        valueCaption: { awarded: "awarded value", ceiling: "ceiling, not summed" },
+        channel: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         consortium: {
           label: "consortium",
           explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",
@@ -294,6 +356,7 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
         },
         badges: badges.en,
         party: { naturalPerson: "Persoană fizică", entityLink: entityLink.en },
+        areaShare: (amount) => `Consortium share in the selection: ${amount}`,
       };
 
 const goTo = (locale: Locale): GoToCardCopy =>
@@ -307,6 +370,7 @@ const resultTabs = (locale: Locale): ResultTabsCopy =>
         label: "Rezultate",
         tabs: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
         empty: { authorities: "Nicio autoritate.", suppliers: "Niciun furnizor.", records: "Nicio înregistrare." },
+        emptyLink: "Verifică ce a fost colectat",
         showAll: (_n, f) => `Arată toate cele ${f}`,
         goTo: goTo(locale),
         entityRow: entityRow(locale),
@@ -316,6 +380,7 @@ const resultTabs = (locale: Locale): ResultTabsCopy =>
         label: "Results",
         tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
         empty: { authorities: "No authorities.", suppliers: "No suppliers.", records: "No Records." },
+        emptyLink: "Check what has been harvested",
         showAll: (_n, f) => `Show all ${f}`,
         goTo: goTo(locale),
         entityRow: entityRow(locale),
@@ -328,10 +393,13 @@ const fullResults = (locale: Locale): FullResultsCopy =>
         heading: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
         showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
         empty: { authorities: "Nicio autoritate.", suppliers: "Niciun furnizor.", records: "Nicio înregistrare." },
+        emptyLink: "Verifică ce a fost colectat",
         outOfRange: (pages, formatted) => `Această pagină este după ultima: ${pages === 1 ? "există doar 1 pagină" : `sunt doar ${formatted}${pages % 100 >= 1 && pages % 100 <= 19 ? "" : " de"} pagini`}.`,
         noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
         firstPage: "Mergi la pagina 1",
         back: "Înapoi la rezultate",
+        cite: citeThisView(locale),
+        order: orderSelect(locale),
         pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
         entityRow: entityRow(locale),
         recordRow: recordRow(locale),
@@ -340,10 +408,13 @@ const fullResults = (locale: Locale): FullResultsCopy =>
         heading: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
         showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
         empty: { authorities: "No authorities.", suppliers: "No suppliers.", records: "No Records." },
+        emptyLink: "Check what has been harvested",
         outOfRange: (pages, formatted) => `This page is past the end: there ${pages === 1 ? "is only 1 page" : `are only ${formatted} pages`}.`,
         noRowsHere: "There are no results on this page: the count above is an estimate.",
         firstPage: "Go to page 1",
         back: "Back to results",
+        cite: citeThisView(locale),
+        order: orderSelect(locale),
         pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
         entityRow: entityRow(locale),
         recordRow: recordRow(locale),
@@ -443,6 +514,7 @@ const recordsTab = (locale: Locale): RecordsTabCopy => ({
   empty: locale === "ro" ? { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" } : { text: "No Records match these filters.", clear: "Clear filters" },
   total: sampleCopy.total(locale),
   recordRow: recordRow(locale),
+  table: locale === "ro" ? { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } } : { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
   pagination: fullResults(locale).pagination,
 });
 
@@ -454,6 +526,7 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
         heading: "Relații",
         recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         graph: {
+          heading: "Principalele contrapărți · alege una ca să vezi înregistrările ei",
           label: "Graful principalelor contrapărți",
           naturalPerson: "Persoană fizică",
           unknown: "Contraparte neidentificată",
@@ -466,15 +539,15 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
             "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
         },
         legend: {
-          title: "Legendă", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie albastră: mai ales contracte",
-          directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
+          title: "Legendă", edgeColour: "Culoarea unei linii este canalul care deține cei mai mulți RON cu acea contraparte.", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie galbenă: contracte",
+          directPurchase: "Linie albastră: achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel galben: are Semnale",
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
           total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
         },
       }
@@ -483,6 +556,7 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
         heading: "Relationships",
         recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
         graph: {
+          heading: "Top counterparties · pick one to list its Records",
           label: "Graph of the top counterparties",
           naturalPerson: "Persoană fizică",
           unknown: "Unidentified counterparty",
@@ -495,23 +569,23 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
             "A consortium's money is split equally among its members, by convention; a Record's full value is on its own page.",
         },
         legend: {
-          title: "Legend", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Blue line: mostly contracts",
-          directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
+          title: "Legend", edgeColour: "An edge's colour is the channel holding the most RON with that counterparty.", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Amber line: contracts",
+          directPurchase: "Blue line: direct purchases", wonTogether: "Dashed line: won together", signals: "Amber ring: has Signals",
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
           total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
         },
       };
 };
 
 const searchBar: Record<Locale, SearchBarCopy> = {
-  en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
-  ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
+  en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", hint: "The data is in Romanian. Try deszăpezire, a company name, a CUI with or without RO, or a CPV prefix such as 45. Diacritics, case and legal forms (SRL, SA) are ignored.", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
+  ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
 };
 
 const entityOverview = (locale: Locale): EntityOverviewCopy => {
@@ -656,7 +730,13 @@ const signalCard: Record<Locale, SignalCardCopy> = {
   },
 };
 
+const sourceEyebrow: Record<Locale, SourceEyebrowCopy> = {
+  en: { search: "search", scope: "national", period: "2021 onward" },
+  ro: { search: "caută", scope: "național", period: "din 2021" },
+};
+
 export const sampleCopy = {
+  sourceEyebrow: (locale: Locale): SourceEyebrowCopy => sourceEyebrow[locale],
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,
@@ -665,6 +745,8 @@ export const sampleCopy = {
   recordsTab,
   relationshipsTab,
   entityRow,
+  signalCount,
+  signalOrder,
   recordRow,
   goTo,
   resultTabs,
@@ -675,7 +757,10 @@ export const sampleCopy = {
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
   entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
-  recordDetail: (locale: Locale): RecordDetailCopy => ({ ...recordDetail[locale], recordRow: recordRow(locale) }),
+  recordDetail: (locale: Locale): RecordDetailCopy => ({ ...recordDetail[locale], cite: citeThisRecord(locale), recordRow: recordRow(locale) }),
+  copyLink: (locale: Locale): CopyLinkButtonCopy => copyLink[locale],
+  citeThisView,
+  orderSelect,
   entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
   mainScreenLayout: (locale: Locale): MainScreenLayoutCopy => mainScreenLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>
@@ -738,6 +823,7 @@ export const sampleCopy = {
             NOT_HARVESTED: "Necolectat",
           },
           noStatus: "Fără stare de acoperire",
+          nationalCaption: (source) => `${source} este colectat la nivel național; lacunele se aplică fiecărui județ`,
           marks: {
             title: "Un semn pentru fiecare Sursă",
             harvested: (source) => `${source}: culoarea arată starea județului`,
@@ -764,6 +850,7 @@ export const sampleCopy = {
             NOT_HARVESTED: "Not harvested",
           },
           noStatus: "No coverage status",
+          nationalCaption: (source) => `${source} is harvested nationally; gaps apply to every county`,
           marks: {
             title: "One mark per Source",
             harvested: (source) => `${source}: coloured by the county's status`,
@@ -877,6 +964,7 @@ export const sampleCopy = {
   coveragePageLayout: (locale: Locale): CoveragePageLayoutCopy =>
     locale === "ro"
       ? {
+        eyebrow: "acoperire",
         title: "Acoperire",
         intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
         grid: {
@@ -904,6 +992,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `dintre care ${f} absente din datele în masă`,
           dataThrough: (date) => `date până la ${date}`,
           inRange: "în intervalul de date",
+          windowNote: "trimestrele urmează data publicării · evidențiat: intervalul din chipul datei atribuirii",
           legend: { title: "Stările celulelor", range: "În intervalul de date" },
           seePage: "Vezi pagina Acoperire",
         },
@@ -945,6 +1034,11 @@ export const sampleCopy = {
           },
           methodology: "Cum se numără cifrele",
         },
+        perCounty: {
+          heading: "pe județ: N din M",
+          body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+          lensLink: "deschide lentila Acoperire pe hartă →",
+        },
         snapshot: {
           heading: "Lista entităților publice",
           line: (date) => `Lista entităților publice a Ministerului Finanțelor: versiunea din ${date}`,
@@ -955,6 +1049,7 @@ export const sampleCopy = {
         error: "Acoperirea nu a putut fi încărcată. Încearcă din nou peste puțin timp.",
       }
       : {
+        eyebrow: "coverage",
         title: "Coverage",
         intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
         grid: {
@@ -982,6 +1077,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `${f} of them not in bulk data`,
           dataThrough: (date) => `data through ${date}`,
           inRange: "inside the date range",
+          windowNote: "quarters follow the publication date · highlighted: the award date chip",
           legend: { title: "Cell states", range: "Inside the date range" },
           seePage: "See the Coverage page",
         },
@@ -1022,6 +1118,11 @@ export const sampleCopy = {
             NOT_YET_LOADED: "The bulk file for this quarter and record kind is not in the data yet.",
           },
           methodology: "How the numbers are counted",
+        },
+        perCounty: {
+          heading: "per county: N of M",
+          body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+          lensLink: "open the Coverage lens on the map →",
         },
         snapshot: {
           heading: "Public entities list",

@@ -10,7 +10,7 @@ type Story = StoryObj<Record<string, unknown>>;
 const page = (status: "loading" | "error" | "ready", content?: CoveragePageContent): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
-    return <CoveragePageLayout status={status} content={content} locale={locale} methodologyHref={locale === "ro" ? "/ro/explore/methodology" : "/explore/methodology"} copy={sampleCopy.coveragePageLayout(locale)} />;
+    return <CoveragePageLayout status={status} content={content} locale={locale} methodologyHref={locale === "ro" ? "/ro/explore/methodology" : "/explore/methodology"} lensHref={locale === "ro" ? "/ro/explore/?lens=coverage" : "/explore/?lens=coverage"} copy={sampleCopy.coveragePageLayout(locale)} />;
   };
 
 /** The whole page on the sample grid: all six states, 2023-24 highlighted among the 19 quarters, data-through per kind, crawl-only counts, known gaps with reasons, rules, MF snapshot date. */

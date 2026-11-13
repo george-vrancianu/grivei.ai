@@ -1,5 +1,5 @@
 // Seam 3: the app shell against the contract's mock responses. Every route, both languages, the language switch, the URL state.
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App.tsx";
@@ -40,6 +40,91 @@ describe("the routes in both languages", () => {
     expect(screen.getByRole("heading", { level: 1, name: catalogue.ro.pages.notFound.title })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("link", { name: catalogue.ro.pages.notFound.back }));
     expect(here()).toBe("/ro/explore/");
+  });
+});
+
+describe("the header and the footer", () => {
+  const nav = (locale: "en" | "ro") => within(screen.getByRole("navigation", { name: catalogue[locale].nav.label }));
+
+  it("links the brand home and the main pages, in both languages", () => {
+    for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
+      openAt(`${prefix}/search`);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const copy = catalogue[locale];
+      expect(within(screen.getByRole("banner")).getByRole("link", { name: copy.brand })).toHaveAttribute("href", `${prefix}/`);
+      expect(nav(locale).getByRole("link", { name: copy.nav.explore })).toHaveAttribute("href", `${prefix}/`);
+      expect(nav(locale).getByRole("link", { name: copy.nav.coverage })).toHaveAttribute("href", `${prefix}/coverage`);
+      expect(nav(locale).getByRole("link", { name: copy.nav.methodology })).toHaveAttribute("href", `${prefix}/methodology`);
+      unmount();
+    }
+  });
+
+  it("reaches the language link with the Tab key, in both languages", async () => {
+    for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
+      openAt(`${prefix}/search`);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const banner = within(screen.getByRole("banner"));
+      const link = banner.getByRole("link", { name: catalogue[locale].language.switchLabel });
+      const user = userEvent.setup();
+      let reached = false;
+      for (let i = 0; i < 30 && !reached; i++) {
+        await user.tab();
+        reached = document.activeElement === link;
+      }
+      expect(reached).toBe(true);
+      unmount();
+    }
+  });
+
+  it("marks the current page, and only that one", () => {
+    const cases = [
+      ["/explore/", "explore"],
+      ["/explore/search", "search"],
+      ["/explore/coverage", "coverage"],
+      ["/ro/explore/methodology", "methodology"],
+      ["/explore/authority/4384206", "explore"],
+      ["/explore/record/CAN1145000", "explore"],
+    ] as const;
+    for (const [path, current] of cases) {
+      openAt(path);
+      const locale = path.startsWith("/ro/") ? "ro" : "en";
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const marked = nav(locale).getAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page");
+      expect(marked.map((link) => link.textContent), path).toEqual([catalogue[locale].nav[current]]);
+      unmount();
+    }
+  });
+
+  it("marks no nav link on a page that is not in the nav", () => {
+    openAt("/explore/nope");
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    expect(nav("en").queryAllByRole("link").filter((link) => link.hasAttribute("aria-current"))).toEqual([]);
+  });
+
+  it("shows the language switch in the header, in both languages", () => {
+    for (const [locale, other, prefix] of [["en", "ro", "/explore/"], ["ro", "en", "/ro/explore/"]] as const) {
+      openAt(prefix);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const banner = within(screen.getByRole("banner"));
+      expect(banner.getByRole("link", { name: catalogue[locale].language.switchLabel })).toHaveTextContent(catalogue[locale].language.switchTo);
+      expect(banner.getByText(catalogue[locale].language.current)).toHaveAttribute("aria-current", "true");
+      expect(catalogue[other].language.current).toBe(catalogue[locale].language.switchTo);
+      unmount();
+    }
+  });
+
+  it("states where the data comes from and that Signals are never scored, in both languages", () => {
+    for (const [locale, prefix] of [["en", "/explore/"], ["ro", "/ro/explore/"]] as const) {
+      openAt(prefix);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const footer = within(screen.getByRole("contentinfo"));
+      expect(footer.getByText(catalogue[locale].footer.provenance)).toBeInTheDocument();
+      expect(footer.getByText(catalogue[locale].footer.signals)).toBeInTheDocument();
+      unmount();
+    }
+    expect(catalogue.en.footer.signals).toBe("Signals are counted, never scored");
+    expect(catalogue.en.footer.provenance).toMatch(/SEAP.*data\.gov\.ro.*e-licitatie\.ro/);
+    expect(catalogue.ro.footer.provenance).toMatch(/SEAP.*data\.gov\.ro.*e-licitatie\.ro/);
   });
 });
 

@@ -28,6 +28,8 @@ export interface CoverageGridCopy {
   dataThrough: (date: string) => string;
   /** The column is inside the active date range. */
   inRange: string;
+  /** The caption above the grid: what the quarters follow and what the highlight is. */
+  windowNote: string;
   legend: { title: string; range: string };
   /** Compact variant only: the link to the Coverage page. */
   seePage: string;

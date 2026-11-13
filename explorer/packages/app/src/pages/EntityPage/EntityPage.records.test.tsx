@@ -47,6 +47,19 @@ describe("the Records tab of an authority", () => {
     expect(screen.queryAllByRole("link").filter((l) => /\/explore\/(supplier|authority)\//.test(l.getAttribute("href") ?? "") && /Persoană fizică/.test(l.textContent ?? ""))).toHaveLength(0);
   });
 
+  it("the Records count beside the tab is the same number on the Overview and on the unfiltered Records tab", async () => {
+    const recordsTab = () => screen.getAllByRole("link").find((l) => /^Records\d/.test(l.textContent ?? ""))!;
+    const { view } = await opened(AUTHORITY);
+    expect(screen.getByText("16 Records")).toBeVisible(); // the Records tab's totals band
+    expect(recordsTab()).toHaveTextContent("Records16");
+    view.unmount();
+    openAt("/explore/authority/1000017");
+    render(<App client={fixtureClient().client} />);
+    await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
+    expect(await screen.findByText("16 Records")).toBeVisible(); // the Overview's total, the source of the tab count
+    expect(recordsTab()).toHaveTextContent("Records16");
+  });
+
   // every facet kind: what the click writes to the URL, and the total and rows the API answered for exactly that filter
   it.each<[string, string, RecordFilter, number]>([
     ["channel", "Direct purchase (8)", { channel: "DIRECT_PURCHASE" }, 8],
@@ -177,9 +190,9 @@ describe("the Records tab of an entity that buys and sells", () => {
     expect(screen.getByText("2 Records")).toBeVisible();
     const bought = listed();
     expect(bought).toEqual(["CAN9600007~1", "DA96000007"]);
-    expect(screen.getByRole("navigation", { name: "View as" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Roles of this entity" })).toBeVisible();
 
-    await userEvent.setup().click(screen.getByRole("link", { name: "As supplier" }));
+    await userEvent.setup().click(screen.getByRole("link", { name: "sells · supplier" }));
     // the role switch keeps the tab: the Records tab of the supplier page (its Records are the ones it won)
     await waitFor(() => expect(window.location.pathname).toBe("/explore/supplier/2000031/records"));
     await waitFor(() => expect(listed()).toEqual(["CAN9600006~1", "DA96000006"]));
@@ -293,5 +306,19 @@ describe("a long list (hand-written: the archive is too small for 100 Records)",
     await waitFor(() => expect(window.location.search).toBe("?to=2030-12-31&channel=contract"));
     // no hand fixture answers the filtered list: the request is what shows the reset
     await waitFor(() => expect(sent.at(-1)).toMatchObject({ variables: { filter: { to: "2030-12-31", channel: "CONTRACT" }, offset: 0 } }));
+  });
+});
+
+describe("a text search on an entity's Records tab (hand-written fixture)", () => {
+  it.each([
+    ["/explore/authority/4000001/records?q=deszăpezire", "Matched in title:"],
+    ["/ro/explore/authority/4000001/records?q=deszăpezire", "Potrivit în titlu:"],
+  ])("%s shows which field matched, with the matched text marked", async (url, label) => {
+    const { sent } = await opened(url);
+    expect(sent[0]).toMatchObject({ variables: { key: "4000001", filter: { q: "deszăpezire" } } });
+    const line = (await screen.findByText(label, { exact: false })).parentElement!;
+    expect(line).toHaveTextContent("Deszăpezire străzi, sezon rece 2023-2024");
+    const marks = line.querySelectorAll("mark");
+    expect([...marks].map((m) => m.textContent)).toEqual(["Deszăpezire"]);
   });
 });

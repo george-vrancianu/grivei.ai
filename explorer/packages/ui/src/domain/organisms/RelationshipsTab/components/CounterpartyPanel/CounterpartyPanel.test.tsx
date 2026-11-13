@@ -5,6 +5,7 @@ import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
 import { authorityDirectSupplierPanel } from "../../../../samples/fixtureData.ts";
 import { CounterpartyPanel, type CounterpartyPanelProps } from "./index.ts";
+import { sentence } from "../../../../../testing/sentence.ts";
 
 const copy = sampleCopy.relationshipsTab("en");
 const counterparty = { key: "30000001", displayName: "HACHI INVEST S.R.L.", identity: "CUI" as const };
@@ -21,7 +22,7 @@ describe("CounterpartyPanel", () => {
   });
   it("lists every Record with the counterparty, with its total", () => {
     renderInUi(<CounterpartyPanel {...base} />);
-    expect(screen.getByText(/RON\s598,400 across 4 Records/)).toBeVisible();
+    expect(screen.getByText(sentence(/RON 598,400 across 4 Records/))).toBeVisible();
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
   });
   it("closes", async () => {

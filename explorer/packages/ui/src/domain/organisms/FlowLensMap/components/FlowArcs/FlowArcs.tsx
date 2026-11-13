@@ -1,4 +1,4 @@
-import { ARC_COLOR, type FlowArc } from "../../flowLensMap.utils.ts";
+import { ARC_COLOR, ARC_OPACITY, ARROWHEAD_OPACITY, type FlowArc } from "../../flowLensMap.utils.ts";
 
 export interface FlowArcsProps {
   arcs: readonly FlowArc[];
@@ -10,8 +10,8 @@ export function FlowArcs({ arcs }: FlowArcsProps) {
     <g data-flow-arcs aria-hidden="true" pointerEvents="none">
       {arcs.map((arc) => (
         <g key={arc.code} data-arc data-county={arc.code} data-from={arc.from} data-to={arc.to}>
-          <path d={arc.d} fill="none" stroke={ARC_COLOR} strokeOpacity={0.6} strokeWidth={arc.width} strokeLinecap="round" />
-          <polygon data-arrowhead points={arc.head} fill={ARC_COLOR} fillOpacity={0.75} />
+          <path d={arc.d} fill="none" stroke={ARC_COLOR} strokeOpacity={ARC_OPACITY} strokeWidth={arc.width} strokeLinecap="round" />
+          <polygon data-arrowhead points={arc.head} fill={ARC_COLOR} fillOpacity={ARROWHEAD_OPACITY} />
         </g>
       ))}
     </g>

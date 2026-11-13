@@ -62,6 +62,8 @@ export const resultSamples = {
   goTo: pick(goToSearch),
   empty: pick(emptySearch.seap.search),
 };
+/** Entity rows whose Records carry a Signal (the hand "records-variety": the no-publication Signal on its no-value Record) next to one whose Records carry none: the "n Signals" chip's states. */
+export const signalRowSamples = pick(variety);
 /** A single-winner Record row whose title matched the query, with its highlighted range (the recorded "text-query-title-match"). */
 export const highlightedRecord = named(fixtures.MainScreen, "text-query-title-match").data.seap.search.records.rows[0]!;
 /** The consortium Record of the variety fixture, with no matched field (an empty query). */
@@ -237,3 +239,6 @@ export const supplierPickedRelationships = relationships("supplier-picked-author
 export const supplierPickedPanel = panelOf("supplier-one-authority");
 /** No counterparties at all. */
 export const emptyRelationships = relationships("no-relationships");
+
+/** A Record that carries the framework-ceiling badge: its value is a ceiling, not money awarded. */
+export const ceilingRecord = variety.records.rows.find((row) => row.record.badges.includes("FRAMEWORK_CEILING"))!;

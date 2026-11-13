@@ -69,7 +69,7 @@ describe("the URL <-> RecordFilter codec", () => {
   });
 
   it("covers exactly the contract's URL-only keys", () => {
-    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc&lens=coverage&counterparty=30000002");
+    const state = decodeUrlState("?tab=suppliers&page=2&order=date-asc&signalOrder=value-desc&lens=coverage&counterparty=30000002&search=q%3Dx");
     expect(Object.keys(state).filter((k) => k !== "filter").sort()).toEqual(Object.keys(URL_ONLY_KEYS).sort());
   });
 
@@ -123,5 +123,52 @@ describe("the URL <-> RecordFilter codec", () => {
     expect(decodeUrlState("?county=RO-BV&uat=880010").filter).toEqual({ county: "RO-BV", uat: "880010" });
     expect(roundTrip("county=RO-BV&uat=")).toBe("?county=RO-BV"); // an empty UAT is no UAT
     expect(roundTrip("county=RO-BV&uat=Sanpetru")).toBe("?county=RO-BV"); // malformed: a SIRUTA is digits
+  });
+
+  describe("the carried search (#106)", () => {
+    const own = (search: string) => decodeUrlState(`?${search}`);
+
+    it("round-trips a query only, chips only, and both, diacritics and special characters included", () => {
+      for (const filter of [
+        { q: "Reabilitare pod și țară & co=1?#" },
+        { channel: "DIRECT_PURCHASE", badges: ["SUSPECT_VALUE"], from: "2024-01-01" },
+        { q: "străzi", procedure: ["Licitație deschisă"], to: "2024-12-31" },
+      ] as RecordFilter[]) {
+        const query = encodeUrlState({ filter: {}, carried: filter });
+        expect(query).toMatch(/^\?search=[^&=]+$/); // one parameter, its value escaped as a whole
+        expect(decodeUrlState(query)).toEqual({ filter: {}, carried: filter });
+        expect(encodeUrlState(decodeUrlState(query))).toBe(query);
+      }
+    });
+
+    it("never leaks into the entity's own filter, in either direction", () => {
+      const carried = { q: "strazi", channel: "CONTRACT" } as RecordFilter;
+      const url = encodeUrlState({ filter: {}, tab: "records", carried });
+      expect(url).toBe("?tab=records&search=q%3Dstrazi%26channel%3Dcontract");
+      expect(decodeUrlState(url).filter).toEqual({});
+      expect(decodeUrlState(url).carried).toEqual(carried);
+      // the entity's own filter encodes without the parameter, and a carried one next to it stays apart
+      expect(encodeUrlState({ filter: { q: "own" } })).toBe("?q=own");
+      const both = decodeUrlState(`?q=own&${url.slice(1)}`);
+      expect(both.filter).toEqual({ q: "own" });
+      expect(both.carried).toEqual(carried);
+      expect(encodeUrlState({ filter: both.filter })).toBe("?q=own");
+    });
+
+    it("is left out when there is nothing to carry, and ignores a value that holds no filter", () => {
+      expect(encodeUrlState({ filter: {}, carried: {} })).toBe("");
+      expect(own("search=").carried).toBeUndefined();
+      expect(own("search=nonsense").carried).toBeUndefined();
+      expect(own("search=channel%3DNot+a+slug").carried).toBeUndefined();
+    });
+
+    it("does not nest: a carried search holds the filter only", () => {
+      const nested = own("search=q%3Dx%26search%3Dq%253Dy%26tab%3Drecords%26page%3D3");
+      expect(nested.carried).toEqual({ q: "x" });
+    });
+
+    it("sits after the counterparty in the canonical order", () => {
+      expect(encodeUrlState({ filter: { cpv: "301" }, counterparty: "123", carried: { q: "a" } })).toBe("?cpv=301&counterparty=123&search=q%3Da");
+    });
   });
 });

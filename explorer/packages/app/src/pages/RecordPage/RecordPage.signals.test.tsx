@@ -7,6 +7,7 @@ import { forbiddenWords } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
+import { sentence } from "../../testing/sentence.ts";
 import { openAt } from "../../testing/openAt.ts";
 
 const recorded = (name: string) => {
@@ -30,7 +31,7 @@ describe("the Signals on a Record page", () => {
     expect(screen.getByText(/\(125%\)/)).toBeVisible();
     const section = signals(SIGNALS_EN);
     expect(section.getByRole("heading", { name: "Framework overrun" })).toBeVisible();
-    expect(section.getByText(/add up to RON 1,250,000.00, against a ceiling of RON 1,000,000.00: 125% of it/)).toBeVisible();
+    expect(section.getByText(sentence(/add up to RON 1,250,000.00, against a ceiling of RON 1,000,000.00: 125% of it/))).toBeVisible();
     expect(section.getByText(/^Possible lawful explanations: indexation of prices/)).toBeVisible();
     expect(section.getByRole("link", { name: "See the 4 Records" })).toHaveAttribute("href", "/explore/authority/1000017/records?from=2023-01-10&to=2023-03-05&supplier=2000007&signal=framework-overrun");
     expect(section.getByRole("link", { name: "How this Signal is detected" })).toHaveAttribute("href", "/explore/methodology#signal-framework-overrun");
@@ -68,7 +69,7 @@ describe("the Signals on a Record page", () => {
 
   it("shows a splitting and a no-publication Signal as cards too, with their numbers", async () => {
     await open("splitting-signal");
-    expect(signals(SIGNALS_EN).getByText(/^3 direct purchases in CPV group .* add up to RON /)).toBeVisible();
+    expect(signals(SIGNALS_EN).getByText(sentence(/^3 direct purchases in CPV group .* add up to RON /))).toBeVisible();
     expect(signals(SIGNALS_EN).getByRole("link", { name: "See the 3 Records" })).toBeVisible();
     document.body.innerHTML = "";
   });

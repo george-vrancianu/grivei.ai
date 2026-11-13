@@ -3,11 +3,13 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import { MoneyAmount, formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, OverviewConsortium } from "../../../../types.ts";
 import { listSx } from "../../../../utils/listSx.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 
 export interface ConsortiaCopy {
   heading: string;
@@ -33,13 +35,11 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
   if (consortia.length === 0) return null;
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+      <SectionHeading>{copy.heading}</SectionHeading>
       <Stack component="ul" sx={listSx}>
         {consortia.map((consortium, index) => (
-          <Stack key={index} component="li" spacing={0.5} sx={{ py: 1 }}>
-            <Box>
+          <Box key={index} component="li" sx={{ py: 1.25, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 14px" }}>
+            <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
               {consortium.members.map((member, i) => (
                 <Box key={member.entity?.key ?? `person-${i}`} component="span">
                   {i > 0 && ", "}
@@ -47,19 +47,19 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
                   {member.share !== null && (
                     <Typography component="span" variant="body2" color="text.secondary">
                       {" "}
-                      ({copy.share(formatMoney(member.share, locale))})
+                      ({withNodes(copy.share, [<MoneyAmount bani={member.share} locale={locale} />])})
                     </Typography>
                   )}
                 </Box>
               ))}
             </Box>
-            <Typography variant="body2">
+            <Typography variant="label" component="span" sx={{ fontVariantNumeric: "tabular-nums" }}>
               <MoneyAmount bani={consortium.total.awarded} locale={locale} />{" "}
-              <Typography component="span" variant="body2" color="text.secondary">
-                {copy.records(consortium.total.records, formatCount(consortium.total.records, consortium.total.estimated, locale))}
+              <Typography component="span" variant="label" color="text.disabled">
+                · {copy.records(consortium.total.records, formatCount(consortium.total.records, consortium.total.estimated, locale))}
               </Typography>
             </Typography>
-          </Stack>
+          </Box>
         ))}
       </Stack>
       <Typography variant="body2" color="text.secondary">

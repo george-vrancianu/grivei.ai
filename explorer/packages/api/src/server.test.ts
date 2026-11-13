@@ -42,6 +42,7 @@ const store: Store = {
   roleLargest: async () => [],
   signalRules: async () => [],
   roleSignals: async () => ({ count: 0, rows: [] }),
+  entitySignalCounts: async () => new Map(),
   signalRecords: async () => [],
   goTo: async () => null,
   entity: async () => null,
@@ -138,6 +139,156 @@ describe("MainScreen for the empty filter", () => {
     const r = await broken.respond({ id: mainScreen.sha256, variables: EMPTY });
     expect(JSON.stringify(r.body)).not.toContain("password");
     expect(r.body.errors?.[0]?.extensions?.code).toBe("INTERNAL");
+  });
+});
+
+describe("areaShare on Record rows (#103)", () => {
+  // a small world: each winner has a supplier county; the Total and the rows are both made from these Record x winner rows, as the search store does
+  const winner = (key: string, county: string, share: string) => ({ key, county, share });
+  const world = [
+    { code: "CAN1", value: "3000", winners: [winner("2000001", "RO-CJ", "1500"), winner("2000002", "RO-MS", "1500")] }, // a consortium across two counties
+    { code: "CAN2", value: "1001", winners: [winner("2000001", "RO-CJ", "501"), winner("2000003", "RO-CJ", "500")] }, // a consortium wholly in Cluj
+    { code: "DA3", value: "700", winners: [winner("2000001", "RO-CJ", "700")] }, // a single winner in Cluj
+    { code: "DA4", value: "900", winners: [winner("2000002", "RO-MS", "900")] }, // elsewhere
+  ];
+  type Filter = { county?: string | null; countySide?: string | null };
+  const matching = (f: Filter) => {
+    const supplierArea = f.county && f.countySide === "SUPPLIER";
+    return world
+      .map((r) => ({ ...r, hit: r.winners.filter((w) => (supplierArea ? w.county === f.county : true)) }))
+      .filter((r) => (f.county && f.countySide !== "SUPPLIER" ? true : r.hit.length > 0));
+  };
+  const sum = (xs: string[]) => xs.reduce((a, x) => a + BigInt(x), 0n);
+  const modelStore: Store = {
+    ...store,
+    searchTotal: async (f) => ({ awarded: sum(matching(f).flatMap((r) => r.hit.map((w) => w.share))).toString(), records: matching(f).length, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
+    searchRecords: async (f) => {
+      const hits = matching(f);
+      return {
+        count: hits.length,
+        rows: hits.map((r) => row({
+          code: r.code, value: r.value, counted: r.value,
+          winners: r.winners.map((w) => ({ naturalPerson: false, name: w.key, entity: entity(w.key, w.key), share: w.share })),
+          areaShare: sum(r.hit.map((w) => w.share)).toString(), // a store that always fills it: the API decides when it is shown
+        })),
+      };
+    },
+  };
+  const modelApi = createApi(modelStore, schema);
+  const ask = async (filter: Filter) => {
+    const r = await modelApi.respond({ id: mainScreen.sha256, variables: { filter } });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, { filter })).toEqual([]);
+    const search = (r.body.data as MainScreenQuery).seap.search;
+    return { total: search.total, rows: search.records.rows.map((x) => [x.record.code, x.areaShare] as const) };
+  };
+
+  it("gives a multi-winner Record the summed shares of its winners in the clicked supplier county", async () => {
+    const { rows } = await ask({ county: "RO-CJ", countySide: "SUPPLIER" });
+    expect(rows).toEqual([["CAN1", "1500"], ["CAN2", "1001"], ["DA3", null]]);
+  });
+
+  it("sums, over all matching Records, to the Total", async () => {
+    for (const county of ["RO-CJ", "RO-MS"]) {
+      const { total, rows } = await ask({ county, countySide: "SUPPLIER" });
+      const shares = rows.map(([code, share]) => share ?? world.find((r) => r.code === code)!.winners.filter((w) => w.county === county).map((w) => w.share)[0]!);
+      expect(sum(shares).toString()).toBe(total.awarded);
+    }
+  });
+
+  it("is null for every row on the authority side, and with no county", async () => {
+    for (const filter of [{ county: "RO-CJ", countySide: "AUTHORITY" }, { county: "RO-CJ" }, { countySide: "SUPPLIER" }, {}]) {
+      const { rows } = await ask(filter);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every(([, share]) => share === null), JSON.stringify(filter)).toBe(true);
+    }
+  });
+
+  it("is null for a Record with one winner, and where no search filter applies", async () => {
+    const { rows } = await ask({ county: "RO-MS", countySide: "SUPPLIER" });
+    expect(rows).toEqual([["CAN1", "1500"], ["DA4", null]]);
+    const plain = await api.respond({ id: mainScreen.sha256, variables: EMPTY });
+    expect((plain.body.data as MainScreenQuery).seap.search.records.rows.map((x) => x.areaShare)).toEqual([null, null]);
+  });
+});
+
+describe("signalCount on entity rows (#104)", () => {
+  // a small world of Signals: each has an authority and the winners of its Records (consortium members included); both the chip's count and
+  // the Overview's Signals are made from it, as the signal store makes both from the same Signal tables
+  const signals = [
+    { id: 1, authority: "1000001", suppliers: ["2000001"] },
+    { id: 2, authority: "1000001", suppliers: ["2000001", "2000002"] }, // a consortium
+    { id: 3, authority: "1000002", suppliers: ["2000002"] },
+  ];
+  const authorities = ["1000001", "1000002", "1000003"]; // the last has none
+  const suppliers = ["2000001", "2000002", "2000003"]; // the last has none
+  type Filter = { authority?: string | null; supplier?: string | null };
+  const inScope = (f: Filter) => signals.filter((g) => (!f.authority || g.authority === f.authority) && (!f.supplier || g.suppliers.includes(f.supplier)));
+  const total0 = { awarded: "5", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };
+  const asked: { side: string; keys: string[] }[] = [];
+  const modelStore: Store = {
+    ...store,
+    searchEntities: async (side) => ({
+      count: 3, estimated: false,
+      rows: (side === "AUTHORITY" ? authorities : suppliers).map((k) => ({ entity: entity(k, `E ${k}`), matched: total0 })),
+    }),
+    entitySignalCounts: async (side, _f, keys) => {
+      asked.push({ side, keys });
+      return new Map(keys.map((k) => [k, inScope(side === "AUTHORITY" ? { authority: k } : { supplier: k }).length]).filter(([, n]) => (n as number) > 0) as [string, number][]);
+    },
+    roleSignals: async (f) => ({ count: inScope(f).length, rows: [] }),
+    entity: async (k) => entity(k, `E ${k}`),
+    roles: async (k) => (k.startsWith("1") ? ["AUTHORITY"] : ["SUPPLIER"]),
+  };
+  const modelApi = createApi(modelStore, schema);
+  const overview = allowlist.operations.find((o) => o.name === "EntityOverview")!;
+  const counts = async () => {
+    const r = await modelApi.respond({ id: mainScreen.sha256, variables: EMPTY });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY)).toEqual([]);
+    const search = (r.body.data as MainScreenQuery).seap.search;
+    const by = (rows: typeof search.authorities.rows) => rows.map((x) => [x.entity.key, x.signalCount] as const);
+    return { authorities: by(search.authorities.rows), suppliers: by(search.suppliers.rows) };
+  };
+
+  it("counts an authority's Signals on the Authorities tab and a supplier's on the Suppliers tab, 0 for an entity with none", async () => {
+    const { authorities: a, suppliers: s } = await counts();
+    expect(a).toEqual([["1000001", 2], ["1000002", 1], ["1000003", 0]]);
+    expect(s).toEqual([["2000001", 2], ["2000002", 2], ["2000003", 0]]); // 2000002 is a consortium member of Signal 2
+  });
+
+  it("asks the store once per tab, for the page's keys only", async () => {
+    asked.length = 0;
+    await counts();
+    expect(asked).toEqual([{ side: "AUTHORITY", keys: authorities }, { side: "SUPPLIER", keys: suppliers }]);
+  });
+
+  it("is not asked for when the query does not select it", async () => {
+    asked.length = 0;
+    const r = await graphql({ schema, rootValue: rootValue(modelStore), source: "{ seap { search(filter: {}) { authorities(limit: 3) { rows { entity { key } } } } } }" });
+    expect(r.errors).toBeUndefined();
+    expect(asked).toEqual([]);
+  });
+
+  it("agrees with the Signals count the entity's Overview shows for the same role and an empty filter", async () => {
+    const { authorities: a, suppliers: s } = await counts();
+    for (const [key, n] of [...a.map(([k, n]) => [k, n, "AUTHORITY"] as const), ...s.map(([k, n]) => [k, n, "SUPPLIER"] as const)].map(([k, n, role]) => [[k, role], n] as const)) {
+      const variables = { key: key[0], role: key[1], filter: null };
+      const r = await modelApi.respond({ id: overview.sha256, variables });
+      expect(r.body.errors, key.join()).toBeUndefined();
+      const role = (r.body.data as { entity: { seap: { role: { signals: { count: number } } } } }).entity.seap.role;
+      expect(role.signals.count, key.join()).toBe(n);
+    }
+  });
+
+  it("is served for the counterparty facet's entities too", async () => {
+    const r = await graphql({
+      schema, rootValue: rootValue(modelStore),
+      source: "{ seap { search(filter: { authority: \"1000001\" }) { facets { counterparty { entity { key } signalCount } } } } }",
+    });
+    expect(r.errors).toBeUndefined();
+    const rows = (r.data as { seap: { search: { facets: { counterparty: { entity: { key: string }; signalCount: number }[] } } } }).seap.search.facets.counterparty;
+    expect(rows.map((x) => [x.entity.key, x.signalCount])).toEqual([["2000001", 2], ["2000002", 2], ["2000003", 0]]); // the suppliers of the authority, counted on their side
   });
 });
 

@@ -5,7 +5,7 @@ import { HAND_ENTERED_NOTE, fixturePageContent, samplePageContent } from "../../
 import { CoveragePageLayout, type CoveragePageContent } from "./index.ts";
 
 function show(content: CoveragePageContent | undefined, status: "loading" | "error" | "ready" = "ready", locale: "en" | "ro" = "en") {
-  render(<CoveragePageLayout status={status} content={content} locale={locale} methodologyHref="/explore/methodology" copy={sampleCopy.coveragePageLayout(locale)} />);
+  render(<CoveragePageLayout status={status} content={content} locale={locale} methodologyHref="/explore/methodology" lensHref="/explore/?lens=coverage" copy={sampleCopy.coveragePageLayout(locale)} />);
 }
 const section = (name: string) => within(screen.getByRole("region", { name }));
 

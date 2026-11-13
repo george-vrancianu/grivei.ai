@@ -39,25 +39,29 @@ export interface EntityOverviewProps {
   copy: EntityOverviewCopy;
   /** The Signal cards, rendered under the Signals heading when the count is above zero. The Signal card organism fills this slot. */
   signals?: ReactNode;
+  /** The slot above the Signals list, under the Signals heading: the order toggle (by date, by RON) is placed here. Shown when there are Signals. */
+  signalsToolbar?: ReactNode;
 }
 
 /** The Overview tab of an Entity page: headline numbers, Signals, counterparties, procedure types, consortia, the framework line, the largest counted Records and the names SEAP knows the entity by. */
-export function EntityOverview({ overview, aliases, role, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signals }: EntityOverviewProps) {
+export function EntityOverview({ overview, aliases, role, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signals, signalsToolbar }: EntityOverviewProps) {
   return (
-    <Stack spacing={4}>
+    <Stack spacing={3}>
       <HeadlineNumbers overview={overview} locale={locale} copy={copy.headline} methodologyHref={methodologyHref} suspectHref={suspectHref} />
-      <SignalsSection count={overview.signals.count} locale={locale} copy={copy.signals}>
-        {signals}
-      </SignalsSection>
-      <Box sx={{ display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, alignItems: "start" }}>
-        <Counterparties counterparties={overview.counterparties} total={overview.total.awarded} role={role} entityHref={entityHref} locale={locale} copy={copy.counterparties} />
-        <Stack spacing={4}>
-          <ProcedureTypes procedures={overview.procedures} locale={locale} copy={copy.procedures} />
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "24px 32px" }}>
+        <Stack spacing={3.5} sx={{ flex: "1.2 1 480px", minWidth: 0 }}>
+          <SignalsSection count={overview.signals.count} locale={locale} copy={copy.signals} toolbar={signalsToolbar}>
+            {signals}
+          </SignalsSection>
+          <LargestRecords records={overview.largestRecords} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.largest} />
+        </Stack>
+        <Stack spacing={3.5} sx={{ flex: "1 1 400px", minWidth: 0 }}>
+          <Counterparties counterparties={overview.counterparties} total={overview.total.awarded} role={role} entityHref={entityHref} locale={locale} copy={copy.counterparties} />
+          <ProcedureTypes procedures={overview.procedures} total={overview.total.awarded} locale={locale} copy={copy.procedures} />
           <Consortia consortia={overview.consortia} entityHref={entityHref} locale={locale} copy={copy.consortia} />
           <FrameworkLine frameworks={overview.frameworks} locale={locale} copy={copy.frameworks} />
         </Stack>
       </Box>
-      <LargestRecords records={overview.largestRecords} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.largest} />
       <AppearsInSeapAs aliases={aliases} locale={locale} copy={copy.aliases} />
     </Stack>
   );

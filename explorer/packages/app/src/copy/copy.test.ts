@@ -75,6 +75,14 @@ describe("Romanian counts", () => {
   });
 });
 
+describe("Romanian consortium size", () => {
+  const of = (n: number) => catalogue.ro.recordPage.parties.consortiumOf(n, String(n));
+  it("takes 'de' before the plural from 20 up, as every other Romanian count does", () => {
+    expect(of(6)).toBe("consorțiu de 6 membri");
+    expect(of(20)).toBe("consorțiu de 20 de membri");
+  });
+});
+
 /** The RON edge as the copy writes it: grouped digits, or "1 bn"/"1 mld." for a billion. */
 const ron = (bani: string, locale: "en" | "ro"): string => {
   const n = BigInt(bani) / 100n;

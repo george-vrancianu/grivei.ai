@@ -26,6 +26,12 @@ const list = (rows: RecordResult[], locale: "en" | "ro", withSignals = false) =>
   </Stack>
 );
 
+/** After a supplier-county click, a consortium Record's share in that county sits under the full value, labelled as the equal-share convention. */
+export const ConsortiumWithAreaShare: Story = {
+  render: (_a, { globals }) => list([{ ...consortiumRecord, areaShare: consortiumRecord.record.winners[0]?.share ?? null }], localeOf(globals["locale"])),
+};
+/** The same Record without the share line (no county click, or the authority side). */
+export const ConsortiumWithoutAreaShare: Story = { render: (_a, { globals }) => list([{ ...consortiumRecord, areaShare: null }], localeOf(globals["locale"])) };
 export const WithMatchedText: Story = { render: (_a, { globals }) => list([highlightedRecord], localeOf(globals["locale"])) };
 /** Two winners: the full value, with the consortium marker. */
 export const Consortium: Story = { render: (_a, { globals }) => list([consortiumRecord], localeOf(globals["locale"])) };

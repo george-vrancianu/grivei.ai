@@ -1,10 +1,13 @@
+import type { MainScreenQuery } from "@grivei/contract";
+import { useId, useState } from "react";
 import {
-  chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, toMapLens, toResultTab, Typography,
+  chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
+import { MainDataThrough } from "../../components/MainDataThrough/index.ts";
 import { MainTotal } from "../../components/MainTotal/index.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -12,6 +15,8 @@ import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { entityHrefFrom } from "../../urlState/carriedSearch.ts";
+import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
@@ -20,11 +25,16 @@ import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
 import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
 
+/** The Source the main screen searches: SEAP is the only explorable one (ADR 0005); a Source picker would hold this in the URL. */
+const SEARCHED_SOURCE = "SEAP";
+
 /**
  * `/explore/` and `/ro/explore/`: the main screen for the filter in the URL. One `MainScreen` query per filter feeds the
  * Money lens map, the Total and the result tabs, so the three always describe the same matching set. The whole state
  * (query, chips, county, side, tab, lens) lives in the URL through the codec; a change replaces the history entry.
  */
+type MainScreenSources = MainScreenQuery["sources"];
+
 export function MainScreenPage({ locale }: { locale: Locale }) {
   const t = useCopy();
   const { filter, tab, lens, search: currentSearch, update, setFilter } = useUrlState();
@@ -42,15 +52,20 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
   const coverageGrid = useCoveragePage(coverageShown ? {} : null);
   const side: CountySide = filter.countySide ?? "AUTHORITY";
+  // The eyebrow and the data-through note keep the last Sources they received while a new query loads, so neither drops back to the id or leaves the map panel's foot.
+  const [lastSources, setLastSources] = useState<MainScreenSources>([]);
+  if (state.status === "ready" && state.data.sources !== lastSources) setLastSources(state.data.sources);
+  const eyebrowId = useId();
 
   return (
     <MainScreenLayout
       search={
         <>
-          <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
             {t.main.title}
           </Typography>
-          <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+          <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
+          <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
         </>
       }
       filters={
@@ -119,18 +134,18 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
         search && state.status === "ready" && (
           <MainTotal
             total={search.total}
-            sources={state.data.sources}
-            copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }}
+            copy={{ heading: t.main.total, total: t.total }}
             locale={locale}
             methodologyHref={methodologyHref(locale, "awardedValue")}
             suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
           />
         )
       }
+      mapNote={<MainDataThrough sources={lastSources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>
-          {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}
-          {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+          {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}
+          {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
           {search && (
             <ResultTabs
               authorities={search.authorities}
@@ -139,9 +154,14 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               goTo={search.goTo}
               tab={toResultTab(tab)}
               onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
-              entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
+              entityHref={entityHrefFrom(locale, filter)}
+              // the card shows for an exact CUI or the entity's own name: carrying that as a topic would offer a meaningless "only Records matching" link
+              goToHref={entityHrefFrom(locale, {})}
               showAllHref={(name) => `${pathFor(locale, { name: "search" })}${encodeUrlState({ filter, ...(name !== DEFAULT_RESULT_TAB ? { tab: name } : {}) })}`}
               recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
+              // An empty tab links to the Coverage lens with the county and dates kept, to check whether "nothing" means "not harvested".
+              emptyHref={coverageLensHref(locale, filter)}
+              onNavigate={(href) => navigate(href, "push")}
               locale={locale}
               copy={t.results}
             />

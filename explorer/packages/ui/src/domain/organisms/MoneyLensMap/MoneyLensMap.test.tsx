@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { authoritySide, authoritySideNoUnplaced, supplierSide } from "../../samples/moneyMaps.ts";
@@ -111,5 +112,22 @@ describe("MoneyLensMap", () => {
     expect(screen.getByRole("button", { name: /^Autorități neplasate/ })).toBeVisible();
     expect(screen.getByRole("button", { name: /^Național/ })).toHaveTextContent("86.000.000.000 RON");
     expect(screen.getByRole("group", { name: "Arată județele după" })).toBeVisible();
+  });
+
+  it("draws the legend's amounts as money, in the money typeface", () => {
+    renderInUi(
+      <MoneyLensMap map={authoritySide} topology={countiesTopology} onSelect={vi.fn()} side="AUTHORITY" onSideChange={vi.fn()} locale="en" copy={sampleCopy.moneyLensMap("en")} />,
+    );
+    const legend = screen.getByRole("region", { name: sampleCopy.moneyLensMap("en").map.legendTitle });
+    const end = within(legend).getByText("RON 310,000,000");
+    expect(getComputedStyle(end).fontFamily).toContain("IBM Plex Mono");
+  });
+
+  it("puts the tiles after the legend, under the map", () => {
+    setup();
+    const legend = screen.getByRole("region", { name: sampleCopy.moneyLensMap("en").map.legendTitle });
+    const tile = screen.getByRole("button", { name: /^National/ });
+    expect(legend.compareDocumentPosition(tile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Map of counties" }).compareDocumentPosition(legend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

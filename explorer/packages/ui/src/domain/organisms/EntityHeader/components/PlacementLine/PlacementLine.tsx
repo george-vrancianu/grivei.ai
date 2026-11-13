@@ -3,6 +3,7 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Tooltip } from "../../../../../atoms/Tooltip/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { EntityHeaderData } from "../../../../types.ts";
+import { visuallyHidden } from "../../../../utils/visuallyHidden.ts";
 import { placementView } from "../../entityHeader.utils.ts";
 
 export interface PlacementLineCopy {
@@ -25,7 +26,7 @@ export function PlacementLine({ entity, copy }: PlacementLineProps) {
   const view = placementView(entity);
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-      <Typography variant="body2" component="span" color="text.secondary">
+      <Typography variant="meta" component="span" sx={visuallyHidden}>
         {copy.label}
       </Typography>
       {view.kind === "unplaced" ? (
@@ -34,10 +35,10 @@ export function PlacementLine({ entity, copy }: PlacementLineProps) {
         </Tooltip>
       ) : (
         <>
-          <Typography variant="body2" component="span">
+          <Typography variant="meta" component="span" color="text.secondary">
             {view.kind === "national" ? copy.national : view.uat ? `${view.uat}, ${view.county}` : view.county}
           </Typography>
-          <Typography variant="caption" component="span" color="text.secondary">
+          <Typography variant="meta" component="span">
             ({copy.placedBy(view.placedBy)})
           </Typography>
         </>

@@ -1,9 +1,11 @@
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { totalExtreme, totalTypical, totalWithLeftOut } from "../../samples/fixtureData.ts";
 import type { Total } from "../../types.ts";
 import { TotalFigure } from "./index.ts";
+import { sentence } from "../../../testing/sentence.ts";
 
 const base = { methodologyHref: "/methodology/", suspectHref: "/explore/?badge=SUSPECT_VALUE" };
 const empty: Total = { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false };
@@ -21,6 +23,18 @@ describe("TotalFigure", () => {
     renderInUi(<TotalFigure total={totalTypical} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByRole("link", { name: "How this total is counted" })).toHaveAttribute("href", "/methodology/");
   });
+  it("sizes the amount by the width of its own box (container units), so a long total fits a 390 px card; jsdom cannot lay out, so the stylesheet is read", () => {
+    renderInUi(<TotalFigure total={totalExtreme} locale="en" copy={sampleCopy.total("en")} {...base} />);
+    const rulesOf = (el: Element) =>
+      [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules]).filter((rule) => [...el.classList].some((c) => (rule as CSSStyleRule).selectorText?.includes(`.${c}`))).map((rule) => rule.cssText).join("\n");
+    const amount = document.querySelector("p.MuiTypography-total")!; // the amount's own paragraph (the framework line repeats the text)
+    const css = rulesOf(amount);
+    const ancestors = (el: Element | null): Element[] => (el ? [el, ...ancestors(el.parentElement)] : []);
+    // the box the amount is measured against is one of its own ancestors
+    expect(ancestors(amount.parentElement).map(rulesOf).join("\n")).toMatch(/container-type:\s*inline-size/);
+    expect(css).toMatch(/font-size:\s*clamp\(18px,\s*9cqi,\s*40px\)/);
+    expect(css).toMatch(/overflow-wrap:\s*anywhere/);
+  });
   it("shows the awarded value and the Record count", () => {
     renderInUi(<TotalFigure total={totalTypical} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText(/^RON\s7,600$/)).toBeVisible();
@@ -29,7 +43,7 @@ describe("TotalFigure", () => {
   it("shows no-value Records and framework ceilings, and stays silent about zero parts", () => {
     renderInUi(<TotalFigure total={totalWithLeftOut} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText("1 Record with no value")).toBeVisible();
-    expect(screen.getByText(/Framework ceilings not counted: RON\s100,000,000/)).toBeVisible();
+    expect(screen.getByText(sentence(/Framework ceilings not counted: RON 100,000,000/))).toBeVisible();
     expect(screen.getByRole("link", { name: "1 suspect value left out" })).toBeVisible();
   });
   it("hides every left-out line when nothing was left out", () => {
@@ -42,5 +56,20 @@ describe("TotalFigure", () => {
     renderInUi(<TotalFigure total={{ ...totalExtreme, estimated: true }} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText(/^RON\s90,071,992,547,409,930$/)).toBeVisible();
     expect(screen.getByText(/^≈\s2,400,000 Records$/)).toBeVisible();
+  });
+});
+
+describe("TotalFigure accent", () => {
+  const hex = (value: string) => [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16));
+  const accent = (element: Element) => getComputedStyle(element).color.match(/\d+/g)?.slice(0, 3).map(Number).join() === hex(color.accent).join();
+  it("colours the headline Total amber and nothing else: the ⓘ, the count, the suspect link, the no-value count and the ceilings stay neutral", () => {
+    const { container } = renderInUi(<TotalFigure total={totalWithLeftOut} locale="en" copy={sampleCopy.total("en")} {...base} />);
+    const figure = container.querySelector("p")!;
+    const accented = [...container.querySelectorAll<HTMLElement>("*")].filter((el) => accent(el) && [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE));
+    expect(accented.length).toBeGreaterThan(0);
+    expect(accented.filter((el) => !figure.contains(el)).map((el) => el.textContent)).toEqual([]);
+    expect(accent(figure)).toBe(true);
+    expect(accent(screen.getByRole("link", { name: "How this total is counted" }))).toBe(false);
+    expect(accent(screen.getByRole("link", { name: /suspect/ }))).toBe(false);
   });
 });

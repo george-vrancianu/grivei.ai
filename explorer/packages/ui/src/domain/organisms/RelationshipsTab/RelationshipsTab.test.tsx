@@ -9,6 +9,8 @@ import {
   naturalPersonRelationships, oneCounterpartyRelationships,
 } from "../../samples/fixtureData.ts";
 import { RelationshipsTab, type RelationshipsTabProps } from "./index.ts";
+import { grafStates } from "../../../theme/index.ts";
+import { SELECTED_STROKE } from "./relationshipsTab.utils.ts";
 
 const copy = sampleCopy.relationshipsTab("en");
 const data = authorityTypicalRelationships;
@@ -54,7 +56,7 @@ describe("RelationshipsTab", () => {
     expect(drumarii).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("sizes a node by money and colours its edge by the channel that carries more", () => {
+  it("sizes a node by money and colours its edge by the channel holding the most RON with that counterparty", () => {
     const { container } = renderInUi(<Harness />);
     const radius = (key: string) => Number(container.querySelector(`[data-node="${key}"] circle[data-radius]`)!.getAttribute("data-radius"));
     expect(radius("30000002")).toBeGreaterThan(radius("30000001"));
@@ -110,8 +112,10 @@ describe("RelationshipsTab", () => {
   it("draws a keyboard focus ring on every pickable node, apart from the selection's own stroke", () => {
     const { container } = renderInUi(<Harness initial="30000002" />);
     expect(container.querySelectorAll("circle[data-focus-ring]")).toHaveLength(6);
-    expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).toHaveAttribute("stroke", "#111827");
-    expect(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')).toHaveAttribute("stroke", "#7c3aed");
+    expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).toHaveAttribute("stroke", SELECTED_STROKE);
+    // same light colour as the map's, told apart by shape: the focus ring is a dashed ring outside the node, the selection a solid stroke on it
+    expect(getComputedStyle(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')!, null).strokeDasharray).toBe(String(grafStates.mapArea.focus.strokeDasharray));
+    expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).not.toHaveAttribute("stroke-dasharray");
   });
 
   it("is picked from the keyboard with Enter and with Space", async () => {
@@ -207,7 +211,8 @@ describe("RelationshipsTab", () => {
     renderInUi(<Harness />);
     const legend = screen.getByRole("region", { name: "Legend" });
     expect(within(legend).getByText("Circle area: money with the counterparty")).toBeVisible();
-    expect(within(legend).getByText("Orange ring: has Signals")).toBeVisible();
+    expect(within(legend).getByText("Amber ring: has Signals")).toBeVisible();
+    expect(within(legend).getByText(/most RON with that counterparty/)).toBeVisible();
     expect(within(legend).queryByText("Dashed line: won together")).toBeNull();
   });
 

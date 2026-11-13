@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GapCellData } from "../types.ts";
-import { crawlOnlyCells, explainedCells, gridShape, kindsOf, quarterBounds, quarterInWindow, quarterSpan, reasonOf, windowActive } from "./coverageGrid.ts";
+import { crawlOnlyCells, explainedCells, gridShape, kindsOf, quarterBounds, quarterInWindow, quarterSpan, reasonOf, windowActive, yearGroups } from "./coverageGrid.ts";
 
 const cell = (quarter: string, kind: string, state: GapCellData["state"], o: Partial<GapCellData> = {}): GapCellData => ({ quarter, kind, state, rule: null, note: null, records: 0, crawlOnly: 0, dataThrough: null, ...o });
 
@@ -76,5 +76,15 @@ describe("the reason of a cell", () => {
   it("is the same sentence for every Not yet loaded cell, with or without a rule", () => {
     expect(reasonOf(cell("2024-Q1", "DA", "NOT_YET_LOADED"), copy)).toBe("awaiting a file");
     expect(reasonOf(cell("2024-Q4", "DA", "NOT_YET_LOADED", { rule: "AWAITING_BULK_FILE" }), copy)).toBe("awaiting a file");
+  });
+});
+
+describe("yearGroups", () => {
+  it("makes one label per year over its consecutive quarters, and keeps a stray name on its own", () => {
+    expect(yearGroups(["2023-Q4", "2024-Q1", "2024-Q2", "odd"])).toEqual([
+      { label: "2023", span: 1 },
+      { label: "2024", span: 2 },
+      { label: "odd", span: 1 },
+    ]);
   });
 });

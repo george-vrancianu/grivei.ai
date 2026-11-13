@@ -1,1 +1,1 @@
-export { MapTooltip, type MapTooltipProps } from "./MapTooltip.tsx";
+export { MapTooltip, mapTooltipLine, mapTooltipName, type MapTooltipProps } from "./MapTooltip.tsx";

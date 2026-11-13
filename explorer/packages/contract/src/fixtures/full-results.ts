@@ -5,13 +5,14 @@ import type {
 } from "../generated/operations.ts";
 import { ron, total } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import { recordedMainScreen } from "./recorded/index.ts";
 import * as w from "./world.ts";
 
 /** `n` distinct Records for a long list: the same Record states cycled, each with its own public code. */
 const rowsFrom = (start: number, n: number) =>
   Array.from({ length: n }, (_, i) => {
     const base = [w.rDirect, w.rContract, w.rConsortium, w.rNoValue][(start + i) % 4]!;
-    return { record: { ...base, code: `CAN${2_000_000 + start + i}` }, matchedField: null };
+    return { record: { ...base, code: `CAN${2_000_000 + start + i}` }, matchedField: null, areaShare: null };
   });
 
 export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables> = [
@@ -21,9 +22,9 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
     data: { seap: { search: {
       total: total({ awarded: ron(9_000_000_000), records: 12_000 }),
       authorities: { count: 5_100, countEstimated: false, rows: [
-        { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(900_000_000), records: 80 }) },
-        { entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1, noValue: 0 }) },
-        { entity: w.primariaFaraUatRow, matched: total({ awarded: ron(36_000), records: 1 }) },
+        { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(900_000_000), records: 80 }), signalCount: 1 },
+        { entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1, noValue: 0 }), signalCount: 0 },
+        { entity: w.primariaFaraUatRow, matched: total({ awarded: ron(36_000), records: 1 }), signalCount: 0 },
       ] },
     } } },
   },
@@ -32,7 +33,7 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
     variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 0 },
     data: { seap: { search: {
       total: total({ awarded: ron(86_000_000_000), records: 410_000 }),
-      authorities: { count: 70_000, countEstimated: true, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }) }] },
+      authorities: { count: 70_000, countEstimated: true, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }), signalCount: 1 }] },
     } } },
   },
   {
@@ -42,13 +43,25 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
   },
 ];
 
+const textQuery = recordedMainScreen.find((f) => f.name === "text-query")!.data.seap.search;
+
 export const fullResultsSuppliersHand: FixtureSet<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables> = [
+  {
+    name: "text-query", kind: "typical", description: "the suppliers of the recorded text query \"comuna\", first page (rows as the main screen's: test data for the carried-search link, #106)",
+    variables: { filter: { q: "comuna" }, limit: 50, offset: 0 },
+    data: { seap: { search: { total: textQuery.total, suppliers: textQuery.suppliers } } },
+  },
 ];
 
 export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullResultsRecordsQueryVariables> = [
   {
     name: "page-1-of-3", kind: "typical", description: "the default page size of 50: page 1 of 120 Records, fifty full rows",
     variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 0 },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(0, 50) } } } },
+  },
+  {
+    name: "page-1-by-date", kind: "typical", description: "the same 120 Records ordered by date, newest first (the order control's choice): page 1 of 120",
+    variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 0, order: "DATE_DESC" },
     data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(0, 50) } } } },
   },
   {
@@ -73,7 +86,7 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
       total: total({ awarded: ron(60_000_000), records: 11, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
       records: { count: 11, rows: [
         w.rConsortium, w.rFrameworkCeiling, w.rSubsequent, w.rSuspect, w.rDirect, w.rNoValue, w.rNaturalPerson, w.rMismatch,
-      ].map((record) => ({ record, matchedField: null })) },
+      ].map((record) => ({ record, matchedField: null, areaShare: null })) },
     } } },
   },
   {
@@ -82,8 +95,8 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
     data: { seap: { search: {
       total: total({ awarded: ron(290_000), records: 2 }),
       records: { count: 2, rows: [
-        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (2)", highlights: [[24, 30], [31, 36]] } },
-        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (1)", highlights: [[24, 30], [31, 36]] } },
+        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (2)", highlights: [[24, 30], [31, 36]] }, areaShare: null },
+        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (1)", highlights: [[24, 30], [31, 36]] }, areaShare: null },
       ] },
     } } },
   },
@@ -92,7 +105,7 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
     variables: { filter: {}, limit: 100, offset: 99_900, order: "DATE_ASC" },
     data: { seap: { search: {
       total: total({ awarded: ron(86_000_000_000), records: 2_400_000 }),
-      records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: null }] },
+      records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: null, areaShare: null }] },
     } } },
   },
 ];

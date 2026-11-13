@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import { fullResultsAuthorityRows, fullResultsRecords } from "../../samples/fixtureData.ts";
@@ -116,6 +117,19 @@ describe("FullResults", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 
+  it("an empty result links to where emptyHref says, and only then", async () => {
+    const onNavigate = vi.fn();
+    const empty: FullResultsData = { tab: "records", page: { count: 0, rows: [] } };
+    const { unmount } = show(empty, 1);
+    expect(screen.queryByRole("link", { name: "Check what has been harvested" })).not.toBeInTheDocument();
+    unmount();
+    show(empty, 1, { emptyHref: "/explore/?lens=coverage", onNavigate });
+    const link = screen.getByRole("link", { name: "Check what has been harvested" });
+    expect(link).toHaveAttribute("href", "/explore/?lens=coverage");
+    await userEvent.setup().click(link);
+    expect(onNavigate).toHaveBeenCalledWith("/explore/?lens=coverage");
+  });
+
   it("a plain click on a page link goes to onNavigate; a modified click is left to the browser", async () => {
     const onNavigate = vi.fn();
     const user = userEvent.setup();
@@ -149,5 +163,51 @@ describe("FullResults", () => {
     );
     expect(screen.getByText("Se afișează 1–3 din 12.000")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pagina 4.000" })).toBeInTheDocument();
+  });
+});
+
+describe("FullResults, the citable view and the order", () => {
+  const some = records(11, fullResultsRecords.rows.slice(0, 4));
+
+  it("shows the citable address of the view and copies the full URL", async () => {
+    const user = userEvent.setup();
+    show(some, 1, { pageSize: 4, citeUrl: "https://grivei.ai/explore/search?tab=records&order=value" });
+    expect(screen.getByText("grivei.ai/explore/search?tab=records&order=value")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByText("Link copied")).toBeVisible();
+    expect(await navigator.clipboard.readText()).toBe("https://grivei.ai/explore/search?tab=records&order=value");
+  });
+
+  it("has no citable line without a URL", () => {
+    show(some, 1, { pageSize: 4 });
+    expect(screen.queryByRole("button", { name: "Copy link" })).toBeNull();
+  });
+
+  it("offers the order on the Records tab, showing the current one, and reports a change", async () => {
+    const onOrderChange = vi.fn();
+    show(some, 1, { pageSize: 4, order: "DATE_DESC", onOrderChange });
+    const select = screen.getByRole("combobox", { name: "order" });
+    expect(select).toHaveValue("DATE_DESC");
+    await userEvent.setup().selectOptions(select, "value, high to low");
+    expect(onOrderChange).toHaveBeenCalledWith("VALUE_DESC");
+  });
+
+  it("shows the API's default order when none is given", () => {
+    show(some, 1, { pageSize: 4, onOrderChange: () => {} });
+    expect(screen.getByRole("combobox", { name: "order" })).toHaveValue("VALUE_DESC");
+  });
+
+  it("has no order control on the Authorities and Suppliers tabs, or without a handler", () => {
+    const { unmount } = show(authorities(8), 1, { onOrderChange: () => {} });
+    expect(screen.queryByRole("combobox")).toBeNull();
+    unmount();
+    show(some, 1, { pageSize: 4 });
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("says it in Romanian", () => {
+    show(some, 1, { pageSize: 4, onOrderChange: () => {}, citeUrl: "https://grivei.ai/ro/explore/search", copy: sampleCopy.fullResults("ro"), locale: "ro" });
+    expect(screen.getByRole("combobox", { name: "ordine" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Copiază linkul" })).toBeVisible();
   });
 });

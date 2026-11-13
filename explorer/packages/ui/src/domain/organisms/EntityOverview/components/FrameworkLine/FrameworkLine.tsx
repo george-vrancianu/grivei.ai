@@ -2,8 +2,11 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import type { OverviewFrameworks } from "../../../../types.ts";
+import { color, radius } from "../../../../../theme/tokens.ts";
 
 export interface FrameworkLineCopy {
   heading: string;
@@ -24,16 +27,17 @@ export interface FrameworkLineProps {
 /** The framework line: how many framework agreements, their ceilings and what subsequent contracts reported so far. Ceilings are shown beside the total, never in it. */
 export function FrameworkLine({ frameworks, locale, copy }: FrameworkLineProps) {
   return (
-    <Stack component="section" spacing={0.5} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+    <Stack component="section" spacing={0.75} aria-label={copy.heading} sx={{ p: 2, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` }}>
+      <SectionHeading>{copy.heading}</SectionHeading>
       {frameworks.count === 0 ? (
         <Typography color="text.secondary">{copy.none}</Typography>
       ) : (
         <>
           <Typography>
-            {copy.line(frameworks.count, formatCount(frameworks.count, false, locale), formatMoney(frameworks.ceilings, locale), formatMoney(frameworks.subsequentReported, locale))}
+            {withNodes((ceilings, reported) => copy.line(frameworks.count, formatCount(frameworks.count, false, locale), ceilings, reported), [
+              <MoneyAmount key="ceilings" bani={frameworks.ceilings} locale={locale} />,
+              <MoneyAmount key="reported" bani={frameworks.subsequentReported} locale={locale} />,
+            ])}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {copy.note}

@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -9,23 +9,37 @@ import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/
  * Add a key by adding it here, then in both files. Prose that varies with a number is a function (`(n, formatted) => string`),
  * so each language owns its plural rules. Source data (titles, institution names) is never copied here.
  */
+/** The "only Records matching ..." link (#106). */
+export interface OnlyMatchingCopy {
+  query: (q: string) => string;
+  filters: string;
+}
+
 export interface Copy {
   brand: string;
   nav: { label: string; explore: string; search: string; coverage: string; methodology: string };
+  /** The footer on every page: where the data comes from, and the counting principle. */
+  footer: { provenance: string; signals: string };
   language: {
-    /** The other language's own name, shown as the link text. */
+    /** The accessible name of the EN/RO group. */
+    groupLabel: string;
+    /** The current language's code (EN, RO), shown as the marked segment. */
+    current: string;
+    /** The other language's code, shown as the link text. */
     switchTo: string;
     /** The link's accessible name. */
     switchLabel: string;
   };
   status: { loading: string; failed: string };
   main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string };
+  /** The Source eyebrow above the search bar: the words around the Source's name, which comes from the API. */
+  sourceEyebrow: SourceEyebrowCopy;
   /** The search bar on the main screen and the full-results view. */
   searchBar: SearchBarCopy;
   /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */
   results: ResultTabsCopy;
   /** The full-results view at `/explore/search`: the tab names, empty sentences and rows come from `results` (same copy as the tabs), the rest is here. */
-  fullResults: Omit<FullResultsCopy, "heading" | "empty" | "entityRow" | "recordRow">;
+  fullResults: Omit<FullResultsCopy, "heading" | "empty" | "emptyLink" | "entityRow" | "recordRow">;
   /** The filter chips bar under the search field. */
   filterChips: FilterChipsCopy;
   /** The main screen template: lens toggle and region names. */
@@ -78,8 +92,14 @@ export interface Copy {
     recordsNoRole: { authority: string; supplier: string };
     /** The page links under the Overview's Signals when they run over one page. */
     signalPages: PageNavCopy;
+    /** The toggle above the Overview's Signals: by date or by RON. */
+    signalOrder: SignalOrderToggleCopy;
     /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
-    recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & { facets: Omit<RecordsTabCopy["facets"], "badges" | "channels"> };
+    recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & {
+      facets: Omit<RecordsTabCopy["facets"], "badges" | "channels">;
+      /** The link offered when the entity was opened from a search (#106): with a query it names it, with chips only it says "the search's filters". */
+      onlyMatching: OnlyMatchingCopy;
+    };
   };
   /** The Signal card and its compact form: the wording of every rule (label, sentence, lawful explanations), the links and the date. Neutral by test: no accusation, in either language. */
   signalCard: SignalCardCopy;

@@ -16,7 +16,7 @@ export interface CrawlOnlyListProps {
 export function CrawlOnlyList({ cells, locale, copy }: CrawlOnlyListProps) {
   return (
     <>
-      <Typography variant="body2" gutterBottom>{copy.crawlOnly.intro}</Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>{copy.crawlOnly.intro}</Typography>
       <Box component="ul" sx={{ m: 0, pl: 3 }}>
         {cells.map((cell) => (
           <li key={`${cell.quarter}/${cell.kind}`}>

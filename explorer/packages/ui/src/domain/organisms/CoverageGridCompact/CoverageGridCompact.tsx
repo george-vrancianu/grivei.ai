@@ -33,7 +33,7 @@ export function CoverageGridCompact({ cells, dateWindow, locale, copy, href, onN
   const { quarters, kinds, at } = gridShape(cells);
   return (
     <Box data-compact>
-      <TableContainer sx={{ overflowX: "auto" }} tabIndex={0} role="region" aria-label={copy.label}>
+      <TableContainer sx={{ overflowX: "auto", maxWidth: "100%" }} tabIndex={0} role="region" aria-label={copy.label}>
         <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: 1, width: "auto" }}>
           <TableHead>
             <TableRow>
@@ -61,7 +61,7 @@ export function CoverageGridCompact({ cells, dateWindow, locale, copy, href, onN
           <TableBody>
             {kinds.map((kind) => (
               <TableRow key={kind}>
-                <TableCell component="th" scope="row" sx={{ position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.paper", p: 0, pr: 0.5, fontSize: 11, whiteSpace: "nowrap", fontWeight: 600, border: 0 }}>
+                <TableCell component="th" scope="row" sx={{ position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.default", p: 0, pr: 0.5, typography: "meta", fontSize: 11, color: "text.primary", whiteSpace: "nowrap", border: 0 }}>
                   {kindLabel(kind, copy)}
                 </TableCell>
                 {quarters.map((quarter) => (

@@ -11,13 +11,14 @@ const tabHrefs = {
   records: "/e/1/records",
   relationships: "/e/1/relationships",
 };
-function show(view: EntityPageView, locale: Locale = "en", onNavigate?: (href: string) => void) {
+function show(view: EntityPageView, locale: Locale = "en", onNavigate?: (href: string) => void, extra: { tabCounts?: Partial<Record<EntityPageView, string>>; citeUrl?: string } = {}) {
   return renderInUi(
     <EntityPageLayout
       header={<h1>Name</h1>}
       view={view}
       tabHrefs={tabHrefs}
       onNavigate={onNavigate}
+      {...extra}
       copy={sampleCopy.entityPageLayout(locale)}
     >
       <p>the body</p>
@@ -75,5 +76,25 @@ describe("EntityPageLayout", () => {
     show("overview", "en", (href) => seen.push(href));
     await userEvent.setup().click(screen.getByRole("link", { name: "Records" }));
     expect(seen).toEqual(["/e/1/records"]);
+  });
+
+  it("shows a count beside the tab it is given for, and none beside the others", () => {
+    show("overview", "en", undefined, { tabCounts: { records: "1,817" } });
+    expect(screen.getByRole("link", { name: "Records 1,817" })).toHaveAttribute("href", "/e/1/records");
+    expect(screen.getByRole("link", { name: "Overview" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Relationships" })).toBeVisible();
+  });
+
+  it("shows the citable address under the tabs, named for assistive technology, in both languages", () => {
+    const { unmount } = show("records", "en", undefined, { citeUrl: "grivei.ai/explore/authority/4384206/records?signal=no-publication" });
+    expect(screen.getByText(/Address of this view:/).parentElement).toHaveTextContent("grivei.ai/explore/authority/4384206/records?signal=no-publication");
+    unmount();
+    show("records", "ro", undefined, { citeUrl: "grivei.ai/ro/explore/authority/4384206/records" });
+    expect(screen.getByText(/Adresa acestei vizualizări:/).parentElement).toHaveTextContent("grivei.ai/ro/explore/authority/4384206/records");
+  });
+
+  it("shows no address line when none is given", () => {
+    show("overview");
+    expect(screen.queryByText(/Address of this view/)).toBeNull();
   });
 });

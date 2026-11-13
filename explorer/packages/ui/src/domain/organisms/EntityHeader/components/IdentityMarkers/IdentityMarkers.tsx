@@ -32,12 +32,12 @@ export function IdentityMarkers({ entity, copy }: IdentityMarkersProps) {
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
       {entity.cui && (
-        <Typography variant="body2" component="span">
+        <Typography variant="meta" component="span" color="text.secondary">
           {copy.cui} <strong>{entity.cui}</strong>
         </Typography>
       )}
       {entity.foreignVatId && (
-        <Typography variant="body2" component="span">
+        <Typography variant="meta" component="span" color="text.secondary">
           {copy.foreignVatId} <strong>{entity.foreignVatId}</strong>
         </Typography>
       )}

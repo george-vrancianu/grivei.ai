@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
+import type { Locale } from "../../../theme/index.ts";
 import { resultSamples } from "../../samples/fixtureData.ts";
 import { ResultTabs, type ResultTabsProps } from "./index.ts";
 
@@ -8,7 +9,7 @@ export default meta;
 type Story = StoryObj;
 
 const sample =
-  (data: (typeof resultSamples)[keyof typeof resultSamples], extra: Partial<ResultTabsProps> = {}): Story["render"] =>
+  (data: (typeof resultSamples)[keyof typeof resultSamples], extra: Partial<ResultTabsProps> | ((locale: Locale) => Partial<ResultTabsProps>) = {}): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
     return (
@@ -18,7 +19,7 @@ const sample =
         recordHref={(record) => `/explore/record/${record.code}`}
         locale={locale}
         copy={sampleCopy.resultTabs(locale)}
-        {...extra}
+        {...(typeof extra === "function" ? extra(locale) : extra)}
       />
     );
   };
@@ -36,3 +37,8 @@ export const Empty: Story = { render: sample(resultSamples.empty) };
 export const EmptyRecords: Story = { render: sample(resultSamples.empty, { tab: "records" }) };
 /** The "show all" slot: more rows exist than shown, and the caller says where the full list lives. */
 export const ShowAll: Story = { render: sample(resultSamples.estimated, { showAllHref: (tab) => `/explore/search?tab=${tab}` }) };
+
+/** An empty tab says so and links to the Coverage lens with the county and dates kept (the app builds the URL with its codec): the reader can check whether "nothing" means "not harvested". */
+export const EmptyWithCoverageLink: Story = {
+  render: sample(resultSamples.empty, { tab: "records", emptyHref: "/explore/?county=RO-CJ&from=2023-01-01&to=2023-12-31&lens=coverage" }),
+};

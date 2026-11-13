@@ -43,7 +43,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -71,7 +72,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -88,7 +90,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -116,7 +119,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -144,7 +148,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -172,7 +177,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -200,7 +206,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -228,7 +235,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -256,7 +264,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -281,7 +290,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -309,7 +319,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -331,7 +342,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -359,7 +371,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -387,7 +400,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           }
@@ -447,7 +461,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -475,7 +490,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -503,7 +519,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -531,7 +548,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -556,7 +574,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -584,7 +603,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -612,7 +632,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           }

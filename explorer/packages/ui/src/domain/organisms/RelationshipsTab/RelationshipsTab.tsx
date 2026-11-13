@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
+import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import type {
   CounterpartyRecordsData, EntityRef, EntityRole, RecordResult, RelationshipsCounterparties, RelationshipsTimeline,
@@ -11,6 +12,7 @@ import { CounterpartyGraph } from "./components/CounterpartyGraph/index.ts";
 import { CounterpartyPanel } from "./components/CounterpartyPanel/index.ts";
 import { GraphLegend } from "./components/GraphLegend/index.ts";
 import { MonthlyTimeline } from "./components/MonthlyTimeline/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import type { RelationshipsTabCopy } from "./relationshipsTab.types.ts";
 
 export type { RelationshipsTabCopy, CounterpartyGraphCopy, GraphLegendCopy, MonthlyTimelineCopy, CounterpartyPanelCopy, NodeNameParts } from "./relationshipsTab.types.ts";
@@ -77,17 +79,21 @@ export function RelationshipsTab({
   return (
     <Stack spacing={2}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-        <Typography variant="h5" component="h2">{copy.heading}</Typography>
+        <SectionHeading>{copy.heading}</SectionHeading>
         {flowToggle && <Box data-slot="flow-toggle">{flowToggle}</Box>}
       </Box>
-      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(280px, 380px)" }, alignItems: "start" }}>
-        <Stack spacing={2}>
-          {flowMap ?? <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />}
-          {!flowMap && rows.length > 0 && (
-            <>
-              <GraphLegend copy={copy.legend} hasWonTogether={rows.some((row) => row.wonTogether)} hasSignals={rows.some((row) => row.hasSignals)} />
-              {rows.some((row) => row.wonTogether) && <Typography variant="caption" color="text.secondary">{copy.graph.consortiumNote}</Typography>}
-            </>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 3 }}>
+        <Stack spacing={3} sx={{ flex: "1.3 1 520px", minWidth: 0 }}>
+          {flowMap ?? (
+            <Panel heading={copy.graph.heading}>
+              <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />
+              {rows.length > 0 && (
+                <>
+                  <GraphLegend copy={copy.legend} hasWonTogether={rows.some((row) => row.wonTogether)} hasSignals={rows.some((row) => row.hasSignals)} />
+                  {rows.some((row) => row.wonTogether) && <Typography variant="meta" color="text.secondary">{copy.graph.consortiumNote}</Typography>}
+                </>
+              )}
+            </Panel>
           )}
           <MonthlyTimeline
             timeline={timeline}

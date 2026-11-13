@@ -70,25 +70,35 @@ const signalCard: Copy["signalCard"] = {
 export const ro: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Principal", explore: "Explorează", search: "Căutare", coverage: "Acoperire", methodology: "Despre cifre" },
-  language: { switchTo: "English", switchLabel: "Versiunea în engleză a acestei pagini" },
+  footer: {
+    provenance: "sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și colectarea de pe e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă",
+    signals: "Semnalele sunt numărate, niciodată notate cu un scor",
+  },
+  language: { groupLabel: "Limba", current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
   main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată." },
-  searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
+  sourceEyebrow: { search: "caută", scope: "național", period: "din 2021" },
+  searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
   results: {
     label: "Rezultate",
     tabs: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
     empty: { authorities: "Nicio autoritate nu corespunde.", suppliers: "Niciun furnizor nu corespunde.", records: "Nicio înregistrare nu corespunde." },
+    emptyLink: "Verifică ce a fost colectat",
     showAll: (_n, formatted) => `Arată toate cele ${formatted}`,
     goTo: { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" },
     entityRow: {
       matched: "potrivit",
+      cui: "CUI",
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
       national: "național",
       noCounty: "județ necunoscut",
       entityLink,
+      signals: { label: (n, f) => roCount(n, f, "Semnal", "Semnale"), forEntity: (name) => `, ${name}` },
     },
     recordRow: {
       noValue: "fără valoare",
+      valueCaption: { awarded: "valoare atribuită", ceiling: "plafon, neadunat" },
+      channel: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
       consortium: {
         label: "asociere",
         explanation: "Se afișează valoarea integrală a contractului. Partea fiecărui membru este o convenție de părți egale, nu o sumă publicată.",
@@ -102,6 +112,7 @@ export const ro: Copy = {
       },
       badges,
       party: { naturalPerson: "Persoană fizică", entityLink },
+      areaShare: (amount) => `Parte din asociere în selecție: ${amount}`,
     },
   },
   fullResults: {
@@ -110,6 +121,8 @@ export const ro: Copy = {
     noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
     firstPage: "Mergi la pagina 1",
     back: "Înapoi la rezultate",
+    cite: { label: "Citează această vizualizare", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } },
+    order: { label: "ordine", options: { VALUE_DESC: "valoare, de la cea mai mare", DATE_DESC: "dată, cele mai noi întâi", DATE_ASC: "dată, cele mai vechi întâi" } },
     pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
   },
   mainScreenLayout: {
@@ -138,6 +151,7 @@ export const ro: Copy = {
       NOT_HARVESTED: "Necolectat",
     },
     noStatus: "Fără stare de acoperire",
+    nationalCaption: (source) => `${source} este colectat la nivel național; lacunele se aplică fiecărui județ`,
     marks: {
       title: "Un semn pentru fiecare Sursă",
       harvested: (source) => `${source}: culoarea arată starea județului`,
@@ -225,6 +239,7 @@ export const ro: Copy = {
     heading: {
       kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
       facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      panel: "Înregistrarea",
     },
     value: {
       published: "Valoare publicată",
@@ -240,6 +255,7 @@ export const ro: Copy = {
     parties: {
       authority: "Autoritate contractantă",
       winners: "Câștigători",
+      consortiumOf: (n, formatted) => `consorțiu de ${roCount(n, formatted, "membru", "membri")}`,
       share: (amount) => `parte egală ${amount}`,
       convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
     },
@@ -260,6 +276,7 @@ export const ro: Copy = {
       agreement: "Atribuit în baza acordului-cadru",
       subsequentHeading: "Contracte subsecvente",
     },
+    cite: { label: "Adresa acestei înregistrări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } },
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",
@@ -279,7 +296,7 @@ export const ro: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+    layout: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
       identity: {
         cui: "CUI",
@@ -295,7 +312,18 @@ export const ro: Copy = {
         placedBy: (source) => `plasată de ${source}`,
       },
       source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
-      roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+      roles: {
+        label: "Rolurile entității",
+        authority: "cumpără · autoritate contractantă",
+        supplier: "vinde · furnizor",
+        none: { AUTHORITY: "cumpără · nicio înregistrare ca autoritate", SUPPLIER: "vinde · nicio înregistrare ca furnizor" },
+      },
+      seapNames: {
+        label: "Apare în SEAP ca",
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+        range: (first, last) => `${first} până la ${last}`,
+        more: (_n, f) => `și încă ${f}`,
+      },
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     relationships: {
@@ -304,6 +332,7 @@ export const ro: Copy = {
         heading: "Relații",
         recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         graph: {
+          heading: "Principalele contrapărți · alege una ca să vezi înregistrările ei",
           label: "Graful principalelor contrapărți",
           naturalPerson: "Persoană fizică",
           unknown: "Contraparte neidentificată",
@@ -316,15 +345,15 @@ export const ro: Copy = {
             "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
         },
         legend: {
-          title: "Legendă", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie albastră: mai ales contracte",
-          directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
+          title: "Legendă", edgeColour: "Culoarea unei linii este canalul care deține cei mai mulți RON cu acea contraparte.", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie galbenă: contracte",
+          directPurchase: "Linie albastră: achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel galben: are Semnale",
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
           total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
         },
       },
@@ -384,9 +413,11 @@ export const ro: Copy = {
       },
     },
     signalPages: { label: "Paginile Semnalelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
+    signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",
+      table: { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } },
       facets: {
         label: "Filtre pe fațete",
         groups: {
@@ -398,12 +429,14 @@ export const ro: Copy = {
         signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
+      onlyMatching: { query: (q) => `doar înregistrările care se potrivesc cu „${q}”`, filters: "doar înregistrările care se potrivesc filtrelor căutării" },
     },
   },
   signalCard,
   methodology: methodologyRo,
   /** The Coverage page (`/explore/coverage`) and the compact grid on the Coverage lens. */
   coverage: {
+    eyebrow: "acoperire",
     title: "Acoperire",
     intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
     grid: {
@@ -431,6 +464,7 @@ export const ro: Copy = {
       crawlOnly: (n, f) => `dintre care ${f} absente din datele în masă`,
       dataThrough: (date) => `date până la ${date}`,
       inRange: "în intervalul de date",
+      windowNote: "trimestrele urmează data publicării · evidențiat: intervalul din chipul datei atribuirii",
       legend: { title: "Stările celulelor", range: "În intervalul de date" },
       seePage: "Vezi pagina Acoperire",
     },
@@ -471,6 +505,11 @@ export const ro: Copy = {
         NOT_YET_LOADED: "Fișierul în masă pentru acest trimestru și tip de înregistrare nu este încă în date.",
       },
       methodology: "Cum se numără cifrele",
+    },
+    perCounty: {
+      heading: "pe județ: N din M",
+      body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+      lensLink: "deschide lentila Acoperire pe hartă →",
     },
     snapshot: {
       heading: "Lista entităților publice",

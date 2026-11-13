@@ -137,3 +137,14 @@ describe("the Relationships tab's failures", () => {
     expect(await screen.findByRole("alert")).toBeVisible();
   });
 });
+
+describe("the Relationships legend's edge-colour rule", () => {
+  it.each([
+    ["en", AUTHORITY, /most RON with that counterparty/],
+    ["ro", `/ro${AUTHORITY}`, /cei mai mulți RON cu acea contraparte/],
+  ])("names the channel holding the most RON as what colours an edge (%s)", async (_locale, url, rule) => {
+    await opened(url, /^(Graph of the top counterparties|Graful principalelor contrapărți)$/);
+    const legend = screen.getByRole("region", { name: /^(Legend|Legendă)$/ });
+    expect(within(legend).getByText(rule)).toBeVisible();
+  });
+});

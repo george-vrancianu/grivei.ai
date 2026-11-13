@@ -1,17 +1,20 @@
-import type { ReactNode } from "react";
-import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, Stack, Typography, type Locale } from "@grivei/ui";
+import type { RecordFilter } from "@grivei/contract";
+import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
 import { navigate } from "../../routing/location.tsx";
+import { useScrollToHash } from "../../routing/useScrollToHash.ts";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
+import { decodeUrlState, encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHref, tabHrefs } from "./entityPage.utils.ts";
 import { SIGNALS_PAGE_SIZE, useEntityPage } from "./hooks/useEntityPage.ts";
 import { useOverviewTab } from "./hooks/useOverviewTab.ts";
 import { usePickedCounterparty } from "./hooks/usePickedCounterparty.ts";
-import { useRecordsTab } from "./hooks/useRecordsTab.ts";
+import { useRecordsTab } from "./hooks/useRecordsTab.tsx";
 import { useRelationshipsTab } from "./hooks/useRelationshipsTab.ts";
 
 const LENSES = ["graph", "flow"] as const;
@@ -28,7 +31,7 @@ export interface EntityPageProps {
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
   const signals = useSignalLinks(locale);
-  const { filter, page, order, signalOrder, lens, counterparty, update } = useUrlState();
+  const { filter, page, order, signalOrder, lens, counterparty, carried, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
@@ -37,21 +40,25 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
   const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
 
+  // a link to `#signals` (the "n Signals" chip of an entity row) lands on the Overview's Signals section once it has rendered
+  useScrollToHash(view === "overview" && state.status === "ready" && state.overview !== null);
+
   if (state.status === "error") {
     return (
       <PageShell>
-        <Typography role="alert">{t.status.failed}</Typography>
+        <StateNote kind="error">{t.status.failed}</StateNote>
       </PageShell>
     );
   }
   if (state.status === "ready" && state.entity === null) {
     return (
       <PageShell>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h1" component="h1">
           {t.entityPage.notFound.title}
         </Typography>
-        <Typography>{t.entityPage.notFound.body}</Typography>
-        <AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>
+        <StateNote kind="empty" action={<AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>}>
+          {t.entityPage.notFound.body}
+        </StateNote>
       </PageShell>
     );
   }
@@ -75,7 +82,9 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         )
       }
       view={view}
-      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter)}
+      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter, carried)}
+      tabCounts={tabCounts(state, filter, locale)}
+      citeUrl={citeUrl()}
       onNavigate={onNavigate}
       copy={t.entityPage.layout}
     >
@@ -86,37 +95,51 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
           </div>
         ) : loading ? (
-          <Typography role="status">{t.status.loading}</Typography>
+          <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (
           // ready, but the entity has no Records in this role
-          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+          <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
-      ) : loading ? (
-        <Typography role="status">{t.status.loading}</Typography>
       ) : view === "overview" ? (
         state.overview && entity ? (
-          <EntityOverview overview={state.overview} aliases={entity.aliases} signals={
-              <SignalList
-                signals={state.overview.signals.rows}
-                locale={locale}
-                renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
-                pagination={{
-                  page: page ?? 1,
-                  pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
-                  // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
-                  pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), page: n }),
-                  onNavigate: (href) => navigate(href, "replace"),
-                  copy: t.entityPage.signalPages,
-                }}
-              />
-            } {...overviewTab} />
+          // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
+          <div aria-busy={loading}>
+            <EntityOverview overview={state.overview} aliases={entity.aliases}
+              signalsToolbar={
+                <SignalOrderToggle
+                  value={signalOrder ?? "DATE_DESC"}
+                  // by date is the default, so it is left out of the URL; a different order starts again at page 1 (from Signals page 2 the window scrolls to the top, as the page links do)
+                  onChange={(next) => update({ signalOrder: next === "DATE_DESC" ? undefined : next, page: undefined })}
+                  copy={t.entityPage.signalOrder}
+                />
+              }
+              signals={
+                <SignalList
+                  signals={state.overview.signals.rows}
+                  locale={locale}
+                  renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
+                  pagination={{
+                    page: page ?? 1,
+                    pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
+                    // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
+                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
+                    onNavigate: (href) => navigate(href, "replace"),
+                    copy: t.entityPage.signalPages,
+                  }}
+                />
+              } {...overviewTab} />
+          </div>
+        ) : loading ? (
+          <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (
           // ready, but the entity has nothing in this role
-          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+          <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
+      ) : loading ? (
+        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : state.relationships && entity ? (
         <>
-          {picked.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+          {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
           <RelationshipsTab
             entity={entity}
             counterparties={state.relationships.counterparties}
@@ -150,17 +173,21 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         </>
       ) : (
         // ready, but the entity has nothing in this role
-        <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+        <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
       )}
     </EntityPageLayout>
   );
 }
 
-/** The bare page for the states with no entity to show: the data could not be loaded, or no entity has that key. */
-function PageShell({ children }: { children: ReactNode }) {
-  return (
-    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      {children}
-    </Stack>
-  );
+/** The Records count beside the tab: the entity's own, so only when no filter narrows it and the open tab has loaded it (the Relationships tab has none). */
+function tabCounts(state: ReturnType<typeof useEntityPage>, filter: RecordFilter, locale: Locale): Partial<Record<TabView, string>> {
+  if (state.status !== "ready" || Object.values(filter).some((v) => v !== undefined)) return {};
+  const total = state.overview?.total ?? state.records?.total;
+  return total ? { records: formatCount(total.records, total.estimated, locale) } : {};
+}
+
+/** The address of this view as a reader would cite it: host, path and query, without the scheme. The carried search is navigation, not part of the citation, so it is left out. */
+function citeUrl(): string {
+  const state = decodeUrlState(window.location.search);
+  return `${window.location.host}${window.location.pathname}${encodeUrlState({ ...state, carried: undefined })}`;
 }

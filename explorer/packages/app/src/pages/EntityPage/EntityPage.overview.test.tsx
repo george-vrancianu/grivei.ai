@@ -29,7 +29,7 @@ describe("an authority page from the API", () => {
     expect(screen.getByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeVisible();
     expect(screen.getByText("1000017")).toBeVisible();
     expect(screen.getByText("Unplaced")).toBeVisible();
-    expect(screen.queryByRole("navigation", { name: "View as" })).toBeNull(); // it never won a Record
+    expect(screen.queryByRole("navigation", { name: "Roles of this entity" })).toBeNull(); // it never won a Record
     // 8,840,000 RON counted; a suspect value, two blanks and a framework ceiling are left out and said so
     expect(headline().getByText("RON 8,840,000")).toBeVisible();
     expect(headline().getByRole("link", { name: "1 suspect value left out" })).toBeVisible();
@@ -113,15 +113,15 @@ describe("an entity with both roles", () => {
     expect(screen.getByRole("heading", { level: 1, name: "CNAIR DEMO SA" })).toBeVisible();
     expect(headline().getByText("RON 340,000")).toBeVisible(); // what it bought
     expect(region("Counterparties").getByRole("link", { name: "BETA DEMO SRL" })).toHaveAttribute("href", "/explore/supplier/2000015");
-    const nav = screen.getByRole("navigation", { name: "View as" });
-    expect(within(nav).getByRole("link", { name: "As authority" })).toHaveAttribute("aria-current", "page");
-    const other = within(nav).getByRole("link", { name: "As supplier" });
+    const nav = screen.getByRole("navigation", { name: "Roles of this entity" });
+    expect(within(nav).getByRole("link", { name: "buys · contracting authority" })).toHaveAttribute("aria-current", "page");
+    const other = within(nav).getByRole("link", { name: "sells · supplier" });
     expect(other).toHaveAttribute("href", "/explore/supplier/2000031");
 
     await userEvent.setup().click(other);
     expect(window.location.pathname).toBe("/explore/supplier/2000031");
     expect(await within(await screen.findByRole("list", { name: HEADLINE })).findByText("RON 2,020,000")).toBeVisible(); // what it won
-    expect(screen.getByRole("link", { name: "As supplier" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "sells · supplier" })).toHaveAttribute("aria-current", "page");
     expect(region("Counterparties").getByRole("link", { name: "SPITALUL EXEMPLU" })).toHaveAttribute("href", "/explore/authority/1000017");
     expect(screen.queryByText("RON 340,000")).toBeNull();
   });
@@ -129,8 +129,8 @@ describe("an entity with both roles", () => {
   it("is in Romanian under /ro/, the switch included", async () => {
     await opened("/ro/explore/supplier/2000031");
     expect(headline().getByText(/^2\.020\.000\sRON$/)).toBeVisible();
-    expect(screen.getByRole("link", { name: "Ca autoritate" })).toHaveAttribute("href", "/ro/explore/authority/2000031");
-    expect(screen.getByRole("link", { name: "Ca furnizor" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "cumpără · autoritate contractantă" })).toHaveAttribute("href", "/ro/explore/authority/2000031");
+    expect(screen.getByRole("link", { name: "vinde · furnizor" })).toHaveAttribute("aria-current", "page");
   });
 });
 

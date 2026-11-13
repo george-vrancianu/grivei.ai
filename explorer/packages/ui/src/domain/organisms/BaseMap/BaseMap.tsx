@@ -1,6 +1,7 @@
 import { useId, useMemo, type ReactNode } from "react";
 import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
+import { withNodes } from "../../utils/withNodes.tsx";
 import type { AreaInfo, BaseMapCopy, ColorScaleKind, MapOverlayContext, ProjectionKind } from "./baseMap.types.ts";
 import { createColorScale, NO_DATA_COLOR, type AreaReader, type AreaValues } from "./baseMap.utils.ts";
 import { Legend } from "./components/Legend/index.ts";
@@ -27,6 +28,8 @@ export type BaseMapProps = {
    * an exact amount (Bani string) and format that instead of the number; on the legend ends it is the code of an area holding that value, when there is one.
    */
   formatValue: (value: number, code?: string) => string;
+  /** The same value as shown text (the default tooltip and the legend ends), when it needs more than a string (e.g. a `MoneyAmount`). Defaults to `formatValue`. */
+  renderValue?: (value: number, code?: string) => ReactNode;
   /** Overrides the numeric scale's fill for an area (e.g. a categorical colour); null or undefined falls back to grey (no data). Pair it with `legend`. */
   colorOf?: (code: string) => string | null | undefined;
   /** Replaces the numeric legend (e.g. a categorical one). It owns its no-data swatch. */
@@ -62,6 +65,7 @@ export function BaseMap({
   domain,
   scale: scaleKind = "linear",
   formatValue,
+  renderValue,
   colorOf,
   describeArea,
   legend,
@@ -77,7 +81,7 @@ export function BaseMap({
 }: BaseMapProps) {
   const tooltipId = useId();
   const [activeCode, setActiveCode] = useActiveArea();
-  const { features, paths, centroids, project } = useBaseMapGeometry(topology, { object, readArea: reader, width, height, projection });
+  const { features, paths, centroids, anchors, project } = useBaseMapGeometry(topology, { object, readArea: reader, width, height, projection });
   const scale = useMemo(() => createColorScale(scaleKind, features.map((f) => values[f.properties.code]), domain), [scaleKind, features, values, domain]);
 
   const valueOf = (code: string): number | null => {
@@ -90,14 +94,23 @@ export function BaseMap({
   };
   const legendValue = (value: number) => {
     const holder = features.find((f) => valueOf(f.properties.code) === value);
-    return formatValue(value, holder?.properties.code);
+    return (renderValue ?? formatValue)(value, holder?.properties.code);
   };
   const active = features.find((f) => f.properties.code === activeCode);
-  const anchor = active ? centroids.get(active.properties.code) : undefined;
+  const anchor = active ? anchors.get(active.properties.code) : undefined;
+  const defaultTooltip = (code: string, name: string): ReactNode => {
+    const value = valueOf(code);
+    const described = describeArea?.({ code, name, value });
+    if (described === null || described === undefined) {
+      if (value === null) return copy.areaLabel(name, copy.noData);
+      return renderValue ? withNodes((token) => copy.areaLabel(name, token), [renderValue(value, code)]) : copy.areaLabel(name, formatValue(value, code));
+    }
+    return copy.areaLabel(name, described);
+  };
 
   return (
-    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "flex-start" }}>
-      <Box sx={{ flex: "1 1 360px", minWidth: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ minWidth: 0 }}>
         <Box sx={{ position: "relative" }}>
           <MapCanvas
             features={features}
@@ -118,13 +131,14 @@ export function BaseMap({
             <MapTooltip id={tooltipId} left={(anchor[0] / width) * 100} top={(anchor[1] / height) * 100}>
               {renderTooltip
                 ? renderTooltip({ code: active.properties.code, name: active.properties.name, value: valueOf(active.properties.code) })
-                : copy.areaLabel(active.properties.name, textOf(active.properties.code, active.properties.name))}
+                : defaultTooltip(active.properties.code, active.properties.name)}
             </MapTooltip>
           )}
         </Box>
         {legend ?? <Legend title={copy.legendTitle} noDataLabel={copy.noData} scale={scale} formatValue={legendValue} atMost={copy.atMost} />}
       </Box>
-      {tiles && <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>{tiles}</Box>}
+      {/* The tiles sit under the legend, so the map reads top to bottom. */}
+      {tiles && <Box data-map-tiles sx={{ display: "flex", flexDirection: "column", gap: 1 }}>{tiles}</Box>}
     </Box>
   );
 }

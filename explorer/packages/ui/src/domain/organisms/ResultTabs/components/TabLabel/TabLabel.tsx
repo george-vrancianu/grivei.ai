@@ -1,4 +1,6 @@
 import type { Locale } from "../../../../../theme/index.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
+import { color } from "../../../../../theme/tokens.ts";
 import { ApproxCount } from "../../../../atoms/ApproxCount/index.ts";
 
 export interface TabLabelProps {
@@ -14,7 +16,10 @@ export interface TabLabelProps {
 export function TabLabel({ name, count, estimated, locale }: TabLabelProps) {
   return (
     <span>
-      {name} <ApproxCount count={count} estimated={estimated} locale={locale} />
+      {name}{" "}
+      <Box component="span" sx={{ color: color.muted }}>
+        <ApproxCount count={count} estimated={estimated} locale={locale} />
+      </Box>
     </span>
   );
 }

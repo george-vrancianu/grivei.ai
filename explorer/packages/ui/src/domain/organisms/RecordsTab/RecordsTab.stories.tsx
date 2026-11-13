@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { RecordFilter } from "@grivei/contract";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Link } from "../../../atoms/Link/index.ts";
+import { pick } from "../../../workbench/index.ts";
+import { StateNote } from "../../molecules/StateNote/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
   authorityEstimatedRecords, authorityOneSupplierFilter, authorityOneSupplierRecords, authorityRecords, supplierNoMatches, supplierNoMatchesFilter,
@@ -14,8 +17,8 @@ export default meta;
 type Story = StoryObj;
 
 /** The tab, with the filter held by the story (the real one holds it in the URL), so clicks show the panel's own change. */
-function Sample({ records, role, initial, locale, pageSize = 100, page = 1, count }: {
-  records: RecordsTabData; role: EntityRole; initial: RecordFilter; locale: "en" | "ro"; pageSize?: number; page?: number; count?: number;
+function Sample({ records, role, initial, locale, pageSize = 100, page = 1, count, filterExtras }: {
+  records: RecordsTabData; role: EntityRole; initial: RecordFilter; locale: "en" | "ro"; pageSize?: number; page?: number; count?: number; filterExtras?: ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
   return (
@@ -33,12 +36,13 @@ function Sample({ records, role, initial, locale, pageSize = 100, page = 1, coun
       suspectHref="?badges=suspect-value"
       locale={locale}
       copy={sampleCopy.recordsTab(locale)}
+      filterExtras={filterExtras}
     />
   );
 }
 
 const sample =
-  (records: RecordsTabData, role: EntityRole, initial: RecordFilter, extra: { pageSize?: number; page?: number; count?: number } = {}): Story["render"] =>
+  (records: RecordsTabData, role: EntityRole, initial: RecordFilter, extra: { pageSize?: number; page?: number; count?: number; filterExtras?: ReactNode } = {}): Story["render"] =>
   (_args, { globals }) => <Sample records={records} role={role} initial={initial} locale={localeOf(globals["locale"])} {...extra} />;
 
 /** A supplier's tab, no facet on: every facet group with its counts; the counterparty facet lists authorities. */
@@ -57,3 +61,19 @@ export const EmptyResult: Story = { render: sample(supplierNoMatches, "supplier"
 export const EmptyNoFacets: Story = { render: sample(supplierNoMatches, "supplier", {}) };
 /** An estimated total and count (≈) with many pages. */
 export const EstimatedTotal: Story = { render: sample(authorityEstimatedRecords, "authority", { to: "2030-12-31" }, { page: 3 }) };
+/** The slot between the facets and the totals holds one more control (here a stand-in for "only Records matching '<query>'", #106). */
+export const FilterExtrasSlot: Story = {
+  render: (_args, { globals }) => (
+    <Sample
+      records={supplierRecords}
+      role="supplier"
+      initial={{}}
+      locale={localeOf(globals["locale"])}
+      filterExtras={<Link href="?q=strazi">{pick(globals["locale"], { en: "only Records matching “strazi”", ro: "doar înregistrările care conțin „strazi”" })}</Link>}
+    />
+  ),
+};
+/** The Records load: the page keeps the last table on screen for a filter change, and shows this note on a first load. */
+export const Loading: Story = { render: (_args, { globals }) => <StateNote kind="loading">{pick(globals["locale"], { en: "Loading…", ro: "Se încarcă…" })}</StateNote> };
+/** The Records could not be loaded: an error note, never red. */
+export const Failed: Story = { render: (_args, { globals }) => <StateNote kind="error">{pick(globals["locale"], { en: "The data could not be loaded.", ro: "Datele nu au putut fi încărcate." })}</StateNote> };

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
 import { FlowLegend } from "./index.ts";
+import { onPanel } from "../../../../../workbench/index.ts";
 
-const meta = { title: "Domain/FlowLensMap/FlowLegend" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/FlowLensMap/FlowLegend", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

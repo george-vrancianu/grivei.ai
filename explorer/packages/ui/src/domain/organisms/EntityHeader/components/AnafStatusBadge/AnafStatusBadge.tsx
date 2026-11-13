@@ -20,7 +20,7 @@ export function AnafStatusBadge({ status, copy }: AnafStatusBadgeProps) {
   if (!isInactiveStatus(status)) return null;
   return (
     <Tooltip title={copy.inactive(status)} describeChild>
-      <Chip size="small" color="warning" label={`${copy.label}: ${status}`} tabIndex={0} />
+      <Chip size="small" variant="outlined" label={`${copy.label}: ${status}`} tabIndex={0} />
     </Tooltip>
   );
 }

@@ -1,24 +1,16 @@
-import { Link } from "../../../../../atoms/Link/index.ts";
+import type { ReactNode } from "react";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityRole, RecordPageData } from "../../../../types.ts";
-import { followLink } from "../../../../utils/followLink.ts";
-import { formatRatio } from "../../recordDetail.utils.ts";
 
 type FrameworkLink = NonNullable<RecordPageData["framework"]>;
 
 export interface FrameworkSectionCopy {
+  /** The region's name ("Framework agreement"). */
   heading: string;
-  /** "Ceiling RON 100,000,000; subsequent contracts reported so far RON 112,400,000 (112.4%)", given the formatted amounts and ratio. */
-  line: (ceiling: string, reported: string, percent: string) => string;
-  /** The same line for a blank ceiling: no ratio can be told. */
-  lineBlankCeiling: (reported: string) => string;
-  /** On a subsequent contract: "Awarded under the framework agreement" before the link. */
-  agreement: string;
   subsequentHeading: string;
 }
 
@@ -26,43 +18,22 @@ export interface FrameworkSectionProps {
   framework: FrameworkLink;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   recordHref: (code: string) => string;
-  onNavigate?: (href: string) => void;
   locale: Locale;
   copy: FrameworkSectionCopy & { recordRow: RecordResultRowCopy };
+  /** The value card, whose framework line and bar are the agreement's: it sits first in the region, the subsequent contracts follow. */
+  children?: ReactNode;
 }
 
-/**
- * The framework line (ceiling, subsequent contracts reported so far and their share of the ceiling; a blank ceiling has no share),
- * the link to the agreement on a subsequent contract, and the list of subsequent contracts on the agreement.
- */
-export function FrameworkSection({ framework, entityHref, recordHref, onNavigate, locale, copy }: FrameworkSectionProps) {
-  const reported = formatMoney(framework.subsequentReported, locale, { showBani: true });
-  const line =
-    framework.ceiling === null || framework.ratio === null
-      ? copy.lineBlankCeiling(reported)
-      : copy.line(formatMoney(framework.ceiling, locale, { showBani: true }), reported, formatRatio(framework.ratio, locale));
-  const { agreement } = framework;
+/** The framework agreement's region: the value card with the framework line (the children), then the list of subsequent contracts on the agreement as Record rows. */
+export function FrameworkSection({ framework, entityHref, recordHref, locale, copy, children }: FrameworkSectionProps) {
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
-      <Typography>{line}</Typography>
-      {agreement && (
-        <Typography>
-          {copy.agreement}:{" "}
-          <Link href={recordHref(agreement.code)} onClick={followLink(recordHref(agreement.code), onNavigate)}>
-            {agreement.title}
-          </Link>
-        </Typography>
-      )}
+    <Stack component="section" spacing={3} aria-label={copy.heading}>
+      {children}
       {framework.subsequent.length > 0 && (
-        <Stack spacing={0.5}>
-          <Typography variant="subtitle1" component="h3">
-            {copy.subsequentHeading}
-          </Typography>
+        <Stack spacing={1}>
+          <SectionHeading>{copy.subsequentHeading}</SectionHeading>
           <RecordResultList
-            rows={framework.subsequent.map((record) => ({ record, matchedField: null }))}
+            rows={framework.subsequent.map((record) => ({ record, matchedField: null, areaShare: null }))}
             entityHref={entityHref}
             recordHref={(record) => recordHref(record.code)}
             locale={locale}

@@ -4,7 +4,7 @@ import type { Fixture } from "./types.ts";
 import { coverageLensHand, coveragePageHand } from "./coverage.ts";
 import { entityOverviewHand, entityRecordsHand, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
-import { mainScreenHand } from "./main-screen.ts";
+import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
 import { methodologyBaseRates } from "./methodology.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
@@ -32,7 +32,7 @@ export { recordedCoverageLens, recordedCoveragePage, recordedMainScreen, recorde
  */
 export const fixtures = {
   MainScreen: [...recordedMainScreen, ...recordedSignalsMainScreen, ...mainScreenHand],
-  ZoomedCounty: recordedZoomedCounty,
+  ZoomedCounty: [...recordedZoomedCounty, ...zoomedCountyHand],
   FullResultsAuthorities: [...recordedFullResultsAuthorities, ...recordedSignalsFullResultsAuthorities, ...fullResultsAuthoritiesHand],
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...recordedSignalsFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...recordedSignalsFullResultsRecords, ...fullResultsRecordsHand],

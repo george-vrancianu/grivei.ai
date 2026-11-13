@@ -9,8 +9,9 @@ import { uatsTopology } from "../../samples/geo/uats.topo.ts";
 import { bucharest, noPurchases, typicalCounty, withUnknownUat } from "../../samples/uatMaps.ts";
 import type { Siruta, UatMap } from "../../types.ts";
 import { ZoomedCountyMap } from "./index.ts";
+import { onPanel } from "../../../workbench/index.ts";
 
-const meta = { title: "Domain/ZoomedCountyMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/ZoomedCountyMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

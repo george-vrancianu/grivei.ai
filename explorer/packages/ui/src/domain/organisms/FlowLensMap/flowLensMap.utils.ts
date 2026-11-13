@@ -1,3 +1,4 @@
+import { ADJUSTED_BLUE } from "../BaseMap/baseMap.utils.ts";
 import type { EntityRole, MoneyMap } from "../../types.ts";
 
 /** Largest bubble radius, in SVG units (the map is 640 wide). */
@@ -12,8 +13,11 @@ export const MIN_ARC_WIDTH = 1;
 export const HOME_COLOR = "#f3c969";
 export const OTHER_COLOR = "#e3e8ee";
 export const BUBBLE_FILL = "#0f766e";
-export const BUBBLE_OUTLINE = "#134e4a";
-export const ARC_COLOR = "#1e3a5f";
+export const BUBBLE_OUTLINE = BUBBLE_FILL;
+export const ARC_COLOR = ADJUSTED_BLUE;
+/** How opaque the arc and its arrowhead are drawn. The arrowhead is solid: blended on the panel it would fall below 3:1 (0.75 gave 2.6:1). */
+export const ARC_OPACITY = 0.85;
+export const ARROWHEAD_OPACITY = 1;
 
 /** The side a Flow lens map has for a page's role: a supplier's money comes from authority counties, an authority's goes to supplier counties. */
 export const flowSide = (role: EntityRole): MoneyMap["side"] => (role === "supplier" ? "AUTHORITY" : "SUPPLIER");

@@ -4,9 +4,11 @@ import { Button } from "../../../../../atoms/Button/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import { PageNav } from "../../../../molecules/PageNav/index.ts";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { CounterpartyRecordsData, EntityRef, EntityRole, RecordResult } from "../../../../types.ts";
@@ -37,26 +39,31 @@ export function CounterpartyPanel({
   picked, counterparty, records, loading, counterpartyRole, onClose, paging, onNavigate, entityHref, recordHref, locale, copy,
 }: CounterpartyPanelProps) {
   const { panel } = copy;
+  const asideSx = { flex: "1 1 380px", minWidth: 0 } as const;
   if (!picked) {
     return (
-      <Box component="aside" aria-label={panel.label}>
-        <Typography color="text.secondary">{panel.hint}</Typography>
+      <Box component="aside" aria-label={panel.label} sx={asideSx}>
+        <Stack spacing={0.5}>
+          <SectionHeading component="h3">{panel.eyebrow}</SectionHeading>
+          <Typography variant="body2" color="text.secondary">{panel.hint}</Typography>
+        </Stack>
       </Box>
     );
   }
   const pages = records && paging ? Math.ceil(records.records.count / Math.max(1, paging.pageSize)) : 1;
   return (
-    <Box component="aside" aria-label={panel.label} aria-busy={loading}>
+    <Box component="aside" aria-label={panel.label} aria-busy={loading} sx={asideSx}>
       <Stack spacing={1.5}>
+        <SectionHeading component="h3">{panel.eyebrow}</SectionHeading>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
-          <Typography variant="h6" component="h3">
+          <Typography variant="h4" component="h4">
             {panel.heading}{counterparty && <> <EntityLink entity={counterparty} href={entityHref(counterparty, counterpartyRole)} copy={copy.entityLink} /></>}
           </Typography>
           <Button size="small" onClick={onClose}>{panel.close}</Button>
         </Box>
         {records && (
           <Typography variant="body2" color="text.secondary">
-            {panel.total(formatMoney(records.total.awarded, locale), copy.recordCount(records.total.records, formatCount(records.total.records, records.total.estimated, locale)))}
+            {withNodes((amount) => panel.total(amount, copy.recordCount(records.total.records, formatCount(records.total.records, records.total.estimated, locale))), [<MoneyAmount bani={records.total.awarded} locale={locale} />])}
           </Typography>
         )}
         {loading && !records && (

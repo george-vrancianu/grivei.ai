@@ -155,7 +155,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -183,7 +184,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -200,7 +202,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -228,7 +231,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -256,7 +260,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -284,7 +289,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -312,7 +318,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -340,7 +347,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -368,7 +376,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -393,7 +402,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -421,7 +431,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -443,7 +454,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -471,7 +483,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -499,7 +512,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -533,7 +547,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -561,7 +576,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -578,7 +594,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -615,7 +632,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -659,7 +677,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -691,7 +710,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -723,7 +743,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -755,7 +776,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -787,7 +809,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -819,7 +842,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -851,7 +875,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -883,7 +908,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -915,7 +941,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -947,7 +974,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -979,7 +1007,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1011,7 +1040,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1043,7 +1073,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1075,7 +1106,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1107,7 +1139,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1147,7 +1180,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1191,7 +1225,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -1340,7 +1375,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1368,7 +1404,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1396,7 +1433,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1424,7 +1462,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1449,7 +1488,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1477,7 +1517,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -1511,7 +1552,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1539,7 +1581,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -1556,7 +1599,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -1614,7 +1658,8 @@
                       11
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1655,7 +1700,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1696,7 +1742,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1737,7 +1784,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1778,7 +1826,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1819,7 +1868,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1860,7 +1910,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1913,7 +1964,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -2029,7 +2081,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -2063,7 +2116,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -2109,7 +2163,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -2259,7 +2314,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2287,7 +2343,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2315,7 +2372,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2343,7 +2401,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2368,7 +2427,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2396,7 +2456,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -2430,7 +2491,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -2476,7 +2538,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2517,7 +2580,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2558,7 +2622,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2599,7 +2664,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2640,7 +2706,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2681,7 +2748,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -2817,7 +2885,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2845,7 +2914,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2873,7 +2943,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2901,7 +2972,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2926,7 +2998,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2954,7 +3027,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -2982,7 +3056,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -3016,7 +3091,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3044,7 +3120,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -3093,7 +3170,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3125,7 +3203,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3157,7 +3236,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3189,7 +3269,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3221,7 +3302,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3253,7 +3335,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3285,7 +3368,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3317,7 +3401,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -3448,7 +3533,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3476,7 +3562,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3504,7 +3591,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3532,7 +3620,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3560,7 +3649,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3588,7 +3678,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3616,7 +3707,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3644,7 +3736,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3669,7 +3762,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3697,7 +3791,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3714,7 +3809,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3736,7 +3832,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3764,7 +3861,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -3792,7 +3890,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -3826,7 +3925,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -3863,7 +3963,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3907,7 +4008,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": "50001"
               },
               {
                 "record": {
@@ -3939,7 +4041,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3971,7 +4074,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4003,7 +4107,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4035,7 +4140,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4067,7 +4173,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4099,7 +4206,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4131,7 +4239,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4163,7 +4272,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4195,7 +4305,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4227,7 +4338,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4259,7 +4371,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4291,7 +4404,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4323,7 +4437,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4355,7 +4470,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -4476,7 +4592,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -4510,7 +4627,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4538,7 +4656,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -4575,7 +4694,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4615,7 +4735,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -4765,7 +4886,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4793,7 +4915,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4810,7 +4933,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4838,7 +4962,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4866,7 +4991,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4894,7 +5020,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4922,7 +5049,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4950,7 +5078,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -4978,7 +5107,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5003,7 +5133,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5031,7 +5162,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5053,7 +5185,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5081,7 +5214,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5109,7 +5243,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -5143,7 +5278,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5171,7 +5307,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5188,7 +5325,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -5225,7 +5363,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5269,7 +5408,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5301,7 +5441,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5333,7 +5474,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5365,7 +5507,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5397,7 +5540,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5429,7 +5573,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5461,7 +5606,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5493,7 +5639,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5525,7 +5672,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5557,7 +5705,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5589,7 +5738,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5621,7 +5771,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5653,7 +5804,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5685,7 +5837,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5717,7 +5870,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5757,7 +5911,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5801,7 +5956,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -5938,7 +6094,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5966,7 +6123,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -5991,7 +6149,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6019,7 +6178,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -6053,7 +6213,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6081,7 +6242,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -6139,7 +6301,8 @@
                       11
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6180,7 +6343,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6221,7 +6385,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6262,7 +6427,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6303,7 +6469,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -6478,7 +6645,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6506,7 +6674,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6534,7 +6703,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6562,7 +6732,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6590,7 +6761,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6618,7 +6790,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6646,7 +6819,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6674,7 +6848,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6699,7 +6874,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6727,7 +6903,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6744,7 +6921,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6766,7 +6944,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6794,7 +6973,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6822,7 +7002,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -6856,7 +7037,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -6884,7 +7066,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -6938,7 +7121,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6999,7 +7183,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7048,7 +7233,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7097,7 +7283,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7146,7 +7333,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7195,7 +7383,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7244,7 +7433,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7293,7 +7483,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7342,7 +7533,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7391,7 +7583,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7440,7 +7633,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7489,7 +7683,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7538,7 +7733,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7587,7 +7783,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7636,7 +7833,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7685,7 +7883,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -7923,7 +8122,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -7951,7 +8151,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -7979,7 +8180,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8013,7 +8215,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -8041,7 +8244,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -8058,7 +8262,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8095,7 +8300,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8127,7 +8333,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8159,7 +8366,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8203,7 +8411,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8339,7 +8548,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8373,7 +8583,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8410,7 +8621,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8547,7 +8759,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8581,7 +8794,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               },
               {
                 "entity": {
@@ -8609,7 +8823,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8658,7 +8873,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8690,7 +8906,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8827,7 +9044,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8861,7 +9079,8 @@
                   "noValue": 0,
                   "frameworkCeilings": "0",
                   "estimated": false
-                }
+                },
+                "signalCount": 0
               }
             ]
           },
@@ -8898,7 +9117,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }

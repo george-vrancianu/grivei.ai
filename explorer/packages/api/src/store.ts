@@ -89,6 +89,11 @@ export interface RecordRow {
   published?: { authorityName: string | null; cpvCode: string | null; cpvDescription: string | null };
   /** The Signals it belongs to (#74), latest first; absent on a stand-in row. */
   signals?: SignalRow[];
+  /**
+   * Set by `searchRecords` only, when the filter is a supplier-side county (#103): the summed shares of the winners in that area, taken from the same
+   * rows as `searchTotal` (bani, null when none has a share). The resolver decides whether it is shown (several winners, a supplier-side county filter).
+   */
+  areaShare?: string | null;
 }
 
 /** One Record for its page: the list row plus what only the page shows. */
@@ -645,6 +650,19 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       if (!wanted.length) return { count, rows: [] };
       const { rows } = await pool.query(`SELECT ${RECORD_COLUMNS} FROM seap.record WHERE code = ANY($1)`, [wanted]);
       const byCode = new Map((await rowsOf(rows as RawRecord[])).map((r) => [r.code, r]));
+      if (filter.county && filter.countySide === "SUPPLIER") {
+        // the in-area share: the same WHERE, hence the same Record x winner rows that `searchTotal` sums per Record (grouped by record_code), so the shares add up to the Total
+        const codesParam = w.params.length + 1;
+        const shares = await cancellableQuery<{ record_code: string; share: string | null }>(
+          pool, signal,
+          `SELECT record_code, sum(share_bani)::text AS share FROM seap.search WHERE ${w.sql} AND record_code = ANY($${codesParam}) GROUP BY record_code`,
+          [...w.params, wanted],
+        );
+        for (const s of shares.rows) {
+          const found = byCode.get(s.record_code);
+          if (found) found.areaShare = s.share;
+        }
+      }
       return { count, rows: wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r) };
     },
     async searchMap(side, filter, { signal } = {}) {
