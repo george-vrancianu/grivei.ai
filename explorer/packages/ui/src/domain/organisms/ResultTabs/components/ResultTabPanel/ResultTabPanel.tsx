@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
+import { followLink } from "../../../../utils/followLink.ts";
 import { neutralLinkSx } from "../../../../utils/neutralLinkSx.ts";
 import { StateNote } from "../../../../molecules/StateNote/index.ts";
 
@@ -16,19 +17,30 @@ export interface ResultTabPanelProps {
   /** All results of the tab, to know whether "show all" has more to show. */
   count: number;
   emptyText: string;
-  /** What to offer under the empty sentence (a link); the empty state is its own component, `StateNote`, so it can grow. */
-  emptyAction?: ReactNode;
+  /** The link under the empty sentence (the empty state is its own component, `StateNote`); shown with both its text and URL. */
+  emptyLink?: { href: string; text: string } | undefined;
+  /** A plain click on a link goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
   /** "Show all n": the link's text and its URL; the link shows only with both, and when there are more results than shown. */
   showAll?: { href: string; text: string } | undefined;
 }
 
 /** One tab's panel: its rows, or one sentence when there are none, then the optional "show all" link. */
-export function ResultTabPanel({ id, tabId, selected, children, shown, count, emptyText, emptyAction, showAll }: ResultTabPanelProps) {
+export function ResultTabPanel({ id, tabId, selected, children, shown, count, emptyText, emptyLink, onNavigate, showAll }: ResultTabPanelProps) {
   return (
     <div role="tabpanel" id={id} aria-labelledby={tabId} hidden={!selected}>
       {selected && (
         <>
-          {shown === 0 ? <StateNote kind="empty" action={emptyAction}>{emptyText}</StateNote> : children}
+          {shown === 0 ? (
+            <StateNote
+              kind="empty"
+              action={emptyLink && <Link href={emptyLink.href} onClick={followLink(emptyLink.href, onNavigate)} sx={{ alignSelf: "flex-start" }}>{emptyLink.text}</Link>}
+            >
+              {emptyText}
+            </StateNote>
+          ) : (
+            children
+          )}
           {showAll && count > shown && (
             <Box sx={{ pt: 2, borderTop: 1, borderColor: "divider" }}>
               <Link href={showAll.href} sx={neutralLinkSx}>{showAll.text}</Link>

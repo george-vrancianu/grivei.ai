@@ -1,5 +1,5 @@
 import type { MainScreenQuery, MainScreenQueryVariables } from "../generated/operations.ts";
-import { moneyMap, ron, total } from "./builders.ts";
+import { moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
 import * as w from "./world.ts";
 
@@ -61,6 +61,27 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
             { record: w.rConsortium, matchedField: null, areaShare: ron(15_000_000) },
             { record: w.rContract, matchedField: null, areaShare: null },
           ] },
+        },
+      },
+    },
+  },
+  {
+    name: "empty-no-match-county-dates",
+    kind: "empty",
+    description: "nothing matches inside a supplier-side county and a date chip: zero totals and empty tabs, so the empty state's Coverage link has a county and dates to keep",
+    variables: { filter: { q: "zzzzzz", county: "RO-CJ", countySide: "SUPPLIER", from: "2023-01-01", to: "2023-12-31" } },
+    data: {
+      sources,
+      seap: {
+        search: {
+          filter: { qFolded: "zzzzzz", authority: null, supplier: null },
+          total: zeroTotal,
+          map: moneyMap({ side: "SUPPLIER" }),
+          goTo: null,
+          facets: { procedure: [] },
+          authorities: { count: 0, countEstimated: false, rows: [] },
+          suppliers: { count: 0, countEstimated: false, rows: [] },
+          records: { count: 0, rows: [] },
         },
       },
     },

@@ -5,6 +5,7 @@ import { navigate, useLocation } from "../../routing/location.tsx";
 import { currentUrl } from "../../routing/currentUrl.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { FULL_RESULTS_PAGE_SIZE, useFullResults } from "./hooks/useFullResults.ts";
 
@@ -39,6 +40,7 @@ export function SearchPage() {
           // Page links change state within this page (replace); leaving it, as "Back to results" does, is a step of its own (push).
           onNavigate={(href) => navigate(href, href.split("?")[0] === here ? "replace" : "push")}
           backHref={backHref}
+          emptyHref={coverageLensHref(locale, filter)}
           citeUrl={currentUrl()}
           order={order}
           // a different order is a different list: it starts at page 1 (the codec drops `page`)
@@ -46,7 +48,7 @@ export function SearchPage() {
           entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
           recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
           locale={locale}
-          copy={{ ...t.fullResults, heading: t.results.tabs, empty: t.results.empty, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
+          copy={{ ...t.fullResults, heading: t.results.tabs, empty: t.results.empty, emptyLink: t.results.emptyLink, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
         />
       )}
     </PageShell>
