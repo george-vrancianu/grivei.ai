@@ -17,6 +17,8 @@ const open = (url: string) => {
   openAt(url);
   return render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
 };
+// the search has the hasSignals chip, so each entity link carries it (#106) in front of the anchor
+const carried = "?search=hasSignals%3Dtrue";
 const chipsOf = (panel: HTMLElement, noun: RegExp) => within(panel).queryAllByRole("link", { name: noun });
 
 describe.each([
@@ -28,9 +30,9 @@ describe.each([
     const panel = await screen.findByRole("tabpanel", { name: new RegExp(`^${authorities}`) });
     await waitFor(() => expect(chipsOf(panel, noun)).toHaveLength(3));
     expect(chipsOf(panel, noun).map((c) => [c.textContent, c.getAttribute("href")])).toEqual([
-      [`${signals(8)}, SPITALUL EXEMPLU`, `${base}/authority/1000017#signals`],
-      [`${signals(3)}, COMUNA EXEMPLU`, `${base}/authority/1000009#signals`],
-      [`${signals(1).replace("1 Signals", "1 Signal").replace("1 Semnale", "1 Semnal")}, CNAIR DEMO SA`, `${base}/authority/2000031#signals`],
+      [`${signals(8)}, SPITALUL EXEMPLU`, `${base}/authority/1000017${carried}#signals`],
+      [`${signals(3)}, COMUNA EXEMPLU`, `${base}/authority/1000009${carried}#signals`],
+      [`${signals(1).replace("1 Signals", "1 Signal").replace("1 Semnale", "1 Semnal")}, CNAIR DEMO SA`, `${base}/authority/2000031${carried}#signals`],
     ]);
   });
 
@@ -39,7 +41,7 @@ describe.each([
     const panel = await screen.findByRole("tabpanel", { name: new RegExp(`^${suppliers}`) });
     await waitFor(() => expect(chipsOf(panel, noun)).toHaveLength(4));
     const hrefs = chipsOf(panel, noun).map((c) => c.getAttribute("href"));
-    expect(hrefs).toEqual([`${base}/supplier/2000007#signals`, `${base}/supplier/2000015#signals`, `${base}/supplier/2000023#signals`, `${base}/supplier/name-avocati-demo#signals`]);
+    expect(hrefs).toEqual([`${base}/supplier/2000007${carried}#signals`, `${base}/supplier/2000015${carried}#signals`, `${base}/supplier/2000023${carried}#signals`, `${base}/supplier/name-avocati-demo${carried}#signals`]);
     expect(chipsOf(panel, noun)[0]).toHaveTextContent(signals(6));
   });
 

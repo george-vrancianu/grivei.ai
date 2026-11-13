@@ -15,6 +15,7 @@ import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { entityHrefFrom } from "../../urlState/carriedSearch.ts";
 import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
@@ -153,7 +154,9 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               goTo={search.goTo}
               tab={toResultTab(tab)}
               onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
-              entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
+              entityHref={entityHrefFrom(locale, filter)}
+              // the card shows for an exact CUI or the entity's own name: carrying that as a topic would offer a meaningless "only Records matching" link
+              goToHref={entityHrefFrom(locale, {})}
               showAllHref={(name) => `${pathFor(locale, { name: "search" })}${encodeUrlState({ filter, ...(name !== DEFAULT_RESULT_TAB ? { tab: name } : {}) })}`}
               recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
               // An empty tab links to the Coverage lens with the county and dates kept, to check whether "nothing" means "not harvested".

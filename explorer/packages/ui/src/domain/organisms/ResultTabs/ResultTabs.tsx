@@ -41,6 +41,8 @@ export interface ResultTabsProps {
   onTabChange?: (tab: ResultTab) => void;
   /** Entity page URL for an entity in a role, built by the caller (language prefix, route). */
   entityHref: (entity: EntityRef, role: EntityRole) => string;
+  /** Entity page URL for the pinned "Go to page" card; leave it out and the card uses `entityHref`. For a caller whose entity links carry context the card's exact match does not need. */
+  goToHref?: (entity: EntityRef, role: EntityRole) => string;
   recordHref: (record: RecordResult["record"]) => string;
   /** Where "show all" goes for a tab (the full-results view); the link shows only when it returns a URL and the tab has more rows than shown. */
   showAllHref?: (tab: ResultTab) => string | undefined;
@@ -54,7 +56,7 @@ export interface ResultTabsProps {
 
 /** The results of a search: a pinned "Go to page" card, then Authorities, Suppliers and Records tabs (Suppliers by default). */
 export function ResultTabs(props: ResultTabsProps) {
-  const { authorities, suppliers, records, goTo, locale, copy, entityHref, recordHref, showAllHref, emptyHref, onNavigate } = props;
+  const { authorities, suppliers, records, goTo, locale, copy, entityHref, goToHref = entityHref, recordHref, showAllHref, emptyHref, onNavigate } = props;
   const [tab, select] = useResultTab(props.tab, props.onTabChange);
   const uid = useId();
   const tabId = (name: ResultTab) => `${uid}-tab-${name}`;
@@ -76,7 +78,7 @@ export function ResultTabs(props: ResultTabsProps) {
 
   return (
     <Stack spacing={2}>
-      {goTo && <GoToCard entity={goTo} href={entityHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
+      {goTo && <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
       <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label}>
         {RESULT_TABS.map((name) => (
           <Tab

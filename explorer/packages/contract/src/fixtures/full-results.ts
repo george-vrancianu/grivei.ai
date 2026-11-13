@@ -5,6 +5,7 @@ import type {
 } from "../generated/operations.ts";
 import { ron, total } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import { recordedMainScreen } from "./recorded/index.ts";
 import * as w from "./world.ts";
 
 /** `n` distinct Records for a long list: the same Record states cycled, each with its own public code. */
@@ -42,7 +43,14 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
   },
 ];
 
+const textQuery = recordedMainScreen.find((f) => f.name === "text-query")!.data.seap.search;
+
 export const fullResultsSuppliersHand: FixtureSet<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables> = [
+  {
+    name: "text-query", kind: "typical", description: "the suppliers of the recorded text query \"comuna\", first page (rows as the main screen's: test data for the carried-search link, #106)",
+    variables: { filter: { q: "comuna" }, limit: 50, offset: 0 },
+    data: { seap: { search: { total: textQuery.total, suppliers: textQuery.suppliers } } },
+  },
 ];
 
 export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullResultsRecordsQueryVariables> = [

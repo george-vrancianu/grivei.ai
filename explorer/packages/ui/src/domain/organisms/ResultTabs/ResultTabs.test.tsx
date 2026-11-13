@@ -81,6 +81,13 @@ describe("ResultTabs", () => {
     expect(card.compareDocumentPosition(screen.getByRole("tablist")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("links the Go to page card with goToHref when the caller gives one, while the rows keep entityHref", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.goTo)} goToHref={(entity, role) => `/plain/${role}/${entity.key}`} />);
+    const entity = resultSamples.goTo.goTo!;
+    expect(within(screen.getByRole("region", { name: "Go to page" })).getByRole("link", { name: /Open the page/ })).toHaveAttribute("href", `/plain/supplier/${entity.key}`);
+    expect(screen.getAllByRole("link").some((l) => l.getAttribute("href")?.startsWith("/explore/"))).toBe(true);
+  });
+
   it("opens the Go to page entity in the role its SEAP roles name, not the role of the rows shown", () => {
     const { key, displayName, identity } = resultSamples.goTo.goTo!;
     const authorityOnly = { key: "name-not-in-rows", displayName, identity, seap: { roles: ["AUTHORITY" as const] } };
