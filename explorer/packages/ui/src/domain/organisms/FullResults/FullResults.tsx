@@ -1,3 +1,4 @@
+import { Box } from "../../../atoms/Box/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
@@ -9,6 +10,8 @@ import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.
 import type { EntityRef, EntityResultPage, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
 import { followLink } from "../../utils/followLink.ts";
 import type { ResultTab } from "../ResultTabs/index.ts";
+import { CiteLine, type CiteLineCopy } from "../../molecules/CiteLine/index.ts";
+import { DEFAULT_RECORD_ORDER, OrderSelect, type OrderSelectCopy, type RecordOrder } from "../../molecules/OrderSelect/index.ts";
 import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
 import { PageNotice } from "./components/PageNotice/index.ts";
 import { ResultsSummary } from "./components/ResultsSummary/index.ts";
@@ -29,6 +32,10 @@ export interface FullResultsCopy {
   firstPage: string;
   /** The link back to the main screen's result tabs. */
   back: string;
+  /** The citable-view line: its name and the copy button's texts. */
+  cite: CiteLineCopy;
+  /** The order control of the Records tab. */
+  order: OrderSelectCopy;
   pagination: PageNavCopy;
   entityRow: EntityResultRowCopy;
   recordRow: RecordResultRowCopy;
@@ -47,6 +54,11 @@ export interface FullResultsProps {
   pageHref: (page: number) => string;
   /** A plain click on a link goes here instead of loading the page; leave it out and the browser follows the links. */
   onNavigate?: (href: string) => void;
+  /** The full URL of this view, scheme included, for the citable-view line (the line shows only with it). */
+  citeUrl?: string;
+  /** The Records tab's current order (the API's default when the URL names none); the control shows only with `onOrderChange`. */
+  order?: RecordOrder;
+  onOrderChange?: (order: RecordOrder) => void;
   /** Where "back to results" goes (the main screen with the same filter and tab); the link shows only with it. */
   backHref?: string;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
@@ -55,9 +67,12 @@ export interface FullResultsProps {
   copy: FullResultsCopy;
 }
 
-/** "Show all": one tab's rows for one page, with its count and links to the other pages. */
+/**
+ * "Show all" (A · Graf): one tab's rows for one page, with its count, the order control (Records only), the citable address of the view and links to the other pages.
+ * The page owns its width and gutter; this is the content.
+ */
 export function FullResults({
-  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, backHref, entityHref, recordHref, locale, copy,
+  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, backHref, entityHref, recordHref, locale, copy,
 }: FullResultsProps) {
   const { tab } = results;
   const { count } = results.page;
@@ -82,13 +97,17 @@ export function FullResults({
     );
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {backHref && (
-        <Link href={backHref} onClick={followLink(backHref, onNavigate)}>
+        <Link href={backHref} onClick={followLink(backHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
           {copy.back}
         </Link>
       )}
-      <ResultsSummary heading={copy.heading[tab]} count={count} estimated={estimated} range={range} locale={locale} />
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 2 }}>
+        <ResultsSummary heading={copy.heading[tab]} count={count} estimated={estimated} range={range} locale={locale} />
+        {tab === "records" && onOrderChange && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
+      </Box>
+      {citeUrl && <CiteLine framed url={citeUrl} copy={copy.cite} />}
       {count === 0 && <PageNotice text={copy.empty[tab]} />}
       {pastTheEnd && (
         <PageNotice

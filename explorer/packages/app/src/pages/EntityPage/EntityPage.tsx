@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import type { RecordFilter } from "@grivei/contract";
-import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, Stack, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -170,13 +170,4 @@ function tabCounts(state: ReturnType<typeof useEntityPage>, filter: RecordFilter
 /** The address of this view as a reader would cite it: host, path and query, without the scheme. */
 function citeUrl(): string {
   return `${window.location.host}${window.location.pathname}${window.location.search}`;
-}
-
-/** The bare page for the states with no entity to show: the data could not be loaded, or no entity has that key. */
-function PageShell({ children }: { children: ReactNode }) {
-  return (
-    <Stack component="main" spacing={2} sx={(theme) => ({ pt: 3, pb: 5, px: theme.graf.layout.gutter, maxWidth: theme.graf.layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" })}>
-      {children}
-    </Stack>
-  );
 }

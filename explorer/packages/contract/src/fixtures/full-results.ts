@@ -52,6 +52,11 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
     data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(0, 50) } } } },
   },
   {
+    name: "page-1-by-date", kind: "typical", description: "the same 120 Records ordered by date, newest first (the order control's choice): page 1 of 120",
+    variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 0, order: "DATE_DESC" },
+    data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(0, 50) } } } },
+  },
+  {
     name: "page-2-of-3-middle", kind: "typical", description: "a middle page: Records 51 to 100 of 120",
     variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 50 },
     data: { seap: { search: { total: total({ awarded: ron(86_000_000), records: 120 }), records: { count: 120, rows: rowsFrom(50, 50) } } } },

@@ -1,0 +1,80 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderInUi } from "../../../testing/render.tsx";
+import { CopyLinkButton } from "./index.ts";
+
+const copy = { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" };
+const URL_TO_COPY = "https://grivei.ai/explore/record/CAN1145000";
+
+/** A clipboard whose `writeText` the test controls. */
+function mockClipboard(writeText: (text: string) => Promise<void>) {
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("CopyLinkButton", () => {
+  it("is a button named by its label, with nothing said before it is used", () => {
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("");
+  });
+
+  it("copies the URL on a click and says so in a polite live region", async () => {
+    const user = userEvent.setup();
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Link copied");
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(await navigator.clipboard.readText()).toBe(URL_TO_COPY);
+  });
+
+  it("works from the keyboard", async () => {
+    const user = userEvent.setup();
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Copy link" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("Link copied")).toBeVisible();
+    await user.keyboard(" ");
+    expect(await navigator.clipboard.readText()).toBe(URL_TO_COPY);
+  });
+
+  it("says it could not copy when the clipboard refuses", async () => {
+    const user = userEvent.setup();
+    mockClipboard(() => Promise.reject(new Error("denied")));
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Could not copy the link");
+  });
+
+  it("says it could not copy when there is no clipboard at all", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Could not copy the link");
+  });
+
+  it("forgets the confirmation after a few seconds, and copies again on another click", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const writeText = vi.fn(() => Promise.resolve());
+      mockClipboard(writeText); // after setup: user-event installs its own clipboard
+      renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+      await user.click(screen.getByRole("button", { name: "Copy link" }));
+      expect(await screen.findByText("Link copied")).toBeVisible();
+      vi.advanceTimersByTime(5000);
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(""));
+      await user.click(screen.getByRole("button", { name: "Copy link" }));
+      expect(writeText).toHaveBeenCalledTimes(2);
+      expect(writeText).toHaveBeenCalledWith(URL_TO_COPY);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

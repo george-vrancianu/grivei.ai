@@ -1,5 +1,5 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
+import { Card } from "../../../../../atoms/Card/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
@@ -30,7 +30,7 @@ export interface SuspectNoteProps {
 export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy }: SuspectNoteProps) {
   const { threshold } = suspect;
   return (
-    <Stack component="section" spacing={0.5} aria-label={copy.heading}>
+    <Card component="section" aria-label={copy.heading} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 0.5 }}>
       <Typography variant="h6" component="h2">
         {copy.heading}
       </Typography>
@@ -41,6 +41,6 @@ export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy
           {copy.methodology}
         </Link>
       </Typography>
-    </Stack>
+    </Card>
   );
 }

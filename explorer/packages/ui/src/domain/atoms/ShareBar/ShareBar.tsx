@@ -1,6 +1,6 @@
-import { LinearProgress } from "../../../../../atoms/LinearProgress/index.ts";
-import { color, radius, size } from "../../../../../theme/tokens.ts";
-import { shareBarPercent } from "../../entityOverview.utils.ts";
+import { LinearProgress } from "../../../atoms/LinearProgress/index.ts";
+import { color, radius, size } from "../../../theme/tokens.ts";
+import { shareBarPercent } from "./shareBar.utils.ts";
 
 export interface ShareBarProps {
   /** A share of the total, 0 to 1; null (no total to share) draws an empty track. */

@@ -133,7 +133,9 @@ describe("a Record page", () => {
     const hrefs = framework.getAllByRole("link").map((l) => l.getAttribute("href")).filter((h) => h?.startsWith("/explore/record/"));
     expect(hrefs).toEqual(["/explore/record/CAN9800001~2", "/explore/record/CAN9800001~3"]);
     expect(valueOf("Counted value")).toHaveTextContent("a framework ceiling is not money awarded");
-    expect(screen.getByText("Framework ceiling")).toBeInTheDocument();
+    // the badge is over the title, and the value card says the ceiling is not summed
+    expect(within(screen.getByRole("heading", { level: 1 }).parentElement!).getByText("Framework ceiling")).toBeInTheDocument();
+    expect(screen.getByText("ceiling, not summed")).toBeInTheDocument();
   });
 
   it("points a subsequent contract back to its framework agreement, and a click follows it without a page load", async () => {
@@ -266,6 +268,26 @@ describe("a Record page", () => {
     await userEvent.setup().click(region("Signals this Record belongs to").getByRole("link", { name: "Achizitie DA98000002" }));
     expect(window.location.pathname).toBe("/explore/record/DA98000002");
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
+  });
+});
+
+describe("a Record page's citable address and Check in SEAP button", () => {
+  it.each([
+    ["/explore", "Copy link", "Link copied", "Check in SEAP"],
+    ["/ro/explore", "Copiază linkul", "Link copiat", "Verifică în SEAP"],
+  ])("shows the Record's URL under the title and copies it (%s)", async (prefix, button, done, checkIn) => {
+    const record = recorded("contract-single-winner");
+    open(pathOf(record.code, prefix));
+    const title = await screen.findByRole("heading", { level: 1, name: record.title });
+    const header = within(title.parentElement!);
+    const url = `${window.location.origin}${pathOf(record.code, prefix)}`;
+    expect(header.getByText(url.replace(/^https?:\/\//, ""))).toBeVisible();
+    // the primary button leads to the Source, like the provenance link
+    expect(header.getByRole("link", { name: checkIn })).toHaveAttribute("href", record.provenance.url!);
+
+    await userEvent.setup().click(header.getByRole("button", { name: button }));
+    expect(await header.findByText(done)).toBeVisible();
+    expect(await navigator.clipboard.readText()).toBe(url);
   });
 });
 

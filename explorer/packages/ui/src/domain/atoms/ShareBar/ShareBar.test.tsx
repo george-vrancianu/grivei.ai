@@ -1,4 +1,4 @@
-import { renderInUi } from "../../../../../testing/render.tsx";
+import { renderInUi } from "../../../testing/render.tsx";
 import { ShareBar } from "./index.ts";
 
 describe("ShareBar", () => {

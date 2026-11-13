@@ -139,6 +139,52 @@ describe("the full-results view against the recorded API answers", () => {
   });
 });
 
+describe("the full-results view's order and citable address", () => {
+  it("shows the order control on the Records tab only, on the API's default order", async () => {
+    openAt("/explore/search?tab=records");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    expect(await screen.findByRole("combobox", { name: "order" })).toHaveValue("VALUE_DESC");
+  });
+
+  it("has no order control on the Suppliers tab", async () => {
+    openAt("/explore/search");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    await screen.findByRole("heading", { name: "Suppliers 3" });
+    expect(screen.queryByRole("combobox", { name: "order" })).not.toBeInTheDocument();
+  });
+
+  it("puts the chosen order in the URL, asks the API for it and starts again at page 1", async () => {
+    openAt("/explore/search?from=2021-01-01&tab=records&page=2");
+    const { client, sent } = fixtureClient();
+    render(<App client={client} />);
+    const user = userEvent.setup();
+
+    await user.selectOptions(await screen.findByRole("combobox", { name: "order" }), "date, newest first");
+    await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records&order=date-desc"));
+    expect(await screen.findByText(/^Showing 1–/)).toBeVisible();
+    expect(sent.at(-1)).toMatchObject({ operation: "FullResultsRecords", variables: { order: "DATE_DESC", offset: 0 } });
+    expect(screen.getByRole("combobox", { name: "order" })).toHaveValue("DATE_DESC");
+    expect(within(pages()).getByRole("link", { name: "Page 2" })).toHaveAttribute("href", "/explore/search?from=2021-01-01&tab=records&page=2&order=date-desc");
+  });
+
+  it.each([
+    ["/explore/search?from=2021-01-01&tab=records&page=2", "Copy link", "Link copied"],
+    ["/ro/explore/search?from=2021-01-01&tab=records&page=2", "Copiază linkul", "Link copiat"],
+  ])("shows the view's address and copies it (%s)", async (url, button, done) => {
+    openAt(url);
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: button }));
+    expect(await screen.findByText(done)).toBeVisible();
+    const full = `${window.location.origin}${url}`;
+    expect(await navigator.clipboard.readText()).toBe(full);
+    expect(screen.getByText(full.replace(/^https?:\/\//, ""))).toBeVisible();
+  });
+});
+
 const waitForPages = async () => {
   await screen.findByText(/^Showing/);
   return pages();

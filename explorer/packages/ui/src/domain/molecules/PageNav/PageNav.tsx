@@ -2,9 +2,26 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { color, font, radius, size, type } from "../../../theme/tokens.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { pageItems } from "./pageNav.utils.ts";
+
+/** A page link or step as a bordered box (the drawing's pager); the current page is filled with the accent. */
+const boxSx = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: size.toggle,
+  minWidth: size.toggle,
+  px: 1.5,
+  border: `1px solid ${color.lineStrong}`,
+  borderRadius: `${radius.control}px`,
+  fontFamily: font.mono,
+  fontSize: type.label.size,
+  color: color.text,
+} as const;
+const currentSx = { bgcolor: color.accent, borderColor: color.accent, color: color.onAccent, fontWeight: 600, "&:hover": { color: color.onAccent } } as const;
 
 export interface PageNavCopy {
   /** The navigation landmark's accessible name. */
@@ -30,18 +47,18 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
   const format = (n: number) => formatCount(n, false, locale);
   const step = (target: number, text: string, enabled: boolean) =>
     enabled ? (
-      <Link href={pageHref(target)} onClick={followLink(pageHref(target), onNavigate)} rel={target < page ? "prev" : "next"}>
+      <Link href={pageHref(target)} onClick={followLink(pageHref(target), onNavigate)} rel={target < page ? "prev" : "next"} underline="none" sx={boxSx}>
         {text}
       </Link>
     ) : (
       // Nothing to follow: the edge is clear from the page links, so no stray "Previous" for a screen reader.
-      <Typography component="span" color="text.disabled" aria-hidden="true">
+      <Typography component="span" variant="label" aria-hidden="true" sx={{ ...boxSx, color: color.muted, borderColor: color.line }}>
         {text}
       </Typography>
     );
   return (
     <nav aria-label={copy.label}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+      <Stack direction="row" useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
         {step(page - 1, copy.previous, page > 1)}
         {pageItems(page, pages).map((item, i) =>
           item === "gap" ? (
@@ -55,8 +72,8 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
               onClick={followLink(pageHref(item), onNavigate)}
               aria-label={copy.page(format(item))}
               aria-current={item === page ? "page" : undefined}
-              underline={item === page ? "none" : "always"}
-              sx={item === page ? { fontWeight: "bold" } : undefined}
+              underline="none"
+              sx={item === page ? { ...boxSx, ...currentSx } : boxSx}
             >
               {format(item)}
             </Link>

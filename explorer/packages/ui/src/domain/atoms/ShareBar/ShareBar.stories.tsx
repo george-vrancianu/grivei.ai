@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { localeOf } from "../../../../samples/copy.ts";
-import { formatPercent } from "../../../../utils/formatPercent.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import { localeOf } from "../../samples/copy.ts";
+import { formatPercent } from "../../utils/formatPercent.ts";
 import { ShareBar } from "./index.ts";
 
-const meta = { title: "Domain/EntityOverview/ShareBar", component: ShareBar } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/ShareBar", component: ShareBar } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj;
 

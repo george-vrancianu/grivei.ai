@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { sentence } from "../../../testing/sentence.ts";
 import { renderInUi } from "../../../testing/render.tsx";
@@ -17,6 +18,7 @@ function show(record: RecordPageData, locale: Locale = "en") {
   return renderInUi(
     <RecordDetail
       record={record}
+      citeUrl={`https://grivei.ai/explore/record/${record.code}`}
       entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
       recordHref={(code) => `/explore/record/${code}`}
       methodologyHref="/explore/methodology"
@@ -33,6 +35,7 @@ describe("RecordDetail Signals", () => {
     renderInUi(
       <RecordDetail
         record={frameworkOverrunPage}
+        citeUrl="https://grivei.ai/explore/record/CAN9000001"
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(code) => `/explore/record/${code}`}
         methodologyHref="/explore/methodology"
@@ -67,16 +70,71 @@ describe("RecordDetail Signals", () => {
   });
 });
 
-describe("RecordDetail", () => {
-  it("shows the title as the heading, with date, kind, procedure, contract type and CPV as published", () => {
-    show(contractRecord);
-    expect(screen.getByRole("heading", { level: 1, name: contractRecord.title })).toBeVisible();
+describe("RecordDetail actions and value card", () => {
+  it.each(["en", "ro"] as const)("has a 44 px primary Check in SEAP button that opens the Source in a new tab (%s)", (locale) => {
+    show(directPurchaseRecord, locale);
+    const name = locale === "en" ? "Check in SEAP" : "Verifică în SEAP";
     const header = within(screen.getByRole("heading", { level: 1 }).parentElement!);
-    expect(header.getByText("20 January 2025")).toBeVisible();
+    const button = header.getByRole("link", { name });
+    expect(button).toHaveAttribute("href", "/source/seap/DA98000001");
+    expect(button).toHaveAttribute("target", "_blank");
+    expect(button).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    expect(button).toHaveStyle({ minHeight: "44px" });
+  });
+
+  it("has no Check in SEAP button when the Source has no page for the Record", () => {
+    show(noPublicPage);
+    const header = within(screen.getByRole("heading", { level: 1 }).parentElement!);
+    expect(header.queryByRole("link")).toBeNull();
+  });
+
+  it.each(["en", "ro"] as const)("shows the citable URL under the title and copies it with the copy-link button (%s)", async (locale) => {
+    const user = userEvent.setup();
+    show(directPurchaseRecord, locale);
+    const header = within(screen.getByRole("heading", { level: 1 }).parentElement!);
+    expect(header.getByText("grivei.ai/explore/record/DA98000001")).toBeVisible();
+    await user.click(header.getByRole("button", { name: locale === "en" ? "Copy link" : "Copiază linkul" }));
+    expect(await header.findByRole("status")).toHaveTextContent(locale === "en" ? "Link copied" : "Link copiat");
+    expect(await navigator.clipboard.readText()).toBe("https://grivei.ai/explore/record/DA98000001");
+  });
+
+  it("says a framework ceiling is not summed, with the bar's share written in the line", () => {
+    show(frameworkPage);
+    expect(screen.getByText("ceiling, not summed")).toBeVisible();
+    expect(section("Framework agreement").getByText(sentence(/\(50%\)/))).toBeVisible();
+  });
+
+  it("does not say it for a counted value", () => {
+    show(contractRecord);
+    expect(screen.queryByText("ceiling, not summed")).toBeNull();
+  });
+
+  it("names a consortium's size in the winners heading", () => {
+    show(consortiumPage);
+    expect(screen.getByRole("heading", { level: 2, name: "Winners · consortium of 2" })).toBeVisible();
+  });
+});
+
+describe("RecordDetail", () => {
+  it("shows the kind as a tag, the code and the badges over the title, which is the page heading", () => {
+    show(contractRecord);
+    const title = screen.getByRole("heading", { level: 1, name: contractRecord.title });
+    expect(title).toBeVisible();
+    const header = within(title.parentElement!);
     expect(header.getByText("Contract")).toBeVisible();
-    expect(header.getByText("Licitatie deschisa")).toBeVisible();
-    expect(screen.getByText("Servicii")).toBeVisible();
-    expect(screen.getByText("50720000-8 Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)")).toBeVisible();
+    expect(header.getByText(contractRecord.code)).toBeVisible();
+    for (const badge of contractRecord.badges) expect(header.getByText(sampleCopy.badges("en")[badge].label)).toBeVisible();
+  });
+
+  it("shows date, procedure, contract type and CPV as published in the Record's panel, with the authority", () => {
+    show(contractRecord);
+    const panel = section("The Record");
+    expect(panel.getByRole("heading", { level: 2, name: "The Record" })).toBeVisible();
+    expect(panel.getByText("20 January 2025")).toBeVisible();
+    expect(panel.getByText("Licitatie deschisa")).toBeVisible();
+    expect(panel.getByText("Servicii")).toBeVisible();
+    expect(panel.getByText("50720000-8 Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)")).toBeVisible();
+    expect(panel.getByRole("link", { name: contractRecord.authority.displayName })).toHaveAttribute("href", `/explore/authority/${contractRecord.authority.key}`);
   });
 
   it("names a DAN a direct purchase award notification, in both languages", () => {

@@ -20,6 +20,7 @@ const detail =
     return (
       <RecordDetail
         record={record}
+        citeUrl={`https://grivei.ai/explore/record/${record.code}`}
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(code) => `/explore/record/${code}`}
         methodologyHref="/explore/methodology"

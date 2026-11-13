@@ -8,7 +8,7 @@ import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import type { Bani, OverviewProcedure } from "../../../../types.ts";
 import { shareOfTotal } from "../../entityOverview.utils.ts";
-import { ShareBar } from "../ShareBar/index.ts";
+import { ShareBar } from "../../../../atoms/ShareBar/index.ts";
 import { listSx } from "../../../../utils/listSx.ts";
 
 export interface ProcedureTypesCopy {

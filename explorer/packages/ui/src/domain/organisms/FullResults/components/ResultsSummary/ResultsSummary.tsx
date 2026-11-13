@@ -18,11 +18,11 @@ export interface ResultsSummaryProps {
 export function ResultsSummary({ heading, count, estimated, range, locale }: ResultsSummaryProps) {
   return (
     <Stack spacing={0.5}>
-      <Typography variant="h5" component="h2">
+      <Typography variant="h3" component="h2">
         {heading} <ApproxCount count={count} estimated={estimated} locale={locale} />
       </Typography>
       {range && (
-        <Typography color="text.secondary">
+        <Typography variant="meta" component="p">
           {range.text(formatCount(range.from, false, locale), formatCount(range.to, false, locale), formatCount(count, estimated, locale))}
         </Typography>
       )}

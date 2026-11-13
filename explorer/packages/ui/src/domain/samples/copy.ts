@@ -14,6 +14,9 @@ import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts"
 import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
+import type { CiteLineCopy } from "../molecules/CiteLine/index.ts";
+import type { CopyLinkButtonCopy } from "../molecules/CopyLinkButton/index.ts";
+import type { OrderSelectCopy } from "../molecules/OrderSelect/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
@@ -31,11 +34,23 @@ import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
 import type { ZoomedCountyMapCopy } from "../organisms/ZoomedCountyMap/index.ts";
 
-const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
+const copyLink: Record<Locale, CopyLinkButtonCopy> = {
+  en: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" },
+  ro: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" },
+};
+const citeThisView = (locale: Locale): CiteLineCopy => ({ label: locale === "ro" ? "Citează această vizualizare" : "Cite this view", copyLink: copyLink[locale] });
+const citeThisRecord = (locale: Locale): CiteLineCopy => ({ label: locale === "ro" ? "Adresa acestei înregistrări" : "Address of this Record", copyLink: copyLink[locale] });
+const orderSelect = (locale: Locale): OrderSelectCopy =>
+  locale === "ro"
+    ? { label: "ordine", options: { VALUE_DESC: "valoare, de la cea mai mare", DATE_DESC: "dată, cele mai noi întâi", DATE_ASC: "dată, cele mai vechi întâi" } }
+    : { label: "order", options: { VALUE_DESC: "value, high to low", DATE_DESC: "date, newest first", DATE_ASC: "date, oldest first" } };
+
+const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">> = {
   en: {
     heading: {
       kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+      panel: "The Record",
     },
     value: {
       published: "Value as published",
@@ -51,6 +66,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     parties: {
       authority: "Contracting authority",
       winners: "Winners",
+      consortiumOf: (_n, formatted) => `consortium of ${formatted}`,
       share: (amount) => `equal share ${amount}`,
       convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
     },
@@ -93,6 +109,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     heading: {
       kinds: { DA: "Achiziție directă (DA)", DAN: "Notificare de atribuire a cumpărării directe (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Anunț de atribuire" },
       facets: { code: "Cod", date: "Data", kind: "Fel înregistrare", procedure: "Procedură", contractType: "Tip contract", cpv: "CPV" },
+      panel: "Înregistrarea",
     },
     value: {
       published: "Valoare publicată",
@@ -108,6 +125,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow">> = {
     parties: {
       authority: "Autoritate contractantă",
       winners: "Câștigători",
+      consortiumOf: (_n, formatted) => `consorțiu de ${formatted}`,
       share: (amount) => `parte egală ${amount}`,
       convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
     },
@@ -361,6 +379,8 @@ const fullResults = (locale: Locale): FullResultsCopy =>
         noRowsHere: "Nu sunt rezultate pe această pagină: numărul de mai sus este estimat.",
         firstPage: "Mergi la pagina 1",
         back: "Înapoi la rezultate",
+        cite: citeThisView(locale),
+        order: orderSelect(locale),
         pagination: { label: "Paginile rezultatelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
         entityRow: entityRow(locale),
         recordRow: recordRow(locale),
@@ -373,6 +393,8 @@ const fullResults = (locale: Locale): FullResultsCopy =>
         noRowsHere: "There are no results on this page: the count above is an estimate.",
         firstPage: "Go to page 1",
         back: "Back to results",
+        cite: citeThisView(locale),
+        order: orderSelect(locale),
         pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
         entityRow: entityRow(locale),
         recordRow: recordRow(locale),
@@ -713,7 +735,10 @@ export const sampleCopy = {
   party: (locale: Locale): PartyNameCopy => ({ naturalPerson: "Persoană fizică", entityLink: entityLink[locale] }),
   dataThrough: (locale: Locale): DataThroughDateCopy => ({ through: locale === "ro" ? "date până la" : "data through" }),
   entityHeader: (locale: Locale): EntityHeaderCopy => entityHeader[locale],
-  recordDetail: (locale: Locale): RecordDetailCopy => ({ ...recordDetail[locale], recordRow: recordRow(locale) }),
+  recordDetail: (locale: Locale): RecordDetailCopy => ({ ...recordDetail[locale], cite: citeThisRecord(locale), recordRow: recordRow(locale) }),
+  copyLink: (locale: Locale): CopyLinkButtonCopy => copyLink[locale],
+  citeThisView,
+  orderSelect,
   entityPageLayout: (locale: Locale): EntityPageLayoutCopy => entityPageLayout[locale],
   mainScreenLayout: (locale: Locale): MainScreenLayoutCopy => mainScreenLayout[locale],
   baseMap: (locale: Locale): BaseMapCopy =>

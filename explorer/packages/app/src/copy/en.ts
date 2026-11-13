@@ -113,6 +113,8 @@ export const en: Copy = {
     noRowsHere: "There are no results on this page: the count above is an estimate.",
     firstPage: "Go to page 1",
     back: "Back to results",
+    cite: { label: "Cite this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } },
+    order: { label: "order", options: { VALUE_DESC: "value, high to low", DATE_DESC: "date, newest first", DATE_ASC: "date, oldest first" } },
     pagination: { label: "Result pages", previous: "Previous", next: "Next", page: (n) => `Page ${n}` },
   },
   mainScreenLayout: {
@@ -229,6 +231,7 @@ export const en: Copy = {
     heading: {
       kinds: { DA: "Direct purchase (DA)", DAN: "Direct purchase award notification (DAN)", CONTRACT: "Contract", AWARD_NOTICE: "Award notice" },
       facets: { code: "Code", date: "Date", kind: "Kind", procedure: "Procedure", contractType: "Contract type", cpv: "CPV" },
+      panel: "The Record",
     },
     value: {
       published: "Value as published",
@@ -244,6 +247,7 @@ export const en: Copy = {
     parties: {
       authority: "Contracting authority",
       winners: "Winners",
+      consortiumOf: (_n, formatted) => `consortium of ${formatted}`,
       share: (amount) => `equal share ${amount}`,
       convention: "Each member's equal share is a counting convention, not a figure SEAP publishes. The value above is the full value of the contract.",
     },
@@ -264,6 +268,7 @@ export const en: Copy = {
       agreement: "Awarded under the framework agreement",
       subsequentHeading: "Subsequent contracts",
     },
+    cite: { label: "Address of this Record", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } },
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
