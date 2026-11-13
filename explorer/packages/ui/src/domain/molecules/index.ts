@@ -10,6 +10,8 @@ export * from "./PageNav/index.ts";
 export * from "./ToggleChip/index.ts";
 export * from "./ChipGroup/index.ts";
 export * from "./SearchBar/index.ts";
+export * from "./SourceEyebrow/index.ts";
+export * from "./StateNote/index.ts";
 export * from "./SignalBadge/index.ts";
 export * from "./CoverageCell/index.ts";
 export * from "./CoverageGridLegend/index.ts";

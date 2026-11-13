@@ -38,9 +38,11 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
   const { record, matchedField } = row;
   const keys = signalKeys(record.signals);
   return (
-    <Stack spacing={0.5} component="li" sx={{ py: 1.5 }}>
+    <Stack spacing={0.75} component="li" sx={{ py: 1.75 }}>
       <Typography component="div" variant="subtitle1">
-        <Link href={recordHref}>{record.title}</Link>
+        <Link href={recordHref} color="text.primary" underline="hover" sx={{ fontWeight: 500, lineHeight: 1.4, textWrap: "pretty" }}>
+          {record.title}
+        </Link>
       </Typography>
       <RecordValueLine record={record} locale={locale} copy={copy} />
       {signalBadges && record.signals.length > 0 && (

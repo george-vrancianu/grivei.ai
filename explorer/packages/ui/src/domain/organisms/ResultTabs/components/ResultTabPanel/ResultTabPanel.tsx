@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { StateNote } from "../../../../molecules/StateNote/index.ts";
 
 export interface ResultTabPanelProps {
   /** The `id`s that tie the panel to its tab. */
@@ -14,18 +15,24 @@ export interface ResultTabPanelProps {
   /** All results of the tab, to know whether "show all" has more to show. */
   count: number;
   emptyText: string;
+  /** What to offer under the empty sentence (a link); the empty state is its own component, `StateNote`, so it can grow. */
+  emptyAction?: ReactNode;
   /** "Show all n": the link's text and its URL; the link shows only with both, and when there are more results than shown. */
   showAll?: { href: string; text: string } | undefined;
 }
 
 /** One tab's panel: its rows, or one sentence when there are none, then the optional "show all" link. */
-export function ResultTabPanel({ id, tabId, selected, children, shown, count, emptyText, showAll }: ResultTabPanelProps) {
+export function ResultTabPanel({ id, tabId, selected, children, shown, count, emptyText, emptyAction, showAll }: ResultTabPanelProps) {
   return (
     <div role="tabpanel" id={id} aria-labelledby={tabId} hidden={!selected}>
       {selected && (
         <>
-          {shown === 0 ? <Typography>{emptyText}</Typography> : children}
-          {showAll && count > shown && <Link href={showAll.href}>{showAll.text}</Link>}
+          {shown === 0 ? <StateNote kind="empty" action={emptyAction}>{emptyText}</StateNote> : children}
+          {showAll && count > shown && (
+            <Box sx={{ pt: 2, borderTop: 1, borderColor: "divider" }}>
+              <Link href={showAll.href}>{showAll.text}</Link>
+            </Box>
+          )}
         </>
       )}
     </div>

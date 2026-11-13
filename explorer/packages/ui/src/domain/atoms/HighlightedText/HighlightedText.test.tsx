@@ -1,4 +1,6 @@
 import { render } from "@testing-library/react";
+import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { HighlightedText } from "./index.ts";
 
 function marks(container: HTMLElement) {
@@ -65,5 +67,15 @@ describe("HighlightedText", () => {
     const { container } = render(<HighlightedText text={text} highlights={[[0, 7], [start, end]]} />);
     expect(marks(container)).toEqual(["Șantier", "școală"]);
     expect(container.textContent).toBe(text);
+  });
+});
+
+describe("HighlightedText look", () => {
+  it("fills a mark with the accent colour and dark text, and leaves the rest of the text unstyled", () => {
+    const { container } = renderInUi(<HighlightedText text="Lucrări străzi Brașov" highlights={[[8, 14]]} />);
+    const mark = container.querySelector("mark")!;
+    expect(mark).toHaveStyle({ backgroundColor: color.accent, color: color.onAccent });
+    expect(mark.textContent).toBe("străzi");
+    expect(container.firstElementChild!).not.toHaveStyle({ backgroundColor: color.accent });
   });
 });

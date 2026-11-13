@@ -27,7 +27,10 @@ describe("MainScreenLayout", () => {
     expect(within(map).getByRole("group", { name: "Map lens" })).toBeVisible();
     expect(within(map).getByText("the money map")).toBeVisible();
     const results = screen.getByRole("region", { name: "Results" });
-    expect(within(results).getByText("the total")).toBeVisible();
+    // the Total is a band across the page, above both columns, not inside the results column
+    expect(screen.getByText("the total")).toBeVisible();
+    expect(within(results).queryByText("the total")).toBeNull();
+    expect(within(map).queryByText("the total")).toBeNull();
     expect(within(results).getByText("the results")).toBeVisible();
   });
 
@@ -86,7 +89,7 @@ describe("MainScreenLayout", () => {
     const css = [...document.querySelectorAll("style")].map((s) => s.textContent).join("");
     const cls = [...grid.classList].find((c) => c.startsWith("css-"))!;
     expect(css).toMatch(new RegExp(`\\.${cls}\\{[^}]*grid-template-columns:minmax\\(0, ?1fr\\)`));
-    expect(css).toMatch(/@media \(min-width:900px\)\{\.[\w-]+\{grid-template-columns:minmax\(0, ?3fr\) minmax\(0, ?2fr\)/);
+    expect(css).toMatch(/@media \(min-width:900px\)\{\.[\w-]+\{grid-template-columns:minmax\(0, ?1fr\) minmax\(0, ?1\.15fr\)/);
   });
 });
 

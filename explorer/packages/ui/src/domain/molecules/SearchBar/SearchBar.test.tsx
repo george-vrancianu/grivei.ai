@@ -4,6 +4,7 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
+import { size } from "../../../theme/tokens.ts";
 import { SearchBar } from "./index.ts";
 
 const en = sampleCopy.searchBar("en");
@@ -148,5 +149,17 @@ describe("SearchBar", () => {
     const ro = sampleCopy.searchBar("ro");
     setup({ copy: ro });
     expect(screen.getByRole("searchbox", { name: ro.label })).toHaveAttribute("placeholder", expect.stringContaining("deszăpezire"));
+  });
+});
+
+describe("SearchBar look", () => {
+  it("is 56 px tall, with a hint line that describes the field and gives way to the length hint", async () => {
+    const { user } = setup();
+    expect(screen.getByText(en.hint)).toBeVisible();
+    expect(box()).toHaveAccessibleDescription(en.hint);
+    expect(box().closest(".MuiOutlinedInput-root")).toHaveStyle({ minHeight: `${size.searchInput}px` });
+    await user.type(box(), "a");
+    expect(box()).toHaveAccessibleDescription(en.minLengthHint);
+    expect(screen.queryByText(en.hint)).toBeNull();
   });
 });

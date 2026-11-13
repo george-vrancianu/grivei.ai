@@ -1,5 +1,5 @@
 import {
-  chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, toMapLens, toResultTab, Typography,
+  chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -19,6 +19,9 @@ import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
 import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
+
+/** The Source the main screen searches: SEAP is the only explorable one (ADR 0005); a Source picker would hold this in the URL. */
+const SEARCHED_SOURCE = "SEAP";
 
 /**
  * `/explore/` and `/ro/explore/`: the main screen for the filter in the URL. One `MainScreen` query per filter feeds the
@@ -47,9 +50,10 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
     <MainScreenLayout
       search={
         <>
-          <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
             {t.main.title}
           </Typography>
+          <SourceEyebrow sources={state.status === "ready" ? state.data.sources : []} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
           <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
         </>
       }
@@ -129,8 +133,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       }
       results={
         <>
-          {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}
-          {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+          {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}
+          {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
           {search && (
             <ResultTabs
               authorities={search.authorities}

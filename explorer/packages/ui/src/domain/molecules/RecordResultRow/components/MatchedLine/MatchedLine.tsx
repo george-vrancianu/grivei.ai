@@ -16,8 +16,8 @@ export interface MatchedLineProps {
 /** "Matched in title: ..." with the matched text of the field highlighted. */
 export function MatchedLine({ matchedField, copy }: MatchedLineProps) {
   return (
-    <Typography component="div" variant="body2">
-      <Typography component="span" variant="body2" color="text.secondary">
+    <Typography component="div" variant="meta" color="text.secondary">
+      <Typography component="span" variant="meta" color="text.secondary">
         {copy.matchedIn(copy.fields[matchedField.field])}:{" "}
       </Typography>
       <HighlightedText text={matchedField.text} highlights={matchedField.highlights} />

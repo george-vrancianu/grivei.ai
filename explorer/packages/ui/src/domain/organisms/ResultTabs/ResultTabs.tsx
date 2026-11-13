@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Tab } from "../../../atoms/Tab/index.ts";
 import { Tabs } from "../../../atoms/Tabs/index.ts";
@@ -42,13 +42,15 @@ export interface ResultTabsProps {
   recordHref: (record: RecordResult["record"]) => string;
   /** Where "show all" goes for a tab (the full-results view); the link shows only when it returns a URL and the tab has more rows than shown. */
   showAllHref?: (tab: ResultTab) => string | undefined;
+  /** What an empty tab offers under its sentence (a link to the Coverage lens, say); absent = nothing. */
+  emptyAction?: (tab: ResultTab) => ReactNode;
   locale: Locale;
   copy: ResultTabsCopy;
 }
 
 /** The results of a search: a pinned "Go to page" card, then Authorities, Suppliers and Records tabs (Suppliers by default). */
 export function ResultTabs(props: ResultTabsProps) {
-  const { authorities, suppliers, records, goTo, locale, copy, entityHref, recordHref, showAllHref } = props;
+  const { authorities, suppliers, records, goTo, locale, copy, entityHref, recordHref, showAllHref, emptyAction } = props;
   const [tab, select] = useResultTab(props.tab, props.onTabChange);
   const uid = useId();
   const tabId = (name: ResultTab) => `${uid}-tab-${name}`;
@@ -91,6 +93,7 @@ export function ResultTabs(props: ResultTabsProps) {
           shown={counts[name].shown}
           count={counts[name].count}
           emptyText={copy.empty[name]}
+          emptyAction={emptyAction?.(name)}
           showAll={showAllLink(name)}
         >
           {rows[name]}

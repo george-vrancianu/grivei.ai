@@ -26,7 +26,7 @@ export interface RecordValueLineProps {
 export function RecordValueLine({ record, locale, copy }: RecordValueLineProps) {
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-      <Typography component="span" variant="body2">
+      <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
         {record.value === null ? copy.noValue : <MoneyAmount bani={record.value} locale={locale} />}
       </Typography>
       {isConsortium(record.winners) && (

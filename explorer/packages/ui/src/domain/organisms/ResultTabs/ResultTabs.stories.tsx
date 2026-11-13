@@ -36,3 +36,8 @@ export const Empty: Story = { render: sample(resultSamples.empty) };
 export const EmptyRecords: Story = { render: sample(resultSamples.empty, { tab: "records" }) };
 /** The "show all" slot: more rows exist than shown, and the caller says where the full list lives. */
 export const ShowAll: Story = { render: sample(resultSamples.estimated, { showAllHref: (tab) => `/explore/search?tab=${tab}` }) };
+
+/** An empty tab can offer a next step under its sentence (#105 puts the Coverage lens link here). */
+export const EmptyWithAction: Story = {
+  render: sample(resultSamples.empty, { tab: "records", emptyAction: () => <a href="/explore/?lens=coverage">Coverage</a> }),
+};

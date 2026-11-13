@@ -1,5 +1,5 @@
 import type { DataThroughFieldsFragment, TotalFieldsFragment } from "@grivei/contract";
-import { Card, CardContent, DataThroughDate, Stack, TotalFigure, Typography, type DataThroughDateCopy, type Locale, type TotalFigureCopy } from "@grivei/ui";
+import { DataThroughDate, Stack, TotalFigure, Typography, type DataThroughDateCopy, type Locale, type TotalFigureCopy } from "@grivei/ui";
 
 export interface MainTotalProps {
   total: TotalFieldsFragment;
@@ -17,20 +17,16 @@ export interface MainTotalProps {
 export function MainTotal({ total, sources, copy, locale, methodologyHref, suspectHref }: MainTotalProps) {
   const dates = sources.flatMap((source) => source.dataThrough);
   return (
-    <Card variant="outlined" data-testid="main-total">
-      <CardContent>
-        <Stack spacing={1}>
-          <Typography variant="overline" component="h2">
-            {copy.heading}
-          </Typography>
-          <TotalFigure total={total} locale={locale} copy={copy.total} methodologyHref={methodologyHref} suspectHref={suspectHref} />
-          {dates.map((dataThrough) => (
-            <Typography key={dataThrough.kind} variant="caption" color="text.secondary" component="p">
-              <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} kindLabel={copy.kinds[dataThrough.kind] ?? dataThrough.kind} />
-            </Typography>
-          ))}
-        </Stack>
-      </CardContent>
-    </Card>
+    <Stack spacing={1} data-testid="main-total">
+      <Typography variant="meta" component="h2">
+        {copy.heading}
+      </Typography>
+      <TotalFigure total={total} locale={locale} copy={copy.total} methodologyHref={methodologyHref} suspectHref={suspectHref} />
+      {dates.map((dataThrough) => (
+        <Typography key={dataThrough.kind} variant="caption" color="text.secondary" component="p">
+          <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} kindLabel={copy.kinds[dataThrough.kind] ?? dataThrough.kind} />
+        </Typography>
+      ))}
+    </Stack>
   );
 }

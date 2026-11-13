@@ -31,7 +31,7 @@ export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProp
   const { entity, matched } = row;
   const count = formatCount(matched.records, false, locale);
   return (
-    <Stack spacing={0.25} component="li" sx={{ py: 1 }}>
+    <Stack spacing={0.5} component="li" sx={{ py: 1.5 }}>
       <Typography component="div" variant="subtitle1">
         <EntityLink entity={entity} href={href} copy={copy.entityLink} />
       </Typography>
