@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { radius } from "../../../../../theme/tokens.ts";
+import { layout, radius } from "../../../../../theme/tokens.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import type { CoveragePageLayoutCopy } from "../../coveragePageLayout.types.ts";
 
@@ -22,7 +22,7 @@ export function PerCountyNote({ lensHref, onNavigate, copy }: PerCountyNoteProps
       <Typography id={id} variant="label" component="h2" color="primary.main" sx={{ fontWeight: 500 }}>
         {perCounty.heading}
       </Typography>
-      <Typography sx={{ maxWidth: 820 }}>{perCounty.body}</Typography>
+      <Typography sx={{ maxWidth: layout.titleMaxWidth }}>{perCounty.body}</Typography>
       <Link href={lensHref} onClick={followLink(lensHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
         {perCounty.lensLink}
       </Link>

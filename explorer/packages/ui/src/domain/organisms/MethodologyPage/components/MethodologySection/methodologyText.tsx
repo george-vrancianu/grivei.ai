@@ -24,5 +24,5 @@ export function renderMethodologyText(text: MethodologyText, locale: Locale): Re
   return withNodes(text.build, text.bani.map((bani, i) => <MoneyAmount key={i} bani={bani} locale={locale} />));
 }
 
-/** The text as plain words (amounts as the money variant would read them), for keys and tests. */
+/** The text as plain words (amounts as their bani digits), for keys and tests. */
 export const plainMethodologyText = (text: MethodologyText): string => (typeof text === "string" ? text : text.build(...text.bani));
