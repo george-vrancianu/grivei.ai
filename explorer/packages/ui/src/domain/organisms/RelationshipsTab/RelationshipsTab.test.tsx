@@ -9,7 +9,8 @@ import {
   naturalPersonRelationships, oneCounterpartyRelationships,
 } from "../../samples/fixtureData.ts";
 import { RelationshipsTab, type RelationshipsTabProps } from "./index.ts";
-import { FOCUS_COLOR, SELECTED_STROKE } from "./relationshipsTab.utils.ts";
+import { grafStates } from "../../../theme/index.ts";
+import { SELECTED_STROKE } from "./relationshipsTab.utils.ts";
 
 const copy = sampleCopy.relationshipsTab("en");
 const data = authorityTypicalRelationships;
@@ -112,9 +113,8 @@ describe("RelationshipsTab", () => {
     const { container } = renderInUi(<Harness initial="30000002" />);
     expect(container.querySelectorAll("circle[data-focus-ring]")).toHaveLength(6);
     expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).toHaveAttribute("stroke", SELECTED_STROKE);
-    expect(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')).toHaveAttribute("stroke", FOCUS_COLOR);
     // same light colour as the map's, told apart by shape: the focus ring is a dashed ring outside the node, the selection a solid stroke on it
-    expect(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')).toHaveAttribute("stroke-dasharray");
+    expect(getComputedStyle(container.querySelector('[data-node="30000002"] circle[data-focus-ring]')!, null).strokeDasharray).toBe(String(grafStates.mapArea.focus.strokeDasharray));
     expect(container.querySelector('[data-node="30000002"] circle[data-radius]')).not.toHaveAttribute("stroke-dasharray");
   });
 

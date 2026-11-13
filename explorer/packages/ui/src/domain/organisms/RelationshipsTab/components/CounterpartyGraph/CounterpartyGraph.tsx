@@ -1,14 +1,14 @@
 import type { KeyboardEvent } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { Locale } from "../../../../../theme/index.ts";
+import { grafStates, type Locale } from "../../../../../theme/index.ts";
 import { color, font } from "../../../../../theme/tokens.ts";
 import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import type { EntityRef, RelationshipsCounterparties } from "../../../../types.ts";
 import type { CounterpartyGraphCopy, RelationshipsTabCopy } from "../../relationshipsTab.types.ts";
 import {
-  CENTRE_COLOR, CENTRE_RADIUS, FOCUS_COLOR, GRAPH_HEIGHT, GRAPH_WIDTH, NODE_FILL, SELECTED_STROKE, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
+  CENTRE_COLOR, CENTRE_RADIUS, GRAPH_HEIGHT, GRAPH_WIDTH, NODE_FILL, SELECTED_STROKE, SIGNAL_RING_COLOR, WON_TOGETHER_DASH, channelColor, layoutNodes, type GraphNode,
 } from "../../relationshipsTab.utils.ts";
 
 export interface CounterpartyGraphProps {
@@ -70,7 +70,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
         viewBox={`${-GRAPH_WIDTH / 2} ${-GRAPH_HEIGHT / 2} ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
         sx={{
           width: "100%", height: "auto", maxHeight: 520, display: "block", color: color.text, fontFamily: font.mono,
-          "& [role=button]": { cursor: "pointer" }, "& [role=button]:hover circle[data-radius]": { stroke: SELECTED_STROKE }, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none" }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" },
+          "& [role=button]": { cursor: "pointer" }, "& [role=button]:hover circle[data-radius]": grafStates.mapArea.hover, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none", ...grafStates.mapArea.focus }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" },
         }}
       >
         {nodes.map((node, i) => (
@@ -109,7 +109,7 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
               <title>{label}</title>
               {node.row.hasSignals && <circle r={node.r + 5} fill="none" stroke={SIGNAL_RING_COLOR} strokeWidth={3} data-ring />}
               {/* A ring outside the node and its Signal ring, shown on keyboard focus only: selection (fill and stroke) never draws it. */}
-              {pickable && <circle r={node.r + 9} fill="none" stroke={FOCUS_COLOR} strokeWidth={3} strokeDasharray="2 3" data-focus-ring />}
+              {pickable && <circle r={node.r + 9} fill="none" data-focus-ring />}
               <circle r={node.r} fill={isSelected ? channelColor(node.channel) : NODE_FILL} stroke={isSelected ? SELECTED_STROKE : channelColor(node.channel)} strokeWidth={isSelected ? 3 : 2} data-radius={node.r} />
               <text y={node.r + (pickable ? LABEL_BELOW_FOCUS_RING : node.row.hasSignals ? 19 : 14)} textAnchor="middle" fontSize={11} fill="currentColor" stroke={color.panel} strokeWidth={4} paintOrder="stroke" aria-hidden="true">{shorten(nameOf(node))}</text>
             </g>

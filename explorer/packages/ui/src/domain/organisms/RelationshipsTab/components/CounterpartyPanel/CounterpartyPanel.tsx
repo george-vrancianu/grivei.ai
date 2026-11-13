@@ -4,7 +4,6 @@ import { Button } from "../../../../../atoms/Button/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { color } from "../../../../../theme/tokens.ts";
 import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
@@ -57,7 +56,7 @@ export function CounterpartyPanel({
       <Stack spacing={1.5}>
         <SectionHeading component="h3">{panel.eyebrow}</SectionHeading>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
-          <Typography variant="h4" component="h4" sx={{ color: color.text }}>
+          <Typography variant="h4" component="h4">
             {panel.heading}{counterparty && <> <EntityLink entity={counterparty} href={entityHref(counterparty, counterpartyRole)} copy={copy.entityLink} /></>}
           </Typography>
           <Button size="small" onClick={onClose}>{panel.close}</Button>

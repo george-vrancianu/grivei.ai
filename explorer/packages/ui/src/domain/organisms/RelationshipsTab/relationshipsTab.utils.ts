@@ -22,7 +22,6 @@ export const CENTRE_COLOR = color.text;
 export const NODE_FILL = color.panel;
 /** The selected node's outline: a solid light stroke (the map's highlight). The keyboard focus ring is a separate dashed ring, apart from it. */
 export const SELECTED_STROKE = map.highlight;
-export const FOCUS_COLOR = color.text;
 /** Legend marks that stand for no channel in particular, and a won-together edge: hollow marks and dashed lines only. */
 export const NEUTRAL_MARK_COLOR = color.idle;
 /** The dash pattern of a won-together edge. */
