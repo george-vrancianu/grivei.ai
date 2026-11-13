@@ -34,3 +34,7 @@ The load now keeps a natural-person supplier's published name, linked to its Rec
 ## Amended 2026-11-13: people follow the same rule
 
 ADR 0011 carries this rule over to people. A person is confirmed only by name plus a full birth date from an official publication, never by name. The identity override file also holds person splits and merges.
+
+## Amended 2026-11-13: natural-person supplier names show on the Record, with no threshold
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) drops the Naming threshold. A natural-person supplier's published name shows on the Record, in that winner slot, and in that Source's search, each record separately. It never gets an entity page or a person page, and records are never merged by name into a total. The two amendments of 2026-11-12 above are superseded on this point; `withheld.natural_person_name` becomes served data once the code follows (separate ticket). CNPs are still never stored or shown.

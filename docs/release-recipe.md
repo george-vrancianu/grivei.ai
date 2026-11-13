@@ -28,7 +28,7 @@ Decided in [Release recipe: the repeatable steps for adding a Source](https://gi
 
 - **Generic:** the ANAF-confirmed CUI as the key for organisations, name-only entities when that fails, aliases never merging, and the identity override file (ADR 0003).
 - **Source-supplied:** an identity ADR in ADR 0003's pattern: how the Source's subjects map onto existing entity keys, and what stays separate.
-- **People:** a Source whose subjects are people (ONRC administrators, AEP donors, parties on portal.just.ro) follows this recipe like any other. Its Go-live waits on the legal posture for person-level data and the entity-linking policy (ADR 0008).
+- **People:** a Source whose subjects are people (ONRC administrators, AEP donors, parties on portal.just.ro) follows this recipe like any other. Its people are shown on the public host only on the public tier; the rest is Restricted to a Private view (ADR 0015).
 - **SEAP:** ADR 0003, [Supplier identity](https://github.com/george-vrancianu/grivei.ai/issues/22).
 
 ## 4. Reference sources

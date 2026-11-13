@@ -12,3 +12,7 @@ Until now, a Source whose subjects are people was blocked on an entity-linking m
 - ONRC can become an explorable Source with its administrators, and is the leading Release 2 candidate (the order is decided [here](https://github.com/george-vrancianu/grivei.ai/issues/125)).
 - ANI stays dropped. That is for legal and access reasons (CCR Decision 297/2025, Law 180/2026), not because of the gate ([research](https://github.com/george-vrancianu/grivei.ai/issues/114)).
 - ADR 0003 still holds: CNPs are never stored or shown, and natural-person SEAP suppliers stay "Persoană fizică".
+
+## Amended 2026-11-13: Go-live no longer waits on the legal posture
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) replaces the Go-live check. People Sources are built, seeded and explored without a legal gate. On the public host, only the public tier (people in official-register roles tied to public money) is shown; everything else person-level is Restricted to a Private view. Go-live needs only a privacy notice with a correction contact. ADR 0009's conditions now bar publishing Restricted content to the anonymous public, a later decision.

@@ -278,8 +278,17 @@ def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db,
     assert re.search(r"rebuild unit 3/7 kind=contracte unit=2022Q2 files=1 rows=2 records=2 loaded in", units[2])
     assert re.search(r"rebuild unit 5/7 kind=contracte unit=2023Q1 files=1 rows=0 records=0 quarantined \(headers do not match a CONTRACT file\)$", units[4])
     assert re.search(r"rebuild unit 7/7 kind=fara-anunt unit=2025Q1 files=1 rows=4 records=2 loaded", units[6])
-    assert "rebuild done units=7 loaded=6 skipped=0 quarantined=1 records=12 in" in lines[-1]
-    assert seen == [None, 0, 1, 2, 3, 4, 5, 6, 7]  # the file moves with the run: at each line it shows the units done before it
+    assert any("rebuild done units=7 loaded=6 skipped=0 quarantined=1 records=12 in" in x for x in lines)
+    unit_seen = [done for line, done in zip(lines, seen) if " rebuild step " not in line]
+    # the file moves with the run: at each line it shows the units done before it (it exists before `rebuild start`: the schema steps wrote it)
+    assert unit_seen == [0, 0, 1, 2, 3, 4, 5, 6, 7]
+    # every stage outside the unit loop is timed, in order, with a start line and a done line
+    steps = [m.group(1, 2) for m in (re.search(r" rebuild step (\S+?)(: start| done in \d+:\d\d:\d\d)$", x) for x in lines) if m]
+    names = ["schema", "anaf-identities", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf",
+             "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "commit", "vacuum", "outlines"]
+    assert [n for n, _ in steps] == [n for n in names for _ in (0, 1)]
+    assert [k == ": start" for _, k in steps] == [True, False] * len(names)
+    assert lines.index(next(x for x in lines if " rebuild done " in x)) > lines.index(next(x for x in lines if "step commit done" in x))
     status = read_status(status_file)
     assert (status["state"], status["done"], status["total"], status["loaded"], status["quarantined"], status["records"]) == ("finished", 7, 7, 6, 1, 12)
 

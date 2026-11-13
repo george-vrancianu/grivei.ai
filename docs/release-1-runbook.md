@@ -141,7 +141,7 @@ up to 8 CPUs. It is one transaction: not resumable, a kill rolls back and the li
 `tail -n 2 ~/grivei-data/seed.log` (one line per unit: `rebuild unit i/N ...`), `$P status`. After it: read `status` for quarantines
 (`<archive>/quarantine/**/reason.json`), fix the header alias or reader, `requeue --match TEXT`, rebuild again (`load-quarter 2023Q2` does both for one quarter).
 
-**Acceptance A (full rebuild succeeds):** the log ends `rebuild done units=... quarantined=N ...` and `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=0`: the DA 2022 Q2 file loads its DA rows and sets the pasted part aside;
+**Acceptance A (full rebuild succeeds):** the log has `rebuild done units=... quarantined=N ...` (followed only by the `vacuum` and `outlines` step lines) and ends `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=0`: the DA 2022 Q2 file loads its DA rows and sets the pasted part aside;
 the Q2 2025 DAN mis-upload may be one) and is named in the closing comment; `verify` passes on the live graph:
 
 ```bash

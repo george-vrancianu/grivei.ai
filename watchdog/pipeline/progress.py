@@ -6,7 +6,13 @@ Two signals, both written as the rebuild goes:
     2026-11-12T10:15:02+0200 rebuild unit 37/412 kind=contracte unit=2023Q2 files=1 rows=124000 records=98000 loaded in 41.2s
     2026-11-12T10:15:02+0200 rebuild unit 38/412 kind=dan unit=2024Q1 files=1 rows=0 records=0 skipped (same file already loaded)
     2026-11-12T10:15:03+0200 rebuild unit 39/412 kind=da unit=2023Q2 files=1 rows=0 records=0 quarantined (headers do not match a DA file)
+    2026-11-12T10:40:12+0200 rebuild step search-index: start
+    2026-11-12T10:44:09+0200 rebuild step search-index done in 0:03:57
     2026-11-12T10:44:10+0200 rebuild done units=412 loaded=398 skipped=9 quarantined=5 records=3120000 in 1:29:08
+
+  The stages before and after the units (building entities, placement, the rollup, the search index, the commit, the
+  VACUUM, the outlines) each get a `step NAME: start` line and a `step NAME done in H:MM:SS` line, so a long silence
+  in the log names the stage it is in.
 
 - a status file, rewritten after every unit (and when one starts) by writing a temporary file and renaming it over the old
   one, so a reader never sees half of it. `pipeline status` reads it. A run that is killed leaves `state: running` with
@@ -17,9 +23,10 @@ from __future__ import annotations
 import json
 import os
 import socket
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, TextIO
+from typing import Callable, Iterator, TextIO
 
 STATUS_VERSION = 1
 DEFAULT_STATUS_NAME = "rebuild-progress.json"
@@ -73,6 +80,7 @@ class Progress:
             "quarantined": 0,
             "records": 0,
             "current": None,
+            "step": None,
             "last": None,
             "error": None,
         }
@@ -99,6 +107,17 @@ class Progress:
         self.state["records"] += records if outcome == "loaded" else 0
         self._line(f"rebuild unit {index}/{total} kind={kind} unit={unit} files={files} rows={rows} records={records} {detail}")
 
+    @contextmanager
+    def step(self, name: str) -> Iterator[None]:
+        """One stage outside the per-unit loop: a start line, then a done line with its duration. A stage that raises gets
+        no done line and stays in the status file's `step`, so the FAILED line and `pipeline status` name it."""
+        started = self._now()
+        self.state["step"] = name
+        self._line(f"rebuild step {name}: start")
+        yield
+        self.state["step"] = None
+        self._line(f"rebuild step {name} done in {_duration((self._now() - started).total_seconds())}")
+
     def finish(self, records_in_graph: int, data_through: dict[str, str] | None = None) -> None:
         s = self.state
         s.update(state="finished", records=records_in_graph, current=None, dataThrough=data_through or {})
@@ -110,7 +129,8 @@ class Progress:
             return
         self.state.update(state="failed", error=f"{type(error).__name__}: {error}".strip(": "))
         try:
-            self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units: {self.state['error']}; nothing was loaded, rerun from scratch")
+            during = f" in step {self.state['step']}" if self.state.get("step") else ""
+            self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units{during}: {self.state['error']}; nothing was loaded, rerun from scratch")
         except OSError:  # the status file cannot be written: the real cause must not be replaced by this one
             pass
 
@@ -183,6 +203,8 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
     if state in ("running", "unknown") and status.get("current"):
         c = status["current"]
         lines.append(f"now: unit {c['index']}/{total} kind={c['kind']} unit={c['unit']}")
+    if state in ("running", "unknown") and status.get("step"):
+        lines.append(f"now: step {status['step']}")
     lines += [f"started: {status.get('startedAt')}", f"updated: {status.get('updatedAt')} (pid {status.get('pid')} on {status.get('host', 'an unknown host')})"]
     if state == "unknown":
         lines.append(f"written by another host or container; last update {_age(status, now or datetime.now(timezone.utc))} ago: a rebuild still going updates it at least once per unit")
