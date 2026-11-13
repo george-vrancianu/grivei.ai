@@ -35,7 +35,7 @@ About half of the wrong matches are SEAP's own CUI typos. Decision: [ticket](htt
   - a spelling attached to two CUIs is ambiguous;
   - if the SEAP spelling and ONRC point to different CUIs, the match is ambiguous.
 
-  This list is the only route to NGOs (which are not in ONRC) and to firms under their old names.
+  This list is the route to firms under their old names, and one of two routes to NGOs (see the amendment below).
 - **Public bodies** confirm only on name + county against SEAP contracting authorities and the MF list of public entities, plus the locality when the Source gives it. Name alone never confirms them, because generic names like "Școala Gimnazială nr. 1" repeat across the country.
 - **Foreign organisations** stay unattached, unless the Source gives a foreign VAT id. With a VAT id they join a name-only supplier by that id (ADR 0003).
 - **Possible matches** (several candidates, or a unique match without a confirming key) are never public. Only an identity override settles one, with a reason, reviewed by a named human.
@@ -45,3 +45,14 @@ About half of the wrong matches are SEAP's own CUI typos. Decision: [ticket](htt
   - a link with any basis other than a CUI carries a "matched by name" marker.
 - **Rebuildable:** matching is a pure function of the Raw archive (ONRC snapshots, ANAF answers, SEAP) and the override file (ADR 0004). No match table is persisted. A record is matched against the ONRC snapshot nearest its own date, falling back to the current one.
 - **Checked per Source:** the bar was measured on SEAP spellings, and other Sources are messier. Before a Source's Go-live, its Connector has a sample of about 200 confirmed links checked by hand. Any key that fails the bar on that Source is switched off for it, and the result is recorded in that Source's Release spec.
+
+## Amended 2026-11-13: MF's taxpayer list is a name list for organisations outside ONRC
+
+NGOs, homeowner associations and other legal persons that ONRC doesn't register now have a third name list: MF's "Date de identificare plătitori" (data.gov.ro, CC BY 4.0, yearly, with CUI, name and county). It becomes a Reference source. Ministerul Justiției's NGO register is dropped: it has no CUI, no people, and has published nothing since July 2026. Measured on SEAP's 3,004 NGO suppliers with known CUIs, exact name is 0.30% wrong and name + seat county 0.33% wrong, both under the bar. It attaches 236 of 319 unattached NGO names in the 2014–20 EU-fund lists, against 117 through SEAP spellings, and the two routes never disagree ([research](https://github.com/george-vrancianu/grivei.ai/blob/research/ngo-register/docs/research/ngo-register.md)). Decision: [ticket](https://github.com/george-vrancianu/grivei.ai/issues/157).
+
+- **Who it serves:** organisations outside ONRC only. Firms still confirm against ONRC, where the bar was measured.
+- **Keys and uniqueness:** the same two keys as ONRC (name + seat county; exact name with legal form when no county is given), unique across the whole list. Homeowner associations stay in the list as candidates, so they count against uniqueness.
+- **Agreement:** if the MF list, ONRC or a SEAP spelling point to different CUIs, the match is ambiguous.
+- **Snapshots:** a record is matched against the yearly snapshot nearest its date, falling back to the current one.
+- **Struck-off NGOs** are mostly missing from the list. A name it doesn't find stays an unattached name, and each Source's data caveats state the gap.
+- **Release:** it joins with the first Release that needs it, EU funds in the planned order. PNRR already gives CUIs.
