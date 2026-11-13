@@ -122,7 +122,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                     page: page ?? 1,
                     pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
                     // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
-                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), page: n }),
+                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
                     onNavigate: (href) => navigate(href, "replace"),
                     copy: t.entityPage.signalPages,
                   }}

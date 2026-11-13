@@ -34,7 +34,7 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
       entityHref: (e, role) => pathFor(locale, { name: "entity", entity: role, key: e.key, view: "overview" }),
       recordHref: (record) => pathFor(locale, { name: "record", code: record.code }),
       methodologyHref: methodologyHref(locale, "awardedValue"),
-      suspectHref: recordsHref(locale, entity, entityKey, { filter: withSuspectBadge(filter) }),
+      suspectHref: recordsHref(locale, entity, entityKey, { filter: withSuspectBadge(filter), ...(carried ? { carried } : {}) }),
       locale,
       // offered only to a reader who came from a search; following it applies the search and the parameter goes (see `onlyMatchingHref`)
       filterExtras: carried

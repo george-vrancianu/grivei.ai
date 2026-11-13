@@ -1,11 +1,13 @@
 // Seam 3 for ticket #106: an entity row of a search carries the query and chips in the `search` parameter; the entity page opens unfiltered
 // and its Records tab offers "only Records matching ...", only then. Following it applies the search as the Records filter (the URL's own
 // filter), drops the parameter, and the totals follow. Both languages; both result screens.
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
+import { createClient } from "../../graphql/client.ts";
+import { overviewNamed } from "../../testing/signalRecordings.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
@@ -140,3 +142,36 @@ function withGoTo(data: unknown, goTo: unknown): unknown {
   answer.seap.search.goTo = goTo;
   return answer;
 }
+
+// The Overview's Signals page links keep the carried search, like the tab links and the order toggle do. The recorded hospital has one page of
+// Signals, so the count is raised to 45 for a second page (as in the signalOrder test).
+describe("the Records tab's suspect-value link keeps the carried search", () => {
+  it("the '1 suspect value left out' link carries the search on", async () => {
+    const { view } = open("/explore/authority/1000017/records?search=q%3Dcomuna");
+    const suspect = await screen.findByRole("link", { name: "1 suspect value left out" });
+    expect(decodeUrlState(suspect.getAttribute("href")!.split("?")[1] ?? "")).toMatchObject({ filter: { badges: ["SUSPECT_VALUE"] }, carried: { q: "comuna" } });
+    view.unmount();
+  });
+});
+
+describe("the Overview's Signals page links keep the carried search", () => {
+  it("following Signals page 2, the Records tab still offers 'only Records matching'", async () => {
+    const recorded = overviewNamed("authority-with-signals");
+    const entity = recorded.data.entity!;
+    const role = entity.seap.role!;
+    const client = createClient({ fetch: async () => Response.json({ data: { entity: { ...entity, seap: { ...entity.seap, role: { ...role, signals: { ...role.signals, count: 45 } } } } } }) });
+    openAt("/explore/authority/1000017?search=q%3Dcomuna");
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    const pager = await screen.findByRole("navigation", { name: catalogue.en.entityPage.signalPages.label });
+    const next = within(pager).getByRole("link", { name: catalogue.en.entityPage.signalPages.page(2) });
+    expect(next.getAttribute("href")).toContain("page=2");
+    expect(decodeUrlState(next.getAttribute("href")!.split("?")[1] ?? "").carried).toEqual({ q: "comuna" });
+    await userEvent.setup().click(next);
+    await waitFor(() => expect(state()).toMatchObject({ page: 2, carried: { q: "comuna" } }));
+    await waitFor(() => {
+      const records = screen.getAllByRole("link").find((l) => (l.getAttribute("href") ?? "").includes("/records"));
+      expect(records).toBeDefined();
+      expect(decodeUrlState(records!.getAttribute("href")!.split("?")[1] ?? "").carried).toEqual({ q: "comuna" });
+    });
+  });
+});

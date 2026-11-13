@@ -5,7 +5,7 @@
  <linearGradient id="gold2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3D58A"/><stop offset=".6" stop-color="#C9962E"/><stop offset="1" stop-color="#7F5A14"/></linearGradient>
  <linearGradient id="paper2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6F1E6"/><stop offset="1" stop-color="#D9D1C2"/></linearGradient>
  <radialGradient id="hl2" cx=".4" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
- 
+
 </defs>
 <g>
  <path d="M 60 300 L 62 190 C 70 170, 110 170, 150 200 L 150 300 Z" fill="url(#blk2)"/>
