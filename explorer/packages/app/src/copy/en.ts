@@ -82,6 +82,7 @@ export const en: Copy = {
     goTo: { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" },
     entityRow: {
       matched: "matched",
+      cui: "CUI",
       records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
       national: "national",
       noCounty: "county unknown",
@@ -89,6 +90,8 @@ export const en: Copy = {
     },
     recordRow: {
       noValue: "no value",
+      valueCaption: { awarded: "awarded value", ceiling: "ceiling, not summed" },
+      channel: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
       consortium: {
         label: "consortium",
         explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",

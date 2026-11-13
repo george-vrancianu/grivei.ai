@@ -4,7 +4,7 @@ export interface SourceOption {
   name: string;
 }
 
-/** The Source's name from the API, or its id while the list has not arrived (so the line does not jump when it does). */
+/** The Source's name from the API, or its id when there is no list (the page keeps the last list it received, so the line does not jump on a new query). */
 export function sourceNameOf(sources: readonly SourceOption[], id: string): string {
   return sources.find((source) => source.id === id)?.name ?? id;
 }

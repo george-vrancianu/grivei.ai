@@ -87,6 +87,7 @@ export const ro: Copy = {
     goTo: { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" },
     entityRow: {
       matched: "potrivit",
+      cui: "CUI",
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
       national: "național",
       noCounty: "județ necunoscut",
@@ -94,6 +95,8 @@ export const ro: Copy = {
     },
     recordRow: {
       noValue: "fără valoare",
+      valueCaption: { awarded: "valoare atribuită", ceiling: "plafon, neadunat" },
+      channel: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
       consortium: {
         label: "asociere",
         explanation: "Se afișează valoarea integrală a contractului. Partea fiecărui membru este o convenție de părți egale, nu o sumă publicată.",

@@ -24,6 +24,8 @@ interface MainScreenLayoutBase {
   maps: Record<MapLens, ReactNode>;
   /** Optional: the Total, in a band across the page between the filter chips and the two columns. */
   summary?: ReactNode;
+  /** Optional: a note at the foot of the map panel (the "data through" lines). */
+  mapNote?: ReactNode;
   /** The result tabs, in the right column. */
   results: ReactNode;
   copy: MainScreenLayoutCopy;
@@ -37,10 +39,10 @@ export type LensControl = { lens: MapLens; onLensChange: (lens: MapLens) => void
 
 /**
  * The layout of the main screen: search and filter chips across the top, then the Total as a band, then the map (with the lens toggle) beside the results.
- * From the md breakpoint (900 px, so laptops of 1024 to 1280 px get two columns) the map takes the wider column; below it the
+ * From the md breakpoint (900 px, so laptops of 1024 to 1280 px get two columns) the results take the slightly wider column; below it the
  * results stack under the map. It fetches nothing and knows no router; the page fills the slots.
  */
-export function MainScreenLayout({ search, filters, maps, summary, results, lens, onLensChange, copy }: MainScreenLayoutProps) {
+export function MainScreenLayout({ search, filters, maps, summary, mapNote, results, lens, onLensChange, copy }: MainScreenLayoutProps) {
   const [shown, select] = useMapLens(lens, onLensChange);
   return (
     <Stack component="main" spacing={3} sx={{ pt: 3.5, pb: 5, px: layout.gutter, maxWidth: layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" }}>
@@ -57,6 +59,7 @@ export function MainScreenLayout({ search, filters, maps, summary, results, lens
         <Stack component="section" aria-label={copy.regions.map} spacing={2} sx={{ p: 2, minWidth: 0, bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: `${radius.card}px` }}>
           <OptionToggle options={MAP_LENSES} value={shown} onChange={select} labels={copy.lens} label={copy.lens.label} />
           {maps[shown]}
+          {mapNote}
         </Stack>
         <Stack component="section" aria-label={copy.regions.results} spacing={2} sx={{ minWidth: 0 }}>
           {results}

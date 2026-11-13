@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { CircularProgress } from "../../../atoms/CircularProgress/index.ts";
 import { IconButton } from "../../../atoms/IconButton/index.ts";
@@ -11,6 +11,8 @@ import { DEFAULT_DEBOUNCE_MS, DEFAULT_MIN_LENGTH, isTooShort } from "./searchBar
 export type { SearchBarCopy } from "./searchBar.types.ts";
 
 export interface SearchBarProps {
+  /** The id of an element that describes the field (the Source eyebrow); it is added to the field's `aria-describedby` after the hint. */
+  describedBy?: string;
   /** The committed query (the URL's). Changing it from outside replaces what is typed. */
   value: string;
   /** The query to search for: the trimmed text once it is long enough and typing has paused, or "" when emptied. */
@@ -35,7 +37,7 @@ function SearchIcon() {
 }
 
 /** The free-text search box. Presentational: it emits the query; the page fetches. */
-export function SearchBar({ value, onQueryChange, loading = false, debounceMs = DEFAULT_DEBOUNCE_MS, minLength = DEFAULT_MIN_LENGTH, copy }: SearchBarProps) {
+export function SearchBar({ value, onQueryChange, describedBy, loading = false, debounceMs = DEFAULT_DEBOUNCE_MS, minLength = DEFAULT_MIN_LENGTH, copy }: SearchBarProps) {
   const { text, setText, clear } = useDebouncedQuery({ value, onQueryChange, debounceMs, minLength });
   const input = useRef<HTMLInputElement>(null);
   const clearAndFocus = () => {
@@ -43,10 +45,13 @@ export function SearchBar({ value, onQueryChange, loading = false, debounceMs = 
     input.current?.focus();
   };
   const tooShort = isTooShort(text, minLength);
+  const id = useId();
+  const helperId = `${id}-helper`;
   return (
     <Box role="search" aria-busy={loading}>
       <TextField
         type="search"
+        id={id}
         label={copy.label}
         placeholder={copy.placeholder}
         value={text}
@@ -62,7 +67,8 @@ export function SearchBar({ value, onQueryChange, loading = false, debounceMs = 
         sx={{ "& .MuiOutlinedInput-root": { minHeight: size.searchInput, fontSize: type.search.size, pl: 2.25 }, "& .MuiFormHelperText-root": { mx: 0, color: "text.secondary" } }}
         inputRef={input}
         slotProps={{
-          htmlInput: { enterKeyHint: "search" },
+          htmlInput: { enterKeyHint: "search", "aria-describedby": describedBy ? `${helperId} ${describedBy}` : helperId },
+          formHelperText: { id: helperId },
           input: {
             startAdornment: <SearchIcon />,
             endAdornment: (

@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
+import { ceilingRecord, consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
 import type { RecordResult } from "../../types.ts";
 import { RecordResultRow } from "./index.ts";
 
@@ -45,6 +45,31 @@ describe("RecordResultRow Signal badges", () => {
 });
 
 describe("RecordResultRow", () => {
+  it("is two columns: the meta line and title on the left, the value over its caption on the right", () => {
+    renderRow(highlightedRecord);
+    const { record } = highlightedRecord;
+    expect(screen.getByText(record.code)).toBeVisible();
+    expect(screen.getByText(record.channel === "CONTRACT" ? "Contract" : "Direct purchase")).toBeVisible();
+    expect(screen.getByText("awarded value")).toBeVisible();
+    const value = screen.getByText("RON 5,000");
+    const title = screen.getByRole("link", { name: record.title });
+    expect(title.compareDocumentPosition(value) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("says 'ceiling, not summed' under the value of a framework ceiling", () => {
+    renderRow(ceilingRecord);
+    expect(screen.getByText("ceiling, not summed")).toBeVisible();
+  });
+
+  it("puts a line given as valueExtra under the caption", () => {
+    renderInUi(
+      <ul>
+        <RecordResultRow row={highlightedRecord} recordHref="/x" entityHref={entityHref} locale="en" copy={sampleCopy.recordRow("en")} valueExtra={<span>share line</span>} />
+      </ul>,
+    );
+    expect(screen.getByText("share line")).toBeVisible();
+  });
+
   it("links the title to the Record page and shows value, date and authority", () => {
     const { container } = renderRow(highlightedRecord);
     const { record } = highlightedRecord;

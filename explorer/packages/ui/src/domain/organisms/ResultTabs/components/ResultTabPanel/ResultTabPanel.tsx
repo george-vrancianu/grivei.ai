@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
+import { neutralLinkSx } from "../../../../utils/neutralLinkSx.ts";
 import { StateNote } from "../../../../molecules/StateNote/index.ts";
 
 export interface ResultTabPanelProps {
@@ -30,7 +31,7 @@ export function ResultTabPanel({ id, tabId, selected, children, shown, count, em
           {shown === 0 ? <StateNote kind="empty" action={emptyAction}>{emptyText}</StateNote> : children}
           {showAll && count > shown && (
             <Box sx={{ pt: 2, borderTop: 1, borderColor: "divider" }}>
-              <Link href={showAll.href}>{showAll.text}</Link>
+              <Link href={showAll.href} sx={neutralLinkSx}>{showAll.text}</Link>
             </Box>
           )}
         </>

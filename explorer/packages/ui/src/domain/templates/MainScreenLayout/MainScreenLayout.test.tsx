@@ -34,6 +34,11 @@ describe("MainScreenLayout", () => {
     expect(within(results).getByText("the results")).toBeVisible();
   });
 
+  it("puts the map note at the foot of the map panel", () => {
+    renderInUi(<MainScreenLayout {...props()} mapNote={<p>data through</p>} />);
+    expect(within(screen.getByRole("region", { name: "Map" })).getByText("data through")).toBeVisible();
+  });
+
   it("works without the optional summary", () => {
     renderInUi(<MainScreenLayout {...props()} summary={undefined} />);
     expect(screen.queryByText("the total")).toBeNull();

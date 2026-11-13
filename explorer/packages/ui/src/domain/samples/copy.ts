@@ -249,6 +249,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
+        cui: "CUI",
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
         noCounty: "județ necunoscut",
@@ -256,6 +257,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
       }
     : {
         matched: "matched",
+        cui: "CUI",
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
         national: "national",
         noCounty: "county unknown",
@@ -266,6 +268,8 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
   locale === "ro"
     ? {
         noValue: "fără valoare",
+        valueCaption: { awarded: "valoare atribuită", ceiling: "plafon, neadunat" },
+        channel: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         consortium: {
           label: "asociere",
           explanation: "Se afișează valoarea integrală a contractului. Fiecare membru al asocierii are o parte egală, după convenție, nu o sumă publicată.",
@@ -282,6 +286,8 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
       }
     : {
         noValue: "no value",
+        valueCaption: { awarded: "awarded value", ceiling: "ceiling, not summed" },
+        channel: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         consortium: {
           label: "consortium",
           explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",

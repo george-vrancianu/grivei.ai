@@ -2,8 +2,8 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color } from "../../../theme/tokens.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
 import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import { withNodes } from "../../utils/withNodes.tsx";
 import type { Total } from "../../types.ts";
@@ -35,8 +35,7 @@ export interface TotalFigureProps {
   suspectHref: string;
 }
 
-/** Links beside the headline figure read in the body colour: amber is for the headline number alone. */
-const neutral = { color: color.text2, "&:hover": { color: color.text } } as const;
+const neutral = neutralLinkSx;
 
 /**
  * A Total: the awarded value and what it left out. A Total always says what it left out,

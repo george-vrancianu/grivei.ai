@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import {
   chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
@@ -5,6 +6,7 @@ import {
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
+import { MainDataThrough } from "../../components/MainDataThrough/index.ts";
 import { MainTotal } from "../../components/MainTotal/index.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -45,6 +47,10 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
   const coverageGrid = useCoveragePage(coverageShown ? {} : null);
   const side: CountySide = filter.countySide ?? "AUTHORITY";
+  // The eyebrow keeps the last Sources it received while a new query loads, so the Source's name does not drop back to its id.
+  const [lastSources, setLastSources] = useState<readonly { id: string; name: string }[]>([]);
+  if (state.status === "ready" && state.data.sources !== lastSources) setLastSources(state.data.sources);
+  const eyebrowId = useId();
 
   return (
     <MainScreenLayout
@@ -53,8 +59,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
             {t.main.title}
           </Typography>
-          <SourceEyebrow sources={state.status === "ready" ? state.data.sources : []} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
-          <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+          <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
+          <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
         </>
       }
       filters={
@@ -123,14 +129,14 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
         search && state.status === "ready" && (
           <MainTotal
             total={search.total}
-            sources={state.data.sources}
-            copy={{ heading: t.main.total, total: t.total, dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }}
+            copy={{ heading: t.main.total, total: t.total }}
             locale={locale}
             methodologyHref={methodologyHref(locale, "awardedValue")}
             suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
           />
         )
       }
+      mapNote={state.status === "ready" && <MainDataThrough sources={state.data.sources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>
           {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}

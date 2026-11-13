@@ -18,6 +18,8 @@ export interface SourceEyebrowProps {
   /** The id of the Source being searched. */
   selected: string;
   copy: SourceEyebrowCopy;
+  /** The element id the search box points to with its `aria-describedby` (the `SearchBar`'s `describedBy`). */
+  id?: string;
 }
 
 /**
@@ -25,9 +27,9 @@ export interface SourceEyebrowProps {
  * one-option state: it already takes the list of Sources and the chosen one, so a later Release can turn the name into a picker
  * (an `onSelect`, a menu) without changing its callers. The Source's name is the API's; the other words are the catalogue's.
  */
-export function SourceEyebrow({ sources, selected, copy }: SourceEyebrowProps) {
+export function SourceEyebrow({ sources, selected, copy, id }: SourceEyebrowProps) {
   return (
-    <Typography variant="label" component="p" color="primary" data-testid="source-eyebrow">
+    <Typography variant="label" component="p" color="primary" id={id} data-testid="source-eyebrow">
       {copy.search} {sourceNameOf(sources, selected)} · {copy.scope} · {copy.period}
     </Typography>
   );
