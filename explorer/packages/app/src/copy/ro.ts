@@ -480,6 +480,11 @@ export const ro: Copy = {
       },
       methodology: "Cum se numără cifrele",
     },
+    perCounty: {
+      heading: "pe județ: N din M",
+      body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+      lensLink: "deschide lentila Acoperire pe hartă →",
+    },
     snapshot: {
       heading: "Lista entităților publice",
       line: (date) => `Lista entităților publice a Ministerului Finanțelor: versiunea din ${date}`,

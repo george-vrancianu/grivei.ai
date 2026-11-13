@@ -23,7 +23,7 @@ export interface CoverageGridProps {
   hideLegend?: boolean;
 }
 
-const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.paper", whiteSpace: "nowrap", fontWeight: 600, borderRight: "1px solid", borderColor: "divider" } as const;
+const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.default", whiteSpace: "nowrap", typography: "meta", color: "text.primary", pr: 2, border: 0 } as const;
 
 /**
  * The quarter x record-kind grid of one Source: quarters as columns, kinds as rows. Each cell shows its state by colour, glyph and border,
@@ -34,9 +34,9 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
   const { quarters, kinds, at } = gridShape(cells);
   const active = windowActive(dateWindow);
   return (
-    <Box>
-      <TableContainer sx={{ overflowX: "auto" }} tabIndex={0} aria-label={copy.label} role="region">
-        <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: 2, width: "auto" }}>
+    <Box sx={{ minWidth: 0 }}>
+      <TableContainer sx={{ overflowX: "auto", maxWidth: "100%" }} tabIndex={0} aria-label={copy.label} role="region">
+        <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: "3px", width: "auto" }}>
           <TableHead>
             <TableRow>
               <TableCell component="th" scope="col" sx={{ ...stickyLabel, zIndex: 3 }}>{copy.kindHeader}</TableCell>
@@ -55,10 +55,13 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
                     sx={{
                       p: 0.5,
                       textAlign: "center",
-                      fontSize: 12,
+                      fontSize: 11,
                       lineHeight: 1.2,
-                      fontWeight: inRange ? 700 : 400,
-                      ...(inRange ? { backgroundColor: RANGE_COLOR, color: "#fff" } : { color: "text.secondary" }),
+                      border: 0,
+                      borderBottom: 2,
+                      borderBottomColor: inRange ? RANGE_COLOR : "transparent",
+                      fontWeight: inRange ? 600 : 400,
+                      color: inRange ? "text.primary" : "text.secondary",
                     }}
                   >
                     <span aria-hidden>

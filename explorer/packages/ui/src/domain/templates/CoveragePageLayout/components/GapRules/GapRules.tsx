@@ -20,20 +20,20 @@ export function GapRules({ methodologyHref, onNavigate, copy }: GapRulesProps) {
   const { rules, grid } = copy;
   return (
     <>
-      <Typography variant="body2" gutterBottom>{rules.intro}</Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>{rules.intro}</Typography>
       <Box component="dl" sx={{ m: 0 }}>
         {RULES.map((rule) => (
           <Box key={rule} data-rule={rule} sx={{ mb: 1 }}>
-            <Typography component="dt" sx={{ fontWeight: 600 }}>{rules.names[rule]}</Typography>
+            <Typography component="dt" variant="subtitle1">{rules.names[rule]}</Typography>
             <Typography component="dd" sx={{ m: 0 }}>{grid.rules[rule]}</Typography>
           </Box>
         ))}
       </Box>
-      <Typography variant="h6" component="h3" gutterBottom>{rules.statesHeading}</Typography>
+      <Typography variant="subtitle1" component="h3" gutterBottom sx={{ mt: 1 }}>{rules.statesHeading}</Typography>
       <Box component="dl" sx={{ m: 0 }}>
         {GAP_STATES.map((state) => (
           <Box key={state} data-state-meaning={state} sx={{ mb: 1 }}>
-            <Typography component="dt" sx={{ fontWeight: 600 }}>{grid.states[state]}</Typography>
+            <Typography component="dt" variant="subtitle1">{grid.states[state]}</Typography>
             <Typography component="dd" sx={{ m: 0 }}>{rules.states[state]}</Typography>
           </Box>
         ))}

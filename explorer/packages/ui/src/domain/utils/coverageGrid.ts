@@ -1,4 +1,5 @@
 import type { Locale } from "../../theme/index.ts";
+import { color, coverage, radius } from "../../theme/tokens.ts";
 import type { GapCellData, GapState } from "../types.ts";
 import { formatCount } from "../atoms/ApproxCount/index.ts";
 import { formatDate } from "./formatDate.ts";
@@ -6,42 +7,44 @@ import type { CoverageGridCopy, GridWindow } from "./coverageGrid.types.ts";
 
 export const GAP_STATES: readonly GapState[] = ["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL", "NOT_YET_LOADED"];
 
-/** Each state's colour. Colour is never the only cue: every state also has a glyph and a border or pattern (`STATE_GLYPHS`, `stateSx`). */
-export const STATE_COLORS: Record<GapState, string> = {
-  LOADED: "#cde8d2",
-  KNOWN_GAP: "#f4b9a8",
-  POSSIBLY_INCOMPLETE: "#f7dc8a",
-  NOT_IN_SOURCE: "#d9d9d9",
-  CRAWLED_PROVISIONAL: "#c5dcf3",
-  NOT_YET_LOADED: "#ffffff",
-};
-
 export const STATE_GLYPHS: Record<GapState, string> = {
   LOADED: "✓",
   KNOWN_GAP: "✕",
   POSSIBLY_INCOMPLETE: "?",
   NOT_IN_SOURCE: "–",
-  CRAWLED_PROVISIONAL: "~",
+  CRAWLED_PROVISIONAL: "c",
   NOT_YET_LOADED: "…",
 };
 
-/** The colour of the date-range highlight (column header and cell outline). */
-export const RANGE_COLOR = "#1565c0";
+/** The date-range highlight (column header and cell outline): the body text colour, which shows on amber and on the dark ground alike. */
+export const RANGE_COLOR = color.text;
 
-/** Colour plus a second cue per state: a hatch, a dashed or a dotted border. */
+/**
+ * Each state's look on the dark ground: amber fill (loaded), stripes (known gap), a dimmer amber (possibly incomplete), an amber outline
+ * (crawled, provisional), a quiet fill (awaiting the bulk file) and a bare outline (not in the source). Colour is never the only cue: every
+ * state also has its glyph (`STATE_GLYPHS`) and its accessible name.
+ */
 export function stateSx(state: GapState): Record<string, unknown> {
-  const base = { backgroundColor: STATE_COLORS[state], border: "1px solid #9a9a9a" };
+  const base = { borderRadius: `${radius.cell}px`, borderWidth: 1, borderStyle: "solid" };
   switch (state) {
-    case "NOT_IN_SOURCE":
-      return { ...base, backgroundImage: "repeating-linear-gradient(45deg, #b5b5b5 0 2px, transparent 2px 6px)" };
-    case "CRAWLED_PROVISIONAL":
-      return { ...base, border: "1px dashed #3b6fa3" };
-    case "NOT_YET_LOADED":
-      return { ...base, border: "1px dotted #6b6b6b" };
+    case "LOADED":
+      return { ...base, backgroundColor: coverage.harvested, borderColor: coverage.harvested, color: color.onAccent };
     case "KNOWN_GAP":
-      return { ...base, border: "1px solid #b04a2f" };
-    default:
-      return base;
+      return {
+        ...base,
+        backgroundImage: `repeating-linear-gradient(135deg, ${coverage.knownGapStripeA} 0 3px, ${coverage.knownGapStripeB} 3px 6px)`,
+        borderColor: coverage.knownGapStripeA,
+        color: color.text,
+        textShadow: `0 0 3px ${color.bg}, 0 0 3px ${color.bg}`,
+      };
+    case "POSSIBLY_INCOMPLETE":
+      return { ...base, backgroundColor: coverage.possiblyIncomplete, borderColor: coverage.possiblyIncomplete, color: color.onAccent };
+    case "CRAWLED_PROVISIONAL":
+      return { ...base, backgroundColor: "transparent", borderColor: color.accent, color: color.accent };
+    case "NOT_YET_LOADED":
+      return { ...base, backgroundColor: coverage.awaitingBulkFile, borderColor: coverage.awaitingBulkFile, color: color.muted };
+    case "NOT_IN_SOURCE":
+      return { ...base, backgroundColor: "transparent", borderColor: color.lineStrong, color: color.muted };
   }
 }
 

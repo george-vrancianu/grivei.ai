@@ -1,4 +1,4 @@
-import { MethodologyPage as MethodologyPageView, Stack, type Locale } from "@grivei/ui";
+import { Box, MethodologyPage as MethodologyPageView, type Locale } from "@grivei/ui";
 import { useCopy } from "../../copy/useCopy.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
@@ -15,7 +15,7 @@ export function MethodologyPage({ locale }: MethodologyPageProps) {
   const baseRates = useMethodologyBaseRates();
   const anchor = decodeAnchor(hash);
   return (
-    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box component="main">
       <MethodologyPageView
         baseRates={baseRates}
         anchor={anchor}
@@ -25,7 +25,7 @@ export function MethodologyPage({ locale }: MethodologyPageProps) {
         locale={locale}
         copy={t.methodology}
       />
-    </Stack>
+    </Box>
   );
 }
 

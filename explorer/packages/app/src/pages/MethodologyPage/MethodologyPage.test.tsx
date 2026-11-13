@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fixtures, recordedSignalsMethodology } from "@grivei/contract/fixtures";
 import allowlist from "@grivei/contract/persisted-queries.json";
-import { SIGNAL_RULES, forbiddenWords, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
+import { SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
@@ -201,7 +201,7 @@ describe("every methodology link the app builds lands on an anchor of the page",
 describe("the Signal sections' wording", () => {
   it.each(["en", "ro"] as const)("never uses a word a Signal never uses (%s)", (locale) => {
     const t = catalogue[locale].methodology;
-    const texts = [t.signals.heading, ...t.signals.paragraphs, ...Object.values(t.rules).flatMap((r) => [r.heading, ...r.paragraphs, ...(r.items ?? []), r.lawful]), t.baseRate.windowLabel, t.baseRate.rateLabel, t.baseRate.loading, t.baseRate.error, t.baseRate.missing];
+    const texts = [t.signals.heading, ...t.signals.paragraphs, ...Object.values(t.rules).flatMap((r) => [r.heading, ...r.paragraphs, ...(r.items ?? []).map(plainMethodologyText).map(plainMethodologyText), r.lawful]), t.baseRate.windowLabel, t.baseRate.rateLabel, t.baseRate.loading, t.baseRate.error, t.baseRate.missing];
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
   });
 });

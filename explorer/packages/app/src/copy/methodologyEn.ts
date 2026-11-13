@@ -1,4 +1,4 @@
-import type { MethodologyPageCopy } from "@grivei/ui";
+import { withAmounts, type MethodologyPageCopy } from "@grivei/ui";
 
 /** The methodology page, "About the numbers". Facts come from the counting rule, the Signal rules and the identity and placement rules as built. */
 export const methodologyEn: MethodologyPageCopy = {
@@ -37,8 +37,8 @@ export const methodologyEn: MethodologyPageCopy = {
         "Two rules flag a value:",
       ],
       items: [
-        "A direct purchase (DA or DAN) at ten times the statutory cap for its date and type, or more. The caps (Law 98/2016, without VAT) are 135,060 RON for goods and services and 450,200 RON for works until 9 September 2022, and 270,120 RON and 900,400 RON from 10 September 2022. The award date decides which applies. Works are told by the contract type or CPV division 45; CPV division 70 (rents) is never flagged. Values are compared as published, with no VAT adjustment.",
-        "A contract or award notice of 1 billion RON or more is checked against its estimated value, looked up on e-licitatie: at a hundred times the estimate or more it is flagged, and above 50 billion RON with no estimate it is flagged too. One whose estimate has not been looked up yet is counted.",
+        withAmounts((a, b, c, d) => `A direct purchase (DA or DAN) at ten times the statutory cap for its date and type, or more. The caps (Law 98/2016, without VAT) are ${a} for goods and services and ${b} for works until 9 September 2022, and ${c} and ${d} from 10 September 2022. The award date decides which applies. Works are told by the contract type or CPV division 45; CPV division 70 (rents) is never flagged. Values are compared as published, with no VAT adjustment.`, ["13506000", "45020000", "27012000", "90040000"]),
+        withAmounts((a, b) => `A contract or award notice of ${a} or more is checked against its estimated value, looked up on e-licitatie: at a hundred times the estimate or more it is flagged, and above ${b} with no estimate it is flagged too. One whose estimate has not been looked up yet is counted.`, ["100000000000", "5000000000000"]),
       ],
     },
     blankValues: {
@@ -97,7 +97,7 @@ export const methodologyEn: MethodologyPageCopy = {
       heading: "Over cap",
       paragraphs: ["Over cap: a direct purchase above the statutory cap for its date and type, and below ten times it."],
       items: [
-        "Direct purchases only (DA and DAN). The cap is the one in force on the award date, for the type of purchase: 135,060 RON for goods and services and 450,200 RON for works until 9 September 2022, then 270,120 RON and 900,400 RON (Law 98/2016, without VAT). Works are told by the contract type or CPV division 45.",
+        withAmounts((a, b, c, d) => `Direct purchases only (DA and DAN). The cap is the one in force on the award date, for the type of purchase: ${a} for goods and services and ${b} for works until 9 September 2022, then ${c} and ${d} (Law 98/2016, without VAT). Works are told by the contract type or CPV division 45.`, ["13506000", "45020000", "27012000", "90040000"]),
         "Strictly above the cap: a value exactly at the cap is within it. At ten times the cap or more, the counting rule handles the value instead and no Signal arises.",
         "CPV division 70 (rents) is exempt, and a Record with no value has nothing to compare.",
         "One Signal for each authority and award day; if several purchases qualify that day, the Signal shows the largest.",

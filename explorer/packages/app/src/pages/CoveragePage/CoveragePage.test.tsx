@@ -33,6 +33,28 @@ describe.each([
     expect(sent.map((s) => [s.operation, s.variables])).toEqual([["CoveragePage", {}]]);
   });
 
+  it("leaves no cell's state to colour alone: a glyph and an accessible name on every cell, stripes on a known gap, and the grid scrolls in its own box", async () => {
+    open(path);
+    const grid = await screen.findByRole("region", { name: gridHeading });
+    const cells = [...grid.querySelectorAll<HTMLElement>("td[data-state]")];
+    expect(cells.length).toBeGreaterThan(0);
+    for (const cell of cells) {
+      expect((cell.textContent ?? "").trim(), cell.getAttribute("aria-label") ?? "").not.toBe("");
+      expect(cell.getAttribute("aria-label") ?? "").not.toBe("");
+    }
+    const known = cells.find((c) => c.dataset["state"] === "KNOWN_GAP");
+    if (known) expect(getComputedStyle(known).backgroundImage).toContain("repeating-linear-gradient");
+    expect(getComputedStyle(within(grid).getByRole("region", { name: catalogue[_locale].coverage.grid.label })).overflowX).toBe("auto");
+  });
+
+  it("has the N of M block with a link to the Coverage lens, and the lead paragraph", async () => {
+    open(path);
+    await screen.findByRole("region", { name: gridHeading });
+    const block = within(screen.getByRole("region", { name: catalogue[_locale].coverage.perCounty.heading }));
+    expect(block.getByRole("link", { name: catalogue[_locale].coverage.perCounty.lensLink })).toHaveAttribute("href", `${path.replace("coverage", "")}?lens=coverage`);
+    expect(screen.getByText(catalogue[_locale].coverage.intro)).toBeVisible();
+  });
+
   it("highlights only the quarters of the date chip's window, against the whole grid", async () => {
     const sent = open(`${path}?from=2023-01-01&to=2023-12-31`);
     await screen.findByRole("region", { name: gridHeading });

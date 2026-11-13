@@ -475,6 +475,11 @@ export const en: Copy = {
       },
       methodology: "How the numbers are counted",
     },
+    perCounty: {
+      heading: "per county: N of M",
+      body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+      lensLink: "open the Coverage lens on the map →",
+    },
     snapshot: {
       heading: "Public entities list",
       line: (date) => `Ministry of Finance list of public entities: snapshot of ${date}`,
