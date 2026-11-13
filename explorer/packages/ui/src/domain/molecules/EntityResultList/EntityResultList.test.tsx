@@ -15,7 +15,7 @@ describe("EntityResultList", () => {
   it("sends each row's chip to the Overview of the list's role", () => {
     const { rows } = signalRowSamples.authorities;
     renderInUi(<EntityResultList rows={rows} role="authority" entityHref={(e, role) => `/explore/${role}/${e.key}`} locale="en" copy={sampleCopy.entityRow("en")} />);
-    const chips = screen.getAllByRole("link", { name: /Signals?$/ });
+    const chips = screen.getAllByRole("link", { name: /^\d+ Signals? , / });
     expect(chips).toHaveLength(rows.filter((r) => r.signalCount > 0).length);
     expect(chips[0]).toHaveAttribute("href", `/explore/authority/${rows[0]!.entity.key}#signals`);
   });

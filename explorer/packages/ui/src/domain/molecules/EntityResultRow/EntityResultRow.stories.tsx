@@ -33,5 +33,5 @@ export const WithAndWithoutSignals: Story = {
     </Stack>
   ),
 };
-/** A supplier with several Signals: the plural count (Romanian "2 Semnale"). */
-export const SeveralSignals: Story = { render: (_a, { globals }) => list(signalRowSamples.suppliers.rows, localeOf(globals["locale"])) };
+/** A supplier whose Records carry a Signal: the chip on the Suppliers tab (the plural forms are the SignalCountChip's Counts story). */
+export const SupplierWithSignal: Story = { render: (_a, { globals }) => list(signalRowSamples.suppliers.rows, localeOf(globals["locale"])) };

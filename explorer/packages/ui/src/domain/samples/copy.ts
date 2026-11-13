@@ -288,8 +288,8 @@ const roCount = (n: number, f: string, one: string, many: string) =>
 
 const signalCount = (locale: Locale): SignalCountChipCopy =>
   locale === "ro"
-    ? { label: (n, f) => roCount(n, f, "Semnal", "Semnale") }
-    : { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}` };
+    ? { label: (n, f) => roCount(n, f, "Semnal", "Semnale"), forEntity: (name) => `, ${name}` }
+    : { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}`, forEntity: (name) => `, ${name}` };
 
 const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"

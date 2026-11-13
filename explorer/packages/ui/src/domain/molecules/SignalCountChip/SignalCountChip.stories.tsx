@@ -10,7 +10,7 @@ type Story = StoryObj;
 const chips = (counts: number[], locale: "en" | "ro") => (
   <Stack direction="row" spacing={1}>
     {counts.map((n) => (
-      <SignalCountChip key={n} count={n} href="/explore/supplier/2000007#signals" locale={locale} copy={sampleCopy.signalCount(locale)} />
+      <SignalCountChip key={n} count={n} href="/explore/supplier/2000007#signals" entityName="Alfa Construct SRL" locale={locale} copy={sampleCopy.signalCount(locale)} />
     ))}
   </Stack>
 );

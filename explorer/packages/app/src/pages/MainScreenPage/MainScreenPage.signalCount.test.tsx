@@ -1,5 +1,5 @@
 // Seam 3 for ticket #104: the "n Signals" chip on entity rows, end to end. Recorded answers (recorded/signals/: hasSignals true and false) give the counts
-// of the Signals archive; the hand "supplier-county-consortium-share" answer gives an authority tab with and without Signals. The chip leads to the
+// of the Signals archive; the hand "records-variety" answer (q=contract) gives an authority tab with and without Signals (its Records carry the no-publication Signal of the hospital). The chip leads to the
 // entity's Overview for the tab's role, at the Signals anchor, where the Signals heading carries that id and is scrolled into view. EN and /ro/.
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,17 +20,17 @@ const open = (url: string) => {
 const chipsOf = (panel: HTMLElement, noun: RegExp) => within(panel).queryAllByRole("link", { name: noun });
 
 describe.each([
-  { locale: "en", base: "/explore", authorities: "Authorities", suppliers: "Suppliers", noun: /^\d+ Signals?$/, hasSignals: "hasSignals=true", signals: (n: number) => `${n} Signals`, heading: "Signals (8)" },
-  { locale: "ro", base: "/ro/explore", authorities: "Autorități", suppliers: "Furnizori", noun: /^\d+ Semnale?$/, hasSignals: "hasSignals=true", signals: (n: number) => `${n} Semnale`, heading: "Semnale (8)" },
+  { locale: "en", base: "/explore", authorities: "Authorities", suppliers: "Suppliers", noun: /^\d+ Signals? , /, hasSignals: "hasSignals=true", signals: (n: number) => `${n} Signals`, heading: "Signals (8)" },
+  { locale: "ro", base: "/ro/explore", authorities: "Autorități", suppliers: "Furnizori", noun: /^\d+ Semnale? , /, hasSignals: "hasSignals=true", signals: (n: number) => `${n} Semnale`, heading: "Semnale (8)" },
 ] as const)("the Signals chip on entity rows at $base", ({ locale, base, authorities, suppliers, noun, hasSignals, signals, heading }) => {
   it("shows each Authorities row's own count, linked to the authority's Overview at the Signals anchor", async () => {
     open(`${base}/?${hasSignals}&tab=authorities`);
     const panel = await screen.findByRole("tabpanel", { name: new RegExp(`^${authorities}`) });
     await waitFor(() => expect(chipsOf(panel, noun)).toHaveLength(3));
     expect(chipsOf(panel, noun).map((c) => [c.textContent, c.getAttribute("href")])).toEqual([
-      [signals(8), `${base}/authority/1000017#signals`],
-      [signals(3), `${base}/authority/1000009#signals`],
-      [signals(1).replace("1 Signals", "1 Signal").replace("1 Semnale", "1 Semnal"), `${base}/authority/2000031#signals`],
+      [`${signals(8)}, SPITALUL EXEMPLU`, `${base}/authority/1000017#signals`],
+      [`${signals(3)}, COMUNA EXEMPLU`, `${base}/authority/1000009#signals`],
+      [`${signals(1).replace("1 Signals", "1 Signal").replace("1 Semnale", "1 Semnal")}, CNAIR DEMO SA`, `${base}/authority/2000031#signals`],
     ]);
   });
 
@@ -51,12 +51,12 @@ describe.each([
   });
 
   it("shows a chip on the row that has Signals and none on the row that has not, in the same tab", async () => {
-    open(`${base}/?county=RO-CJ&countySide=supplier&tab=authorities`);
+    open(`${base}/?q=contract&tab=authorities`);
     const panel = await screen.findByRole("tabpanel", { name: new RegExp(`^${authorities}`) });
     const rowOf = async (name: RegExp | string) => (await within(panel).findByRole("link", { name })).closest("li")!;
-    const withSignals = await rowOf(/^COMPANIA NAȚIONALĂ DE ADMINISTRARE/);
-    const without = await rowOf("MUNICIPIUL BRAȘOV");
-    expect(chipsOf(withSignals, noun)).toHaveLength(1);
+    const withSignals = await rowOf("SPITALUL CLINIC JUDEȚEAN DE URGENȚĂ SIBIU");
+    const without = await rowOf("ASOCIAȚIA INTERCOMUNITARĂ EXEMPLU");
+    expect(chipsOf(withSignals, noun).map((c) => c.textContent)).toEqual([`${signals(1).replace("1 Signals", "1 Signal").replace("1 Semnale", "1 Semnal")}, SPITALUL CLINIC JUDEȚEAN DE URGENȚĂ SIBIU`]);
     expect(chipsOf(without, noun)).toHaveLength(0);
   });
 

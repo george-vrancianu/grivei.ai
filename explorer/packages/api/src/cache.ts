@@ -195,11 +195,14 @@ export function cachedStore(
           await store.searchTotal(f);
           await store.searchMap("AUTHORITY", f); // the Money lens, the default side (#71)
           await store.searchMap("SUPPLIER", f); // and the other side, so the first toggle is not a cold scan
-          await store.searchEntities("AUTHORITY", f, PAGE);
-          await store.searchEntities("SUPPLIER", f, PAGE);
+          // each tab's page, then its rows' Signal counts (#104): the resolver asks for them with these same keys, in this order, so the key matches
+          for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
+            const page = await store.searchEntities(side, f, PAGE);
+            await store.entitySignalCounts(side, f, page.rows.map((r) => r.entity.key));
+          }
           await (f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }));
           if (f.q) await store.goTo(foldTokens(f.q).join(" ")); // the Go-to lookup of the same folded query
-          statements += f.q ? 7 : 6;
+          statements += f.q ? 9 : 8;
         } catch (e) {
           failed++;
           log(`cache warming of ${JSON.stringify(f)} failed: ${(e as Error).message}`);

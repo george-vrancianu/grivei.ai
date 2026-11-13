@@ -51,7 +51,7 @@ export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProp
           {meta.join(" · ")}
         </Typography>
       </Stack>
-      {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} locale={locale} copy={copy.signals} />}
+      {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} />}
       <Stack spacing={0.25} sx={{ alignItems: "flex-end", flex: "none", ml: "auto", textAlign: "right" }}>
         <Typography component="span" variant="body1" sx={{ fontWeight: 600 }}>
           <MoneyAmount bani={matched.awarded} locale={locale} />

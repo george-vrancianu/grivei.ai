@@ -33,14 +33,14 @@ describe("EntityResultRow", () => {
   });
   it("shows an 'n Signals' chip linking to the Overview's Signals section only when the entity has Signals", () => {
     const withSignals = renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 3 }} href="/explore/supplier/30000001" locale="en" copy={sampleCopy.entityRow("en")} />);
-    expect(screen.getByRole("link", { name: "3 Signals" })).toHaveAttribute("href", "/explore/supplier/30000001#signals");
+    expect(screen.getByRole("link", { name: "3 Signals , HACHI INVEST S.R.L." })).toHaveAttribute("href", "/explore/supplier/30000001#signals");
     withSignals.unmount();
     renderInUi(<EntityResultRow row={row(county)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
     expect(screen.queryByRole("link", { name: /Signal/ })).toBeNull();
   });
   it("reads the chip in Romanian, and does not nest it in another link", () => {
     renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 2 }} href="/explore/furnizor/1" locale="ro" copy={sampleCopy.entityRow("ro")} />, "ro");
-    const chip = screen.getByRole("link", { name: "2 Semnale" });
+    const chip = screen.getByRole("link", { name: "2 Semnale , HACHI INVEST S.R.L." });
     expect(chip.closest("a")).toBe(chip);
     expect(chip.parentElement?.closest("a")).toBeNull();
   });

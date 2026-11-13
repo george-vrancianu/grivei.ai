@@ -21,7 +21,7 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
     data: { seap: { search: {
       total: total({ awarded: ron(9_000_000_000), records: 12_000 }),
       authorities: { count: 5_100, countEstimated: false, rows: [
-        { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(900_000_000), records: 80 }), signalCount: 3 },
+        { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(900_000_000), records: 80 }), signalCount: 1 },
         { entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1, noValue: 0 }), signalCount: 0 },
         { entity: w.primariaFaraUatRow, matched: total({ awarded: ron(36_000), records: 1 }), signalCount: 0 },
       ] },
@@ -32,7 +32,7 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
     variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 0 },
     data: { seap: { search: {
       total: total({ awarded: ron(86_000_000_000), records: 410_000 }),
-      authorities: { count: 70_000, countEstimated: true, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }), signalCount: 12 }] },
+      authorities: { count: 70_000, countEstimated: true, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(9_000_000_000), records: 1_200 }), signalCount: 1 }] },
     } } },
   },
   {

@@ -87,7 +87,7 @@ export const en: Copy = {
       national: "national",
       noCounty: "county unknown",
       entityLink,
-      signals: { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}` },
+      signals: { label: (n, f) => `${f} ${plural(n, "Signal", "Signals")}`, forEntity: (name) => `, ${name}` },
     },
     recordRow: {
       noValue: "no value",

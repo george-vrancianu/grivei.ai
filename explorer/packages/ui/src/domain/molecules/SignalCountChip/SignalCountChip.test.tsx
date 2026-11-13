@@ -7,18 +7,18 @@ import { sampleCopy } from "../../samples/copy.ts";
 import { SignalCountChip } from "./index.ts";
 
 function show(count: number, locale: Locale = "en") {
-  renderInUi(<SignalCountChip count={count} href="/explore/supplier/2000007#signals" locale={locale} copy={sampleCopy.signalCount(locale)} />, locale);
+  renderInUi(<SignalCountChip count={count} href="/explore/supplier/2000007#signals" entityName="Alfa SRL" locale={locale} copy={sampleCopy.signalCount(locale)} />, locale);
 }
 
 describe("the Signals count chip", () => {
-  it("is a link to the entity's Signals section, named by the count", () => {
+  it("is a link to the entity's Signals section, named by the count and the entity", () => {
     show(3);
-    expect(screen.getByRole("link", { name: "3 Signals" })).toHaveAttribute("href", "/explore/supplier/2000007#signals");
+    expect(screen.getByRole("link", { name: "3 Signals , Alfa SRL" })).toHaveAttribute("href", "/explore/supplier/2000007#signals");
   });
 
   it("uses the singular for one Signal", () => {
     show(1);
-    expect(screen.getByRole("link", { name: "1 Signal" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "1 Signal , Alfa SRL" })).toBeVisible();
   });
 
   it.each([
@@ -30,12 +30,12 @@ describe("the Signals count chip", () => {
     [1200, "1.200 de Semnale"],
   ])("reads %i in Romanian as %s", (n, text) => {
     show(n, "ro");
-    expect(screen.getByRole("link", { name: text })).toBeVisible();
+    expect(screen.getByRole("link", { name: `${text} , Alfa SRL` })).toBeVisible();
   });
 
   it("carries the amber ring and no accusing word", () => {
     show(2);
     expect(document.querySelector("[data-signal-mark]")).not.toBeNull();
-    for (const locale of ["en", "ro"] as const) for (const n of [1, 2, 20]) expect(forbiddenWords(sampleCopy.signalCount(locale).label(n, String(n)), locale)).toEqual([]);
+    for (const locale of ["en", "ro"] as const) for (const n of [1, 2, 20]) expect(forbiddenWords(sampleCopy.signalCount(locale).label(n, String(n)) + sampleCopy.signalCount(locale).forEntity("Alfa SRL"), locale)).toEqual([]);
   });
 });

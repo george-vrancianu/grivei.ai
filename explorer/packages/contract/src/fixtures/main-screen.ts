@@ -24,8 +24,12 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
           map: moneyMap({ national: total({ awarded: ron(52_000_000), records: 6 }), unplaced: { authorities: 1, total: total({ awarded: ron(12_000), records: 1 }) } }),
           goTo: null,
           facets: { procedure: procedureFacet },
-          authorities: { count: 5, countEstimated: false, rows: [{ entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1 }), signalCount: 0 }] },
-          suppliers: { count: 6, countEstimated: false, rows: [{ entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 2, noValue: 1 }), signalCount: 0 }] },
+          authorities: { count: 5, countEstimated: false, rows: [
+            // the Signal: sNoPublication (spitalSibiu / foreignFirm) on rNoValue, one of this set's Records; the other rows' Records carry none
+            { entity: w.spitalSibiuRow, matched: total({ awarded: ron(4_500_000), records: 2, noValue: 1 }), signalCount: 1 },
+            { entity: w.autoritateNeplasataRow, matched: total({ awarded: ron(12_000), records: 1 }), signalCount: 0 },
+          ] },
+          suppliers: { count: 6, countEstimated: false, rows: [{ entity: w.foreignFirmRow, matched: total({ awarded: ron(2_250_000), records: 2, noValue: 1 }), signalCount: 1 }] },
           records: { count: 11, rows: [
             w.rConsortium, w.rConsortiumNameOnly, w.rFrameworkCeiling, w.rSubsequent, w.rSuspect, w.rNoValue,
             w.rNaturalPerson, w.rProvisional, w.rMismatch,
@@ -49,10 +53,10 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
           goTo: null,
           facets: { procedure: procedureFacet },
           authorities: { count: 2, countEstimated: false, rows: [
-            { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(15_000_000), records: 1 }), signalCount: 1 },
+            { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(15_000_000), records: 1 }), signalCount: 0 },
             { entity: w.primariaBrasovRow, matched: total({ awarded: ron(12_800_000), records: 1 }), signalCount: 0 },
           ] },
-          suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(27_800_000), records: 2 }), signalCount: 2 }] },
+          suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(27_800_000), records: 2 }), signalCount: 0 }] },
           records: { count: 2, rows: [
             { record: w.rConsortium, matchedField: null, areaShare: ron(15_000_000) },
             { record: w.rContract, matchedField: null, areaShare: null },

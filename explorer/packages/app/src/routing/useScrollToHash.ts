@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { decodeHash } from "./decodeHash.ts";
 import { useLocation } from "./location.tsx";
 
 /**
@@ -9,13 +10,8 @@ import { useLocation } from "./location.tsx";
 export function useScrollToHash(ready: boolean): void {
   const { hash } = useLocation();
   useEffect(() => {
-    if (!ready || hash.length < 2) return;
-    let id: string;
-    try {
-      id = decodeURIComponent(hash.slice(1));
-    } catch {
-      return;
-    }
+    const id = decodeHash(hash);
+    if (!ready || id === null) return;
     document.getElementById(id)?.scrollIntoView?.();
   }, [ready, hash]);
 }
