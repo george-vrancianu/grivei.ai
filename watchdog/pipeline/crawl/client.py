@@ -27,7 +27,7 @@ HEADERS = {
 DELAY = 0.35  # seconds between requests (the harvester's PAUSE)
 RETRIES = 3  # retries of one request after a transient error
 RETRY_PAUSE = 5  # back-off step in seconds: 5, 10, 15
-TIMEOUT = 60
+TIMEOUT = 180  # seconds per request: a 1000-contract page of a big notice took 86 s (notice 100665956, 2480 contracts, Nov 2026)
 
 
 class CrawlError(RuntimeError):
