@@ -212,6 +212,14 @@ _Avoid_: history, audit log
 **Relationships tab**:
 The entity page's view of how money moves between the entity and its counterparties: a counterparty graph, a monthly timeline and the Flow lens.
 
+**Assistant**:
+The journalist-facing feature that answers plain-language questions by querying the graph, every claim citing a Record, entity or source document it was given; it states only links the graph returned.
+_Avoid_: Grivei LLM, chatbot, AI
+
+**Research model**:
+A model trained on Grivei.ai data for research; Restricted, and never a source of facts for the Assistant.
+_Avoid_: Grivei LLM, the model
+
 **Record page**:
 The page, with its own URL, for one SEAP record (a contract or a direct purchase), linking to its source document.
 
