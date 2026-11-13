@@ -1,4 +1,4 @@
-// Unit tests of the result cache's memory bound, eviction (#70) and shared in-flight misses (#144); no database: a fake pool answers the generation read.
+// Unit tests of the result cache's memory bound, eviction (#70), shared in-flight misses (#144) and the Coverage figures (#145); no database: a fake pool answers the generation read.
 import type pg from "pg";
 import { describe, expect, it } from "vitest";
 import { approxBytes, cachedStore } from "../src/cache.ts";
@@ -249,18 +249,37 @@ describe("Coverage in the result cache", () => {
     expect(calls.slice(2)).toEqual(["areas 2024-01-01|null", "areas null|2024-01-01"]);
   });
 
-  it("asks the store again after a new load generation", async () => {
+  it("asks the store again after a new load generation, and only then", async () => {
     const calls: string[] = [];
     const state = { generation: "g1" };
     const cache = cachedStore(coverageInner(calls), fakePool(state), { autoWarm: false, generationTtlMs: 0 });
-    await cache.coverageGrid();
-    await cache.coverageAreas(none);
-    await cache.unplacedAuthorities(none);
+    for (let i = 0; i < 2; i++) {
+      await cache.coverageGrid();
+      await cache.coverageAreas(none);
+      await cache.unplacedAuthorities(none);
+    }
+    expect(calls).toHaveLength(3); // cached within g1
     state.generation = "g2";
     await cache.coverageGrid();
     await cache.coverageAreas(none);
     await cache.unplacedAuthorities(none);
     expect(calls).toEqual(["grid", "areas null|null", "unplaced null|null", "grid", "areas null|null", "unplaced null|null"]);
+  });
+
+  it("hands the store the normalised window, whichever equivalent window arrives first", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(coverageInner(calls), fakePool({ generation: "g1" }), { autoWarm: false });
+    await cache.coverageAreas({ from: "", to: "" });
+    await cache.unplacedAuthorities({ from: "", to: "2024-01-01" });
+    expect(calls).toEqual(["areas null|null", "unplaced null|2024-01-01"]);
+  });
+
+  it("shares one in-flight run between concurrent misses on equivalent windows", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(coverageInner(calls), fakePool({ generation: "g1" }), { autoWarm: false });
+    const [a, b] = await Promise.all([cache.coverageAreas(none), cache.coverageAreas({} as typeof none)]);
+    expect(calls).toEqual(["areas null|null"]);
+    expect(b).toEqual(a);
   });
 
   it("counts Coverage entries in the stats and evicts them under the byte budget", async () => {

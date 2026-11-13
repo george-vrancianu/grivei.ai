@@ -1,4 +1,4 @@
-// The result cache (#70): an in-process cache over the search statements, keyed by the normalised filter and valid for one
+// The result cache (#70): an in-process cache over the search and Coverage statements, keyed by the normalised filter and valid for one
 // load generation. A load (the pipeline's rebuild) writes a fresh value into `seap.rollup_meta` inside its transaction; every
 // lookup reads it (one tiny statement) and flushes the cache when it changed, so "a load invalidates the cache" holds for
 // the next request after the commit, with no signal between the pipeline and the API. After a flush the 2-character
@@ -60,7 +60,7 @@ export interface CachedStore extends Store {
   stats(): CacheStats;
   /** Reads the load generation now: a new one flushes the cache and starts warming in the background. */
   sync(): Promise<void>;
-  /** Warms every 2-character prefix of the current load (no chips) and the empty state; resolves when done. */
+  /** Warms the no-window Coverage figures, then the empty state and every 2-character prefix of the current load (no chips); resolves when done. */
   warm(): Promise<WarmReport>;
 }
 
@@ -287,6 +287,8 @@ export function cachedStore(
   }
 
   // A Coverage window's key: absent, null and empty bounds are one window, `from`-only and `to`-only are two.
+  // The store gets the canonical window too, so the answer never depends on which equivalent spelling filled the entry.
+  const normWindow = (w: { from?: string | null; to?: string | null }) => ({ from: w.from || null, to: w.to || null });
   const windowKey = (w: { from?: string | null; to?: string | null }) => `${w.from || ""}..${w.to || ""}`;
   const page = (p: { limit: number; offset: number }) => `${p.limit}:${p.offset}`;
   const store: CachedStore = {
@@ -328,8 +330,8 @@ export function cachedStore(
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, (signal) => inner.searchUatMap(county, filter, { ...options, signal }), options?.signal),
     // Coverage (#145): the grid has no argument; the figures follow the date window
     coverageGrid: () => cached("coverage-grid", () => inner.coverageGrid()),
-    coverageAreas: (w) => cached(`coverage-areas|${windowKey(w)}`, () => inner.coverageAreas(w)),
-    unplacedAuthorities: (w) => cached(`coverage-unplaced|${windowKey(w)}`, () => inner.unplacedAuthorities(w)),
+    coverageAreas: (w) => cached(`coverage-areas|${windowKey(w)}`, () => inner.coverageAreas(normWindow(w))),
+    unplacedAuthorities: (w) => cached(`coverage-unplaced|${windowKey(w)}`, () => inner.unplacedAuthorities(normWindow(w))),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };
   return store;
