@@ -33,7 +33,7 @@ export function FrameworkSection({ framework, entityHref, recordHref, locale, co
         <Stack spacing={1}>
           <SectionHeading>{copy.subsequentHeading}</SectionHeading>
           <RecordResultList
-            rows={framework.subsequent.map((record) => ({ record, matchedField: null }))}
+            rows={framework.subsequent.map((record) => ({ record, matchedField: null, areaShare: null }))}
             entityHref={entityHref}
             recordHref={(record) => recordHref(record.code)}
             locale={locale}

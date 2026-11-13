@@ -166,7 +166,7 @@ const facetsOfAuthority = {
     { entity: w.constructii, matched: total({ awarded: ron(12_800_000), records: 1 }) },
   ],
 };
-const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null })) });
+const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null, areaShare: null })) });
 
 /**
  * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`,
@@ -196,7 +196,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
       records: {
         total: total({ awarded: ron(300_000), records: 1 }),
         facets: { ...facetsOfAuthority, channel: [facetsOfAuthority.channel[0]!], procedure: [facetsOfAuthority.procedure[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
-        records: { count: 1, rows: [{ record: w.rDirect, matchedField: { field: "TITLE", text: "Deszăpezire străzi, sezon rece 2023-2024", highlights: [[0, 11]] } }] },
+        records: { count: 1, rows: [{ record: w.rDirect, matchedField: { field: "TITLE", text: "Deszăpezire străzi, sezon rece 2023-2024", highlights: [[0, 11]] }, areaShare: null }] },
       },
     }) },
   },
@@ -212,7 +212,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
           ...facetsOfAuthority,
           channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
         },
-        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null, areaShare: null })) },
       },
     }) },
   },
@@ -228,7 +228,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
           ...facetsOfAuthority,
           channel: facetsOfAuthority.channel.map((f) => ({ ...f, total: { ...f.total, estimated: true } })),
         },
-        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null })) },
+        records: { count: 1_240_000, rows: [w.rContract, w.rDirect, w.rSplit1].map((record) => ({ record, matchedField: null, areaShare: null })) },
       },
     }) },
   },

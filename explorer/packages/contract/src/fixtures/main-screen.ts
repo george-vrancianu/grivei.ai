@@ -29,7 +29,34 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
           records: { count: 11, rows: [
             w.rConsortium, w.rConsortiumNameOnly, w.rFrameworkCeiling, w.rSubsequent, w.rSuspect, w.rNoValue,
             w.rNaturalPerson, w.rProvisional, w.rMismatch,
-          ].map((record) => ({ record, matchedField: null })) },
+          ].map((record) => ({ record, matchedField: null, areaShare: null })) },
+        },
+      },
+    },
+  },
+  {
+    name: "supplier-county-consortium-share",
+    kind: "typical",
+    description: "a supplier-side county click (Cluj): a consortium Record whose winners sit in two supplier counties (Cluj and Mureș) shows its Cluj share as areaShare; the single-winner Record shows none; the shares add up to the Total",
+    variables: { filter: { county: "RO-CJ", countySide: "SUPPLIER" } },
+    data: {
+      sources,
+      seap: {
+        search: {
+          filter: { qFolded: null, authority: null, supplier: null },
+          total: total({ awarded: ron(27_800_000), records: 2 }),
+          map: moneyMap({ side: "SUPPLIER", counties: [{ area: "RO-CJ", name: "Cluj", entities: 1, total: total({ awarded: ron(27_800_000), records: 2 }) }] }),
+          goTo: null,
+          facets: { procedure: procedureFacet },
+          authorities: { count: 2, countEstimated: false, rows: [
+            { entity: w.drumuriNationaleRow, matched: total({ awarded: ron(15_000_000), records: 1 }) },
+            { entity: w.primariaBrasovRow, matched: total({ awarded: ron(12_800_000), records: 1 }) },
+          ] },
+          suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(27_800_000), records: 2 }) }] },
+          records: { count: 2, rows: [
+            { record: w.rConsortium, matchedField: null, areaShare: ron(15_000_000) },
+            { record: w.rContract, matchedField: null, areaShare: null },
+          ] },
         },
       },
     },
@@ -53,7 +80,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
           facets: { procedure: procedureFacet },
           authorities: { count: 66_000, countEstimated: true, rows: [{ entity: w.primariaBrasovRow, matched: total({ awarded: ron(1), records: 1 }) }] },
           suppliers: { count: 240_000, countEstimated: true, rows: [{ entity: w.hachiRow, matched: total({ awarded: ron(1), records: 1 }) }] },
-          records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Consumabile birotică", highlights: [[0, 2]] } }] },
+          records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Consumabile birotică", highlights: [[0, 2]] }, areaShare: null }] },
         },
       },
     },

@@ -4,6 +4,7 @@ import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import { ceilingRecord, consortiumRecord, highlightedRecord, naturalPersonRecord, nameOnlyParty, noValueRecord, overCapSignalRecords } from "../../samples/fixtureData.ts";
 import type { RecordResult } from "../../types.ts";
+import { formatMoney } from "../../atoms/MoneyAmount/moneyAmount.utils.ts";
 import { RecordResultRow } from "./index.ts";
 
 const entityHref = (entity: { key: string }, role: string) => `/explore/${role}/${entity.key}`;
@@ -59,15 +60,6 @@ describe("RecordResultRow", () => {
   it("says 'ceiling, not summed' under the value of a framework ceiling", () => {
     renderRow(ceilingRecord);
     expect(screen.getByText("ceiling, not summed")).toBeVisible();
-  });
-
-  it("puts a line given as valueExtra under the caption", () => {
-    renderInUi(
-      <ul>
-        <RecordResultRow row={highlightedRecord} recordHref="/x" entityHref={entityHref} locale="en" copy={sampleCopy.recordRow("en")} valueExtra={<span>share line</span>} />
-      </ul>,
-    );
-    expect(screen.getByText("share line")).toBeVisible();
   });
 
   it("links the title to the Record page and shows value, date and authority", () => {
@@ -139,5 +131,16 @@ describe("RecordResultRow", () => {
     const { container } = renderRow(highlightedRecord, "ro");
     expect(container).toHaveTextContent("Potrivit în titlu:");
     expect(container).toHaveTextContent("5.000 RON");
+  });
+});
+
+describe("RecordResultRow in-county share line (#103)", () => {
+  it.each(["en", "ro"] as const)("shows the share under the full value, labelled, only when the row has one (%s)", (locale) => {
+    const share = consortiumRecord.record.winners[0]!.share!;
+    const { container, unmount } = renderRow({ ...consortiumRecord, areaShare: share }, locale);
+    const line = container.querySelector("[data-area-share]");
+    expect(line?.textContent).toBe(sampleCopy.recordRow(locale).areaShare(formatMoney(share, locale, { showBani: true })));
+    unmount();
+    expect(renderRow({ ...consortiumRecord, areaShare: null }, locale).container.querySelector("[data-area-share]")).toBeNull();
   });
 });

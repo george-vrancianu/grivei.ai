@@ -323,6 +323,7 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
         },
         badges: badges.ro,
         party: { naturalPerson: "Persoană fizică", entityLink: entityLink.ro },
+        areaShare: (amount) => `Parte din asociere în selecție: ${amount}`,
       }
     : {
         noValue: "no value",
@@ -341,6 +342,7 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
         },
         badges: badges.en,
         party: { naturalPerson: "Persoană fizică", entityLink: entityLink.en },
+        areaShare: (amount) => `Consortium share in the selection: ${amount}`,
       };
 
 const goTo = (locale: Locale): GoToCardCopy =>

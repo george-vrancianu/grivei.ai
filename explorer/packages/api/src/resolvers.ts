@@ -242,7 +242,16 @@ export function rootValue(store: Store) {
         const { count, rows } = where.empty
           ? { count: (await store.searchTotal(filter, { signal: ctx?.signal })).records, rows: await store.records(page) } // the empty state's Records: the Top-K query on the Record table
           : await store.searchRecords(filter, page, { signal: ctx?.signal });
-        return { count, rows: rows.map((record) => ({ record: recordRow(record), matchedField: matchedFieldOf(matchSource(record), queryTokens) })) };
+        // areaShare (#103): only after a supplier-side county click, and only for a Record with several winners (a single winner's share is the whole value)
+        const inArea = filter.countySide === "SUPPLIER" && !!filter.county;
+        return {
+          count,
+          rows: rows.map((record) => ({
+            record: recordRow(record),
+            matchedField: matchedFieldOf(matchSource(record), queryTokens),
+            areaShare: inArea && record.winners.length > 1 ? (record.areaShare ?? null) : null,
+          })),
+        };
       },
     };
   }

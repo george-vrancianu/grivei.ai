@@ -25,7 +25,7 @@ export interface LargestRecordsProps {
 
 /** The largest counted Records. Only counted Records are listed, whatever the API sends: a Record with no counted value (suspect, framework ceiling) is filtered out. */
 export function LargestRecords({ records, entityHref, recordHref, locale, copy }: LargestRecordsProps) {
-  const rows = countedRecords(records).map((record) => ({ record, matchedField: null }));
+  const rows = countedRecords(records).map((record) => ({ record, matchedField: null, areaShare: null }));
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
       <SectionHeading>{copy.heading}</SectionHeading>

@@ -615,7 +615,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -659,7 +660,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -691,7 +693,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -723,7 +726,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -755,7 +759,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -787,7 +792,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -819,7 +825,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -851,7 +858,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -883,7 +891,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -915,7 +924,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -947,7 +957,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -979,7 +990,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1011,7 +1023,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1043,7 +1056,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1075,7 +1089,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1107,7 +1122,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1147,7 +1163,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1191,7 +1208,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -1614,7 +1632,8 @@
                       11
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1655,7 +1674,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1696,7 +1716,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1737,7 +1758,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1778,7 +1800,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1819,7 +1842,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1860,7 +1884,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -1913,7 +1938,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -2109,7 +2135,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -2476,7 +2503,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2517,7 +2545,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2558,7 +2587,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2599,7 +2629,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2640,7 +2671,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -2681,7 +2713,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -3093,7 +3126,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3125,7 +3159,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3157,7 +3192,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3189,7 +3225,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3221,7 +3258,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3253,7 +3291,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3285,7 +3324,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3317,7 +3357,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -3863,7 +3904,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3907,7 +3949,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": "50001"
               },
               {
                 "record": {
@@ -3939,7 +3982,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -3971,7 +4015,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4003,7 +4048,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4035,7 +4081,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4067,7 +4114,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4099,7 +4147,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4131,7 +4180,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4163,7 +4213,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4195,7 +4246,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4227,7 +4279,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4259,7 +4312,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4291,7 +4345,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4323,7 +4378,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4355,7 +4411,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -4575,7 +4632,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -4615,7 +4673,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -5225,7 +5284,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5269,7 +5329,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5301,7 +5362,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5333,7 +5395,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5365,7 +5428,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5397,7 +5461,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5429,7 +5494,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5461,7 +5527,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5493,7 +5560,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5525,7 +5593,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5557,7 +5626,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5589,7 +5659,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5621,7 +5692,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5653,7 +5725,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5685,7 +5758,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5717,7 +5791,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5757,7 +5832,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -5801,7 +5877,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -6139,7 +6216,8 @@
                       11
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6180,7 +6258,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6221,7 +6300,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6262,7 +6342,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6303,7 +6384,8 @@
                       6
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -6938,7 +7020,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -6999,7 +7082,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7048,7 +7132,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7097,7 +7182,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7146,7 +7232,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7195,7 +7282,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7244,7 +7332,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7293,7 +7382,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7342,7 +7432,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7391,7 +7482,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7440,7 +7532,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7489,7 +7582,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7538,7 +7632,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7587,7 +7682,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7636,7 +7732,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               },
               {
                 "record": {
@@ -7685,7 +7782,8 @@
                       19
                     ]
                   ]
-                }
+                },
+                "areaShare": null
               }
             ]
           }
@@ -8095,7 +8193,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8127,7 +8226,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8159,7 +8259,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8203,7 +8304,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8410,7 +8512,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8658,7 +8761,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -8690,7 +8794,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -8898,7 +9003,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }

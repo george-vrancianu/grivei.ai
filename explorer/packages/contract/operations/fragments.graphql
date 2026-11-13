@@ -134,5 +134,6 @@ fragment RecordResultFields on RecordResultPage {
   rows {
     record { ...RecordRowFields }
     matchedField { field text highlights }
+    areaShare
   }
 }

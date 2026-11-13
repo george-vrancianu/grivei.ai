@@ -228,6 +228,14 @@ type RecordResult {
   record: SeapRecord!
   "Why it matched: computed only for returned rows."
   matchedField: MatchedField
+  """
+  The part of the Record's value that went to winners placed in the filter's supplier-side map area: the summed
+  consortium shares of those winners, counted by the same rule and over the same Record x winner rows as the headline
+  Total, so over all Records matching the filter these sum to the Total's `awarded`. Null unless the filter has
+  `countySide: SUPPLIER` and a `county`; null for a Record with a single winner (its full value is the share); null
+  for a Record with no value to share. The app's entity Records tab never sends a county, so it never sees one.
+  """
+  areaShare: Bani
 }
 
 type MatchedField {
