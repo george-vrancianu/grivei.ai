@@ -92,7 +92,7 @@ Expected: about 15 minutes for 4.7 GB (use `--kind` to split it), one file in me
 
 **If DA 2022 Q2 is already in quarantine** (a seed or load ran before this rule; `reason.json` says `a CONTRACT header in the middle of a DA file`), bring it back once, with nothing else running (`requeue` does not take the lock), then load: `$P requeue --match da/2022Q2` (it prints `requeued 1 unit(s)`), then the next load (`$P load-quarter 2022Q2`, which requeues and rebuilds in one go under the lock, or the next nightly `refresh`: a requeue changes the archive fingerprint, so its load step is due). The rebuild summary then says `set aside, not loaded: ... from line 415944 a CONTRACT export (87912 rows) ...; its cell is a known gap`, and `seap.source_file.load_notes` keeps `set_aside:CONTRACT:from_line_415944:87912_rows`.
 
-**Steps 5 and 6 in one detached chain:** `setsid nohup deploy/first-load.sh >> ~/grivei-data/seed.log 2>&1 &` runs the crawl, then the seed, so the one full load includes the crawled days (add `--backfill` for step 8; see the script's header). The steps below are the same commands by hand.
+**Steps 5 and 6 in one detached chain:** `setsid nohup deploy/first-load.sh >> ~/grivei-data/seed.log 2>&1 &` runs the crawl, then the three lookups of step 6 (`anaf-lookup`, `authority-scope`, `seap-entities`), then the seed, so the lookups and the one full load include the crawled days (add `--backfill` for step 8; see the script's header). The steps below are the same commands by hand.
 
 ### 5. (Optional, before the seed) crawl the quarters the bulk has not reached
 
