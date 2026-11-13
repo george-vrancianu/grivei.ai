@@ -1,5 +1,6 @@
 import type { RecordFilter } from "@grivei/contract";
 import { Box } from "@grivei/ui";
+import type { OnlyMatchingCopy } from "../../copy/types.ts";
 import { AppLink } from "../AppLink/index.ts";
 
 export interface OnlyMatchingLinkProps {
@@ -7,7 +8,7 @@ export interface OnlyMatchingLinkProps {
   carried: RecordFilter;
   /** The Records tab with that search applied to the entity's filter. */
   href: string;
-  copy: { query: (q: string) => string; filters: string };
+  copy: OnlyMatchingCopy;
 }
 
 /** "only Records matching '<query>'": names the query, or says "the search's filters" when only chips were carried. Followed in-app, without a page load. */

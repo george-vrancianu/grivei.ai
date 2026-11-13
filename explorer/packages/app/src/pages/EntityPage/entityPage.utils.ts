@@ -33,7 +33,8 @@ export function recordsHref(locale: Locale, entity: EntityRoute, key: string, st
 
 /**
  * Where "only Records matching ..." goes: the Records tab with the carried query and chips applied over the entity's own filter, and the
- * carried search dropped (it is applied now, and the link has nothing left to offer). The page restarts at 1.
+ * carried search dropped (it is applied now, and the link has nothing left to offer). The page restarts at 1. Where both set the same field
+ * (a repeatable one like badges or procedure, or from/to) the carried value wins: it replaces the entity's own rather than combining with it.
  */
 export function onlyMatchingHref(locale: Locale, entity: EntityRoute, key: string, state: UrlState & { carried: RecordFilter }): string {
   const { carried, filter, order } = state;

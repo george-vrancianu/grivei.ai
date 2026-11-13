@@ -27,9 +27,9 @@ function loadLink(view: { unmount: () => void }, link: HTMLElement) {
   return open(href);
 }
 /** The supplier row's link (key 2000007), wherever the screen shows it. */
-const supplierLink = async (prefix: string) =>
+const supplierLink = async (prefix: string, containing = "") =>
   waitFor(() => {
-    const link = screen.getAllByRole("link").find((l) => (l.getAttribute("href") ?? "").startsWith(`${prefix}/explore/supplier/2000007`));
+    const link = screen.getAllByRole("link").find((l) => (l.getAttribute("href") ?? "").startsWith(`${prefix}/explore/supplier/2000007`) && (l.getAttribute("href") ?? "").includes(containing));
     expect(link).toBeDefined();
     return link!;
   });
@@ -52,11 +52,16 @@ describe.each([
     await screen.findByRole("heading", { level: 1 });
     expect(state()).toEqual({ filter: {}, carried: { q: "comuna" } }); // the entity's own filter is empty
     expect(window.location.pathname).toBe(`${prefix}/explore/supplier/2000007`);
+    // the page URL carries the search, but the address the reader sees (and would cite) is the clean one
+    expect(window.location.search).toContain("search=");
+    expect(screen.getByText(`${window.location.host}${prefix}/explore/supplier/2000007`)).toBeVisible();
+    expect(screen.queryByText(/search=/)).toBeNull();
     await userEvent.setup().click(recordsTab());
     const link = await screen.findByRole("link", { name: only.query("comuna") });
     expect(state().filter).toEqual({});
-    expect(page.sent.filter((s) => s.operation === "EntityRecords").map((s) => (s.variables as { filter: unknown }).filter)).toEqual([{}]);
     expect(await total(13)).toBeVisible(); // unfiltered
+    // supplementary guard beside the visible total above: the request itself carried no filter (an internal, so it never stands alone)
+    expect(page.sent.filter((s) => s.operation === "EntityRecords").map((s) => (s.variables as { filter: unknown }).filter)).toEqual([{}]);
 
     await userEvent.setup().click(link);
     await waitFor(() => expect(state()).toEqual({ filter: { q: "comuna" } })); // applied through the URL filter; the parameter is gone
@@ -104,7 +109,7 @@ describe.each([
     const { sent } = open(`${prefix}/explore/supplier/2000007/records`);
     expect(await total(13)).toBeVisible();
     expect(screen.queryByRole("link", { name: /^(only Records|doar înregistrările)/ })).toBeNull();
-    expect(sent).toHaveLength(1);
+    expect(sent).toHaveLength(1); // supplementary guard beside the visible total: one EntityRecords request, nothing extra for a carried search
   });
 
   it("carries nothing from a search with no query and no chips, and offers no link on the page it opens", async () => {
@@ -117,4 +122,21 @@ describe.each([
     await total(13);
     expect(screen.queryByRole("link", { name: /^(only Records|doar înregistrările)/ })).toBeNull();
   });
+
+  it("the pinned Go to page card opens the plain entity page, while the rows of the same screen carry the search", async () => {
+    const goTo = { key: "2000007", displayName: "FURNIZOR DEMO SRL", identity: "CUI", seap: { roles: ["SUPPLIER"] } };
+    const fixture = fixtureClient({ rewrite: (operation, data) => (operation === "MainScreen" ? withGoTo(data, goTo) : data) });
+    openAt(`${prefix}/explore/?q=comuna&tab=suppliers`);
+    render(<App client={fixture.client} loadCountyTopology={loadTestCountyTopology} />);
+    const card = await screen.findByRole("link", { name: `${t.results.goTo.open}: ${goTo.displayName}` });
+    expect(card.getAttribute("href")).toBe(`${prefix}/explore/supplier/2000007`);
+    expect((await supplierLink(prefix, "?search=")).getAttribute("href")).toContain("search=q%3Dcomuna");
+  });
 });
+
+/** A MainScreen answer with the pinned go-to entity set. */
+function withGoTo(data: unknown, goTo: unknown): unknown {
+  const answer = data as { seap: { search: { goTo: unknown } } };
+  answer.seap.search.goTo = goTo;
+  return answer;
+}

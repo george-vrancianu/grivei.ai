@@ -428,7 +428,7 @@ export const ro: Copy = {
         signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
-      onlyMatching: { query: (q) => `doar înregistrările care conțin „${q}”`, filters: "doar înregistrările care se potrivesc filtrelor căutării" },
+      onlyMatching: { query: (q) => `doar înregistrările care se potrivesc cu „${q}”`, filters: "doar înregistrările care se potrivesc filtrelor căutării" },
     },
   },
   signalCard,

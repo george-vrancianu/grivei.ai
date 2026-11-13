@@ -155,6 +155,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               tab={toResultTab(tab)}
               onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
               entityHref={entityHrefFrom(locale, filter)}
+              // the card shows for an exact CUI or the entity's own name: carrying that as a topic would offer a meaningless "only Records matching" link
+              goToHref={entityHrefFrom(locale, {})}
               showAllHref={(name) => `${pathFor(locale, { name: "search" })}${encodeUrlState({ filter, ...(name !== DEFAULT_RESULT_TAB ? { tab: name } : {}) })}`}
               recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
               // An empty tab links to the Coverage lens with the county and dates kept, to check whether "nothing" means "not harvested".

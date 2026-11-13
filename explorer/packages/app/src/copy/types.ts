@@ -9,6 +9,12 @@ import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/
  * Add a key by adding it here, then in both files. Prose that varies with a number is a function (`(n, formatted) => string`),
  * so each language owns its plural rules. Source data (titles, institution names) is never copied here.
  */
+/** The "only Records matching ..." link (#106). */
+export interface OnlyMatchingCopy {
+  query: (q: string) => string;
+  filters: string;
+}
+
 export interface Copy {
   brand: string;
   nav: { label: string; explore: string; search: string; coverage: string; methodology: string };
@@ -90,7 +96,7 @@ export interface Copy {
     recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & {
       facets: Omit<RecordsTabCopy["facets"], "badges" | "channels">;
       /** The link offered when the entity was opened from a search (#106): with a query it names it, with chips only it says "the search's filters". */
-      onlyMatching: { query: (q: string) => string; filters: string };
+      onlyMatching: OnlyMatchingCopy;
     };
   };
   /** The Signal card and its compact form: the wording of every rule (label, sentence, lawful explanations), the links and the date. Neutral by test: no accusation, in either language. */

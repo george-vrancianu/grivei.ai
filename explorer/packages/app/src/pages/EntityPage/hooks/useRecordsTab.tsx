@@ -1,4 +1,4 @@
-import { createElement, useMemo } from "react";
+import { useMemo } from "react";
 import type { RecordsTabProps } from "@grivei/ui";
 import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
@@ -38,7 +38,7 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
       locale,
       // offered only to a reader who came from a search; following it applies the search and the parameter goes (see `onlyMatchingHref`)
       filterExtras: carried
-        ? createElement(OnlyMatchingLink, { carried, href: onlyMatchingHref(locale, entity, entityKey, { filter, carried, ...(order ? { order } : {}) }), copy: own.onlyMatching })
+        ? <OnlyMatchingLink carried={carried} href={onlyMatchingHref(locale, entity, entityKey, { filter, carried, ...(order ? { order } : {}) })} copy={own.onlyMatching} />
         : undefined,
       copy: {
         heading: own.heading,
