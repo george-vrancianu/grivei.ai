@@ -1,7 +1,8 @@
+import { color } from "../../../../../theme/tokens.ts";
 import { circleRadius } from "../../zoomedCountyMap.utils.ts";
 
 /** The circles' outline: dark enough to read on every fill of the choropleth. */
-const CIRCLE_STROKE = "#1b2a41";
+const CIRCLE_STROKE = color.bg;
 
 export interface AuthorityCirclesProps {
   /** The projected centre of each UAT, by SIRUTA (the base map's overlay context). */

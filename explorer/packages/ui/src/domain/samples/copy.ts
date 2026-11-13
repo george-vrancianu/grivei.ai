@@ -751,6 +751,7 @@ export const sampleCopy = {
             NOT_HARVESTED: "Necolectat",
           },
           noStatus: "Fără stare de acoperire",
+          nationalCaption: (source) => `${source} este colectat la nivel național; lacunele se aplică fiecărui județ`,
           marks: {
             title: "Un semn pentru fiecare Sursă",
             harvested: (source) => `${source}: culoarea arată starea județului`,
@@ -777,6 +778,7 @@ export const sampleCopy = {
             NOT_HARVESTED: "Not harvested",
           },
           noStatus: "No coverage status",
+          nationalCaption: (source) => `${source} is harvested nationally; gaps apply to every county`,
           marks: {
             title: "One mark per Source",
             harvested: (source) => `${source}: coloured by the county's status`,

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Topology } from "topojson-specification";
+import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import type { CoverageLens } from "../../types.ts";
 import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
@@ -9,7 +10,7 @@ import { CoverageTiles } from "./components/CoverageTiles/index.ts";
 import { CoverageTooltip } from "./components/CoverageTooltip/index.ts";
 import { SourceMarks } from "./components/SourceMarks/index.ts";
 import type { CoverageLensMapCopy } from "./coverageLensMap.types.ts";
-import { COVERAGE_COLORS, COVERAGE_SOURCE_ID, NO_STATUS_COLOR, coverageByCounty, coverageSource, sinceText, summaryParts } from "./coverageLensMap.utils.ts";
+import { COVERAGE_COLORS, COVERAGE_SOURCE_ID, NO_STATUS_COLOR, coverageByCounty, coverageSource, sharedCountyStatus, sinceText, summaryParts } from "./coverageLensMap.utils.ts";
 
 export type CoverageLensMapProps = {
   /** The Coverage lens's data (`CoverageLens` query): the Sources and the SEAP coverage of the date window. */
@@ -50,7 +51,14 @@ export function CoverageLensMap({ lens, topology, selected, onSelect, locale, co
         return row ? COVERAGE_COLORS[row.status] : NO_STATUS_COLOR;
       }}
       describeArea={describeArea}
-      legend={<CoverageLegend sources={lens.sources} copy={copy} />}
+      legend={
+        <>
+          <CoverageLegend sources={lens.sources} copy={copy} />
+          {sharedCountyStatus(rows) !== null && (
+            <Typography variant="caption" component="p" data-coverage-caption sx={{ mt: 1 }}>{copy.nationalCaption(source)}</Typography>
+          )}
+        </>
+      }
       renderOverlay={({ centroids }) => <SourceMarks centroids={centroids} sources={lens.sources} coverage={rows} copy={copy} />}
       renderTooltip={({ code, name }) => <CoverageTooltip name={name} row={rows.get(code)} lens={lens} locale={locale} copy={copy} />}
       onSelect={onSelect}

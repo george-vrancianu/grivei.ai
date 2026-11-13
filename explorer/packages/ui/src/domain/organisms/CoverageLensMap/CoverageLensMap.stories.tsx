@@ -1,3 +1,4 @@
+import { onPanel } from "../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
@@ -8,7 +9,7 @@ import type { CoverageLens } from "../../types.ts";
 import type { MapArea } from "../MoneyLensMap/index.ts";
 import { CoverageLensMap } from "./index.ts";
 
-const meta = { title: "Domain/CoverageLensMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/CoverageLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

@@ -1,3 +1,4 @@
+import { NONE_OUTLINE } from "../../../BaseMap/index.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { SourceInfo } from "../../../../types.ts";
@@ -29,7 +30,7 @@ export function CoverageLegend({ sources, copy }: CoverageLegendProps) {
           </Box>
         ))}
         <Box component="li" data-status="none" sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-          <Box aria-hidden sx={{ ...swatch, backgroundColor: NO_STATUS_COLOR }} />
+          <Box aria-hidden sx={{ ...swatch, backgroundColor: NO_STATUS_COLOR, border: `1px solid ${NONE_OUTLINE}`, boxSizing: "border-box" }} />
           <Typography variant="caption">{copy.noStatus}</Typography>
         </Box>
       </Box>

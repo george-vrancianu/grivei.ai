@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { CountyCoverage } from "../../types.ts";
 import { nothingHarvestedCoverage, typicalCoverage } from "../../samples/coverageLenses.ts";
-import { coverageByCounty, coverageSource, plannedSources, sinceText, summaryParts } from "./coverageLensMap.utils.ts";
+import { coverageByCounty, coverageSource, plannedSources, sharedCountyStatus, sinceText, summaryParts } from "./coverageLensMap.utils.ts";
 
 describe("coverage lens utils", () => {
   it("indexes rows by county code", () => {
@@ -21,5 +22,16 @@ describe("coverage lens utils", () => {
   it("formats the counts for the locale", () => {
     const row = nothingHarvestedCoverage.coverage.counties.find((r) => r.county === "NATIONAL")!;
     expect(summaryParts({ ...row, publicEntities: 13_200 }, "SEAP", "2021", "ro").publicEntitiesText).toBe("13.200");
+  });
+});
+
+describe("sharedCountyStatus", () => {
+  const row = (county: string, status: CountyCoverage["status"]) => [county, { county, status } as CountyCoverage] as const;
+  it("is the status every county shares, ignoring NATIONAL", () => {
+    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "HARVESTED"), row("NATIONAL", "PARTIAL")]))).toBe("HARVESTED");
+  });
+  it("is null when the counties differ, or there are none", () => {
+    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "PARTIAL")]))).toBeNull();
+    expect(sharedCountyStatus(new Map([row("NATIONAL", "HARVESTED")]))).toBeNull();
   });
 });

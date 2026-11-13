@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { map } from "../../../theme/tokens.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { uatsTopology } from "../../samples/geo/uats.topo.ts";
@@ -170,5 +171,22 @@ describe("BaseMap", () => {
     expect(screen.getByRole("group", { name: "Harta județelor" })).toBeVisible();
     expect(screen.getByText("Fără date")).toBeVisible();
     expect(screen.getByRole("button", { name: "Suceava: Fără date" })).toBeVisible();
+  });
+
+  it("draws the default tooltip and the legend ends from renderValue when given", async () => {
+    setup({ renderValue: (value) => <b data-testid="amount">{value} lei</b> });
+    await userEvent.hover(screen.getByRole("button", { name: "Cluj: 1000 RON" }));
+    expect(within(screen.getByRole("tooltip")).getByTestId("amount")).toHaveTextContent("1000 lei");
+    expect(within(screen.getByRole("region", { name: copy.legendTitle })).getAllByTestId("amount").length).toBeGreaterThan(0);
+  });
+
+  it("separates areas by a stroke in the panel colour and sits the tooltip above the hovered area", async () => {
+    setup();
+    expect(screen.getByRole("group", { name: "Map of counties" })).toHaveStyle({ display: "block" });
+    const area = screen.getByRole("button", { name: "Cluj: 1000 RON" });
+    expect(getComputedStyle(area).stroke).toBe("rgb(20, 25, 32)"); // map.gap, the panel colour
+    expect(map.gap).toBe("#141920");
+    await userEvent.hover(area);
+    expect(getComputedStyle(screen.getByRole("tooltip")).transform).toContain("-100%");
   });
 });

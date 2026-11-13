@@ -4,10 +4,14 @@ import { interpolateBlues } from "d3-scale-chromatic";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import type { Feature, FeatureCollection } from "geojson";
+import { color, map } from "../../../theme/tokens.ts";
 import type { ColorScaleKind, MapFeature, ProjectionKind } from "./baseMap.types.ts";
 
-/** The colour of an area with no value. Distinct from every colour the scale can produce (blues never reach grey). */
-export const NO_DATA_COLOR = "#bdbdbd";
+/** The colour of an area with no value (the dark ground's "none" fill). Distinct from every colour the scale can produce. */
+export const NO_DATA_COLOR = map.none;
+
+/** The outline of a "none" swatch: the fill is close to the panel by design (the handoff's drawing), so the swatch carries a line that reaches 3:1 against it. */
+export const NONE_OUTLINE = color.idle;
 
 export type AreaValues = Readonly<Record<string, number | null | undefined>>;
 
@@ -23,8 +27,10 @@ export type ColorScale = {
   ramp: (steps: number) => string[];
 };
 
-// Start the ramp a little darker than white so the lowest value stays visible against the page.
-const rampColor = (t: number) => interpolateBlues(0.15 + 0.85 * t);
+// On the dark ground the ramp runs from a pale blue (0.15) to a mid blue (0.75): the darkest blues of d3's scale fall below 3:1 against the panel.
+export const RAMP_FROM = 0.15;
+export const RAMP_TO = 0.75;
+const rampColor = (t: number) => interpolateBlues(RAMP_FROM + (RAMP_TO - RAMP_FROM) * t);
 
 /**
  * A colour scale over the given values. Linear spans 0..max (or min..max when something is negative), so the palest colour means zero, not "the smallest area"; `domain` overrides the span for lenses that compare maps. Log spans the smallest positive value..max and copes with zeros:
@@ -99,7 +105,7 @@ export function projectFeatures(
   width: number,
   height: number,
   options: { projection?: ProjectionKind; padding?: number } = {},
-): { paths: Map<string, string>; centroids: Map<string, [number, number]>; project: ProjectPoint } {
+): { paths: Map<string, string>; centroids: Map<string, [number, number]>; anchors: Map<string, [number, number]>; project: ProjectPoint } {
   const padding = options.padding ?? 4;
   const projection = options.projection === "mercator" ? geoMercator() : geoConicConformal().parallels([44, 48]).rotate([-25, 0]);
   const collection: GeoPermissibleObjects = { type: "FeatureCollection", features: [...features] };
@@ -113,10 +119,14 @@ export function projectFeatures(
   const path = geoPath(projection);
   const paths = new Map<string, string>();
   const centroids = new Map<string, [number, number]>();
+  // Where a tooltip sits: the middle of the area's box, at its top edge.
+  const anchors = new Map<string, [number, number]>();
   for (const item of features) {
     paths.set(item.properties.code, path(item) ?? "");
     centroids.set(item.properties.code, path.centroid(item));
+    const [[x0, y0], [x1]] = path.bounds(item);
+    anchors.set(item.properties.code, [(x0 + x1) / 2, y0]);
   }
   const project: ProjectPoint = (lonLat) => projection(lonLat) ?? null;
-  return { paths, centroids, project };
+  return { paths, centroids, anchors, project };
 }

@@ -146,6 +146,7 @@ export const ro: Copy = {
       NOT_HARVESTED: "Necolectat",
     },
     noStatus: "Fără stare de acoperire",
+    nationalCaption: (source) => `${source} este colectat la nivel național; lacunele se aplică fiecărui județ`,
     marks: {
       title: "Un semn pentru fiecare Sursă",
       harvested: (source) => `${source}: culoarea arată starea județului`,

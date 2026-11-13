@@ -1,3 +1,4 @@
+import { onPanel } from "../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import type { Topology } from "topojson-specification";
@@ -10,7 +11,7 @@ import { bucharest, noPurchases, typicalCounty, withUnknownUat } from "../../sam
 import type { Siruta, UatMap } from "../../types.ts";
 import { ZoomedCountyMap } from "./index.ts";
 
-const meta = { title: "Domain/ZoomedCountyMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/ZoomedCountyMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

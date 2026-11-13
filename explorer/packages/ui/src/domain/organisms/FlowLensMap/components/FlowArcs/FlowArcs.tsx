@@ -10,7 +10,7 @@ export function FlowArcs({ arcs }: FlowArcsProps) {
     <g data-flow-arcs aria-hidden="true" pointerEvents="none">
       {arcs.map((arc) => (
         <g key={arc.code} data-arc data-county={arc.code} data-from={arc.from} data-to={arc.to}>
-          <path d={arc.d} fill="none" stroke={ARC_COLOR} strokeOpacity={0.6} strokeWidth={arc.width} strokeLinecap="round" />
+          <path d={arc.d} fill="none" stroke={ARC_COLOR} strokeOpacity={0.85} strokeWidth={arc.width} strokeLinecap="round" />
           <polygon data-arrowhead points={arc.head} fill={ARC_COLOR} fillOpacity={0.75} />
         </g>
       ))}

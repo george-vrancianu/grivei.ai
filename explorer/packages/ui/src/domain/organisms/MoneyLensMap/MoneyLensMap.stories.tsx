@@ -1,3 +1,4 @@
+import { onPanel } from "../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
@@ -7,7 +8,7 @@ import { authoritySide, authoritySideNoUnplaced, supplierSide } from "../../samp
 import type { MoneyMap } from "../../types.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "./index.ts";
 
-const meta = { title: "Domain/MoneyLensMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/MoneyLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
