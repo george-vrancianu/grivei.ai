@@ -2,6 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { resultSamples } from "../../samples/fixtureData.ts";
 import { ResultTabs, toResultTab, type ResultTab, type ResultTabsProps } from "./index.ts";
@@ -128,6 +129,12 @@ describe("ResultTabs", () => {
     unmount();
     renderInUi(<ResultTabs {...base(resultSamples.variety)} tab="records" showAllHref={() => undefined} />);
     expect(screen.queryByRole("link", { name: /^Show all/ })).toBeNull();
+  });
+
+  it("keeps the 'show all' link neutral: amber is for the headline Total alone", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.accent.slice(i, i + 2), 16));
+    expect(getComputedStyle(screen.getByRole("link", { name: "Show all 240,000" })).color).not.toBe(`rgb(${r}, ${g}, ${b})`);
   });
 
   it("reads in Romanian", () => {

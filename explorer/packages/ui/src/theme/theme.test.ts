@@ -118,3 +118,15 @@ describe("contrast on the dark ground", () => {
     }
   });
 });
+
+describe("the chips on the main screen", () => {
+  const chip = theme.components?.MuiChip?.styleOverrides as Record<string, Record<string, unknown>>;
+  it("makes filter chips 40 px pills and badge chips flat 32 px chips", () => {
+    expect(chip["sizeMedium"]).toMatchObject({ height: size.filterChip, borderRadius: radius.filterPill });
+    expect(chip["sizeSmall"]).toMatchObject({ height: size.badgeChip, borderRadius: radius.chip });
+    expect(chip["sizeSmall"]).not.toHaveProperty("boxShadow");
+  });
+  it("gives a badge chip a hit area 44 px tall, beyond its 32 px", () => {
+    expect(chip["sizeSmall"]?.["&::after"]).toMatchObject({ height: 44, position: "absolute" });
+  });
+});

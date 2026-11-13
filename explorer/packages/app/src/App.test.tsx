@@ -23,7 +23,8 @@ describe("the main screen for the empty filter", () => {
     expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("tabpanel", { name: /^Suppliers/ });
     expect(within(panel).getByRole("link", { name: "ȘANTIERUL ȚARA DEMO SRL" })).toHaveAttribute("href", "/explore/supplier/2000007");
-    expect(panel).toHaveTextContent("RON 19,500 matched · 16 Records · Brașov");
+    expect(panel).toHaveTextContent("16 Records · Brașov · CUI 2000007");
+    expect(panel).toHaveTextContent("RON 19,500");
 
     // it asked for the empty filter, by persisted id
     expect(sent).toHaveLength(1);
@@ -41,7 +42,8 @@ describe("the main screen for the empty filter", () => {
 
     expect(screen.getByRole("tab", { name: /^Furnizori/ })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("tabpanel", { name: /^Furnizori/ });
-    expect(panel).toHaveTextContent("19.500 RON potrivit · 16 înregistrări · Brașov");
+    expect(panel).toHaveTextContent("16 înregistrări · Brașov · CUI 2000007");
+    expect(panel).toHaveTextContent("19.500 RON");
     expect(within(panel).getByRole("link", { name: "ȘANTIERUL ȚARA DEMO SRL" })).toHaveAttribute("href", "/ro/explore/supplier/2000007");
   });
 

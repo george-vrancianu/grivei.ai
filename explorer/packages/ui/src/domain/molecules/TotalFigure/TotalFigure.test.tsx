@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { totalExtreme, totalTypical, totalWithLeftOut } from "../../samples/fixtureData.ts";
 import type { Total } from "../../types.ts";
@@ -43,5 +44,20 @@ describe("TotalFigure", () => {
     renderInUi(<TotalFigure total={{ ...totalExtreme, estimated: true }} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText(/^RON\s90,071,992,547,409,930$/)).toBeVisible();
     expect(screen.getByText(/^≈\s2,400,000 Records$/)).toBeVisible();
+  });
+});
+
+describe("TotalFigure accent", () => {
+  const hex = (value: string) => [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16));
+  const accent = (element: Element) => getComputedStyle(element).color.match(/\d+/g)?.slice(0, 3).map(Number).join() === hex(color.accent).join();
+  it("colours the headline Total amber and nothing else: the ⓘ, the count, the suspect link, the no-value count and the ceilings stay neutral", () => {
+    const { container } = renderInUi(<TotalFigure total={totalWithLeftOut} locale="en" copy={sampleCopy.total("en")} {...base} />);
+    const figure = container.querySelector("p")!;
+    const accented = [...container.querySelectorAll<HTMLElement>("*")].filter((el) => accent(el) && [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE));
+    expect(accented.length).toBeGreaterThan(0);
+    expect(accented.filter((el) => !figure.contains(el)).map((el) => el.textContent)).toEqual([]);
+    expect(accent(figure)).toBe(true);
+    expect(accent(screen.getByRole("link", { name: "How this total is counted" }))).toBe(false);
+    expect(accent(screen.getByRole("link", { name: /suspect/ }))).toBe(false);
   });
 });

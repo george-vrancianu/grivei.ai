@@ -237,3 +237,6 @@ export const supplierPickedRelationships = relationships("supplier-picked-author
 export const supplierPickedPanel = panelOf("supplier-one-authority");
 /** No counterparties at all. */
 export const emptyRelationships = relationships("no-relationships");
+
+/** A Record that carries the framework-ceiling badge: its value is a ceiling, not money awarded. */
+export const ceilingRecord = variety.records.rows.find((row) => row.record.badges.includes("FRAMEWORK_CEILING"))!;

@@ -18,8 +18,9 @@ export interface SentRequest {
  * A client whose network answers from the contract's mock fixtures (Seam 3): it looks the persisted id up on the allowlist,
  * then returns the fixture of that operation whose variables equal the ones sent. No fixture for them is a loud failure.
  * `failing` names operations whose every request fails (a 500), to test a screen's error state beside working ones.
+ * `rewrite(operation, data)` changes a fixture's answer before it is returned (a clone, so fixtures stay as they are), to make a value the test can tell apart.
  */
-export function fixtureClient(options: { failing?: readonly string[] } = {}): { client: GraphqlClient; sent: SentRequest[] } {
+export function fixtureClient(options: { failing?: readonly string[]; rewrite?: (operation: string, data: unknown) => unknown } = {}): { client: GraphqlClient; sent: SentRequest[] } {
   const sent: SentRequest[] = [];
   const client = createClient({
     fetch: async (_url, init) => {
@@ -30,7 +31,7 @@ export function fixtureClient(options: { failing?: readonly string[] } = {}): { 
       const set = op ? (fixtures[op.name as OperationName] as readonly { variables: unknown; data: unknown }[] | undefined) : undefined;
       const hit = set?.find((f) => canonical(f.variables) === canonical(variables));
       if (!hit) return Response.json({ errors: [{ message: `no fixture for ${op?.name} with ${JSON.stringify(variables)}` }] }, { status: 400 });
-      return Response.json({ data: hit.data });
+      return Response.json({ data: options.rewrite ? options.rewrite(op!.name, structuredClone(hit.data)) : hit.data });
     },
   });
   return { client, sent };

@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SignalCardCopy, TotalFigureCopy,
+  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -26,6 +26,8 @@ export interface Copy {
   };
   status: { loading: string; failed: string };
   main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string };
+  /** The Source eyebrow above the search bar: the words around the Source's name, which comes from the API. */
+  sourceEyebrow: SourceEyebrowCopy;
   /** The search bar on the main screen and the full-results view. */
   searchBar: SearchBarCopy;
   /** The result tabs of the main screen (and later of the full-results view): tab names, rows, empty states, Go-to card. */

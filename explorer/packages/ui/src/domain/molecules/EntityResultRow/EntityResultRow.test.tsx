@@ -13,10 +13,12 @@ const row = (placement: EntityRow["placement"], records = 6): EntityResult => ({
 const county = { county: { code: "RO-BV", name: "Brașov" }, uat: null, national: false, placedBy: "ANAF" as const };
 
 describe("EntityResultRow", () => {
-  it("links the name to the entity page and reads 'RON matched · n Records · county' (EN)", () => {
+  it("links the name to the entity page and shows the amount in its own column and reads 'n Records · county · CUI n' (EN)", () => {
     const { container } = renderInUi(<EntityResultRow row={row(county)} href="/explore/supplier/30000001" locale="en" copy={sampleCopy.entityRow("en")} />);
     expect(screen.getByRole("link", { name: "HACHI INVEST S.R.L." })).toHaveAttribute("href", "/explore/supplier/30000001");
-    expect(container).toHaveTextContent("RON 1,420,000 matched · 6 Records · Brașov");
+    expect(container).toHaveTextContent("6 Records · Brașov · CUI 30000001");
+    expect(screen.getByText("RON 1,420,000")).toBeVisible();
+    expect(screen.getByText("matched")).toBeVisible();
   });
   it("uses the singular for one Record", () => {
     const { container } = renderInUi(<EntityResultRow row={row(county, 1)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
@@ -24,7 +26,18 @@ describe("EntityResultRow", () => {
   });
   it("reads in Romanian", () => {
     const { container } = renderInUi(<EntityResultRow row={row(county, 25)} href="/x" locale="ro" copy={sampleCopy.entityRow("ro")} />, "ro");
-    expect(container).toHaveTextContent("1.420.000 RON potrivit · 25 de înregistrări · Brașov");
+    expect(container).toHaveTextContent("25 de înregistrări · Brașov · CUI 30000001");
+    expect(container).toHaveTextContent("1.420.000 RON");
+    expect(screen.getByText("potrivit")).toBeVisible();
+  });
+  it("has a slot between the name and the value", () => {
+    renderInUi(<EntityResultRow row={row(county)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} extra={<span>chip</span>} />);
+    expect(screen.getByText("chip")).toBeVisible();
+  });
+  it("has no CUI in the meta line for an entity identified by name only", () => {
+    const named = row(county);
+    const { container } = renderInUi(<EntityResultRow row={{ ...named, entity: { ...named.entity, identity: "NAME_ONLY" } }} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
+    expect(container).not.toHaveTextContent("CUI");
   });
   it("falls back when the entity has no county", () => {
     const national = renderInUi(<EntityResultRow row={row(placeNational)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);

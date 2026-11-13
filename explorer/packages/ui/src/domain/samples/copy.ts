@@ -11,6 +11,7 @@ import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.t
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
+import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
 import type { RecordResultRowCopy } from "../molecules/RecordResultRow/index.ts";
 import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
@@ -248,6 +249,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
+        cui: "CUI",
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
         noCounty: "județ necunoscut",
@@ -255,6 +257,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
       }
     : {
         matched: "matched",
+        cui: "CUI",
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
         national: "national",
         noCounty: "county unknown",
@@ -265,6 +268,8 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
   locale === "ro"
     ? {
         noValue: "fără valoare",
+        valueCaption: { awarded: "valoare atribuită", ceiling: "plafon, neadunat" },
+        channel: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         consortium: {
           label: "asociere",
           explanation: "Se afișează valoarea integrală a contractului. Fiecare membru al asocierii are o parte egală, după convenție, nu o sumă publicată.",
@@ -281,6 +286,8 @@ const recordRow = (locale: Locale): RecordResultRowCopy =>
       }
     : {
         noValue: "no value",
+        valueCaption: { awarded: "awarded value", ceiling: "ceiling, not summed" },
+        channel: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         consortium: {
           label: "consortium",
           explanation: "The full contract value is shown. Each member's share is an equal-share convention, not a published figure.",
@@ -510,8 +517,8 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
 };
 
 const searchBar: Record<Locale, SearchBarCopy> = {
-  en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
-  ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
+  en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", hint: "The data is in Romanian. Try deszăpezire, a company name, a CUI with or without RO, or a CPV prefix such as 45. Diacritics, case and legal forms (SRL, SA) are ignored.", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
+  ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
 };
 
 const entityOverview = (locale: Locale): EntityOverviewCopy => {
@@ -656,7 +663,13 @@ const signalCard: Record<Locale, SignalCardCopy> = {
   },
 };
 
+const sourceEyebrow: Record<Locale, SourceEyebrowCopy> = {
+  en: { search: "search", scope: "national", period: "2021 onward" },
+  ro: { search: "caută", scope: "național", period: "din 2021" },
+};
+
 export const sampleCopy = {
+  sourceEyebrow: (locale: Locale): SourceEyebrowCopy => sourceEyebrow[locale],
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,

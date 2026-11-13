@@ -21,10 +21,16 @@ describe.each([
 ] as const)("the Total at $url", ({ locale, url, methodology, suspect }) => {
   const t = catalogue[locale];
 
-  it("carries the ⓘ link to the methodology page and the date the data runs through", async () => {
+  it("carries the ⓘ link to the methodology page", async () => {
     const total = await opened(url);
     expect(total.getByRole("link", { name: t.total.methodology })).toHaveAttribute("href", methodology);
-    expect(total.getAllByText(new RegExp(`${t.coverage.grid.kinds.CONTRACT}: ${t.dataThrough.through}`)).length).toBeGreaterThan(0);
+  });
+
+  it("puts the date the data runs through under the map, not in the Total", async () => {
+    const total = await opened(url);
+    const note = within(screen.getByTestId("main-data-through"));
+    expect(total.queryByText(new RegExp(t.dataThrough.through))).toBeNull();
+    expect(note.getAllByText(new RegExp(`${t.coverage.grid.kinds.CONTRACT}: ${t.dataThrough.through}`)).length).toBeGreaterThan(0);
   });
 
   it("says how many suspect Records it left out and links to them, keeping the search", async () => {
