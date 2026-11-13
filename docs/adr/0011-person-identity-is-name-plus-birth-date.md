@@ -30,4 +30,4 @@ Two person records are the same person only when their normalised name and full 
   - every entry has a reason and is reviewed by a named human, never an agent;
   - disputed links are hidden while they are checked (ADR 0009).
 - **Stable ids:** a person page's id is a keyed hash of the person key, with the secret held outside the repo. It is deterministic across rebuilds and cannot be reversed. When the key changes (a split, a merge or a corrected birth date), the page gets a new id, and the override records the old one so it redirects.
-- **Organisations named without a CUI** (EU-fund beneficiaries, court parties, firm donors) are not covered here. They get their own identity rule.
+- **Organisations named without a CUI** (EU-fund beneficiaries, court parties, subsidy suppliers) are not covered here; see ADR 0013.

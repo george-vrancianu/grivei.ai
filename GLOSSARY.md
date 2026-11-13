@@ -72,6 +72,10 @@ _Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
 A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
 _Avoid_: unknown supplier, unidentified supplier
 
+**Unattached name**:
+An organisation named by a Source without a CUI that no confirmed match attaches to one; it stays as text on its record, with no entity page and no Signals. Only SEAP winners become name-only suppliers.
+_Avoid_: name-only entity, unmatched entity, orphan
+
 **Natural-person supplier**:
 An individual who wins a record, with or without a CNP in the published id (an id-less winner whose name is shaped like a person's counts too); shown only as "Persoană fizică", with no entity page, unless the public money they receive reaches the Naming threshold, which makes them a Named person.
 _Avoid_: PFA (when any individual is meant), person (alone)
@@ -81,15 +85,19 @@ A spelling under which an entity was published in a Source, kept with its dates;
 _Avoid_: variant, AKA, old name
 
 **Identity override**:
-A reviewed, reasoned correction to which supplier a record is attached, or to which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
+A reviewed, reasoned correction to which supplier a record is attached, which CUI an organisation name is attached to, or which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
 _Avoid_: manual merge, fix, mapping
 
 **Record**:
 One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
 
+**Money measure**:
+The one amount a Source sums (for SEAP, awarded value), fixed in that Source's Release; measures of different Sources are never added together or compared on one scale.
+_Avoid_: total public money, spending (across Sources)
+
 **Awarded value**:
-The value a record was awarded at, in RON, as published; the only money measure the explorer sums. It is not what was paid, and later contract modifications are not included.
+The value a record was awarded at, in RON, as published; SEAP's money measure, the only amount summed for SEAP and never added to another Source's money measure. It is not what was paid, and later contract modifications are not included.
 _Avoid_: spent, spending, paid, payments
 
 **Framework ceiling**:
@@ -125,7 +133,7 @@ A normalised name plus a full birth date taken from an official publication (ONR
 _Avoid_: person id, fingerprint
 
 **Possible match**:
-Two person records that might be one person (same name and birth date with birthplaces in different counties, or a partial name with the same birth date); never shown publicly, and only an identity override merges them.
+Two person records that might be one person (same name and birth date with birthplaces in different counties, or a partial name with the same birth date), or an organisation name that might be a given CUI without meeting the confirmation rule; never shown publicly, and only an identity override settles it.
 _Avoid_: likely match, probable link, namesake
 
 **Unlinked role holder**:
@@ -151,7 +159,7 @@ One way the explorer's map of Romania encodes data; the map shows one lens at a 
 _Avoid_: mode, layer, view
 
 **Money lens**:
-The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier). Zoomed into a county, it colours each UAT the same way.
+The default lens: the chosen Source's money measure by county (for SEAP, awarded value, either where it is awarded by the contracting authority or where it goes to the supplier). Zoomed into a county, it colours each UAT the same way. It shows one Source at a time; a Source without a money measure has a count lens instead.
 
 **Coverage lens**:
 The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. Grey means not harvested, never no spending.
