@@ -16,7 +16,7 @@ export interface MethodologyContentsProps {
 /** A short table of contents: one link per section, to its anchor. */
 export function MethodologyContents({ label, entries, sectionHref, onNavigate }: MethodologyContentsProps) {
   return (
-    <Box component="nav" aria-label={label} sx={{ position: { md: "sticky" }, top: { md: 24 } }}>
+    <Box component="nav" aria-label={label} sx={{ position: { md: "sticky" }, top: { md: 3 } }}>
       <Typography variant="meta" component="p" sx={{ m: 0 }}>
         {label}
       </Typography>

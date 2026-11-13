@@ -14,6 +14,7 @@ export const typography: TypographyVariantsOptions = {
   h6: { ...title, fontSize: type.subheading.sizes[2], lineHeight: type.subheading.lineHeight, letterSpacing: 0 },
   subtitle1: { fontFamily: font.body, fontSize: type.rowTitle.size, fontWeight: type.rowTitle.weight, lineHeight: type.body.lineHeight },
   subtitle2: { fontFamily: font.body, fontSize: type.small.min, fontWeight: type.rowTitle.weight, lineHeight: type.body.lineHeight },
+  lead: { fontFamily: font.body, fontSize: type.lead.size, fontWeight: type.lead.weight, lineHeight: type.lead.lineHeight, color: color.text2 },
   body1: { fontFamily: font.body, fontSize: type.body.size, fontWeight: type.body.weight, lineHeight: type.body.lineHeight },
   body2: { fontFamily: font.body, fontSize: type.small.min, fontWeight: type.body.weight, lineHeight: type.body.lineHeight },
   caption: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, lineHeight: type.meta.lineHeight, color: color.muted },

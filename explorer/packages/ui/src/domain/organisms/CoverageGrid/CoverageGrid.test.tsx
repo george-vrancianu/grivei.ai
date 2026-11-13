@@ -61,6 +61,15 @@ describe("the Coverage grid's cells", () => {
     expect(getComputedStyle(box).maxWidth).toBe("100%");
   });
 
+  it("labels each year once over its quarters, with the quarters as Q1 to Q4, and captions the grid", () => {
+    render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
+    const years = [...document.querySelectorAll<HTMLElement>("th[scope='colgroup']")];
+    expect(years.map((y) => y.textContent)).toEqual(["2021", "2022", "2023", "2024", "2025"]);
+    expect(years.slice(0, 4).map((y) => y.getAttribute("colspan"))).toEqual(["4", "4", "4", "4"]);
+    expect(document.querySelector("th[data-quarter='2022-Q3']")).toHaveTextContent(/^Q3$/);
+    expect(screen.getByText(sampleCopy.coverageGrid("en").windowNote)).toBeVisible();
+  });
+
   it("gives each state a mark besides its colour", () => {
     render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} hideLegend />);
     const glyphs = new Map<string, string>();

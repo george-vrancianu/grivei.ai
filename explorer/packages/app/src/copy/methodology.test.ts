@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import type { MethodologyText } from "@grivei/ui";
+import { fileURLToPath } from "node:url";
+import { plainMethodologyText, type MethodologyText } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { ro } from "./ro.ts";
 import { methodologyEn } from "./methodologyEn.ts";
 import { methodologyRo } from "./methodologyRo.ts";
 
-const text = JSON.stringify(methodologyRo);
+/** The Romanian copy as one string; items with amounts (a `build` function) are read as plain text, since JSON would drop them. */
+const text = JSON.stringify(methodologyRo, (_key, value: unknown) => (value && typeof value === "object" && "build" in value ? plainMethodologyText(value as MethodologyText) : value));
 
 describe("the Romanian methodology copy quotes the Romanian UI's own labels", () => {
   it("names the badges as the badges read", () => {
@@ -21,7 +22,7 @@ describe("the Romanian methodology copy quotes the Romanian UI's own labels", ()
 });
 
 describe("the money figures in the methodology prose follow the counting rule", () => {
-  const counting = readFileSync(resolve(process.cwd(), "../../../watchdog/pipeline/counting.py"), "utf8");
+  const counting = readFileSync(fileURLToPath(new URL("../../../../../watchdog/pipeline/counting.py", import.meta.url)), "utf8");
   /** A Python integer literal with underscores and an optional `* RON` factor (bani per RON = 100), in bani. */
   const bani = (expr: string): string => String(BigInt(expr.replace(/_/g, "")) * 100n);
   const caps = [...counting.matchAll(/Cap\(date\([^)]*\), ([\d_]+) \* RON, ([\d_]+) \* RON\)/g)].map((m) => [bani(m[1]!), bani(m[2]!)] as const);

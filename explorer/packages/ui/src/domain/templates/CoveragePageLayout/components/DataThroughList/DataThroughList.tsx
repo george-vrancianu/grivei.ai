@@ -1,5 +1,5 @@
 import type { Locale } from "../../../../../theme/index.ts";
-import { font, radius } from "../../../../../theme/tokens.ts";
+import { radius } from "../../../../../theme/tokens.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import { DataThroughDate } from "../../../../atoms/DataThroughDate/index.ts";
@@ -21,7 +21,7 @@ const dataThroughCardSx = {
   borderColor: "divider",
   borderRadius: `${radius.card}px`,
   "& > span": { typography: "meta", display: "block" },
-  "& time": { display: "block", mt: 0.5, fontFamily: font.display, fontSize: 22, fontWeight: 600, letterSpacing: 0, color: "text.primary" },
+  "& time": { display: "block", mt: 0.5, typography: "h3", color: "text.primary" },
 } as const;
 
 /** Each harvested Source's data-through date per record kind. */

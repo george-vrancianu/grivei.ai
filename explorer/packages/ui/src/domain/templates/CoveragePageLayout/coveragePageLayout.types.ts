@@ -15,6 +15,8 @@ export interface CoveragePageContent {
 }
 
 export interface CoveragePageLayoutCopy {
+  /** The mono amber line above the title. */
+  eyebrow: string;
   title: string;
   intro: string;
   grid: CoverageGridCopy;

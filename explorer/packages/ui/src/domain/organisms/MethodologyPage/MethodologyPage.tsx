@@ -17,6 +17,8 @@ export interface MethodologyRuleCopy extends MethodologySectionCopy {
 }
 
 export interface MethodologyPageCopy {
+  /** The mono amber line above the title. */
+  eyebrow: string;
   title: string;
   intro: string;
   /** The table of contents' name: "On this page". */
@@ -68,17 +70,20 @@ export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavig
         mx: "auto",
         display: "grid",
         gap: 5,
-        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "200px minmax(0, 1fr)" },
+        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: `${layout.contentsColumn}px minmax(0, 1fr)` },
         alignItems: "start",
       }}
     >
       <MethodologyContents label={copy.contents} entries={contents} sectionHref={sectionHref} {...(onNavigate ? { onNavigate } : {})} />
-      <Stack component="article" spacing={4.5} sx={{ maxWidth: 800, minWidth: 0 }}>
+      <Stack component="article" spacing={4.5} sx={{ maxWidth: layout.articleMaxWidth, minWidth: 0 }}>
         <Stack spacing={1.5}>
+          <Typography variant="label" component="p" color="primary.main" sx={{ m: 0 }}>
+            {copy.eyebrow}
+          </Typography>
           <Typography variant="h1" component="h1" sx={{ textWrap: "balance" }}>
             {copy.title}
           </Typography>
-          <Typography sx={{ fontSize: 17, color: "text.secondary", textWrap: "pretty" }}>{copy.intro}</Typography>
+          <Typography variant="lead" sx={{ textWrap: "pretty" }}>{copy.intro}</Typography>
         </Stack>
         {METHODOLOGY_SECTIONS.map((key) => (
           <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]} />

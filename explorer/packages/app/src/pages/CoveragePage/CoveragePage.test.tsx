@@ -43,7 +43,8 @@ describe.each([
       expect(cell.getAttribute("aria-label") ?? "").not.toBe("");
     }
     const known = cells.find((c) => c.dataset["state"] === "KNOWN_GAP");
-    if (known) expect(getComputedStyle(known).backgroundImage).toContain("repeating-linear-gradient");
+    expect(known).toBeDefined();
+    expect(getComputedStyle(known!).backgroundImage).toContain("repeating-linear-gradient");
     expect(getComputedStyle(within(grid).getByRole("region", { name: catalogue[_locale].coverage.grid.label })).overflowX).toBe("auto");
   });
 
@@ -53,6 +54,22 @@ describe.each([
     const block = within(screen.getByRole("region", { name: catalogue[_locale].coverage.perCounty.heading }));
     expect(block.getByRole("link", { name: catalogue[_locale].coverage.perCounty.lensLink })).toHaveAttribute("href", `${path.replace("coverage", "")}?lens=coverage`);
     expect(screen.getByText(catalogue[_locale].coverage.intro)).toBeVisible();
+  });
+
+  it("keeps the date chip's window on the link back to the Coverage lens", async () => {
+    open(`${path}?from=2023-01-01&to=2023-12-31`);
+    await screen.findByRole("region", { name: gridHeading });
+    const block = within(screen.getByRole("region", { name: catalogue[_locale].coverage.perCounty.heading }));
+    expect(block.getByRole("link", { name: catalogue[_locale].coverage.perCounty.lensLink })).toHaveAttribute("href", `${path.replace("coverage", "")}?from=2023-01-01&to=2023-12-31&lens=coverage`);
+  });
+
+  it("shows the eyebrow, the one year label per four quarters and the grid caption", async () => {
+    open(path);
+    await screen.findByRole("region", { name: gridHeading });
+    const t = catalogue[_locale].coverage;
+    expect(screen.getByText(t.eyebrow)).toBeVisible();
+    expect(screen.getByText(t.grid.windowNote)).toBeVisible();
+    expect(document.querySelectorAll("th[scope='colgroup']").length).toBeLessThan(document.querySelectorAll("th[data-quarter]").length / 2);
   });
 
   it("highlights only the quarters of the date chip's window, against the whole grid", async () => {
@@ -149,7 +166,7 @@ describe.each([
     await screen.findByRole("region", { name: t.coverage.gridHeading });
     const named = (quarter: string, kind: string) => {
       const header = document.querySelector(`th[data-quarter='${quarter}']`)!;
-      const column = [...header.parentElement!.children].indexOf(header);
+      const column = [...header.parentElement!.children].indexOf(header) + 1; // the kind label opens each body row, but sits in the header's first row, above the years
       const row = [...document.querySelectorAll("tbody tr")].find((tr) => within(tr as HTMLElement).queryByText(t.coverage.grid.kinds[kind as "DA"]!) !== null)!;
       return row.children[column]!.getAttribute("aria-label") ?? row.children[column]!.textContent ?? "";
     };

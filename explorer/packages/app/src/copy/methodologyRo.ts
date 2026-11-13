@@ -2,6 +2,7 @@ import { withAmounts, type MethodologyPageCopy } from "@grivei/ui";
 
 /** Pagina de metodologie, „Despre cifre”: aceleași secțiuni și aceleași ancore ca în engleză. */
 export const methodologyRo: MethodologyPageCopy = {
+  eyebrow: "despre cifre",
   title: "Despre cifre",
   intro:
     "Fiecare înregistrare și fiecare sumă din explorator vine din SEAP, sistemul electronic de achiziții publice, și este calculată după o singură regulă peste tot: totaluri, hartă, clasamente, fluxul de bani și Semnale. Pagina aceasta spune care este regula. Cifrele din secțiunile Semnalelor sunt recalculate la fiecare încărcare a datelor.",

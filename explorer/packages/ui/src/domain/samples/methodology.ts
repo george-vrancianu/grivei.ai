@@ -51,6 +51,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
   });
   const s = sections[locale];
   return {
+    eyebrow: en ? "about the numbers" : "despre cifre",
     title: en ? "About the numbers" : "Despre cifre",
     intro: en ? "How every number in the explorer is counted." : "Cum se calculează fiecare cifră din explorator.",
     contents: en ? "On this page" : "Pe această pagină",

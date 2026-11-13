@@ -2,6 +2,7 @@ import { withAmounts, type MethodologyPageCopy } from "@grivei/ui";
 
 /** The methodology page, "About the numbers". Facts come from the counting rule, the Signal rules and the identity and placement rules as built. */
 export const methodologyEn: MethodologyPageCopy = {
+  eyebrow: "about the numbers",
   title: "About the numbers",
   intro:
     "Every Record and every amount in the explorer comes from SEAP, Romania's public procurement system, and is counted by one rule everywhere: totals, the map, rankings, the Flow lens and Signals. This page says what that rule is. The figures in the Signal sections are recomputed every time the data is loaded.",

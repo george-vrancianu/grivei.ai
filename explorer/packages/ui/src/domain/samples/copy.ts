@@ -890,6 +890,7 @@ export const sampleCopy = {
   coveragePageLayout: (locale: Locale): CoveragePageLayoutCopy =>
     locale === "ro"
       ? {
+        eyebrow: "acoperire",
         title: "Acoperire",
         intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
         grid: {
@@ -917,6 +918,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `dintre care ${f} absente din datele în masă`,
           dataThrough: (date) => `date până la ${date}`,
           inRange: "în intervalul de date",
+          windowNote: "trimestrele urmează data publicării · evidențiat: intervalul din chipul datei atribuirii",
           legend: { title: "Stările celulelor", range: "În intervalul de date" },
           seePage: "Vezi pagina Acoperire",
         },
@@ -973,6 +975,7 @@ export const sampleCopy = {
         error: "Acoperirea nu a putut fi încărcată. Încearcă din nou peste puțin timp.",
       }
       : {
+        eyebrow: "coverage",
         title: "Coverage",
         intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
         grid: {
@@ -1000,6 +1003,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `${f} of them not in bulk data`,
           dataThrough: (date) => `data through ${date}`,
           inRange: "inside the date range",
+          windowNote: "quarters follow the publication date · highlighted: the award date chip",
           legend: { title: "Cell states", range: "Inside the date range" },
           seePage: "See the Coverage page",
         },

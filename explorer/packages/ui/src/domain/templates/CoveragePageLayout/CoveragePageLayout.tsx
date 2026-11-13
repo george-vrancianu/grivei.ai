@@ -36,8 +36,9 @@ export interface CoveragePageLayoutProps {
 export function CoveragePageLayout({ status, content, locale, methodologyHref, lensHref, onNavigate, copy }: CoveragePageLayoutProps) {
   const head = (
     <>
-      <Typography variant="h1" component="h1" sx={{ maxWidth: 900, textWrap: "balance" }}>{copy.title}</Typography>
-      <Typography sx={{ maxWidth: 680, fontSize: 17, color: "text.secondary", textWrap: "pretty" }}>{copy.intro}</Typography>
+      <Typography variant="label" component="p" color="primary.main" sx={{ m: 0 }}>{copy.eyebrow}</Typography>
+      <Typography variant="h1" component="h1" sx={{ maxWidth: layout.titleMaxWidth, textWrap: "balance" }}>{copy.title}</Typography>
+      <Typography variant="lead" sx={{ maxWidth: layout.leadMaxWidth, textWrap: "pretty" }}>{copy.intro}</Typography>
     </>
   );
   if (status === "loading" || status === "error" || !content) {

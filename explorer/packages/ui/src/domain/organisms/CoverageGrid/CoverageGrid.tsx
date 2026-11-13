@@ -1,5 +1,6 @@
 import type { Locale } from "../../../theme/index.ts";
 import { Box } from "../../../atoms/Box/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
 import { Table } from "../../../atoms/Table/index.ts";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
@@ -10,7 +11,7 @@ import type { GapCellData } from "../../types.ts";
 import { CoverageCell } from "../../molecules/CoverageCell/index.ts";
 import { CoverageGridLegend } from "../../molecules/CoverageGridLegend/index.ts";
 import type { CoverageGridCopy, GridWindow } from "../../utils/coverageGrid.types.ts";
-import { RANGE_COLOR, gridShape, kindLabel, parseQuarter, quarterInWindow, windowActive } from "../../utils/coverageGrid.ts";
+import { RANGE_COLOR, gridShape, kindLabel, parseQuarter, quarterInWindow, windowActive, yearGroups } from "../../utils/coverageGrid.ts";
 
 export interface CoverageGridProps {
   /** One Source's grid (`coverage.grid`). Quarters run from the earliest to the latest cell, kinds come from the cells. */
@@ -33,13 +34,22 @@ const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "
 export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = false }: CoverageGridProps) {
   const { quarters, kinds, at } = gridShape(cells);
   const active = windowActive(dateWindow);
+  const years = yearGroups(quarters);
   return (
     <Box sx={{ minWidth: 0 }}>
+      {!hideLegend && <Typography variant="meta" component="p" sx={{ m: 0, mb: 1, textAlign: { sm: "right" } }}>{copy.windowNote}</Typography>}
       <TableContainer sx={{ overflowX: "auto", maxWidth: "100%" }} tabIndex={0} aria-label={copy.label} role="region">
         <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: "3px", width: "auto" }}>
           <TableHead>
             <TableRow>
-              <TableCell component="th" scope="col" sx={{ ...stickyLabel, zIndex: 3 }}>{copy.kindHeader}</TableCell>
+              <TableCell component="th" scope="col" rowSpan={2} sx={{ ...stickyLabel, zIndex: 3, verticalAlign: "bottom" }}>{copy.kindHeader}</TableCell>
+              {years.map(({ label, span }, i) => (
+                <TableCell key={`${label}-${i}`} component="th" scope="colgroup" colSpan={span} aria-hidden sx={{ p: 0.5, border: 0, textAlign: "left", typography: "meta", color: "text.secondary" }}>
+                  {label}
+                </TableCell>
+              ))}
+            </TableRow>
+            <TableRow>
               {quarters.map((quarter) => {
                 const inRange = quarterInWindow(quarter, dateWindow);
                 const parsed = parseQuarter(quarter);
@@ -64,11 +74,7 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
                       color: inRange ? "text.primary" : "text.secondary",
                     }}
                   >
-                    <span aria-hidden>
-                      {parsed?.year ?? quarter}
-                      <br />
-                      {parsed ? `Q${parsed.q}` : ""}
-                    </span>
+                    <span aria-hidden>{parsed ? `Q${parsed.q}` : ""}</span>
                   </TableCell>
                 );
               })}

@@ -59,6 +59,19 @@ export function parseQuarter(quarter: string): { year: number; q: number } | nul
   return match ? { year: Number(match[1]), q: Number(match[2]) } : null;
 }
 
+/** The header's year labels: consecutive quarters of one year share one label (`span` columns); a name that is not a quarter stands alone. */
+export function yearGroups(quarters: readonly string[]): { label: string; span: number }[] {
+  const groups: { label: string; span: number }[] = [];
+  for (const quarter of quarters) {
+    const parsed = parseQuarter(quarter);
+    const label = parsed ? String(parsed.year) : quarter;
+    const last = groups[groups.length - 1];
+    if (parsed && last?.label === label) last.span += 1;
+    else groups.push({ label, span: 1 });
+  }
+  return groups;
+}
+
 /** First and last day of a quarter as ISO dates; null when the quarter is malformed. */
 export function quarterBounds(quarter: string): { start: string; end: string } | null {
   const parsed = parseQuarter(quarter);
