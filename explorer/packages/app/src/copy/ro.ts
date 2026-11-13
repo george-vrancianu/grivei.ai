@@ -324,6 +324,7 @@ export const ro: Copy = {
         heading: "Relații",
         recordCount: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         graph: {
+          heading: "Principalele contrapărți · alege una ca să vezi înregistrările ei",
           label: "Graful principalelor contrapărți",
           naturalPerson: "Persoană fizică",
           unknown: "Contraparte neidentificată",
@@ -336,15 +337,15 @@ export const ro: Copy = {
             "Sumele unui consorțiu sunt împărțite în mod egal între membri, prin convenție; valoarea întreagă a înregistrării apare pe pagina ei.",
         },
         legend: {
-          title: "Legendă", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie albastră: mai ales contracte",
-          directPurchase: "Linie verde: mai ales achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel portocaliu: are Semnale",
+          title: "Legendă", edgeColour: "Culoarea unei linii este canalul care deține cei mai mulți RON cu acea contraparte.", centre: "Entitatea acestei pagini", size: "Aria cercului: banii cu contrapartea", contract: "Linie galbenă: contracte",
+          directPurchase: "Linie albastră: achiziții directe", wonTogether: "Linie întreruptă: au câștigat împreună", signals: "Inel galben: are Semnale",
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
           total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
         },
       },

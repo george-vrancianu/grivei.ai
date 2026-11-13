@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { color } from "../../../theme/tokens.ts";
 import {
-  CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, MAX_NODE_RADIUS, MIN_NODE_RADIUS, channelColor, counterpartyKey, dominantChannel, layoutNodes, maxAwarded,
+  CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, MAX_EDGE_WIDTH, MIN_EDGE_WIDTH, edgeWidth, SIGNAL_RING_COLOR, MAX_NODE_RADIUS, MIN_NODE_RADIUS, channelColor, counterpartyKey, dominantChannel, layoutNodes, maxAwarded,
   nodeRadius, share, timelineBars,
 } from "./relationshipsTab.utils.ts";
 import {
@@ -120,5 +121,18 @@ describe("the stories' timelines", () => {
   });
   it("of a supplier with one authority add up to that authority's row", () => {
     expect(sum(supplierPickedRelationships.timeline)).toBe(BigInt(supplierPickedRelationships.counterparties.rows[0]!.total.awarded));
+  });
+});
+
+describe("edge width and the dark-ground colours", () => {
+  it("is linear in money between the minimum and the maximum width", () => {
+    expect(edgeWidth("0", "1000")).toBe(MIN_EDGE_WIDTH);
+    expect(edgeWidth("1000", "1000")).toBe(MAX_EDGE_WIDTH);
+    expect(edgeWidth("500", "1000")).toBeCloseTo((MIN_EDGE_WIDTH + MAX_EDGE_WIDTH) / 2, 2);
+    expect(edgeWidth("5", "0")).toBe(MIN_EDGE_WIDTH);
+  });
+
+  it("draws a Signal ring in amber (never red)", () => {
+    expect(SIGNAL_RING_COLOR).toBe(color.accent);
   });
 });

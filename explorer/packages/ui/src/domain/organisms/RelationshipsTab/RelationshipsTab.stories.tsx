@@ -84,3 +84,10 @@ export const EmptyEntity: Story = { render: render({ data: emptyRelationships, r
 export const LoadingSidePanel: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", initial: "30000002", loading: true }) };
 /** The Flow lens open: the `flowMap` slot replaces the graph and its legend; the timeline and the side panel stay. */
 export const FlowLensOpen: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", flowOpen: true }) };
+/** No counterparty carries a Signal: no amber ring on the graph and no ring entry in the legend. */
+export const WithoutSignals: Story = {
+  render: render({
+    data: { ...authorityTypicalRelationships, counterparties: { ...authorityTypicalRelationships.counterparties, rows: authorityTypicalRelationships.counterparties.rows.map((row) => ({ ...row, hasSignals: false })) } },
+    role: "authority", picked: typicalPicked, initial: "30000002",
+  }),
+};

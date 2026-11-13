@@ -16,6 +16,8 @@ export interface NodeNameParts {
 }
 
 export interface CounterpartyGraphCopy {
+  /** The graph panel's title ('top counterparties · pick one to list its Records'). */
+  heading: string;
   /** The graph's accessible name. */
   label: string;
   /** The natural person's label: never a name (ADR 0003). */
@@ -34,6 +36,8 @@ export interface CounterpartyGraphCopy {
 
 export interface GraphLegendCopy {
   title: string;
+  /** The rule for an edge's colour, in one sentence: the channel holding the most RON with that counterparty. */
+  edgeColour: string;
   centre: string;
   size: string;
   contract: string;
@@ -58,6 +62,8 @@ export interface MonthlyTimelineCopy {
 export interface CounterpartyPanelCopy {
   /** The panel's accessible name. */
   label: string;
+  /** The mono label above the panel ('picked counterparty'). */
+  eyebrow: string;
   /** Shown while nothing is picked. */
   hint: string;
   /** The heading's words before the counterparty's name ("Records with"). */

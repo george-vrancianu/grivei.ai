@@ -1,4 +1,5 @@
 import { scaleBand, scaleLinear } from "d3-scale";
+import { color, map } from "../../../theme/tokens.ts";
 import type { Bani, RelationshipsCounterparty, RelationshipsTimeline } from "../../types.ts";
 
 /** The graph's drawing box, in SVG units (it scales to the container). */
@@ -12,21 +13,27 @@ export const MIN_NODE_RADIUS = 6;
 export const ORBIT_X = 235;
 export const ORBIT_Y = 145;
 
-/** Edge and node colours: contracts, direct purchases; the Signal ring; the neutral centre. */
-export const CONTRACT_COLOR = "#2f5d9e";
-export const DIRECT_PURCHASE_COLOR = "#0f766e";
-export const SIGNAL_RING_COLOR = "#ea580c";
-export const CENTRE_COLOR = "#1f2937";
-/** The selected node's outline, and the keyboard focus ring (a mark selection never uses: a separate ring around the node). */
-export const SELECTED_STROKE = "#111827";
-export const FOCUS_COLOR = "#7c3aed";
-/** Legend marks that stand for no channel in particular. */
-export const NEUTRAL_MARK_COLOR = "#6b7280";
+/** Edge and node colours (tokens): contracts are amber, direct purchases blue; the Signal ring is the amber of every Signal mark, never red. */
+export const CONTRACT_COLOR = color.accent;
+export const DIRECT_PURCHASE_COLOR = color.directPurchase;
+export const SIGNAL_RING_COLOR = color.accent;
+/** The centre node, and the surface a counterparty node is filled with (the graph sits on a panel). */
+export const CENTRE_COLOR = color.text;
+export const NODE_FILL = color.panel;
+/** The selected node's outline: a solid light stroke (the map's highlight). The keyboard focus ring is a separate dashed ring, apart from it. */
+export const SELECTED_STROKE = map.highlight;
+export const FOCUS_COLOR = color.text;
+/** Legend marks that stand for no channel in particular, and a won-together edge: hollow marks and dashed lines only. */
+export const NEUTRAL_MARK_COLOR = color.idle;
 /** The dash pattern of a won-together edge. */
-export const WON_TOGETHER_DASH = "6 4";
-/** The timeline's overall bars and the picked counterparty's bars drawn over them. */
-export const TIMELINE_COLOR = "#b6c2d1";
-export const TIMELINE_PICKED_COLOR = "#2f5d9e";
+export const WON_TOGETHER_DASH = "5 5";
+/** The timeline's bars: all amber alone; with a counterparty picked the overall bars step back to `idle` and its months are amber over them. */
+export const TIMELINE_COLOR = color.accent;
+export const TIMELINE_DIMMED_COLOR = color.idle;
+export const TIMELINE_PICKED_COLOR = color.accent;
+/** An edge's width: linear in the counterparty's money between these two, as the drawing does. */
+export const MIN_EDGE_WIDTH = 1.5;
+export const MAX_EDGE_WIDTH = 9;
 
 export type Channel = "contract" | "directPurchase";
 
@@ -49,11 +56,16 @@ export function nodeRadius(awarded: Bani, max: Bani): number {
 }
 
 /**
- * The channel an edge is coloured by: the one that carries more money. The graph shows one colour per counterparty, not a split
+ * The channel an edge is coloured by: the one holding the most RON with that counterparty. The graph shows one colour per counterparty, not a split
  * (the tooltip and the accessible name give both amounts); a tie reads as contract.
  */
 export function dominantChannel(row: Pick<RelationshipsCounterparty, "viaContract" | "viaDirectPurchase">): Channel {
   return BigInt(row.viaDirectPurchase.awarded) > BigInt(row.viaContract.awarded) ? "directPurchase" : "contract";
+}
+
+/** Edge width for a counterparty: `MIN_EDGE_WIDTH` for no money up to `MAX_EDGE_WIDTH` for the largest. */
+export function edgeWidth(awarded: Bani, max: Bani): number {
+  return Math.round((MIN_EDGE_WIDTH + (MAX_EDGE_WIDTH - MIN_EDGE_WIDTH) * share(awarded, max)) * 100) / 100;
 }
 
 export const channelColor = (channel: Channel): string => (channel === "contract" ? CONTRACT_COLOR : DIRECT_PURCHASE_COLOR);
@@ -75,6 +87,8 @@ export interface GraphNode {
   y: number;
   r: number;
   channel: Channel;
+  /** The edge's stroke width (money, linear). */
+  edgeWidth: number;
 }
 
 /** Counterparties spread evenly on the ellipse, the first (largest) at the top and the rest clockwise; the centre is (0, 0). */
@@ -89,6 +103,7 @@ export function layoutNodes(rows: readonly RelationshipsCounterparty[]): GraphNo
       y: rows.length === 1 ? -ORBIT_Y : round(Math.sin(angle) * ORBIT_Y),
       r: nodeRadius(row.total.awarded, max),
       channel: dominantChannel(row),
+      edgeWidth: edgeWidth(row.total.awarded, max),
     };
   });
 }

@@ -6,11 +6,13 @@ import { TableHead } from "../../../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { color, font, radius } from "../../../../../theme/tokens.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import type { RelationshipsTimeline } from "../../../../types.ts";
 import type { MonthlyTimelineCopy } from "../../relationshipsTab.types.ts";
-import { TIMELINE_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
+import { TIMELINE_COLOR, TIMELINE_DIMMED_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
 import { formatMonth } from "../../../../utils/formatDate.ts";
+import { Panel } from "../Panel/index.ts";
 import { visuallyHidden } from "../../../../utils/visuallyHidden.ts";
 
 export interface MonthlyTimelineProps {
@@ -42,21 +44,21 @@ export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, locale, 
   // Label about a dozen months however many there are.
   const every = Math.max(1, Math.ceil(bars.length / 12));
   return (
-    <Box component="section" aria-label={copy.heading}>
-      <Typography variant="h6" component="h3">{copy.heading}</Typography>
+    <Panel heading={copy.heading}>
       {bars.length === 0 ? (
         <Typography color="text.secondary">{copy.empty}</Typography>
       ) : (
         <>
-          <Box component="svg" role="img" aria-label={copy.label} viewBox={`0 0 ${WIDTH} ${HEIGHT + AXIS}`} sx={{ width: "100%", height: "auto", display: "block" }}>
+          <Box component="svg" role="img" aria-label={copy.label} viewBox={`0 0 ${WIDTH} ${HEIGHT + AXIS}`} sx={{ width: "100%", height: "auto", display: "block", color: color.muted, fontFamily: font.mono }}>
             {bars.map((bar) => (
               <g key={bar.month} data-month={bar.month}>
-                <rect data-series="overall" x={bar.x} y={bar.y} width={bar.width} height={bar.height} fill={TIMELINE_COLOR} />
+                <rect data-series="overall" x={bar.x} y={bar.y} width={bar.width} height={bar.height} fill={picked ? TIMELINE_DIMMED_COLOR : TIMELINE_COLOR} rx={radius.cell} />
                 {picked && bar.pickedHeight > 0 && (
-                  <rect data-series="picked" x={bar.x} y={bar.pickedY} width={bar.width} height={bar.pickedHeight} fill={TIMELINE_PICKED_COLOR} />
+                  <rect data-series="picked" x={bar.x} y={bar.pickedY} width={bar.width} height={bar.pickedHeight} fill={TIMELINE_PICKED_COLOR} rx={radius.cell} />
                 )}
               </g>
             ))}
+            <line x1={0} x2={WIDTH} y1={HEIGHT} y2={HEIGHT} stroke={color.lineStrong} strokeWidth={1} />
             {bars.map((bar, i) =>
               i % every === 0 ? (
                 <text key={`label-${bar.month}`} x={bar.x + bar.width / 2} y={HEIGHT + 14} textAnchor="middle" fontSize={10} fill="currentColor" aria-hidden="true">
@@ -67,13 +69,13 @@ export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, locale, 
           </Box>
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }} data-legend="timeline">
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box aria-hidden sx={{ ...swatch, backgroundColor: TIMELINE_COLOR }} />
-              <Typography variant="caption">{copy.overall}</Typography>
+              <Box aria-hidden sx={{ ...swatch, backgroundColor: picked ? TIMELINE_DIMMED_COLOR : TIMELINE_COLOR }} />
+              <Typography variant="meta">{copy.overall}</Typography>
             </Box>
             {picked && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box aria-hidden sx={{ ...swatch, backgroundColor: TIMELINE_PICKED_COLOR }} />
-                <Typography variant="caption">{copy.picked(pickedName)}</Typography>
+                <Typography variant="meta">{copy.picked(pickedName)}</Typography>
               </Box>
             )}
           </Box>
@@ -100,6 +102,6 @@ export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, locale, 
           </Box>
         </>
       )}
-    </Box>
+    </Panel>
   );
 }
