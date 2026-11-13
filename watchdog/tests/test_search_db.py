@@ -4,6 +4,7 @@ fixture of test_bulk_loader_db.py); the bucket test does not."""
 import re
 import shutil
 import time
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
@@ -98,6 +99,11 @@ class _Progress:
 
     def __getattr__(self, name):
         return lambda *a, **k: self.events.append(name)
+
+    @contextmanager
+    def step(self, name):
+        self.events.append(f"step {name}")
+        yield
 
 
 def test_a_vacuum_that_fails_after_the_commit_is_a_warning_and_the_rebuild_still_finishes(db, tmp_path, monkeypatch, caplog):

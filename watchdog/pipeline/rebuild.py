@@ -25,6 +25,7 @@ records absent from a re-upload are kept.
 from __future__ import annotations
 
 import logging
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -446,14 +447,21 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     today = today or datetime.now(timezone.utc).date()
     bulk_rows: dict[tuple[str, tuple[int, int]], int] = {}  # (kind, quarter) -> data rows of the largest loaded bulk unit: the possibly-incomplete rule's count
     overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
+
+    def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
+        return progress.step(name) if progress else nullcontext()
+
     try:
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
-            cur.execute(CORE_SQL.read_text(encoding="utf-8"))
-            cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
-            cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
-            resolver = Resolver(load_anaf(cur, archive, summary), overrides)
-            estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
-            summary.estimates = len(estimates)
+            with step("schema"):
+                cur.execute(CORE_SQL.read_text(encoding="utf-8"))
+                cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
+                cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
+            with step("anaf-identities"):
+                resolver = Resolver(load_anaf(cur, archive, summary), overrides)
+            with step("estimates"):
+                estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
+                summary.estimates = len(estimates)
             for o in iter_units(archive, summary, progress):
                 if o.status == "loaded" and o.unit.stream == "bulk":
                     cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
@@ -474,52 +482,67 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 if progress:
                     progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                        sum(len(rows) for _, rows in o.files), o.status, o.reason)
-            # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
-            # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
-            cur.execute(
-                """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
-                       SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
-                   OR (SELECT f.stream FROM seap.source_file f WHERE f.id = r.source_file_id) = 'backfill'
-                   THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
-            for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
-                through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
-                if through:
-                    cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
-            # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
-            cur.execute(
-                """UPDATE seap.search s SET badges = s.badges || CASE r.crawl_status WHEN 'PROVISIONAL' THEN 'CRAWLED_PROVISIONAL' ELSE 'CRAWL_ONLY' END
-                     FROM seap.record r WHERE r.code = s.record_code AND r.crawl_status IS NOT NULL""")
-            build_frameworks(cur)
-            cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
-            summary.estimates_missing = cur.fetchone()[0]
-            build_entities(cur, overrides, summary)
-            summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
-            summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
-            cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
-            summary.coverage = flagged_cells(cells)
-            gaps = {(c.kind, c.quarter) for c in cells if c.state == "KNOWN_GAP"}
-            summary.set_aside_without_gap = [path for path, _ in summary.set_aside
-                                             if (KINDS[path.parts[-4]].label, _quarter_label(path.parts[-3])) not in gaps]
-            cur.execute("SELECT count(*) FROM seap.record")
-            summary.records = cur.fetchone()[0]
-            cur.execute(DATA_THROUGH_SQL)
-            data_through = dict(cur.fetchall())
-            summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
-            # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
-            cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
-            cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
-            cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
-            cur.execute("ANALYZE seap.record")
-            build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
-            create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
-            cur.execute("ANALYZE seap.search")
+            with step("crawl-status"):
+                # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
+                # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
+                cur.execute(
+                    """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
+                           SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
+                       OR (SELECT f.stream FROM seap.source_file f WHERE f.id = r.source_file_id) = 'backfill'
+                       THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
+                for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
+                    through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
+                    if through:
+                        cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
+            with step("crawl-badges"):
+                # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
+                cur.execute(
+                    """UPDATE seap.search s SET badges = s.badges || CASE r.crawl_status WHEN 'PROVISIONAL' THEN 'CRAWLED_PROVISIONAL' ELSE 'CRAWL_ONLY' END
+                         FROM seap.record r WHERE r.code = s.record_code AND r.crawl_status IS NOT NULL""")
+            with step("frameworks"):
+                build_frameworks(cur)
+                cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
+                summary.estimates_missing = cur.fetchone()[0]
+            with step("entities"):
+                build_entities(cur, overrides, summary)
+            with step("placement"):
+                summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+            with step("mf"):
+                summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
+            with step("coverage"):
+                cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
+                summary.coverage = flagged_cells(cells)
+                gaps = {(c.kind, c.quarter) for c in cells if c.state == "KNOWN_GAP"}
+                summary.set_aside_without_gap = [path for path, _ in summary.set_aside
+                                                 if (KINDS[path.parts[-4]].label, _quarter_label(path.parts[-3])) not in gaps]
+            with step("signals"):
+                cur.execute("SELECT count(*) FROM seap.record")
+                summary.records = cur.fetchone()[0]
+                cur.execute(DATA_THROUGH_SQL)
+                data_through = dict(cur.fetchall())
+                summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
+            with step("record-indexes"):
+                # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
+                cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
+                cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
+                cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
+                cur.execute("ANALYZE seap.record")
+            with step("rollup"):
+                build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
+            with step("search-index"):
+                create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
+            with step("analyze-search"):
+                cur.execute("ANALYZE seap.search")
+            with step("commit"):
+                conn.commit()  # what leaving the `with` would do; explicit so the commit is timed
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
         if progress:
             progress.fail(e)
         raise
     if gate:
         try:
-            gate()
+            with step("check"):  # the switchover's check of the new graph against the live one (switchover.py)
+                gate()
         except BaseException as e:  # refused: recorded as failed, nothing served, no outlines
             if progress:
                 progress.fail(e)
@@ -527,14 +550,16 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     if progress:  # the load is committed (VACUUM is not graph work, so an interrupt there is not a failed load): `pipeline status` must not show a running rebuild while the (slower) national outlines are dissolved
         progress.finish(summary.records, data_through)
     try:
-        vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+        with step("vacuum"):
+            vacuum(db_url)  # cannot run inside the transaction above: right after the commit
     except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
         log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 
     try:
-        summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
+        with step("outlines"):
+            summary.geo_line = build_topojson(archive, Path(geo_dir) if geo_dir else archive.root / "derived" / "geo", placement_dir).line()
     except Exception as e:  # the graph is loaded; the outlines can be rebuilt on their own with `pipeline geo-topojson`
         summary.geo_line = f"geo: TopoJSON failed ({type(e).__name__}: {e}); the graph is loaded, rerun `pipeline geo-topojson`"
     return summary

@@ -100,6 +100,29 @@ def test_a_failure_is_reported_and_says_to_rerun_from_scratch(run):
     assert s["state"] == "failed" and s["error"] == "RuntimeError: connection lost"
 
 
+def test_a_step_logs_its_start_and_its_duration_and_shows_in_status(run):
+    p, clock, lines, status_file = run
+    p.start(1, "/archive")
+    with p.step("search-index"):
+        assert read_status(status_file)["step"] == "search-index"  # visible while the step runs
+        assert "now: step search-index" in describe(read_status(status_file), alive=lambda pid: True)
+        clock.tick(3 * 3600 + 125)
+    assert re.fullmatch(rf"{TS} rebuild step search-index: start", lines[-2])
+    assert re.fullmatch(rf"{TS} rebuild step search-index done in 3:02:05", lines[-1])
+    assert read_status(status_file)["step"] is None
+
+
+def test_a_failure_inside_a_step_names_the_step_and_gets_no_done_line(run):
+    p, _, lines, status_file = run
+    p.start(2, "/archive")
+    with pytest.raises(RuntimeError):
+        with p.step("entities"):
+            raise RuntimeError("out of memory")
+    p.fail(RuntimeError("out of memory"))
+    assert not any(" done in " in x for x in lines)
+    assert re.fullmatch(rf"{TS} rebuild FAILED after 0/2 units in step entities: RuntimeError: out of memory; nothing was loaded, rerun from scratch", lines[-1])
+
+
 def test_a_failure_after_the_load_finished_does_not_overwrite_the_finished_state(run):
     p, _, _, status_file = run
     p.start(1, "/archive")
