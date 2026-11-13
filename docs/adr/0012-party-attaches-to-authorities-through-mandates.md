@@ -24,3 +24,7 @@ To let search filter public money by Party, a Party is attached to a contracting
   - A firm donation shows as a dated fact.
   - A Party role shows only on a link confirmed under ADR 0011, which in practice means parliamentarians (cdep.ro birth dates) matched to ONRC administrators. Party roles are what the person made public as a candidate or office holder (GDPR art. 9(2)(e)), never claimed membership.
 - **Candidate Signal rules:** "a donor to Party X, or a supplier whose Named person holds a Party role in X, wins from an authority whose mandate is X" stays a candidate Signal rule for the Release-order decision, on confirmed links only.
+
+## Amended 2026-11-13: Party roles on supplier pages are Restricted
+
+A Party role on a supplier page rests on an ADR 0011 link across Sources, which [ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) makes Restricted. It shows only in a Private view, as does the candidate Signal rule above. Elected leaders on an authority's Leadership list stay public: they come from one official source (AEP).

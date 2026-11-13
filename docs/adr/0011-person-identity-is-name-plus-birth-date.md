@@ -31,3 +31,7 @@ Two person records are the same person only when their normalised name and full 
   - disputed links are hidden while they are checked (ADR 0009).
 - **Stable ids:** a person page's id is a keyed hash of the person key, with the secret held outside the repo. It is deterministic across rebuilds and cannot be reversed. When the key changes (a split, a merge or a corrected birth date), the page gets a new id, and the override records the old one so it redirects.
 - **Organisations named without a CUI** (EU-fund beneficiaries, court parties, subsidy suppliers) are not covered here; see ADR 0013.
+
+## Amended 2026-11-13: cross-Source person links are Restricted
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) makes confirmed links that join people across Sources (for example a deputy to an ONRC administrator) Restricted, along with Signals that join through people. They are shown only in a Private view. The linking rules here are unchanged; they no longer wait on Go-live.

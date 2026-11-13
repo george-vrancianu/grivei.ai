@@ -37,3 +37,7 @@ Grivei.ai adds **Investigations**: cases that agents work up from a Signal, join
 - **Legal gate:** no Investigation is published until the lawyer review and the DPIA from ADR 0009 cover Investigations, Findings and hand-offs.
 - **Readers find them** on the entity, Record and Signal pages they touch and on an `/investigations` index. They have no search surface of their own (ADR 0005 is per Source).
 - **Language:** written in Romanian, with an English translation reviewed at sign-off. Quoted source passages stay in Romanian.
+
+## Amended 2026-11-13: Investigations are Restricted
+
+[ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) makes all of Investigations Restricted: shown only in a Private view, never on the open public host. The legal gate and the "organisation-level joins only until person-level Go-live" rule are removed; in a Private view everything is visible, drafts and Findings included, and Investigations may join through people. Right of reply, Editor sign-off and ADR 0009's legal conditions apply only to publishing an Investigation to the anonymous public, a later decision. ADR 0009's "Never named" list and no inferred relationships still bind.
