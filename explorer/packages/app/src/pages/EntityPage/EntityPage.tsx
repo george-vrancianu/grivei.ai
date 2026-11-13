@@ -30,7 +30,7 @@ export interface EntityPageProps {
 export function EntityPage({ locale, entity: routeRole, entityKey, view }: EntityPageProps) {
   const t = useCopy();
   const signals = useSignalLinks(locale);
-  const { filter, page, order, signalOrder, lens, counterparty, update } = useUrlState();
+  const { filter, page, order, signalOrder, lens, counterparty, carried, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
@@ -81,7 +81,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         )
       }
       view={view}
-      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter)}
+      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter, carried)}
       tabCounts={tabCounts(state, filter, locale)}
       citeUrl={citeUrl()}
       onNavigate={onNavigate}

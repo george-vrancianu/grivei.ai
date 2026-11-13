@@ -1,6 +1,7 @@
 import type { MainScreenQuery, MainScreenQueryVariables, ZoomedCountyQuery, ZoomedCountyQueryVariables } from "../generated/operations.ts";
 import { moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import { recordedMainScreen } from "./recorded/index.ts";
 import * as w from "./world.ts";
 
 const { sources } = w;
@@ -10,6 +11,13 @@ const procedureFacet = [{ value: "Achiziție directă" }, { value: "Licitație d
 
 /** What a recorded run cannot produce (a record state of every kind, counts a fixture archive cannot reach). The rest is `recorded/`. */
 export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariables> = [
+  {
+    // the recorded "text-query-with-chip" rows under a chip-only filter (no query): a search whose entity links carry chips and no query (#106)
+    ...recordedMainScreen.find((f) => f.name === "text-query-with-chip")!,
+    name: "chip-only-direct-purchase",
+    description: "a channel chip and no text query (rows as the recorded text-query-with-chip, test data for the carried-search link, #106)",
+    variables: { filter: { channel: "DIRECT_PURCHASE" } },
+  },
   {
     name: "records-variety",
     kind: "typical",

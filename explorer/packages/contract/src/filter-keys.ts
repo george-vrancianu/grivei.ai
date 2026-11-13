@@ -52,5 +52,6 @@ export const RECORD_FILTER_URL = {
  * matching set, but a citation must reproduce them. Signal paging is not citable.
  * `lens` is the main screen's map lens (`money`, the default and left out, or `coverage`), or the Relationships tab's (`flow`).
  * `counterparty` is the Entity key picked on the Relationships tab (it is not a filter: the graph keeps showing every counterparty).
+ * `carried` (`search=`) is the search an entity link was followed from: the query and chips as one escaped query string. It is never the entity's own filter (#106).
  */
-export const URL_ONLY_KEYS = { tab: "tab", page: "page", order: "order", signalOrder: "signalOrder", lens: "lens", counterparty: "counterparty" } as const;
+export const URL_ONLY_KEYS = { tab: "tab", page: "page", order: "order", signalOrder: "signalOrder", lens: "lens", counterparty: "counterparty", carried: "search" } as const;

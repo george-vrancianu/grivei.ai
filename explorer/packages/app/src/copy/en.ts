@@ -423,6 +423,7 @@ export const en: Copy = {
         signals: ruleLabels(signalCard.rules),
       },
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
+      onlyMatching: { query: (q) => `only Records matching “${q}”`, filters: "only Records matching the search's filters" },
     },
   },
   signalCard,

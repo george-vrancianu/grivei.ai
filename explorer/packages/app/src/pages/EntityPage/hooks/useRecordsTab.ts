@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { createElement, useMemo } from "react";
 import type { RecordsTabProps } from "@grivei/ui";
 import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
 import { pathFor, type EntityRoute } from "../../../routing/routes.ts";
+import { OnlyMatchingLink } from "../../../components/OnlyMatchingLink/index.ts";
 import { methodologyHref } from "../../../methodology/methodologyLinks.ts";
 import { withSuspectBadge } from "../../../urlState/suspect.ts";
 import { useUrlState } from "../../../urlState/useUrlState.ts";
-import { patchTo, recordsHref } from "../entityPage.utils.ts";
+import { onlyMatchingHref, patchTo, recordsHref } from "../entityPage.utils.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
 
 type Wiring = Omit<RecordsTabProps, "records">;
@@ -17,9 +18,9 @@ type Wiring = Omit<RecordsTabProps, "records">;
  */
 export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, entityKey: string): Wiring {
   const t = useCopy();
-  const { filter, page, order, setFilter } = useUrlState();
+  const { filter, page, order, carried, setFilter } = useUrlState();
   return useMemo(() => {
-    const here = (n: number) => recordsHref(locale, entity, entityKey, { filter, ...(order ? { order } : {}), page: n });
+    const here = (n: number) => recordsHref(locale, entity, entityKey, { filter, ...(order ? { order } : {}), ...(carried ? { carried } : {}), page: n });
     const own = t.entityPage.recordsTab;
     return {
       filter,
@@ -35,6 +36,10 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
       methodologyHref: methodologyHref(locale, "awardedValue"),
       suspectHref: recordsHref(locale, entity, entityKey, { filter: withSuspectBadge(filter) }),
       locale,
+      // offered only to a reader who came from a search; following it applies the search and the parameter goes (see `onlyMatchingHref`)
+      filterExtras: carried
+        ? createElement(OnlyMatchingLink, { carried, href: onlyMatchingHref(locale, entity, entityKey, { filter, carried, ...(order ? { order } : {}) }), copy: own.onlyMatching })
+        : undefined,
       copy: {
         heading: own.heading,
         facets: { ...own.facets, badges: t.badges, channels: t.filterChips.channel.options },
@@ -45,5 +50,5 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
         pagination: t.fullResults.pagination,
       },
     };
-  }, [locale, entity, entityKey, filter, page, order, setFilter, t]);
+  }, [locale, entity, entityKey, filter, page, order, carried, setFilter, t]);
 }

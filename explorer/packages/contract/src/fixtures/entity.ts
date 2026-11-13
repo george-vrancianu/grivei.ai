@@ -4,6 +4,7 @@ import type {
 } from "../generated/operations.ts";
 import { entityHeader, entityRef, moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
+import { recordedEntityRecords } from "./recorded/records.ts";
 import * as w from "./world.ts";
 
 type Role = "AUTHORITY" | "SUPPLIER";
@@ -169,11 +170,29 @@ const facetsOfAuthority = {
 const rowsOf = (...records: (typeof w.rDirect)[]) => ({ count: records.length, rows: records.map((record) => ({ record, matchedField: null, areaShare: null })) });
 
 /**
+ * The recorded unfiltered Records of an entity narrowed to its first `n` rows, as the answer to `filter` (#106's "only Records matching ...":
+ * the search an entity link carries, applied as the Records tab's filter). Test data: the rows are the recorded ones, the counts follow them.
+ */
+function narrowed(key: string, role: Role, filter: EntityRecordsQueryVariables["filter"], n: number, name: string, description: string): FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables>[number] {
+  const full = recordedEntityRecords.find((f) => f.variables.key === key && f.variables.role === role && Object.keys(f.variables.filter ?? {}).length === 0 && !f.variables.order)!;
+  const records = full.data.entity!.seap.role!.records!;
+  const rows = records.records.rows.slice(0, n);
+  return {
+    name, kind: "typical", description,
+    variables: { key, role, limit: 100, offset: 0, filter },
+    data: { entity: { ...full.data.entity!, seap: { ...full.data.entity!.seap, role: { ...full.data.entity!.seap.role!, records: { ...records, total: total({ awarded: ron(1_000_000 * n), records: n }), records: { count: n, rows } } } } } },
+  } as FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables>[number];
+}
+
+/**
  * The EntityRecords states a small recorded archive cannot cheaply produce (the rest are recorded: `recorded/EntityRecords.json`,
  * `recorded/signals/EntityRecords.json` for every Signal's reproducing filter): an estimated total (> 65,000 Records) and its second page (offset 100). The
  * three counterparty-picked ones belong to the Relationships tab's side panel (#88 records them).
  */
 export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQueryVariables> = [
+  narrowed("2000007", "SUPPLIER", { q: "comuna" }, 3, "supplier-carried-query", "a supplier's Records tab narrowed to the search an entity link carried: a text query only (#106)"),
+  narrowed("2000007", "SUPPLIER", { q: "comuna", channel: "DIRECT_PURCHASE" }, 2, "supplier-carried-query-and-chip", "a supplier's Records tab narrowed to a carried text query and a channel chip (#106)"),
+  narrowed("2000007", "SUPPLIER", { channel: "DIRECT_PURCHASE" }, 6, "supplier-carried-chip", "a supplier's Records tab narrowed to a carried channel chip, no query (#106)"),
   {
     name: "authority-one-supplier", kind: "typical",
     description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",
