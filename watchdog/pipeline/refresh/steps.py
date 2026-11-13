@@ -65,6 +65,7 @@ class Impl:
         summary = self.load_fn()
         warnings = [f"quarantined (not loaded, shown as not yet loaded): {p}" for p in summary.quarantined]
         warnings += [line for line in summary.coverage if "possibly incomplete" in line]
+        warnings += [f"set aside (a file that switches kind partway; its tail is not loaded and its cell has no known gap): {p}" for p in summary.set_aside_without_gap]
         return StepResult({"files": summary.files_loaded, "records": summary.records, "quarantined": len(summary.quarantined)}, [], warnings)
 
     def backfill(self) -> StepResult:

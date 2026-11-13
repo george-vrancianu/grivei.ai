@@ -437,3 +437,40 @@ def test_the_rebuild_status_file_and_pipeline_status_show_the_data_through_dates
     out = capsys.readouterr().out
     assert "data through (as of this rebuild): AWARD_NOTICE 2026-02-10, CONTRACT 2026-04-02" in out
     assert "crawl cursor: 2026-04-02" in out  # the live cursor, from the archive
+
+
+def _no_gaps(tmp_path):
+    path = tmp_path / "no-gaps.csv"
+    path.write_text("quarter,kind,reason\n", encoding="utf-8")
+    return path
+
+
+def test_a_quarantined_file_that_switches_kind_partway_comes_back_with_requeue_and_loads_its_own_rows(db, tmp_path):
+    """The DA 2022 Q2 case (#92's known gap): quarantined by the older rule, `requeue`d, then the next load keeps the DA rows and sets
+    the pasted Contracte export aside, on the file's row and in the summary, never silently."""
+    from test_real_headers import _CONTRACTE_HEAD, _CONTRACTE_ROWS, _DA_HEAD, _DA_ROW, _DA_ROW_2
+
+    a = Archive(tmp_path / "a")
+    a.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=datetime(2022, 9, 15, 9, tzinfo=timezone.utc),
+                 files={"t2.csv": (_DA_HEAD + _DA_ROW + _DA_ROW_2 + _CONTRACTE_HEAD + _CONTRACTE_ROWS).encode()}, via="v")
+    [unit] = a.units()
+    a.quarantine(unit, "line 4: a CONTRACT header in the middle of a DA file: the file mixes kinds")  # what the older rule did
+    summary = rebuild(a, db, known_gaps_path=_no_gaps(tmp_path))
+    assert summary.records == 0  # a quarantined unit is not read again until it is requeued
+    assert len(a.requeue("CONTRACT header in the middle")) == 1 and not a.quarantined()
+    summary = rebuild(a, db, known_gaps_path=_no_gaps(tmp_path))
+    assert summary.records == 2 and not summary.quarantined
+    [(path, aside)] = summary.set_aside
+    assert path.name == "t2.csv" and (aside.kind, aside.line, aside.rows) == ("CONTRACT", 4, 2)
+    assert summary.set_aside_without_gap == [path]
+    assert any(line.startswith("set aside, not loaded:") and "no known gap yet" in line for line in summary.lines())
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT kind, row_count, load_notes FROM seap.source_file").fetchall() == [("DA", 2, ["set_aside:CONTRACT:from_line_4:2_rows"])]
+        assert c.execute("SELECT kind, count(*) FROM seap.record GROUP BY kind").fetchall() == [("DA", 2)]
+    # with the hand-entered gap the cell says why, and the summary no longer asks for one
+    gaps = tmp_path / "gaps.csv"
+    gaps.write_text('quarter,kind,reason\n2022-Q2,DA,"lipsește iunie"\n', encoding="utf-8")
+    summary = rebuild(a, db, known_gaps_path=gaps)
+    assert summary.set_aside_without_gap == []
+    with psycopg.connect(db) as c:
+        assert c.execute("SELECT state, rule, note FROM seap.coverage_cell WHERE quarter = '2022-Q2' AND kind = 'DA'").fetchone() == ("KNOWN_GAP", "HAND_ENTERED", "lipsește iunie")

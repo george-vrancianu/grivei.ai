@@ -38,13 +38,13 @@ export const coverageLensHand: FixtureSet<CoverageLensQuery, CoverageLensQueryVa
 const states: GapState[] = ["LOADED", "KNOWN_GAP", "POSSIBLY_INCOMPLETE", "NOT_IN_SOURCE", "CRAWLED_PROVISIONAL", "NOT_YET_LOADED"];
 type Cell = NonNullable<CoveragePageQuery["coverage"]>["grid"][number];
 const cell = (quarter: string, kind: string, state: GapState, records: number, o: Partial<Cell> = {}): Cell => ({
-  quarter, kind, state, rule: null, note: null, records, dataThrough: null, ...o,
+  quarter, kind, state, rule: null, note: null, records, crawlOnly: 0, dataThrough: null, ...o,
 });
 
 export const coveragePageHand: FixtureSet<CoveragePageQuery, CoveragePageQueryVariables> = [
   {
     name: "typical-every-gap-state", kind: "typical",
-    description: "a quarter x kind grid showing every gap state, with a published rule (and, for the hand-entered gap, the gap file's own note), the current quarter crawled-provisional (direct purchases: not yet loaded, awaiting the bulk file; a quarantined file shows the same state with no rule) and the 2021-22 no-prior-call contracts not in the source",
+    description: "a quarter x kind grid showing every gap state, with a published rule (and, for the hand-entered gap, the gap file's own note), the current quarter crawled-provisional (direct purchases: not yet loaded, awaiting the bulk file; a quarantined file shows the same state with no rule) and the 2021-22 no-prior-call contracts not in the source; a loaded quarter holding crawl-only contracts (#60/#90)",
     variables: { window: { from: "2021-01-01", to: "2024-12-31" } },
     data: {
       sources,
@@ -56,7 +56,7 @@ export const coveragePageHand: FixtureSet<CoveragePageQuery, CoveragePageQueryVa
           cell("2022-Q3", "DA", "KNOWN_GAP", 0, { rule: "HAND_ENTERED", note: "Exportul ADR pentru acest trimestru a fost republicat fără achizițiile directe" }),
           cell("2023-Q2", "DAN", "POSSIBLY_INCOMPLETE", 4_210, { rule: "COUNT_BELOW_NEIGHBOURS" }),
           cell("2023-Q3", "DAN", "NOT_YET_LOADED", 0),
-          cell("2024-Q3", "CONTRACT", "LOADED", 18_400, { dataThrough: "2024-09-30" }),
+          cell("2024-Q3", "CONTRACT", "LOADED", 18_400, { dataThrough: "2024-09-30", crawlOnly: 120 }),
           cell("2024-Q4", "DA", "NOT_YET_LOADED", 0, { rule: "AWAITING_BULK_FILE" }),
           cell("2024-Q4", "AWARD_NOTICE", "CRAWLED_PROVISIONAL", 2_900, { dataThrough: "2024-11-30" }),
         ],

@@ -279,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
 def _print_result(r) -> None:
     where = f"{r.kind}/{r.unit}"
     if r.ok:
-        print(f"PASS {where}  {r.rows} rows, {r.records} records  {r.path}", flush=True)
+        print(f"PASS {where}  {r.rows} rows, {r.records} records{f'; {r.reason}' if r.reason else ''}  {r.path}", flush=True)
     else:
         print(f"FAIL {where}  {r.reason}  {r.path}", flush=True)
         for p in r.problems[:5]:

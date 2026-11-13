@@ -214,6 +214,8 @@ export type FrameworkSummary = {
 
 export type GapCell = {
   __typename?: 'GapCell';
+  /** Of `records`, the crawl-only ones: crawled or backfilled Records that the bulk file of their quarter does not hold (or that have no bulk file of their kind). */
+  crawlOnly: Scalars['Int']['output'];
   dataThrough: Maybe<Scalars['Date']['output']>;
   /** A record kind of the Source (SEAP: SeapRecordKind). A plain string because kinds belong to each Source (ADR 0005). */
   kind: Scalars['String']['output'];
@@ -1225,6 +1227,7 @@ export type FrameworkSummaryResolvers<ContextType = any, ParentType extends Reso
 };
 
 export type GapCellResolvers<ContextType = any, ParentType extends ResolversParentTypes['GapCell'] = ResolversParentTypes['GapCell']> = {
+  crawlOnly?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   dataThrough?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   note?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

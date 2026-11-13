@@ -51,6 +51,9 @@ def test_every_cell_state_comes_out_of_the_fixture_archive(db, archive):
     # the neighbours of the undersized quarter are fine; a crawl-only Record counts in its loaded quarter (15 file rows + 1)
     assert [g[q, "CONTRACT"][0] for q in ("2024-Q2", "2024-Q3", "2025-Q1", "2025-Q2")] == ["LOADED"] * 4
     assert g["2025-Q2", "CONTRACT"][3] == 16
+    with psycopg.connect(db) as c:  # the crawl-only count the Coverage page lists (#60/#90): the crawled day's contract the bulk lacks
+        rows = c.execute("SELECT quarter, kind, crawl_only FROM seap.coverage_cell WHERE crawl_only > 0").fetchall()
+    assert ("2025-Q2", "CONTRACT", 1) in rows
     assert g["2021-Q3", "AWARD_NOTICE"][:2] == ("NOT_IN_SOURCE", "NO_PRIOR_CALL_BEFORE_BACKFILL")  # one week only: not covered
     assert g["2021-Q3", "AWARD_NOTICE"][3] == 1
 

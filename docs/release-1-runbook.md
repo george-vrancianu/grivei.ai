@@ -70,7 +70,7 @@ docker compose build pipeline                      # AFTER geo-table: installs r
 ```
 
 Expected (estimate): `geo-fetch` a few minutes (a few MB; ANCPI is about 16 pages of 200 UATs, 1 s apart), `geo-table` under a minute, the image build 5 minutes. Resume: rerun (archived snapshots are kept; a new SIRUTA semester is `geo-fetch --only siruta --siruta-dataset <id>`).
-The national flag comes after the first load (step 7). Check: `uats.csv` and `villages.csv` exist and the image contains them (`docker compose run --rm --entrypoint ls pipeline pipeline/placement/data`).
+The national flag and the SEAP placement fallback come from step 6's lookups, before the first load. Check: `uats.csv` and `villages.csv` exist and the image contains them (`docker compose run --rm --entrypoint ls pipeline pipeline/placement/data`).
 
 ### 4. Validate the archive read-only (ticket #64c): required before the seed
 
@@ -88,7 +88,9 @@ docker run --rm -v ~/grivei-data/raw:/archive:ro -v "$PWD/watchdog":/app:ro pyth
 
 It prints `PASS` or `FAIL <kind>/<quarter>` per file (with the reason) and `N passed, M failed of T file(s) (da a/b, ...)`, and exits 1 on any failure. The image name is Compose's (`docker compose --profile pipeline config --images`).
 Expected: about 15 minutes for 4.7 GB (use `--kind` to split it), one file in memory at a time (xls files whole: up to a few hundred MB). Resume: it changes nothing, rerun.
-**Expected result on the real archive: 72 of 73 passed.** The one FAIL is the DA 2022 Q2 file: it mixes a pasted Contracte export and is rejected for that stated reason; it stays quarantined (note it in the closing comment). Fix, or accept in writing, every other FAIL before step 6.
+**Expected result on the real archive: 73 of 73 passed.** The DA 2022 Q2 file passes with a note: it switches to a pasted Contracte export at line 415944, so its DA rows (published up to 31 May 2022) load and the 87,912 Contracte rows after that line are set aside, never loaded (`PASS da/2022Q2 ...; set aside from line 415944: a CONTRACT export, 87912 rows not loaded`). June 2022's direct purchases are missing from the file: `pipeline/coverage/known_gaps.csv` enters DA 2022 Q2 as a known gap with that reason. Fix, or accept in writing, every FAIL before step 6.
+
+**If DA 2022 Q2 is already in quarantine** (a seed or load ran before this rule; `reason.json` says `a CONTRACT header in the middle of a DA file`), bring it back once, with nothing else running (`requeue` does not take the lock), then load: `$P requeue --match da/2022Q2` (it prints `requeued 1 unit(s)`), then the next load (`$P load-quarter 2022Q2`, which requeues and rebuilds in one go under the lock, or the next nightly `refresh`: a requeue changes the archive fingerprint, so its load step is due). The rebuild summary then says `set aside, not loaded: ... from line 415944 a CONTRACT export (87912 rows) ...; its cell is a known gap`, and `seap.source_file.load_notes` keeps `set_aside:CONTRACT:from_line_415944:87912_rows`.
 
 **Steps 5 and 6 in one detached chain:** `setsid nohup deploy/first-load.sh >> ~/grivei-data/seed.log 2>&1 &` runs the crawl, then the seed, so the one full load includes the crawled days (add `--backfill` for step 8; see the script's header). The steps below are the same commands by hand.
 
@@ -100,12 +102,26 @@ nohup docker compose run --rm -T --no-deps pipeline crawl --start 2025-07-01 >> 
 
 Expected: about 220 notices a weekday nationally, a quarter is 2 to 3 hours at the 0.35 s default delay, the five quarters after 2025 Q2 of the order of 10 hours; a day is a few MB.
 Resume: rerun (complete days are skipped, a killed day resumes). Progress: `docker compose run --rm -T --no-deps pipeline status`, `tail -n 2 ~/grivei-data/crawl.log`.
-The seed does not crawl; skip this step and the first nightly refresh catches up instead. **Wait for `crawl done` in `crawl.log` before step 6** (`pgrep -f 'pipeline crawl'` empty): the crawl takes no lock and must not run beside the seed.
+The seed does not crawl; skip this step and the first nightly refresh catches up instead. **Wait for `crawl done` in `crawl.log` before step 6** (`pgrep -f 'pipeline crawl'` empty): the crawl takes no lock and must not run beside the seed, and step 6's lookups read the crawled days too (a crawled award notice carries the internal id `authority-scope` needs).
 
-### 6. ANAF lookups and the load (full rebuild): `seed`
+### 6. The lookups, then the one national load: `seed`
 
-`seed` runs, in one locked, resumable run, `datagov` (step 2 again, a no-op if done), `anaf` (about 600 requests at 1/s, under an hour plus a scan of the archive) and `load`
-(the full rebuild). ANAF runs before the load, so identities and placement are right on the first load.
+Every lookup reads the raw archive, never a graph, and archives each answer, so the seed's single load already has identities, the
+national flag and the placement fallback. In order, one after the other (none takes the lock: nothing else may run beside them):
+
+1. `anaf-lookup`: ANAF for every CUI in the archive (about 600 requests at 1/s, under an hour plus a scan of the archive).
+2. `authority-scope`: one award notice per authority with a Contracte or award-notice Record in the archive, for its `legalBuyerType` / `caType` (national or not).
+3. `seap-entities`: SEAP's entity view for the archive's authority CUIs that the archived ANAF answers do not confirm (the placement fallback). It refuses to start when the archive holds no ANAF answer, so step 1 comes first.
+
+```bash
+# about 16,000 authorities at the 0.35 s default delay: an hour or more for each placement lookup (estimate). Detached, one after the other
+nohup sh -c 'docker compose run --rm -T pipeline anaf-lookup && docker compose run --rm -T pipeline authority-scope && docker compose run --rm -T pipeline seap-entities' >> ~/grivei-data/lookups.log 2>&1 &
+tail -f ~/grivei-data/lookups.log      # wait for the seap-entities summary (`seap-entities done archived=... failed=...`) and `pgrep -f 'pipeline (anaf-lookup|authority-scope|seap-entities)'` empty
+# resume after a stop or a failure: rerun the same command; every answer is archived and skipped (each verb scans the archive first: a few minutes)
+```
+
+Then `seed` runs, in one locked, resumable run, `datagov` (step 2 again, a no-op if done), `anaf` (the CUIs answered above are not asked again) and `load`
+(the full rebuild, reading the archived ANAF, notice and entity answers).
 
 ```bash
 nohup docker compose run --rm -T pipeline seed >> ~/grivei-data/seed.log 2>&1 &     # add --backfill to also run step 8's crawl as its last step
@@ -119,14 +135,14 @@ Only when `seed run <id> ok` is in the log (the rollup tables exist; started ear
 docker compose up -d --build api web                                                # then open http://localhost:8080/explore
 ```
 
-By hand instead (the same steps): `$P anaf-lookup` then `$P rebuild`. Rebuild: hours (about 860 Records/s; 20M search rows is of the order of 6+ hours, estimate), 1.5 GB for the biggest DA
+By hand instead (the same steps): the three lookups above, then `$P rebuild`. Rebuild: hours (about 860 Records/s; 20M search rows is of the order of 6+ hours, estimate), 1.5 GB for the biggest DA
 quarter in the pipeline container, 3 copies of the graph on disk during the build (live, `<db>_prev`, `<db>_next`; check `df -h` and the Docker volume's disk first), the db container busy on
 up to 8 CPUs. It is one transaction: not resumable, a kill rolls back and the live graph is untouched; rerun the same command. The seed resumes at the failed step. Progress:
 `tail -n 2 ~/grivei-data/seed.log` (one line per unit: `rebuild unit i/N ...`), `$P status`. After it: read `status` for quarantines
 (`<archive>/quarantine/**/reason.json`), fix the header alias or reader, `requeue --match TEXT`, rebuild again (`load-quarter 2023Q2` does both for one quarter).
 
-**Acceptance A (full rebuild succeeds):** the log ends `rebuild done units=... quarantined=N ...` and `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=1`: the DA 2022 Q2 file;
-the Q2 2025 DAN mis-upload may be a second) and is named in the closing comment; `verify` passes on the live graph:
+**Acceptance A (full rebuild succeeds):** the log ends `rebuild done units=... quarantined=N ...` and `seed run <id> ok`, where **every quarantined unit has a stated reason you accept** (after step 4 expect `quarantined=0`: the DA 2022 Q2 file loads its DA rows and sets the pasted part aside;
+the Q2 2025 DAN mis-upload may be one) and is named in the closing comment; `verify` passes on the live graph:
 
 ```bash
 $P verify                                          # the container's DATABASE_URL is the live graph; the checks of a switchover, exit 1 if any fails
@@ -135,25 +151,19 @@ docker compose exec db psql -U grivei -d grivei -c "SELECT count(*) FROM seap.re
 
 Expected on the real national load: of the order of 20M search rows (the benchmark's size). Record the real counts, duration and peak memory (`docker stats --no-stream`) in the closing comment.
 
-### 7. Placement lookups and the national flag, then the second rebuild
+### 7. Review the national flag; a second rebuild only after a hand edit
 
-Both lookups read the graph the load just built, archive every answer and are resumable. The names that come out go into the next rebuild.
+The seed's load already used step 6's archived answers: the national flag from the award notices and the SEAP placement fallback. What is left is the reviewed file, for authorities without an award notice (only direct purchases) and for corrections. `national-propose` reads the loaded graph.
 
 ```bash
-# the two lookups send one request per authority (about 16,000 authorities at the 0.35 s default delay: an hour or more each, estimate): detached, one after the other
-nohup sh -c 'docker compose run --rm -T pipeline authority-scope && docker compose run --rm -T pipeline seap-entities' >> ~/grivei-data/placement.log 2>&1 &
-#   authority-scope: one award notice per authority: legalBuyerType / caType (national or not)
-#   seap-entities:   SEAP's entity view for the authority CUIs ANAF did not answer: the placement fallback; same pace
-tail -f ~/grivei-data/placement.log      # `status` does not show these two; wait until the log ends with the seap-entities summary and `pgrep -f 'pipeline (authority-scope|seap-entities)'` is empty
-# resume after a stop or a failure: rerun the same command; every answer is archived and skipped
 $P national-propose         # prints CSV lines for authorities with no flag whose name looks national (MINISTERUL ..., AGENTIA NATIONALA ...): a proposal, never applied by itself
-# review the proposal: add the lines that are right to watchdog/pipeline/placement/data/national_authorities.csv, commit, then rebuild the image so it carries the file
+# only if you add lines: put the right ones in watchdog/pipeline/placement/data/national_authorities.csv, commit, then rebuild the image so it carries the file, and load again
 docker compose build pipeline && $P rebuild
 ```
 
 The notice flag wins over the file; check the `legalBuyerType` / `caType` mapping on a handful of real `notice.json` files before trusting it (`watchdog/README.md`, "National authorities").
-Expected: the lookups tens of minutes to a couple of hours (estimate), the rebuild as in step 6. Check: `ls geo/counties.topo.json geo/uats | head`, `$P status`, and the `rebuild` log has **no** `no UAT table` line and no `geo: TopoJSON failed`; the explorer's county map and a zoomed county load.
-(`seed` is not needed again: this is `rebuild` beside the live graph, checked and switched over like the first one; the API's cache notices the new load by itself.)
+Check (after the seed, or after the rebuild when there was one): `ls geo/counties.topo.json geo/uats | head`, `$P status`, and the `rebuild` log has **no** `no UAT table` line and no `geo: TopoJSON failed`; the explorer's county map and a zoomed county load.
+(No edit to the file: no second rebuild. With one, `seed` is not needed again: `rebuild` runs beside the live graph, checked and switched over like the first one; the API's cache notices the new load by itself.)
 
 ### 8. The one-off 2021-22 backfill crawl
 
@@ -161,7 +171,7 @@ Expected: the lookups tens of minutes to a couple of hours (estimate), the rebui
 nohup docker compose run --rm -T --no-deps pipeline backfill >> ~/grivei-data/backfill.log 2>&1 &
 docker compose run --rm -T --no-deps pipeline backfill --status                    # weeks complete per pass, no request sent
 # when it has finished:
-$P anaf-lookup && $P rebuild                                                        # the backfilled units bring new CUIs; ANAF first (it reads the archive's units), then the load
+$P anaf-lookup && $P authority-scope && $P seap-entities && $P rebuild               # the backfilled units bring new CUIs; the lookups first (they read the archive's units: authorities seen only in the backfill need the national flag and the placement fallback), then the load
 ```
 
 Expected: 6 to 10 hours (105 weeks, about 30,000 contract requests at 0.35 s minimum gap; estimate from the ticket), light CPU and memory. Resume: rerun the same command (complete weeks are skipped,
@@ -280,7 +290,7 @@ Run on <date range>, <commit>, <machine: CPUs, RAM, disk>, compose stack as in `
 - geo-fetch / geo-table: <duration>; placement tables committed: <commit>
 - validate (#64c): <passed>/<total>; failures and their reasons: <...>
 - anaf-lookup: <duration>; rebuild: <duration>, peak memory <...>, Records <n>, search rows <n>, quarantined units: <none | list and reasons>
-- authority-scope / seap-entities: <durations>; national authorities added: <n>; second rebuild: <duration>; `counties.topo.json` served: <yes/no>
+- anaf-lookup / authority-scope / seap-entities (before the seed): <durations>; national authorities added by hand: <n>; second rebuild: <none | duration>; `counties.topo.json` served: <yes/no>
 - backfill: <duration>, weeks failed/retried: <...>; anaf-lookup and rebuild after it: <duration>
 
 ### Latency (`pipeline bench`, <json files>)

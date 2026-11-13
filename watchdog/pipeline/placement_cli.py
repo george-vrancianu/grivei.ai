@@ -33,12 +33,10 @@ def add_parsers(sub) -> None:
     t.add_argument("--out", default=None, help="output directory (default pipeline/placement/data: the checked-in tables)")
     o = sub.add_parser("geo-topojson", help="build the county and UAT TopoJSON from the archived ANCPI polygons (rebuild does this too)")
     add_rebuild_args(o)
-    s = sub.add_parser("seap-entities", help="ask SEAP about authority CUIs ANAF does not know (needs a rebuilt graph); archives each answer")
-    s.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
+    s = sub.add_parser("seap-entities", help="ask SEAP about the archive's authority CUIs the archived ANAF answers do not confirm (after anaf-lookup; no graph needed); archives each answer")
     s.add_argument("--delay", type=float, default=0.35, help="seconds between requests (default 0.35)")
     s.add_argument("--max", type=int, default=None, help="stop after this many CUIs (a small trial run)")
-    a = sub.add_parser("authority-scope", help="fetch one award notice per authority for its buyer type (national flag; needs a rebuilt graph); archives each answer")
-    a.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
+    a = sub.add_parser("authority-scope", help="fetch one award notice per authority of the archive for its buyer type (national flag; no graph needed); archives each answer")
     a.add_argument("--delay", type=float, default=0.35, help="seconds between requests (default 0.35)")
     a.add_argument("--max", type=int, default=None, help="stop after this many authorities (a small trial run)")
     n = sub.add_parser("national-propose", help="print CSV lines proposing national authorities (by name) that have no award-notice flag or file entry, for review")
@@ -89,22 +87,26 @@ def run(archive: Archive, args) -> int | None:
         out = Path(args.geo_dir) if args.geo_dir else archive.root / "derived" / "geo"
         print(build_topojson(archive, out, args.placement_data).line() + f" -> {out}")
         return 0
-    if verb in ("seap-entities", "authority-scope", "national-propose"):
-        if not args.db:
-            print(f"{verb}: --db or DATABASE_URL is required", file=sys.stderr)
-            return 2
+    if verb in ("seap-entities", "authority-scope"):  # both read the raw archive, never a graph: they run before the one national load
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
         if verb == "seap-entities":
             from .placement import seap_lookup
 
-            cuis = seap_lookup.candidates(args.db)
+            try:
+                cuis = seap_lookup.candidates(archive, say=_stamped)
+            except seap_lookup.NoAnafAnswers as e:
+                print(f"seap-entities: {e}", file=sys.stderr)
+                return 2
             _, failed = seap_lookup.lookup_locations(archive, make_client(args.delay), cuis[: args.max] if args.max else cuis, note=_stamped)
             return 1 if failed else 0
-        if verb == "authority-scope":
-            from .placement import scope
+        from .placement import scope
 
-            _, failed = scope.lookup_scopes(archive, make_client(args.delay), scope.candidates(args.db), note=_stamped, max_authorities=args.max)
-            return 1 if failed else 0
+        _, failed = scope.lookup_scopes(archive, make_client(args.delay), scope.candidates(archive, say=_stamped), note=_stamped, max_authorities=args.max)
+        return 1 if failed else 0
+    if verb == "national-propose":
+        if not args.db:
+            print(f"{verb}: --db or DATABASE_URL is required", file=sys.stderr)
+            return 2
         import psycopg
 
         from .placement import scope

@@ -11,7 +11,12 @@ Units are read and loaded one at a time, so memory holds one quarter's rows, not
 Identity (ADR 0003): before the SEAP files, the archived ANAF answers (`pipeline anaf-lookup` archives them; a rebuild never
 calls ANAF) go into `core.anaf_company`. Each Record's authority and winners are resolved to entity keys while it loads
 (identity.py), and after the last unit `core.entity` and `core.alias` are built from the loaded Records. A 13-digit CNP
-is recognised before anything is stored: the winner becomes a natural-person supplier with no name and no key.
+is recognised before anything is stored: the winner becomes a natural-person supplier with no name and no key in the graph the
+API reads. A natural person's published name (never a CNP) is kept apart in `withheld.natural_person_name`, which nothing serves
+(ADR 0003 as amended 2026-11-12: names wait for the Naming threshold and ADR 0009's Go-live conditions).
+
+A file that switches kind partway (bulk/records.py: rows of its own kind, then another kind's export pasted in) loads its leading
+rows; the tail is set aside, kept as a load note on its `seap.source_file` row and reported in the summary, never loaded.
 
 A re-uploaded file loads like any file and per-identity precedence decides (ADR 0002, 2026-11-11 amendment): the later
 notice publication wins, an older re-upload cannot overwrite newer data, and a quarter is never replaced wholesale, so
@@ -30,7 +35,7 @@ from psycopg.types.json import Jsonb
 
 from .anaf import iter_companies
 from .archive import Archive, Unit, sha256_of
-from .bulk import KINDS, BulkRecord, InvalidFile, parse_file_stats
+from .bulk import KINDS, BulkRecord, InvalidFile, SetAside, parse_file_stats
 from .counting import Estimate, count
 from .coverage import build_coverage, flagged as flagged_cells
 from .coverage import parse_quarter as _parse_quarter
@@ -39,7 +44,7 @@ from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as c
 from .crawl.records import parse_unit as parse_crawl_unit
 from .estimates import read_estimates
 from .fold import fold
-from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority
+from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
 from .mf.build import MfSummary, build_mf
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
@@ -52,6 +57,7 @@ log = logging.getLogger("pipeline.rebuild")
 SQL_DIR = Path(__file__).parent / "sql"
 SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
+WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 
 
 @dataclass
@@ -69,6 +75,8 @@ class RebuildSummary:
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
+    set_aside: list[tuple[Path, SetAside]] = field(default_factory=list)  # a file that switches kind partway: its tail, not loaded
+    set_aside_without_gap: list[Path] = field(default_factory=list)  # of them, those whose cell has no hand-entered known gap yet
     quarantined: list[Path] = field(default_factory=list)
     incomplete: list[Path] = field(default_factory=list)
 
@@ -86,6 +94,10 @@ class RebuildSummary:
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
+        out += [f"set aside, not loaded: {p}: from line {a.line} a {a.kind} export ({a.rows} rows) inside the file; its own rows load"
+                f"{f' (the last published {a.last_published})' if a.last_published else ''}"
+                + ("; its cell has no known gap yet: add one to known_gaps.csv" if p in self.set_aside_without_gap else "; its cell is a known gap")
+                for p, a in self.set_aside]
         out += self.coverage
         out += [f"quarantined: {p}" for p in self.quarantined]
         out += [f"skipped, incomplete (no valid manifest): {p}" for p in self.incomplete]
@@ -101,6 +113,12 @@ SELECT kind, max(d)::text FROM (
     UNION ALL
     SELECT kind, through FROM seap.crawl_state
 ) x GROUP BY kind ORDER BY kind"""
+
+
+def _quarter_label(unit: str) -> str:
+    """The archive's `2022Q2` as the Coverage grid writes it, `2022-Q2`."""
+    year, quarter = _parse_quarter(unit)
+    return f"{year}-Q{quarter}"
 
 
 def _search_doc(r: BulkRecord, authority: Resolved, winners: list[tuple[str | None, Resolved]]) -> str:
@@ -198,8 +216,13 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
         replaced = cur.fetchone()
         if replaced is None:  # unchanged, or older than what is stored
             continue
-        if not replaced[0]:  # a version that replaces another: its search rows go
+        if not replaced[0]:  # a version that replaces another: its search rows and withheld names go
             cur.execute("DELETE FROM seap.search WHERE record_code = %s", (r.code,))
+            cur.execute("DELETE FROM withheld.natural_person_name WHERE record_code = %s", (r.code,))
+        for position, (name, w) in enumerate(resolved, start=1):  # natural persons: the name, withheld (never served, never a CNP)
+            if w.natural_person and (kept := withheld_name(name)):
+                cur.execute("INSERT INTO withheld.natural_person_name (record_code, winner_position, name, had_cnp) VALUES (%s, %s, %s, %s)",
+                            (r.code, position, kept, w.had_cnp))
         doc = _search_doc(r, authority, resolved)
         # one row per winner; share_bani is the winner's equal share of the counted value (counting.split_evenly), a sole winner has it all
         for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
@@ -228,6 +251,7 @@ class UnitOutcome:
     files: list[tuple[str, list[BulkRecord]]] = field(default_factory=list)
     rows: int = 0  # data rows read from its files, duplicates included
     reason: str | None = None
+    set_aside: dict[str, SetAside] = field(default_factory=dict)  # file name -> the tail set aside (a file that switches kind partway)
 
 
 def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None) -> Iterator[UnitOutcome]:
@@ -248,6 +272,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
         files: list[tuple[str, list[BulkRecord]]] = []
         keys = []  # recorded as loaded only once the whole unit validates
         rows = 0
+        set_aside: dict[str, SetAside] = {}
         try:
             if unit.stream == "crawl":  # a crawled day: one parse of its list and contracts pages, Records by kind
                 parsed_day = parse_crawl_unit(unit)
@@ -263,14 +288,17 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
                     parsed = parse_file_stats(unit.kind, unit.unit, path)
                     files.append((name, parsed.records))
                     rows += parsed.rows
+                    if parsed.set_aside:
+                        set_aside[name] = parsed.set_aside
                     keys.append(key)
         except InvalidFile as e:
             summary.quarantined.append(archive.quarantine(unit, e.reason, [p for p in e.problems if p]))
             yield UnitOutcome(index, len(units), unit, "quarantined", rows=rows, reason=e.reason)
             continue  # all or nothing: none of this unit's files load
         loaded.update(keys)
+        summary.set_aside += [(unit.file_path(name), aside) for name, aside in set_aside.items()]
         yield UnitOutcome(index, len(units), unit, "loaded" if files else "skipped", files, rows,
-                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"))
+                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"), set_aside)
 
 
 @dataclass
@@ -422,6 +450,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
             cur.execute(CORE_SQL.read_text(encoding="utf-8"))
             cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
+            cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
             resolver = Resolver(load_anaf(cur, archive, summary), overrides)
             estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
             summary.estimates = len(estimates)
@@ -433,11 +462,12 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                     number += 1
                     crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
                     cur.execute(
-                        "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream, load_notes) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                         (number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
                          sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
-                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream),
+                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream,
+                         [aside.note()] if (aside := o.set_aside.get(name)) else []),
                     )
                     load_records(cur, number, rows, resolver, estimates)
                     summary.files_loaded += 1
@@ -465,7 +495,11 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             build_entities(cur, overrides, summary)
             summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
-            summary.coverage = flagged_cells(build_coverage(cur, archive, today, bulk_rows, known_gaps_path))
+            cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
+            summary.coverage = flagged_cells(cells)
+            gaps = {(c.kind, c.quarter) for c in cells if c.state == "KNOWN_GAP"}
+            summary.set_aside_without_gap = [path for path, _ in summary.set_aside
+                                             if (KINDS[path.parts[-4]].label, _quarter_label(path.parts[-3])) not in gaps]
             cur.execute("SELECT count(*) FROM seap.record")
             summary.records = cur.fetchone()[0]
             cur.execute(DATA_THROUGH_SQL)

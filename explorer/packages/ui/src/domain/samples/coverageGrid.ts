@@ -13,7 +13,7 @@ export const CURRENT_QUARTER = "2025-Q3";
 export const HAND_ENTERED_NOTE = "Fișierul ADR pentru T2 2025 a fost republicat fără achizițiile directe notificate; completat manual din arhiva furnizorului";
 
 const cell = (quarter: string, kind: string, state: GapState, records: number, o: Partial<GapCellData> = {}): GapCellData => ({
-  quarter, kind, state, rule: null, note: null, records, dataThrough: null, ...o,
+  quarter, kind, state, rule: null, note: null, records, crawlOnly: 0, dataThrough: null, ...o,
 });
 
 const base = (kind: string, quarter: string): number => ({ DA: 41_000, DAN: 9_200, CONTRACT: 17_500, AWARD_NOTICE: 6_400 })[kind]! + (quarter.charCodeAt(3)! % 7) * 130;

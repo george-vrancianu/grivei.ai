@@ -128,6 +128,8 @@ export interface GapCellRow {
   rule: string | null;
   note: string | null;
   records: number;
+  /** Of `records`, the crawl-only ones (#60/#90). */
+  crawlOnly: number;
   dataThrough: string | null;
 }
 
@@ -739,7 +741,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async coverageGrid() {
       const { rows } = await pool.query(
-        `SELECT quarter, kind, state, rule, note, records, data_through::text AS "dataThrough" FROM seap.coverage_cell
+        `SELECT quarter, kind, state, rule, note, records, crawl_only AS "crawlOnly", data_through::text AS "dataThrough" FROM seap.coverage_cell
           ORDER BY quarter, array_position(ARRAY['DA', 'DAN', 'CONTRACT', 'AWARD_NOTICE'], kind)`,
       );
       return rows as GapCellRow[];

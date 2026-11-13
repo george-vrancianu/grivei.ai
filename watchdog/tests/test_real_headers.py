@@ -11,7 +11,7 @@ import xlwt
 from openpyxl import Workbook
 
 from ods_builder import write_ods
-from pipeline.bulk import InvalidFile, parse_file
+from pipeline.bulk import InvalidFile, SetAside, parse_file, parse_file_stats
 
 FIXTURES = Path(__file__).parent / "fixtures" / "real_headers"
 VARIANTS = sorted(p.stem for p in FIXTURES.iterdir())  # `<kind>-<yyyy>q<n>-<format>`; the kind may hold a dash (fara-anunt)
@@ -99,16 +99,42 @@ def test_12_hour_clock_stamps_of_the_2023_q3_csv_are_dates(tmp_path):
     assert r.published_on.isoformat() == "2023-07-01" and r.awarded_on.isoformat() == "2023-07-03" and r.value_bani == 114000
 
 
-def test_a_file_that_holds_the_header_of_another_kind_in_the_middle_is_rejected_for_that_reason(tmp_path):
-    """The real DA 2022 Q2 file: a Contracte export (its own header line, then its rows) was pasted after the purchases."""
-    da = ("|NUMAR_ACHIZITIE_DIRECTA|,|DATA_PUBLICARE_ACHIZITIE|,|STARE_ACHIZITIE|,|DENUMIRE_AC|,|CUI_AC|,|DENUMIRE_ACHIZITIE|,|COD_CPV|,|DENUMIRE_CPV|,"
-          "|DATA_ATRIBUIRE_ACHIZITIE|,|VALOARE_ESTIMATA_RON|,|VALOARE_ATRIBUITA_RON|,|OFERTANT|,|CUI_OFERTANT|\n"
-          "|DA30722448|,|05/30/2022|,|Oferta acceptata|,|SCOALA GIRISU|,|20272301|,|Lemne de foc|,|03413000-8|,|Lemn de foc (Rev.2)|,|05/31/2022|,18600,18600,|DOREA|,|42858310|\n")
+_DA_HEAD = ("|NUMAR_ACHIZITIE_DIRECTA|,|DATA_PUBLICARE_ACHIZITIE|,|STARE_ACHIZITIE|,|DENUMIRE_AC|,|CUI_AC|,|DENUMIRE_ACHIZITIE|,|COD_CPV|,|DENUMIRE_CPV|,"
+            "|DATA_ATRIBUIRE_ACHIZITIE|,|VALOARE_ESTIMATA_RON|,|VALOARE_ATRIBUITA_RON|,|OFERTANT|,|CUI_OFERTANT|\n")
+_DA_ROW = "|DA30722448|,|05/30/2022|,|Oferta acceptata|,|SCOALA GIRISU|,|20272301|,|Lemne de foc|,|03413000-8|,|Lemn de foc (Rev.2)|,|05/31/2022|,18600,18600,|DOREA|,|42858310|\n"
+_DA_ROW_2 = "|DA30722449|,|05/31/2022|,|Oferta acceptata|,|SCOALA GIRISU|,|20272301|,|Lemne|,|03413000-8|,|Lemn de foc (Rev.2)|,|05/31/2022|,100,100,|DOREA|,|42858310|\n"
+_CONTRACTE_HEAD = ("|DENUMIRE_AC|,|CUI_AC|,|COD_NUTS|,|DENUMIRE_NUTS|,|TIP_PROCEDURA|,|INCHEIAT_PRIN|,|MODALITATE_DESFASURARE|,|NUMAR_ANUNT_INITIERE|,|DATA_ANUNT_INITIERE|,"
+                   "|NUMAR_ANUNT_ATRIBUIRE|,|DATA_ANUNT_ATRIBUIRE|,|NUMAR_LOT|,|NUMAR_CONTRACT|,|DENUMIRE_CONTRACT|,|DATA_CONTRACT|,|VALOARE_ESTIMATA_RON|,|VALOARE_CONTRACT_RON|,|OFERTANT|,|CUI_OFERTANT|\n")
+_CONTRACTE_ROWS = ("|UNITATEA MILITARA 02648|,|4265868|,|RO321|,|Bucuresti|,|Procedura simplificata|,|Fara acord cadru|,|Online|,|SCN1105090|,|04/14/2022|,|SCNA1070596|,|06/01/2022|,|1|,|A2-623|,|Contract de produse|,|05/27/2022|,294117,117247,|PRO HVAC SERVICES|,|40938545|\n"
+                   "|Ministerul Sanatatii|,|4266456|,|RO321|,|Bucuresti|,|Licitatie deschisa|,|Cu acord cadru|,|Online|,|CN1039610|,|02/23/2022|,|CAN1079948|,|06/01/2022|,|1|,|263|,|Acord cadru transport aerian|,|05/05/2022|,2115831,255,|ALFA TURISM|,| 30394080|\n")
+
+
+def test_a_da_file_that_switches_to_a_contracte_export_keeps_its_da_rows_and_sets_the_rest_aside(tmp_path):
+    """The real DA 2022 Q2 file: a Contracte export (its own header line, then its rows) was pasted after the purchases. The purchases load;
+    the pasted part is counted and reported, never loaded, never silently dropped."""
     path = tmp_path / "da.csv"
-    path.write_text(da + "|DENUMIRE_AC|,|CUI_AC|,|COD_NUTS|,|DENUMIRE_NUTS|,|TIP_PROCEDURA|,|INCHEIAT_PRIN|,|MODALITATE_DESFASURARE|,|NUMAR_ANUNT_INITIERE|,|DATA_ANUNT_INITIERE|,"
-                    "|NUMAR_ANUNT_ATRIBUIRE|,|DATA_ANUNT_ATRIBUIRE|,|NUMAR_LOT|,|NUMAR_CONTRACT|,|DENUMIRE_CONTRACT|,|DATA_CONTRACT|,|VALOARE_ESTIMATA_RON|,|VALOARE_CONTRACT_RON|,|OFERTANT|,|CUI_OFERTANT|\n",
-                    encoding="utf-8")
-    with pytest.raises(InvalidFile, match="CONTRACT header in the middle of a DA file: the file mixes kinds"):
+    path.write_text(_DA_HEAD + _DA_ROW + _DA_ROW_2 + _CONTRACTE_HEAD + _CONTRACTE_ROWS, encoding="utf-8")
+    parsed = parse_file_stats("da", "2022Q2", path)
+    assert [r.code for r in parsed.records] == ["DA30722448", "DA30722449"] and {r.kind for r in parsed.records} == {"DA"}
+    assert parsed.rows == 2
+    assert parsed.set_aside == SetAside(line=4, kind="CONTRACT", rows=2, last_published=datetime(2022, 5, 31).date())
+    assert parsed.set_aside.note() == "set_aside:CONTRACT:from_line_4:2_rows"
+
+
+def test_a_file_whose_own_kind_comes_back_after_the_switch_is_still_rejected(tmp_path):
+    path = tmp_path / "da.csv"
+    path.write_text(_DA_HEAD + _DA_ROW + _CONTRACTE_HEAD + _CONTRACTE_ROWS + _DA_ROW_2, encoding="utf-8")
+    with pytest.raises(InvalidFile, match="DA rows again after the CONTRACT part that starts at line 3: the file mixes kinds"):
+        parse_file("da", "2022Q2", path)
+    path.write_text(_DA_HEAD + _DA_ROW + _CONTRACTE_HEAD + _CONTRACTE_ROWS + _DA_HEAD + _DA_ROW_2, encoding="utf-8")
+    with pytest.raises(InvalidFile, match="the file mixes kinds"):
+        parse_file("da", "2022Q2", path)
+
+
+def test_another_kinds_header_before_any_row_of_the_files_own_kind_is_rejected(tmp_path):
+    path = tmp_path / "da.csv"
+    path.write_text(_DA_HEAD + _CONTRACTE_HEAD + _CONTRACTE_ROWS, encoding="utf-8")
+    with pytest.raises(InvalidFile, match="a CONTRACT header before any DA row: the file mixes kinds"):
         parse_file("da", "2022Q2", path)
 
 

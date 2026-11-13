@@ -19,7 +19,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 ARCHIVE = FIXTURES / "archive-identity"
 OVERRIDES = FIXTURES / "identity-overrides.toml"
 CNPS = ("1990101123456", "2950202123456")
-PEOPLE = ("POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV")
+PEOPLE = ("POPESCU ION FICTIV", "IONESCU MARIA FICTIV", "POPESCU X FICTIV", "POPESCU Y FICTIV")  # invented
 
 
 @pytest.fixture
@@ -156,16 +156,40 @@ def test_the_lookups_behind_entity_roles_are_indexed(built):
     assert {"record_authority_key_idx", "search_supplier_key_idx"} <= names
 
 
-def test_no_cnp_and_no_natural_persons_name_appears_anywhere_in_the_graph(built):
-    """Every row of every table in the shared core and in `seap` (the winners jsonb, load notes, search rows and the folded
-    text, aliases) is scanned as text. The raw archive keeps the files as they were; the graph must not."""
+def test_no_cnp_anywhere_and_no_natural_persons_name_outside_the_withheld_schema(built):
+    """Every row of every table in the shared core, in `seap` (the winners jsonb, load notes, search rows and the folded text,
+    aliases) and in `withheld` is scanned as text. A CNP is nowhere; a natural person's name only in `withheld` (ADR 0003 as
+    amended 2026-11-12), which the API never reads. The raw archive keeps the files as they were; the graph must not."""
     with psycopg.connect(built) as c:
-        tables = c.execute("SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema IN ('core', 'seap') AND table_type = 'BASE TABLE'").fetchall()
-        assert len(tables) >= 6
+        tables = c.execute("SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema IN ('core', 'seap', 'withheld') AND table_type = 'BASE TABLE'").fetchall()
+        assert len(tables) >= 7 and ("withheld", "natural_person_name") in tables
         for schema, name in tables:
+            needles = (*CNPS, "199010112", "295020212", "1.99E+12") + (() if schema == "withheld" else PEOPLE)
             for (row,) in c.execute(f'SELECT t::text FROM "{schema}"."{name}" t').fetchall():
-                for needle in (*CNPS, *PEOPLE, "199010112", "295020212"):
+                for needle in needles:
                     assert needle not in row, f"{needle} in {schema}.{name}: {row[:200]}"
+
+
+def test_natural_persons_names_are_stored_withheld_linked_to_the_record_and_winner_slot_never_with_a_cnp(built):
+    assert q(built, "SELECT record_code, winner_position, name, had_cnp FROM withheld.natural_person_name ORDER BY 1, 2") == [
+        ("CAN9700001~C-1", 2, "IONESCU MARIA FICTIV", True),  # the consortium's second winner
+        ("DA93000008", 1, "POPESCU ION FICTIV", True),
+        ("DA93000018", 1, "POPESCU X FICTIV", True),  # the CNP Excel mangled: still a CNP
+        ("DA93000019", 1, "POPESCU Y FICTIV", False),  # no CNP: paid under the authority's own CUI
+    ]
+    # every withheld slot is a natural-person slot of its Record's winners, which stays nameless
+    for code, position in q(built, "SELECT record_code, winner_position FROM withheld.natural_person_name"):
+        [(winners,)] = q(built, "SELECT winners FROM seap.record WHERE code = %s", code)
+        assert winners[position - 1]["naturalPerson"] is True and winners[position - 1]["name"] is None
+
+
+def test_a_natural_person_with_the_authoritys_own_cui_keeps_the_cui_mismatch_badge_and_nothing_else(built):
+    [(winners, supplier_name, supplier_cui, authority)] = q(built, "SELECT winners, supplier_name, supplier_cui, authority_key FROM seap.record WHERE code = 'DA93000019'")
+    assert winners == [{"name": None, "key": None, "identity": None, "naturalPerson": True, "curated": False, "differsFromAnaf": False, "cuiMismatch": True}]
+    assert (supplier_name, supplier_cui, authority) == (None, None, "1000009")
+    assert badges(built, "DA93000019") == ["CUI_MISMATCH"]
+    assert q(built, "SELECT supplier_key, supplier_spelling, supplier_cui, badges FROM seap.search WHERE record_code = 'DA93000019'") == [(None, None, None, ["CUI_MISMATCH"])]
+    assert q(built, "SELECT count(*) FROM core.entity WHERE key = 'name-popescu-y-fictiv'") == [(0,)]
 
 
 def test_the_rebuild_never_calls_anaf_and_gives_the_same_graph_twice(db, archive, monkeypatch):
@@ -174,7 +198,7 @@ def test_the_rebuild_never_calls_anaf_and_gives_the_same_graph_twice(db, archive
 
     monkeypatch.setattr("requests.sessions.Session.request", refuse)
     monkeypatch.setattr("pipeline.anaf.http_post", refuse)
-    dump = lambda: [q(db, f"SELECT t::text FROM {t} t ORDER BY 1") for t in ("core.entity", "core.alias", "core.anaf_company", "seap.record", "seap.search")]
+    dump = lambda: [q(db, f"SELECT t::text FROM {t} t ORDER BY 1") for t in ("core.entity", "core.alias", "core.anaf_company", "seap.record", "seap.search", "withheld.natural_person_name")]
     rebuild(archive, db, overrides_path=OVERRIDES)
     first = dump()
     rebuild(archive, db, overrides_path=OVERRIDES)  # and over the same database
@@ -193,3 +217,62 @@ def test_a_bad_override_file_stops_the_rebuild_before_it_touches_the_database(db
     with pytest.raises(OverrideError):
         rebuild(archive, db, overrides_path=bad)
     assert q(db, "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('seap', 'core')") == [(0,)]
+
+
+# ---- a replaced Record leaves no stale name in `withheld` ------------------------------------------------------------------
+
+def _withheld(url, code):
+    return q(url, "SELECT winner_position, name, had_cnp FROM withheld.natural_person_name WHERE record_code = %s ORDER BY 1", code)
+
+
+def _retarget(unit_dir, name, edit):
+    """Rewrites one file of an archived unit and keeps its manifest honest (the archive checks sha256 and size)."""
+    import hashlib
+    import json
+
+    path = unit_dir / name
+    path.write_bytes(edit(path.read_bytes()))
+    manifest = json.loads((unit_dir / "manifest.json").read_text())
+    for entry in manifest["files"]:
+        if entry["name"] == name:
+            entry["sha256"], entry["bytes"] = hashlib.sha256(path.read_bytes()).hexdigest(), path.stat().st_size
+    (unit_dir / "manifest.json").write_text(json.dumps(manifest))
+
+
+@pytest.mark.parametrize("bulk_winner, bulk_cui, expected", [
+    ("IONESCU MARIA FICTIV", "2950202123456", [(1, "IONESCU MARIA FICTIV", True)]),  # the bulk version is a person too: only its row remains
+    ("CURAT NOU SRL", "2000011", []),  # the bulk version is a company: no row remains
+])
+def test_a_crawled_natural_persons_record_replaced_by_its_bulk_version_leaves_no_stale_withheld_row(db, tmp_path, bulk_winner, bulk_cui, expected):
+    root = tmp_path / "archive-crawl"
+    shutil.copytree(FIXTURES / "archive-crawl", root)
+    crawl = root / "seap/crawl/award-notices/2026-02-10/2026-11-11"
+    _retarget(crawl, "contracts-92000011-s00000.json",
+              lambda b: b.replace(b'"name":"CURAT NOU SRL","fiscalNumber":"2000011"', b'"name":"POPESCU ION FICTIV","fiscalNumber":"1990101123456"'))
+    bulk = root / "seap/bulk/contracte/2026Q1/2026-11-10"
+    _retarget(bulk, "raport-contracte-t1-2026.csv",
+              lambda b: b.replace(b"|CURAT NOU SRL|,|2000011|", f"|{bulk_winner}|,|{bulk_cui}|".encode()))
+    # fetched AFTER the crawl day (units load oldest fetch first): the crawl version loads first, then the bulk one replaces it
+    bulk = bulk.rename(bulk.parent / "2026-11-12")
+    manifest = bulk / "manifest.json"
+    manifest.write_text(manifest.read_text().replace("2026-11-10T09:00:00Z", "2026-11-12T09:00:00Z"))
+    rebuild(Archive(root), db)
+    assert q(db, "SELECT via FROM seap.record WHERE code = 'CAN9200001~C-1'") == [("BULK",)]
+    assert _withheld(db, "CAN9200001~C-1") == expected
+    assert q(db, "SELECT count(*) FROM withheld.natural_person_name WHERE name LIKE '%%POPESCU ION%%'") == [(0,)]  # the crawl version's name is gone
+
+
+def test_a_natural_person_winner_replaced_by_a_company_winner_leaves_no_stale_withheld_row(db, tmp_path):
+    from test_bulk_loader_db import _write
+    from test_contracts_loader import H22, line22
+
+    t = lambda m, d: datetime(2022, m, d, 9, tzinfo=timezone.utc)
+    a = Archive(tmp_path / "a")
+    _write(a, "contracte", "2022Q1", t(6, 1), H22 + line22(published="05/01/2022", supplier="POPESCU ION FICTIV", cui="1990101123456"))
+    rebuild(a, db)
+    assert _withheld(db, "CAN1~C1") == [(1, "POPESCU ION FICTIV", True)]
+    _write(a, "contracte", "2022Q1", t(7, 1), H22 + line22(published="06/01/2022", supplier="BETA SRL", cui="2000002"), name="g.csv")  # republished later
+    rebuild(a, db)
+    assert q(db, "SELECT winners->0->>'name' FROM seap.record WHERE code = 'CAN1~C1'") == [("BETA SRL",)]
+    assert _withheld(db, "CAN1~C1") == []
+    assert q(db, "SELECT count(*) FROM withheld.natural_person_name") == [(0,)]

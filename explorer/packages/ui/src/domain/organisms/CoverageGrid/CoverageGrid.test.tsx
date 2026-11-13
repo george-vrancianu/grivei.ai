@@ -56,7 +56,7 @@ describe("the Coverage grid's cells", () => {
   });
 
   it("falls back to the raw kind when the copy has no label for it, and shows a missing cell as no information", () => {
-    const cells = [...fixturePageContent("typical-every-gap-state").cells, { quarter: "2024-Q4", kind: "NEW_KIND", state: "LOADED" as const, rule: null, note: null, records: 3, dataThrough: null }];
+    const cells = [...fixturePageContent("typical-every-gap-state").cells, { quarter: "2024-Q4", kind: "NEW_KIND", state: "LOADED" as const, rule: null, note: null, records: 3, crawlOnly: 0, dataThrough: null }];
     render(<CoverageGrid cells={cells} locale="en" copy={sampleCopy.coverageGrid("en")} />);
     expect(screen.getByRole("rowheader", { name: "NEW_KIND" })).toBeVisible();
     expect(screen.getAllByRole("cell", { name: /no information/ }).length).toBeGreaterThan(0);

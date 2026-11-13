@@ -20,7 +20,7 @@ Then open http://localhost:8080/ (landing page, English), http://localhost:8080/
 
 ## Where the data lives
 
-- **Postgres:** the named volume `pgdata` (on the WSL ext4 disk, under Docker's data root). The graph is derived: losing it costs a rebuild, not data (ADR 0004).
+- **Postgres:** the named volume `pgdata` (on the WSL ext4 disk, under Docker's data root). The graph is derived: losing it costs a rebuild, not data (ADR 0004). It holds natural persons' names in `withheld.natural_person_name` (stored, never served, never a CNP; ADR 0003 as amended 2026-11-12), so the volume, every dump and every backup of it is personal data.
 - **Raw archive:** the bind mount `./archive` (override with `GRIVEI_ARCHIVE_DIR`, ideally an absolute path on the WSL disk; gitignored). Layout, written by the pipeline:
 
 ```
@@ -70,7 +70,7 @@ In Windows (PowerShell), register `deploy/windows/keep-wsl-up.ps1` to run at log
 | `GRIVEI_ARCHIVE_DIR` | `./archive` | host directory mounted as the raw archive |
 | `GRIVEI_GEO_DIR` | `./geo` | host directory the pipeline writes the county and UAT TopoJSON to and Caddy serves at `/geo/` (create it first: `mkdir geo`, so it is yours, not root's) |
 | `GRIVEI_HEALTHCHECK_URL` | empty | healthchecks.io ping URL for `refresh` (becomes `PIPELINE_HEALTHCHECK_URL` in the pipeline container); empty = no pings |
-| `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (or `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY`) | empty | the encrypted backup repository of refresh step 5 (#82); empty `RESTIC_REPOSITORY` = no backups, logged. Backup, restore, switchover, rollback and the major-upgrade rebuild: `watchdog/README.md`. `GRIVEI_DB_NEXT_IMAGE` names the new image for the `upgrade` profile |
+| `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (or `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY`) | empty | the encrypted backup repository of refresh step 5 (#82); empty `RESTIC_REPOSITORY` = no backups, logged. Backup, restore, switchover, rollback and the major-upgrade rebuild: `watchdog/README.md`. The database holds natural persons' names (`withheld.natural_person_name`, stored, never served; ADR 0003 as amended 2026-11-12), so its dumps and backups do too: see `watchdog/README.md`, "Backups and restore". `GRIVEI_DB_NEXT_IMAGE` names the new image for the `upgrade` profile |
 | `GRIVEI_UID` / `GRIVEI_GID` | `1000` / `1000` | user the pipeline runs as, so archive files stay yours |
 | `SEAP_BASE_URL` | `https://e-licitatie.ro` | the SEAP site the API's `/source/seap/<code>` redirect asks (and redirects to); set on the `api` service, only tests change it |
 | `API_CACHE_MAX_MB` | `300` | API result-cache budget in MB; keep it well under the api's 2 GB `mem_limit` |

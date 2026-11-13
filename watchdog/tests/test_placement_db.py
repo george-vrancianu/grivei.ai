@@ -139,3 +139,34 @@ def test_the_search_rows_carry_the_money_lens_areas(built):
     assert area[CUI["ministry"]] == "NATIONAL" and area[CUI["agency"]] == "NATIONAL"  # seated in Bucharest, never RO-B
     assert area[CUI["unplaced"]] == "UNPLACED"
     assert {r[3] for r in rows if r[2] == "2000007"} == {"RO-BV"}
+
+
+# The graph queries `authority-scope` and `seap-entities` used before they read the raw archive: the archive's answer must equal
+# what these return on the graph rebuilt from the same archive.
+_SCOPE_FROM_GRAPH = """
+SELECT DISTINCT ON (authority_cui) authority_cui, ca_notice_id::text, notice_code FROM seap.record
+ WHERE kind IN ('CONTRACT', 'AWARD_NOTICE') AND authority_key ~ '^[0-9]+$' AND authority_cui IS NOT NULL
+   AND (ca_notice_id IS NOT NULL OR notice_code IS NOT NULL)
+ ORDER BY authority_cui, (ca_notice_id IS NULL), published_on DESC, code"""
+_UNKNOWN_TO_ANAF_FROM_GRAPH = """
+SELECT DISTINCT r.authority_cui FROM seap.record r
+ WHERE r.authority_key ~ '^[0-9]+$' AND r.authority_cui IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM core.anaf_company a WHERE a.cui = r.authority_key)
+ ORDER BY 1"""
+
+
+@pytest.mark.parametrize("fixture", ["archive-placement", "archive-signals", "archive-identity"])
+def test_the_lookups_archive_candidates_match_the_graph_rebuilt_from_that_archive(db, tmp_path, fixture):
+    from pipeline.placement import scope, seap_lookup
+
+    shutil.copytree(Path(__file__).parent / "fixtures" / fixture, tmp_path / "a")
+    archive = Archive(tmp_path / "a")
+    from_archive = (scope.candidates(archive), seap_lookup.candidates(archive))  # before the rebuild: no graph needed
+    rebuild(archive, db, placement_dir=DATA, geo_dir=tmp_path / "geo")
+    with psycopg.connect(db) as c:
+        graph_scope = [scope.Candidate(*row) for row in c.execute(_SCOPE_FROM_GRAPH).fetchall()]
+        graph_unknown = [row[0] for row in c.execute(_UNKNOWN_TO_ANAF_FROM_GRAPH).fetchall()]
+    # the graph loses a crawled Record's internal id when the bulk file has the same Record (the bulk version wins); the archive keeps it
+    assert [(c.cui, c.notice_code) for c in from_archive[0]] == [(c.cui, c.notice_code) for c in graph_scope]
+    assert {c.cui for c in from_archive[0]} == {c.cui for c in graph_scope}
+    assert from_archive[1] == graph_unknown

@@ -70,8 +70,16 @@ def test_a_loaded_bulk_quarter_counts_its_records_and_is_through_its_latest_reco
 
 
 def test_crawl_only_records_count_in_a_loaded_cell():
-    g = grid(bulk_rows={("CONTRACT", Q("2025Q2")): 15}, facts={("CONTRACT", Q("2025Q2")): CellFacts(16, 1, D("2025-06-30"))})
+    g = grid(bulk_rows={("CONTRACT", Q("2025Q2")): 15}, facts={("CONTRACT", Q("2025Q2")): CellFacts(16, 1, D("2025-06-30"), 0, 1)})
     assert g["2025-Q2", "CONTRACT"].records == 16
+    assert g["2025-Q2", "CONTRACT"].crawl_only == 1  # the Coverage page's crawl-only count (#60/#90)
+
+
+def test_every_cell_carries_its_crawl_only_count_whatever_its_state():
+    g = grid(facts={("CONTRACT", Q("2024Q1")): CellFacts(6, 6, D("2024-03-20"), 0, 6)}, known_gaps={("DAN", Q("2024Q1")): "x"},
+             bulk_rows={("DA", Q("2024Q1")): 3})
+    assert (g["2024-Q1", "CONTRACT"].state, g["2024-Q1", "CONTRACT"].crawl_only) == ("NOT_YET_LOADED", 6)  # backfilled, the bulk lacks the quarter
+    assert g["2024-Q1", "DA"].crawl_only == 0 and g["2024-Q1", "DAN"].crawl_only == 0
 
 
 def test_a_hand_entered_gap_overrides_a_loaded_file_and_shows_its_reason_verbatim():
@@ -172,10 +180,11 @@ def test_flagged_lines_name_the_cells_to_look_at_and_never_a_quarantine_reason()
 # ---- the known-gaps file -----------------------------------------------------------------------------------------------------
 
 
-def test_the_checked_in_known_gaps_file_holds_the_q2_2025_dan_gap_with_a_reason():
+def test_the_checked_in_known_gaps_file_holds_the_q2_2025_dan_and_q2_2022_da_gaps_with_a_reason():
     gaps = load_known_gaps(DEFAULT_KNOWN_GAPS)
-    assert list(gaps) == [("DAN", Q("2025Q2"))]
+    assert list(gaps) == [("DAN", Q("2025Q2")), ("DA", Q("2022Q2"))]
     assert gaps["DAN", Q("2025Q2")].strip()
+    assert "415944" in gaps["DA", Q("2022Q2")] and "iunie 2022" in gaps["DA", Q("2022Q2")]  # the DA file that switches to a Contracte export
 
 
 def test_known_gaps_file_format(tmp_path):

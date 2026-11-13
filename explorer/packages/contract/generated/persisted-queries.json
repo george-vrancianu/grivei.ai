@@ -8,8 +8,8 @@
     },
     {
       "name": "CoveragePage",
-      "sha256": "89822a7ee958e7e76c3362195df9e26e94f3dbf51598319b2c963af88551aad5",
-      "document": "query CoveragePage($window: DateRange) {\n  sources {\n    ...DataThroughFields\n  }\n  coverage(source: SEAP, window: $window) {\n    window {\n      from\n      to\n    }\n    counties {\n      county\n      status\n      withRecords\n      publicEntities\n      otherAuthorities\n    }\n    grid {\n      quarter\n      kind\n      state\n      rule\n      note\n      records\n      dataThrough\n    }\n    unplacedAuthorities {\n      authorities\n      total {\n        ...TotalFields\n      }\n    }\n    referenceSnapshot\n  }\n}\n\nfragment DataThroughFields on Source {\n  id\n  name\n  harvested\n  dataThrough {\n    kind\n    date\n  }\n}\n\nfragment TotalFields on Total {\n  awarded\n  records\n  suspectLeftOut\n  noValue\n  frameworkCeilings\n  estimated\n}"
+      "sha256": "0b7ea4c13fdb02a1951a5f2fe06dceab8d4b5c038f1adfbbd6c25363e7facdd7",
+      "document": "query CoveragePage($window: DateRange) {\n  sources {\n    ...DataThroughFields\n  }\n  coverage(source: SEAP, window: $window) {\n    window {\n      from\n      to\n    }\n    counties {\n      county\n      status\n      withRecords\n      publicEntities\n      otherAuthorities\n    }\n    grid {\n      quarter\n      kind\n      state\n      rule\n      note\n      records\n      crawlOnly\n      dataThrough\n    }\n    unplacedAuthorities {\n      authorities\n      total {\n        ...TotalFields\n      }\n    }\n    referenceSnapshot\n  }\n}\n\nfragment DataThroughFields on Source {\n  id\n  name\n  harvested\n  dataThrough {\n    kind\n    date\n  }\n}\n\nfragment TotalFields on Total {\n  awarded\n  records\n  suspectLeftOut\n  noValue\n  frameworkCeilings\n  estimated\n}"
     },
     {
       "name": "EntityOverview",

@@ -79,8 +79,13 @@ describe("the Coverage page", () => {
   });
 
   it("leaves the crawl-only section out when no cell has crawl-only Records", () => {
-    show(fixturePageContent("typical-every-gap-state"));
+    show(fixturePageContent("extreme-full-grid"));
     expect(screen.queryByRole("region", { name: "Records not in bulk data" })).toBeNull();
+  });
+
+  it("lists the contract's crawl-only counts (#60/#90)", () => {
+    show(fixturePageContent("typical-every-gap-state"));
+    expect(section("Records not in bulk data").getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Contracts, Q3 2024: 120 Records not in bulk data"]);
   });
 
   it("shows the reference snapshot date, or says it is not loaded yet", () => {

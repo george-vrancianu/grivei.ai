@@ -149,5 +149,5 @@ export function explainedCells(cells: readonly GapCellData[]): GapCellData[] {
 
 /** The cells that carry crawl-only Records, in the same order. */
 export function crawlOnlyCells(cells: readonly GapCellData[]): GapCellData[] {
-  return cells.filter((c) => (c.crawlOnly ?? 0) > 0).sort(byQuarterThenKind);
+  return cells.filter((c) => c.crawlOnly > 0).sort(byQuarterThenKind);
 }

@@ -1,10 +1,12 @@
 """Supplier identity rules (ADR 0003, ticket #66), as pure functions: tax ids, names, entity keys, the override file.
 Every CUI here is invented; `CHECK_OK` / `CHECK_BAD` pass / fail the Romanian check digit."""
+import re
+
 import pytest
 
 from pipeline.identity import (
-    NATURAL_PERSON, Overrides, OverrideError, Resolver, classify_tax_id, comma_below, compare_name, cui_check_digit_ok, name_key,
-    name_key_text, resolve_authority,
+    NATURAL_PERSON, NATURAL_PERSON_WITH_CNP, Overrides, OverrideError, Resolver, classify_tax_id, comma_below, compare_name, cui_check_digit_ok, name_key,
+    name_key_text, resolve_authority, shares_a_word, withheld_name,
 )
 
 CHECK_OK = ["2000007", "1000009", "18308578", "54760", "3286536", "16310091"]
@@ -110,8 +112,8 @@ def test_a_foreign_vat_id_keys_a_name_only_supplier():
 
 
 def test_a_cnp_is_a_natural_person_with_nothing_kept():
-    got = Resolver(ANAF).supplier("POPESCU ION", "1003600118796")
-    assert got is NATURAL_PERSON and got.key is None and got.natural_person and got.cui is None
+    got = Resolver(ANAF).supplier("PERSOANA FIZICA A", "1003600118796")
+    assert got is NATURAL_PERSON_WITH_CNP and got.had_cnp and got.key is None and got.natural_person and got.cui is None
     assert not got.differs_from_anaf and not got.curated
 
 
@@ -282,3 +284,78 @@ def test_a_truncated_cnp_yields_to_a_legal_form_or_organisation_word(name, perso
 def test_a_law_practice_published_without_an_id_stays_name_only():
     got = Resolver(ANAF).supplier("AVOCATI DEMO", None)
     assert got is not NATURAL_PERSON and got.identity == "NAME_ONLY"
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "ALFA CONSTRUCT",  # a Romanian organisation word, no legal form
+        "BETA IMPEX",
+        "GAMA COM",
+        "ALFAPROD EXEMPLU",  # a coined company word (suffix -prod)
+        "BETATRANS DELTA",
+        "OMEGA TECHNOLOGIES",  # foreign industry words
+        "SIGMA MEDIZINTECHNIK",
+        "KAPPA COSTRUZIONI",
+        "LAMBDA INSAAT TICARET",
+        "THETA PHARMACEUTICALS",
+        "ZETA LABORATORIES",
+    ],
+)
+def test_a_two_word_organisation_name_without_a_legal_form_is_not_read_as_a_person(name):
+    got = Resolver(ANAF).supplier(name, None)
+    assert got.identity == "NAME_ONLY" and not got.natural_person
+
+
+@pytest.mark.parametrize("name", ["PERSOANA FIZICA A", "ION EXEMPLESCU", "MARIA DE EXEMPLU", "VASILE COMANESCU FICTIV", "ANA PRODAN"])
+def test_invented_peoples_names_stay_natural_persons(name):
+    """A coined-word suffix needs a stem (`PRODAN`, `COMANESCU` hold `prod` and `com` but do not end in them as a coined word)."""
+    assert Resolver(ANAF).supplier(name, None) is NATURAL_PERSON
+
+
+def test_the_word_overlap_guard_ignores_initials_and_short_particles():
+    anaf = {"100000": compare_name("A & B DISTRIBUTIE SRL")}
+    # a person whose ID card number is a CUI ANAF knows: sharing only the initial `A` with the company is no rename
+    assert Resolver(anaf).supplier("ION A FICTIV", "100000") is NATURAL_PERSON
+    assert not shares_a_word("ION A FICTIV", anaf["100000"]) and shares_a_word("B DISTRIBUTIE NOUA", anaf["100000"])
+    anaf = {"100000": compare_name("COMPANIA DE EXEMPLU SA")}
+    assert Resolver(anaf).supplier("MARIA DE FICTIV", "100000") is NATURAL_PERSON  # `DE` is a particle, not a shared word
+
+
+def test_a_truncated_cnp_still_yields_only_to_the_original_organisation_words_until_66_decides():
+    """The 12-digit CNP-shaped ids (#66) keep their behaviour: the wider company words do not turn them into name-only suppliers."""
+    assert Resolver(ANAF).supplier("ALFA IMPEX", "199010112345") is NATURAL_PERSON
+    assert Resolver(ANAF).supplier("ALFA IMPEX SRL", "199010112345").identity == "NAME_ONLY"
+    assert Resolver(ANAF).supplier("ASOCIATIA ALFA", "199010112345").identity == "NAME_ONLY"
+
+
+@pytest.mark.parametrize(
+    "name, kept",
+    [
+        ("POPESCU ION 1900101123456", "POPESCU ION"),
+        ("ION 190 0101 123456", "ION"),
+        ("ION 190.0101.123456", "ION"),
+        ("ION 190-0101-123456", "ION"),
+        ("ION 1.90010E+12", "ION"),  # scientific notation is one number, not `E+12` left over
+        ("ION 1,90010E12 POPESCU", "ION POPESCU"),
+        ("1900101123456", None),
+        ("  POPESCU   ION  ", "POPESCU ION"),
+        (None, None),
+    ],
+)
+def test_a_cnp_inside_a_natural_persons_name_is_never_kept_in_the_withheld_name(name, kept):
+    got = withheld_name(name)
+    assert got == kept
+    assert not re.search(r"\d{6}", got or "")
+
+
+@pytest.mark.parametrize("name", ["MARIA BAU", "ION LAB", "ANA MARIA BAU", "ION MARKET", "ANNA STORE", "PIERRE TOUR"])
+def test_a_real_surname_that_is_also_a_foreign_word_is_a_person_not_a_company(name):
+    """`BAU`, `LAB`, `MARKET`, `STORE` and `TOUR` are surnames: with no id the name decides, and reading them as a company would publish the person by name."""
+    assert Resolver(ANAF).supplier(name, None) is NATURAL_PERSON
+
+
+@pytest.mark.parametrize("name", ["SIGMA MASCHINENBAU", "ZETA LABORATORIES", "OMEGA LABS"])
+def test_the_foreign_company_words_that_remain_still_read_a_company(name):
+    got = Resolver(ANAF).supplier(name, None)
+    assert got.identity == "NAME_ONLY" and not got.natural_person

@@ -582,3 +582,60 @@ def test_authority_scope_uses_a_crawled_notice_id_or_finds_one_through_the_list(
     observed = scope.read_scopes(archive)
     assert set(observed) == {"111", "222"} and observed["111"].national is True and observed["111"].legal_buyer_type == "Autoritate guvernamentală centrală"
     assert scope.lookup_scopes(archive, stub_client(lambda *a: b"{}", lambda *a: b"{}"), todo, note=lambda s: None) == (0, 0)  # resumable
+
+
+# ---- the two lookups read the raw archive, not a graph (one national load: anaf-lookup, authority-scope, seap-entities, seed) ----
+
+
+def test_authority_scope_candidates_come_from_the_raw_archive_one_notice_per_authority(tmp_path):
+    shutil.copytree(FIXTURES / "archive-signals", tmp_path / "a")
+    archive = Archive(tmp_path / "a")
+    assert scope.candidates(archive) == [
+        scope.Candidate("1000009", None, "CAN9800003"),
+        scope.Candidate("1000017", "92000015", "CAN9200005"),  # a crawled award notice's internal id is preferred (no list request)
+        scope.Candidate("2000031", None, "CAN9800008"),
+    ]
+    assert not (tmp_path / "a" / "quarantine").exists()  # reading never quarantines
+
+
+def test_seap_entities_candidates_are_the_archives_authorities_the_archived_anaf_answers_do_not_confirm(archive):
+    from pipeline.anaf import archive_batch
+
+    assert seap_lookup.candidates(archive) == [CUI["seap"], CUI["unplaced"]]  # ANAF answered every other authority
+    # a later "not found" for an authority ANAF had found: it is unknown again (the latest answer wins, as in a rebuild)
+    archive_batch(archive, [int(CUI["sanpetru"])], datetime(2027, 1, 1).date(), b'{"found":[],"notFound":[%s]}' % CUI["sanpetru"].encode(),
+                  datetime(2027, 1, 1, 8, tzinfo=timezone.utc))
+    assert seap_lookup.candidates(archive) == sorted([CUI["seap"], CUI["unplaced"], CUI["sanpetru"]])
+
+
+def test_seap_entities_refuses_an_archive_without_any_anaf_answer(tmp_path):
+    shutil.copytree(FIXTURES / "archive-crawl", tmp_path / "a")
+    with pytest.raises(seap_lookup.NoAnafAnswers, match="anaf-lookup"):
+        seap_lookup.candidates(Archive(tmp_path / "a"))
+
+
+def test_both_lookups_run_from_the_cli_without_a_database_and_resume(tmp_path, monkeypatch, capsys):
+    from pipeline import cli, placement_cli
+
+    shutil.copytree(FIXTURES / "archive-signals", tmp_path / "a")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    central = json.dumps({"section1_New": {"legalBuyerType": {"text": "Autoritate guvernamentală centrală"}}}, ensure_ascii=False).encode()
+    listing = json.dumps({"items": [{"noticeNo": n, "caNoticeId": 7000 + i} for i, n in enumerate(("CAN9800003", "CAN9800008"))]}).encode()
+    view = json.dumps({"entityId": 5, "city": "Cluj-Napoca", "county": "Cluj", "country": "Romania"}).encode()
+    clients = []
+
+    def make_client(delay):
+        clients.append(stub_client(lambda url, body: view if "Entity" in url else listing, lambda url: view if "Entity" in url else central))
+        return clients[-1]
+
+    monkeypatch.setattr(placement_cli, "make_client", make_client)
+    root = str(tmp_path / "a")
+    assert cli.main(["--archive", root, "authority-scope"]) == 0
+    assert set(scope.read_scopes(Archive(root))) == {"1000009", "1000017", "2000031"}
+    assert cli.main(["--archive", root, "seap-entities"]) == 0
+    asked = sorted(s[2] for s in clients[-1].seen if s[0] == "POST")
+    assert asked == ["1000009", "1000017"]  # the archive's ANAF answers do not confirm these two authorities
+    # rerun: everything is archived already, nothing is asked
+    assert cli.main(["--archive", root, "authority-scope"]) == 0 and clients[-1].seen == []
+    assert cli.main(["--archive", root, "seap-entities"]) == 0 and clients[-1].seen == []
+    assert "DATABASE_URL" not in capsys.readouterr().err

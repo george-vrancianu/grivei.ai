@@ -159,12 +159,12 @@ describe("over HTTP", () => {
 });
 
 describe("Coverage grid (#79)", () => {
-  const cell = (quarter: string, kind = "DA") => ({ quarter, kind, state: "LOADED", rule: null, note: null, records: 1, dataThrough: null });
-  const grid = [cell("2021-Q1"), cell("2021-Q4"), cell("2022-Q1"), cell("2022-Q2", "DAN")];
+  const cell = (quarter: string, kind = "DA", crawlOnly = 0) => ({ quarter, kind, state: "LOADED", rule: null, note: null, records: 1, crawlOnly, dataThrough: null });
+  const grid = [cell("2021-Q1"), cell("2021-Q4"), cell("2022-Q1", "CONTRACT", 1), cell("2022-Q2", "DAN")];
   const ask = async (variables: Record<string, unknown>, source = "SEAP") => {
     const r = await graphql({
       schema, rootValue: rootValue({ ...store, coverageGrid: async () => grid }), variableValues: variables,
-      source: `query($w: DateRange) { coverage(source: ${source}, window: $w) { source { id } window { from to } grid { quarter kind state rule note records dataThrough } } }`,
+      source: `query($w: DateRange) { coverage(source: ${source}, window: $w) { source { id } window { from to } grid { quarter kind state rule note records crawlOnly dataThrough } } }`,
     });
     return r;
   };
@@ -175,6 +175,13 @@ describe("Coverage grid (#79)", () => {
     expect(r.errors).toBeUndefined();
     expect(quarters(r)).toEqual(["2021-Q1", "2021-Q4", "2022-Q1", "2022-Q2"]);
     expect((r.data as { coverage: { source: { id: string }; window: object } }).coverage).toMatchObject({ source: { id: "SEAP" }, window: { from: null, to: null } });
+  });
+
+  it("serves each cell's crawl-only count (#60/#90)", async () => {
+    const r = await ask({});
+    expect((r.data as { coverage: { grid: { quarter: string; crawlOnly: number }[] } }).coverage.grid.map((c) => [c.quarter, c.crawlOnly])).toEqual([
+      ["2021-Q1", 0], ["2021-Q4", 0], ["2022-Q1", 1], ["2022-Q2", 0],
+    ]);
   });
 
   it("keeps the quarters that overlap the window, ends included", async () => {

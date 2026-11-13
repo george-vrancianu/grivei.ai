@@ -14,6 +14,10 @@ Identity (ADR 0002 and its 2026-11-11 amendment):
   contracts are attributes (`contract_numbers`), and its value is the sum of its contracts' values.
 
 One file is parsed all or nothing, and inside it:
+- a file that switches kind partway (rows of its own kind, then another registered kind's header line and only that kind's rows
+  to the end: the DA 2022 Q2 export has a Contracte export pasted in from line 415944) keeps its leading rows as its own kind; the
+  rest is set aside, counted and reported (`ParsedFile.set_aside`), never loaded and never silently dropped. A file mixed in any
+  other way (another kind's header before any row of its own, or its own kind again after the switch) is invalid;
 - an exact duplicate row (every field equal after parsing) is dropped;
 - DA/DAN: the same code with different content keeps the later publication date, a tie going to the later row;
 - contracts and award notices: the rows of one identity collapse into a Record from the rows of its most recent notice
@@ -332,9 +336,24 @@ KINDS: dict[str, KindSpec] = {
 
 
 @dataclass(frozen=True)
+class SetAside:
+    """The tail of a file that switches kind partway: from `line` on (that line is the other kind's header) it holds `kind`'s rows."""
+
+    line: int
+    kind: str  # the other kind's label, e.g. 'CONTRACT'
+    rows: int  # data rows after that header, not loaded
+    last_published: date | None  # the latest publication date among the leading rows that do load
+
+    def note(self) -> str:
+        """The load note kept on the file (`seap.source_file.load_notes`)."""
+        return f"set_aside:{self.kind}:from_line_{self.line}:{self.rows}_rows"
+
+
+@dataclass(frozen=True)
 class ParsedFile:
     records: list[BulkRecord]
-    rows: int  # data rows read, duplicates included
+    rows: int  # data rows read of the file's own kind, duplicates included (a set-aside tail is not counted here)
+    set_aside: SetAside | None = None
 
 
 def _resolves(spec: KindSpec, unit: str, cells: list) -> bool:
@@ -358,6 +377,19 @@ def _header_of_another_kind(kind: str, unit: str, cells: list) -> str | None:
     return next((other.label for name, other in KINDS.items() if name != kind and _resolves(other, unit, cells)), None)
 
 
+def _is_own_kind_again(spec: KindSpec, unit: str, columns: list, header: list, cells: list) -> bool:
+    """After a switch: a row that is this kind's header, or that reads as a row of this kind, means the file is mixed some other way."""
+    if cells == header or _is_header(spec, unit, cells):
+        return True
+    if len(cells) != len(columns):
+        return False
+    try:
+        spec.build(spec.label, {c: cell for c, cell in zip(columns, cells) if c})
+    except ValueError:
+        return False
+    return True
+
+
 def parse_file_stats(kind: str, unit: str, path: Path) -> ParsedFile:
     """Read and validate one file of `kind` ('da', 'dan', 'contracte', 'fara-anunt') from quarter `unit`. Raises InvalidFile; never a partial result."""
     spec = KINDS[kind]
@@ -368,10 +400,21 @@ def parse_file_stats(kind: str, unit: str, path: Path) -> ParsedFile:
         seen: set[Any] = set()
         distinct: list[Any] = []
         read = 0
+        switch: tuple[int, str] | None = None  # (line, other kind) once the file has switched kind
+        tail = 0
         with values.day_first(era.day_first):
             for number, cells in rows:
+                if switch:  # past the switch: only the other kind may follow
+                    if _is_own_kind_again(spec, unit, columns, header, cells):
+                        raise InvalidFile(f"line {number}: {spec.label} rows again after the {switch[1]} part that starts at line {switch[0]}: the file mixes kinds",
+                                          [f"line {number}: a {spec.label} row or header after line {switch[0]}"])
+                    tail += 1
+                    continue
                 read += 1
                 if len(cells) != len(columns):
+                    if distinct and (other := _header_of_another_kind(kind, unit, cells)):  # a header of another width (quoted CSV)
+                        switch, read = (number, other), read - 1
+                        continue
                     raise InvalidFile(f"line {number}: {len(cells)} fields, expected {len(columns)}", [f"line {number}: {len(cells)} fields, expected {len(columns)}"])
                 if cells == header or (read <= 2 and _is_header(spec, unit, cells)):  # the header repeated (2022 T1 Contracte), or a second header row of technical names (2025 T4)
                     continue
@@ -380,8 +423,11 @@ def parse_file_stats(kind: str, unit: str, path: Path) -> ParsedFile:
                     row = spec.build(spec.label, fields)
                 except ValueError as e:
                     other = _header_of_another_kind(kind, unit, cells)
+                    if other and distinct:  # the file switches kind partway: what came before loads, the rest is set aside
+                        switch, read = (number, other), read - 1
+                        continue
                     if other:
-                        raise InvalidFile(f"line {number}: a {other} header in the middle of a {spec.label} file: the file mixes kinds", [f"line {number}: {e}"]) from None
+                        raise InvalidFile(f"line {number}: a {other} header before any {spec.label} row: the file mixes kinds", [f"line {number}: {e}"]) from None
                     raise InvalidFile(f"line {number}: {e}", [f"line {number}: {e}"]) from None
                 if row in seen:  # an exact duplicate row
                     continue
@@ -389,11 +435,15 @@ def parse_file_stats(kind: str, unit: str, path: Path) -> ParsedFile:
                 distinct.append(row)
         if not distinct:
             raise InvalidFile("no data rows")
+        set_aside = None
+        if switch:
+            published = [d for r in distinct if (d := getattr(r, "published_on", None))]
+            set_aside = SetAside(switch[0], switch[1], tail, max(published) if published else None)
     finally:
         close = getattr(rows, "close", None)
         if close:
             close()  # an XLSX workbook is an open file
-    return ParsedFile(spec.assemble(spec.label, distinct), read)
+    return ParsedFile(spec.assemble(spec.label, distinct), read, set_aside)
 
 
 def parse_file(kind: str, unit: str, path: Path) -> list[BulkRecord]:

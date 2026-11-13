@@ -22,7 +22,8 @@ quarter holding only backfilled Records falls through to step 5 or 6, with its R
 A quarantined file is "as if it did not exist" for steps 4 and 6 (a quarter that is quarantined but has crawled Records is crawled
 provisional); only the rule differs when nothing else is there.
 
-Per cell: `records` = Records of the kind whose publication quarter it is (bulk and crawled, crawl-only ones included, spec l.224).
+Per cell: `records` = Records of the kind whose publication quarter it is (bulk and crawled, crawl-only ones included, spec l.224);
+`crawl_only` = of them, the crawl-only ones (crawled or backfilled Records the bulk file of their quarter does not hold, #60/#90), whatever the state.
 `data_through` = loaded or covered cell: the latest publication date among those Records (null when there are none); crawled
 provisional cell: the kind's crawl data-through (the end of the unbroken run of complete crawl days), never past the quarter's end,
 when that run starts no later than the quarter's end, else (a hole quarter the run never covered) the latest Record date; known gap: the latest Record date, if any; NOT_YET_LOADED, NOT_IN_SOURCE: null.
@@ -109,6 +110,7 @@ class CellFacts:
     crawled: int = 0  # of them, via the crawl (provisional and crawl-only, and the backfill's)
     latest: date | None = None  # the latest publication date among them
     provisional: int = 0  # of the crawled ones, those still provisional (no bulk file of the kind and quarter, not backfilled)
+    crawl_only: int = 0  # of the crawled ones, those crawl-only (the bulk has the quarter, not them; or backfilled)
 
 
 @dataclass
@@ -132,6 +134,7 @@ class Cell:
     note: str | None
     records: int
     data_through: date | None
+    crawl_only: int = 0  # of `records`, the crawl-only ones (#60/#90)
 
 
 def compute_grid(inputs: Inputs) -> list[Cell]:
@@ -152,7 +155,7 @@ def _cell(inputs: Inputs, eligible: dict[Quarter, int], q: Quarter, kind: str) -
     facts = inputs.facts.get(key) or CellFacts()
 
     def cell(state: str, rule: str | None = None, note: str | None = None, through: date | None = None) -> Cell:
-        return Cell(label(q), kind, state, rule, note, facts.records, through)
+        return Cell(label(q), kind, state, rule, note, facts.records, through, facts.crawl_only)
 
     if key in inputs.known_gaps:
         return cell("KNOWN_GAP", "HAND_ENTERED", inputs.known_gaps[key], facts.latest)
