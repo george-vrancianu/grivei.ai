@@ -65,7 +65,7 @@ A contracting authority whose remit is the whole country (ministry, national age
 _Avoid_: central authority
 
 **Elected leader**:
-A mayor (of a commune, town, municipality, Bucharest sector or Bucharest itself) or a county council president, elected directly; the only officials through whom a Party reaches a contracting authority.
+A mayor (of a commune, town, municipality, Bucharest sector or Bucharest itself) or a county council president, elected directly; the only officials through whom a Party reaches a contracting authority, directly or through its subordinate bodies.
 _Avoid_: local leader, politician, head of authority
 
 **Mandate**:
@@ -73,8 +73,12 @@ One elected leader's term at one authority, from their oath to their successor's
 _Avoid_: term, tenure, office
 
 **Party**:
-The list (party, alliance or "Independent") an elected leader ran on for one mandate, as registered at that election; it belongs to the contracting authority for that mandate's dates and never to a supplier or a person. "Independent" is not a party.
+The list (party, alliance or "Independent") an elected leader ran on for one mandate, as registered at that election; it belongs to the contracting authority for that mandate's dates, and through it to that authority's subordinate bodies, and never to a supplier or a person. "Independent" is not a party.
 _Avoid_: political affiliation, current party, party family, ruling party
+
+**Subordinate body**:
+A public body whose only principal credit holder, in MF's Lista entităților publice, is one town hall, Bucharest sector, Bucharest city hall or county council (a county hospital, a social-services or roads directorate); it inherits that authority's Party. A body that shares its principal with a ministry (a school) is not one.
+_Avoid_: subordinate institution, local agency, under the mayor
 
 **Supplier**:
 A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF knows; an entity that both buys and sells is one entity in both roles.
