@@ -173,6 +173,6 @@ export const components: Components<Theme> = {
     },
   },
   MuiTypography: {
-    defaultProps: { variantMapping: { total: "p", stat: "p", money: "span", label: "span", meta: "span" } },
+    defaultProps: { variantMapping: { lead: "p", total: "p", stat: "p", money: "span", label: "span", meta: "span" } },
   },
 };

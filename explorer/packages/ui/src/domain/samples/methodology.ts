@@ -2,7 +2,7 @@
 // `methodologyRo.ts`); these are short stand-ins of the same shape, so a story shows the layout and every state without that much text.
 import { fixtures } from "@grivei/contract/fixtures";
 import type { Locale } from "../../theme/index.ts";
-import type { MethodologyPageCopy, MethodologyRuleCopy } from "../organisms/MethodologyPage/index.ts";
+import { withAmounts, type MethodologyPageCopy, type MethodologyRuleCopy } from "../organisms/MethodologyPage/index.ts";
 import type { SignalRuleBaseRateCopy } from "../molecules/SignalRuleBaseRate/index.ts";
 import type { SignalRuleBaseRateData } from "../types.ts";
 
@@ -46,11 +46,12 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
   const section = (heading: string) => ({ heading, paragraphs: [en ? `How ${heading.toLowerCase()} is counted, in one sentence.` : `Cum se tratează „${heading.toLowerCase()}”, într-o propoziție.`] });
   const rule = (heading: string): MethodologyRuleCopy => ({
     heading, paragraphs: [en ? `${heading}: the rule in one sentence.` : `${heading}: regula într-o propoziție.`],
-    items: [en ? "One condition of the rule." : "O condiție a regulii."],
+    items: [en ? "One condition of the rule." : "O condiție a regulii.", withAmounts((cap) => (en ? `At most ${cap} for goods and services.` : `Cel mult ${cap} pentru bunuri și servicii.`), ["13506000"])],
     lawful: en ? "Possible lawful explanations: a sample line." : "Explicații legale posibile: o linie de probă.",
   });
   const s = sections[locale];
   return {
+    eyebrow: en ? "about the numbers" : "despre cifre",
     title: en ? "About the numbers" : "Despre cifre",
     intro: en ? "How every number in the explorer is counted." : "Cum se calculează fiecare cifră din explorator.",
     contents: en ? "On this page" : "Pe această pagină",

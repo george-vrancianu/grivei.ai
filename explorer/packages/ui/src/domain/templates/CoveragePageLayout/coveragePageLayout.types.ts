@@ -15,6 +15,8 @@ export interface CoveragePageContent {
 }
 
 export interface CoveragePageLayoutCopy {
+  /** The mono amber line above the title. */
+  eyebrow: string;
   title: string;
   intro: string;
   grid: CoverageGridCopy;
@@ -38,6 +40,8 @@ export interface CoveragePageLayoutCopy {
     /** Link text to the methodology page. */
     methodology: string;
   };
+  /** The "N of M" block: what a county reads on the map's Coverage lens. */
+  perCounty: { heading: string; body: string; lensLink: string };
   snapshot: { heading: string; line: (date: string) => string; notLoaded: string };
   /** The window holds no quarter of the Source. */
   empty: string;

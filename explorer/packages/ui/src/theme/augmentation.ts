@@ -30,6 +30,8 @@ declare module "@mui/material/styles" {
   interface TypographyVariants {
     /** An amount of money: Plex Mono, semibold, tabular figures. */
     money: CSSProperties;
+    /** The lead paragraph under a page title: 17 px, text2. */
+    lead: CSSProperties;
     /** Nav, chips, toggles and section labels. */
     label: CSSProperties;
     /** Codes, dates, legends and badges. */
@@ -41,6 +43,7 @@ declare module "@mui/material/styles" {
   }
   interface TypographyVariantsOptions {
     money?: CSSProperties;
+    lead?: CSSProperties;
     label?: CSSProperties;
     meta?: CSSProperties;
     total?: CSSProperties;
@@ -51,6 +54,7 @@ declare module "@mui/material/styles" {
 declare module "@mui/material/Typography" {
   interface TypographyPropsVariantOverrides {
     money: true;
+    lead: true;
     label: true;
     meta: true;
     total: true;

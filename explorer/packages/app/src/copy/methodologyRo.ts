@@ -1,7 +1,8 @@
-import type { MethodologyPageCopy } from "@grivei/ui";
+import { withAmounts, type MethodologyPageCopy } from "@grivei/ui";
 
 /** Pagina de metodologie, „Despre cifre”: aceleași secțiuni și aceleași ancore ca în engleză. */
 export const methodologyRo: MethodologyPageCopy = {
+  eyebrow: "despre cifre",
   title: "Despre cifre",
   intro:
     "Fiecare înregistrare și fiecare sumă din explorator vine din SEAP, sistemul electronic de achiziții publice, și este calculată după o singură regulă peste tot: totaluri, hartă, clasamente, fluxul de bani și Semnale. Pagina aceasta spune care este regula. Cifrele din secțiunile Semnalelor sunt recalculate la fiecare încărcare a datelor.",
@@ -37,8 +38,8 @@ export const methodologyRo: MethodologyPageCopy = {
         "Două reguli marchează o valoare:",
       ],
       items: [
-        "O achiziție directă (DA sau DAN) de zece ori plafonul legal pentru data și tipul ei, sau mai mult. Plafoanele (Legea 98/2016, fără TVA) sunt 135.060 RON pentru bunuri și servicii și 450.200 RON pentru lucrări până la 9 septembrie 2022, respectiv 270.120 RON și 900.400 RON de la 10 septembrie 2022. Data atribuirii decide care se aplică. Lucrările se recunosc după tipul de contract sau după diviziunea CPV 45; diviziunea CPV 70 (chirii) nu este marcată niciodată. Valorile se compară așa cum sunt publicate, fără ajustare pentru TVA.",
-        "Un contract sau un anunț de atribuire de 1 miliard RON sau mai mult este verificat față de valoarea lui estimată, căutată pe e-licitatie: la o sută de ori estimarea sau mai mult este marcat, iar peste 50 de miliarde RON fără estimare este marcat și el. Unul a cărui estimare nu a fost încă căutată este numărat.",
+        withAmounts((a, b, c, d) => `O achiziție directă (DA sau DAN) de zece ori plafonul legal pentru data și tipul ei, sau mai mult. Plafoanele (Legea 98/2016, fără TVA) sunt ${a} pentru bunuri și servicii și ${b} pentru lucrări până la 9 septembrie 2022, respectiv ${c} și ${d} de la 10 septembrie 2022. Data atribuirii decide care se aplică. Lucrările se recunosc după tipul de contract sau după diviziunea CPV 45; diviziunea CPV 70 (chirii) nu este marcată niciodată. Valorile se compară așa cum sunt publicate, fără ajustare pentru TVA.`, ["13506000", "45020000", "27012000", "90040000"]),
+        withAmounts((a, b) => `Un contract sau un anunț de atribuire de ${a} sau mai mult este verificat față de valoarea lui estimată, căutată pe e-licitatie: la o sută de ori estimarea sau mai mult este marcat, iar peste ${b} fără estimare este marcat și el. Unul a cărui estimare nu a fost încă căutată este numărat.`, ["100000000000", "5000000000000"]),
       ],
     },
     blankValues: {
@@ -97,7 +98,7 @@ export const methodologyRo: MethodologyPageCopy = {
       heading: "Peste plafon",
       paragraphs: ["Peste plafon: o achiziție directă peste plafonul legal pentru data și tipul ei, dar sub de zece ori valoarea acestuia."],
       items: [
-        "Doar achiziții directe (DA și DAN). Plafonul este cel în vigoare la data atribuirii, pentru tipul achiziției: 135.060 RON pentru bunuri și servicii și 450.200 RON pentru lucrări până la 9 septembrie 2022, apoi 270.120 RON și 900.400 RON (Legea 98/2016, fără TVA). Lucrările se recunosc după tipul de contract sau după diviziunea CPV 45.",
+        withAmounts((a, b, c, d) => `Doar achiziții directe (DA și DAN). Plafonul este cel în vigoare la data atribuirii, pentru tipul achiziției: ${a} pentru bunuri și servicii și ${b} pentru lucrări până la 9 septembrie 2022, apoi ${c} și ${d} (Legea 98/2016, fără TVA). Lucrările se recunosc după tipul de contract sau după diviziunea CPV 45.`, ["13506000", "45020000", "27012000", "90040000"]),
         "Strict peste plafon: o valoare exact egală cu plafonul se încadrează în el. La de zece ori plafonul sau mai mult, valoarea este tratată de regula de calcul și nu apare niciun Semnal.",
         "Diviziunea CPV 70 (chirii) este exceptată, iar o înregistrare fără valoare nu are cu ce să fie comparată.",
         "Un Semnal pentru fiecare autoritate și zi de atribuire; dacă mai multe achiziții se califică în aceeași zi, Semnalul o arată pe cea mai mare.",

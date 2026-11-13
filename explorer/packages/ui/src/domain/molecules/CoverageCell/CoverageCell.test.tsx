@@ -21,7 +21,7 @@ describe("CoverageCell", () => {
     show();
     const el = screen.getByRole("cell");
     expect(el).toHaveAccessibleName("Contracts, Q4 2024: Possibly incomplete. 18,400 Records. Fewer than 60% of the median row count of the surrounding quarters");
-    expect(el).toHaveTextContent("?18k");
+    expect(el).toHaveTextContent(/^\?$/);
     expect(el).toHaveAttribute("data-state", "POSSIBLY_INCOMPLETE");
   });
 

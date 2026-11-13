@@ -890,6 +890,7 @@ export const sampleCopy = {
   coveragePageLayout: (locale: Locale): CoveragePageLayoutCopy =>
     locale === "ro"
       ? {
+        eyebrow: "acoperire",
         title: "Acoperire",
         intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
         grid: {
@@ -917,6 +918,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `dintre care ${f} absente din datele în masă`,
           dataThrough: (date) => `date până la ${date}`,
           inRange: "în intervalul de date",
+          windowNote: "trimestrele urmează data publicării · evidențiat: intervalul din chipul datei atribuirii",
           legend: { title: "Stările celulelor", range: "În intervalul de date" },
           seePage: "Vezi pagina Acoperire",
         },
@@ -958,6 +960,11 @@ export const sampleCopy = {
           },
           methodology: "Cum se numără cifrele",
         },
+        perCounty: {
+          heading: "pe județ: N din M",
+          body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+          lensLink: "deschide lentila Acoperire pe hartă →",
+        },
         snapshot: {
           heading: "Lista entităților publice",
           line: (date) => `Lista entităților publice a Ministerului Finanțelor: versiunea din ${date}`,
@@ -968,6 +975,7 @@ export const sampleCopy = {
         error: "Acoperirea nu a putut fi încărcată. Încearcă din nou peste puțin timp.",
       }
       : {
+        eyebrow: "coverage",
         title: "Coverage",
         intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
         grid: {
@@ -995,6 +1003,7 @@ export const sampleCopy = {
           crawlOnly: (n, f) => `${f} of them not in bulk data`,
           dataThrough: (date) => `data through ${date}`,
           inRange: "inside the date range",
+          windowNote: "quarters follow the publication date · highlighted: the award date chip",
           legend: { title: "Cell states", range: "Inside the date range" },
           seePage: "See the Coverage page",
         },
@@ -1035,6 +1044,11 @@ export const sampleCopy = {
             NOT_YET_LOADED: "The bulk file for this quarter and record kind is not in the data yet.",
           },
           methodology: "How the numbers are counted",
+        },
+        perCounty: {
+          heading: "per county: N of M",
+          body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+          lensLink: "open the Coverage lens on the map →",
         },
         snapshot: {
           heading: "Public entities list",

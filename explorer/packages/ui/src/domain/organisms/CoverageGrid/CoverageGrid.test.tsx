@@ -41,6 +41,35 @@ describe("the Coverage grid's cells", () => {
     expect(awaiting).toBe(quarantined!.replace("Q3 2023", "Q3 2025"));
   });
 
+  it("never leaves a cell's state to colour alone: every cell has a glyph and an accessible name, and a known gap is striped", () => {
+    render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} hideLegend />);
+    const cells = [...document.querySelectorAll<HTMLElement>("td[data-state]")];
+    expect(cells.length).toBeGreaterThan(0);
+    for (const el of cells) {
+      expect((el.textContent ?? "").trim(), el.dataset["state"]).not.toBe("");
+      expect(el.getAttribute("aria-label") ?? "", el.dataset["state"]).toMatch(/: \S/);
+    }
+    const stripes = (state: string) => getComputedStyle(document.querySelector(`td[data-state='${state}']`)!).backgroundImage;
+    expect(stripes("KNOWN_GAP")).toContain("repeating-linear-gradient");
+    expect(stripes("LOADED")).not.toContain("repeating-linear-gradient");
+  });
+
+  it("scrolls inside its own box instead of widening the page", () => {
+    render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
+    const box = screen.getByRole("region", { name: "Coverage by quarter and record kind" });
+    expect(getComputedStyle(box).overflowX).toBe("auto");
+    expect(getComputedStyle(box).maxWidth).toBe("100%");
+  });
+
+  it("labels each year once over its quarters, with the quarters as Q1 to Q4, and captions the grid", () => {
+    render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} />);
+    const years = [...document.querySelectorAll<HTMLElement>("th[scope='colgroup']")];
+    expect(years.map((y) => y.textContent)).toEqual(["2021", "2022", "2023", "2024", "2025"]);
+    expect(years.slice(0, 4).map((y) => y.getAttribute("colspan"))).toEqual(["4", "4", "4", "4"]);
+    expect(document.querySelector("th[data-quarter='2022-Q3']")).toHaveTextContent(/^Q3$/);
+    expect(screen.getByText(sampleCopy.coverageGrid("en").windowNote)).toBeVisible();
+  });
+
   it("gives each state a mark besides its colour", () => {
     render(<CoverageGrid cells={sampleGrid()} locale="en" copy={sampleCopy.coverageGrid("en")} hideLegend />);
     const glyphs = new Map<string, string>();

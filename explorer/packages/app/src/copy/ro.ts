@@ -412,6 +412,7 @@ export const ro: Copy = {
   methodology: methodologyRo,
   /** The Coverage page (`/explore/coverage`) and the compact grid on the Coverage lens. */
   coverage: {
+    eyebrow: "acoperire",
     title: "Acoperire",
     intro: "Ce conține explorerul din SEAP, trimestru cu trimestru și tip de înregistrare cu tip de înregistrare. Fiecare lacună, sau îndoială privind o lacună, apare aici împreună cu motivul sau regula din spatele ei.",
     grid: {
@@ -439,6 +440,7 @@ export const ro: Copy = {
       crawlOnly: (n, f) => `dintre care ${f} absente din datele în masă`,
       dataThrough: (date) => `date până la ${date}`,
       inRange: "în intervalul de date",
+      windowNote: "trimestrele urmează data publicării · evidențiat: intervalul din chipul datei atribuirii",
       legend: { title: "Stările celulelor", range: "În intervalul de date" },
       seePage: "Vezi pagina Acoperire",
     },
@@ -479,6 +481,11 @@ export const ro: Copy = {
         NOT_YET_LOADED: "Fișierul în masă pentru acest trimestru și tip de înregistrare nu este încă în date.",
       },
       methodology: "Cum se numără cifrele",
+    },
+    perCounty: {
+      heading: "pe județ: N din M",
+      body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+      lensLink: "deschide lentila Acoperire pe hartă →",
     },
     snapshot: {
       heading: "Lista entităților publice",

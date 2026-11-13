@@ -407,6 +407,7 @@ export const en: Copy = {
   methodology: methodologyEn,
   /** The Coverage page (`/explore/coverage`) and the compact grid on the Coverage lens. */
   coverage: {
+    eyebrow: "coverage",
     title: "Coverage",
     intro: "What the explorer holds of SEAP, quarter by quarter and record kind by record kind. Every gap, or doubt about a gap, is shown here with the reason or the rule behind it.",
     grid: {
@@ -434,6 +435,7 @@ export const en: Copy = {
       crawlOnly: (n, f) => `${f} of them not in bulk data`,
       dataThrough: (date) => `data through ${date}`,
       inRange: "inside the date range",
+      windowNote: "quarters follow the publication date · highlighted: the award date chip",
       legend: { title: "Cell states", range: "Inside the date range" },
       seePage: "See the Coverage page",
     },
@@ -474,6 +476,11 @@ export const en: Copy = {
         NOT_YET_LOADED: "The bulk file for this quarter and record kind is not in the data yet.",
       },
       methodology: "How the numbers are counted",
+    },
+    perCounty: {
+      heading: "per county: N of M",
+      body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+      lensLink: "open the Coverage lens on the map →",
     },
     snapshot: {
       heading: "Public entities list",

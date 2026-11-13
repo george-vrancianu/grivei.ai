@@ -22,7 +22,7 @@ export function KnownGapsTable({ cells, locale, copy }: KnownGapsTableProps) {
   const { knownGaps, grid } = copy;
   return (
     <>
-      <Typography variant="body2" gutterBottom>{knownGaps.intro}</Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>{knownGaps.intro}</Typography>
       {cells.length === 0 ? (
         <Typography>{knownGaps.empty}</Typography>
       ) : (
