@@ -1,1 +1,2 @@
-export { SignalOrderToggle, type SignalOrderToggleProps, type SignalOrderToggleCopy, type SignalOrderValue } from "./SignalOrderToggle.tsx";
+export { SignalOrderToggle, type SignalOrderToggleProps, type SignalOrderToggleCopy } from "./SignalOrderToggle.tsx";
+export { SIGNAL_ORDERS, type SignalOrder } from "./signalOrderToggle.utils.ts";

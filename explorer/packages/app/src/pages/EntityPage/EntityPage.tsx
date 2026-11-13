@@ -100,10 +100,10 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           // ready, but the entity has no Records in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
-      ) : loading ? (
-        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : view === "overview" ? (
         state.overview && entity ? (
+          // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
+          <div aria-busy={loading}>
           <EntityOverview overview={state.overview} aliases={entity.aliases}
             signalsToolbar={
               <SignalOrderToggle
@@ -128,10 +128,15 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                 }}
               />
             } {...overviewTab} />
+          </div>
+        ) : loading ? (
+          <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (
           // ready, but the entity has nothing in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
+      ) : loading ? (
+        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : state.relationships && entity ? (
         <>
           {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}

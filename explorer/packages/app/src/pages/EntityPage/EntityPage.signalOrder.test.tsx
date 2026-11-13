@@ -30,11 +30,11 @@ function signalsClient() {
 }
 
 const cards = () => screen.getAllByRole("article");
-const firstHeadings = () => cards().map((c) => within(c).getByRole("heading").textContent);
+const headings = () => cards().map((c) => within(c).getByRole("heading").textContent);
 
 const words = {
-  en: { base: "/explore/authority/1000017", group: "Order Signals", date: "by date", ron: "by RON", heading: "Signals (45)", over: "Over cap", none: "No publication" },
-  ro: { base: "/ro/explore/authority/1000017", group: "Ordinea Semnalelor", date: "după dată", ron: "după RON", heading: "Semnale (45)", over: "Peste plafon", none: "Fără publicare" },
+  en: { base: "/explore/authority/1000017", group: "Order Signals", date: "by date", ron: "by RON", heading: "Signals (45)", byDate: ["No publication", "No publication", "No publication", "Over cap", "Over cap", "Over cap", "Over cap", "No publication"], byRon: ["Over cap", "No publication", "No publication", "Over cap", "Over cap", "Over cap", "No publication", "No publication"] },
+  ro: { base: "/ro/explore/authority/1000017", group: "Ordinea Semnalelor", date: "după dată", ron: "după RON", heading: "Semnale (45)", byDate: ["Fără publicare", "Fără publicare", "Fără publicare", "Peste plafon", "Peste plafon", "Peste plafon", "Peste plafon", "Fără publicare"], byRon: ["Peste plafon", "Fără publicare", "Fără publicare", "Peste plafon", "Peste plafon", "Peste plafon", "Fără publicare", "Fără publicare"] },
 } as const;
 
 describe.each(["en", "ro"] as const)("the Signals order toggle (%s)", (lang) => {
@@ -52,7 +52,7 @@ describe.each(["en", "ro"] as const)("the Signals order toggle (%s)", (lang) => 
     await open(w.base);
     expect(group().getByRole("button", { name: w.date, pressed: true })).toBeVisible();
     expect(group().getByRole("button", { name: w.ron, pressed: false })).toBeVisible();
-    expect(firstHeadings()[0]).toBe(w.none);
+    expect(headings()).toEqual(w.byDate);
   });
 
   it("opens on by RON when the URL says VALUE_DESC", async () => {
@@ -60,15 +60,15 @@ describe.each(["en", "ro"] as const)("the Signals order toggle (%s)", (lang) => 
     expect(group().getByRole("button", { name: w.ron, pressed: true })).toBeVisible();
     expect(group().getByRole("button", { name: w.date, pressed: false })).toBeVisible();
     expect(sent[0]!.variables).toMatchObject({ signalOrder: "VALUE_DESC" });
-    expect(firstHeadings()[0]).toBe(w.over);
+    expect(headings()).toEqual(w.byRon);
   });
 
   it("choosing by RON puts it in the URL, reorders the cards and returns to page 1", async () => {
     const sent = await open(`${w.base}?page=2`);
     expect(sent[0]!.variables).toMatchObject({ signalOffset: 20 });
-    expect(firstHeadings()[0]).toBe(w.none);
+    expect(headings()).toEqual(w.byDate);
     await userEvent.setup().click(group().getByRole("button", { name: w.ron }));
-    await waitFor(() => expect(firstHeadings()[0]).toBe(w.over));
+    await waitFor(() => expect(headings()).toEqual(w.byRon));
     expect(window.location.search).toBe("?signalOrder=value-desc");
     expect(sent.at(-1)!.variables).toMatchObject({ signalOrder: "VALUE_DESC" });
     expect(sent.at(-1)!.variables).not.toHaveProperty("signalOffset");
@@ -76,10 +76,19 @@ describe.each(["en", "ro"] as const)("the Signals order toggle (%s)", (lang) => 
     expect(group().getByRole("button", { name: w.date, pressed: false })).toBeVisible();
   });
 
+  it("keeps keyboard focus on the pressed toggle, and the Overview on screen, while the new order loads", async () => {
+    await open(w.base);
+    const user = userEvent.setup();
+    await user.click(group().getByRole("button", { name: w.ron }));
+    expect(screen.getByRole("heading", { name: w.heading })).toBeVisible();
+    await waitFor(() => expect(headings()).toEqual(w.byRon));
+    expect(document.activeElement).toBe(group().getByRole("button", { name: w.ron }));
+  });
+
   it("choosing by date again leaves the order out of the URL (the default) and restores the order", async () => {
     await open(`${w.base}?signalOrder=value-desc`);
     await userEvent.setup().click(group().getByRole("button", { name: w.date }));
-    await waitFor(() => expect(firstHeadings()[0]).toBe(w.none));
+    await waitFor(() => expect(headings()).toEqual(w.byDate));
     expect(window.location.search).toBe("");
   });
 });
