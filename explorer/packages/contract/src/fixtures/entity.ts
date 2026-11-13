@@ -188,6 +188,19 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     }) },
   },
   {
+    name: "authority-text-search", kind: "typical",
+    description: "an authority's Records tab with a text search (RecordFilter.q): the row says which field matched and where (matchedField)",
+    variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "deszăpezire" } },
+    data: { entity: withSeap(w.primariaBrasovHeader, {
+      role: "AUTHORITY" as Role,
+      records: {
+        total: total({ awarded: ron(300_000), records: 1 }),
+        facets: { ...facetsOfAuthority, channel: [facetsOfAuthority.channel[0]!], procedure: [facetsOfAuthority.procedure[0]!], counterparty: [facetsOfAuthority.counterparty[0]!] },
+        records: { count: 1, rows: [{ record: w.rDirect, matchedField: { field: "TITLE", text: "Deszăpezire străzi, sezon rece 2023-2024", highlights: [[0, 11]] } }] },
+      },
+    }) },
+  },
+  {
     name: "authority-estimated-total", kind: "extreme",
     description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 1 of many",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { to: "2030-12-31" } },

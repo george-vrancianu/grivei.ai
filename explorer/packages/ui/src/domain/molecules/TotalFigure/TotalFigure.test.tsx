@@ -25,8 +25,13 @@ describe("TotalFigure", () => {
   });
   it("sizes the amount by the width of its own box (container units), so a long total fits a 390 px card; jsdom cannot lay out, so the stylesheet is read", () => {
     renderInUi(<TotalFigure total={totalExtreme} locale="en" copy={sampleCopy.total("en")} {...base} />);
-    const css = [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText)).join("\n");
-    expect(css).toMatch(/container-type:\s*inline-size/);
+    const rulesOf = (el: Element) =>
+      [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules]).filter((rule) => [...el.classList].some((c) => (rule as CSSStyleRule).selectorText?.includes(`.${c}`))).map((rule) => rule.cssText).join("\n");
+    const amount = document.querySelector("p.MuiTypography-total")!; // the amount's own paragraph (the framework line repeats the text)
+    const css = rulesOf(amount);
+    const ancestors = (el: Element | null): Element[] => (el ? [el, ...ancestors(el.parentElement)] : []);
+    // the box the amount is measured against is one of its own ancestors
+    expect(ancestors(amount.parentElement).map(rulesOf).join("\n")).toMatch(/container-type:\s*inline-size/);
     expect(css).toMatch(/font-size:\s*clamp\(18px,\s*9cqi,\s*40px\)/);
     expect(css).toMatch(/overflow-wrap:\s*anywhere/);
   });

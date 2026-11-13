@@ -308,3 +308,17 @@ describe("a long list (hand-written: the archive is too small for 100 Records)",
     await waitFor(() => expect(sent.at(-1)).toMatchObject({ variables: { filter: { to: "2030-12-31", channel: "CONTRACT" }, offset: 0 } }));
   });
 });
+
+describe("a text search on an entity's Records tab (hand-written fixture)", () => {
+  it.each([
+    ["/explore/authority/4000001/records?q=deszăpezire", "Matched in title:"],
+    ["/ro/explore/authority/4000001/records?q=deszăpezire", "Potrivit în titlu:"],
+  ])("%s shows which field matched, with the matched text marked", async (url, label) => {
+    const { sent } = await opened(url);
+    expect(sent[0]).toMatchObject({ variables: { key: "4000001", filter: { q: "deszăpezire" } } });
+    const line = (await screen.findByText(label, { exact: false })).parentElement!;
+    expect(line).toHaveTextContent("Deszăpezire străzi, sezon rece 2023-2024");
+    const marks = line.querySelectorAll("mark");
+    expect([...marks].map((m) => m.textContent)).toEqual(["Deszăpezire"]);
+  });
+});
