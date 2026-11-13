@@ -25,3 +25,7 @@ ADRs 0008–0011 made Go-live wait on a legal posture: a controller entity, a la
 - **Natural-person suppliers:** the published name shows on the Record, in that winner slot only, with no threshold. There is no entity page, no person page and no total, because no key exists to merge on and names never merge (ADRs 0003, 0011). The Naming threshold is dropped.
 - **Investigations in a Private view** show everything, drafts and Findings included. They may use person-level joins.
 - **Data quality is not a legal gate:** ADR 0013's hand-check of about 200 links per Source stays, as a condition for serving that Source's confirmed links.
+
+## Amended 2026-11-13: a public-tier name past its source's window is Restricted
+
+[ADR 0016](0016-public-tier-names-follow-their-source-publication-window.md): the public tier holds people *while* their source publishes them. A name whose Publication window has ended (EU 2021–27 fund recipients after 2 years, PNRR by policy) is Restricted. Fund recipients are on the public tier inside their window, named on their operation's record only.
