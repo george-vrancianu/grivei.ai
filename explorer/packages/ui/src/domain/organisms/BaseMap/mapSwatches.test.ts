@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { color, map } from "../../../theme/tokens.ts";
 import { COVERAGE_COLORS, MARK_OUTLINE, NO_STATUS_COLOR, OTHER_HARVESTED_MARK_COLOR, PLANNED_MARK_COLOR } from "../CoverageLensMap/index.ts";
-import { ARC_COLOR, BUBBLE_FILL, BUBBLE_OUTLINE, HOME_COLOR, OTHER_COLOR } from "../FlowLensMap/flowLensMap.utils.ts";
+import { ARC_COLOR, ARC_OPACITY, ARROWHEAD_OPACITY, BUBBLE_FILL, BUBBLE_OUTLINE, HOME_COLOR, OTHER_COLOR } from "../FlowLensMap/flowLensMap.utils.ts";
 import { createColorScale, NO_DATA_COLOR, NONE_OUTLINE } from "./baseMap.utils.ts";
 
 function luminance(hex: string): number {
@@ -14,6 +14,12 @@ function luminance(hex: string): number {
 const contrast = (a: string, b: string) => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
   return (hi + 0.05) / (lo + 0.05);
+};
+/** The colour a mark shows once drawn at `opacity` over the panel (what the eye sees, not the opaque value). */
+const overPanel = (value: string, opacity: number) => {
+  const channel = (hexValue: string, offset: number) => parseInt(hexValue.slice(offset, offset + 2), 16);
+  const mixed = [1, 3, 5].map((offset) => Math.round(opacity * channel(value, offset) + (1 - opacity) * channel(color.panel, offset)));
+  return `#${mixed.map((n) => n.toString(16).padStart(2, "0")).join("")}`;
 };
 const hex = (css: string) => {
   const m = /rgb\((\d+), (\d+), (\d+)\)/.exec(css);
@@ -31,8 +37,10 @@ const swatches: Record<string, string> = {
   "flow home": HOME_COLOR,
   "flow other": OTHER_COLOR,
   "flow bubble": BUBBLE_FILL,
+  // The bubble's fill is drawn at 0.55 and is 1.8:1 as drawn; its full-opacity outline (this entry) carries the 3:1.
   "flow bubble outline": BUBBLE_OUTLINE,
-  "flow arc": ARC_COLOR,
+  "flow arc as drawn": overPanel(ARC_COLOR, ARC_OPACITY),
+  "flow arrowhead as drawn": overPanel(ARC_COLOR, ARROWHEAD_OPACITY),
 };
 
 /** The "none" fills are the handoff's dark slate (close to the panel by design): their swatches carry an outline that must reach 3:1 instead. */

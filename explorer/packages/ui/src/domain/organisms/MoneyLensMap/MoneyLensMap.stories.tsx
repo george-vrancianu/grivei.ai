@@ -1,4 +1,3 @@
-import { onPanel } from "../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
@@ -7,6 +6,7 @@ import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { authoritySide, authoritySideNoUnplaced, supplierSide } from "../../samples/moneyMaps.ts";
 import type { MoneyMap } from "../../types.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "./index.ts";
+import { onPanel } from "../../../workbench/index.ts";
 
 const meta = { title: "Domain/MoneyLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;

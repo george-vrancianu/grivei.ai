@@ -27,11 +27,15 @@ describe("coverage lens utils", () => {
 
 describe("sharedCountyStatus", () => {
   const row = (county: string, status: CountyCoverage["status"]) => [county, { county, status } as CountyCoverage] as const;
-  it("is the status every county shares, ignoring NATIONAL", () => {
-    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "HARVESTED"), row("NATIONAL", "PARTIAL")]))).toBe("HARVESTED");
+  const counties = ["RO-BV", "RO-CJ"];
+  it("is the status every county shares, ignoring NATIONAL and other off-map rows", () => {
+    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "HARVESTED"), row("NATIONAL", "PARTIAL"), row("UNPLACED", "PARTIAL")]), counties)).toBe("HARVESTED");
   });
-  it("is null when the counties differ, or there are none", () => {
-    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "PARTIAL")]))).toBeNull();
-    expect(sharedCountyStatus(new Map([row("NATIONAL", "HARVESTED")]))).toBeNull();
+  it("is null when the counties differ, or the map has none", () => {
+    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED"), row("RO-CJ", "PARTIAL")]), counties)).toBeNull();
+    expect(sharedCountyStatus(new Map([row("NATIONAL", "HARVESTED")]), [])).toBeNull();
+  });
+  it("is null when a county has no row", () => {
+    expect(sharedCountyStatus(new Map([row("RO-BV", "HARVESTED")]), counties)).toBeNull();
   });
 });

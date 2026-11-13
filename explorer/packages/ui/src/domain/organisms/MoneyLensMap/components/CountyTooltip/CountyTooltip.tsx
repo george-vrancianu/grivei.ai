@@ -1,5 +1,6 @@
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { color } from "../../../../../theme/tokens.ts";
 import type { Total } from "../../../../types.ts";
 import type { MoneyLensMapCopy } from "../../moneyLensMap.types.ts";
 import { AreaFigures } from "../AreaFigures/index.ts";
@@ -16,11 +17,11 @@ export interface CountyTooltipProps {
 export function CountyTooltip({ name, total, locale, copy }: CountyTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
+      <Typography component="span" variant="meta" sx={{ display: "block", color: color.text, fontWeight: 600 }}>{name}</Typography>
       {total ? (
-        <AreaFigures total={total} locale={locale} copy={copy.tiles} />
+        <AreaFigures dense total={total} locale={locale} copy={copy.tiles} />
       ) : (
-        <Typography component="span" variant="body2" sx={{ display: "block" }}>{copy.map.noData}</Typography>
+        <Typography component="span" variant="meta" sx={{ display: "block", color: color.text2 }}>{copy.map.noData}</Typography>
       )}
     </>
   );

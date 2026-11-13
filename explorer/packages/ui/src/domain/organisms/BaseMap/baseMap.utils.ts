@@ -30,6 +30,8 @@ export type ColorScale = {
 // On the dark ground the ramp runs from a pale blue (0.15) to a mid blue (0.75): the darkest blues of d3's scale fall below 3:1 against the panel.
 export const RAMP_FROM = 0.15;
 export const RAMP_TO = 0.75;
+/** The blue the Coverage lens's harvested counties and the Flow lens's arcs share: a mid blue that reaches 3:1 against the panel (the old `#1b5e8c` was 2.5:1). */
+export const ADJUSTED_BLUE = "#2b78b0";
 const rampColor = (t: number) => interpolateBlues(RAMP_FROM + (RAMP_TO - RAMP_FROM) * t);
 
 /**

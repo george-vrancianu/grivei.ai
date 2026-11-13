@@ -1,5 +1,5 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { color, font, radius } from "../../../../../theme/tokens.ts";
+import { color, radius } from "../../../../../theme/tokens.ts";
 import type { ReactNode } from "react";
 
 export type MapTooltipProps = {
@@ -26,9 +26,7 @@ export function MapTooltip({ id, left, top, children }: MapTooltipProps) {
         whiteSpace: "nowrap",
         px: 1.5,
         py: 1,
-        fontFamily: font.mono,
-        fontSize: 12,
-        lineHeight: 1.5,
+        typography: "meta",
         color: color.text,
         backgroundColor: color.bg,
         border: `1px solid ${color.lineStrong}`,

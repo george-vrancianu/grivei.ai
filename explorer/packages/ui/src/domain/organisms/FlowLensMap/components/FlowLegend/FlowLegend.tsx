@@ -2,7 +2,7 @@ import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { EntityRole } from "../../../../types.ts";
 import type { FlowLegendCopy } from "../../flowLensMap.types.ts";
-import { ARC_COLOR, BUBBLE_FILL, BUBBLE_OUTLINE, HOME_COLOR, MAX_ARC_WIDTH, OTHER_COLOR } from "../../flowLensMap.utils.ts";
+import { ARC_COLOR, ARC_OPACITY, ARROWHEAD_OPACITY, BUBBLE_FILL, BUBBLE_OUTLINE, HOME_COLOR, MAX_ARC_WIDTH, OTHER_COLOR } from "../../flowLensMap.utils.ts";
 
 export interface FlowLegendProps {
   role: EntityRole;
@@ -30,8 +30,8 @@ export function FlowLegend({ role, hasHome, copy }: FlowLegendProps) {
         {hasHome && (
           <Box component="li" data-legend="arc" sx={row}>
             <Box component="svg" aria-hidden width={22} height={22} sx={{ flex: "none" }}>
-              <path d="M2,18 Q8,4 14,8" fill="none" stroke={ARC_COLOR} strokeOpacity={0.85} strokeWidth={MAX_ARC_WIDTH / 4} strokeLinecap="round" />
-              <polygon points="20,8 12,4 12,12" fill={ARC_COLOR} fillOpacity={0.75} />
+              <path d="M2,18 Q8,4 14,8" fill="none" stroke={ARC_COLOR} strokeOpacity={ARC_OPACITY} strokeWidth={MAX_ARC_WIDTH / 4} strokeLinecap="round" />
+              <polygon points="20,8 12,4 12,12" fill={ARC_COLOR} fillOpacity={ARROWHEAD_OPACITY} />
             </Box>
             <Typography variant="caption">{copy.arcWidth}</Typography>
           </Box>
@@ -39,8 +39,8 @@ export function FlowLegend({ role, hasHome, copy }: FlowLegendProps) {
         {hasHome && (
           <Box component="li" data-legend="direction" sx={row}>
             <Box component="svg" aria-hidden width={22} height={14} sx={{ flex: "none" }}>
-              <polygon points="21,7 13,2 13,12" fill={ARC_COLOR} fillOpacity={0.75} />
-              <line x1={1} y1={7} x2={13} y2={7} stroke={ARC_COLOR} strokeOpacity={0.85} strokeWidth={2} />
+              <polygon points="21,7 13,2 13,12" fill={ARC_COLOR} fillOpacity={ARROWHEAD_OPACITY} />
+              <line x1={1} y1={7} x2={13} y2={7} stroke={ARC_COLOR} strokeOpacity={ARC_OPACITY} strokeWidth={2} />
             </Box>
             <Typography variant="caption">{copy.arrow[role]}</Typography>
           </Box>

@@ -1,5 +1,6 @@
 import type { Locale } from "../../../theme/index.ts";
 import { color, map } from "../../../theme/tokens.ts";
+import { ADJUSTED_BLUE } from "../BaseMap/baseMap.utils.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { FIRST_YEAR } from "../../molecules/FilterChips/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
@@ -27,18 +28,24 @@ export const OTHER_HARVESTED_MARK_COLOR = color.text2;
  * The legend and the accessible names carry the status words, so colour is never the only cue.
  */
 export const COVERAGE_COLORS: Record<CoverageStatus, string> = {
-  HARVESTED: "#2b78b0",
+  HARVESTED: ADJUSTED_BLUE,
   HARVESTED_WITH_KNOWN_GAPS: "#8cc0e0",
   PARTIAL: "#f0c75e",
   NOT_HARVESTED: PLANNED_MARK_COLOR,
 };
 
 /**
- * The Coverage lens's caption condition: the one status every county shares, or null when the counties differ (or there are none).
- * `NATIONAL` is a row of its own, not a county. Derived from the data, so a Source harvested per county loses the caption by itself.
+ * The Coverage lens's caption condition: the one status every county of the map shares, or null when the counties differ, when any county
+ * has no row (it is drawn "no coverage status", so "every county" would be false) or when the map has none. Only the map's own counties
+ * count: `NATIONAL` and other off-map rows are not counties. Derived from the data, so a Source harvested per county loses the caption by itself.
  */
-export function sharedCountyStatus(rows: ReadonlyMap<string, CountyCoverage>): CoverageStatus | null {
-  const statuses = new Set([...rows].filter(([code]) => code !== "NATIONAL").map(([, row]) => row.status));
+export function sharedCountyStatus(rows: ReadonlyMap<string, CountyCoverage>, countyCodes: readonly string[]): CoverageStatus | null {
+  const statuses = new Set<CoverageStatus>();
+  for (const code of countyCodes) {
+    const row = rows.get(code);
+    if (!row) return null;
+    statuses.add(row.status);
+  }
   return statuses.size === 1 ? ([...statuses][0] ?? null) : null;
 }
 

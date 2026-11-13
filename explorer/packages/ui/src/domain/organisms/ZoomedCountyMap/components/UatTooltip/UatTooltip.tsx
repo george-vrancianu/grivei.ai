@@ -1,5 +1,6 @@
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { color } from "../../../../../theme/tokens.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import type { Total } from "../../../../types.ts";
 import { AreaFigures } from "../../../MoneyLensMap/index.ts";
@@ -20,14 +21,14 @@ export interface UatTooltipProps {
 export function UatTooltip({ name, total, authorities, locale, copy }: UatTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
+      <Typography component="span" variant="meta" sx={{ display: "block", color: color.text, fontWeight: 600 }}>{name}</Typography>
       {total ? (
-        <AreaFigures total={total} locale={locale} copy={copy.figures} />
+        <AreaFigures dense total={total} locale={locale} copy={copy.figures} />
       ) : (
-        <Typography component="span" variant="body2" sx={{ display: "block" }}>{copy.map.noData}</Typography>
+        <Typography component="span" variant="meta" sx={{ display: "block", color: color.text2 }}>{copy.map.noData}</Typography>
       )}
       {authorities !== undefined && (
-        <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.authorities(authorities, formatCount(authorities, false, locale))}</Typography>
+        <Typography component="span" variant="meta" sx={{ display: "block", color: color.text2 }}>{copy.authorities(authorities, formatCount(authorities, false, locale))}</Typography>
       )}
     </>
   );

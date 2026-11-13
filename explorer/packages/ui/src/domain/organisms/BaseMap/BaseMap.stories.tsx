@@ -1,8 +1,7 @@
-import { onPanel } from "../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
-import { pick } from "../../../workbench/index.ts";
+import { pick, onPanel } from "../../../workbench/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { sampleCopy, localeOf } from "../../samples/copy.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";

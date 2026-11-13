@@ -1,8 +1,8 @@
-import { onPanel } from "../../../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
 import { sampleSources } from "../../../../samples/coverageLenses.ts";
 import { CoverageLegend } from "./index.ts";
+import { onPanel } from "../../../../../workbench/index.ts";
 
 const meta = { title: "Domain/CoverageLensMap/CoverageLegend", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;

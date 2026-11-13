@@ -3,7 +3,7 @@ import type { Topology } from "topojson-specification";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import type { CoverageLens } from "../../types.ts";
-import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
+import { BaseMap, featuresOf, type AreaInfo } from "../BaseMap/index.ts";
 import type { MapArea } from "../MoneyLensMap/index.ts";
 import { CoverageLegend } from "./components/CoverageLegend/index.ts";
 import { CoverageTiles } from "./components/CoverageTiles/index.ts";
@@ -33,6 +33,7 @@ const NO_VALUES = {};
  */
 export function CoverageLensMap({ lens, topology, selected, onSelect, locale, copy }: CoverageLensMapProps) {
   const rows = useMemo(() => coverageByCounty(lens.coverage), [lens]);
+  const countyCodes = useMemo(() => featuresOf(topology).map((area) => area.properties.code), [topology]);
   const since = sinceText(lens.coverage.window, locale);
   const source = coverageSource(lens.sources)?.name ?? COVERAGE_SOURCE_ID;
   // The accessible name carries the status and the N of M sentence: the tooltip is not linked to the area for assistive tech.
@@ -54,7 +55,7 @@ export function CoverageLensMap({ lens, topology, selected, onSelect, locale, co
       legend={
         <>
           <CoverageLegend sources={lens.sources} copy={copy} />
-          {sharedCountyStatus(rows) !== null && (
+          {sharedCountyStatus(rows, countyCodes) !== null && (
             <Typography variant="caption" component="p" data-coverage-caption sx={{ mt: 1 }}>{copy.nationalCaption(source)}</Typography>
           )}
         </>

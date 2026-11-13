@@ -1,7 +1,8 @@
+import { color } from "../../../../../theme/tokens.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import { CoverageFigures, type CoverageFiguresProps } from "../CoverageFigures/index.ts";
 
-export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNote"> {
+export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNote" | "dense"> {
   name: string;
 }
 
@@ -9,8 +10,8 @@ export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNo
 export function CoverageTooltip({ name, ...figures }: CoverageTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
-      <CoverageFigures {...figures} withNote />
+      <Typography component="span" variant="meta" sx={{ display: "block", color: color.text, fontWeight: 600 }}>{name}</Typography>
+      <CoverageFigures {...figures} withNote dense />
     </>
   );
 }

@@ -1,9 +1,9 @@
-import { onPanel } from "../../../../../workbench/onPanel.tsx";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
 import { createColorScale } from "../../baseMap.utils.ts";
 import { Legend } from "./index.ts";
+import { onPanel } from "../../../../../workbench/index.ts";
 
 const meta = { title: "Domain/BaseMap/Legend", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;

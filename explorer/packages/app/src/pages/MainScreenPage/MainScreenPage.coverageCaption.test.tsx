@@ -9,21 +9,23 @@ import { openAt } from "../../testing/openAt.ts";
 
 afterEach(() => openAt("/"));
 
-/** Every county, and NATIONAL, harvested: one status for the whole country. */
-const oneStatus = (operation: string, data: unknown) => {
-  if (operation !== "CoverageLens") return data;
-  const { coverage } = data as { coverage: { counties: { status: string }[] } };
-  for (const row of coverage.counties) row.status = "HARVESTED";
+type Rows = { coverage: { counties: { county: string; status: string }[] } };
+
+/** The test topology's counties, each with a coverage row (a county without one cancels the caption), all with the given status. */
+const everyCounty = (data: unknown, status: (county: string) => string) => {
+  const { coverage } = data as Rows;
+  for (const county of ["RO-CJ", "RO-BV", "RO-B"]) {
+    if (!coverage.counties.some((row) => row.county === county)) coverage.counties.push({ ...coverage.counties[0]!, county });
+  }
+  for (const row of coverage.counties) row.status = status(row.county);
   return data;
 };
 
+/** Every county, and NATIONAL, harvested: one status for the whole country. */
+const oneStatus = (operation: string, data: unknown) => (operation === "CoverageLens" ? everyCounty(data, () => "HARVESTED") : data);
+
 /** A Source harvested per county: one county differs from the others. */
-const perCounty = (operation: string, data: unknown) => {
-  if (operation !== "CoverageLens") return data;
-  const { coverage } = data as { coverage: { counties: { status: string }[] } };
-  coverage.counties[0]!.status = coverage.counties[0]!.status === "HARVESTED" ? "NOT_HARVESTED" : "HARVESTED";
-  return data;
-};
+const perCounty = (operation: string, data: unknown) => (operation === "CoverageLens" ? everyCounty(data, (county) => (county === "RO-BV" ? "NOT_HARVESTED" : "HARVESTED")) : data);
 
 describe.each([
   { locale: "en", url: "/explore/?lens=coverage", caption: "SEAP is harvested nationally; gaps apply to every county" },

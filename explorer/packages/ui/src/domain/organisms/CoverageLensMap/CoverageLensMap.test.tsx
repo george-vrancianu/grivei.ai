@@ -163,9 +163,21 @@ describe("CoverageLensMap", () => {
   describe("the national caption", () => {
     const caption = (locale: Locale) => sampleCopy.coverageLensMap(locale).nationalCaption("SEAP");
 
+    // The sample leaves Galați without a row (the lens draws it "No coverage status"); give it one so every county has a status.
+    const everyCountyCovered: CoverageLens = {
+      ...nothingHarvestedCoverage,
+      coverage: { ...nothingHarvestedCoverage.coverage, counties: [...nothingHarvestedCoverage.coverage.counties, { ...nothingHarvestedCoverage.coverage.counties[0]!, county: "RO-GL" }] },
+    };
+
     it.each(["en", "ro"] as const)("shows when every county shares one status (%s)", (locale) => {
-      setup(nothingHarvestedCoverage, {}, locale);
+      setup(everyCountyCovered, {}, locale);
       expect(screen.getByText(caption(locale))).toBeVisible();
+    });
+
+    it("is absent when a county has no coverage row, even if the others share one status", () => {
+      setup(nothingHarvestedCoverage);
+      expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
+      expect(document.querySelector("[data-coverage-caption]")).toBeNull();
     });
 
     it("is absent when the counties' statuses differ", () => {
