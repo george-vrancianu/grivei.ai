@@ -24,6 +24,8 @@ export interface FullResultsCopy {
   showing: (from: string, to: string, total: string) => string;
   /** One sentence per tab for a search with no results. */
   empty: Record<ResultTab, string>;
+  /** The link under the empty sentence (to the Coverage lens), shown when the caller gives `emptyHref`. It must not suggest that nothing was spent. */
+  emptyLink: string;
   /** A page number past the last page; `pages` is the last page, `formatted` the same in the locale's number format. */
   outOfRange: (pages: number, formatted: string) => string;
   /** A page inside the page count that came back with no rows: the (estimated) count overshot. */
@@ -59,6 +61,8 @@ export interface FullResultsProps {
   /** The Records tab's current order (the API's default when the URL names none); the control shows only with `onOrderChange`. */
   order?: RecordOrder;
   onOrderChange?: (order: RecordOrder) => void;
+  /** Where the empty result's link (`copy.emptyLink`) goes (the Coverage lens, built by the caller); absent = no link. */
+  emptyHref?: string;
   /** Where "back to results" goes (the main screen with the same filter and tab); the link shows only with it. */
   backHref?: string;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
@@ -72,7 +76,7 @@ export interface FullResultsProps {
  * The page owns its width and gutter; this is the content.
  */
 export function FullResults({
-  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, backHref, entityHref, recordHref, locale, copy,
+  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, backHref, emptyHref, entityHref, recordHref, locale, copy,
 }: FullResultsProps) {
   const { tab } = results;
   const { count } = results.page;
@@ -108,7 +112,7 @@ export function FullResults({
         {tab === "records" && onOrderChange && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
       </Box>
       {citeUrl && <CiteLine framed url={citeUrl} copy={copy.cite} />}
-      {count === 0 && <PageNotice text={copy.empty[tab]} />}
+      {count === 0 && <PageNotice text={copy.empty[tab]} link={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }} onNavigate={onNavigate} />}
       {pastTheEnd && (
         <PageNotice
           text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}

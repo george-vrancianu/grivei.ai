@@ -117,6 +117,19 @@ describe("FullResults", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 
+  it("an empty result links to where emptyHref says, and only then", async () => {
+    const onNavigate = vi.fn();
+    const empty: FullResultsData = { tab: "records", page: { count: 0, rows: [] } };
+    const { unmount } = show(empty, 1);
+    expect(screen.queryByRole("link", { name: "Check what has been harvested" })).not.toBeInTheDocument();
+    unmount();
+    show(empty, 1, { emptyHref: "/explore/?lens=coverage", onNavigate });
+    const link = screen.getByRole("link", { name: "Check what has been harvested" });
+    expect(link).toHaveAttribute("href", "/explore/?lens=coverage");
+    await userEvent.setup().click(link);
+    expect(onNavigate).toHaveBeenCalledWith("/explore/?lens=coverage");
+  });
+
   it("a plain click on a page link goes to onNavigate; a modified click is left to the browser", async () => {
     const onNavigate = vi.fn();
     const user = userEvent.setup();

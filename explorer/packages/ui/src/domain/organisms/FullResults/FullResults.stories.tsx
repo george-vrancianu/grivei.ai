@@ -59,6 +59,10 @@ export const SinglePage: Story = { render: sample({ tab: "authorities", page: { 
 export const PageOutOfRange: Story = { render: sample({ tab: "records", page: { count: 11, rows: [] } }, 9, { pageSize: 4 }) };
 /** No Records match: the order control stays, the notice says so. */
 export const EmptyRecords: Story = { render: sample({ tab: "records", page: { count: 0, rows: [] } }, 1, { onOrderChange: () => {} }) };
+/** No Records match, with the link to the Coverage lens (county and dates kept) so the reader can check what was harvested. */
+export const EmptyRecordsWithCoverageLink: Story = {
+  render: sample({ tab: "records", page: { count: 0, rows: [] } }, 1, { onOrderChange: () => {}, emptyHref: "/explore/?county=RO-CJ&from=2023-01-01&to=2023-12-31&lens=coverage" }),
+};
 export const Empty: Story = { render: sample({ tab: "suppliers", page: { count: 0, countEstimated: false, rows: [] } }, 1) };
 /** An estimated count that overshoots: the page is inside the estimated pages but holds no rows, so it reads as past the end. */
 export const EstimatedCountOvershoots: Story = {

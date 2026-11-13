@@ -1,5 +1,5 @@
-import type { MainScreenQuery, MainScreenQueryVariables } from "../generated/operations.ts";
-import { moneyMap, ron, total } from "./builders.ts";
+import type { MainScreenQuery, MainScreenQueryVariables, ZoomedCountyQuery, ZoomedCountyQueryVariables } from "../generated/operations.ts";
+import { moneyMap, ron, total, zeroTotal } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
 import * as w from "./world.ts";
 
@@ -66,6 +66,48 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     },
   },
   {
+    name: "empty-no-match-county-dates",
+    kind: "empty",
+    description: "nothing matches inside a supplier-side county and a date chip: zero totals and empty tabs, so the empty state's Coverage link has a county and dates to keep",
+    variables: { filter: { q: "zzzzzz", county: "RO-CJ", countySide: "SUPPLIER", from: "2023-01-01", to: "2023-12-31" } },
+    data: {
+      sources,
+      seap: {
+        search: {
+          filter: { qFolded: "zzzzzz", authority: null, supplier: null },
+          total: zeroTotal,
+          map: moneyMap({ side: "SUPPLIER" }),
+          goTo: null,
+          facets: { procedure: [] },
+          authorities: { count: 0, countEstimated: false, rows: [] },
+          suppliers: { count: 0, countEstimated: false, rows: [] },
+          records: { count: 0, rows: [] },
+        },
+      },
+    },
+  },
+  {
+    name: "county-dates-no-query",
+    kind: "typical",
+    description: "Cluj with a date chip and no query: what the Coverage lens link of the empty state lands on, so the screen behind the followed link has its answers",
+    variables: { filter: { county: "RO-CJ", from: "2023-01-01", to: "2023-12-31" } },
+    data: {
+      sources,
+      seap: {
+        search: {
+          filter: { qFolded: null, authority: null, supplier: null },
+          total: total({ awarded: ron(15_000_000), records: 1 }),
+          map: moneyMap({ counties: [{ area: "RO-CJ", name: "Cluj", entities: 1, total: total({ awarded: ron(15_000_000), records: 1 }) }] }),
+          goTo: null,
+          facets: { procedure: procedureFacet },
+          authorities: { count: 1, countEstimated: false, rows: [{ entity: w.drumuriNationaleRow, matched: total({ awarded: ron(15_000_000), records: 1 }), signalCount: 0 }] },
+          suppliers: { count: 1, countEstimated: false, rows: [{ entity: w.constructiiRow, matched: total({ awarded: ron(15_000_000), records: 1 }), signalCount: 0 }] },
+          records: { count: 1, rows: [{ record: w.rConsortium, matchedField: null, areaShare: null }] },
+        },
+      },
+    },
+  },
+  {
     name: "extreme-estimated-counts",
     kind: "extreme",
     description: "very large numbers and HyperLogLog estimates: countEstimated true on both tabs; a sum above 2^53 bani, which only survives as a string",
@@ -87,6 +129,20 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
           records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: { field: "TITLE", text: "Consumabile birotică", highlights: [[0, 2]] }, areaShare: null }] },
         },
       },
+    },
+  },
+];
+
+/** The zoomed-county answers a recorded run does not hold (a county with a date chip). */
+export const zoomedCountyHand: FixtureSet<ZoomedCountyQuery, ZoomedCountyQueryVariables> = [
+  {
+    name: "county-dates-no-query",
+    kind: "typical",
+    description: "Cluj inside a date chip and no query, with no UAT money: the zoomed answer behind the empty state's Coverage link, so the followed link has every request answered",
+    variables: { filter: { county: "RO-CJ", from: "2023-01-01", to: "2023-12-31" }, county: "RO-CJ" },
+    data: {
+      uats: [{ siruta: "990001", name: "Cluj-Napoca", county: { code: "RO-CJ", name: "Cluj" } }],
+      seap: { search: { total: total({ awarded: ron(15_000_000), records: 1 }), uatMap: { uats: [], unknownUat: null } } },
     },
   },
 ];

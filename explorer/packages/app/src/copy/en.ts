@@ -78,6 +78,7 @@ export const en: Copy = {
     label: "Results",
     tabs: { authorities: "Authorities", suppliers: "Suppliers", records: "Records" },
     empty: { authorities: "No authorities match.", suppliers: "No suppliers match.", records: "No Records match." },
+    emptyLink: "Check what has been harvested",
     showAll: (_n, formatted) => `Show all ${formatted}`,
     goTo: { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" },
     entityRow: {

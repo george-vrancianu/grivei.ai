@@ -15,6 +15,7 @@ import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
@@ -155,6 +156,9 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
               showAllHref={(name) => `${pathFor(locale, { name: "search" })}${encodeUrlState({ filter, ...(name !== DEFAULT_RESULT_TAB ? { tab: name } : {}) })}`}
               recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
+              // An empty tab links to the Coverage lens with the county and dates kept, to check whether "nothing" means "not harvested".
+              emptyHref={coverageLensHref(locale, filter)}
+              onNavigate={(href) => navigate(href, "push")}
               locale={locale}
               copy={t.results}
             />

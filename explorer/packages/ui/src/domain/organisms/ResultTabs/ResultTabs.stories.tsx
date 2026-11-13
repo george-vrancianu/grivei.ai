@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { pick } from "../../../workbench/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { resultSamples } from "../../samples/fixtureData.ts";
 import { ResultTabs, type ResultTabsProps } from "./index.ts";
@@ -39,10 +38,7 @@ export const EmptyRecords: Story = { render: sample(resultSamples.empty, { tab: 
 /** The "show all" slot: more rows exist than shown, and the caller says where the full list lives. */
 export const ShowAll: Story = { render: sample(resultSamples.estimated, { showAllHref: (tab) => `/explore/search?tab=${tab}` }) };
 
-/** An empty tab can offer a next step under its sentence (#105 puts the Coverage lens link here). */
-export const EmptyWithAction: Story = {
-  render: sample(resultSamples.empty, (locale) => ({
-    tab: "records",
-    emptyAction: () => <a href="/explore/?lens=coverage">{pick(locale, { en: "See what is covered", ro: "Vezi ce este acoperit" })}</a>,
-  })),
+/** An empty tab says so and links to the Coverage lens with the county and dates kept (the app builds the URL with its codec): the reader can check whether "nothing" means "not harvested". */
+export const EmptyWithCoverageLink: Story = {
+  render: sample(resultSamples.empty, { tab: "records", emptyHref: "/explore/?county=RO-CJ&from=2023-01-01&to=2023-12-31&lens=coverage" }),
 };

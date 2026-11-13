@@ -123,6 +123,19 @@ describe("ResultTabs", () => {
     expect(screen.getByRole("tabpanel")).toHaveTextContent("No Records.");
   });
 
+  it.each(["en", "ro"] as const)("links every empty tab to emptyHref with the catalogue's link text (%s), and not without it", async (locale) => {
+    const copy = sampleCopy.resultTabs(locale);
+    const user = userEvent.setup();
+    const { unmount } = renderInUi(<ResultTabs {...base(resultSamples.empty, locale)} emptyHref="/explore/?lens=coverage" />);
+    for (const tab of [copy.tabs.suppliers, copy.tabs.authorities, copy.tabs.records]) {
+      await user.click(screen.getByRole("tab", { name: new RegExp(`^${tab}`) }));
+      expect(within(screen.getByRole("tabpanel")).getByRole("link", { name: copy.emptyLink })).toHaveAttribute("href", "/explore/?lens=coverage");
+    }
+    unmount();
+    renderInUi(<ResultTabs {...base(resultSamples.empty, locale)} />);
+    expect(screen.queryByRole("link", { name: copy.emptyLink })).toBeNull();
+  });
+
   it("offers 'show all' only when the caller gives a URL and there are more rows than shown", () => {
     const { unmount } = renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
     expect(screen.getByRole("link", { name: "Show all 240,000" })).toHaveAttribute("href", "/explore/search?tab=suppliers");

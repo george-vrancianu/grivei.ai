@@ -83,6 +83,7 @@ export const ro: Copy = {
     label: "Rezultate",
     tabs: { authorities: "Autorități", suppliers: "Furnizori", records: "Înregistrări" },
     empty: { authorities: "Nicio autoritate nu corespunde.", suppliers: "Niciun furnizor nu corespunde.", records: "Nicio înregistrare nu corespunde." },
+    emptyLink: "Verifică ce a fost colectat",
     showAll: (_n, formatted) => `Arată toate cele ${formatted}`,
     goTo: { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" },
     entityRow: {

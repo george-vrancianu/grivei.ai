@@ -1,4 +1,6 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { renderInUi } from "../../../../../testing/render.tsx";
 import { ResultTabPanel } from "./index.ts";
 
@@ -16,6 +18,18 @@ describe("ResultTabPanel", () => {
   it("says so when there are no rows, and offers no 'show all' link", () => {
     renderInUi(<ResultTabPanel {...props} selected shown={0} count={0} showAll={{ href: "/all", text: "Show all" }}><p>rows</p></ResultTabPanel>);
     expect(screen.getByText("Nothing.")).toBeVisible();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("links an empty panel to emptyLink, handing a plain click to onNavigate, and not when the panel has rows", async () => {
+    const onNavigate = vi.fn();
+    const emptyLink = { href: "/explore/?lens=coverage", text: "Check what has been harvested" };
+    const { rerender } = renderInUi(<ResultTabPanel {...props} selected shown={0} count={0} emptyLink={emptyLink} onNavigate={onNavigate}><p>rows</p></ResultTabPanel>);
+    const link = screen.getByRole("link", { name: emptyLink.text });
+    expect(link).toHaveAttribute("href", emptyLink.href);
+    await userEvent.setup().click(link);
+    expect(onNavigate).toHaveBeenCalledWith(emptyLink.href);
+    rerender(<ResultTabPanel {...props} selected shown={2} emptyLink={emptyLink}><p>rows</p></ResultTabPanel>);
     expect(screen.queryByRole("link")).toBeNull();
   });
 
