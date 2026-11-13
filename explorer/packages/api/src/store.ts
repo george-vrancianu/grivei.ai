@@ -451,6 +451,24 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   }
 
   /**
+   * A Total counted on each Record's first winner row (the authority side, winners not restricted), per area when `areaCol` is given.
+   * pg_search pushes a `count(*) FILTER (WHERE ...)` down to the index as a filter sub-aggregation of its own, and on the full load those
+   * outgrow the aggregation's memory budget (`MemoryExceeded`). So the index groups on bare columns (an expression would stop the pushdown)
+   * and Postgres folds the few groups: `count(value_bani)` counts the rows with a value, the rest have none. `areaOut` is the outer area
+   * expression (the zoomed county maps a null UAT to NO_UAT there, outside the pushed-down grouping).
+   */
+  function firstRowTotalsSql(w: Where, areaCol?: string, areaOut = "area"): string {
+    const inner = areaCol ? `${areaCol} AS area, ` : "";
+    const byArea = areaCol ? `${areaCol}, ` : "";
+    return `SELECT ${areaCol ? `${areaOut} AS area, ` : ""}coalesce(sum(sh), 0)::text AS awarded, coalesce(sum(n) FILTER (WHERE pos = 1), 0)::int AS records,
+                   coalesce(sum(n) FILTER (WHERE pos = 1 AND suspect), 0)::int AS suspect_left_out,
+                   coalesce(sum(n - with_value) FILTER (WHERE pos = 1), 0)::int AS no_value,
+                   coalesce(sum(ceil) FILTER (WHERE pos = 1), 0)::text AS framework_ceilings
+              FROM (SELECT ${inner}winner_position AS pos, suspect, sum(share_bani) AS sh, count(*) AS n, count(value_bani) AS with_value, sum(ceiling_bani) AS ceil
+                      FROM seap.search WHERE ${w.sql} GROUP BY ${byArea}winner_position, suspect) g${areaCol ? ` GROUP BY 1 ORDER BY 1` : ""}`;
+  }
+
+  /**
    * One Total and one distinct-entity count per value of `areaCol`. The counting rule is not applied here, only summed (see searchTotal):
    * - authority side, winners not restricted: every matching row's share sums to the Record's counted value, the Record is counted on its first row;
    * - otherwise (the supplier side, or the filter restricts the winners): each (area, Record) once, with the shares of the winners that matched.
@@ -468,11 +486,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
              FROM (SELECT ${area} AS area, record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
                      FROM seap.search WHERE ${w.sql} GROUP BY ${area}, record_code) g
             GROUP BY area ORDER BY area`
-        : `SELECT ${area} AS area, coalesce(sum(share_bani), 0)::text AS awarded, (count(*) FILTER (WHERE winner_position = 1))::int AS records,
-                  (count(*) FILTER (WHERE winner_position = 1 AND suspect))::int AS suspect_left_out,
-                  (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int AS no_value,
-                  coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
-             FROM seap.search WHERE ${w.sql} GROUP BY ${area} ORDER BY area`,
+        : firstRowTotalsSql(w, areaCol, areaCol === "authority_uat" ? `coalesce(area, '${NO_UAT}')` : "area"),
       w.params,
     );
     const entities = await cancellableQuery<{ area: string; n: number }>(
@@ -508,11 +522,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
                   (count(*) FILTER (WHERE no_value))::int AS no_value, coalesce(sum(ceil), 0)::text AS framework_ceilings
              FROM (SELECT record_code, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
                      FROM seap.search WHERE ${w.sql} GROUP BY record_code) g`
-        : `SELECT coalesce(sum(share_bani), 0)::text AS awarded, (count(*) FILTER (WHERE winner_position = 1))::int AS records,
-                  (count(*) FILTER (WHERE winner_position = 1 AND suspect))::int AS suspect_left_out,
-                  (count(*) FILTER (WHERE winner_position = 1 AND value_bani IS NULL))::int AS no_value,
-                  coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text AS framework_ceilings
-             FROM seap.search WHERE ${w.sql}`;
+        : firstRowTotalsSql(w);
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
   };
 
