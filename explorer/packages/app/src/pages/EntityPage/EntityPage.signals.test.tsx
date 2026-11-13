@@ -48,7 +48,8 @@ describe("the Overview's Signals (English)", () => {
     // the numbers of an over-cap Signal: the value, the multiple and the cap
     const over = within(cards()[3]!);
     expect(over.getByText(/^One direct purchase was awarded for RON .*, .* times the direct-purchase cap of RON /)).toBeVisible();
-    expect(screen.queryByText(/score|rank|riskiest/i)).toBeNull();
+    // the footer's "never scored" is the shell's principle, not a score on the page
+    expect(screen.queryAllByText(/score|rank|riskiest/i).filter((el) => !el.closest("footer"))).toEqual([]);
   });
 
   it("orders them by value when the URL says so (still no score)", async () => {
