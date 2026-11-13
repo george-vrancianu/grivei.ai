@@ -2,7 +2,8 @@ import { Link } from "../../../../../atoms/Link/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityRole, RecordPageData } from "../../../../types.ts";
@@ -36,11 +37,12 @@ export interface FrameworkSectionProps {
  * the link to the agreement on a subsequent contract, and the list of subsequent contracts on the agreement.
  */
 export function FrameworkSection({ framework, entityHref, recordHref, onNavigate, locale, copy }: FrameworkSectionProps) {
-  const reported = formatMoney(framework.subsequentReported, locale, { showBani: true });
+  const reported = <MoneyAmount key="reported" bani={framework.subsequentReported} locale={locale} showBani />;
+  const { ceiling, ratio } = framework;
   const line =
-    framework.ceiling === null || framework.ratio === null
-      ? copy.lineBlankCeiling(reported)
-      : copy.line(formatMoney(framework.ceiling, locale, { showBani: true }), reported, formatRatio(framework.ratio, locale));
+    ceiling === null || ratio === null
+      ? withNodes(copy.lineBlankCeiling, [reported])
+      : withNodes((ceilingText, sum) => copy.line(ceilingText, sum, formatRatio(ratio, locale)), [<MoneyAmount key="ceiling" bani={ceiling} locale={locale} showBani />, reported]);
   const { agreement } = framework;
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>

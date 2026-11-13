@@ -7,7 +7,7 @@ import type { EntityRef, EntityRole, SignalData } from "../../types.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import type { SignalBadgeCopy } from "../../molecules/SignalBadge/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
-import { signalSentence } from "../../utils/signalWording.ts";
+import { signalSentenceNodes } from "../../utils/signalSentenceNodes.tsx";
 import { SignalLinks, type SignalLinksCopy } from "./components/SignalLinks/index.ts";
 import { SignalParties, type SignalPartiesCopy } from "./components/SignalParties/index.ts";
 
@@ -48,7 +48,7 @@ export function SignalCard({ signal, reproduceHref, methodologyHref, seapHref, e
           <Typography variant="h6" component="h3">
             {rule.label}
           </Typography>
-          <Typography>{signalSentence(signal, locale, copy.rules)}</Typography>
+          <Typography>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>
           <Typography variant="body2" color="text.secondary">
             {rule.lawful}
           </Typography>

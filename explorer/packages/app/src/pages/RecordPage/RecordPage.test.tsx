@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
+import { sentence } from "../../testing/sentence.ts";
 
 function open(url: string) {
   openAt(url);
@@ -97,7 +98,7 @@ describe("a Record page", () => {
     await openRecorded("award-notice-consortium");
     expect(screen.getByText("Award notice")).toBeInTheDocument();
     expect(valueOf("Counted value")).toHaveTextContent("RON 98,800.00");
-    expect(screen.getAllByText(/equal share RON 49,400.00/)).toHaveLength(2);
+    expect(screen.getAllByText(sentence(/equal share RON 49,400.00/))).toHaveLength(2);
   });
 
   it("links the authority and the winner to their pages, in the language's prefix", async () => {
@@ -110,7 +111,7 @@ describe("a Record page", () => {
   it("shows a consortium's full value, each member's equal share and the convention label; a natural person among them is unnamed", async () => {
     await openRecorded("consortium-with-natural-person");
     expect(valueOf("Counted value")).toHaveTextContent("RON 1,000.00");
-    expect(screen.getAllByText(/equal share RON 333.3[34]/)).toHaveLength(3);
+    expect(screen.getAllByText(sentence(/equal share RON 333.3[34]/))).toHaveLength(3);
     expect(screen.getByText(/counting convention, not a figure SEAP publishes/)).toBeInTheDocument();
     const winners = within(screen.getByText("Winners").nextElementSibling as HTMLElement);
     expect(winners.getByText(/Persoană fizică/)).toBeInTheDocument();
@@ -127,7 +128,7 @@ describe("a Record page", () => {
 
   it("shows the framework line with its percentage and lists the subsequent contracts, with links that keep the code's encoding", async () => {
     await openRecorded("framework-agreement");
-    expect(screen.getByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeInTheDocument();
+    expect(screen.getByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeInTheDocument();
     const framework = region("Framework agreement");
     const hrefs = framework.getAllByRole("link").map((l) => l.getAttribute("href")).filter((h) => h?.startsWith("/explore/record/"));
     expect(hrefs).toEqual(["/explore/record/CAN9800001~2", "/explore/record/CAN9800001~3"]);
@@ -143,12 +144,12 @@ describe("a Record page", () => {
     expect(back).toHaveAttribute("href", "/explore/record/CAN9800001~1");
     await userEvent.setup().click(back);
     expect(window.location.pathname).toBe("/explore/record/CAN9800001~1");
-    expect(await screen.findByText("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)")).toBeInTheDocument();
+    expect(await screen.findByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeInTheDocument();
   });
 
   it("leaves the percentage out when the framework's ceiling is blank", async () => {
     await openRecorded("framework-blank-ceiling");
-    expect(screen.getByText("Ceiling not published; subsequent contracts reported so far RON 500,000.00")).toBeInTheDocument();
+    expect(screen.getByText(sentence("Ceiling not published; subsequent contracts reported so far RON 500,000.00"))).toBeInTheDocument();
     expect(screen.queryByText(/%/)).toBeNull();
     expect(valueOf("Value as published")).toHaveTextContent("No value in SEAP");
   });

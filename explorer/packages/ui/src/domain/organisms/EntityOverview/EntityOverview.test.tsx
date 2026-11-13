@@ -8,6 +8,7 @@ import {
 } from "../../samples/fixtureData.ts";
 import type { EntityAliases, EntityOverviewData, EntityRole } from "../../types.ts";
 import { EntityOverview } from "./index.ts";
+import { sentence } from "../../../testing/sentence.ts";
 
 function show(data: { overview: EntityOverviewData; aliases: EntityAliases }, role: EntityRole, locale: Locale = "en", signals?: React.ReactNode) {
   renderInUi(
@@ -52,7 +53,7 @@ describe("the Overview tab", () => {
 
   it("lists every section of an authority with many counterparties, and the framework line with its ceilings", () => {
     show(authorityManyCounterpartiesOverview, "authority");
-    expect(screen.getByText("4 framework agreements, ceilings RON 100,000,000, reported subsequent contracts RON 112,400,000")).toBeVisible();
+    expect(screen.getByText(sentence("4 framework agreements, ceilings RON 100,000,000, reported subsequent contracts RON 112,400,000"))).toBeVisible();
     expect(screen.getByRole("region", { name: "Consortia" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Procedure types" })).toBeVisible();
     expect(screen.getByText("and 216 more")).toBeVisible();

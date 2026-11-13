@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { renderInUi } from "../../../testing/render.tsx";
 import { baniToRon, formatMoney } from "./index.ts";
 import { MoneyAmount } from "./index.ts";
 
@@ -44,5 +45,17 @@ describe("MoneyAmount", () => {
     expect(baniToRon("-1234")).toBe("-12.34");
     expect(() => baniToRon("12.5")).toThrow();
     expect(() => baniToRon("1e5")).toThrow();
+  });
+  it("is set in the money variant: Plex Mono with tabular figures, at the size of the text around it", () => {
+    renderInUi(
+      <p style={{ fontSize: "40px" }}>
+        <MoneyAmount bani="142000000" locale="en" />
+      </p>,
+    );
+    const amount = screen.getByText(/RON/);
+    const style = getComputedStyle(amount);
+    expect(style.fontFamily).toContain("IBM Plex Mono");
+    expect(style.fontVariantNumeric).toBe("tabular-nums");
+    expect(style.fontSize).toBe("40px");
   });
 });

@@ -12,8 +12,14 @@ import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/
 export interface Copy {
   brand: string;
   nav: { label: string; explore: string; search: string; coverage: string; methodology: string };
+  /** The footer on every page: where the data comes from, and the counting principle. */
+  footer: { provenance: string; signals: string };
   language: {
-    /** The other language's own name, shown as the link text. */
+    /** The accessible name of the EN/RO group. */
+    groupLabel: string;
+    /** The current language's code (EN, RO), shown as the marked segment. */
+    current: string;
+    /** The other language's code, shown as the link text. */
     switchTo: string;
     /** The link's accessible name. */
     switchLabel: string;

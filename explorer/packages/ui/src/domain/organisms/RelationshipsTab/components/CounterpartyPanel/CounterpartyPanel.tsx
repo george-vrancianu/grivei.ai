@@ -6,7 +6,8 @@ import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import { PageNav } from "../../../../molecules/PageNav/index.ts";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { CounterpartyRecordsData, EntityRef, EntityRole, RecordResult } from "../../../../types.ts";
@@ -56,7 +57,7 @@ export function CounterpartyPanel({
         </Box>
         {records && (
           <Typography variant="body2" color="text.secondary">
-            {panel.total(formatMoney(records.total.awarded, locale), copy.recordCount(records.total.records, formatCount(records.total.records, records.total.estimated, locale)))}
+            {withNodes((amount) => panel.total(amount, copy.recordCount(records.total.records, formatCount(records.total.records, records.total.estimated, locale))), [<MoneyAmount bani={records.total.awarded} locale={locale} />])}
           </Typography>
         )}
         {loading && !records && (

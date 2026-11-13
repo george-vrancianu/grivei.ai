@@ -4,6 +4,7 @@ import { sampleCopy } from "../../samples/copy.ts";
 import { totalExtreme, totalTypical, totalWithLeftOut } from "../../samples/fixtureData.ts";
 import type { Total } from "../../types.ts";
 import { TotalFigure } from "./index.ts";
+import { sentence } from "../../../testing/sentence.ts";
 
 const base = { methodologyHref: "/methodology/", suspectHref: "/explore/?badge=SUSPECT_VALUE" };
 const empty: Total = { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false };
@@ -29,7 +30,7 @@ describe("TotalFigure", () => {
   it("shows no-value Records and framework ceilings, and stays silent about zero parts", () => {
     renderInUi(<TotalFigure total={totalWithLeftOut} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText("1 Record with no value")).toBeVisible();
-    expect(screen.getByText(/Framework ceilings not counted: RON\s100,000,000/)).toBeVisible();
+    expect(screen.getByText(sentence(/Framework ceilings not counted: RON 100,000,000/))).toBeVisible();
     expect(screen.getByRole("link", { name: "1 suspect value left out" })).toBeVisible();
   });
   it("hides every left-out line when nothing was left out", () => {

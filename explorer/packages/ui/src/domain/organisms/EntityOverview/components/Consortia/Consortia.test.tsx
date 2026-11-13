@@ -4,6 +4,7 @@ import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
 import { authorityManyCounterpartiesOverview } from "../../../../samples/fixtureData.ts";
 import { Consortia } from "./index.ts";
+import { sentence } from "../../../../../testing/sentence.ts";
 
 const consortia = authorityManyCounterpartiesOverview.overview.consortia;
 const show = (list: typeof consortia) =>
@@ -13,7 +14,7 @@ describe("Consortia", () => {
   it("lists the members as supplier links with their equal share, and says the share is a convention", () => {
     show(consortia);
     expect(screen.getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/explore/supplier/30000002");
-    expect(screen.getAllByText(/equal share RON 15,000,000/)).toHaveLength(2);
+    expect(screen.getAllByText(sentence(/\(equal share RON 15,000,000\)/))).toHaveLength(2);
     expect(screen.getByText(/counting convention/)).toBeVisible();
   });
 

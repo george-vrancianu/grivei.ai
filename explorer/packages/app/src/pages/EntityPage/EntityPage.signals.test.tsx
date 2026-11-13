@@ -8,6 +8,7 @@ import { App } from "../../App.tsx";
 import { createClient } from "../../graphql/client.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
+import { sentence } from "../../testing/sentence.ts";
 import { openAt } from "../../testing/openAt.ts";
 import { overviewNamed, overviewsWithSignals, overviewUrl } from "../../testing/signalRecordings.ts";
 import { fixtures } from "@grivei/contract/fixtures";
@@ -47,8 +48,9 @@ describe("the Overview's Signals (English)", () => {
     expect(two.getByText("Latest Record: 10 February 2023 · 2 Records")).toBeVisible();
     // the numbers of an over-cap Signal: the value, the multiple and the cap
     const over = within(cards()[3]!);
-    expect(over.getByText(/^One direct purchase was awarded for RON .*, .* times the direct-purchase cap of RON /)).toBeVisible();
-    expect(screen.queryByText(/score|rank|riskiest/i)).toBeNull();
+    expect(over.getByText(sentence(/^One direct purchase was awarded for RON .*, .* times the direct-purchase cap of RON /))).toBeVisible();
+    // the footer's "never scored" is the shell's principle, not a score on the page
+    expect(screen.queryAllByText(/score|rank|riskiest/i).filter((el) => !el.closest("footer"))).toEqual([]);
   });
 
   it("orders them by value when the URL says so (still no score)", async () => {
@@ -83,13 +85,13 @@ describe("the Overview's Signals (English)", () => {
   it("lists one card per rule on the pages of the splitting and framework-overrun archives, each linking its rule's methodology section", async () => {
     await opened(overviewUrl(overviewNamed("splitting-authority").variables), "Signals (3)");
     expect(cards().map((c) => within(c).getByRole("heading").textContent)).toEqual(["Splitting", "Splitting", "Splitting"]);
-    expect(within(cards()[1]!).getByText(/^3 direct purchases in CPV group 301 between 1 March 2023 and 8 April 2023 add up to RON .*, above the single-purchase cap of RON /)).toBeVisible();
+    expect(within(cards()[1]!).getByText(sentence(/^3 direct purchases in CPV group 301 between 1 March 2023 and 8 April 2023 add up to RON .*, above the single-purchase cap of RON /))).toBeVisible();
     for (const c of cards()) expect(within(c).getByRole("link", { name: "How this Signal is detected" })).toHaveAttribute("href", "/explore/methodology#signal-splitting");
   });
 
   it("shows the framework-overrun Signal with its ceiling, the subsequent total and the ratio", async () => {
     await opened(overviewUrl(overviewNamed("framework-overrun-authority").variables), "Signals (2)");
-    expect(within(cards()[0]!).getByText(/^Subsequent contracts reported under one framework agreement add up to RON 1,250,000.00, against a ceiling of RON 1,000,000.00: 125% of it\./)).toBeVisible();
+    expect(within(cards()[0]!).getByText(sentence(/^Subsequent contracts reported under one framework agreement add up to RON 1,250,000.00, against a ceiling of RON 1,000,000.00: 125% of it\./))).toBeVisible();
     expect(within(cards()[0]!).getByRole("link", { name: "See the 4 Records" })).toBeVisible();
   });
 

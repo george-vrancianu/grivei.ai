@@ -19,6 +19,7 @@ export function BadgeChips({ label, selected, onToggle, copy }: BadgeChipsProps)
       {RECORD_BADGES.map((badge) => (
         <ToggleChip
           key={badge}
+          size="small"
           label={copy[badge].label}
           description={copy[badge].explanation}
           pressed={(selected ?? []).includes(badge)}

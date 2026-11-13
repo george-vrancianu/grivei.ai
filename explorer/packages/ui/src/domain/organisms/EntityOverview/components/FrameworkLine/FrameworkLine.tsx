@@ -2,7 +2,8 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
+import { withNodes } from "../../../../utils/withNodes.tsx";
 import type { OverviewFrameworks } from "../../../../types.ts";
 
 export interface FrameworkLineCopy {
@@ -33,7 +34,10 @@ export function FrameworkLine({ frameworks, locale, copy }: FrameworkLineProps) 
       ) : (
         <>
           <Typography>
-            {copy.line(frameworks.count, formatCount(frameworks.count, false, locale), formatMoney(frameworks.ceilings, locale), formatMoney(frameworks.subsequentReported, locale))}
+            {withNodes((ceilings, reported) => copy.line(frameworks.count, formatCount(frameworks.count, false, locale), ceilings, reported), [
+              <MoneyAmount key="ceilings" bani={frameworks.ceilings} locale={locale} />,
+              <MoneyAmount key="reported" bani={frameworks.subsequentReported} locale={locale} />,
+            ])}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {copy.note}

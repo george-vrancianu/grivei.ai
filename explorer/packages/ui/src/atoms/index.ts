@@ -21,5 +21,7 @@ export * from "./TablePagination/index.ts";
 export * from "./TableRow/index.ts";
 export * from "./Tabs/index.ts";
 export * from "./TextField/index.ts";
+export * from "./ToggleButton/index.ts";
+export * from "./ToggleButtonGroup/index.ts";
 export * from "./Tooltip/index.ts";
 export * from "./Typography/index.ts";
