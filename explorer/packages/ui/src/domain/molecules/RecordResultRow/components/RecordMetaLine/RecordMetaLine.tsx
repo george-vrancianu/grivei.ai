@@ -1,6 +1,7 @@
-import { Chip } from "../../../../../atoms/Chip/index.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { color, radius } from "../../../../../theme/tokens.ts";
 import type { RecordResult } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
@@ -21,10 +22,11 @@ export function RecordMetaLine({ record, locale, copy }: RecordMetaLineProps) {
     <Typography
       component="div"
       variant="caption"
-      color="text.secondary"
-      sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1.5, rowGap: 0.5, fontFamily: "monospace" }}
+      sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1.5, rowGap: 0.5 }}
     >
-      <Chip size="small" variant="outlined" label={copy.channel[record.channel]} />
+      <Box component="span" sx={{ border: `1px solid ${color.lineStrong}`, borderRadius: `${radius.chip}px`, px: 1, py: "2px", color: "text.primary" }}>
+        {copy.channel[record.channel]}
+      </Box>
       <span>{record.code}</span>
       {record.date && <time dateTime={record.date}>{formatDate(record.date, locale)}</time>}
       {record.procedure && <span>{record.procedure}</span>}

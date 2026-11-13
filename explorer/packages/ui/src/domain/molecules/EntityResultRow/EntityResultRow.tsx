@@ -45,7 +45,7 @@ export function EntityResultRow({ row, href, locale, copy, extra }: EntityResult
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
           <EntityLink entity={entity} href={href} copy={copy.entityLink} />
         </Typography>
-        <Typography component="div" variant="caption" color="text.secondary" sx={{ fontFamily: "monospace" }}>
+        <Typography component="div" variant="caption">
           {meta.join(" · ")}
         </Typography>
       </Stack>
@@ -54,7 +54,7 @@ export function EntityResultRow({ row, href, locale, copy, extra }: EntityResult
         <Typography component="span" variant="body1" sx={{ fontWeight: 600 }}>
           <MoneyAmount bani={matched.awarded} locale={locale} />
         </Typography>
-        <Typography component="span" variant="caption" color="text.secondary">
+        <Typography component="span" variant="caption">
           {copy.matched}
         </Typography>
       </Stack>

@@ -1,3 +1,4 @@
+import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
   chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, StateNote, toMapLens, toResultTab, Typography,
@@ -30,6 +31,8 @@ const SEARCHED_SOURCE = "SEAP";
  * Money lens map, the Total and the result tabs, so the three always describe the same matching set. The whole state
  * (query, chips, county, side, tab, lens) lives in the URL through the codec; a change replaces the history entry.
  */
+type MainScreenSources = MainScreenQuery["sources"];
+
 export function MainScreenPage({ locale }: { locale: Locale }) {
   const t = useCopy();
   const { filter, tab, lens, search: currentSearch, update, setFilter } = useUrlState();
@@ -47,8 +50,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
   const coverageGrid = useCoveragePage(coverageShown ? {} : null);
   const side: CountySide = filter.countySide ?? "AUTHORITY";
-  // The eyebrow keeps the last Sources it received while a new query loads, so the Source's name does not drop back to its id.
-  const [lastSources, setLastSources] = useState<readonly { id: string; name: string }[]>([]);
+  // The eyebrow and the data-through note keep the last Sources they received while a new query loads, so neither drops back to the id or leaves the map panel's foot.
+  const [lastSources, setLastSources] = useState<MainScreenSources>([]);
   if (state.status === "ready" && state.data.sources !== lastSources) setLastSources(state.data.sources);
   const eyebrowId = useId();
 
@@ -136,7 +139,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           />
         )
       }
-      mapNote={state.status === "ready" && <MainDataThrough sources={state.data.sources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
+      mapNote={<MainDataThrough sources={lastSources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>
           {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}

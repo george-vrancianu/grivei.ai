@@ -71,9 +71,10 @@ describe("RecordDetail", () => {
   it("shows the title as the heading, with date, kind, procedure, contract type and CPV as published", () => {
     show(contractRecord);
     expect(screen.getByRole("heading", { level: 1, name: contractRecord.title })).toBeVisible();
-    expect(screen.getAllByText("20 January 2025")[0]).toBeVisible();
-    expect(screen.getAllByText("Contract")[0]).toBeVisible();
-    expect(screen.getAllByText("Licitatie deschisa")[0]).toBeVisible();
+    const header = within(screen.getByRole("heading", { level: 1 }).parentElement!);
+    expect(header.getByText("20 January 2025")).toBeVisible();
+    expect(header.getByText("Contract")).toBeVisible();
+    expect(header.getByText("Licitatie deschisa")).toBeVisible();
     expect(screen.getByText("Servicii")).toBeVisible();
     expect(screen.getByText("50720000-8 Servicii de reparare si de intretinere a incalzirii centrale (Rev.2)")).toBeVisible();
   });

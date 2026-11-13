@@ -35,7 +35,6 @@ export interface TotalFigureProps {
   suspectHref: string;
 }
 
-const neutral = neutralLinkSx;
 
 /**
  * A Total: the awarded value and what it left out. A Total always says what it left out,
@@ -51,7 +50,7 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
         <Typography variant="total" component="p">
           <MoneyAmount bani={total.awarded} locale={locale} />
         </Typography>
-        <Link href={methodologyHref} aria-label={copy.methodology} underline="none" sx={neutral}>
+        <Link href={methodologyHref} aria-label={copy.methodology} underline="none" sx={neutralLinkSx}>
           ⓘ
         </Link>
       </Stack>
@@ -61,7 +60,7 @@ export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref 
         </Typography>
         {parts.suspect > 0 && (
           <Typography variant="label" component="p">
-            <Link href={suspectHref} sx={neutral}>
+            <Link href={suspectHref} sx={neutralLinkSx}>
               {copy.suspectLeftOut(parts.suspect, count(parts.suspect))}
             </Link>
           </Typography>

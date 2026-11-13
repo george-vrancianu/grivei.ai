@@ -28,6 +28,16 @@ afterEach(() => {
 });
 
 describe("SearchBar", () => {
+  it("describes the box by its hint, then by the element it is told about", () => {
+    setup({ describedBy: "eyebrow" });
+    const eyebrow = document.createElement("p");
+    eyebrow.id = "eyebrow";
+    eyebrow.textContent = "Source: SEAP";
+    document.body.append(eyebrow);
+    expect(box()).toHaveAccessibleDescription(`${en.hint} Source: SEAP`);
+    eyebrow.remove();
+  });
+
   it("emits ONE query after a burst of keystrokes, once typing pauses", async () => {
     const { user, onQueryChange } = setup();
     await user.type(box(), "deszăpezire");

@@ -28,7 +28,7 @@ export function RecordValue({ record, locale, copy, children }: RecordValueProps
         {record.value === null ? copy.noValue : <MoneyAmount bani={record.value} locale={locale} />}
       </Typography>
       {record.value !== null && (
-        <Typography component="span" variant="caption" color="text.secondary">
+        <Typography component="span" variant="caption">
           {caption}
         </Typography>
       )}
