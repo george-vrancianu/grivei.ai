@@ -186,7 +186,6 @@ export function cachedStore(
 
   async function cached<T>(key: string, run: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
     const g = await sync(false);
-    signal?.throwIfAborted();
     const hit = g !== null ? entries.get(key) : undefined;
     if (hit) {
       hits++;
@@ -194,11 +193,12 @@ export function cachedStore(
       entries.set(key, hit);
       return hit.value as T;
     }
+    signal?.throwIfAborted(); // an aborted caller on a miss starts and joins nothing
     misses++;
     let f = inflight.get(key);
     if (!f || f.generation !== g) {
       const controller = new AbortController();
-      const flight: Flight = { generation: g, controller, waiters: 0, promise: undefined as unknown as Promise<unknown> };
+      const flight = { generation: g, controller, waiters: 0 } as Flight; // promise assigned right below
       flight.promise = run(controller.signal).then(
         (value) => {
           if (inflight.get(key) === flight) inflight.delete(key);

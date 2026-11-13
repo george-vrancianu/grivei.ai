@@ -174,11 +174,26 @@ describe("shared in-flight misses", () => {
     const fresh = cache.searchTotal({ q: "aa" });
     await tick();
     expect(g.calls).toHaveLength(2); // the g2 caller started its own run
-    g.pending[0]!.resolve({ ...totalOf("aa"), records: 1 });
     g.pending[1]!.resolve({ ...totalOf("aa"), records: 2 });
-    expect((await old).records).toBe(1);
     expect((await fresh).records).toBe(2);
+    g.pending[0]!.resolve({ ...totalOf("aa"), records: 1 }); // the older run settles last: it must not overwrite the g2 entry
+    expect((await old).records).toBe(1);
     expect(cache.stats()).toMatchObject({ entries: 1, generation: "g2" });
     expect((await cache.searchTotal({ q: "aa" })).records).toBe(2); // the g2 value is the cached one
+    expect(g.calls).toHaveLength(2); // a hit, not a rerun
+  });
+
+  it("rejects an already-aborted caller on a miss without starting a run", async () => {
+    const g = gatedInner();
+    const cache = cachedStore(g.inner, fakePool({ generation: "g1" }), { autoWarm: false });
+    const gone = new AbortController();
+    gone.abort();
+    await expect(cache.searchTotal({ q: "aa" }, { signal: gone.signal })).rejects.toMatchObject({ name: "AbortError" });
+    expect(g.calls).toHaveLength(0);
+    const next = cache.searchTotal({ q: "aa" });
+    await tick();
+    expect(g.calls).toHaveLength(1);
+    g.pending[0]!.resolve(totalOf("aa"));
+    expect(await next).toEqual(totalOf("aa"));
   });
 });
