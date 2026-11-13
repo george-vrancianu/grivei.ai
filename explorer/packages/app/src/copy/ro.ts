@@ -74,7 +74,7 @@ export const ro: Copy = {
     provenance: "sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și colectarea de pe e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă",
     signals: "Semnalele sunt numărate, niciodată notate cu un scor",
   },
-  language: { current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
+  language: { groupLabel: "Limba", current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
   main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată." },
   searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },

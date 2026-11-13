@@ -59,6 +59,23 @@ describe("the header and the footer", () => {
     }
   });
 
+  it("reaches the language link with the Tab key, in both languages", async () => {
+    for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
+      openAt(`${prefix}/search`);
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const banner = within(screen.getByRole("banner"));
+      const link = banner.getByRole("link", { name: catalogue[locale].language.switchLabel });
+      const user = userEvent.setup();
+      let reached = false;
+      for (let i = 0; i < 30 && !reached; i++) {
+        await user.tab();
+        reached = document.activeElement === link;
+      }
+      expect(reached).toBe(true);
+      unmount();
+    }
+  });
+
   it("marks the current page, and only that one", () => {
     const cases = [
       ["/explore/", "explore"],

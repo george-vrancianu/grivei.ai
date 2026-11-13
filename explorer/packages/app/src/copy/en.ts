@@ -69,7 +69,7 @@ export const en: Copy = {
     provenance: "source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document",
     signals: "Signals are counted, never scored",
   },
-  language: { current: "EN", switchTo: "RO", switchLabel: "Romanian version of this page" },
+  language: { groupLabel: "Language", current: "EN", switchTo: "RO", switchLabel: "Romanian version of this page" },
   status: { loading: "Loading…", failed: "The data could not be loaded." },
   main: { title: "Explore public spending", total: "Total awarded", mapUnavailable: "The map could not be loaded." },
   searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },

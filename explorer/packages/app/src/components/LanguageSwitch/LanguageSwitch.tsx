@@ -17,11 +17,11 @@ export interface LanguageSwitchProps {
 export function LanguageSwitch({ copy, to, href }: LanguageSwitchProps) {
   const current = to === "ro" ? "en" : "ro";
   return (
-    <ToggleButtonGroup>
-      <ToggleButton component="span" role={undefined} tabIndex={-1} value={current} selected lang={current} aria-current="true">
+    <ToggleButtonGroup aria-label={copy.groupLabel}>
+      <ToggleButton component="span" role={undefined} tabIndex={-1} aria-pressed={undefined} disableRipple sx={{ cursor: "default" }} value={current} selected lang={current} aria-current="true">
         {copy.current}
       </ToggleButton>
-      <ToggleButton component={AppLink} href={href} hrefLang={to} lang={to} aria-label={copy.switchLabel} data-testid="language-switch" underline="none" value={to}>
+      <ToggleButton component={AppLink} tabIndex={0} aria-pressed={undefined} href={href} hrefLang={to} lang={to} aria-label={copy.switchLabel} data-testid="language-switch" underline="none" value={to}>
         {copy.switchTo}
       </ToggleButton>
     </ToggleButtonGroup>

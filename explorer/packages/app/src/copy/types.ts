@@ -15,6 +15,8 @@ export interface Copy {
   /** The footer on every page: where the data comes from, and the counting principle. */
   footer: { provenance: string; signals: string };
   language: {
+    /** The accessible name of the EN/RO group. */
+    groupLabel: string;
     /** The current language's code (EN, RO), shown as the marked segment. */
     current: string;
     /** The other language's code, shown as the link text. */
