@@ -1,5 +1,5 @@
 import type { RecordFilter } from "@grivei/contract";
-import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -104,7 +104,16 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : view === "overview" ? (
         state.overview && entity ? (
-          <EntityOverview overview={state.overview} aliases={entity.aliases} signals={
+          <EntityOverview overview={state.overview} aliases={entity.aliases}
+            signalsToolbar={
+              <SignalOrderToggle
+                value={signalOrder ?? "DATE_DESC"}
+                // by date is the default, so it is left out of the URL; a different order starts again at page 1
+                onChange={(next) => update({ signalOrder: next === "DATE_DESC" ? undefined : next, page: undefined })}
+                copy={t.entityPage.signalOrder}
+              />
+            }
+            signals={
               <SignalList
                 signals={state.overview.signals.rows}
                 locale={locale}

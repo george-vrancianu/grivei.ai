@@ -413,6 +413,7 @@ export const ro: Copy = {
       },
     },
     signalPages: { label: "Paginile Semnalelor", previous: "Anterioara", next: "Următoarea", page: (n) => `Pagina ${n}` },
+    signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",

@@ -15,6 +15,7 @@ export * from "./StateNote/index.ts";
 export * from "./SignalChip/index.ts";
 export * from "./SignalBadge/index.ts";
 export * from "./SignalCountChip/index.ts";
+export * from "./SignalOrderToggle/index.ts";
 export * from "./CoverageCell/index.ts";
 export * from "./CoverageGridLegend/index.ts";
 export * from "./SignalRuleBaseRate/index.ts";
