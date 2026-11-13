@@ -4,6 +4,8 @@
 // the next request after the commit, with no signal between the pipeline and the API. After a flush the 2-character
 // prefixes the load contains (`seap.rollup_prefix`) are warmed in the background, no chips.
 // Concurrent misses on one key share one in-flight run (#144).
+// The Coverage figures (the grid, the per-area figures and the unplaced authorities, per date window) are cached the same way
+// (#145), and the no-window ones are warmed first, before the search prefixes.
 import pg from "pg";
 import { foldTokens } from "./fold.ts";
 import type { SearchFilter } from "./search.ts";
@@ -239,9 +241,24 @@ export function cachedStore(
     const started = Date.now();
     const g = generation;
     const prefixes = (await pool.query<{ prefix: string }>("SELECT prefix FROM seap.rollup_prefix ORDER BY prefix")).rows.map((r) => r.prefix);
-    const filters: SearchFilter[] = [{}, ...prefixes.map((q) => ({ q }))];
     let statements = 0;
     let failed = 0;
+    // The Coverage page and the lens without a date chip first: the three figures of the empty window.
+    for (const [name, step] of [
+      ["Coverage areas", () => store.coverageAreas({ from: null, to: null })],
+      ["unplaced authorities", () => store.unplacedAuthorities({ from: null, to: null })],
+      ["Coverage grid", () => store.coverageGrid()],
+    ] as const) {
+      if (generation !== g) break; // a newer load arrived: this warming is stale
+      try {
+        await step();
+        statements++;
+      } catch (e) {
+        failed++;
+        log(`cache warming of the ${name} failed: ${(e as Error).message}`);
+      }
+    }
+    const filters: SearchFilter[] = [{}, ...prefixes.map((q) => ({ q }))];
     let next = 0;
     const worker = async () => {
       while (next < filters.length) {
@@ -269,6 +286,8 @@ export function cachedStore(
     return report;
   }
 
+  // A Coverage window's key: absent, null and empty bounds are one window, `from`-only and `to`-only are two.
+  const windowKey = (w: { from?: string | null; to?: string | null }) => `${w.from || ""}..${w.to || ""}`;
   const page = (p: { limit: number; offset: number }) => `${p.limit}:${p.offset}`;
   const store: CachedStore = {
     ...inner,
@@ -307,6 +326,10 @@ export function cachedStore(
     roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, (signal) => inner.roleSignals(filter, p, { ...options, signal }), options?.signal),
     signalRecords: (ordinal, p) => cached(`signal-records|${ordinal}|${page(p)}`, () => inner.signalRecords(ordinal, p)),
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, (signal) => inner.searchUatMap(county, filter, { ...options, signal }), options?.signal),
+    // Coverage (#145): the grid has no argument; the figures follow the date window
+    coverageGrid: () => cached("coverage-grid", () => inner.coverageGrid()),
+    coverageAreas: (w) => cached(`coverage-areas|${windowKey(w)}`, () => inner.coverageAreas(w)),
+    unplacedAuthorities: (w) => cached(`coverage-unplaced|${windowKey(w)}`, () => inner.unplacedAuthorities(w)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };
   return store;

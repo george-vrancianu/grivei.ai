@@ -197,3 +197,121 @@ describe("shared in-flight misses", () => {
     expect(await next).toEqual(totalOf("aa"));
   });
 });
+
+// Coverage (#145): the grid, the per-area figures and the unplaced authorities, per date window per load generation.
+const cell = { quarter: "2024-Q1" };
+function coverageInner(calls: string[]) {
+  return {
+    coverageGrid: async () => (calls.push("grid"), [cell]),
+    coverageAreas: async (w: { from: string | null; to: string | null }) => (calls.push(`areas ${w.from}|${w.to}`), [{ area: "RO-B", withRecords: 1, publicEntities: 2, otherAuthorities: 3 }]),
+    unplacedAuthorities: async (w: { from: string | null; to: string | null }) => (calls.push(`unplaced ${w.from}|${w.to}`), { authorities: 4, total: totalOf("u") }),
+    searchTotal: async () => (calls.push("total"), totalOf("")),
+    searchMap: async () => (calls.push("map"), []),
+    searchEntities: async () => (calls.push("entities"), []),
+    records: async () => (calls.push("records"), []),
+    searchRecords: async () => (calls.push("searchRecords"), []),
+    goTo: async () => (calls.push("goTo"), null),
+  } as unknown as Store;
+}
+const none = { from: null, to: null };
+
+describe("Coverage in the result cache", () => {
+  it("serves a second request for the same window from memory, and a different window from the store", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(coverageInner(calls), fakePool({ generation: "g1" }), { autoWarm: false });
+    await cache.coverageGrid();
+    await cache.coverageGrid();
+    await cache.coverageAreas(none);
+    await cache.coverageAreas(none);
+    await cache.unplacedAuthorities(none);
+    await cache.unplacedAuthorities(none);
+    expect(calls).toEqual(["grid", "areas null|null", "unplaced null|null"]);
+    const w = { from: "2024-01-01", to: "2024-12-31" };
+    await cache.coverageAreas(w);
+    await cache.coverageAreas(w);
+    await cache.unplacedAuthorities(w);
+    await cache.unplacedAuthorities(w);
+    expect(calls.slice(3)).toEqual(["areas 2024-01-01|2024-12-31", "unplaced 2024-01-01|2024-12-31"]);
+    expect(await cache.coverageAreas(w)).toEqual([{ area: "RO-B", withRecords: 1, publicEntities: 2, otherAuthorities: 3 }]);
+  });
+
+  it("shares one entry between the empty, all-null and empty-string windows, but keeps from-only and to-only apart", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(coverageInner(calls), fakePool({ generation: "g1" }), { autoWarm: false });
+    for (const w of [{}, none, { from: "", to: "" }, { from: undefined, to: null }] as { from: string | null; to: string | null }[]) {
+      await cache.coverageAreas(w);
+      await cache.unplacedAuthorities(w);
+    }
+    expect(calls).toHaveLength(2);
+    await cache.coverageAreas({ from: "2024-01-01", to: null });
+    await cache.coverageAreas({ from: null, to: "2024-01-01" });
+    await cache.coverageAreas({ from: "2024-01-01", to: null });
+    expect(calls.slice(2)).toEqual(["areas 2024-01-01|null", "areas null|2024-01-01"]);
+  });
+
+  it("asks the store again after a new load generation", async () => {
+    const calls: string[] = [];
+    const state = { generation: "g1" };
+    const cache = cachedStore(coverageInner(calls), fakePool(state), { autoWarm: false, generationTtlMs: 0 });
+    await cache.coverageGrid();
+    await cache.coverageAreas(none);
+    await cache.unplacedAuthorities(none);
+    state.generation = "g2";
+    await cache.coverageGrid();
+    await cache.coverageAreas(none);
+    await cache.unplacedAuthorities(none);
+    expect(calls).toEqual(["grid", "areas null|null", "unplaced null|null", "grid", "areas null|null", "unplaced null|null"]);
+  });
+
+  it("counts Coverage entries in the stats and evicts them under the byte budget", async () => {
+    const calls: string[] = [];
+    const areasCost = approxBytes([{ area: "RO-B", withRecords: 1, publicEntities: 2, otherAuthorities: 3 }]);
+    const cache = cachedStore(coverageInner(calls), fakePool({ generation: "g1" }), { autoWarm: false, maxBytes: areasCost * 2 + 1 });
+    await cache.coverageAreas({ from: "2024-01-01", to: null }); // a
+    await cache.coverageAreas({ from: "2024-02-01", to: null }); // b
+    await cache.coverageAreas({ from: "2024-01-01", to: null }); // hit
+    expect(cache.stats()).toMatchObject({ entries: 2, hits: 1, misses: 2, bytes: areasCost * 2 });
+    await cache.coverageAreas({ from: "2024-03-01", to: null }); // over budget: b goes
+    expect(cache.stats().entries).toBe(2);
+    calls.length = 0;
+    await cache.coverageAreas({ from: "2024-02-01", to: null });
+    expect(calls).toEqual(["areas 2024-02-01|null"]);
+  });
+});
+
+describe("warming the Coverage figures", () => {
+  const warmPool = (state: { generation: string }): pg.Pool =>
+    ({
+      query: async (sql: string) => (sql.includes("rollup_prefix") ? { rows: [{ prefix: "ab" }] } : { rows: [{ generation: state.generation }] }),
+    }) as unknown as pg.Pool;
+
+  it("warms the no-window areas, unplaced authorities and grid before the empty search state and any prefix", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(coverageInner(calls), warmPool({ generation: "g1" }), { autoWarm: false });
+    const report = await cache.warm();
+    expect(calls.slice(0, 4)).toEqual(["areas null|null", "unplaced null|null", "grid", "total"]);
+    expect(report.failed).toBe(0);
+    calls.length = 0;
+    await cache.coverageAreas(none);
+    await cache.unplacedAuthorities({} as typeof none);
+    await cache.coverageGrid();
+    expect(calls).toEqual([]); // the first visitor after a load is served from memory
+  });
+
+  it("stops a stale warm, Coverage entries included, when a newer load arrives", async () => {
+    const calls: string[] = [];
+    const state = { generation: "g1" };
+    const inner = coverageInner(calls);
+    const areas = inner.coverageAreas;
+    inner.coverageAreas = async (w) => {
+      const r = await areas(w);
+      state.generation = "g2"; // a newer load commits while the warm runs
+      return r;
+    };
+    const cache = cachedStore(inner, warmPool(state), { autoWarm: false, generationTtlMs: 0 });
+    await cache.warm();
+    expect(calls).not.toContain("total");
+    expect(calls).not.toContain("grid");
+    expect(cache.stats().generation).toBe("g2");
+  });
+});
