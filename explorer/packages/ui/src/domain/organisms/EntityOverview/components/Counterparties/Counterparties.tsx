@@ -1,5 +1,4 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { LinearProgress } from "../../../../../atoms/LinearProgress/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
@@ -10,6 +9,8 @@ import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { Bani, EntityRef, EntityRole, OverviewCounterparties } from "../../../../types.ts";
 import { formatPercent } from "../../../../utils/formatPercent.ts";
 import { listSx } from "../../../../utils/listSx.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { ShareBar } from "../ShareBar/index.ts";
 import { counterpartyRole, shareOfTotal } from "../../entityOverview.utils.ts";
 
 export interface CounterpartiesCopy {
@@ -44,9 +45,7 @@ export function Counterparties({ counterparties, total, role, entityHref, locale
   const hidden = count - rows.length;
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+      <SectionHeading>{copy.heading}</SectionHeading>
       {rows.length === 0 ? (
         <Typography color="text.secondary">{copy.empty}</Typography>
       ) : (
@@ -54,28 +53,28 @@ export function Counterparties({ counterparties, total, role, entityHref, locale
           {rows.map((row, index) => {
             const share = shareOfTotal(row.total.awarded, total);
             return (
-              <Stack key={row.entity?.key ?? `person-${index}`} component="li" spacing={0.5} sx={{ py: 1 }}>
-                <Typography>
-                  <PartyName
-                    party={{ naturalPerson: row.naturalPerson, publishedName: null, share: null, entity: row.entity }}
-                    entityHref={(entity) => entityHref(entity, other)}
-                    copy={copy.party}
-                  />
-                </Typography>
-                {share !== null && <LinearProgress variant="determinate" value={share * 100} aria-hidden="true" sx={{ height: 6, borderRadius: 3 }} />}
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "baseline" }}>
-                  {share !== null && (
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {formatPercent(share, locale)}
-                    </Typography>
-                  )}
-                  <Typography variant="body2">
-                    <MoneyAmount bani={row.total.awarded} locale={locale} />
+              <Stack key={row.entity?.key ?? `person-${index}`} component="li" spacing={0.75} sx={{ py: 1.25 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "2px 14px" }}>
+                  <Typography sx={{ fontWeight: 600 }}>
+                    <PartyName
+                      party={{ naturalPerson: row.naturalPerson, publishedName: null, share: null, entity: row.entity }}
+                      entityHref={(entity) => entityHref(entity, other)}
+                      copy={copy.party}
+                    />
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {copy.records(row.total.records, formatCount(row.total.records, row.total.estimated, locale))}
+                  <Typography variant="label" component="span" sx={{ display: "flex", flexWrap: "wrap", columnGap: 1, fontVariantNumeric: "tabular-nums" }}>
+                    {share !== null && (
+                      <Typography variant="label" component="span" color="text.primary" sx={{ fontWeight: 600 }}>
+                        {formatPercent(share, locale)}
+                      </Typography>
+                    )}
+                    <MoneyAmount bani={row.total.awarded} locale={locale} />
+                    <Typography variant="label" component="span" color="text.disabled">
+                      · {copy.records(row.total.records, formatCount(row.total.records, row.total.estimated, locale))}
+                    </Typography>
                   </Typography>
                 </Box>
+                <ShareBar share={share} />
               </Stack>
             );
           })}

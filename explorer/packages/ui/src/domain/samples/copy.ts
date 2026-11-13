@@ -202,7 +202,18 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       placedBy: (source) => `placed by ${source}`,
     },
     source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
-    roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+    roles: {
+      label: "Roles of this entity",
+      authority: "buys · contracting authority",
+      supplier: "sells · supplier",
+      none: { AUTHORITY: "buys · no Records as authority", SUPPLIER: "sells · no Records as supplier" },
+    },
+    seapNames: {
+      label: "Appears in SEAP as",
+      records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+      range: (first, last) => `${first} to ${last}`,
+      more: (_n, f) => `and ${f} more`,
+    },
   },
   ro: {
     identity: {
@@ -219,13 +230,24 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       placedBy: (source) => `plasată de ${source}`,
     },
     source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
-    roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+    roles: {
+      label: "Rolurile entității",
+      authority: "cumpără · autoritate contractantă",
+      supplier: "vinde · furnizor",
+      none: { AUTHORITY: "cumpără · nicio înregistrare ca autoritate", SUPPLIER: "vinde · nicio înregistrare ca furnizor" },
+    },
+    seapNames: {
+      label: "Apare în SEAP ca",
+      records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+      range: (first, last) => `${first} până la ${last}`,
+      more: (_n, f) => `și încă ${f}`,
+    },
   },
 };
 
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
-  en: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
-  ro: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+  en: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
 };
 
 const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
@@ -450,6 +472,7 @@ const recordsTab = (locale: Locale): RecordsTabCopy => ({
   empty: locale === "ro" ? { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" } : { text: "No Records match these filters.", clear: "Clear filters" },
   total: sampleCopy.total(locale),
   recordRow: recordRow(locale),
+  table: locale === "ro" ? { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } } : { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
   pagination: fullResults(locale).pagination,
 });
 

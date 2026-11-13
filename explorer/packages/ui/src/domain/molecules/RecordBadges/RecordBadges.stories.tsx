@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord } from "../../../../samples/fixtureData.ts";
+import { localeOf, sampleCopy } from "../../samples/copy.ts";
+import { consortiumRecord, highlightedRecord } from "../../samples/fixtureData.ts";
 import { RecordBadges } from "./index.ts";
 
-const meta = { title: "Domain/RecordResultRow/RecordBadges", component: RecordBadges } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/RecordBadges", component: RecordBadges } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj;
 

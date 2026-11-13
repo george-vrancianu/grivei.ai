@@ -1,9 +1,9 @@
-import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
-import type { Locale } from "../../../../../theme/index.ts";
-import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
-import type { RecordResult } from "../../../../types.ts";
-import { isFrameworkCeiling } from "../../recordResultRow.utils.ts";
+import { Stack } from "../../../atoms/Stack/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
+import type { RecordResult } from "../../types.ts";
+import { isFrameworkCeiling } from "../RecordResultRow/recordResultRow.utils.ts";
 
 export interface RecordValueCopy {
   noValue: string;

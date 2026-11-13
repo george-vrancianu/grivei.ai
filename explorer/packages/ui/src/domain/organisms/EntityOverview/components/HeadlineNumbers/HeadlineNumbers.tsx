@@ -32,7 +32,7 @@ export interface HeadlineNumbersProps {
 export function HeadlineNumbers({ overview, locale, copy, methodologyHref, suspectHref }: HeadlineNumbersProps) {
   const { total, counterparties, directPurchaseShare, signals } = overview;
   const figure = (text: string) => (
-    <Typography variant="h5" component="p">
+    <Typography variant="stat" component="p">
       {text}
     </Typography>
   );
@@ -40,7 +40,7 @@ export function HeadlineNumbers({ overview, locale, copy, methodologyHref, suspe
     <Box
       component="ul"
       aria-label={copy.label}
-      sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, m: 0, p: 0 }}
+      sx={{ display: "grid", gap: 1.5, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", m: 0, p: 0 }}
     >
       <Figure label={copy.total}>
         <TotalFigure total={total} locale={locale} copy={copy.totalFigure} methodologyHref={methodologyHref} suspectHref={suspectHref} />

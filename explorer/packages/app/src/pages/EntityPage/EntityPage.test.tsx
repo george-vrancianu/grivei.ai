@@ -20,7 +20,7 @@ function open(url: string) {
   return sent;
 }
 const tabs = () => within(screen.getByRole("navigation", { name: /Sections of this page|Secțiunile paginii/ }));
-const currentTab = () => tabs().getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page").map((l) => l.textContent);
+const currentTab = () => tabs().getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page").map((l) => l.firstChild?.textContent);
 
 describe("an entity page", () => {
   it("opens a supplier on the Overview tab, with its header", async () => {
@@ -52,10 +52,10 @@ describe("an entity page", () => {
   it("gives each tab its own URL and follows a click without a page load", async () => {
     open(SUPPLIER);
     await screen.findByRole("heading", { level: 1, name: NAME });
-    expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("href", `${SUPPLIER}/records`);
+    expect(tabs().getByRole("link", { name: /^Records/ })).toHaveAttribute("href", `${SUPPLIER}/records`);
     expect(tabs().getByRole("link", { name: "Relationships" })).toHaveAttribute("href", `${SUPPLIER}/relationships`);
 
-    await userEvent.setup().click(tabs().getByRole("link", { name: "Records" }));
+    await userEvent.setup().click(tabs().getByRole("link", { name: /^Records/ }));
     await waitFor(() => expect(window.location.pathname).toBe(`${SUPPLIER}/records`));
     expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
@@ -78,7 +78,7 @@ describe("an entity page", () => {
 
     held = true;
     const user = userEvent.setup();
-    await user.click(tabs().getByRole("link", { name: "Records" }));
+    await user.click(tabs().getByRole("link", { name: /^Records/ }));
     expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
     expect(screen.getByRole("status")).toHaveTextContent("Loading");
@@ -97,7 +97,7 @@ describe("an entity page", () => {
     for (let i = 0; i < 20 && reached.length < 3; i++) {
       await user.tab();
       const el = document.activeElement;
-      if (el && tabs().queryAllByRole("link").includes(el as HTMLElement)) reached.push(el.textContent);
+      if (el && tabs().queryAllByRole("link").includes(el as HTMLElement)) reached.push(el.firstChild?.textContent ?? null);
     }
     expect(reached).toEqual(["Overview", "Records", "Relationships"]);
     expect(screen.queryByRole("tablist")).toBeNull();
@@ -106,28 +106,28 @@ describe("an entity page", () => {
   it("carries the filter from tab to tab", async () => {
     open("/explore/authority/1000017?from=2023-02-01");
     await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
-    expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("href", "/explore/authority/1000017/records?from=2023-02-01");
+    expect(tabs().getByRole("link", { name: /^Records/ })).toHaveAttribute("href", "/explore/authority/1000017/records?from=2023-02-01");
     expect(tabs().getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/explore/authority/1000017?from=2023-02-01");
   });
 
   it("offers the role switch to an entity that both buys and sells, linking to the other role's page", async () => {
     open("/explore/authority/2000031");
     await screen.findByRole("heading", { level: 1, name: "CNAIR DEMO SA" });
-    const nav = screen.getByRole("navigation", { name: "View as" });
-    expect(within(nav).getByRole("link", { name: "As authority" })).toHaveAttribute("aria-current", "page");
-    const other = within(nav).getByRole("link", { name: "As supplier" });
+    const nav = screen.getByRole("navigation", { name: "Roles of this entity" });
+    expect(within(nav).getByRole("link", { name: "buys · contracting authority" })).toHaveAttribute("aria-current", "page");
+    const other = within(nav).getByRole("link", { name: "sells · supplier" });
     expect(other).toHaveAttribute("href", "/explore/supplier/2000031");
 
     await userEvent.setup().click(other);
     expect(window.location.pathname).toBe("/explore/supplier/2000031");
-    expect(await screen.findByRole("navigation", { name: "View as" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "As supplier" })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("navigation", { name: "Roles of this entity" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "sells · supplier" })).toHaveAttribute("aria-current", "page");
   });
 
   it("shows no role switch for an entity that only buys", async () => {
     open("/explore/authority/1000017");
     await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
-    expect(screen.queryByRole("navigation", { name: "View as" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Roles of this entity" })).not.toBeInTheDocument();
   });
 
   it("says a name-only supplier is identified by name only", async () => {
@@ -161,5 +161,34 @@ describe("an entity page", () => {
     openAt(SUPPLIER);
     render(<App client={createClient({ fetch: async () => Response.json({ errors: [{ message: "down" }] }, { status: 400 }) })} />);
     expect(await screen.findByRole("alert")).toHaveTextContent("The data could not be loaded.");
+  });
+
+  describe("the tab counts and the citable address", () => {
+    it("shows the entity's Records count beside the Records tab on the unfiltered page", async () => {
+      open(SUPPLIER);
+      await screen.findByRole("list", { name: "Headline numbers" });
+      const records = tabs().getByRole("link", { name: /^Records/ });
+      expect(records.textContent).toMatch(/^Records\d/);
+      expect(tabs().getByRole("link", { name: "Overview" })).toBeVisible();
+    });
+
+    it("leaves the count off when a filter narrows the page, since it would not be the entity's own", async () => {
+      open("/explore/authority/1000017?from=2023-02-01");
+      await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
+      await screen.findByRole("list", { name: "Headline numbers" });
+      expect(tabs().getByRole("link", { name: "Records" })).toBeVisible();
+    });
+
+    it("shows the address of the view under the tabs, query included, in both languages", async () => {
+      open(`${SUPPLIER}/records?channel=contract`);
+      await screen.findByRole("heading", { level: 1, name: NAME });
+      expect(screen.getByLabelText("Address of this view")).toHaveTextContent(`${window.location.host}${SUPPLIER}/records?channel=contract`);
+    });
+
+    it("names the address line in Romanian", async () => {
+      open(`/ro${SUPPLIER}`);
+      await screen.findByRole("heading", { level: 1, name: NAME });
+      expect(screen.getByLabelText("Adresa acestei vizualizări")).toHaveTextContent(`${window.location.host}/ro${SUPPLIER}`);
+    });
   });
 });

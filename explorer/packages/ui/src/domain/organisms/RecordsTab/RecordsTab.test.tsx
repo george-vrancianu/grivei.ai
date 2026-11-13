@@ -40,13 +40,14 @@ describe("the Records tab", () => {
     expect(screen.getByRole("heading", { name: "Records" })).toBeVisible();
     expect(screen.getByText("13 Records")).toBeVisible();
     expect(screen.getByRole("link", { name: "Contract CAN9600001 1" })).toHaveAttribute("href", "/explore/record/CAN9600001~1");
-    expect(screen.getAllByRole("listitem")).toHaveLength(13);
+    // the header row and one row per Record
+    expect(within(screen.getByRole("table", { name: "Records of this entity" })).getAllByRole("row")).toHaveLength(14);
   });
 
   it("shows the filtered total and rows it is given, not the unfiltered ones", () => {
     show(supplierSplittingRecords, "supplier", { signal: "SPLITTING" });
     expect(screen.getByText("5 Records")).toBeVisible();
-    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(6);
     expect(screen.queryByRole("link", { name: "Contract CAN9600001 1" })).toBeNull();
   });
 
@@ -83,7 +84,7 @@ describe("the Records tab", () => {
       const filter: RecordFilter = { channel: "CONTRACT", q: "pod" };
       const onFilterChange = show(supplierNoMatches, "supplier", filter);
       expect(screen.getByText("No Records match these filters.")).toBeVisible();
-      expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+      expect(screen.queryByRole("table")).toBeNull();
       await userEvent.setup().click(screen.getByRole("button", { name: "Clear filters" }));
       expect(onFilterChange).toHaveBeenCalledWith({ q: "pod" });
     });
@@ -98,5 +99,38 @@ describe("the Records tab", () => {
     show(supplierRecords, "supplier", {}, { locale: "ro", copy: sampleCopy.recordsTab("ro") });
     expect(screen.getByRole("heading", { name: "Înregistrări" })).toBeVisible();
     expect(screen.getByRole("group", { name: "Anul atribuirii" })).toBeVisible();
+  });
+
+  describe("the table and the slot above the totals", () => {
+    it("names the counterparty column by the page's role: Authority on a supplier's page, Winners on an authority's", () => {
+      show(supplierRecords, "supplier");
+      expect(screen.getByRole("columnheader", { name: "Authority" })).toBeVisible();
+    });
+
+    it("shows the winners column on an authority's page", () => {
+      show(authorityRecords, "authority");
+      expect(screen.getByRole("columnheader", { name: "Winners" })).toBeVisible();
+      expect(screen.getByRole("columnheader", { name: "Value" })).toBeVisible();
+    });
+
+    it("keeps a wide table inside its own scrolling box, so the page does not scroll sideways", () => {
+      show(supplierRecords, "supplier");
+      const box = screen.getByRole("table").parentElement!;
+      expect(getComputedStyle(box).overflowX).toBe("auto");
+    });
+
+    it("has a slot for one more filter control between the facets and the totals", () => {
+      show(supplierRecords, "supplier", {}, { filterExtras: <a href="/only">only Records matching</a> });
+      const extra = screen.getByRole("link", { name: "only Records matching" });
+      const facets = screen.getByRole("complementary", { name: "Filter by facet" });
+      const total = screen.getByText("13 Records");
+      expect(facets.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(extra.compareDocumentPosition(total) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it("shows no slot content when none is given", () => {
+      show(supplierRecords, "supplier");
+      expect(screen.queryByRole("link", { name: "only Records matching" })).toBeNull();
+    });
   });
 });

@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
-import { renderInUi } from "../../../../../testing/render.tsx";
-import { sampleCopy } from "../../../../samples/copy.ts";
-import { ceilingRecord, highlightedRecord, noValueRecord } from "../../../../samples/fixtureData.ts";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sampleCopy } from "../../samples/copy.ts";
+import { ceilingRecord, highlightedRecord, noValueRecord } from "../../samples/fixtureData.ts";
 import { RecordValue } from "./index.ts";
 
 describe("RecordValue", () => {

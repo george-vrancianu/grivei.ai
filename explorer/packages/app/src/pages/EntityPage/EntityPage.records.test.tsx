@@ -177,9 +177,9 @@ describe("the Records tab of an entity that buys and sells", () => {
     expect(screen.getByText("2 Records")).toBeVisible();
     const bought = listed();
     expect(bought).toEqual(["CAN9600007~1", "DA96000007"]);
-    expect(screen.getByRole("navigation", { name: "View as" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Roles of this entity" })).toBeVisible();
 
-    await userEvent.setup().click(screen.getByRole("link", { name: "As supplier" }));
+    await userEvent.setup().click(screen.getByRole("link", { name: "sells · supplier" }));
     // the role switch keeps the tab: the Records tab of the supplier page (its Records are the ones it won)
     await waitFor(() => expect(window.location.pathname).toBe("/explore/supplier/2000031/records"));
     await waitFor(() => expect(listed()).toEqual(["CAN9600006~1", "DA96000006"]));

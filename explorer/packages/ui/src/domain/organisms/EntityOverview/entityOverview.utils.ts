@@ -18,3 +18,12 @@ export function shareOfTotal(part: Bani, whole: Bani): number | null {
 
 /** The side a counterparty is on: an authority's counterparties are suppliers, a supplier's are authorities. */
 export const counterpartyRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
+
+/** The id of the Overview's Signals section, the same in both languages: a link to `#signals` (the "n Signals" chip of an entity row) scrolls to it. */
+export const SIGNALS_ANCHOR = "signals";
+
+/** The width of a concentration bar, 0 to 100: a share of the total (0 to 1) as a percentage. No share (a zero total) is an empty bar. */
+export function shareBarPercent(share: number | null): number {
+  if (share === null || !Number.isFinite(share)) return 0;
+  return Math.min(100, Math.max(0, share * 100));
+}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, Stack, Typography, type Locale } from "@grivei/ui";
+import type { RecordFilter } from "@grivei/contract";
+import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, Stack, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -40,18 +41,19 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   if (state.status === "error") {
     return (
       <PageShell>
-        <Typography role="alert">{t.status.failed}</Typography>
+        <StateNote kind="error">{t.status.failed}</StateNote>
       </PageShell>
     );
   }
   if (state.status === "ready" && state.entity === null) {
     return (
       <PageShell>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h1" component="h1">
           {t.entityPage.notFound.title}
         </Typography>
-        <Typography>{t.entityPage.notFound.body}</Typography>
-        <AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>
+        <StateNote kind="empty" action={<AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>}>
+          {t.entityPage.notFound.body}
+        </StateNote>
       </PageShell>
     );
   }
@@ -76,6 +78,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       }
       view={view}
       tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter)}
+      tabCounts={tabCounts(state, filter, locale)}
+      citeUrl={citeUrl()}
       onNavigate={onNavigate}
       copy={t.entityPage.layout}
     >
@@ -86,13 +90,13 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
           </div>
         ) : loading ? (
-          <Typography role="status">{t.status.loading}</Typography>
+          <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (
           // ready, but the entity has no Records in this role
-          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+          <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
       ) : loading ? (
-        <Typography role="status">{t.status.loading}</Typography>
+        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : view === "overview" ? (
         state.overview && entity ? (
           <EntityOverview overview={state.overview} aliases={entity.aliases} signals={
@@ -112,11 +116,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             } {...overviewTab} />
         ) : (
           // ready, but the entity has nothing in this role
-          <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+          <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
       ) : state.relationships && entity ? (
         <>
-          {picked.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+          {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
           <RelationshipsTab
             entity={entity}
             counterparties={state.relationships.counterparties}
@@ -150,16 +154,28 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         </>
       ) : (
         // ready, but the entity has nothing in this role
-        <Typography>{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</Typography>
+        <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
       )}
     </EntityPageLayout>
   );
 }
 
+/** The Records count beside the tab: the entity's own, so only when no filter narrows it and the open tab has loaded it (the Relationships tab has none). */
+function tabCounts(state: ReturnType<typeof useEntityPage>, filter: RecordFilter, locale: Locale): Partial<Record<TabView, string>> {
+  if (state.status !== "ready" || Object.values(filter).some((v) => v !== undefined)) return {};
+  const total = state.overview?.total ?? state.records?.total;
+  return total ? { records: formatCount(total.records, total.estimated, locale) } : {};
+}
+
+/** The address of this view as a reader would cite it: host, path and query, without the scheme. */
+function citeUrl(): string {
+  return `${window.location.host}${window.location.pathname}${window.location.search}`;
+}
+
 /** The bare page for the states with no entity to show: the data could not be loaded, or no entity has that key. */
 function PageShell({ children }: { children: ReactNode }) {
   return (
-    <Stack component="main" spacing={2} sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Stack component="main" spacing={2} sx={(theme) => ({ pt: 3, pb: 5, px: theme.graf.layout.gutter, maxWidth: theme.graf.layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" })}>
       {children}
     </Stack>
   );

@@ -145,7 +145,7 @@ describe("the Records tab's Signal facet and row badges", () => {
     const { client } = fixtureClient();
     render(<App client={client} />);
     await screen.findByRole("complementary", { name: "Filter by facet" });
-    const rows = await screen.findAllByRole("listitem");
+    const rows = (await screen.findAllByRole("row")).slice(1); // the table's head row is not a Record
     const recorded = fixtures.EntityRecords.find((f) => f.name === "authority-with-signals")!.data.entity!.seap.role!.records.records.rows;
     const withSignals = recorded.filter((r) => r.record.signals.length > 0).length;
     expect(withSignals).toBeGreaterThan(0);

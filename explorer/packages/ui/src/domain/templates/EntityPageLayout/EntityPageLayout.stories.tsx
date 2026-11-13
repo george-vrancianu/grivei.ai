@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Typography } from "../../../atoms/Typography/index.ts";
+import { pick } from "../../../workbench/index.ts";
+import { StateNote } from "../../molecules/StateNote/index.ts";
 import { EntityHeader } from "../../organisms/EntityHeader/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { authorityHeader, bothRolesHeader, nameOnlySupplierHeader, supplierHeader } from "../../samples/fixtureData.ts";
@@ -33,6 +35,8 @@ function page(entity: EntityHeaderData, role: EntityPageRole, view: EntityPageVi
           header={<EntityHeader entity={entity} role={role} roleHref={roleHref} locale={locale} copy={sampleCopy.entityHeader(locale)} />}
           view={view}
           tabHrefs={hrefs(entity, role)}
+          tabCounts={{ records: "1,817" }}
+          citeUrl={`grivei.ai${hrefs(entity, role)[view]}`}
           copy={sampleCopy.entityPageLayout(locale)}
         >
           <Typography>{sampleCopy.entityPageLayout(locale).tabs[view]}</Typography>
@@ -57,7 +61,31 @@ export const Loading: Story = {
     const locale = localeOf(globals["locale"]);
     return (
       <EntityPageLayout header={null} view="overview" tabHrefs={hrefs(authorityHeader, "AUTHORITY")} copy={sampleCopy.entityPageLayout(locale)}>
-        <Typography role="status">{locale === "ro" ? "Se încarcă..." : "Loading..."}</Typography>
+        <StateNote kind="loading">{pick(locale, { en: "Loading…", ro: "Se încarcă…" })}</StateNote>
+      </EntityPageLayout>
+    );
+  },
+};
+
+/** The data could not be loaded: an error note in the body, never red. */
+export const Failed: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return (
+      <EntityPageLayout header={null} view="records" tabHrefs={hrefs(authorityHeader, "AUTHORITY")} copy={sampleCopy.entityPageLayout(locale)}>
+        <StateNote kind="error">{pick(locale, { en: "The data could not be loaded.", ro: "Datele nu au putut fi încărcate." })}</StateNote>
+      </EntityPageLayout>
+    );
+  },
+};
+
+/** The entity has nothing in this role. */
+export const NothingInThisRole: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return (
+      <EntityPageLayout header={null} view="records" tabHrefs={hrefs(authorityHeader, "AUTHORITY")} copy={sampleCopy.entityPageLayout(locale)}>
+        <StateNote kind="empty">{pick(locale, { en: "This entity has no Records as a supplier.", ro: "Această entitate nu are înregistrări ca furnizor." })}</StateNote>
       </EntityPageLayout>
     );
   },

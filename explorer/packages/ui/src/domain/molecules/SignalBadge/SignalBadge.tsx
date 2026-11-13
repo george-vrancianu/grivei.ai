@@ -1,6 +1,8 @@
 import { Chip } from "../../../atoms/Chip/index.ts";
 import { Tooltip } from "../../../atoms/Tooltip/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { color } from "../../../theme/tokens.ts";
+import { SignalMark } from "../../atoms/SignalMark/index.ts";
 import type { SignalData } from "../../types.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { formatDate } from "../../utils/formatDate.ts";
@@ -37,7 +39,8 @@ export function SignalBadge({ signal, href, onNavigate, locale, copy }: SignalBa
         clickable
         size="small"
         variant="outlined"
-        color="warning"
+        icon={<SignalMark size="small" />}
+        sx={{ borderColor: color.signalLine, color: color.accent, "&.MuiChip-root .MuiChip-icon": { color: "inherit", ml: "8px", mr: "-4px" } }}
         label={copy.compact.text(label, formatDate(signal.date, locale))}
         onClick={followLink(href, onNavigate)}
       />

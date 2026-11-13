@@ -10,7 +10,7 @@ import type { EntityAliases, EntityOverviewData, EntityRole } from "../../types.
 import { EntityOverview } from "./index.ts";
 import { sentence } from "../../../testing/sentence.ts";
 
-function show(data: { overview: EntityOverviewData; aliases: EntityAliases }, role: EntityRole, locale: Locale = "en", signals?: React.ReactNode) {
+function show(data: { overview: EntityOverviewData; aliases: EntityAliases }, role: EntityRole, locale: Locale = "en", signals?: React.ReactNode, signalsToolbar?: React.ReactNode) {
   renderInUi(
     <EntityOverview
       overview={data.overview}
@@ -23,6 +23,7 @@ function show(data: { overview: EntityOverviewData; aliases: EntityAliases }, ro
       locale={locale}
       copy={sampleCopy.entityOverview(locale)}
       signals={signals}
+      signalsToolbar={signalsToolbar}
     />,
     locale,
   );
@@ -79,5 +80,37 @@ describe("the Overview tab", () => {
     const aliases = screen.getByRole("region", { name: "Appears in SEAP as" });
     expect(within(aliases).getAllByRole("listitem")).toHaveLength(8);
     expect(within(aliases).getAllByText("Name differs from ANAF")).toHaveLength(5);
+  });
+});
+
+describe("the Overview's Signals section", () => {
+  it.each(["en", "ro"] as const)("has the stable anchor #signals in %s, on the section that holds the heading", (locale) => {
+    show(supplierOverview, "supplier", locale, <p>the cards</p>);
+    const section = document.getElementById("signals")!;
+    expect(section).not.toBeNull();
+    expect(within(section).getByRole("heading", { level: 2 })).toBeVisible();
+    expect(within(section).getByText("the cards")).toBeVisible();
+  });
+
+  it("keeps the anchor when there are no Signals, so a link to it still lands somewhere", () => {
+    show(authorityOverview, "authority");
+    expect(document.getElementById("signals")).not.toBeNull();
+  });
+
+  it("has a slot between the heading and the cards for the order toggle", () => {
+    show(supplierOverview, "supplier", "en", <p>the cards</p>, <p>the toggle</p>);
+    const section = document.getElementById("signals")!;
+    const parts = Array.from(section.querySelectorAll("h2, p")).map((n) => n.textContent);
+    expect(parts).toEqual(["Signals (6)", "the toggle", "the cards"]);
+  });
+
+  it("leaves the toolbar out when there are no Signals to order", () => {
+    show(authorityOverview, "authority", "en", undefined, <p>the toggle</p>);
+    expect(screen.queryByText("the toggle")).toBeNull();
+  });
+
+  it("is not scored: no heading, label or figure in the Overview says score, rank or risk", () => {
+    show(supplierOverview, "supplier", "en", <p>the cards</p>);
+    expect(document.body.textContent).not.toMatch(/\b(score|scored by|rank|risk|suspicious|fraud)\b/i);
   });
 });
