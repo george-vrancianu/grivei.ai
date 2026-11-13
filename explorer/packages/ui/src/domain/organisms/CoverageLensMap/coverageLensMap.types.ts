@@ -42,6 +42,8 @@ export type CoverageLensMapCopy = {
   status: Record<CoverageStatus, string>;
   /** A county the coverage lacks a row for: not "not harvested", and not "bought nothing". */
   noStatus: string;
+  /** The caption shown when every county shares one status, from the coverage Source's name: "SEAP is harvested nationally; gaps apply to every county". */
+  nationalCaption: (source: string) => string;
   marks: SourceMarksCopy;
   tooltip: CoverageTooltipCopy;
   /** The tiles' strings: the Money lens's, so a page can share them. */

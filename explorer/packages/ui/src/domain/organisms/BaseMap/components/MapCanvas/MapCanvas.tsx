@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { grafStates } from "../../../../../theme/index.ts";
+import { map } from "../../../../../theme/tokens.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import type { MapFeature } from "../../baseMap.types.ts";
 import { AreaPath } from "./components/AreaPath/index.ts";
@@ -30,16 +31,16 @@ export function MapCanvas({ features, paths, width, height, label, fillOf, label
       viewBox={`0 0 ${width} ${height}`}
       role="group"
       aria-label={label}
-      sx={(theme) => ({
+      sx={{
         display: "block",
         width: "100%",
         height: "auto",
-        "& path": { stroke: theme.palette.background.paper, strokeWidth: 0.75, strokeLinejoin: "round", outline: "none" },
+        "& path": { stroke: map.gap, strokeWidth: 0.75, strokeLinejoin: "round", outline: "none" },
         "& path[data-clickable='true']": { cursor: "pointer" },
         "& path[data-active='true']": grafStates.mapArea.hover,
         "& path[aria-pressed='true']": grafStates.mapArea.selected,
         "& path:focus-visible": grafStates.mapArea.focus,
-      })}
+      }}
     >
       {ordered.map((area) => {
         const code = area.properties.code;

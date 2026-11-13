@@ -3,8 +3,9 @@ import { Box } from "../../../../../atoms/Box/index.ts";
 import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
 import { createColorScale } from "../../baseMap.utils.ts";
 import { Legend } from "./index.ts";
+import { onPanel } from "../../../../../workbench/index.ts";
 
-const meta = { title: "Domain/BaseMap/Legend" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/BaseMap/Legend", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

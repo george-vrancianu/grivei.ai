@@ -9,6 +9,7 @@ import { SideToggle } from "./components/SideToggle/index.ts";
 import type { MoneyMap } from "../../types.ts";
 import type { CountySide, MapArea, MoneyLensMapCopy } from "./moneyLensMap.types.ts";
 import { moneyMapValues, moneyValueFormatter, totalsByCounty } from "./moneyLensMap.utils.ts";
+import { moneyValueRenderer } from "./moneyValueRenderer.tsx";
 
 export type MoneyLensMapProps = {
   /** The money map of the current search (`seap.search.map`). */
@@ -34,6 +35,7 @@ export function MoneyLensMap({ map, topology, selected, onSelect, side, onSideCh
   const values = useMemo(() => moneyMapValues(map), [map]);
   const totals = useMemo(() => totalsByCounty(map), [map]);
   const formatValue = useMemo(() => moneyValueFormatter(totals, locale), [totals, locale]);
+  const renderValue = useMemo(() => moneyValueRenderer(totals, locale), [totals, locale]);
   const renderTooltip = ({ name, code }: AreaInfo) => <CountyTooltip name={name} total={totals.get(code)} locale={locale} copy={copy} />;
 
   return (
@@ -44,6 +46,7 @@ export function MoneyLensMap({ map, topology, selected, onSelect, side, onSideCh
         values={values}
         scale="linear"
         formatValue={formatValue}
+        renderValue={renderValue}
         renderTooltip={renderTooltip}
         onSelect={onSelect}
         selected={selected}

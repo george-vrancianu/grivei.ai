@@ -5,7 +5,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import type { Siruta, UatMap } from "../../types.ts";
 import { BaseMap, type AreaInfo } from "../BaseMap/index.ts";
-import { moneyMapValues, moneyValueFormatter, totalsByCounty } from "../MoneyLensMap/index.ts";
+import { moneyMapValues, moneyValueFormatter, moneyValueRenderer, totalsByCounty } from "../MoneyLensMap/index.ts";
 import { AuthorityCircles } from "./components/AuthorityCircles/index.ts";
 import { UatTooltip } from "./components/UatTooltip/index.ts";
 import { UnknownUatRow } from "./components/UnknownUatRow/index.ts";
@@ -37,6 +37,7 @@ export function ZoomedCountyMap({ map, topology, selected, onSelect, showAuthori
   const totals = useMemo(() => totalsByCounty({ counties: map.uats }), [map]);
   const authorities = useMemo(() => authoritiesByUat(map), [map]);
   const formatValue = useMemo(() => moneyValueFormatter(totals, locale), [totals, locale]);
+  const renderValue = useMemo(() => moneyValueRenderer(totals, locale), [totals, locale]);
   const renderTooltip = ({ name, code }: AreaInfo) => (
     <UatTooltip name={name} total={totals.get(code)} authorities={showAuthorityCircles ? authorities.get(code) : undefined} locale={locale} copy={copy} />
   );
@@ -48,6 +49,7 @@ export function ZoomedCountyMap({ map, topology, selected, onSelect, showAuthori
         values={values}
         scale="log"
         formatValue={formatValue}
+        renderValue={renderValue}
         renderTooltip={renderTooltip}
         renderOverlay={showAuthorityCircles ? ({ centroids }) => <AuthorityCircles centroids={centroids} authorities={authorities} /> : undefined}
         onSelect={onSelect}

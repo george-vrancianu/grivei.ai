@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { map } from "../../../theme/tokens.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { nothingHarvestedCoverage, openWindowCoverage, typicalCoverage } from "../../samples/coverageLenses.ts";
@@ -45,9 +46,9 @@ describe("CoverageLensMap", () => {
     expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
     expect(fillOf("RO-GL")).toBe(NO_STATUS_COLOR);
     expect(Object.values(COVERAGE_COLORS)).not.toContain(NO_STATUS_COLOR);
-    // visible against the white county outlines and the page backgrounds (#ffffff, #f7f8fa)
-    expect(["#ffffff", "#f7f8fa", "#fafafa"]).not.toContain(NO_STATUS_COLOR);
-    expect(NO_STATUS_COLOR).toBe("#e9dfc9");
+    // the dark ground's "none" fill, apart from the grey that means not harvested
+    expect(NO_STATUS_COLOR).toBe(map.none);
+    expect(NO_STATUS_COLOR).not.toBe(PLANNED_MARK_COLOR);
   });
 
   it("fills not harvested with the grey of the planned Sources' marks", () => {
@@ -157,5 +158,31 @@ describe("CoverageLensMap", () => {
     expect(screen.queryByRole("button", { name: /^Unplaced/ })).toBeNull();
     expect(screen.getByRole("button", { name: /^Brașov: Not harvested\. / })).toBeVisible();
     expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
+  });
+
+  describe("the national caption", () => {
+    const caption = (locale: Locale) => sampleCopy.coverageLensMap(locale).nationalCaption("SEAP");
+
+    // The sample leaves Galați without a row (the lens draws it "No coverage status"); give it one so every county has a status.
+    const everyCountyCovered: CoverageLens = {
+      ...nothingHarvestedCoverage,
+      coverage: { ...nothingHarvestedCoverage.coverage, counties: [...nothingHarvestedCoverage.coverage.counties, { ...nothingHarvestedCoverage.coverage.counties[0]!, county: "RO-GL" }] },
+    };
+
+    it.each(["en", "ro"] as const)("shows when every county shares one status (%s)", (locale) => {
+      setup(everyCountyCovered, {}, locale);
+      expect(screen.getByText(caption(locale))).toBeVisible();
+    });
+
+    it("is absent when a county has no coverage row, even if the others share one status", () => {
+      setup(nothingHarvestedCoverage);
+      expect(screen.getByRole("button", { name: "Galați: No coverage status" })).toBeVisible();
+      expect(document.querySelector("[data-coverage-caption]")).toBeNull();
+    });
+
+    it("is absent when the counties' statuses differ", () => {
+      setup();
+      expect(document.querySelector("[data-coverage-caption]")).toBeNull();
+    });
   });
 });

@@ -1,7 +1,8 @@
 import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { mapTooltipName } from "../../../BaseMap/index.ts";
 import { CoverageFigures, type CoverageFiguresProps } from "../CoverageFigures/index.ts";
 
-export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNote"> {
+export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNote" | "dense"> {
   name: string;
 }
 
@@ -9,8 +10,8 @@ export interface CoverageTooltipProps extends Omit<CoverageFiguresProps, "withNo
 export function CoverageTooltip({ name, ...figures }: CoverageTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
-      <CoverageFigures {...figures} withNote />
+      <Typography component="span" {...mapTooltipName}>{name}</Typography>
+      <CoverageFigures {...figures} withNote dense />
     </>
   );
 }

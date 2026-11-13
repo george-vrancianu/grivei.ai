@@ -3,6 +3,7 @@ import type { Locale } from "../../../../../theme/index.ts";
 import type { EntityRole, Total } from "../../../../types.ts";
 import { AreaFigures } from "../../../MoneyLensMap/index.ts";
 import type { FlowLensMapCopy } from "../../flowLensMap.types.ts";
+import { mapTooltipLine, mapTooltipName } from "../../../BaseMap/index.ts";
 
 export interface FlowTooltipProps {
   name: string;
@@ -21,16 +22,16 @@ export interface FlowTooltipProps {
 export function FlowTooltip({ name, total, role, isHome, homeName, locale, copy }: FlowTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
+      <Typography component="span" {...mapTooltipName}>{name}</Typography>
       {total ? (
-        <AreaFigures total={total} locale={locale} copy={copy.tiles} />
+        <AreaFigures dense total={total} locale={locale} copy={copy.tiles} />
       ) : (
-        <Typography component="span" variant="body2" sx={{ display: "block" }}>{copy.map.noData}</Typography>
+        <Typography component="span" {...mapTooltipLine}>{copy.map.noData}</Typography>
       )}
       {isHome ? (
-        <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tooltip.homeCounty}</Typography>
+        <Typography component="span" {...mapTooltipLine}>{copy.tooltip.homeCounty}</Typography>
       ) : (
-        total && BigInt(total.awarded) > 0n && homeName && <Typography component="span" variant="caption" sx={{ display: "block" }}>{copy.tooltip.direction[role](homeName)}</Typography>
+        total && BigInt(total.awarded) > 0n && homeName && <Typography component="span" {...mapTooltipLine}>{copy.tooltip.direction[role](homeName)}</Typography>
       )}
     </>
   );

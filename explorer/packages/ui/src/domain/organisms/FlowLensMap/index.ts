@@ -6,6 +6,6 @@ export { FlowLegend, type FlowLegendProps } from "./components/FlowLegend/index.
 export { FlowTooltip, type FlowTooltipProps } from "./components/FlowTooltip/index.ts";
 export type { ByRole, FlowCaptionCopy, FlowLegendCopy, FlowLensMapCopy, FlowTooltipCopy } from "./flowLensMap.types.ts";
 export {
-  ARC_COLOR, BUBBLE_FILL, HOME_COLOR, MAX_ARC_WIDTH, MAX_BUBBLE_RADIUS, MIN_ARC_WIDTH, MIN_BUBBLE_RADIUS, OTHER_COLOR, arcWidth, bubbleRadius, flowMarks, flowRows, flowSide, isEmptyFlow, maxAwarded,
+  ARC_COLOR, ARC_OPACITY, ARROWHEAD_OPACITY, BUBBLE_FILL, HOME_COLOR, MAX_ARC_WIDTH, MAX_BUBBLE_RADIUS, MIN_ARC_WIDTH, MIN_BUBBLE_RADIUS, OTHER_COLOR, arcWidth, bubbleRadius, flowMarks, flowRows, flowSide, isEmptyFlow, maxAwarded,
   type FlowArc, type FlowBubble, type FlowRow,
 } from "./flowLensMap.utils.ts";

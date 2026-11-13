@@ -3,6 +3,7 @@ import type { Locale } from "../../../../../theme/index.ts";
 import type { Total } from "../../../../types.ts";
 import type { MoneyLensMapCopy } from "../../moneyLensMap.types.ts";
 import { AreaFigures } from "../AreaFigures/index.ts";
+import { mapTooltipLine, mapTooltipName } from "../../../BaseMap/index.ts";
 
 export interface CountyTooltipProps {
   name: string;
@@ -16,11 +17,11 @@ export interface CountyTooltipProps {
 export function CountyTooltip({ name, total, locale, copy }: CountyTooltipProps) {
   return (
     <>
-      <Typography component="span" variant="subtitle2" sx={{ display: "block" }}>{name}</Typography>
+      <Typography component="span" {...mapTooltipName}>{name}</Typography>
       {total ? (
-        <AreaFigures total={total} locale={locale} copy={copy.tiles} />
+        <AreaFigures dense total={total} locale={locale} copy={copy.tiles} />
       ) : (
-        <Typography component="span" variant="body2" sx={{ display: "block" }}>{copy.map.noData}</Typography>
+        <Typography component="span" {...mapTooltipLine}>{copy.map.noData}</Typography>
       )}
     </>
   );

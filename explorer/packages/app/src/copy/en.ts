@@ -141,6 +141,7 @@ export const en: Copy = {
       NOT_HARVESTED: "Not harvested",
     },
     noStatus: "No coverage status",
+    nationalCaption: (source) => `${source} is harvested nationally; gaps apply to every county`,
     marks: {
       title: "One mark per Source",
       harvested: (source) => `${source}: coloured by the county's status`,

@@ -7,8 +7,9 @@ import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import type { CoverageLens } from "../../types.ts";
 import type { MapArea } from "../MoneyLensMap/index.ts";
 import { CoverageLensMap } from "./index.ts";
+import { onPanel } from "../../../workbench/index.ts";
 
-const meta = { title: "Domain/CoverageLensMap" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/CoverageLensMap", decorators: [onPanel] } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
