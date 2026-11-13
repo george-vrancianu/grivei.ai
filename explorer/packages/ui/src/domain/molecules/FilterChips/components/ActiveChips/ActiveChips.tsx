@@ -26,7 +26,6 @@ export function ActiveChips({ chips, onRemove, onClearAll, copy }: ActiveChipsPr
           {chips.map((chip) => (
             <Chip
               key={chip.id}
-              size="small"
               color="primary"
               label={chip.label}
               aria-label={copy.remove(chip.label)}

@@ -6,7 +6,7 @@ import { TableHead } from "../../../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { formatMoney } from "../../../../atoms/MoneyAmount/index.ts";
+import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import type { RelationshipsTimeline } from "../../../../types.ts";
 import type { MonthlyTimelineCopy } from "../../relationshipsTab.types.ts";
 import { TIMELINE_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
@@ -91,8 +91,8 @@ export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, locale, 
                 {bars.map((bar) => (
                   <TableRow key={bar.month}>
                     <TableCell>{formatMonth(bar.month, locale)}</TableCell>
-                    <TableCell>{formatMoney(overallByMonth.get(bar.month) ?? "0", locale)}</TableCell>
-                    {picked && <TableCell>{formatMoney(pickedByMonth.get(bar.month) ?? "0", locale)}</TableCell>}
+                    <TableCell>{<MoneyAmount bani={overallByMonth.get(bar.month) ?? "0"} locale={locale} />}</TableCell>
+                    {picked && <TableCell>{<MoneyAmount bani={pickedByMonth.get(bar.month) ?? "0"} locale={locale} />}</TableCell>}
                   </TableRow>
                 ))}
               </TableBody>

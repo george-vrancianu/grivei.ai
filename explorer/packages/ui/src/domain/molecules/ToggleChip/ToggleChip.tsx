@@ -7,13 +7,15 @@ export interface ToggleChipProps {
   onToggle: () => void;
   /** Shown as a tooltip and read as the chip's description (a badge's caveat). */
   description?: string;
+  /** `medium` is a filter chip (40 px pill, the default); `small` is a badge chip (32 px, with a 44 px hit area). */
+  size?: "small" | "medium";
 }
 
 /** A filter chip that is on or off: a button with `aria-pressed`, filled when on, outlined when off. */
-export function ToggleChip({ label, pressed, onToggle, description }: ToggleChipProps) {
+export function ToggleChip({ label, pressed, onToggle, description, size = "medium" }: ToggleChipProps) {
   const chip = (
     <Chip
-      size="small"
+      size={size}
       label={label}
       clickable
       aria-pressed={pressed}
