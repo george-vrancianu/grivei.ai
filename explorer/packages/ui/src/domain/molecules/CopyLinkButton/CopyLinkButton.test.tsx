@@ -1,8 +1,9 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { CopyLinkButton } from "./index.ts";
+import { REANNOUNCE_MS } from "./hooks/useCopyLink.ts";
 
 const copy = { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" };
 const URL_TO_COPY = "https://grivei.ai/explore/record/CAN1145000";
@@ -93,6 +94,22 @@ describe("CopyLinkButton", () => {
       expect(seen).toEqual(["Link copied", "", "Link copied"]);
     } finally {
       observer.disconnect();
+    }
+  });
+
+  it("sets no state and starts no timer when it unmounts during the re-announce wait", async () => {
+    vi.useFakeTimers();
+    try {
+      mockClipboard(() => Promise.resolve());
+      const { unmount } = renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+      fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+      await vi.advanceTimersByTimeAsync(0);
+      fireEvent.click(screen.getByRole("button", { name: "Copy link" })); // second copy: now waiting out the re-announce gap
+      unmount();
+      await vi.advanceTimersByTimeAsync(REANNOUNCE_MS + 10);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

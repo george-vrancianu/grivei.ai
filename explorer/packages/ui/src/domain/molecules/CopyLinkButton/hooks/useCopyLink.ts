@@ -14,7 +14,15 @@ export function useCopyLink(url: string): { status: CopyStatus; copy: () => Prom
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   /** Whether the region holds a confirmation now. */
   const said = useRef(false);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  /** False once unmounted, so nothing runs after the re-announce wait. */
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(timer.current);
+    };
+  }, []);
 
   const copy = useCallback(async () => {
     clearTimeout(timer.current);
@@ -29,6 +37,7 @@ export function useCopyLink(url: string): { status: CopyStatus; copy: () => Prom
       // empty the region before saying it again, or a second copy's identical text would not be announced
       setStatus("idle");
       await new Promise((resolve) => setTimeout(resolve, REANNOUNCE_MS));
+      if (!mounted.current) return;
     }
     said.current = true;
     setStatus(next);
