@@ -20,4 +20,10 @@ describe("OrderSelect", () => {
     await userEvent.setup().selectOptions(screen.getByRole("combobox", { name: "Order" }), "date, oldest first");
     expect(onChange).toHaveBeenCalledWith("DATE_ASC");
   });
+
+  it("has a real label: a click on the visible text focuses the select", async () => {
+    renderInUi(<OrderSelect value="VALUE_DESC" onChange={() => {}} copy={copy} />);
+    await userEvent.setup().click(screen.getByText("Order"));
+    expect(screen.getByRole("combobox", { name: "Order" })).toHaveFocus();
+  });
 });

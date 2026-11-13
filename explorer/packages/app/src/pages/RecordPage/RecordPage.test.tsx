@@ -72,7 +72,8 @@ describe("a Record page", () => {
 
   it("opens a contract by its code: title, kind, procedure, values, authority and winner", async () => {
     const { record } = await openRecorded("contract-single-winner");
-    expect(screen.getByText("Contract")).toBeInTheDocument();
+    expect(within(screen.getByRole("heading", { level: 1 }).parentElement!).getByText("Contract")).toBeInTheDocument(); // the channel tag over the title
+    expect(valueOf("Kind")).toHaveTextContent("Contract");
     expect(screen.getByText("Licitatie deschisa")).toBeInTheDocument();
     expect(valueOf("Value as published")).toHaveTextContent("RON 150.00");
     expect(valueOf("Counted value")).toHaveTextContent("RON 150.00");

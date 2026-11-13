@@ -9,7 +9,9 @@ import { factsSx } from "../facts.ts";
 export interface RecordFactsCopy {
   /** The panel's title ("The Record"). */
   heading: string;
-  facets: { date: string; procedure: string; contractType: string; cpv: string };
+  /** The Record's kind, spelled out per kind. */
+  kinds: Record<RecordPageData["kind"], string>;
+  facets: { kind: string; date: string; procedure: string; contractType: string; cpv: string };
   /** The label of the contracting authority's row. */
   authority: string;
   entityLink: EntityLinkCopy;
@@ -22,12 +24,14 @@ export interface RecordFactsProps {
   copy: RecordFactsCopy;
 }
 
-/** The side panel of the Record's own facts: date, contracting authority (linked), procedure, contract type and CPV, the last three as published. A fact the Record does not have is left out. */
+/** The side panel of the Record's own facts: kind, date, contracting authority (linked), procedure, contract type and CPV, the last three as published. A fact the Record does not have is left out. */
 export function RecordFacts({ record, entityHref, locale, copy }: RecordFactsProps) {
   const { facets } = copy;
   return (
     <Panel heading={copy.heading} level="h2">
       <Box component="dl" sx={factsSx}>
+        <dt>{facets.kind}</dt>
+        <dd>{copy.kinds[record.kind]}</dd>
         {record.date && (
           <>
             <dt>{facets.date}</dt>

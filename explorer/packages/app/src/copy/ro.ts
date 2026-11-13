@@ -252,7 +252,7 @@ export const ro: Copy = {
     parties: {
       authority: "Autoritate contractantă",
       winners: "Câștigători",
-      consortiumOf: (_n, formatted) => `consorțiu de ${formatted}`,
+      consortiumOf: (_n, formatted) => `consorțiu de ${formatted} membri`,
       share: (amount) => `parte egală ${amount}`,
       convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP. Valoarea de mai sus este valoarea întreagă a contractului.",
     },

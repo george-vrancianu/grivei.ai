@@ -77,4 +77,22 @@ describe("CopyLinkButton", () => {
       vi.useRealTimers();
     }
   });
+
+  it("announces a second copy again: the live region empties between the two", async () => {
+    const user = userEvent.setup();
+    renderInUi(<CopyLinkButton url={URL_TO_COPY} copy={copy} />);
+    mockClipboard(() => Promise.resolve());
+    const seen: string[] = [];
+    const observer = new MutationObserver(() => seen.push(screen.getByRole("status").textContent ?? ""));
+    observer.observe(screen.getByRole("status"), { childList: true, characterData: true, subtree: true });
+    try {
+      await user.click(screen.getByRole("button", { name: "Copy link" }));
+      await waitFor(() => expect(seen).toContain("Link copied"));
+      await user.click(screen.getByRole("button", { name: "Copy link" }));
+      await waitFor(() => expect(seen.filter((text) => text === "Link copied")).toHaveLength(2));
+      expect(seen).toEqual(["Link copied", "", "Link copied"]);
+    } finally {
+      observer.disconnect();
+    }
+  });
 });

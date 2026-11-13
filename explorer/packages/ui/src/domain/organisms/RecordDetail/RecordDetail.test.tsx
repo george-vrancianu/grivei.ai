@@ -116,7 +116,7 @@ describe("RecordDetail actions and value card", () => {
 });
 
 describe("RecordDetail", () => {
-  it("shows the kind as a tag, the code and the badges over the title, which is the page heading", () => {
+  it("shows the channel as a tag, the code and the badges over the title, which is the page heading", () => {
     show(contractRecord);
     const title = screen.getByRole("heading", { level: 1, name: contractRecord.title });
     expect(title).toBeVisible();
@@ -137,13 +137,16 @@ describe("RecordDetail", () => {
     expect(panel.getByRole("link", { name: contractRecord.authority.displayName })).toHaveAttribute("href", `/explore/authority/${contractRecord.authority.key}`);
   });
 
-  it("names a DAN a direct purchase award notification, in both languages", () => {
+  it("names a DAN a direct purchase award notification in the Record's panel, in both languages, under the channel tag over the title", () => {
     const dan: RecordPageData = { ...directPurchaseRecord, kind: "DAN" };
     const { unmount } = show(dan);
-    expect(screen.getByText("Direct purchase award notification (DAN)")).toBeVisible();
+    const header = () => within(screen.getByRole("heading", { level: 1, name: dan.title }).parentElement!);
+    expect(header().getByText("Direct purchase")).toBeVisible();
+    expect(section("The Record").getByText("Kind").nextElementSibling).toHaveTextContent("Direct purchase award notification (DAN)");
     unmount();
     show(dan, "ro");
-    expect(screen.getByText("Notificare de atribuire a cumpărării directe (DAN)")).toBeVisible();
+    expect(header().getByText("Achiziție directă")).toBeVisible();
+    expect(section("Înregistrarea").getByText("Fel înregistrare").nextElementSibling).toHaveTextContent("Notificare de atribuire a cumpărării directe (DAN)");
   });
 
   it("shows the value as published and the counted value", () => {

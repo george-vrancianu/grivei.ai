@@ -11,3 +11,4 @@ export {
   FORBIDDEN_STEMS, SIGNAL_RULES, forbiddenWords, ruleTexts, signalNumberTexts, signalSentence,
   type SignalNumberTexts, type SignalRuleCopy, type SignalRulesCopy,
 } from "./utils/signalWording.ts";
+export { pageSx } from "./utils/pageSx.ts";

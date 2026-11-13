@@ -2,7 +2,7 @@ import { Box } from "../../../../../atoms/Box/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { color } from "../../../../../theme/tokens.ts";
+import { color, type } from "../../../../../theme/tokens.ts";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
@@ -60,7 +60,7 @@ export function WinnersSection({ record, entityHref, locale, copy }: WinnersSect
       >
         {record.winners.map((party, index) => (
           <Box component="li" key={index} sx={{ py: 1.5, borderTop: `1px solid ${color.line}`, overflowWrap: "anywhere" }}>
-            <Typography component="span" sx={{ fontWeight: 600 }}>
+            <Typography component="span" sx={{ fontWeight: type.rowTitle.weight }}>
               <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} />
             </Typography>
             {consortium && party.share !== null && (

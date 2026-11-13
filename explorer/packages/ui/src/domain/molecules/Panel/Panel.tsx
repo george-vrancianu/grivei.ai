@@ -3,7 +3,7 @@ import { Card } from "../../../atoms/Card/index.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 
 export interface PanelProps {
-  /** The panel's title, a mono accent label (an `h3`: the tab's own heading is the `h2`). */
+  /** The panel's title, a mono accent label. */
   heading: string;
   /** Accessible name of the region, when it differs from the heading. */
   label?: string;
@@ -12,7 +12,7 @@ export interface PanelProps {
   children: ReactNode;
 }
 
-/** A `Card` (the theme's panel fill, hairline and radius) for the drawing's graph and timeline boxes: a title, then its content. */
+/** A `Card` (the theme's panel fill, hairline and radius) for a titled box of content: the mono accent title, then the content. Used on tabs (under the tab's own `h2`) and on the Record page. */
 export function Panel({ heading, label, level = "h3", children }: PanelProps) {
   return (
     <Card

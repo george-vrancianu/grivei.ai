@@ -6,6 +6,7 @@ import type { Locale } from "../../../../../theme/index.ts";
 import { color, type } from "../../../../../theme/tokens.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import type { RecordPageData } from "../../../../types.ts";
+import { fitSize } from "../../../../utils/fitSize.ts";
 import { notCountedReason, type NotCountedReason } from "../../recordDetail.utils.ts";
 
 export interface ValueFactsCopy {
@@ -30,9 +31,6 @@ export interface ValueFactsProps {
   children?: ReactNode;
 }
 
-/** The big number never breaks, so it shrinks with the width of the card (a container query unit): 9cqi x 18 characters x 0.6 em fits any width. */
-const FIT_SIZE = `clamp(18px, 9cqi, ${type.stat.size})`;
-
 /**
  * The value card: the value as published in the big number (a framework ceiling says "ceiling, not summed"), the counted value under it
  * (an empty one says why), and whatever the Record adds below. The published value is never edited.
@@ -47,7 +45,7 @@ export function ValueFacts({ record, locale, copy, children }: ValueFactsProps) 
             {copy.published}
           </Typography>
           <Box component="dd" sx={{ m: 0, mb: 1.5 }}>
-            <Typography variant="stat" component="p" sx={{ fontSize: FIT_SIZE, overflowWrap: "anywhere" }}>
+            <Typography variant="stat" component="p" sx={{ fontSize: fitSize(type.stat.size), overflowWrap: "anywhere" }}>
               {record.value === null ? (
                 <Typography variant="h4" component="span">
                   {copy.noValue}

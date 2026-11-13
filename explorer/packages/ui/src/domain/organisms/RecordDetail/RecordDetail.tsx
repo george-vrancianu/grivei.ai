@@ -3,6 +3,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { layout } from "../../../theme/tokens.ts";
+import { pageSx } from "../../utils/pageSx.ts";
 import type { CiteLineCopy } from "../../molecules/CiteLine/index.ts";
 import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityRole, RecordPageData, RecordSignal } from "../../types.ts";
@@ -53,7 +54,7 @@ export interface RecordDetailProps {
 }
 
 /**
- * A Record page (A · Graf): over the title the kind, code and caveat badges; under it the primary "Check in SEAP" button and the citable URL
+ * A Record page (A · Graf): over the title the channel, code and caveat badges; under it the primary "Check in SEAP" button and the citable URL
  * with its copy button. Then the main column (the value card with the framework line and its bar, the subsequent contracts, the winners with
  * consortium shares labelled as a convention) beside a column of panels (the Record's facts, every badge explained, its Signals, where it came from)
  * that stacks under the main column below the medium breakpoint. The page owns its width and gutter. Presentational: it fetches nothing and knows no router.
@@ -65,12 +66,8 @@ export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodol
     </ValueFacts>
   );
   return (
-    <Stack
-      component="main"
-      spacing={3}
-      sx={{ pt: 3, pb: 5, px: layout.gutter, maxWidth: layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" }}
-    >
-      <RecordHeading record={record} copy={{ ...copy.heading, badges: copy.recordRow.badges }}>
+    <Stack component="main" spacing={3} sx={pageSx}>
+      <RecordHeading record={record} copy={{ ...copy.heading, badges: copy.recordRow.badges, channel: copy.recordRow.channel }}>
         <RecordActions provenance={record.provenance} citeUrl={citeUrl} copy={{ checkIn: copy.provenance.checkIn, cite: copy.cite }} />
       </RecordHeading>
       <Box
@@ -97,7 +94,7 @@ export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodol
             record={record}
             entityHref={entityHref}
             locale={locale}
-            copy={{ heading: copy.heading.panel, facets: copy.heading.facets, authority: copy.parties.authority, entityLink: copy.recordRow.party.entityLink }}
+            copy={{ heading: copy.heading.panel, kinds: copy.heading.kinds, facets: copy.heading.facets, authority: copy.parties.authority, entityLink: copy.recordRow.party.entityLink }}
           />
           <BadgeExplanations badges={record.badges} copy={{ ...copy.badges, badges: copy.recordRow.badges }} />
           <SignalsSection signals={record.signals} recordHref={recordHref} onNavigate={onNavigate} renderCard={renderSignalCard} locale={locale} copy={copy.signals} />

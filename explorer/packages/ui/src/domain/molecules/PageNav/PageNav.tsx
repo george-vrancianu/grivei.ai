@@ -21,7 +21,7 @@ const boxSx = {
   fontSize: type.label.size,
   color: color.text,
 } as const;
-const currentSx = { bgcolor: color.accent, borderColor: color.accent, color: color.onAccent, fontWeight: 600, "&:hover": { color: color.onAccent } } as const;
+const currentSx = { bgcolor: color.accent, borderColor: color.accent, color: color.onAccent, fontWeight: type.button.weight, "&:hover": { color: color.onAccent } } as const;
 
 export interface PageNavCopy {
   /** The navigation landmark's accessible name. */
