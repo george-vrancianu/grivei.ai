@@ -37,3 +37,9 @@ export function MapTooltip({ id, left, top, children }: MapTooltipProps) {
     </Box>
   );
 }
+
+/** Props for a tooltip's title line (the area's name, or a status word): `meta`, `text`, 600. Spread on a `Typography`. */
+export const mapTooltipName = { variant: "meta", sx: { display: "block", color: color.text, fontWeight: 600 } } as const;
+
+/** Props for a tooltip's detail lines: `meta`, `text2`. Spread on a `Typography`. */
+export const mapTooltipLine = { variant: "meta", sx: { display: "block", color: color.text2 } } as const;
