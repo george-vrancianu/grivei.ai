@@ -11,7 +11,7 @@ import * as w from "./world.ts";
 const rowsFrom = (start: number, n: number) =>
   Array.from({ length: n }, (_, i) => {
     const base = [w.rDirect, w.rContract, w.rConsortium, w.rNoValue][(start + i) % 4]!;
-    return { record: { ...base, code: `CAN${2_000_000 + start + i}` }, matchedField: null };
+    return { record: { ...base, code: `CAN${2_000_000 + start + i}` }, matchedField: null, areaShare: null };
   });
 
 export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables> = [
@@ -78,7 +78,7 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
       total: total({ awarded: ron(60_000_000), records: 11, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
       records: { count: 11, rows: [
         w.rConsortium, w.rFrameworkCeiling, w.rSubsequent, w.rSuspect, w.rDirect, w.rNoValue, w.rNaturalPerson, w.rMismatch,
-      ].map((record) => ({ record, matchedField: null })) },
+      ].map((record) => ({ record, matchedField: null, areaShare: null })) },
     } } },
   },
   {
@@ -87,8 +87,8 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
     data: { seap: { search: {
       total: total({ awarded: ron(290_000), records: 2 }),
       records: { count: 2, rows: [
-        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (2)", highlights: [[24, 30], [31, 36]] } },
-        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (1)", highlights: [[24, 30], [31, 36]] } },
+        { record: w.rSplit2, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (2)", highlights: [[24, 30], [31, 36]] }, areaShare: null },
+        { record: w.rSplit1, matchedField: { field: "TITLE", text: "Servicii de întreținere spații verzi (1)", highlights: [[24, 30], [31, 36]] }, areaShare: null },
       ] },
     } } },
   },
@@ -97,7 +97,7 @@ export const fullResultsRecordsHand: FixtureSet<FullResultsRecordsQuery, FullRes
     variables: { filter: {}, limit: 100, offset: 99_900, order: "DATE_ASC" },
     data: { seap: { search: {
       total: total({ awarded: ron(86_000_000_000), records: 2_400_000 }),
-      records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: null }] },
+      records: { count: 2_400_000, rows: [{ record: w.rDirectSmall, matchedField: null, areaShare: null }] },
     } } },
   },
 ];

@@ -141,6 +141,76 @@ describe("MainScreen for the empty filter", () => {
   });
 });
 
+describe("areaShare on Record rows (#103)", () => {
+  // a small world: each winner has a supplier county; the Total and the rows are both made from these Record x winner rows, as the search store does
+  const winner = (key: string, county: string, share: string) => ({ key, county, share });
+  const world = [
+    { code: "CAN1", value: "3000", winners: [winner("2000001", "RO-CJ", "1500"), winner("2000002", "RO-MS", "1500")] }, // a consortium across two counties
+    { code: "CAN2", value: "1001", winners: [winner("2000001", "RO-CJ", "501"), winner("2000003", "RO-CJ", "500")] }, // a consortium wholly in Cluj
+    { code: "DA3", value: "700", winners: [winner("2000001", "RO-CJ", "700")] }, // a single winner in Cluj
+    { code: "DA4", value: "900", winners: [winner("2000002", "RO-MS", "900")] }, // elsewhere
+  ];
+  type Filter = { county?: string | null; countySide?: string | null };
+  const matching = (f: Filter) => {
+    const supplierArea = f.county && f.countySide === "SUPPLIER";
+    return world
+      .map((r) => ({ ...r, hit: r.winners.filter((w) => (supplierArea ? w.county === f.county : true)) }))
+      .filter((r) => (f.county && f.countySide !== "SUPPLIER" ? true : r.hit.length > 0));
+  };
+  const sum = (xs: string[]) => xs.reduce((a, x) => a + BigInt(x), 0n);
+  const modelStore: Store = {
+    ...store,
+    searchTotal: async (f) => ({ awarded: sum(matching(f).flatMap((r) => r.hit.map((w) => w.share))).toString(), records: matching(f).length, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }),
+    searchRecords: async (f) => {
+      const hits = matching(f);
+      return {
+        count: hits.length,
+        rows: hits.map((r) => row({
+          code: r.code, value: r.value, counted: r.value,
+          winners: r.winners.map((w) => ({ naturalPerson: false, name: w.key, entity: entity(w.key, w.key), share: w.share })),
+          areaShare: sum(r.hit.map((w) => w.share)).toString(), // a store that always fills it: the API decides when it is shown
+        })),
+      };
+    },
+  };
+  const modelApi = createApi(modelStore, schema);
+  const ask = async (filter: Filter) => {
+    const r = await modelApi.respond({ id: mainScreen.sha256, variables: { filter } });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, { filter })).toEqual([]);
+    const search = (r.body.data as MainScreenQuery).seap.search;
+    return { total: search.total, rows: search.records.rows.map((x) => [x.record.code, x.areaShare] as const) };
+  };
+
+  it("gives a multi-winner Record the summed shares of its winners in the clicked supplier county", async () => {
+    const { rows } = await ask({ county: "RO-CJ", countySide: "SUPPLIER" });
+    expect(rows).toEqual([["CAN1", "1500"], ["CAN2", "1001"], ["DA3", null]]);
+  });
+
+  it("sums, over all matching Records, to the Total", async () => {
+    for (const county of ["RO-CJ", "RO-MS"]) {
+      const { total, rows } = await ask({ county, countySide: "SUPPLIER" });
+      const shares = rows.map(([code, share]) => share ?? world.find((r) => r.code === code)!.winners.filter((w) => w.county === county).map((w) => w.share)[0]!);
+      expect(sum(shares).toString()).toBe(total.awarded);
+    }
+  });
+
+  it("is null for every row on the authority side, and with no county", async () => {
+    for (const filter of [{ county: "RO-CJ", countySide: "AUTHORITY" }, { county: "RO-CJ" }, { countySide: "SUPPLIER" }, {}]) {
+      const { rows } = await ask(filter);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every(([, share]) => share === null), JSON.stringify(filter)).toBe(true);
+    }
+  });
+
+  it("is null for a Record with one winner, and where no search filter applies", async () => {
+    const { rows } = await ask({ county: "RO-MS", countySide: "SUPPLIER" });
+    expect(rows).toEqual([["CAN1", "1500"], ["DA4", null]]);
+    const plain = await api.respond({ id: mainScreen.sha256, variables: EMPTY });
+    expect((plain.body.data as MainScreenQuery).seap.search.records.rows.map((x) => x.areaShare)).toEqual([null, null]);
+  });
+});
+
 describe("over HTTP", () => {
   const started = api.listen(0, "127.0.0.1");
   afterAll(async () => (await started).close());

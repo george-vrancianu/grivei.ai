@@ -11,8 +11,9 @@ import { RecordParties, type RecordPartiesCopy } from "./components/RecordPartie
 import { RecordBadges, type RecordBadgesCopy } from "../RecordBadges/index.ts";
 import { RecordMetaLine, type RecordMetaLineCopy } from "./components/RecordMetaLine/index.ts";
 import { RecordValue, type RecordValueCopy } from "../RecordValue/index.ts";
+import { AreaShareLine, type AreaShareLineCopy } from "./components/AreaShareLine/index.ts";
 
-export type RecordResultRowCopy = RecordMetaLineCopy & RecordValueCopy & RecordBadgesCopy & RecordPartiesCopy & MatchedLineCopy;
+export type RecordResultRowCopy = RecordMetaLineCopy & RecordValueCopy & RecordBadgesCopy & RecordPartiesCopy & MatchedLineCopy & AreaShareLineCopy;
 
 /** How a row shows the Signals its Record is in: one compact badge each, linking to the Signal's reproducing Records list. Without it a row shows none. */
 export interface RecordSignalBadges {
@@ -31,14 +32,14 @@ export interface RecordResultRowProps {
   locale: Locale;
   copy: RecordResultRowCopy;
   signalBadges?: RecordSignalBadges | undefined;
-  /** A line under the value's caption (the in-county share of a consortium Record, #103). */
+  /** Another line under the value's caption (after the in-county share line). */
   valueExtra?: React.ReactNode;
 }
 
 /**
  * A row of the Records tab, two columns. Left: the meta line (channel tag, code, date, procedure), the title (linked), "matched in ...",
  * authority and winners, then the badges and Signal badges. Right: the full value over its caption (`RecordValue`; it takes children,
- * the slot under the caption for the in-county share line, #103). The right column wraps under the left one on a narrow screen.
+ * the slot under the caption). After a supplier-county click a multi-winner Record has `areaShare`: its in-county share is the second line, labelled as the equal-share convention (#103). The right column wraps under the left one on a narrow screen.
  */
 export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges, valueExtra }: RecordResultRowProps) {
   const { record, matchedField } = row;
@@ -64,6 +65,7 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
         </RecordBadges>
       </Stack>
       <RecordValue record={record} locale={locale} copy={copy}>
+        {row.areaShare != null && <AreaShareLine bani={row.areaShare} locale={locale} copy={copy} />}
         {valueExtra}
       </RecordValue>
     </Box>

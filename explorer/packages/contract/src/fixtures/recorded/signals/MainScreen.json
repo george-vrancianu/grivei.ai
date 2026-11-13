@@ -326,7 +326,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -377,7 +378,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -422,7 +424,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -483,7 +486,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -530,7 +534,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -581,7 +586,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -632,7 +638,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -683,7 +690,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -734,7 +742,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -785,7 +794,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -834,7 +844,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -886,7 +897,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -937,7 +949,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -988,7 +1001,8 @@
                     }
                   ]
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }
@@ -1306,7 +1320,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1338,7 +1353,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1370,7 +1386,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1402,7 +1419,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1434,7 +1452,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1466,7 +1485,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1498,7 +1518,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1530,7 +1551,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1564,7 +1586,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               },
               {
                 "record": {
@@ -1596,7 +1619,8 @@
                   ],
                   "signals": []
                 },
-                "matchedField": null
+                "matchedField": null,
+                "areaShare": null
               }
             ]
           }

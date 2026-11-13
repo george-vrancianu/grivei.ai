@@ -443,6 +443,14 @@ export type RecordOrder =
 
 export type RecordResult = {
   __typename?: 'RecordResult';
+  /**
+   * The part of the Record's value that went to winners placed in the filter's supplier-side map area: the summed
+   * consortium shares of those winners, counted by the same rule and over the same Record x winner rows as the headline
+   * Total, so over all Records matching the filter these sum to the Total's `awarded`. Null unless the filter has
+   * `countySide: SUPPLIER` and a `county`; null for a Record with a single winner (its full value is the share); null
+   * for a Record with no value to share. Always null where no search filter applies (e.g. the entity page's Records tab).
+   */
+  areaShare: Maybe<Scalars['Bani']['output']>;
   /** Why it matched: computed only for returned rows. */
   matchedField: Maybe<MatchedField>;
   record: SeapRecord;
@@ -1335,6 +1343,7 @@ export type RecordFilterValueResolvers<ContextType = any, ParentType extends Res
 };
 
 export type RecordResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordResult'] = ResolversParentTypes['RecordResult']> = {
+  areaShare?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
   matchedField?: Resolver<Maybe<ResolversTypes['MatchedField']>, ParentType, ContextType>;
   record?: Resolver<ResolversTypes['SeapRecord'], ParentType, ContextType>;
 };
