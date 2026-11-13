@@ -92,8 +92,12 @@ _Avoid_: manual merge, fix, mapping
 One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
 
+**Money measure**:
+The one amount a Source sums (for SEAP, awarded value), fixed in that Source's Release; measures of different Sources are never added together or compared on one scale.
+_Avoid_: total public money, spending (across Sources)
+
 **Awarded value**:
-The value a record was awarded at, in RON, as published; the only money measure the explorer sums. It is not what was paid, and later contract modifications are not included.
+The value a record was awarded at, in RON, as published; SEAP's money measure, the only amount summed for SEAP and never added to another Source's money measure. It is not what was paid, and later contract modifications are not included.
 _Avoid_: spent, spending, paid, payments
 
 **Framework ceiling**:
@@ -155,7 +159,7 @@ One way the explorer's map of Romania encodes data; the map shows one lens at a 
 _Avoid_: mode, layer, view
 
 **Money lens**:
-The default lens: awarded value by county, either where it is awarded (contracting authority) or where it goes (supplier). Zoomed into a county, it colours each UAT the same way.
+The default lens: the chosen Source's money measure by county (for SEAP, awarded value, either where it is awarded by the contracting authority or where it goes to the supplier). Zoomed into a county, it colours each UAT the same way. It shows one Source at a time; a Source without a money measure has a count lens instead.
 
 **Coverage lens**:
 The lens showing, per county and per Source, whether the harvest is complete enough to trust the Money lens there; it colours each county by coverage status, never by how much an authority buys. Grey means not harvested, never no spending.
