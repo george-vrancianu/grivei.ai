@@ -163,7 +163,7 @@ describe("the Overview's Signals page links keep the carried search", () => {
     openAt("/explore/authority/1000017?search=q%3Dcomuna");
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
     const pager = await screen.findByRole("navigation", { name: catalogue.en.entityPage.signalPages.label });
-    const next = within(pager).getByRole("link", { name: catalogue.en.entityPage.signalPages.page(2) });
+    const next = within(pager).getByRole("link", { name: catalogue.en.entityPage.signalPages.page("2") });
     expect(next.getAttribute("href")).toContain("page=2");
     expect(decodeUrlState(next.getAttribute("href")!.split("?")[1] ?? "").carried).toEqual({ q: "comuna" });
     await userEvent.setup().click(next);
