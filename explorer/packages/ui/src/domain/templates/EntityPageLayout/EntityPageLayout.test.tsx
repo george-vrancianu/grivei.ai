@@ -87,14 +87,14 @@ describe("EntityPageLayout", () => {
 
   it("shows the citable address under the tabs, named for assistive technology, in both languages", () => {
     const { unmount } = show("records", "en", undefined, { citeUrl: "grivei.ai/explore/authority/4384206/records?signal=no-publication" });
-    expect(screen.getByLabelText("Address of this view")).toHaveTextContent("grivei.ai/explore/authority/4384206/records?signal=no-publication");
+    expect(screen.getByText(/Address of this view:/).parentElement).toHaveTextContent("grivei.ai/explore/authority/4384206/records?signal=no-publication");
     unmount();
     show("records", "ro", undefined, { citeUrl: "grivei.ai/ro/explore/authority/4384206/records" });
-    expect(screen.getByLabelText("Adresa acestei vizualizări")).toBeVisible();
+    expect(screen.getByText(/Adresa acestei vizualizări:/).parentElement).toHaveTextContent("grivei.ai/ro/explore/authority/4384206/records");
   });
 
   it("shows no address line when none is given", () => {
     show("overview");
-    expect(screen.queryByLabelText("Address of this view")).toBeNull();
+    expect(screen.queryByText(/Address of this view/)).toBeNull();
   });
 });

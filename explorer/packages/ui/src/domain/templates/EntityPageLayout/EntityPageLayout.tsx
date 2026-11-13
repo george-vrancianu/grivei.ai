@@ -4,6 +4,7 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { layout } from "../../../theme/tokens.ts";
 import type { EntityPageView } from "../../types.ts";
+import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { EntityTabNav, type EntityTabNavCopy } from "./components/EntityTabNav/index.ts";
 
 export type EntityPageLayoutCopy = EntityTabNavCopy;
@@ -34,7 +35,10 @@ export function EntityPageLayout({ header, view, tabHrefs, tabCounts, citeUrl, o
       <Stack spacing={0.75}>
         <EntityTabNav view={view} hrefs={tabHrefs} counts={tabCounts} onNavigate={onNavigate} copy={copy} />
         {citeUrl && (
-          <Typography variant="meta" component="p" aria-label={copy.cite} sx={{ overflowWrap: "anywhere" }}>
+          <Typography variant="meta" component="p" sx={{ overflowWrap: "anywhere" }}>
+            <Box component="span" sx={visuallyHidden}>
+              {copy.cite}:{" "}
+            </Box>
             {citeUrl}
           </Typography>
         )}

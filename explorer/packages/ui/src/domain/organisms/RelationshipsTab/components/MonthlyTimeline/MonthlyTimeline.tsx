@@ -11,6 +11,7 @@ import type { RelationshipsTimeline } from "../../../../types.ts";
 import type { MonthlyTimelineCopy } from "../../relationshipsTab.types.ts";
 import { TIMELINE_COLOR, TIMELINE_PICKED_COLOR, timelineBars } from "../../relationshipsTab.utils.ts";
 import { formatMonth } from "../../../../utils/formatDate.ts";
+import { visuallyHidden } from "../../../../utils/visuallyHidden.ts";
 
 export interface MonthlyTimelineProps {
   /** The entity's months in the filter. */
@@ -27,7 +28,6 @@ const WIDTH = 640;
 const HEIGHT = 120;
 const AXIS = 22;
 
-const visuallyHidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" } as const;
 const swatch = { width: 12, height: 12, borderRadius: 0.5, flex: "none" } as const;
 
 /**

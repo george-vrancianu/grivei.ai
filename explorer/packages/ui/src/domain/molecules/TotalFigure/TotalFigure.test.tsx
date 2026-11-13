@@ -23,6 +23,13 @@ describe("TotalFigure", () => {
     renderInUi(<TotalFigure total={totalTypical} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByRole("link", { name: "How this total is counted" })).toHaveAttribute("href", "/methodology/");
   });
+  it("sizes the amount by the width of its own box (container units), so a long total fits a 390 px card; jsdom cannot lay out, so the stylesheet is read", () => {
+    renderInUi(<TotalFigure total={totalExtreme} locale="en" copy={sampleCopy.total("en")} {...base} />);
+    const css = [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText)).join("\n");
+    expect(css).toMatch(/container-type:\s*inline-size/);
+    expect(css).toMatch(/font-size:\s*clamp\(18px,\s*9cqi,\s*40px\)/);
+    expect(css).toMatch(/overflow-wrap:\s*anywhere/);
+  });
   it("shows the awarded value and the Record count", () => {
     renderInUi(<TotalFigure total={totalTypical} locale="en" copy={sampleCopy.total("en")} {...base} />);
     expect(screen.getByText(/^RON\s7,600$/)).toBeVisible();

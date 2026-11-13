@@ -47,6 +47,19 @@ describe("the Records tab of an authority", () => {
     expect(screen.queryAllByRole("link").filter((l) => /\/explore\/(supplier|authority)\//.test(l.getAttribute("href") ?? "") && /Persoană fizică/.test(l.textContent ?? ""))).toHaveLength(0);
   });
 
+  it("the Records count beside the tab is the same number on the Overview and on the unfiltered Records tab", async () => {
+    const recordsTab = () => screen.getAllByRole("link").find((l) => /^Records\d/.test(l.textContent ?? ""))!;
+    const { view } = await opened(AUTHORITY);
+    expect(screen.getByText("16 Records")).toBeVisible(); // the Records tab's totals band
+    expect(recordsTab()).toHaveTextContent("Records16");
+    view.unmount();
+    openAt("/explore/authority/1000017");
+    render(<App client={fixtureClient().client} />);
+    await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
+    expect(await screen.findByText("16 Records")).toBeVisible(); // the Overview's total, the source of the tab count
+    expect(recordsTab()).toHaveTextContent("Records16");
+  });
+
   // every facet kind: what the click writes to the URL, and the total and rows the API answered for exactly that filter
   it.each<[string, string, RecordFilter, number]>([
     ["channel", "Direct purchase (8)", { channel: "DIRECT_PURCHASE" }, 8],

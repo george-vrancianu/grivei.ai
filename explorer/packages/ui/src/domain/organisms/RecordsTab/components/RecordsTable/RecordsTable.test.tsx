@@ -1,15 +1,15 @@
 import { screen, within } from "@testing-library/react";
 import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
-import { authorityRecords, supplierRecords } from "../../../../samples/fixtureData.ts";
+import { authorityRecords, highlightedRecord, supplierRecords } from "../../../../samples/fixtureData.ts";
 import type { EntityRole, RecordsTabData } from "../../../../types.ts";
 import { RecordsTable } from "./index.ts";
 
-function show(records: RecordsTabData, role: EntityRole, locale: "en" | "ro" = "en") {
+function show(records: RecordsTabData, role: EntityRole, locale: "en" | "ro" = "en", rows: RecordsTabData["records"]["rows"] = records.records.rows) {
   const copy = sampleCopy.recordsTab(locale);
   renderInUi(
     <RecordsTable
-      rows={records.records.rows}
+      rows={rows}
       role={role}
       entityHref={(e, r) => `/explore/${r}/${e.key}`}
       recordHref={(r) => `/explore/record/${r.code}`}
@@ -42,5 +42,22 @@ describe("RecordsTable", () => {
     expect(screen.getByRole("columnheader", { name: "Titlu" })).toBeVisible();
     expect(screen.getByRole("columnheader", { name: "Câștigători" })).toBeVisible();
     expect(screen.getByRole("columnheader", { name: "Valoare" })).toBeVisible();
+  });
+
+  it.each([
+    ["en", "Matched in title:"],
+    ["ro", "Potrivit în titlu:"],
+  ] as const)("says why a Record matched the search, with exactly the matched ranges marked (%s)", (locale, line) => {
+    show(authorityRecords, "authority", locale, [highlightedRecord]);
+    const { text, highlights } = highlightedRecord.matchedField!;
+    const cell = screen.getByRole("link", { name: highlightedRecord.record.title }).closest("td")!;
+    expect(cell).toHaveTextContent(line);
+    expect([...cell.querySelectorAll("mark")].map((m) => m.textContent)).toEqual(highlights.map(([s, e]) => text.slice(s!, e!)));
+  });
+
+  it("shows no matched line for a Record without one", () => {
+    const row = { ...highlightedRecord, matchedField: null };
+    show(authorityRecords, "authority", "en", [row]);
+    expect(screen.queryByText(/Matched in/)).toBeNull();
   });
 });

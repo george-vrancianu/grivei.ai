@@ -17,4 +17,5 @@ export * from "./CoverageCell/index.ts";
 export * from "./CoverageGridLegend/index.ts";
 export * from "./SignalRuleBaseRate/index.ts";
 export * from "./RecordBadges/index.ts";
+export * from "./MatchedLine/index.ts";
 export * from "./RecordValue/index.ts";

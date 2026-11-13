@@ -9,6 +9,7 @@ import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
 import { PartyName } from "../../../../atoms/PartyName/index.ts";
+import { MatchedLine } from "../../../../molecules/MatchedLine/index.ts";
 import { RecordBadges } from "../../../../molecules/RecordBadges/index.ts";
 import type { RecordResultRowCopy, RecordSignalBadges } from "../../../../molecules/RecordResultRow/index.ts";
 import { RecordValue } from "../../../../molecules/RecordValue/index.ts";
@@ -35,7 +36,7 @@ export interface RecordsTableProps {
 }
 
 /**
- * The Records of the page as a table: the code and date, the title with its badges and Signals, the counterparty and the full value.
+ * The Records of the page as a table: the code and date, the title with the matched field (when the filter has a search text), its badges and Signals, the counterparty and the full value.
  * It scrolls sideways inside its own box on a narrow screen, so the page never does.
  */
 export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy, signalBadges }: RecordsTableProps) {
@@ -54,7 +55,7 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map(({ record }) => {
+          {rows.map(({ record, matchedField }) => {
             const keys = signalKeys(record.signals);
             const signals = signalBadges
               ? record.signals.map((signal, i) => (
@@ -77,6 +78,7 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
                   <Link href={recordHref(record)} color="text.primary" underline="hover" sx={{ fontWeight: 500, lineHeight: 1.4, textWrap: "pretty" }}>
                     {record.title}
                   </Link>
+                  {matchedField && <MatchedLine matchedField={matchedField} copy={row} />}
                   <RecordBadges record={record} copy={row}>
                     {signals.length > 0 ? signals : null}
                   </RecordBadges>

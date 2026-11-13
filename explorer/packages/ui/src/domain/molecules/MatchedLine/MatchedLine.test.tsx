@@ -1,6 +1,6 @@
-import { renderInUi } from "../../../../../testing/render.tsx";
-import { sampleCopy } from "../../../../samples/copy.ts";
-import { highlightedRecord } from "../../../../samples/fixtureData.ts";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sampleCopy } from "../../samples/copy.ts";
+import { highlightedRecord } from "../../samples/fixtureData.ts";
 import { MatchedLine } from "./index.ts";
 
 describe("MatchedLine", () => {

@@ -3,7 +3,7 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Tooltip } from "../../../atoms/Tooltip/index.ts";
 import { BadgeChip, type BadgeCopy } from "../../atoms/BadgeChip/index.ts";
 import type { RecordResult } from "../../types.ts";
-import { isConsortium } from "../RecordResultRow/recordResultRow.utils.ts";
+import { isConsortium } from "../../utils/recordFlags.ts";
 
 export interface RecordBadgesCopy {
   /** The consortium marker: the label, and the explanation that the full value is shown. */

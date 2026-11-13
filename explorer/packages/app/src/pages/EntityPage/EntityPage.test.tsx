@@ -182,13 +182,13 @@ describe("an entity page", () => {
     it("shows the address of the view under the tabs, query included, in both languages", async () => {
       open(`${SUPPLIER}/records?channel=contract`);
       await screen.findByRole("heading", { level: 1, name: NAME });
-      expect(screen.getByLabelText("Address of this view")).toHaveTextContent(`${window.location.host}${SUPPLIER}/records?channel=contract`);
+      expect(screen.getByText(/Address of this view:/).parentElement).toHaveTextContent(`${window.location.host}${SUPPLIER}/records?channel=contract`);
     });
 
     it("names the address line in Romanian", async () => {
       open(`/ro${SUPPLIER}`);
       await screen.findByRole("heading", { level: 1, name: NAME });
-      expect(screen.getByLabelText("Adresa acestei vizualizări")).toHaveTextContent(`${window.location.host}/ro${SUPPLIER}`);
+      expect(screen.getByText(/Adresa acestei vizualizări:/).parentElement).toHaveTextContent(`${window.location.host}/ro${SUPPLIER}`);
     });
   });
 });
