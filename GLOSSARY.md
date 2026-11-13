@@ -27,15 +27,19 @@ The moment the explorer becomes public at grivei.ai on a public host, with Restr
 _Avoid_: launch, release (when going public is meant)
 
 **Restricted**:
-Said of content shown only in a Private view: person-level data beyond the people an official source publishes in a role tied to public money (links joining people across Sources, Signals whose rule joins through people, court parties), and every Investigation.
+Said of content shown only in a Private view: person-level data beyond the people an official source publishes in a role tied to public money (links joining people across Sources, Signals whose rule joins through people, court parties, names past their Publication window), and every Investigation.
 _Avoid_: sensitive, hidden, private data
 
 **Private view**:
 The explorer with Restricted content shown, on a local host or behind a login; never the open public host.
 _Avoid_: admin mode, internal view, staging
 
+**Publication window**:
+How long a person's source keeps their name public under its own rules: 2 years for EU 2021–27 fund recipients (and PNRR by policy), no end for SEAP. Past it, the name is Restricted.
+_Avoid_: retention period, display window
+
 **Raw archive**:
-Every file a Connector fetched, kept unchanged and dated; the graph is always rebuildable from it, and nothing lives only in the graph.
+Every file a Connector fetched, kept as fetched and dated, apart from the personal fields its Connector declares stripped or tokenised; the graph is always rebuildable from it, and nothing lives only in the graph.
 _Avoid_: cache, dump, backup
 
 **Switchover**:
