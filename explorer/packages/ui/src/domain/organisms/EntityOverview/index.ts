@@ -7,4 +7,4 @@ export type { ConsortiaCopy } from "./components/Consortia/index.ts";
 export type { FrameworkLineCopy } from "./components/FrameworkLine/index.ts";
 export type { LargestRecordsCopy } from "./components/LargestRecords/index.ts";
 export type { AppearsInSeapAsCopy } from "./components/AppearsInSeapAs/index.ts";
-export { countedRecords, shareOfTotal } from "./entityOverview.utils.ts";
+export { countedRecords, shareOfTotal, SIGNALS_ANCHOR } from "./entityOverview.utils.ts";

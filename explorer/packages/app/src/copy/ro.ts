@@ -288,7 +288,7 @@ export const ro: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Secțiunile paginii", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+    layout: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
       identity: {
         cui: "CUI",
@@ -304,7 +304,18 @@ export const ro: Copy = {
         placedBy: (source) => `plasată de ${source}`,
       },
       source: { from: (source, fetched) => `Denumire și stare de la ${source}, preluate la ${fetched}` },
-      roles: { label: "Vezi ca", authority: "Ca autoritate", supplier: "Ca furnizor" },
+      roles: {
+        label: "Rolurile entității",
+        authority: "cumpără · autoritate contractantă",
+        supplier: "vinde · furnizor",
+        none: { AUTHORITY: "cumpără · nicio înregistrare ca autoritate", SUPPLIER: "vinde · nicio înregistrare ca furnizor" },
+      },
+      seapNames: {
+        label: "Apare în SEAP ca",
+        records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
+        range: (first, last) => `${first} până la ${last}`,
+        more: (_n, f) => `și încă ${f}`,
+      },
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     relationships: {
@@ -396,6 +407,7 @@ export const ro: Copy = {
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",
+      table: { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } },
       facets: {
         label: "Filtre pe fațete",
         groups: {

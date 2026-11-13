@@ -1,6 +1,6 @@
-import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { HighlightedText } from "../../../../atoms/HighlightedText/index.ts";
-import type { MatchableField, MatchedField } from "../../../../types.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import { HighlightedText } from "../../atoms/HighlightedText/index.ts";
+import type { MatchableField, MatchedField } from "../../types.ts";
 
 export interface MatchedLineCopy {
   /** "Matched in title": `field` is already the language's name for the field (`fields[...]`). */

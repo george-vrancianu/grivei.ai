@@ -76,22 +76,44 @@ describe("EntityHeader", () => {
 
   it("offers the role switch only to an entity that both buys and sells, with the current role marked", () => {
     show(bothRolesHeader, "SUPPLIER");
-    const nav = screen.getByRole("navigation", { name: "View as" });
+    const nav = screen.getByRole("navigation", { name: "Roles of this entity" });
     expect(nav).toBeVisible();
-    expect(screen.getByRole("link", { name: "As supplier" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "As authority" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "As authority" })).toHaveAttribute("href", "/explore/authority/x");
+    expect(screen.getByRole("link", { name: "sells · supplier" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "buys · contracting authority" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "buys · contracting authority" })).toHaveAttribute("href", "/explore/authority/x");
   });
 
   it("hands a plain click on a role link to onNavigate, and leaves a modified click to the browser", async () => {
     const user = userEvent.setup();
     const seen: string[] = [];
     show(bothRolesHeader, "SUPPLIER", "en", (href) => seen.push(href));
-    await user.click(screen.getByRole("link", { name: "As authority" }));
+    await user.click(screen.getByRole("link", { name: "buys · contracting authority" }));
     expect(seen).toEqual(["/explore/authority/x"]);
     await user.keyboard("{Control>}");
-    await user.click(screen.getByRole("link", { name: "As authority" }));
+    await user.click(screen.getByRole("link", { name: "buys · contracting authority" }));
     await user.keyboard("{/Control}");
     expect(seen).toHaveLength(1);
+  });
+
+  it("fills the page's role chip and mutes the role the entity has no Records in, without a link", () => {
+    show(authorityHeader, "AUTHORITY");
+    expect(screen.getByText("buys · contracting authority")).toBeVisible();
+    expect(screen.getByText("buys · contracting authority")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("sells · no Records as supplier")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /sells/ })).toBeNull();
+  });
+
+  it("says the same in Romanian", () => {
+    show(authorityHeader, "AUTHORITY", "ro");
+    expect(screen.getByText("cumpără · autoritate contractantă")).toBeVisible();
+    expect(screen.getByText("vinde · nicio înregistrare ca furnizor")).toBeVisible();
+  });
+
+  it("says which names SEAP publishes the entity under, with the Records and the dates", () => {
+    show(bothRolesHeader, "AUTHORITY");
+    const line = screen.getByText(/^Appears in SEAP as/);
+    expect(line).toBeVisible();
+    for (const alias of bothRolesHeader.aliases) expect(line).toHaveTextContent(alias.name);
+    expect(line).toHaveTextContent(/Records? · .+ to /);
   });
 });

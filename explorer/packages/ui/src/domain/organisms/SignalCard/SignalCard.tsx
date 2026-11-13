@@ -1,9 +1,12 @@
+import { Box } from "../../../atoms/Box/index.ts";
 import { Card } from "../../../atoms/Card/index.ts";
 import { CardContent } from "../../../atoms/CardContent/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { type as typeScale } from "../../../theme/tokens.ts";
 import type { EntityRef, EntityRole, SignalData } from "../../types.ts";
+import { SignalMark } from "../../atoms/SignalMark/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import type { SignalBadgeCopy } from "../../molecules/SignalBadge/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
@@ -43,17 +46,20 @@ export function SignalCard({ signal, reproduceHref, methodologyHref, seapHref, e
   const rule = copy.rules[signal.rule];
   return (
     <Card variant="outlined" component="article" aria-label={rule.label}>
-      <CardContent>
+      <CardContent sx={{ "&:last-child": { pb: 2 } }}>
         <Stack spacing={1}>
-          <Typography variant="h6" component="h3">
-            {rule.label}
-          </Typography>
-          <Typography>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1.25, rowGap: 0.75 }}>
+            <SignalMark />
+            <Typography variant="h3" component="h3" sx={{ fontSize: typeScale.cardTitle.min }}>
+              {rule.label}
+            </Typography>
+            <Typography variant="meta" component="span">
+              {copy.date(formatDate(signal.date, locale, "long"))} · {copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}
+            </Typography>
+          </Box>
+          <Typography sx={{ textWrap: "pretty" }}>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textWrap: "pretty" }}>
             {rule.lawful}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {copy.date(formatDate(signal.date, locale, "long"))} · {copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}
           </Typography>
           <SignalParties authority={signal.authority} suppliers={signal.suppliers} entityHref={entityHref} locale={locale} copy={copy.parties} />
           <SignalLinks

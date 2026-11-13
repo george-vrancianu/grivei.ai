@@ -283,7 +283,7 @@ export const en: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Sections of this page", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+    layout: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
       identity: {
         cui: "CUI",
@@ -299,7 +299,18 @@ export const en: Copy = {
         placedBy: (source) => `placed by ${source}`,
       },
       source: { from: (source, fetched) => `Name and status from ${source}, fetched ${fetched}` },
-      roles: { label: "View as", authority: "As authority", supplier: "As supplier" },
+      roles: {
+        label: "Roles of this entity",
+        authority: "buys · contracting authority",
+        supplier: "sells · supplier",
+        none: { AUTHORITY: "buys · no Records as authority", SUPPLIER: "sells · no Records as supplier" },
+      },
+      seapNames: {
+        label: "Appears in SEAP as",
+        records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
+        range: (first, last) => `${first} to ${last}`,
+        more: (_n, f) => `and ${f} more`,
+      },
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     relationships: {
@@ -391,6 +402,7 @@ export const en: Copy = {
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",
+      table: { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
       facets: {
         label: "Filter by facet",
         groups: {

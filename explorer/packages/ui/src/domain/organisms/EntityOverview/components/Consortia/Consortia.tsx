@@ -9,6 +9,7 @@ import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, OverviewConsortium } from "../../../../types.ts";
 import { listSx } from "../../../../utils/listSx.ts";
+import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 
 export interface ConsortiaCopy {
   heading: string;
@@ -34,13 +35,11 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
   if (consortia.length === 0) return null;
   return (
     <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <Typography variant="h6" component="h2">
-        {copy.heading}
-      </Typography>
+      <SectionHeading>{copy.heading}</SectionHeading>
       <Stack component="ul" sx={listSx}>
         {consortia.map((consortium, index) => (
-          <Stack key={index} component="li" spacing={0.5} sx={{ py: 1 }}>
-            <Box>
+          <Box key={index} component="li" sx={{ py: 1.25, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 14px" }}>
+            <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
               {consortium.members.map((member, i) => (
                 <Box key={member.entity?.key ?? `person-${i}`} component="span">
                   {i > 0 && ", "}
@@ -54,13 +53,13 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
                 </Box>
               ))}
             </Box>
-            <Typography variant="body2">
+            <Typography variant="label" component="span" sx={{ fontVariantNumeric: "tabular-nums" }}>
               <MoneyAmount bani={consortium.total.awarded} locale={locale} />{" "}
-              <Typography component="span" variant="body2" color="text.secondary">
-                {copy.records(consortium.total.records, formatCount(consortium.total.records, consortium.total.estimated, locale))}
+              <Typography component="span" variant="label" color="text.disabled">
+                · {copy.records(consortium.total.records, formatCount(consortium.total.records, consortium.total.estimated, locale))}
               </Typography>
             </Typography>
-          </Stack>
+          </Box>
         ))}
       </Stack>
       <Typography variant="body2" color="text.secondary">

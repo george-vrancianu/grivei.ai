@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
-import { renderInUi } from "../../../../../testing/render.tsx";
-import { sampleCopy } from "../../../../samples/copy.ts";
-import { consortiumRecord, highlightedRecord } from "../../../../samples/fixtureData.ts";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sampleCopy } from "../../samples/copy.ts";
+import { consortiumRecord, highlightedRecord } from "../../samples/fixtureData.ts";
 import { RecordBadges } from "./index.ts";
 
 const copy = sampleCopy.recordRow("en");

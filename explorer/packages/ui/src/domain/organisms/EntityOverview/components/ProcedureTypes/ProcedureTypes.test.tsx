@@ -5,8 +5,8 @@ import { sampleCopy } from "../../../../samples/copy.ts";
 import { authorityManyCounterpartiesOverview } from "../../../../samples/fixtureData.ts";
 import { ProcedureTypes } from "./index.ts";
 
-const show = (procedures: Parameters<typeof ProcedureTypes>[0]["procedures"]) =>
-  renderInUi(<ProcedureTypes procedures={procedures} locale="en" copy={sampleCopy.entityOverview("en").procedures} />);
+const show = (procedures: Parameters<typeof ProcedureTypes>[0]["procedures"], total = authorityManyCounterpartiesOverview.overview.total.awarded) =>
+  renderInUi(<ProcedureTypes procedures={procedures} total={total} locale="en" copy={sampleCopy.entityOverview("en").procedures} />);
 
 describe("ProcedureTypes", () => {
   it("lists each procedure as published with its money and Record count", () => {
@@ -21,5 +21,13 @@ describe("ProcedureTypes", () => {
   it("is a sentence when there are no procedures", () => {
     show([]);
     expect(screen.getByText(sampleCopy.entityOverview("en").procedures.empty)).toBeVisible();
+  });
+});
+
+describe("ProcedureTypes bars", () => {
+  it("draws one decorative bar per procedure, hidden from assistive technology", () => {
+    show(authorityManyCounterpartiesOverview.overview.procedures);
+    const rows = within(screen.getByRole("region")).getAllByRole("listitem");
+    for (const row of rows) expect(row.querySelector("[aria-hidden='true'][role='progressbar']")).not.toBeNull();
   });
 });

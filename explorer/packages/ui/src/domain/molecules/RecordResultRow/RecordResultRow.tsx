@@ -6,11 +6,11 @@ import type { Locale } from "../../../theme/index.ts";
 import { signalKeys } from "../../utils/signalKey.ts";
 import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
 import { SignalBadge, type SignalBadgeCopy } from "../SignalBadge/index.ts";
-import { MatchedLine, type MatchedLineCopy } from "./components/MatchedLine/index.ts";
+import { MatchedLine, type MatchedLineCopy } from "../MatchedLine/index.ts";
 import { RecordParties, type RecordPartiesCopy } from "./components/RecordParties/index.ts";
-import { RecordBadges, type RecordBadgesCopy } from "./components/RecordBadges/index.ts";
+import { RecordBadges, type RecordBadgesCopy } from "../RecordBadges/index.ts";
 import { RecordMetaLine, type RecordMetaLineCopy } from "./components/RecordMetaLine/index.ts";
-import { RecordValue, type RecordValueCopy } from "./components/RecordValue/index.ts";
+import { RecordValue, type RecordValueCopy } from "../RecordValue/index.ts";
 
 export type RecordResultRowCopy = RecordMetaLineCopy & RecordValueCopy & RecordBadgesCopy & RecordPartiesCopy & MatchedLineCopy;
 

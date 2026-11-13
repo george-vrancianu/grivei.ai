@@ -5,3 +5,5 @@ export * from "./EntityLink/index.ts";
 export * from "./MoneyAmount/index.ts";
 export * from "./PartyName/index.ts";
 export * from "./HighlightedText/index.ts";
+export * from "./SignalMark/index.ts";
+export * from "./SectionHeading/index.ts";

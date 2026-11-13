@@ -41,6 +41,7 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
         empty: own.empty,
         total: t.total,
         recordRow: t.results.recordRow,
+        table: own.table,
         pagination: t.fullResults.pagination,
       },
     };

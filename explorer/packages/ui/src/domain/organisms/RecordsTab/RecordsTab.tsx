@@ -1,14 +1,16 @@
+import type { ReactNode } from "react";
 import type { RecordFilter } from "@grivei/contract";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
+import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
+import { color } from "../../../theme/tokens.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
-import { RecordResultList } from "../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy, RecordSignalBadges } from "../../molecules/RecordResultRow/index.ts";
 import { TotalFigure, type TotalFigureCopy } from "../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, RecordResult, RecordsTabData } from "../../types.ts";
 import { EmptyRecords, type EmptyRecordsCopy } from "./components/EmptyRecords/index.ts";
+import { RecordsTable, type RecordsTableCopy } from "./components/RecordsTable/index.ts";
 import { FacetPanel, type FacetPanelCopy } from "./components/FacetPanel/index.ts";
 import { clearFacets, hasFacetsOn } from "./recordsTab.utils.ts";
 
@@ -19,6 +21,8 @@ export interface RecordsTabCopy {
   empty: EmptyRecordsCopy;
   total: TotalFigureCopy;
   recordRow: RecordResultRowCopy;
+  /** The table: its name and column heads (the counterparty column is named by the row copy: Winners or Authority). */
+  table: RecordsTableCopy;
   pagination: PageNavCopy;
 }
 
@@ -44,31 +48,43 @@ export interface RecordsTabProps {
   copy: RecordsTabCopy;
   /** A compact badge per Signal on each row; absent = none. */
   signalBadges?: RecordSignalBadges | undefined;
+  /**
+   * The slot between the facets and the totals, for one extra control that changes the filter (the "only Records matching '<query>'" link, #106).
+   * Whatever sits here must change the URL's filter through the page, so the totals and the table follow it.
+   */
+  filterExtras?: ReactNode;
 }
 
 /** The Records tab of an Entity page: the facet side panel, the total that follows the filter, and the Records table. */
 export function RecordsTab({
-  records, filter, onFilterChange, role, page, pageSize, pageHref, onNavigate, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signalBadges,
+  records, filter, onFilterChange, role, page, pageSize, pageHref, onNavigate, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signalBadges, filterExtras,
 }: RecordsTabProps) {
   const { total, facets } = records;
   const rows = records.records.rows;
   const pages = Math.ceil(records.records.count / Math.max(1, pageSize));
   const empty = records.records.count === 0;
   return (
-    <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 300px) 1fr" }, alignItems: "start" }}>
+    <Stack spacing={2.5}>
+      <SectionHeading>{copy.heading}</SectionHeading>
       <FacetPanel facets={facets} filter={filter} role={role} onFilterChange={onFilterChange} locale={locale} copy={copy.facets} />
-      <Stack spacing={2}>
-        <Typography variant="h6" component="h2">
-          {copy.heading}
-        </Typography>
+      {filterExtras}
+      <Box sx={{ py: 2, borderTop: 1, borderBottom: 1, borderColor: color.line }}>
         <TotalFigure total={total} locale={locale} copy={copy.total} methodologyHref={methodologyHref} suspectHref={suspectHref} />
-        {empty ? (
-          <EmptyRecords copy={copy.empty} onClear={hasFacetsOn(filter, role) ? () => onFilterChange(clearFacets(filter, role)) : undefined} />
-        ) : (
-          <RecordResultList rows={rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} signalBadges={signalBadges} />
-        )}
-        {pages > 1 && <PageNav page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />}
-      </Stack>
-    </Box>
+      </Box>
+      {empty ? (
+        <EmptyRecords copy={copy.empty} onClear={hasFacetsOn(filter, role) ? () => onFilterChange(clearFacets(filter, role)) : undefined} />
+      ) : (
+        <RecordsTable
+          rows={rows}
+          role={role}
+          entityHref={entityHref}
+          recordHref={recordHref}
+          locale={locale}
+          copy={{ ...copy.table, recordRow: copy.recordRow }}
+          signalBadges={signalBadges}
+        />
+      )}
+      {pages > 1 && <PageNav page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />}
+    </Stack>
   );
 }
