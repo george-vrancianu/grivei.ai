@@ -6,12 +6,13 @@ type Locale = "en" | "ro";
 /** "Nothing was spent" in other words, per language. Written without diacritics: the text is folded the same way before it is matched. */
 const IMPLIES_NO_SPENDING: Record<Locale, RegExp[]> = {
   en: [
-    /\bnothing\b/, /\bno (public )?(spending|spend|money|funds|purchases?|contracts?|procurement)\b/, /\bzero\b/, /\bnever (spent|bought)\b/,
+    /\bnothing\b/, /\bno (public )?(spending|spend|money|funds|purchases?|contracts?|procurement|expenditures?)\b/, /\bnone\b.*\bspent\b/, /\bzero\b/, /\bnever (spent|bought)\b/,
     /\b(not|n't) (spent|spend|bought|buy|purchased)\b/, /\b(spent|bought|purchased) (nothing|zero)\b/, /\b0(?:[.,]0+)? ?(ron|lei)\b/, /\b(ron|lei) ?0(?:[.,]0+)?(?![\d.,])/, /\bwithout (any )?(spending|purchases?)\b/,
   ],
   ro: [
     /\bnimic\b/, /\bnicio (cheltuiala|achizitie|plata|suma)\b/, /\bfara (cheltuieli|cheltuiala|achizitii|bani|plati)\b/, /\bzero\b/,
     /\bnu (s-a|s-au|a|au|am|se a|se au) (cheltuit|cumparat|achizitionat|platit)\b/, /\bn-(a|au) (cheltuit|cumparat|achizitionat|platit)\b/, /\bnu exista (cheltuieli|achizitii|plati)\b/,
+    /\bniciun (ban|leu)\b/, /\bnu s-au facut (cheltuieli|achizitii|plati)\b/, /\bnu (au )?exist(a|au|at) (cheltuieli|achizitii|plati)\b/,
     /\b0(?:[.,]0+)? ?(ron|lei)\b/, /\b(ron|lei) ?0(?:[.,]0+)?(?![\d.,])/,
   ],
 };
@@ -35,6 +36,8 @@ describe("the guard against wording that implies no spending", () => {
     ["en", "No money was spent in 2023"],
     ["en", "RON 0 spent"],
     ["en", "0 RON"],
+    ["en", "No expenditure in this county"],
+    ["en", "None was spent here"],
     ["en", "The county never spent anything"],
     ["ro", "Nu s-a cheltuit nimic"],
     ["ro", "Nu s-a cumpărat nimic aici"],
@@ -44,6 +47,12 @@ describe("the guard against wording that implies no spending", () => {
     ["ro", "Fără cheltuieli"],
     ["ro", "Fara cheltuieli"],
     ["ro", "0 lei"],
+    ["ro", "Niciun ban nu a fost cheltuit"],
+    ["ro", "Niciun leu"],
+    ["ro", "Nu s-au făcut cheltuieli"],
+    ["ro", "Nu s-au facut achizitii"],
+    ["ro", "Nu au existat achiziții"],
+    ["ro", "Nu există plăți"],
   ] as const)("rejects %s: %s", (locale, text) => {
     expect(impliesNoSpending(text, locale), text).not.toEqual([]);
   });

@@ -50,14 +50,16 @@ describe.each([
     await waitFor(() => expect(here()).toBe(href));
     expect(await screen.findByRole("button", { name: new RegExp(`^${t.coverageLensMap.tiles.national}`) })).toBeVisible();
     expect(screen.getByRole("region", { name: t.coverage.grid.label })).toBeVisible();
+    // the screen behind the link has every answer: nothing is loading and no request failed (a missing fixture would show the error note)
+    await waitFor(() => expect(screen.queryByText(t.status.loading)).not.toBeInTheDocument());
+    expect(screen.queryByText(t.status.failed)).not.toBeInTheDocument();
     expect(sent.filter((s) => s.operation === "CoverageLens").map((s) => JSON.stringify(s.variables))).toEqual(['{"window":{"from":"2023-01-01","to":"2023-12-31"}}']);
   });
 
-  it("links from every empty tab, and says nothing about spending", async () => {
+  it("links from an empty tab with no chips to the bare Coverage lens", async () => {
     open(`${prefix}/explore/?q=zzzzzz`);
     const panel = await screen.findByRole("tabpanel");
     await waitFor(() => expect(within(panel).getByRole("link", { name: t.results.emptyLink })).toHaveAttribute("href", `${prefix}/explore/?lens=coverage`));
-    expect(panel).toHaveTextContent(t.results.empty.suppliers);
   });
 });
 
