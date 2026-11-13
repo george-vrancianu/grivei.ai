@@ -19,7 +19,6 @@ export function shareOfTotal(part: Bani, whole: Bani): number | null {
 /** The side a counterparty is on: an authority's counterparties are suppliers, a supplier's are authorities. */
 export const counterpartyRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
 
-/** The id of the Overview's Signals section, the same in both languages: a link to `#signals` (the "n Signals" chip of an entity row) scrolls to it. */
-export const SIGNALS_ANCHOR = "signals";
+export { SIGNALS_ANCHOR } from "../../utils/signalsAnchor.ts";
 
 export { shareBarPercent } from "../../atoms/ShareBar/shareBar.utils.ts";

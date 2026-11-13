@@ -71,6 +71,12 @@ export interface SignalStore {
    * scoped to the entity (role.ts `scopeFilter`); a `signal` in it restricts to that rule. Never scored: DATE_DESC or VALUE_DESC only.
    */
   roleSignals(filter: SearchFilter, page: { limit: number; offset: number; order: SignalOrderKey }, options?: SearchOptions): Promise<{ count: number; rows: SignalRow[] }>;
+  /**
+   * How many Signals each of `keys` has in the matching set, on `side` (#104): the Signals with at least one Record in the set where the entity is the
+   * authority (AUTHORITY) or a winner (SUPPLIER), the same rule `roleSignals` applies to an entity's page, so with the same filter the two counts agree.
+   * `filter` is the search's own, not scoped to an entity. An entity with none is absent from the map. One grouped query for the whole page.
+   */
+  entitySignalCounts(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, keys: string[], options?: SearchOptions): Promise<Map<string, number>>;
   /** A Signal's Records (by the ordinal of the row it came from), latest first, with full provenance like every Record list. */
   signalRecords(ordinal: number, page: { limit: number; offset: number }): Promise<RecordRow[]>;
 }
@@ -176,6 +182,28 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalD
       // a page past the end has no row to read the count from
       const total = await cancellableQuery<{ n: number }>(pool, signal, `SELECT count(*)::int AS n FROM ${SIGNAL_FROM} WHERE ${inSet}`, params);
       return { count: total.rows[0]!.n, rows: [] };
+    },
+
+    async entitySignalCounts(side, filter, keys, { signal } = {}) {
+      const out = new Map<string, number>();
+      if (!keys.length) return out;
+      const w = buildWhere(filter);
+      const params = [...w.params, keys];
+      const column = side === "AUTHORITY" ? "authority_key" : "supplier_key";
+      // the entity's Records in the set (once each), then the Signals those Records belong to: `roleSignals`' rule per entity. A `signal` in the filter
+      // narrows which Signals count, as it does there.
+      const rule = filter.signal ? ` AND g.rule = $${params.push(filter.signal)}` : "";
+      const { rows } = await cancellableQuery<{ key: string; n: number }>(
+        pool, signal,
+        `SELECT s.key, count(DISTINCT m.signal_id)::int AS n
+           FROM (SELECT DISTINCT ${column} AS key, record_code FROM seap.search WHERE ${w.sql} AND ${column} = ANY($${w.params.length + 1}::text[])) s
+           JOIN seap.signal_member m ON m.record_code = s.record_code
+           JOIN seap.signal g ON g.id = m.signal_id${rule}
+          GROUP BY s.key`,
+        params,
+      );
+      for (const r of rows) out.set(r.key, r.n);
+      return out;
     },
 
     async signalRecords(ordinal, { limit, offset }) {

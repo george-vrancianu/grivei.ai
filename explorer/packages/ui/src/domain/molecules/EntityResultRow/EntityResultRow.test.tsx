@@ -9,6 +9,7 @@ const placeNational: EntityRow["placement"] = { county: null, uat: null, nationa
 const row = (placement: EntityRow["placement"], records = 6): EntityResult => ({
   entity: { key: "30000001", displayName: "HACHI INVEST S.R.L.", identity: "CUI", anafStatus: "ACTIV", placement },
   matched: { awarded: "142000000", records, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false },
+  signalCount: 0,
 });
 const county = { county: { code: "RO-BV", name: "Brașov" }, uat: null, national: false, placedBy: "ANAF" as const };
 
@@ -30,9 +31,18 @@ describe("EntityResultRow", () => {
     expect(container).toHaveTextContent("1.420.000 RON");
     expect(screen.getByText("potrivit")).toBeVisible();
   });
-  it("has a slot between the name and the value", () => {
-    renderInUi(<EntityResultRow row={row(county)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} extra={<span>chip</span>} />);
-    expect(screen.getByText("chip")).toBeVisible();
+  it("shows an 'n Signals' chip linking to the Overview's Signals section only when the entity has Signals", () => {
+    const withSignals = renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 3 }} href="/explore/supplier/30000001" locale="en" copy={sampleCopy.entityRow("en")} />);
+    expect(screen.getByRole("link", { name: "3 Signals , HACHI INVEST S.R.L." })).toHaveAttribute("href", "/explore/supplier/30000001#signals");
+    withSignals.unmount();
+    renderInUi(<EntityResultRow row={row(county)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
+    expect(screen.queryByRole("link", { name: /Signal/ })).toBeNull();
+  });
+  it("reads the chip in Romanian, and does not nest it in another link", () => {
+    renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 2 }} href="/explore/furnizor/1" locale="ro" copy={sampleCopy.entityRow("ro")} />, "ro");
+    const chip = screen.getByRole("link", { name: "2 Semnale , HACHI INVEST S.R.L." });
+    expect(chip.closest("a")).toBe(chip);
+    expect(chip.parentElement?.closest("a")).toBeNull();
   });
   it("has no CUI in the meta line for an entity identified by name only", () => {
     const named = row(county);

@@ -195,11 +195,14 @@ export function cachedStore(
           await store.searchTotal(f);
           await store.searchMap("AUTHORITY", f); // the Money lens, the default side (#71)
           await store.searchMap("SUPPLIER", f); // and the other side, so the first toggle is not a cold scan
-          await store.searchEntities("AUTHORITY", f, PAGE);
-          await store.searchEntities("SUPPLIER", f, PAGE);
+          // each tab's page, then its rows' Signal counts (#104): the resolver asks for them with these same keys, in this order, so the key matches
+          for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
+            const page = await store.searchEntities(side, f, PAGE);
+            await store.entitySignalCounts(side, f, page.rows.map((r) => r.entity.key));
+          }
           await (f.q ? store.searchRecords(f, { ...PAGE, order: "VALUE_DESC" }) : store.records({ ...PAGE, order: "VALUE_DESC" }));
           if (f.q) await store.goTo(foldTokens(f.q).join(" ")); // the Go-to lookup of the same folded query
-          statements += f.q ? 7 : 6;
+          statements += f.q ? 9 : 8;
         } catch (e) {
           failed++;
           log(`cache warming of ${JSON.stringify(f)} failed: ${(e as Error).message}`);
@@ -248,6 +251,7 @@ export function cachedStore(
     // Signals (#74): every argument is in the key; the ordinal is only good for one load and the cache is flushed on every load
     signalRules: () => cached("signal-rules", () => inner.signalRules()),
     roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, () => inner.roleSignals(filter, p, options)),
+    entitySignalCounts: (side, filter, keys, options) => cached(`signal-counts|${side}|${canonicalFilter(filter)}|${keys.join(",")}`, () => inner.entitySignalCounts(side, filter, keys, options)),
     signalRecords: (ordinal, p) => cached(`signal-records|${ordinal}|${page(p)}`, () => inner.signalRecords(ordinal, p)),
     searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),

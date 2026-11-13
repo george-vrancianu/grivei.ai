@@ -71,3 +71,39 @@ describe("result cache bound", () => {
     expect(reads).toBe(1);
   });
 });
+
+describe("cache warming", () => {
+  const poolWithPrefixes = (prefixes: string[]) =>
+    ({ query: async (sql: string) => ({ rows: /rollup_prefix/.test(sql) ? prefixes.map((prefix) => ({ prefix })) : [{ generation: "g1" }] }) }) as unknown as pg.Pool;
+
+  // every store method the warm job and the MainScreen statements use, answering with something small and counting each call
+  function countingInner(calls: string[]): Store {
+    const entities = (side: string) => ({ count: 2, countEstimated: false, rows: ["k1", "k2"].map((k) => ({ entity: { key: `${side}-${k}` }, matched: totalOf("") })) });
+    return {
+      searchTotal: async () => (calls.push("total"), totalOf("")),
+      searchMap: async (side: string) => (calls.push(`map ${side}`), { counties: [], national: totalOf(""), unplaced: null }),
+      searchEntities: async (side: string) => (calls.push(`entities ${side}`), entities(side)),
+      entitySignalCounts: async (side: string, _f: unknown, keys: string[]) => (calls.push(`signal-counts ${side}`), new Map(keys.map((k, i) => [k, i]))),
+      searchRecords: async () => (calls.push("records"), { count: 0, rows: [] }),
+      records: async () => (calls.push("records"), { count: 0, rows: [] }),
+      goTo: async () => (calls.push("goto"), null),
+    } as unknown as Store;
+  }
+
+  it("warms each tab's Signal counts, so a warmed MainScreen makes no further store calls", async () => {
+    const calls: string[] = [];
+    const cache = cachedStore(countingInner(calls), poolWithPrefixes(["ab"]), { autoWarm: false });
+    const report = await cache.warm();
+    expect(report).toMatchObject({ prefixes: 1, failed: 0, statements: 8 + 9 });
+    expect(calls.filter((c) => c.startsWith("signal-counts")).sort()).toEqual(["signal-counts AUTHORITY", "signal-counts AUTHORITY", "signal-counts SUPPLIER", "signal-counts SUPPLIER"]);
+    calls.length = 0;
+    // what the MainScreen resolvers ask for the empty filter and the 2-character prefix: the page of each tab, then the page's keys' counts
+    for (const f of [{}, { q: "ab" }]) {
+      for (const side of ["AUTHORITY", "SUPPLIER"] as const) {
+        const page = await cache.searchEntities(side, f, { limit: 50, offset: 0 });
+        await cache.entitySignalCounts(side, f, page.rows.map((r) => r.entity.key));
+      }
+    }
+    expect(calls).toEqual([]);
+  });
+});

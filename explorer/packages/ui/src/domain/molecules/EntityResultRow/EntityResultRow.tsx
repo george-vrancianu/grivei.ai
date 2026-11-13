@@ -5,7 +5,9 @@ import type { Locale } from "../../../theme/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { EntityLink, type EntityLinkCopy } from "../../atoms/EntityLink/index.ts";
 import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
+import { SIGNALS_ANCHOR } from "../../utils/signalsAnchor.ts";
 import type { EntityResult } from "../../types.ts";
+import { SignalCountChip, type SignalCountChipCopy } from "../SignalCountChip/index.ts";
 import { placeLabel } from "./entityResultRow.utils.ts";
 
 export interface EntityResultRowCopy {
@@ -19,11 +21,11 @@ export interface EntityResultRowCopy {
   national: string;
   noCounty: string;
   entityLink: EntityLinkCopy;
+  /** The "n Signals" chip (#104). */
+  signals: SignalCountChipCopy;
 }
 
 export interface EntityResultRowProps {
-  /** A chip or line between the name block and the value (the Signals chip, #104). */
-  extra?: React.ReactNode;
   row: EntityResult;
   /** The entity page's URL, built by the caller (role and language prefix). */
   href: string;
@@ -33,10 +35,10 @@ export interface EntityResultRowProps {
 
 /**
  * A row of the Authorities or Suppliers tab, two columns. Left: the entity's name (linked) over a mono meta line, "n Records · county · CUI n"
- * (the CUI only for an entity identified by one). Right: the matched amount over its caption. `extra` sits between them: the slot for #104's chip.
+ * (the CUI only for an entity identified by one). Right: the matched amount over its caption. Between them, an entity with Signals in the filter (`signalCount` above 0) has the "n Signals" chip (`SignalCountChip`), a link to the entity page's Signals section (`href` + `#signals`, the Overview's anchor); the row itself is not a link, so the chip is not nested in one.
  */
-export function EntityResultRow({ row, href, locale, copy, extra }: EntityResultRowProps) {
-  const { entity, matched } = row;
+export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProps) {
+  const { entity, matched, signalCount } = row;
   const count = formatCount(matched.records, false, locale);
   const meta = [copy.records(matched.records, count), placeLabel(entity.placement, copy), ...(entity.identity === "CUI" ? [`${copy.cui} ${entity.key}`] : [])];
   return (
@@ -49,7 +51,7 @@ export function EntityResultRow({ row, href, locale, copy, extra }: EntityResult
           {meta.join(" · ")}
         </Typography>
       </Stack>
-      {extra}
+      {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} />}
       <Stack spacing={0.25} sx={{ alignItems: "flex-end", flex: "none", ml: "auto", textAlign: "right" }}>
         <Typography component="span" variant="body1" sx={{ fontWeight: 600 }}>
           <MoneyAmount bani={matched.awarded} locale={locale} />

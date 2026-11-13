@@ -6,6 +6,7 @@ import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSe
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
 import { navigate } from "../../routing/location.tsx";
+import { useScrollToHash } from "../../routing/useScrollToHash.ts";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHref, tabHrefs } from "./entityPage.utils.ts";
@@ -37,6 +38,9 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
   // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
   const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
+
+  // a link to `#signals` (the "n Signals" chip of an entity row) lands on the Overview's Signals section once it has rendered
+  useScrollToHash(view === "overview" && state.status === "ready" && state.overview !== null);
 
   if (state.status === "error") {
     return (

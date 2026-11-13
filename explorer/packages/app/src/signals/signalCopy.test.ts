@@ -66,3 +66,16 @@ describe.each(["en", "ro"] as const)("one name and one lawful line per Signal ru
     for (const rule of SIGNAL_RULES) expect(c.methodology.rules[rule].lawful, rule).toBe(c.signalCard.rules[rule].lawful);
   });
 });
+
+describe.each(["en", "ro"] as const)("the \"n Signals\" chip of an entity row (%s)", (locale) => {
+  const label = catalogue[locale].results.entityRow.signals.label;
+
+  it("never says suspect, fraud, irregular, illegal or risk (nor the Romanian equivalents)", () => {
+    for (const n of [1, 2, 19, 20, 25, 101]) expect(forbiddenWords(label(n, String(n)), locale), String(n)).toEqual([]);
+  });
+
+  it("takes the language's plural form", () => {
+    if (locale === "en") expect([1, 2].map((n) => label(n, String(n)))).toEqual(["1 Signal", "2 Signals"]);
+    else expect([1, 2, 19, 20, 25, 101].map((n) => label(n, String(n)))).toEqual(["1 Semnal", "2 Semnale", "19 Semnale", "20 de Semnale", "25 de Semnale", "101 Semnale"]);
+  });
+});
