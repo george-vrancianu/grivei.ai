@@ -62,15 +62,6 @@ describe("RecordResultRow", () => {
     expect(screen.getByText("ceiling, not summed")).toBeVisible();
   });
 
-  it("puts a line given as valueExtra under the caption", () => {
-    renderInUi(
-      <ul>
-        <RecordResultRow row={highlightedRecord} recordHref="/x" entityHref={entityHref} locale="en" copy={sampleCopy.recordRow("en")} valueExtra={<span>share line</span>} />
-      </ul>,
-    );
-    expect(screen.getByText("share line")).toBeVisible();
-  });
-
   it("links the title to the Record page and shows value, date and authority", () => {
     const { container } = renderRow(highlightedRecord);
     const { record } = highlightedRecord;

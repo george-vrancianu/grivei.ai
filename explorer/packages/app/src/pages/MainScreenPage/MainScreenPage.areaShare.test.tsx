@@ -34,25 +34,29 @@ describe.each([
 
     await user.click(screen.getByRole("button", { name: suppliers }));
     await user.click(screen.getByRole("button", { name: /^Brașov:/ }));
-        await waitFor(() => expect(total().records).toMatch(/^16/));
+    await waitFor(() => expect(total().records).toMatch(/^16/));
     expect(shareLines()).toEqual([label]); // one multi-winner Record of sixteen
     const row = screen.getByRole("tabpanel").querySelector("[data-area-share]")!.closest("li")!;
     expect(row).toHaveTextContent("CAN9800001~1");
 
     await user.click(screen.getByRole("button", { name: authorities })); // the authority side: the county stays, the shares go
-        await waitFor(() => expect(total().records).toMatch(/^8/));
+    await waitFor(() => expect(total().records).toMatch(/^8/));
     expect(shareLines()).toEqual([]);
   });
 });
 
-describe("a consortium across two supplier counties (hand fixture)", () => {
+describe.each([
+  { locale: "en", base: "/explore/", share: "RON 15,000,000.00", single: "RON 12,800,000", awarded: "RON 27,800,000", records: "2 Records" },
+  { locale: "ro", base: "/ro/explore/", share: "15.000.000,00 RON", single: "12.800.000", awarded: "27.800.000", records: "2 înregistrări" },
+] as const)("a consortium across two supplier counties (hand fixture) at $base", ({ locale, base, share, single, awarded, records }) => {
   it("shows the Cluj share on the consortium Record and none on the single-winner Record; the two add up to the Total", async () => {
-    open("/explore/?county=RO-CJ&countySide=supplier&tab=records");
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 27,800,000", records: "2 Records" }));
+    open(`${base}?county=RO-CJ&countySide=supplier&tab=records`);
+    await waitFor(() => expect(total()).toEqual({ awarded: expect.stringContaining(awarded), records }));
     const rows = within(screen.getByRole("tabpanel")).getAllByRole("listitem");
     expect(rows).toHaveLength(2);
-    expect(shareLines()).toEqual([catalogue.en.results.recordRow.areaShare("RON 15,000,000.00")]);
+    expect(shareLines()).toEqual([catalogue[locale].results.recordRow.areaShare(share)]); // 15,000,000 of the consortium Record
     expect(within(rows[0]!).getByText(/CAN1170001/)).toBeTruthy();
-    expect(rows[1]!.querySelector("[data-area-share]")).toBeNull(); // the 12,800,000 contract has one winner: its full value is the share
+    expect(rows[1]!.querySelector("[data-area-share]")).toBeNull(); // the contract has one winner: its full value is the share
+    expect(plain(rows[1]!.textContent)).toContain(single); // 15,000,000 + 12,800,000 = the 27,800,000 Total
   });
 });

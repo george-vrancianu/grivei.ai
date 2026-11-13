@@ -32,16 +32,14 @@ export interface RecordResultRowProps {
   locale: Locale;
   copy: RecordResultRowCopy;
   signalBadges?: RecordSignalBadges | undefined;
-  /** Another line under the value's caption (after the in-county share line). */
-  valueExtra?: React.ReactNode;
 }
 
 /**
  * A row of the Records tab, two columns. Left: the meta line (channel tag, code, date, procedure), the title (linked), "matched in ...",
  * authority and winners, then the badges and Signal badges. Right: the full value over its caption (`RecordValue`; it takes children,
- * the slot under the caption). After a supplier-county click a multi-winner Record has `areaShare`: its in-county share is the second line, labelled as the equal-share convention (#103). The right column wraps under the left one on a narrow screen.
+ * the slot under the caption). After a supplier-county click a multi-winner Record has `areaShare`: its in-county share is the second line, labelled with the consortium-share convention's name (#103). The right column wraps under the left one on a narrow screen.
  */
-export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges, valueExtra }: RecordResultRowProps) {
+export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges }: RecordResultRowProps) {
   const { record, matchedField } = row;
   const keys = signalKeys(record.signals);
   const signals = signalBadges
@@ -66,7 +64,6 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       </Stack>
       <RecordValue record={record} locale={locale} copy={copy}>
         {row.areaShare != null && <AreaShareLine bani={row.areaShare} locale={locale} copy={copy} />}
-        {valueExtra}
       </RecordValue>
     </Box>
   );

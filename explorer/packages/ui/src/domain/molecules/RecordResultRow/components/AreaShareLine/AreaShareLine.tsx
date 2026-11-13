@@ -4,7 +4,7 @@ import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import { withNodes } from "../../../../utils/withNodes.tsx";
 
 export interface AreaShareLineCopy {
-  /** "equal shares in the county RON 15,000,000": the part of a consortium Record that went to winners in the selected supplier county, labelled as the equal-share convention. */
+  /** "Consortium share in the selection: RON 15,000,000": the part of a consortium Record that went to winners in the selected supplier area, labelled with the consortium-share convention's name. */
   areaShare: (amount: string) => string;
 }
 

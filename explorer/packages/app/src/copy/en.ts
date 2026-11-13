@@ -105,7 +105,7 @@ export const en: Copy = {
       },
       badges,
       party: { naturalPerson: "Persoană fizică", entityLink },
-      areaShare: (amount) => `equal shares in the county ${amount}`,
+      areaShare: (amount) => `Consortium share in the selection: ${amount}`,
     },
   },
   fullResults: {

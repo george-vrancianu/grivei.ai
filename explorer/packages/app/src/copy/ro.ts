@@ -110,7 +110,7 @@ export const ro: Copy = {
       },
       badges,
       party: { naturalPerson: "Persoană fizică", entityLink },
-      areaShare: (amount) => `părți egale în județ ${amount}`,
+      areaShare: (amount) => `Parte din asociere în selecție: ${amount}`,
     },
   },
   fullResults: {

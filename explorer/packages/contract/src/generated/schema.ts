@@ -448,7 +448,7 @@ export type RecordResult = {
    * consortium shares of those winners, counted by the same rule and over the same Record x winner rows as the headline
    * Total, so over all Records matching the filter these sum to the Total's `awarded`. Null unless the filter has
    * `countySide: SUPPLIER` and a `county`; null for a Record with a single winner (its full value is the share); null
-   * for a Record with no value to share. Always null where no search filter applies (e.g. the entity page's Records tab).
+   * for a Record with no value to share. The app's entity Records tab never sends a county, so it never sees one.
    */
   areaShare: Maybe<Scalars['Bani']['output']>;
   /** Why it matched: computed only for returned rows. */
