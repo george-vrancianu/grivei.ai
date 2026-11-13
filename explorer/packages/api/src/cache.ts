@@ -1,8 +1,11 @@
-// The result cache (#70): an in-process cache over the search statements, keyed by the normalised filter and valid for one
+// The result cache (#70): an in-process cache over the search and Coverage statements, keyed by the normalised filter and valid for one
 // load generation. A load (the pipeline's rebuild) writes a fresh value into `seap.rollup_meta` inside its transaction; every
 // lookup reads it (one tiny statement) and flushes the cache when it changed, so "a load invalidates the cache" holds for
 // the next request after the commit, with no signal between the pipeline and the API. After a flush the 2-character
 // prefixes the load contains (`seap.rollup_prefix`) are warmed in the background, no chips.
+// Concurrent misses on one key share one in-flight run (#144).
+// The Coverage figures (the grid, the per-area figures and the unplaced authorities, per date window) are cached the same way
+// (#145), and the no-window ones are warmed first, before the search prefixes.
 import pg from "pg";
 import { foldTokens } from "./fold.ts";
 import type { SearchFilter } from "./search.ts";
@@ -57,7 +60,7 @@ export interface CachedStore extends Store {
   stats(): CacheStats;
   /** Reads the load generation now: a new one flushes the cache and starts warming in the background. */
   sync(): Promise<void>;
-  /** Warms every 2-character prefix of the current load (no chips) and the empty state; resolves when done. */
+  /** Warms the no-window Coverage figures, then the empty state and every 2-character prefix of the current load (no chips); resolves when done. */
   warm(): Promise<WarmReport>;
 }
 
@@ -149,7 +152,41 @@ export function cachedStore(
 
   let countiesMemo: { generation: string; rows: Awaited<ReturnType<Store["counties"]>> } | null = null;
 
-  async function cached<T>(key: string, run: () => Promise<T>): Promise<T> {
+  // One in-flight run per key (#144): concurrent misses on a key await the same run, so the store is asked once. A flight belongs
+  // to the generation it started under; a lookup under a newer generation never joins it and starts (and registers) its own.
+  // Stats: every caller that finds no entry counts as a miss, whether it started the run or joined it, so `misses` is "lookups
+  // not served from an entry" and `hits` stays "served from an entry"; the inner store is asked once for the lot.
+  // Abort: the run gets its own signal, never a caller's. A caller that aborts is released alone (it rejects with its signal's
+  // reason); only when the last waiter has gone is the run itself cancelled and dropped.
+  interface Flight {
+    generation: string | null;
+    promise: Promise<unknown>;
+    controller: AbortController;
+    waiters: number;
+  }
+  const inflight = new Map<string, Flight>();
+
+  function awaitFlight<T>(key: string, f: Flight, signal: AbortSignal | undefined): Promise<T> {
+    if (!signal) return f.promise as Promise<T>;
+    return new Promise<T>((resolve, reject) => {
+      f.waiters++;
+      const onAbort = () => {
+        f.waiters--;
+        if (f.waiters === 0) {
+          if (inflight.get(key) === f) inflight.delete(key);
+          f.controller.abort(signal.reason);
+        }
+        reject(signal.reason);
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
+      f.promise.then(
+        (v) => (signal.removeEventListener("abort", onAbort), resolve(v as T)),
+        (e) => (signal.removeEventListener("abort", onAbort), reject(e)),
+      );
+    });
+  }
+
+  async function cached<T>(key: string, run: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
     const g = await sync(false);
     const hit = g !== null ? entries.get(key) : undefined;
     if (hit) {
@@ -158,33 +195,70 @@ export function cachedStore(
       entries.set(key, hit);
       return hit.value as T;
     }
+    signal?.throwIfAborted(); // an aborted caller on a miss starts and joins nothing
     misses++;
-    const value = await run(); // a failure or an abort is never cached
-    if (g !== null && g === generation) {
-      const cost = approxBytes(value);
-      if (cost <= maxBytes) {
-        const old = entries.get(key);
-        if (old) bytes -= old.bytes;
-        entries.delete(key);
-        entries.set(key, { value, bytes: cost });
-        bytes += cost;
-        while ((bytes > maxBytes || entries.size > maxEntries) && entries.size > 1) {
-          const [oldest, e] = entries.entries().next().value!;
-          entries.delete(oldest);
-          bytes -= e.bytes;
-        }
-      }
+    let f = inflight.get(key);
+    if (!f || f.generation !== g) {
+      const controller = new AbortController();
+      const flight = { generation: g, controller, waiters: 0 } as Flight; // promise assigned right below
+      flight.promise = run(controller.signal).then(
+        (value) => {
+          if (inflight.get(key) === flight) inflight.delete(key);
+          if (g !== null && g === generation) storeEntry(key, value); // an older generation's value is never stored
+          return value;
+        },
+        (e) => {
+          if (inflight.get(key) === flight) inflight.delete(key); // a failure or an abort is never cached
+          throw e;
+        },
+      );
+      // a waiter-less run (every caller aborted) must not surface as an unhandled rejection
+      flight.promise.catch(() => undefined);
+      inflight.set(key, flight);
+      f = flight;
     }
-    return value;
+    // callers without a signal never release early, but still count as waiters so the last aborter does not cancel their run
+    if (!signal) f.waiters++;
+    return awaitFlight<T>(key, f, signal);
+  }
+
+  function storeEntry(key: string, value: unknown) {
+    const cost = approxBytes(value);
+    if (cost > maxBytes) return;
+    const old = entries.get(key);
+    if (old) bytes -= old.bytes;
+    entries.delete(key);
+    entries.set(key, { value, bytes: cost });
+    bytes += cost;
+    while ((bytes > maxBytes || entries.size > maxEntries) && entries.size > 1) {
+      const [oldest, e] = entries.entries().next().value!;
+      entries.delete(oldest);
+      bytes -= e.bytes;
+    }
   }
 
   async function warm(): Promise<WarmReport> {
     const started = Date.now();
     const g = generation;
     const prefixes = (await pool.query<{ prefix: string }>("SELECT prefix FROM seap.rollup_prefix ORDER BY prefix")).rows.map((r) => r.prefix);
-    const filters: SearchFilter[] = [{}, ...prefixes.map((q) => ({ q }))];
     let statements = 0;
     let failed = 0;
+    // The Coverage page and the lens without a date chip first: the three figures of the empty window.
+    for (const [name, step] of [
+      ["Coverage areas", () => store.coverageAreas({ from: null, to: null })],
+      ["unplaced authorities", () => store.unplacedAuthorities({ from: null, to: null })],
+      ["Coverage grid", () => store.coverageGrid()],
+    ] as const) {
+      if (generation !== g) break; // a newer load arrived: this warming is stale
+      try {
+        await step();
+        statements++;
+      } catch (e) {
+        failed++;
+        log(`cache warming of the ${name} failed: ${(e as Error).message}`);
+      }
+    }
+    const filters: SearchFilter[] = [{}, ...prefixes.map((q) => ({ q }))];
     let next = 0;
     const worker = async () => {
       while (next < filters.length) {
@@ -212,6 +286,10 @@ export function cachedStore(
     return report;
   }
 
+  // A Coverage window's key: absent, null and empty bounds are one window, `from`-only and `to`-only are two.
+  // The store gets the canonical window too, so the answer never depends on which equivalent spelling filled the entry.
+  const normWindow = (w: { from?: string | null; to?: string | null }) => ({ from: w.from || null, to: w.to || null });
+  const windowKey = (w: { from?: string | null; to?: string | null }) => `${w.from || ""}..${w.to || ""}`;
   const page = (p: { limit: number; offset: number }) => `${p.limit}:${p.offset}`;
   const store: CachedStore = {
     ...inner,
@@ -224,12 +302,12 @@ export function cachedStore(
       if (warming) await warming.catch(() => undefined);
       return warm();
     },
-    searchTotal: (filter, options) => cached(`total|${canonicalFilter(filter)}`, () => inner.searchTotal(filter, options)),
-    searchEntities: (side, filter, p, options) => cached(`${side}|${canonicalFilter(filter)}|${page(p)}`, () => inner.searchEntities(side, filter, p, options)),
-    searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, () => inner.searchRecords(filter, p, options)),
+    searchTotal: (filter, options) => cached(`total|${canonicalFilter(filter)}`, (signal) => inner.searchTotal(filter, { ...options, signal }), options?.signal),
+    searchEntities: (side, filter, p, options) => cached(`${side}|${canonicalFilter(filter)}|${page(p)}`, (signal) => inner.searchEntities(side, filter, p, { ...options, signal }), options?.signal),
+    searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, (signal) => inner.searchRecords(filter, p, { ...options, signal }), options?.signal),
     // the Go-to entity depends on the folded query alone (chips never restrict it), so the key is the folded text
-    goTo: (qFolded, options) => cached(`goto|${qFolded}`, () => inner.goTo(qFolded, options)),
-    searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, () => inner.searchMap(side, filter, options)),
+    goTo: (qFolded, options) => cached(`goto|${qFolded}`, (signal) => inner.goTo(qFolded, { ...options, signal }), options?.signal),
+    searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, (signal) => inner.searchMap(side, filter, { ...options, signal }), options?.signal),
     // the county list is tiny and only changes with a load: kept per generation, outside the LRU and the hit/miss counts
     counties: async () => {
       const g = await sync(false);
@@ -239,17 +317,21 @@ export function cachedStore(
       return rows;
     },
     // the role aggregates of an entity page (#73): the filter is already scoped to the entity, so its key is in the canonical filter
-    roleCounterparties: (side, filter, p, options) => cached(`cpty|${side}|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleCounterparties(side, filter, p, options)),
-    searchFacet: (dimension, filter, options) => cached(`facet|${dimension}|${canonicalFilter(filter)}`, () => inner.searchFacet(dimension, filter, options)),
-    searchMonths: (filter, options) => cached(`months|${canonicalFilter(filter)}`, () => inner.searchMonths(filter, options)),
-    roleFrameworks: (filter, options) => cached(`frameworks|${canonicalFilter(filter)}`, () => inner.roleFrameworks(filter, options)),
-    roleConsortia: (filter, p, options) => cached(`consortia|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleConsortia(filter, p, options)),
-    roleLargest: (filter, p, options) => cached(`largest|${canonicalFilter(filter)}|${p.limit}`, () => inner.roleLargest(filter, p, options)),
+    roleCounterparties: (side, filter, p, options) => cached(`cpty|${side}|${canonicalFilter(filter)}|${p.limit}`, (signal) => inner.roleCounterparties(side, filter, p, { ...options, signal }), options?.signal),
+    searchFacet: (dimension, filter, options) => cached(`facet|${dimension}|${canonicalFilter(filter)}`, (signal) => inner.searchFacet(dimension, filter, { ...options, signal }), options?.signal),
+    searchMonths: (filter, options) => cached(`months|${canonicalFilter(filter)}`, (signal) => inner.searchMonths(filter, { ...options, signal }), options?.signal),
+    roleFrameworks: (filter, options) => cached(`frameworks|${canonicalFilter(filter)}`, (signal) => inner.roleFrameworks(filter, { ...options, signal }), options?.signal),
+    roleConsortia: (filter, p, options) => cached(`consortia|${canonicalFilter(filter)}|${p.limit}`, (signal) => inner.roleConsortia(filter, p, { ...options, signal }), options?.signal),
+    roleLargest: (filter, p, options) => cached(`largest|${canonicalFilter(filter)}|${p.limit}`, (signal) => inner.roleLargest(filter, p, { ...options, signal }), options?.signal),
     // Signals (#74): every argument is in the key; the ordinal is only good for one load and the cache is flushed on every load
     signalRules: () => cached("signal-rules", () => inner.signalRules()),
-    roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, () => inner.roleSignals(filter, p, options)),
+    roleSignals: (filter, p, options) => cached(`signals|${canonicalFilter(filter)}|${p.order}|${page(p)}`, (signal) => inner.roleSignals(filter, p, { ...options, signal }), options?.signal),
     signalRecords: (ordinal, p) => cached(`signal-records|${ordinal}|${page(p)}`, () => inner.signalRecords(ordinal, p)),
-    searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, () => inner.searchUatMap(county, filter, options)),
+    searchUatMap: (county, filter, options) => cached(`uatmap|${county}|${canonicalFilter(filter)}`, (signal) => inner.searchUatMap(county, filter, { ...options, signal }), options?.signal),
+    // Coverage (#145): the grid has no argument; the figures follow the date window
+    coverageGrid: () => cached("coverage-grid", () => inner.coverageGrid()),
+    coverageAreas: (w) => cached(`coverage-areas|${windowKey(w)}`, () => inner.coverageAreas(normWindow(w))),
+    unplacedAuthorities: (w) => cached(`coverage-unplaced|${windowKey(w)}`, () => inner.unplacedAuthorities(normWindow(w))),
     records: (p) => cached(`empty-records|${page(p)}|${p.order}`, () => inner.records(p)),
   };
   return store;
