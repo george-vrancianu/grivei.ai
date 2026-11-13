@@ -1411,14 +1411,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
       const misses = cache.stats().misses;
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
-      expect(cache.stats()).toMatchObject({ misses, hits: 6 }); // total, two tabs, Records, the map, and the Go-to lookup (keyed by the folded query)
+      expect(cache.stats()).toMatchObject({ misses, hits: 8 }); // total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
 
       const report = await cache.warm();
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
       const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
-      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 6 });
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 8 });
       expect(de.total.records).toBeGreaterThan(0);
       const empty = await answer(api, {});
       expect(empty.total.records).toBe(13);
