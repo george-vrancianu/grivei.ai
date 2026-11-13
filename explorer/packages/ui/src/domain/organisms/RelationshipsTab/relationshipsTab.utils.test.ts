@@ -39,7 +39,7 @@ describe("share and node radius", () => {
 });
 
 describe("edge style", () => {
-  it("colours by the channel that carries more money", () => {
+  it("colours by the channel holding the most RON with that counterparty", () => {
     expect(dominantChannel(row("1", "100", "70", "30"))).toBe("directPurchase");
     expect(dominantChannel(row("1", "100", "30", "70"))).toBe("contract");
   });

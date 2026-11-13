@@ -29,7 +29,7 @@ const shorten = (text: string) => (text.length > MAX_LABEL ? `${text.slice(0, MA
 
 /**
  * The radial graph: the entity in the centre and its top counterparties around it. Node area = money, edge and node colour = the channel
- * that carries more of it, dashed edge = won together, amber ring = has Signals. React draws the SVG; D3 supplies the scales and the layout maths.
+ * holding the most RON with that counterparty, dashed edge = won together, amber ring = has Signals. React draws the SVG; D3 supplies the scales and the layout maths.
  * A node with an Entity is a button (click, Enter or Space picks it, picking it again clears the pick); a natural person is only a labelled mark.
  */
 export function CounterpartyGraph({ entity, counterparties, selected, onSelect, locale, copy }: CounterpartyGraphProps) {
@@ -70,7 +70,9 @@ export function CounterpartyGraph({ entity, counterparties, selected, onSelect, 
         viewBox={`${-GRAPH_WIDTH / 2} ${-GRAPH_HEIGHT / 2} ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
         sx={{
           width: "100%", height: "auto", maxHeight: 520, display: "block", color: color.text, fontFamily: font.mono,
-          "& [role=button]": { cursor: "pointer" }, "& [role=button]:hover circle[data-radius]": grafStates.mapArea.hover, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none", ...grafStates.mapArea.focus }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" },
+          "& [role=button]": { cursor: "pointer" },
+          // Unpicked nodes only: the hover stroke (1.5) would otherwise override the picked node's selection stroke (3) while the pointer is on it.
+          "& [role=button][aria-pressed=false]:hover circle[data-radius]": grafStates.mapArea.hover, "& [role=button]:focus-visible": { outline: "none" }, "& circle[data-focus-ring]": { display: "none", ...grafStates.mapArea.focus }, "& [role=button]:focus-visible circle[data-focus-ring]": { display: "inline" },
         }}
       >
         {nodes.map((node, i) => (

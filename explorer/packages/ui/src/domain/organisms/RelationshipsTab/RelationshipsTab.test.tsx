@@ -56,7 +56,7 @@ describe("RelationshipsTab", () => {
     expect(drumarii).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("sizes a node by money and colours its edge by the channel that carries more", () => {
+  it("sizes a node by money and colours its edge by the channel holding the most RON with that counterparty", () => {
     const { container } = renderInUi(<Harness />);
     const radius = (key: string) => Number(container.querySelector(`[data-node="${key}"] circle[data-radius]`)!.getAttribute("data-radius"));
     expect(radius("30000002")).toBeGreaterThan(radius("30000001"));
