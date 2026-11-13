@@ -319,6 +319,7 @@ export const en: Copy = {
         heading: "Relationships",
         recordCount: (n, formatted) => `${formatted} ${n === 1 ? "Record" : "Records"}`,
         graph: {
+          heading: "Top counterparties · pick one to list its Records",
           label: "Graph of the top counterparties",
           naturalPerson: "Persoană fizică",
           unknown: "Unidentified counterparty",
@@ -331,15 +332,15 @@ export const en: Copy = {
             "A consortium's money is split equally among its members, by convention; a Record's full value is on its own page.",
         },
         legend: {
-          title: "Legend", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Blue line: mostly contracts",
-          directPurchase: "Green line: mostly direct purchases", wonTogether: "Dashed line: won together", signals: "Orange ring: has Signals",
+          title: "Legend", edgeColour: "An edge's colour is the channel holding the most RON with that counterparty.", centre: "The entity of this page", size: "Circle area: money with the counterparty", contract: "Amber line: contracts",
+          directPurchase: "Blue line: direct purchases", wonTogether: "Dashed line: won together", signals: "Amber ring: has Signals",
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
           total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
         },
       },

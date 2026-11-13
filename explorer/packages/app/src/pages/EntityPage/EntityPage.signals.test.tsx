@@ -171,7 +171,7 @@ describe("the Relationships tab's rings", () => {
     const graph = await screen.findByRole("group", { name: "Graph of the top counterparties" });
     expect(within(graph).getByRole("button", { name: /^ALFA DEMO SRL.*has Signals/ })).toBeVisible();
     expect(graph.querySelectorAll("[data-ring]").length).toBe(4); // ALFA, BETA, GAMMA and the lumped natural persons
-    expect(screen.getByText("Orange ring: has Signals")).toBeVisible();
+    expect(screen.getByText("Amber ring: has Signals")).toBeVisible();
     unmount();
     openAt("/ro/explore/supplier/2000015/relationships?from=2023-01-01&to=2023-12-31");
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
