@@ -16,11 +16,30 @@ This session is the top level the user talks to. It starts each spec with [orche
 ## While specs run
 
 - With the first spec, start the memory watcher as in orchestrate-specs step 1 (one watcher for the whole run, stopped by END-OF-RUN step 8 after the last spec).
-- Start each spec orchestrator in the background with the brief from [orchestrate-specs](../orchestrate-specs/SKILL.md).
+- Start each spec orchestrator in the background with the brief from [orchestrate-specs](../orchestrate-specs/SKILL.md). While quiet mode is on, add the [quiet-mode block](#quiet-mode) to it.
 - **Cross-spec dependency**: when a blocking spec merges, SendMessage the waiting spec orchestrator. Agents never poll.
 - A subagent report that reaches this level by mistake: relay it to the orchestrator it belongs to.
 - An interim "waiting on its own background work" notification is not a result. Say the spec is still running and predict no outcome.
 - Answer progress questions from completion messages only. Agents' transcript files stay unread.
+
+## Quiet mode
+
+For when the user works on the machine. Off until the user says "I'm working"; the user ends it with "I'm done". Answer each switch with one line saying the mode and that the orchestrators were told.
+
+The limits live in this one block, named `QUIET-MODE-LIMITS`. Paste it verbatim into each spec orchestrator's brief; a spec orchestrator passes it on to its ticket orchestrators. Retyping it is how limits drift.
+
+```
+QUIET-MODE-LIMITS (on until the top level says "quiet mode off")
+- One spec orchestrator and one ticket orchestrator at a time.
+- No spawn while `free -g` "used" is above 16 GB; wait and re-check.
+- One test suite at a time.
+- Read memory from the watcher, never start or stop it: `bash .claude/skills/orchestrate-specs/mem-watch.sh peak`, or the last line of its log (`/tmp/mem-watch.log`, MB).
+```
+
+- **Switching**: SendMessage every running spec orchestrator with the new mode (on: the block; off: "quiet mode off, normal limits"). Spec orchestrators relay it to their running ticket orchestrators. Specs started later get the block in their brief while the mode is on.
+- **Stricter than the normal caps** in [Intake](#intake) and [SPEC-ORCHESTRATOR](../orchestrate-specs/SPEC-ORCHESTRATOR.md); with the mode on, those caps do not apply.
+- **The spawn check does not bound running agents**: a peak or latest sample above 16 GB while agents run means start nothing new, and tell the user.
+- **Watcher**: this level owns it, started and stopped as in [While specs run](#while-specs-run). Orchestrators only read it.
 
 ## The user's checkout
 
