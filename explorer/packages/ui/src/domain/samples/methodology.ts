@@ -32,7 +32,7 @@ const sections = {
   ro: {
     awardedValue: "Valoarea atribuită", frameworkCeilings: "Plafoane de acord-cadru", consortiumShares: "Părți din asociere", suspectValues: "Valori suspecte", blankValues: "Valori lipsă",
     contractModifications: "Modificările contractelor", backfilledValues: "Valorile înregistrărilor 2021–22 completate ulterior", supplierIdentity: "Identitatea furnizorului",
-    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", partyAndLeadership: "Partid și conducere (AEP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)", onrcRegister: "Înregistrările ONRC (registrul comerțului)",
+    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", partyAndLeadership: "Partid și conducere (AEP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)", onrcRegister: "Înmatriculările ONRC (registrul comerțului)",
   },
 } as const;
 const rules = {

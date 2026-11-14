@@ -56,7 +56,7 @@ describe("the money figures in the methodology prose follow the counting rule", 
 
 describe("the data caveats of ONRC and its Reference sources (#186) are on the page in both languages", () => {
   /** Each caveat as a pattern per language: the page must carry it, wherever the section puts it. */
-  const caveats: [string, "onrcRegister" | "financialStatements" | "partyAndLeadership" | "firmDonations" | "publicEnterprises", RegExp, RegExp][] = [
+  const caveats: [string, keyof typeof methodologyEn.sections, RegExp, RegExp][] = [
     ["ONRC statuses are undated", "onrcRegister", /undated/, /nu sunt datate/],
     ["dates come from comparing snapshots", "onrcRegister", /comparing snapshots/, /comparând instantaneele/],
     ["no main CAEN", "onrcRegister", /does not say which is its main one/, /nu spune care este cel principal/],
@@ -70,9 +70,9 @@ describe("the data caveats of ONRC and its Reference sources (#186) are on the p
     ["AMEPIP leaves out companies outside the Ordinance", "publicEnterprises", /outside the Ordinance/, /în afara ordonanței/],
   ];
 
-  it.each(caveats)("%s", (_name, key, en, ro) => {
-    expect(methodologyEn.sections[key].paragraphs.join(" ")).toMatch(en);
-    expect(methodologyRo.sections[key].paragraphs.join(" ")).toMatch(ro);
+  it.each(caveats)("%s", (_name, key, enPattern, roPattern) => {
+    expect(methodologyEn.sections[key].paragraphs.join(" ")).toMatch(enPattern);
+    expect(methodologyRo.sections[key].paragraphs.join(" ")).toMatch(roPattern);
   });
 
   it("has the ONRC section, with the same number of paragraphs in both languages", () => {
