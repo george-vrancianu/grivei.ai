@@ -180,3 +180,11 @@ fragment FinancialStatementsFields on FinancialStatements {
     source { file datasetUrl fileUrl via license published fetchedAt }
   }
 }
+
+fragment FirmDonationsFields on FirmDonations {
+  dataThroughYear
+  donationCount
+  loanCount
+  items { kind party year date dateText amount sourceRow }
+  source { datasetUrl license licenseUrl publisher publisherUrl underlyingUrl fetchedAt }
+}

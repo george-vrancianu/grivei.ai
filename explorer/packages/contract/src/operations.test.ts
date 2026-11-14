@@ -58,6 +58,8 @@ describe("operations", () => {
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
       // MF's statements (#179): the file's name, its links, the dataset's title and the licence, as the portal publishes them
+      // BaniPartide's donations (#182): the party and the date cell as published, and the publisher's own links, name and licence
+      "FirmDonation.party", "FirmDonation.dateText", "DonationSource.datasetUrl", "DonationSource.license", "DonationSource.licenseUrl", "DonationSource.publisher", "DonationSource.publisherUrl", "DonationSource.underlyingUrl",
       "FinancialSource.file", "FinancialSource.datasetUrl", "FinancialSource.fileUrl", "FinancialSource.via", "FinancialSource.license",
     ]);
     const found: string[] = [];

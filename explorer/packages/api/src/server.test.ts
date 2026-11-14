@@ -34,6 +34,7 @@ const store: Store = {
   onrcDataThrough: async () => [],
   publicEnterprise: async () => null,
   financials: async () => [],
+  donations: async () => null,
   referenceSources: async () => [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null }],
   searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),

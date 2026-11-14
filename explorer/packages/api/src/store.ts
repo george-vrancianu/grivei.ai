@@ -51,6 +51,13 @@ export interface FinancialYearRow {
   source: { file: string; datasetUrl: string | null; fileUrl: string | null; via: string | null; license: string | null; published: string | null; fetchedAt: string };
 }
 
+/** A firm's donations and loans as BaniPartide lists them (`donations.*`, #182). Money is bani as text; the party and the date cell are exactly as published. */
+export interface FirmDonationsRow {
+  dataThroughYear: number;
+  items: { kind: "DONATION" | "LOAN"; party: string; year: number | null; date: string | null; dateText: string; amount: string; sourceRow: number }[];
+  source: { datasetUrl: string | null; license: string | null; licenseUrl: string | null; publisher: string | null; publisherUrl: string | null; underlyingUrl: string | null; fetchedAt: string };
+}
+
 /** A Reference source as the methodology page names it: when the held list was published (null when none is held). */
 export interface ReferenceSourceRow {
   id: string;
@@ -301,6 +308,8 @@ export interface Store extends RoleStore, SignalStore {
   publicEnterprise(cui: string): Promise<PublicEnterpriseRow | null>;
   /** MF's annual statements for a CUI, newest year first, each with the awards of that calendar year as the entity's supplier role (`key` is its entity key); empty when MF holds none (#179). */
   financials(cui: string, key: string): Promise<FinancialYearRow[]>;
+  /** The firm donations and loans under a CUI, newest first; null when BaniPartide lists none (#182). */
+  donations(cui: string): Promise<FirmDonationsRow | null>;
   /** The Reference sources held, each with its data-through date (#183). */
   referenceSources(): Promise<ReferenceSourceRow[]>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
@@ -981,13 +990,35 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       ).catch(noTable);
       return rows.map(({ file, datasetUrl, fileUrl, via, license, published, fetchedAt, ...year }) => ({ ...year, source: { file, datasetUrl, fileUrl, via, license, published, fetchedAt } })) as FinancialYearRow[];
     },
+    async donations(cui) {
+      // A graph built before the donations schema existed (deployed ahead of a rebuild) has none: the Overview still works.
+      const { rows } = await pool.query(
+        `SELECT d.kind, d.party, d.donation_year AS year, d.donation_date::text AS date, d.date_text AS "dateText", d.amount_bani::text AS amount, d.source_row AS "sourceRow",
+                f.through_year AS "dataThroughYear", f.dataset_url AS "datasetUrl", f.license, f.license_url AS "licenseUrl", f.source AS publisher, f.source_url AS "publisherUrl",
+                f.underlying_url AS "underlyingUrl", to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM donations.donation d JOIN donations.source_file f ON f.id = d.source_file_id
+          WHERE d.donor_cui = $1
+          ORDER BY d.donation_year DESC NULLS LAST, d.donation_date DESC NULLS LAST, d.source_row`,
+        [cui],
+      ).catch(noTable);
+      if (rows.length === 0) return null;
+      const { dataThroughYear, datasetUrl, license, licenseUrl, publisher, publisherUrl, underlyingUrl, fetchedAt } = rows[0];
+      return {
+        dataThroughYear,
+        items: rows.map(({ kind, party, year, date, dateText, amount, sourceRow }) => ({ kind, party, year, date, dateText, amount, sourceRow })),
+        source: { datasetUrl, license, licenseUrl, publisher, publisherUrl, underlyingUrl, fetchedAt },
+      } as FirmDonationsRow;
+    },
     async referenceSources() {
       const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
       const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
       const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
+      const bp = await pool.query(`SELECT through_year AS year, dataset_url AS url FROM donations.source_file ORDER BY id DESC LIMIT 1`).catch(noTable);
+      const bpYear = (bp.rows[0]?.year as number | null | undefined) ?? null;
       return [
         { id: "AMEPIP", name: "AMEPIP", dataThrough: (amepip.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: (amepip.rows[0]?.url as string | null | undefined) ?? null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: year === null ? null : `${year}-12-31`, fiscalYear: year, url: year === null ? null : "https://data.gov.ro/organization/mfp" },
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: bpYear === null ? null : `${bpYear}-12-31`, fiscalYear: bpYear, url: (bp.rows[0]?.url as string | null | undefined) ?? null },
       ];
     },
     async counties() {

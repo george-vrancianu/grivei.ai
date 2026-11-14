@@ -612,7 +612,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -957,7 +958,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -1599,6 +1601,40 @@
               }
             }
           ]
+        },
+        "donations": {
+          "dataThroughYear": 2024,
+          "donationCount": 1,
+          "loanCount": 1,
+          "items": [
+            {
+              "kind": "LOAN",
+              "party": "PSD",
+              "year": 2024,
+              "date": null,
+              "dateText": "20.01.2024; 15.05.2024",
+              "amount": "25000050",
+              "sourceRow": 2
+            },
+            {
+              "kind": "DONATION",
+              "party": "PNL",
+              "year": 2023,
+              "date": "2023-03-15",
+              "dateText": "15.03.2023",
+              "amount": "5000000",
+              "sourceRow": 1
+            }
+          ],
+          "source": {
+            "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+            "license": "CC Attribution 4.0 License",
+            "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+            "publisher": "Expert Forum",
+            "publisherUrl": "https://expertforum.ro/tag/finantare-politica/",
+            "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
         }
       }
     }
@@ -2162,6 +2198,31 @@
               }
             }
           ]
+        },
+        "donations": {
+          "dataThroughYear": 2024,
+          "donationCount": 1,
+          "loanCount": 0,
+          "items": [
+            {
+              "kind": "DONATION",
+              "party": "USR",
+              "year": 2022,
+              "date": "2022-10-04",
+              "dateText": "4102022",
+              "amount": "800536",
+              "sourceRow": 3
+            }
+          ],
+          "source": {
+            "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+            "license": "CC Attribution 4.0 License",
+            "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+            "publisher": "Expert Forum",
+            "publisherUrl": "https://expertforum.ro/tag/finantare-politica/",
+            "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
         }
       }
     }
@@ -2387,6 +2448,31 @@
               }
             }
           ]
+        },
+        "donations": {
+          "dataThroughYear": 2024,
+          "donationCount": 1,
+          "loanCount": 0,
+          "items": [
+            {
+              "kind": "DONATION",
+              "party": "PSD+PC",
+              "year": 2021,
+              "date": "2021-06-09",
+              "dateText": "9 iunie 2021",
+              "amount": "1200000",
+              "sourceRow": 4
+            }
+          ],
+          "source": {
+            "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+            "license": "CC Attribution 4.0 License",
+            "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+            "publisher": "Expert Forum",
+            "publisherUrl": "https://expertforum.ro/tag/finantare-politica/",
+            "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
         }
       }
     }
@@ -2596,6 +2682,31 @@
               }
             }
           ]
+        },
+        "donations": {
+          "dataThroughYear": 2024,
+          "donationCount": 1,
+          "loanCount": 0,
+          "items": [
+            {
+              "kind": "DONATION",
+              "party": "PSD+PC",
+              "year": 2021,
+              "date": "2021-06-09",
+              "dateText": "9 iunie 2021",
+              "amount": "1200000",
+              "sourceRow": 4
+            }
+          ],
+          "source": {
+            "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+            "license": "CC Attribution 4.0 License",
+            "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+            "publisher": "Expert Forum",
+            "publisherUrl": "https://expertforum.ro/tag/finantare-politica/",
+            "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
         }
       }
     }
@@ -2749,7 +2860,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -2873,7 +2985,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -2922,7 +3035,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -3077,6 +3191,40 @@
               }
             }
           ]
+        },
+        "donations": {
+          "dataThroughYear": 2024,
+          "donationCount": 1,
+          "loanCount": 1,
+          "items": [
+            {
+              "kind": "LOAN",
+              "party": "PSD",
+              "year": 2024,
+              "date": null,
+              "dateText": "20.01.2024; 15.05.2024",
+              "amount": "25000050",
+              "sourceRow": 2
+            },
+            {
+              "kind": "DONATION",
+              "party": "PNL",
+              "year": 2023,
+              "date": "2023-03-15",
+              "dateText": "15.03.2023",
+              "amount": "5000000",
+              "sourceRow": 1
+            }
+          ],
+          "source": {
+            "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+            "license": "CC Attribution 4.0 License",
+            "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+            "publisher": "Expert Forum",
+            "publisherUrl": "https://expertforum.ro/tag/finantare-politica/",
+            "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
         }
       }
     }
@@ -3598,7 +3746,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -3678,7 +3827,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -3915,7 +4065,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -4085,7 +4236,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -4315,7 +4467,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -5318,7 +5471,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -6321,7 +6475,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -7177,7 +7332,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -7405,7 +7561,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -7758,7 +7915,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -7938,7 +8096,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8111,7 +8270,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8288,7 +8448,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8462,7 +8623,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8636,7 +8798,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8724,7 +8887,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   },
@@ -8805,7 +8969,8 @@
           }
         },
         "publicEnterprise": null,
-        "financials": null
+        "financials": null,
+        "donations": null
       }
     }
   }
