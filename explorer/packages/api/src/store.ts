@@ -227,6 +227,34 @@ export interface TotalRow {
   frameworkCeilings: string;
 }
 
+/** One slice of the Party coverage: the Records and the awarded value (bani, summed like a Total's) in it. */
+export interface PartyShareRow {
+  records: number;
+  awarded: string;
+}
+
+/**
+ * What a Party-filtered Total covers (#181), over the set the rest of the filter selects: `direct` and `subordinate` are the matched Records split by the basis
+ * of their Party; the others are what the filter leaves out, so the share left unattributed is `unattributed` against the sum of the five.
+ */
+export interface PartyCoverageRow {
+  party: string;
+  direct: PartyShareRow;
+  subordinate: PartyShareRow;
+  /** Records led by another list. */
+  otherParties: PartyShareRow;
+  /** Records of an Independent leader's authority: attributed to a leader, never to a party. */
+  independent: PartyShareRow;
+  /** Records with no Mandate: central government, schools, municipal companies, ADIs, an authority outside the Leadership list, or a gap in the mandates. */
+  unattributed: PartyShareRow;
+}
+
+/** A list the Party filter offers, with the Records it led (directly or through a subordinate body). */
+export interface PartyOptionRow {
+  party: string;
+  records: number;
+}
+
 /** One map area of the Coverage lens (a county as `RO-BV`, or `NATIONAL`) in a window: N of M public entities and the other authorities (#80). */
 export interface CoverageAreaRow {
   area: string;
@@ -337,6 +365,10 @@ export interface Store extends RoleStore, SignalStore, OnrcStore {
   onrcDataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
+  /** The Party coverage of the matching set (the filter's `party` is set): how its Total splits, and what the party filter leaves out. */
+  searchPartyCoverage(filter: SearchFilter, options?: SearchOptions): Promise<PartyCoverageRow>;
+  /** The lists present in `aep.record_party`, largest first (an Independent is never one); empty when the `aep` schema is missing. */
+  partyOptions(): Promise<PartyOptionRow[]>;
   /** The Money lens of the matching set, on the side the filter's `countySide` names (the filter is not narrowed by the lens). */
   searchMap(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, options?: SearchOptions): Promise<MoneyMapRow>;
   /** The zoomed county (ISO code with `RO-`): the matching set's authority side, by UAT. */
@@ -704,11 +736,44 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
   };
 
+  /** Party coverage (#181): the set the rest of the filter selects, grouped on the indexed party columns; see `PartyCoverageRow`. A Record counts once, as in `searchTotal`. */
+  const searchPartyCoverage: Store["searchPartyCoverage"] = async (filter, { signal } = {}) => {
+    const party = filter.party ?? "";
+    const w = buildWhere({ ...filter, party: undefined });
+    type Row = { party: string | null; basis: string | null; awarded: string; records: number };
+    const sql = w.winnerSide
+      ? `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records
+           FROM (SELECT party, party_basis, record_code, sum(share_bani) AS sh FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, record_code) g
+          GROUP BY party, party_basis`
+      : `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, coalesce(sum(n) FILTER (WHERE pos = 1), 0)::int AS records
+           FROM (SELECT party, party_basis, winner_position AS pos, sum(share_bani) AS sh, count(*) AS n FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, winner_position) g
+          GROUP BY party, party_basis`;
+    const rows = (await cancellableQuery<Row>(pool, signal, sql, w.params)).rows;
+    const sums = { direct: { records: 0, awarded: 0n }, subordinate: { records: 0, awarded: 0n }, otherParties: { records: 0, awarded: 0n }, independent: { records: 0, awarded: 0n }, unattributed: { records: 0, awarded: 0n } };
+    for (const r of rows) {
+      const slice = r.basis === null ? sums.unattributed : r.party === null ? sums.independent : r.party !== party ? sums.otherParties : r.basis === "SUBORDINATE" ? sums.subordinate : sums.direct;
+      slice.records += r.records;
+      slice.awarded += BigInt(r.awarded);
+    }
+    const out = (s: { records: number; awarded: bigint }): PartyShareRow => ({ records: s.records, awarded: s.awarded.toString() });
+    return { party, direct: out(sums.direct), subordinate: out(sums.subordinate), otherParties: out(sums.otherParties), independent: out(sums.independent), unattributed: out(sums.unattributed) };
+  };
+
   return {
     ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
     ...onrcStore({ pool, entitiesOf }),
     ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
     searchTotal,
+    searchPartyCoverage,
+    async partyOptions() {
+      // No `aep` schema (a graph built before it) offers no party: the chip is simply absent. The list is capped so a native select stays usable; the largest lists come first.
+      const { rows } = await pool.query(
+        `SELECT m.list_name AS party, count(*)::int AS records
+           FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
+          WHERE NOT m.independent GROUP BY m.list_name ORDER BY count(*) DESC, m.list_name LIMIT 1000`,
+      ).catch(noTable);
+      return rows as PartyOptionRow[];
+    },
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
       const plan = rollup ? rollupPlan(filter) : null;
       if (plan) {

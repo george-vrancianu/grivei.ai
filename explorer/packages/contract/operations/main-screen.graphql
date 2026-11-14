@@ -5,7 +5,7 @@ query MainScreen($filter: RecordFilter!) {
   seap {
     search(filter: $filter) {
       filter { qFolded authority { ...EntityRef } supplier { ...EntityRef } }
-      total { ...TotalFields }
+      total { ...TotalFields partyCoverage { ...PartyCoverageFields } }
       map { ...MoneyMapFields }
       goTo { ...EntityRef seap { roles } }
       facets { procedure { value } }
@@ -28,4 +28,9 @@ query ZoomedCounty($filter: RecordFilter!, $county: CountyCode!) {
       }
     }
   }
+}
+
+# The lists the Party chip offers (#181): independent of the filter, asked once per visit to the main screen.
+query PartyOptions {
+  seap { partyOptions { party records } }
 }

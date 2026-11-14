@@ -115,6 +115,8 @@ def build_where(f: dict) -> Where:
         add("authority_uat = %s", f["uat"])
     if f.get("hasSignals") is not None:
         add("has_signals = %s", bool(f["hasSignals"]))
+    if f.get("party"):
+        add("party = %s", f["party"])
     if f.get("signal"):
         add("signals @> ARRAY[%s]::text[]", f["signal"])
     if f.get("county"):
@@ -136,7 +138,7 @@ def rollup_plan(f: dict) -> dict | None:
         return None
     if f.get("badges") or f.get("procedure"):
         return None
-    if any(f.get(k) for k in ("cpv", "authority", "supplier", "county", "uat", "signal")):
+    if any(f.get(k) for k in ("cpv", "authority", "supplier", "county", "uat", "signal", "party")):
         return None
     year_from = year_to = None
     if f.get("from"):
@@ -250,6 +252,21 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                 f"coalesce(sum(ceiling_bani) FILTER (WHERE winner_position = 1), 0)::text FROM seap.search WHERE {w.sql}"
             )
         tasks.append(Task("total", "scan", ["total"], run=lambda timed, s=total_sql, p=w.params: timed("total", s, p)))
+
+    # Party coverage (#181): only a Party-filtered search states it; the set the rest of the filter selects, grouped on the indexed party columns (store.ts `searchPartyCoverage`)
+    if f.get("party"):
+        cw = build_where({**f, "party": None})
+        if cw.winner_side:
+            coverage_sql = (
+                "SELECT party, party_basis, coalesce(sum(sh), 0)::text, count(*)::int FROM (SELECT party, party_basis, record_code, sum(share_bani) AS sh "
+                f"FROM seap.search WHERE {cw.sql} GROUP BY party, party_basis, record_code) g GROUP BY party, party_basis"
+            )
+        else:
+            coverage_sql = (
+                "SELECT party, party_basis, coalesce(sum(sh), 0)::text, coalesce(sum(n) FILTER (WHERE pos = 1), 0)::int FROM (SELECT party, party_basis, winner_position AS pos, "
+                f"sum(share_bani) AS sh, count(*) AS n FROM seap.search WHERE {cw.sql} GROUP BY party, party_basis, winner_position) g GROUP BY party, party_basis"
+            )
+        tasks.append(Task("party_coverage", "scan", ["party_coverage"], run=lambda timed, s=coverage_sql, p=cw.params: timed("party_coverage", s, p)))
 
     # the Money lens: ONE side per request (MainScreen asks `map` with the filter's countySide, default AUTHORITY: resolvers.ts). Always the
     # scan: store.ts `searchMap` has no rollup path, the API's result cache answers the warmed states.

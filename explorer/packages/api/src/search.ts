@@ -21,6 +21,8 @@ export interface SearchFilter {
   supplier?: string | null;
   cpv?: string | null;
   signal?: string | null;
+  /** A list as registered at the election (`PARTIDUL SOCIAL DEMOCRAT`, an alliance's own name): Records whose Mandate (direct or derived) ran on it (#181). */
+  party?: string | null;
 }
 
 export interface Where {
@@ -77,6 +79,9 @@ export function buildWhere(filter: SearchFilter): Where {
   if (filter.uat) add(`authority_uat = ${bind(filter.uat)}`);
   // has_signals / signals are filled by the pipeline's Signal step (watchdog/pipeline/signals) before the index is built
   if (filter.hasSignals != null) add(`has_signals = ${bind(filter.hasSignals)}`);
+  // Party per Record (#181): one exact term on the search row (filled at rebuild from aep.record_party, Independent leaders and Records with no Mandate hold null).
+  // An alliance is matched under its own registered name only: a member party never matches it, and no party family exists (ADR 0012).
+  if (filter.party) add(`party = ${bind(filter.party)}`);
   if (filter.signal) add(`signals @> ARRAY[${bind(filter.signal)}]::text[]`);
   if (filter.county) {
     // A county, or an off-map tile of the Money lens (#71). The area columns are never null: the county code, or NATIONAL / UNPLACED

@@ -53,6 +53,10 @@ describe("a graph without the aep schema (deployed before a rebuild)", () => {
     expect(await store.recordParty("DA95000002")).toBeNull();
   });
 
+  it("offers no party to the filter (#181), so the main screen shows no Party chip and keeps working", async () => {
+    expect(await postgresStore(poolWithoutAep(), { rollup: false }).partyOptions()).toEqual([]);
+  });
+
   it("still lists the Reference sources, with no data-through date for AEP", async () => {
     const sources = await postgresStore(poolWithoutAep(), { rollup: false }).referenceSources();
     expect(sources.map((s) => [s.id, s.dataThrough])).toEqual([["AMEPIP", null], ["AEP", null], ["FINANCIAL_STATEMENTS", null], ["BANIPARTIDE", null]]);

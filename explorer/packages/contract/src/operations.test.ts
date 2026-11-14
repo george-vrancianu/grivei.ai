@@ -28,7 +28,7 @@ describe("operations", () => {
     expect(names).toEqual([
       "CoverageLens", "CoveragePage", "EntityOverview", "EntityRecords", "EntityRelationships",
       "FullResultsAuthorities", "FullResultsRecords", "FullResultsSuppliers", "MainScreen",
-      "MethodologyBaseRates", "MethodologyReferenceSources", "OnrcCoverage", "OnrcRecord", "OnrcSearch", "RecordPage", "ZoomedCounty",
+      "MethodologyBaseRates", "MethodologyReferenceSources", "OnrcCoverage", "OnrcRecord", "OnrcSearch", "PartyOptions", "RecordPage", "ZoomedCounty",
     ]);
   });
   it("are queries only", () => {
@@ -48,7 +48,7 @@ describe("operations", () => {
       "Source.name", "DataThrough.kind", "GapCell.kind", "GapCell.quarter", "GapCell.note",
       "Entity.displayName", "Entity.cui", "Entity.foreignVatId", "Entity.anafStatus",
       "Placement.locality", "Alias.name",
-      "Party.publishedName", "Cpv.code", "Cpv.description",
+      "Party.publishedName", "PartyCoverage.party", "PartyOption.party", "Cpv.code", "Cpv.description",
       "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
       "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
       // ONRC's registration as published (#175): identifiers, ONRC's own nomenclature words and the seat; none is prose of ours

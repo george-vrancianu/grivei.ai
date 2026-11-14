@@ -717,6 +717,40 @@ export type Party = {
   share: Maybe<Scalars['Bani']['output']>;
 };
 
+/**
+ * What a Party filter covers (#181), measured over the set the rest of the filter selects. `direct` + `subordinate` are the Total's own Records; the other three are
+ * what the filter leaves out. The share left unattributed is `unattributed` against the sum of the five (central government, schools, municipal companies, ADIs,
+ * authorities outside the Leadership list, and gaps in the mandates all sit there). Bani are summed like a Total's: counted value, framework ceilings out, suspect values out.
+ */
+export type PartyCoverage = {
+  __typename?: 'PartyCoverage';
+  /** Records whose authority itself had the Mandate. */
+  direct: PartyShare;
+  /** Records of an Independent leader's authority: attributed to a leader, never to a party. */
+  independent: PartyShare;
+  /** Records of authorities led on another list. */
+  otherParties: PartyShare;
+  /** The list as registered, echoed from the filter. */
+  party: Scalars['String']['output'];
+  /** Records of a subordinate body (principal credit holder in MF's list) that inherits the Mandate's Party. */
+  subordinate: PartyShare;
+  /** Records with no Mandate in force on the award date, or no attributed authority. */
+  unattributed: PartyShare;
+};
+
+/** A list the Party filter offers: as registered, with the Records it led (direct and subordinate). */
+export type PartyOption = {
+  __typename?: 'PartyOption';
+  party: Scalars['String']['output'];
+  records: Scalars['Int']['output'];
+};
+
+export type PartyShare = {
+  __typename?: 'PartyShare';
+  awarded: Scalars['Bani']['output'];
+  records: Scalars['Int']['output'];
+};
+
 /** Output twin of DateRange. */
 export type Period = {
   __typename?: 'Period';
@@ -853,6 +887,14 @@ export type RecordFilter = {
   cpv?: InputMaybe<Scalars['String']['input']>;
   from?: InputMaybe<Scalars['Date']['input']>;
   hasSignals?: InputMaybe<Scalars['Boolean']['input']>;
+  /**
+   * A list as registered at the election, as `partyOptions` offers it (`PARTIDUL SOCIAL DEMOCRAT`, or an alliance under its own registered name). One value, like the
+   * other entity-scoped fields (a second one would be a different question). Matches the Records whose Mandate (direct, or derived through a subordinate body's principal
+   * credit holder) ran on that list; there is no "direct only" switch. "Independent" is never a party and matches nothing, an alliance is not matched by its member
+   * parties and no party family exists. Never a supplier's: a Party belongs to an authority for a mandate's dates. Narrows only the SEAP search: a Total with this filter
+   * states its coverage (`Total.partyCoverage`).
+   */
+  party?: InputMaybe<Scalars['String']['input']>;
   procedure?: InputMaybe<Array<Scalars['String']['input']>>;
   q?: InputMaybe<Scalars['String']['input']>;
   signal?: InputMaybe<SignalRuleSlug>;
@@ -962,6 +1004,8 @@ export type SeapEntityRoleArgs = {
 
 export type SeapQuery = {
   __typename?: 'SeapQuery';
+  /** The lists the Party filter offers (largest first, at most 1000, never Independent); empty for a graph built without AEP's mandates. */
+  partyOptions: Array<PartyOption>;
   /** A Record by its public code (e.g. CAN1166685, DA12345678), the Record page's URL key. */
   record: Maybe<SeapRecord>;
   /**
@@ -1272,6 +1316,8 @@ export type Total = {
   frameworkCeilings: Scalars['Bani']['output'];
   /** Records with no value in SEAP: counted here, add nothing. */
   noValue: Scalars['Int']['output'];
+  /** Only on a SEAP search whose filter has `party`: what the filter covers. Null on every other Total. */
+  partyCoverage: Maybe<PartyCoverage>;
   records: Scalars['Int']['output'];
   /** Records in the set whose value is suspect: shown, searchable, not summed. */
   suspectLeftOut: Scalars['Int']['output'];
@@ -1491,6 +1537,9 @@ export type ResolversTypes = {
   OnrcStatus: ResolverTypeWrapper<OnrcStatus>;
   OverCapNumbers: ResolverTypeWrapper<OverCapNumbers>;
   Party: ResolverTypeWrapper<Omit<Party, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  PartyCoverage: ResolverTypeWrapper<PartyCoverage>;
+  PartyOption: ResolverTypeWrapper<PartyOption>;
+  PartyShare: ResolverTypeWrapper<PartyShare>;
   Period: ResolverTypeWrapper<Period>;
   Placement: ResolverTypeWrapper<Placement>;
   Provenance: ResolverTypeWrapper<Provenance>;
@@ -1598,6 +1647,9 @@ export type ResolversParentTypes = {
   OnrcStatus: OnrcStatus;
   OverCapNumbers: OverCapNumbers;
   Party: Omit<Party, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  PartyCoverage: PartyCoverage;
+  PartyOption: PartyOption;
+  PartyShare: PartyShare;
   Period: Period;
   Placement: Placement;
   Provenance: Provenance;
@@ -2019,6 +2071,25 @@ export type PartyResolvers<ContextType = any, ParentType extends ResolversParent
   share?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
 };
 
+export type PartyCoverageResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyCoverage'] = ResolversParentTypes['PartyCoverage']> = {
+  direct?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  otherParties?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  subordinate?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  unattributed?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+};
+
+export type PartyOptionResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyOption'] = ResolversParentTypes['PartyOption']> = {
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type PartyShareResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyShare'] = ResolversParentTypes['PartyShare']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
 export type PeriodResolvers<ContextType = any, ParentType extends ResolversParentTypes['Period'] = ResolversParentTypes['Period']> = {
   from?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   to?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
@@ -2124,6 +2195,7 @@ export type SeapEntityResolvers<ContextType = any, ParentType extends ResolversP
 };
 
 export type SeapQueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['SeapQuery'] = ResolversParentTypes['SeapQuery']> = {
+  partyOptions?: Resolver<Array<ResolversTypes['PartyOption']>, ParentType, ContextType>;
   record?: Resolver<Maybe<ResolversTypes['SeapRecord']>, ParentType, ContextType, RequireFields<SeapQueryRecordArgs, 'code'>>;
   search?: Resolver<ResolversTypes['SeapSearch'], ParentType, ContextType, RequireFields<SeapQuerySearchArgs, 'filter'>>;
 };
@@ -2246,6 +2318,7 @@ export type TotalResolvers<ContextType = any, ParentType extends ResolversParent
   estimated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   frameworkCeilings?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
   noValue?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  partyCoverage?: Resolver<Maybe<ResolversTypes['PartyCoverage']>, ParentType, ContextType>;
   records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   suspectLeftOut?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
@@ -2321,6 +2394,9 @@ export type Resolvers<ContextType = any> = {
   OnrcStatus?: OnrcStatusResolvers<ContextType>;
   OverCapNumbers?: OverCapNumbersResolvers<ContextType>;
   Party?: PartyResolvers<ContextType>;
+  PartyCoverage?: PartyCoverageResolvers<ContextType>;
+  PartyOption?: PartyOptionResolvers<ContextType>;
+  PartyShare?: PartyShareResolvers<ContextType>;
   Period?: PeriodResolvers<ContextType>;
   Placement?: PlacementResolvers<ContextType>;
   Provenance?: ProvenanceResolvers<ContextType>;

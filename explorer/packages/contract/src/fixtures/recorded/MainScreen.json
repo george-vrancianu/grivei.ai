@@ -61,7 +61,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -1298,7 +1299,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2037,7 +2039,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2237,7 +2240,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2821,7 +2825,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -3475,7 +3480,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "SUPPLIER",
@@ -4543,7 +4549,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -4808,7 +4815,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "SUPPLIER",
@@ -6030,7 +6038,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -6542,7 +6551,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -7956,7 +7966,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8058,7 +8069,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8484,7 +8496,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8695,7 +8708,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8980,7 +8994,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -9191,7 +9206,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",

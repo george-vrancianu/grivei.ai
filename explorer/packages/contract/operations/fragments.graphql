@@ -10,6 +10,16 @@ fragment TotalFields on Total {
   estimated
 }
 
+# A Party-filtered search's coverage (#181): how the Total splits and what the filter leaves out.
+fragment PartyCoverageFields on PartyCoverage {
+  party
+  direct { records awarded }
+  subordinate { records awarded }
+  otherParties { records awarded }
+  independent { records awarded }
+  unattributed { records awarded }
+}
+
 fragment EntityRef on Entity {
   key
   displayName

@@ -43,6 +43,11 @@ const store: Store = {
   financials: async () => [],
   donations: async () => null,
   referenceSources: async () => [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null }],
+  searchPartyCoverage: async (f) => {
+    const none = { records: 0, awarded: "0" };
+    return { party: f.party ?? "", direct: { records: 1, awarded: "420050" }, subordinate: none, otherParties: none, independent: none, unattributed: { records: 1, awarded: "0" } };
+  },
+  partyOptions: async () => [{ party: "PARTIDUL SOCIAL DEMOCRAT", records: 1 }],
   searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
   searchMap: async () => ({ counties: [], national: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" }, unplaced: null, unknownSupplierCounty: null }),
@@ -95,6 +100,32 @@ describe("the API answers persisted queries only", () => {
   });
 });
 
+describe("MainScreen with a Party filter (#181)", () => {
+  it("states the coverage beside the Total, valid for the contract; there is none without the filter", async () => {
+    const variables = { filter: { party: "PARTIDUL SOCIAL DEMOCRAT" } };
+    const r = await api.respond({ id: mainScreen.sha256, variables });
+    expect(r.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), r.body.data, variables)).toEqual([]);
+    expect((r.body.data as MainScreenQuery).seap.search.total.partyCoverage).toEqual({
+      party: "PARTIDUL SOCIAL DEMOCRAT",
+      direct: { records: 1, awarded: "420050" }, subordinate: { records: 0, awarded: "0" }, otherParties: { records: 0, awarded: "0" },
+      independent: { records: 0, awarded: "0" }, unattributed: { records: 1, awarded: "0" },
+    });
+  });
+
+  it("lists the party options, and runs the coverage scan only when the query selects it", async () => {
+    let scans = 0;
+    const spy = { ...store, searchPartyCoverage: async (f: Parameters<Store["searchPartyCoverage"]>[0]) => (scans++, store.searchPartyCoverage(f)) };
+    const without = await graphql({ schema, rootValue: rootValue(spy), source: '{ seap { partyOptions { party records } search(filter: { party: "X" }) { total { records } } } }' });
+    expect(without.errors).toBeUndefined();
+    expect(without.data).toMatchObject({ seap: { partyOptions: [{ party: "PARTIDUL SOCIAL DEMOCRAT", records: 1 }] } });
+    expect(scans).toBe(0);
+    await graphql({ schema, rootValue: rootValue(spy), source: '{ seap { search(filter: { party: "X" }) { total { partyCoverage { party } } } } }' });
+    await graphql({ schema, rootValue: rootValue(spy), source: "{ seap { search(filter: {}) { total { partyCoverage { party } } } } }" });
+    expect(scans).toBe(1); // only the filtered search scans: no filter, no coverage
+  });
+});
+
 describe("MainScreen for the empty filter", () => {
   it("returns the Total and the Records list, and the response is valid for the contract", async () => {
     const r = await api.respond({ id: mainScreen.sha256, variables: EMPTY });
@@ -103,7 +134,7 @@ describe("MainScreen for the empty filter", () => {
     expect(validateResponse(schema, parse(mainScreen.document), r.body.data, EMPTY)).toEqual([]);
     const data = r.body.data as MainScreenQuery;
     const search = data.seap.search;
-    expect(search.total).toEqual({ awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0", estimated: false });
+    expect(search.total).toEqual({ awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0", estimated: false, partyCoverage: null });
     expect(search.records.count).toBe(2);
     expect(search.records.rows.map((x) => [x.record.code, x.record.value, x.record.badges, x.record.winners.length])).toEqual([
       ["DA1", "120050", [], 1],

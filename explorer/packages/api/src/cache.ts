@@ -34,6 +34,7 @@ export function canonicalFilter(f: SearchFilter): string {
     supplier: f.supplier || undefined,
     cpv: f.cpv || undefined,
     signal: f.signal || undefined,
+    party: f.party || undefined,
   };
   return JSON.stringify(canonical); // keys in a fixed order, undefined dropped
 }
@@ -310,6 +311,9 @@ export function cachedStore(
     searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, (signal) => inner.searchRecords(filter, p, { ...options, signal }), options?.signal),
     // the Go-to entity depends on the folded query alone (chips never restrict it), so the key is the folded text
     goTo: (qFolded, options) => cached(`goto|${qFolded}`, (signal) => inner.goTo(qFolded, { ...options, signal }), options?.signal),
+    searchPartyCoverage: (filter, options) => cached(`party-coverage|${canonicalFilter(filter)}`, (signal) => inner.searchPartyCoverage(filter, { ...options, signal }), options?.signal),
+    // the options depend on the load alone: kept for its generation
+    partyOptions: () => cached("party-options", () => inner.partyOptions()),
     searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, (signal) => inner.searchMap(side, filter, { ...options, signal }), options?.signal),
     // the county list is tiny and only changes with a load: kept per generation, outside the LRU and the hit/miss counts
     counties: async () => {
