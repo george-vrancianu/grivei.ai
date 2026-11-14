@@ -8,7 +8,7 @@ This session is the top level the user talks to. It starts each spec with [orche
 
 ## Intake
 
-- **"Add #N to the pipeline"**: read the issue, list its children (the "Children of a spec" command) and each child's `## Blocked by` lines, and confirm it carries `ready-for-agent`. A single ticket that is not a spec runs as a one-ticket spec.
+- **"Add #N to the pipeline"**: read the issue, list its sub-issues (issue-tracker.md, "Make an issue a sub-issue of a parent") and each child's `## Blocked by` lines, and confirm it carries `ready-for-agent`. A single ticket that is not a spec runs as a one-ticket spec.
 - **"What new issues in the last X hours can be implemented?"**: list only parent issues (not children) labelled `ready-for-agent`. For each give whether its blockers, including other specs, are closed, and which children belong to it.
 - **Before starting a spec**: compare it with the running specs for shared files or modules. Start in parallel only when conflict is light and `free -g` leaves memory well under 30 GB: about 2 to 3 spec orchestrators at once ([SPEC-ORCHESTRATOR](../orchestrate-specs/SPEC-ORCHESTRATOR.md) caps each at 2 ticket orchestrators).
 - **Unsettled blocker**: ask the user before starting. Once the user says the blocker "is settled", start the spec.
