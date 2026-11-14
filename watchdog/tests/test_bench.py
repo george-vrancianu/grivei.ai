@@ -65,10 +65,10 @@ def test_a_text_keystroke_is_parallel_tasks_with_one_map_and_the_goto_and_the_sc
     assert list(t) == ["total", "map", "entities_authority", "entities_supplier", "records", "goto", "data_through"]  # ONE map: MainScreen asks for one side; dataThrough rides on every request
     assert {n: x.serving for n, x in t.items()} == {**{n: "scan" for n in t}, "data_through": "record"}
     assert t["data_through"].statements == ["data_through"]
-    assert t["entities_supplier"].statements == ["entities_supplier_cardinality", "entities_supplier_rank", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement"]
+    assert t["entities_supplier"].statements == ["entities_supplier_cardinality", "entities_supplier_rank", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement", "entities_supplier_signal_counts"]
     assert t["entities_supplier"].alternatives == ["entities_supplier_terms"]
     assert t["map"].statements == ["map_totals", "map_entities"] and not t["map"].judged_in_rollup_state
-    assert t["records"].statements == ["records_count", "records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]
+    assert t["records"].statements == ["records_count", "records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]  # no areaShare: no supplier-side county
     assert "goto" not in _tasks({}) and "goto" not in _tasks({"channel": "CONTRACT"})  # Go-to depends on the query alone
 
 
@@ -95,14 +95,14 @@ class Recorder:
 
 def test_the_empty_state_reads_the_rollup_for_total_and_entities_but_scans_the_map():
     t = _tasks({})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup", "data_through": "record"}
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "mixed", "entities_supplier": "mixed", "records": "rollup", "data_through": "record"}
     assert t["total"].rollup_statements == ["total"] and t["entities_supplier"].rollup_statements == ["entities_supplier_rank"]
     rec = Recorder({"entities_supplier_rank": [("k1", "1", 1)]})
     t["total"].run(rec)
     t["entities_supplier"].run(rec)
     assert "seap.rollup_cube" in rec.calls[0][1] and "seap.search" not in rec.calls[0][1]
     assert "seap.rollup_entity" in rec.calls[1][1] and "seap.search" not in rec.calls[1][1] and rec.calls[1][2] == ["SUPPLIER"]
-    assert [c[0] for c in rec.calls] == ["total", "entities_supplier_rank", "entities_supplier_entities", "entities_supplier_placement"]
+    assert [c[0] for c in rec.calls] == ["total", "entities_supplier_rank", "entities_supplier_entities", "entities_supplier_placement", "entities_supplier_signal_counts"]
     assert "core.entity" in rec.calls[2][1] and "core.placement" in rec.calls[3][1] and rec.calls[3][2] == [["k1"]]
 
 
@@ -136,7 +136,7 @@ def test_a_chip_that_is_not_a_cube_dimension_falls_back_to_the_scan():
 
 def test_the_chips_only_records_page_is_mixed_the_top_k_is_an_index_query_by_design():
     t = _tasks({"channel": "CONTRACT"})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "mixed", "data_through": "record"}
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "mixed", "entities_supplier": "mixed", "records": "mixed", "data_through": "record"}
     assert t["records"].judged_in_rollup_state
 
 
@@ -144,7 +144,7 @@ def test_the_entity_tab_asks_cardinality_then_ranks_then_reads_the_pages_stats()
     t = _tasks({"q": "ma"})["entities_authority"]
     rec = Recorder({"entities_authority_cardinality": [({"value": 12.4},)], "entities_authority_rank": [("k1", "100", 2), ("k2", "50", 2)]})
     t.run(rec)
-    assert [c[0] for c in rec.calls] == ["entities_authority_cardinality", "entities_authority_rank", "entities_authority_stats", "entities_authority_entities", "entities_authority_placement"]
+    assert [c[0] for c in rec.calls] == ["entities_authority_cardinality", "entities_authority_rank", "entities_authority_stats", "entities_authority_entities", "entities_authority_placement", "entities_authority_signal_counts"]
     assert rec.calls[2][2][-1] == ["k1", "k2"] and rec.calls[3][2] == [["k1", "k2"]]
     assert "pdb.exists()" in rec.calls[1][1] and "ORDER BY sum(share_bani) DESC NULLS LAST, authority_key LIMIT 50" in rec.calls[1][1]
 
@@ -154,7 +154,7 @@ def test_above_the_group_limit_the_terms_aggregation_ranks_instead():
     spec = json.dumps({"terms": {"field": "supplier_key", "size": 51, "order": {"s": "desc"}}, "aggs": {"s": {"sum": {"field": "share_bani"}}}})
     rec = Recorder({"entities_supplier_cardinality": [({"value": 5000},)], "entities_supplier_terms": [({"buckets": [{"key": "a", "s": {"value": 1}}, {"key": None, "s": {"value": 1}}]},)]})
     t.run(rec)
-    assert [c[0] for c in rec.calls] == ["entities_supplier_cardinality", "entities_supplier_terms", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement"]
+    assert [c[0] for c in rec.calls] == ["entities_supplier_cardinality", "entities_supplier_terms", "entities_supplier_stats", "entities_supplier_entities", "entities_supplier_placement", "entities_supplier_signal_counts"]
     assert rec.calls[1][2][0] == spec and rec.calls[2][2][-1] == ["a"]  # a natural person (null key) is not looked up
 
 
@@ -162,6 +162,51 @@ def test_supplier_county_counts_distinct_records_and_groups_the_page_per_record(
     rec = Recorder({"records_page": [("DA1",)]})
     _tasks({"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"})["records"].run(rec)
     assert "count(DISTINCT record_code)" in rec.calls[0][1] and "GROUP BY record_code, value_bani, award_date" in rec.calls[1][1]
+
+
+def test_each_entity_tab_ends_with_the_signal_counts_of_its_page_for_the_filters_set_on_both_paths():
+    # store.ts `entitySignalCounts` (#104): the page's keys, the filter's WHERE, the tab's side column; also when the rollup ranks the page
+    for f, ranked in (({"q": "ma"}, "entities_supplier_rank"), ({}, "entities_supplier_rank")):
+        rec = Recorder({ranked: [("k1", "1", 1), ("k2", "1", 1)]} | ({"entities_supplier_cardinality": [({"value": 3},)]} if f else {}))
+        _tasks(f)["entities_supplier"].run(rec)
+        name, sql, params = rec.calls[-1]
+        assert name == "entities_supplier_signal_counts"
+        assert "SELECT DISTINCT supplier_key AS key, record_code FROM seap.search WHERE" in sql and "supplier_key = ANY(%s::text[])" in sql
+        assert "JOIN seap.signal_member m ON m.record_code = s.record_code" in sql and "count(DISTINCT m.signal_id)::int" in sql and "GROUP BY s.key" in sql
+        assert params == [*build_where(f).params, ["k1", "k2"]]
+    rec = Recorder({"entities_authority_rank": [("k1", "1", 1)], "entities_authority_cardinality": [({"value": 1},)]})
+    _tasks({"q": "ma", "signal": "OVER_CAP"})["entities_authority"].run(rec)
+    name, sql, params = rec.calls[-1]
+    assert "authority_key = ANY(%s::text[])" in sql and sql.rstrip().endswith("GROUP BY s.key") and "JOIN seap.signal g ON g.id = m.signal_id AND g.rule = %s" in sql
+    assert params[-2:] == [["k1"], "OVER_CAP"]  # a `signal` in the filter narrows which Signals count
+
+
+def test_an_empty_entity_page_asks_for_no_signal_counts():
+    rec = Recorder({"entities_authority_cardinality": [({"value": 0},)]})
+    _tasks({"q": "ma"})["entities_authority"].run(rec)
+    assert not any(c[0].endswith("signal_counts") for c in rec.calls)
+
+
+def test_the_area_share_runs_last_only_for_a_supplier_side_county():
+    f = {"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"}
+    t = _tasks(f)["records"]
+    assert t.statements == ["records_count", "records_page", "records_hydrate", "records_entities", "records_placement", "records_files", "records_area_share"]
+    rec = Recorder({"records_page": [("DA1",), ("DA2",)], "records_hydrate": [("4384206", 3, [])]})
+    t.run(rec)
+    names = [c[0] for c in rec.calls]
+    assert names[-1] == "records_area_share"  # store.ts reads it after the rows are built (entities, placement, source files)
+    _, sql, params = next(c for c in rec.calls if c[0] == "records_area_share")
+    w = build_where(f)
+    assert sql == f"SELECT record_code, sum(share_bani)::text AS share FROM seap.search WHERE {w.sql} AND record_code = ANY(%s) GROUP BY record_code"
+    assert params == [*w.params, ["DA1", "DA2"]]
+    for other in ({"q": "ma", "county": "RO-BV"}, {"q": "ma", "county": "RO-BV", "countySide": "AUTHORITY"}, {"q": "ma", "countySide": "SUPPLIER"}, {"q": "ma"}, {}):
+        assert "records_area_share" not in _tasks(other)["records"].statements, other
+        rec = Recorder({"records_page": [("DA1", 1, [])]})
+        _tasks(other)["records"].run(rec)
+        assert not any(c[0] == "records_area_share" for c in rec.calls), other
+    rec = Recorder()  # a page with no Record asks for no shares
+    t.run(rec)
+    assert not any(c[0] == "records_area_share" for c in rec.calls)
 
 
 def test_the_goto_lookup_is_by_cui_for_a_number_and_by_folded_name_otherwise():
@@ -300,7 +345,7 @@ def test_api_mode_fails_a_warmed_state_whose_first_request_was_slow_and_says_so(
 def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_measured_and_the_rollup_must_be_read():
     before = {"seap.search": 10, "seap.rollup_cube": 4, "seap.rollup_entity": 4}
     miss = {"seap.search": 13, "seap.rollup_cube": 5, "seap.rollup_entity": 6}
-    served = judge_scans("chips", before, miss, 3, need_rollup=True)  # allowed = what the map and the Top-K page cost in SQL mode (calibrate_scans)
+    served = judge_scans("chips", before, miss, 3, need_rollup=True)  # allowed = what the map, the entity tabs' Signal counts and the Top-K page cost in SQL mode (calibrate_scans)
     assert served == {"search": 3, "cube": 1, "entity": 2, "allowed": 3, "need_rollup": True, "ok": True}
     assert judge_scans("empty", before, before, 9)["ok"]  # a warmed-cache answer: nothing moved, and no rollup read is demanded
     assert not judge_scans("chips", before, before, 3, need_rollup=True)["ok"]  # a miss that read no rollup (cached, or the API scanned)
