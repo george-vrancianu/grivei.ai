@@ -63,4 +63,4 @@ Create `hooks/`, `components/` and the utils file only when they have something 
 
 ## Component reference
 
-Props, layout and per-component rules (maps, entity page, Record page, rows, Source picker, ONRC screens) are in `explorer/packages/ui/COMPONENTS.md`, one section per component. Read the section of the component you change, and update it in the same change. When a section and the component's file disagree, the file wins: fix the section.
+Props, layout and per-component rules (maps, entity page, Record page, rows, Source picker, ONRC screens) are in `explorer/packages/ui/COMPONENTS.md`, one section per component or group. Read the section of the component you change, and update it in the same change. When a section and the component's file disagree, the file wins: fix the section.
