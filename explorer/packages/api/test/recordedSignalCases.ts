@@ -3,7 +3,8 @@
  * API after a real rebuild (seam 1). The block "recorded fixtures (#89)" in `seam1.test.ts` compares each answer with the committed JSON
  * and, with `RECORD_FIXTURES=1`, rewrites it. Same convention as `recordedEntityCases.ts` (#86).
  *
- * Four archives, one per rule family (the fourth, `onrcSignals`, is the six ONRC and financial-statement rules of #184): `signals` (over-cap and no-publication), `splitting` and `frameworkOverrun` (each also has a few
+ * Four archives, one per rule family (the fourth, `onrcSignals`, is the six ONRC and financial-statement rules of #184; `onrc` is #175's ONRC world, which only
+ * serves the reproducing Records of the insolvency Signals its recorded Overviews now show): `signals` (over-cap and no-publication), `splitting` and `frameworkOverrun` (each also has a few
  * of the others' Signals or none). The entity pages of the three share keys (the hospital 1000017, ALFA 2000007 ...), so a case in a
  * later archive asks with the Signal filter (`?signal=splitting`), which is also how a reader narrows an Overview to one rule.
  * The Records-tab answers for each Signal's own reproducing filter are not listed here: the block derives them from the Overview answers
@@ -11,7 +12,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type SignalArchive = "signals" | "splitting" | "frameworkOverrun" | "onrcSignals";
+export type SignalArchive = "signals" | "splitting" | "frameworkOverrun" | "onrcSignals" | "onrc";
 
 export interface RecordedSignalCase {
   operation: "EntityOverview" | "EntityRecords" | "EntityRelationships" | "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords" | "RecordPage" | "MethodologyBaseRates";

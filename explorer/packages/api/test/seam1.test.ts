@@ -3722,8 +3722,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // drifts from the committed JSON; `RECORD_FIXTURES=1` rewrites it. One JSON file per operation under recorded/signals/.
     const recording = process.env.RECORD_FIXTURES === "1";
     const dir = resolve(here, "../../contract/src/fixtures/recorded/signals");
-    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c", onrcSignals: "sig89_d" } as const;
-    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun", onrcSignals: "archive-onrc-signals" } as const;
+    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c", onrcSignals: "sig89_d", onrc: "sig89_e" } as const;
+    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun", onrcSignals: "archive-onrc-signals", onrc: "archive-onrc" } as const;
     const OPS = {
       EntityOverview: entityOverview,
       EntityRecords: entityRecords,
@@ -3739,6 +3739,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     type Answer = { name: string; kind: string; description: string; variables: Record<string, unknown>; data: unknown };
 
     beforeAll(async () => {
+      cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true }); // also copied by the #86 block: this one must not depend on it having run
       for (const a of Object.keys(DBS) as (keyof typeof DBS)[]) {
         await admin.query(`CREATE DATABASE ${DBS[a]}`);
         rebuild(DBS[a], DIRS[a]);
@@ -3774,9 +3775,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       // one Records-tab case per Signal the recorded Overviews show: the Signal and its Records list cannot drift apart
       const seen = new Set<string>();
       // (and the hospital's Signals of #86's recorded Overview, which this block does not ask again)
-      const earlier = (JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[]).filter((x) => x.name === "authority-with-signals");
+      const earlier = (JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[]).filter((x) => (x.name === "authority-with-signals" || /^(onrc|people)-/.test(x.name)) && x.data.entity?.seap.role);
       const shown = [
-        ...earlier.map((x) => ({ archive: "signals" as const, rows: x.data.entity!.seap.role!.signals.rows })),
+        // (#175's ONRC world, and #177's with people, show insolvency Signals since #184: their Records lists are asked of archive-onrc)
+        ...earlier.map((x) => ({ archive: x.name === "authority-with-signals" ? ("signals" as const) : ("onrc" as const), rows: x.data.entity!.seap.role!.signals.rows })),
         ...RECORDED_SIGNAL_CASES.filter((x) => x.operation === "EntityOverview").map((c) => ({ archive: c.archive, rows: (answers.get(`EntityOverview/${c.name}`)!.data as EntityOverviewQuery).entity!.seap.role!.signals.rows })),
       ];
       for (const { archive, rows } of shown) {
@@ -3869,6 +3871,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         const v = c.variables as { key: string; filter: { signal: string; from?: string; to?: string } };
         const r = await graphql({ schema, source: signalsDoc, rootValue: rootValue(postgresStore(pool)), variableValues: { key: v.key, role: "AUTHORITY" } });
         expect(r.errors, c.name).toBeUndefined();
+        expect((r.data as { entity: unknown }).entity, c.name).not.toBeNull();
         type Row = { rule: string; date: string; firstDate: string; recordCount: number; reproduce: Record<string, string | null>; records: { code: string }[] };
         const rows = (r.data as { entity: { seap: { role: { signals: { rows: Row[] } } } } }).entity.seap.role.signals.rows;
         // the Signal whose reproduce filter this case is
