@@ -33,16 +33,15 @@ The user keeps working in the main checkout. Only this level runs commands there
 
 [END-OF-RUN.md](../orchestrate-specs/END-OF-RUN.md) steps 4 to 6, plus:
 
-- API: `nohup npm run start:dev --workspace @pocket-pantry/api > /tmp/pp-api.log`. Web: `nohup npm run dev --workspace @pocket-pantry/web > /tmp/pp-web.log`. Stop them by PID; `pkill -f`/`pgrep -f` patterns can match this agent's own shell.
-- An orphan `apps/api/dist/main` holding port 3000 shows up as EADDRINUSE: stop it by PID.
-- Tunnel log: `/tmp/cloudflared.log`. Another session may have started the tunnel: reuse it. Down: start a new one, and set `CLIENT_ORIGIN` in `.env` to the new URL **before** starting the API. A `cloudflared` pointing at another port belongs to something else: leave it.
-- Verify web 200 on 5173 and `/api/health` 200 on 3000 both directly and through the tunnel, and that the `access-control-allow-origin` header equals the tunnel URL. Tell the user the URL whenever it changes.
+- Commands, ports and the health route: [codebase map](../../../docs/agents/codebase-map.md), "Running the app". Run long-lived servers with `nohup`, output to `/tmp/pp-<name>.log`, and note each PID. Stop only those PIDs; `pkill -f`/`pgrep -f` patterns can match this agent's own shell.
+- A port already in use (EADDRINUSE): find the holder; stop it only if this level started it, otherwise tell the user.
+- Tunnel: reuse one another session started; a tunnel pointing at another port belongs to something else. If the codebase map names no tunnel, say so rather than inventing one. Tell the user the URL whenever it changes.
 
 ## Reporting when a spec finishes
 
 [END-OF-RUN.md](../orchestrate-specs/END-OF-RUN.md) step 7, per spec, built from the spec orchestrator's hand-back, plus:
 
-- Summary fields: PR, merge commit, CI, what was built, migrations, env vars, dependencies.
+- Summary fields: PR, merge commit, CI, what was built, schema changes (a rebuild for the user to run), env vars, dependencies.
 - Health fields: review rounds and real bugs caught, memory peak (`mem-watch.sh peak`), process slips.
 - Proposed follow-ups are shown and never posted without the user's approval; add them to the running list below.
 

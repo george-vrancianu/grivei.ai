@@ -45,6 +45,16 @@ The main test seam: miniature raw archive, then `pipeline rebuild`, then the app
 - Explorer: eslint, `npm run lint` under `explorer/` (config `explorer/eslint.config.js`). It enforces that only `packages/ui` imports MUI; `explorer/tooling/lint-boundary.test.ts` tests that rule. Type checking is `tsc --noEmit` per package.
 - Watchdog: no Python linter is configured.
 
+## Running the app
+
+There is no dev server: the explorer has no `dev` or `start:dev` script and the app has no vite dev server. The runtime is the Compose project (`compose.yaml`, runbook `deploy/README.md`).
+
+- Start: `docker compose up -d --build` from the repo root starts `db`, `api` and `web` (Caddy). The `pipeline` service is a one-shot behind a profile: `docker compose run --rm pipeline rebuild`.
+- Ports: only `web` is published, as `127.0.0.1:8080` (Caddy: landing page `/` and `/ro/`, app `/explore/` and `/ro/explore/`, `/graphql`, `/source/*`, `/geo/*`). The API listens on 4000 and the database on 5432, both on the Compose network only.
+- Health: the API answers `GET /healthz` (`explorer/packages/api/src/server.ts`) on 4000, reachable from inside the network; Compose uses it as the `api` healthcheck, so `docker compose ps` shows `healthy`. Caddy does not route it. From the host, check `http://localhost:8080/explore/` for 200.
+- Same origin: Caddy serves app and API on one origin, so there is no CORS setting and no `CLIENT_ORIGIN`-style variable. The API reads `DATABASE_URL` (required), `PORT`, `API_CACHE_MAX_MB`, `SEAP_BASE_URL`, `SEAP_LINK_PUBLIC_BASE`, `GRIVEI_RESTRICTED` (list in `explorer/packages/api/src/main.ts`).
+- Tunnel: the repo defines none.
+
 ## Worktrees
 
 `scripts/worktree.sh` creates and removes ready-to-work worktrees under `.claude/worktrees/`; its header comment is the usage. `scripts/worktree.test.sh` tests it (minutes; not in CI).
