@@ -83,7 +83,10 @@ def _checked_vacancy(day: date) -> date:
 def vacancies(path: Path | None = None) -> dict[str, date]:
     """Area -> the known date its leader's mandate ended early (`data/vacancies.csv`: area, vacancy_date, note). Only dates in the 2024 term."""
     with (path or DATA / "vacancies.csv").open(encoding="utf-8", newline="") as f:
-        return {r["area"].strip(): _checked_vacancy(date.fromisoformat(r["vacancy_date"].strip())) for r in csv.DictReader(f) if r.get("area")}
+        rows = [(r["area"].strip(), _checked_vacancy(date.fromisoformat(r["vacancy_date"].strip()))) for r in csv.DictReader(f) if r.get("area")]
+    if len({a for a, _ in rows}) != len(rows):
+        raise ValueError("vacancies.csv has more than one row for an area; only one vacancy per area is supported")
+    return dict(rows)
 
 
 def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = None, vacancy: date | None = None) -> tuple[list[Mandate], list[Gap]]:
@@ -91,6 +94,8 @@ def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = N
     `vacancy` is the known date the leader's mandate ended early, if any: the mandate is cut there and what follows is an interim gap."""
     table = alliances() if table is None else table
     vacancy = _checked_vacancy(vacancy) if vacancy is not None else None
+    if vacancy is not None and races.get(PARTIAL_2025.id) is not None and vacancy >= PARTIAL_2025.date:
+        raise ValueError(f"vacancy date {vacancy} is on or after the partial election ({PARTIAL_2025.date}) that fills it; the vacancy must come before")
     first = races.get(REPEAT_2020.id) or races.get(LOCAL_2020.id)  # a repeat round replaces the September result of its UAT
     first_election = REPEAT_2020 if races.get(REPEAT_2020.id) else LOCAL_2020
     slots = [(first, first_election, HANDOVER_START), (races.get(LOCAL_2024.id), LOCAL_2024, None)]

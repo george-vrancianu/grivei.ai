@@ -27,7 +27,7 @@ type Query {
   "Signal rules with their methodology numbers (base rate recomputed per load)."
   signalRules: [SignalRule!]!
 
-  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page."
+  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page."
   referenceSources: [ReferenceSource!]!
 
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."

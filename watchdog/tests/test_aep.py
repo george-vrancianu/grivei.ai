@@ -107,6 +107,18 @@ def test_a_vacancy_date_before_the_2024_mandate_starts_is_refused_not_applied_ov
         vacancies(csv_file)
 
 
+def test_a_vacancy_on_or_after_the_partial_election_is_refused_and_so_is_a_duplicate_area(tmp_path):
+    races = {LOCAL_2020.id: race(("A", "P", 5)), LOCAL_2024.id: race(("B", "Q", 9)), PARTIAL_2025.id: race(("C", "R", 7))}
+    for late in (PARTIAL_2025.date, date(2026, 3, 1)):  # the vacancy must come before the partial election that fills it
+        with pytest.raises(ValueError, match="on or after the partial election"):
+            derive(races, {}, late)
+    derive({k: v for k, v in races.items() if k != PARTIAL_2025.id}, {}, date(2026, 3, 1))  # with no partial race loaded the date is just an open interim gap
+    csv_file = tmp_path / "vacancies.csv"
+    csv_file.write_text("area,vacancy_date,note\nGENERAL:X,2025-01-10,a\nGENERAL:X,2025-02-10,b\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="more than one"):
+        vacancies(csv_file)
+
+
 def test_derive_a_mandate_without_results_is_a_gap_not_a_guess():
     mandates, gaps = derive({LOCAL_2020.id: race(("A", "P", 5))}, {})
     assert len(mandates) == 1 and (NO_RESULTS, date(2024, 10, 27), None) in [(g.reason, g.start, g.end) for g in gaps]

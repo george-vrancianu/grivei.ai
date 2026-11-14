@@ -648,7 +648,7 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
-  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
+  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
