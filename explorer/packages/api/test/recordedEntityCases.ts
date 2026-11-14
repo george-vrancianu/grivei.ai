@@ -12,7 +12,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedEntityArchive = "overview" | "signals" | "moneymap" | "onrc";
+export type RecordedEntityArchive = "overview" | "signals" | "moneymap" | "onrc" | "party";
 
 export interface RecordedEntityCase {
   operation: "EntityOverview";
@@ -41,6 +41,12 @@ export const ENTITY_KEYS = {
   onrcBeta: "3100039", // BETA ONRC SRL: ONRC renamed it (BETA VECHI SRL -> BETA NOU SRL); ANAF's name stays the display name
   onrcGamma: "3100047", // GAMMA ONRC SRL: struck off in the newest snapshot
   onrcDelta: "3100055", // DELTA ONRC SRL: a CUI ANAF does not know, ONRC lists
+  partyBrasov: "51000501", // MUNICIPIUL BRASOV: a town hall with two mandates, a party switch and a handover window (archive-party, #180)
+  partyHospital: "51003206", // SPITALUL CLINIC JUDETEAN DEMO BRASOV: a subordinate body, Brasov's principal tie
+  partySchool: "51001507", // SCOALA GIMNAZIALA FICTIVA BRASOV: the town hall and a ministry are its principals: no Leadership list
+  partyRasnov: "51000307", // ORAS RASNOV: a partial election and its interim gap
+  partySinca: "51000404", // COMUNA SINCA NOUA: a repeat round, then no results
+  partySupplier: "2000007", // SANTIERUL TARA DEMO SRL: a supplier of the party world: never a Leadership list (asked by seam1.test.ts, not recorded: the key and role are another archive's case)
   onrcDubla: "3100063", // DUBLA ONRC SA: both roles
   onrcOnly: "3100071", // OMEGA ONLY SRL: in ONRC only, seat in Cluj
   onrcUnplaced: "3100080", // ZETA FARA JUDET SRL: in ONRC only, no county
@@ -184,5 +190,30 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "onrc-only-unplaced", archive: "onrc", kind: "empty",
     description: "an organisation only in ONRC whose registration names no county: no placement (the Unplaced tile)",
     variables: page(ENTITY_KEYS.onrcUnplaced, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-town-hall", archive: "party", kind: "typical",
+    description: "a town hall: its Leadership list with a party switch (two mandates for the same leader), the handover window shown as a gap",
+    variables: page(ENTITY_KEYS.partyBrasov, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-partial-election", archive: "party", kind: "extreme",
+    description: "a town hall with a partial election: the old mandate cut at the vacancy bound, an interim gap, the partial winner's mandate (partial counts, a one-off file)",
+    variables: page(ENTITY_KEYS.partyRasnov, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-repeat-round-and-no-results", archive: "party", kind: "extreme",
+    description: "a commune decided by the October 2020 repeat round and absent from the 2024 minutes: a mandate without results is a gap",
+    variables: page(ENTITY_KEYS.partySinca, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-subordinate-body", archive: "party", kind: "typical",
+    description: "a hospital that is a subordinate body of the town hall: the authority's Leadership list with the basis of the tie",
+    variables: page(ENTITY_KEYS.partyHospital, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-school", archive: "party", kind: "empty",
+    description: "a school with the town hall and a ministry as principals: no Leadership list, no Party",
+    variables: page(ENTITY_KEYS.partySchool, "AUTHORITY"),
   },
 ];

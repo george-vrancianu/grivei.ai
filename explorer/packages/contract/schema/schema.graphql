@@ -327,6 +327,8 @@ type Entity {
   identityCurated: Boolean!
   "Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages."
   publicEnterprise: PublicEnterprise
+  "The Leadership list (AEP's election results, ADR 0012): set for a town hall, Bucharest sector, Bucharest city hall or county council, and for a subordinate body of one (its authority's list, with the basis of the tie). Null for every other entity, and always null for an entity that is only a supplier. Leaders are never linked to a person page or to ONRC."
+  leadership: Leadership
   placement: Placement
   "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP."
   provenance: [Provenance!]!
@@ -429,6 +431,68 @@ type PublicEnterprise {
   license: String
   "When we fetched it (from the raw archive)."
   fetchedAt: DateTime!
+}
+
+"""
+An authority's Mandates, newest last, with the gaps between them. A Mandate runs from the oath to the successor's oath; the handover window, an interim leader
+and a mandate without results get no Mandate and are listed as gaps, never guessed. The party is as registered at the election: the leader may have
+switched party since (the page says so). Leader names appear only here.
+"""
+type Leadership {
+  mandates: [Mandate!]!
+  gaps: [LeadershipGap!]!
+  "Set for a subordinate body: the authority this list is, and the MF snapshot its principal-credit-holder tie comes from (a funding relation, the current tie)."
+  via: LeadershipVia
+}
+
+type Mandate {
+  "The elected leader's name as AEP wrote it (source data). Never linked to a person."
+  leaderName: String!
+  "The list the leader ran on, as registered at the election: a party, an alliance under its registered name, or 'Independent' (which is no party)."
+  list: String!
+  independent: Boolean!
+  "An alliance's member parties (empty for a party or an independent)."
+  memberParties: [String!]!
+  electionDate: Date!
+  basis: MandateBasis!
+  "The day the basis data runs through: the election day for final minutes, the stated date of the one-off 2025 file."
+  dataThrough: Date!
+  "From the oath (assumed: AEP publishes no per-UAT oath dates, see the methodology page)."
+  startDate: Date!
+  "Null while the mandate is still in force."
+  endDate: Date
+}
+
+enum MandateBasis { FINAL_MINUTES REPEAT_ROUND PARTIAL_MINUTES }
+
+type LeadershipGap {
+  startDate: Date!
+  endDate: Date
+  reason: LeadershipGapReason!
+}
+
+enum LeadershipGapReason { HANDOVER_WINDOW INTERIM NO_RESULTS }
+
+"The authority a subordinate body takes its Leadership list and Party from, and the basis: principal credit holder in MF's list of public entities, as every held snapshot says."
+type LeadershipVia {
+  authority: ID!
+  authorityName: String!
+  "The newest MF snapshot that shows the tie."
+  snapshotDate: Date!
+  "How many held snapshots list the body (all show the same single principal)."
+  snapshots: Int!
+}
+
+"The Party of a SEAP Record: the Mandate in force on its award date at its authority, or through its principal credit holder. Never a supplier's, never a person's."
+type RecordParty {
+  list: String!
+  independent: Boolean!
+  memberParties: [String!]!
+  electionDate: Date!
+  basis: MandateBasis!
+  dataThrough: Date!
+  "Set for a subordinate body's Record: the authority it is inherited through."
+  via: LeadershipVia
 }
 
 "A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is."
@@ -589,6 +653,8 @@ type SeapRecord implements SourceRecord {
   signals: [Signal!]!
   "Why the value is suspect; set exactly when `badges` has SUSPECT_VALUE."
   suspect: SuspectFlag
+  "The Party of the mandate in force on the award date at the authority (ADR 0012). Null when the authority is not a town hall, sector, Bucharest city hall or county council (or a subordinate body of one), or the date falls in a gap."
+  party: RecordParty
 }
 
 enum SeapRecordKind { DA DAN CONTRACT AWARD_NOTICE }

@@ -51,6 +51,8 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
     ...recordRow(r),
     contractType: r.contractType,
     cpv: r.cpv,
+    // the Party of the Mandate in force on the award date at the authority (#180); never on a winner
+    party: () => store.recordParty(r.code),
     // the link to its framework agreement (the counting rule): set for an agreement's own contract and for a contract awarded under one
     framework: r.frameworkRole
       ? async () => {
@@ -109,6 +111,8 @@ export function rootValue(store: Store) {
     },
     // AMEPIP's list holds CUIs only (#183): an entity with no CUI is never a public enterprise
     publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
+    // the Leadership list (#180): only an attributed authority or a subordinate body has one; null for every other entity, a supplier never
+    leadership: () => store.leadership(e.key),
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
