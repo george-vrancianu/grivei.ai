@@ -15,7 +15,7 @@ This session is the top level the user talks to. It starts each spec with [orche
 
 ## While specs run
 
-- With the first spec, run `bash .claude/skills/orchestrate-specs/mem-watch.sh start` (idempotent; one watcher for the whole run, stopped by END-OF-RUN step 8 after the last spec).
+- With the first spec, start the memory watcher as in orchestrate-specs step 1 (one watcher for the whole run, stopped by END-OF-RUN step 8 after the last spec).
 - Start each spec orchestrator in the background with the brief from [orchestrate-specs](../orchestrate-specs/SKILL.md).
 - **Cross-spec dependency**: when a blocking spec merges, SendMessage the waiting spec orchestrator. Agents never poll.
 - A subagent report that reaches this level by mistake: relay it to the orchestrator it belongs to.

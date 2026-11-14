@@ -24,7 +24,7 @@ Launch agents with the Agent tool, `general-purpose`, setting `model` explicitly
 
 ## Steps
 
-1. Top level: resolve each spec number, check `free -g`, run `bash .claude/skills/orchestrate-specs/mem-watch.sh start`, then spawn one spec orchestrator per spec in the background with the brief from [SPEC-ORCHESTRATOR.md](SPEC-ORCHESTRATOR.md). Specs run in parallel only if they won't heavily conflict.
+1. Top level: resolve each spec number, check `free -g`, run `bash .claude/skills/orchestrate-specs/mem-watch.sh start` (idempotent; note whether it printed "started" or "reusing": only a watcher you started gets stopped, see END-OF-RUN step 8), then spawn one spec orchestrator per spec in the background with the brief from [SPEC-ORCHESTRATOR.md](SPEC-ORCHESTRATOR.md). Specs run in parallel only if they won't heavily conflict.
 2. Each spec orchestrator spawns ticket orchestrators from [TICKET-ORCHESTRATOR.md](TICKET-ORCHESTRATOR.md) and runs the final PR flow in SPEC-ORCHESTRATOR.md.
 3. Wait for the spec orchestrators' hand-backs. Follow-up tickets that agents propose are collected, never posted.
 4. Run the end-of-run steps in [END-OF-RUN.md](END-OF-RUN.md), then present the report. Done when every spec has a merged PR (or a stated reason it has none) and the report is presented.
