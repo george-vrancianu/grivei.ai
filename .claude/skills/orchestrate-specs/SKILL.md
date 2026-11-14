@@ -12,7 +12,7 @@ Orchestrate the specs the user names. The top level (this session) and every orc
 
 ## Roles
 
-Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> haiku explorers (in parallel, before the first implementer; see the loop in TICKET-ORCHESTRATOR.md), sonnet implementer (uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
+Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> haiku explorers (in parallel, before the first implementer; see the loop in TICKET-ORCHESTRATOR.md), sonnet implementer (one or more per ticket, split per TICKET-ORCHESTRATOR.md step 3; uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
 
 The spec orchestrator follows `implement-spec`'s task-graph/frontier approach, and ticket orchestrators run each ticket per its loop.
 
