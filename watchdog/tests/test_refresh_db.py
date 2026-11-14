@@ -26,7 +26,7 @@ def test_a_quarantined_file_is_a_warning_in_the_run_and_not_yet_loaded_in_the_pu
     status_file = tmp_path / "rebuild-status.json"
     load = lambda: rebuild(archive, db, Progress(status_file), today=date(2025, 9, 20), known_gaps_path=FIXTURES / "coverage-known-gaps.csv")
     impl = Impl(archive, print, None, None, None, None, load)
-    impl.crawl = impl.datagov = impl.anaf = lambda: StepResult()  # the network steps are not under test here
+    impl.crawl = impl.datagov = impl.onrc = impl.anaf = lambda: StepResult()  # the network steps are not under test here
 
     result = run_refresh(archive, impl, pinger=Pinger("https://hc.example/p", post=pings), now=clock.now, sleep=clock.sleep, say=lambda _: None)
 
