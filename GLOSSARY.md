@@ -85,11 +85,11 @@ A public body whose only principal credit holder, in MF's Lista entităților pu
 _Avoid_: subordinate institution, local agency, under the mayor
 
 **Supplier**:
-A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF knows; an entity that both buys and sells is one entity in both roles.
+A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF or ONRC knows; an entity that both buys and sells is one entity in both roles.
 _Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
 
 **Name-only supplier**:
-A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
+A supplier with no CUI that ANAF or ONRC knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
 _Avoid_: unknown supplier, unidentified supplier
 
 **Unattached name**:
