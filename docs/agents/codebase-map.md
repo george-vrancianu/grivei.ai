@@ -47,7 +47,7 @@ The main test seam: miniature raw archive, then `pipeline rebuild`, then the app
 
 ## Worktrees
 
-`scripts/worktree.sh <name> [base]` creates `.claude/worktrees/<name>` on a new branch `<name>` (base defaults to `origin/main`), copies the `.env` / `.env.local` files of the main checkout, runs `npm ci` under `explorer/` and builds `watchdog/.venv` from `requirements-dev.txt`. `scripts/worktree.sh --remove <name>` deletes the worktree and its branch. Run it from the main checkout or any worktree. `scripts/worktree.test.sh` tests it (minutes; not in CI).
+`scripts/worktree.sh` creates and removes ready-to-work worktrees under `.claude/worktrees/`; its header comment is the usage. `scripts/worktree.test.sh` tests it (minutes; not in CI).
 
 ## Gotchas
 

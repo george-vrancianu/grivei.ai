@@ -2,7 +2,8 @@
 # Create or remove a ready-to-work git worktree under <main checkout>/.claude/worktrees/.
 #   scripts/worktree.sh <name> [base]     new branch <name> from base (default origin/main), with .env copies,
 #                                         `npm ci` under explorer/ and watchdog/.venv installed from requirements-dev.txt
-#   scripts/worktree.sh --remove <name>   delete the worktree and its local branch
+#   scripts/worktree.sh --remove <name>   delete the worktree and the branch it has checked out;
+#                                         exits non-zero when no worktree matches or a step fails
 # Works from the main checkout or from any worktree. Never writes to the main checkout's files.
 # Env: WORKTREE_ENV_SOURCE (directory to copy .env files from; default the main checkout; used by the test),
 #      WORKTREE_PYTHON (interpreter for the venv; default 3.12 as in CI). Uses uv when installed, else `python -m venv`.
@@ -20,9 +21,19 @@ if [ "${1:-}" = "--remove" ]; then
   NAME="${2:-}"
   [ -n "$NAME" ] && valid_name "$NAME" || die "usage: worktree.sh --remove <name>"
   WT="$ROOT/$NAME"
-  git -C "$MAIN" worktree remove --force "$WT" 2>/dev/null || { rm -rf "$WT"; git -C "$MAIN" worktree prune; }
-  git -C "$MAIN" branch -D "$NAME" >/dev/null 2>&1 || true
-  echo "removed worktree and branch $NAME"
+  # the branch is the one this worktree has checked out, never a same-named branch elsewhere
+  BRANCH="$(git -C "$MAIN" worktree list --porcelain | awk -v wt="$WT" '
+    $1 == "worktree" { cur = substr($0, 10) }
+    $1 == "branch" && cur == wt { sub("^refs/heads/", "", $2); print $2 }')"
+  git -C "$MAIN" worktree list --porcelain | grep -qxF "worktree $WT" || die "no worktree at $WT; nothing removed"
+  git -C "$MAIN" worktree remove -f -f "$WT" || die "could not remove the worktree at $WT"
+  echo "removed worktree $WT"
+  if [ -n "$BRANCH" ]; then
+    git -C "$MAIN" branch -D "$BRANCH" >/dev/null || die "worktree removed, but could not delete branch $BRANCH"
+    echo "removed branch $BRANCH"
+  else
+    echo "the worktree had no branch checked out (detached); no branch removed"
+  fi
   exit 0
 fi
 
