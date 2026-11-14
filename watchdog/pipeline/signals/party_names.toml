@@ -1,0 +1,74 @@
+# The party-name equivalence table of the donor-to-Party Signal (#185, ADR 0012). Reviewed and versioned: change `version` with every edit, and every entry needs
+# a `reason` that a reviewer can check. Read by `party_names.py`.
+#
+# What it does. A donation names its party as BaniPartide published it (`Partid`: "PSD", "PNL", ...). A Mandate names its list as AEP registered it ("PARTIDUL
+# SOCIAL DEMOCRAT"), and an alliance's member parties are recorded in `pipeline/aep/data/alliances.csv` under AEP's registered names. A donation matches a Mandate
+# when its party, once written the same way (ASCII, upper case, letters and digits only), is the Mandate's list or one of the alliance's member parties. This table
+# only lists the names a donation is published under that differ from the registered one: an abbreviation, or a spelling.
+#
+# What it never does.
+#   - It never merges a predecessor or successor party. A party that merged into or was renamed to another is a different party for this rule: a donation to the
+#     Democratic-Liberal Party is not a donation to the National Liberal Party. `[[kept_apart]]` lists the known cases; an entry above can never point at one.
+#   - It never makes a party family, a coalition or a "current party". An alliance is matched through its recorded member parties only.
+#   - "Independent" is never a party: a Mandate held by an independent matches no donation.
+#
+# An entry is a `[[alias]]` table:
+#   published  the party as BaniPartide publishes it (case, diacritics, punctuation and spacing are ignored when matching).
+#   party      the party's name as AEP registers it (a list or an alliance member).
+#   reason     why the two are the same party. Required.
+#
+# An entry of `[[kept_apart]]` has `published`, the name of a predecessor or successor party, and `reason`. Neither is ever matched to another party through this
+# table; the test of the table asserts it. The entries below were drafted by an agent and are pending a named human reviewer before Go-live (#187).
+version = 1
+updated = "2026-11-14"
+
+[[alias]]
+published = "PSD"
+party = "PARTIDUL SOCIAL DEMOCRAT"
+reason = "PSD is the registered abbreviation of the Social Democratic Party."
+
+[[alias]]
+published = "PNL"
+party = "PARTIDUL NATIONAL LIBERAL"
+reason = "PNL is the registered abbreviation of the National Liberal Party."
+
+[[alias]]
+published = "USR"
+party = "PARTIDUL USR"
+reason = "USR is the abbreviation of the party AEP lists as PARTIDUL USR (the member of the USR PLUS alliances in pipeline/aep/data/alliances.csv)."
+
+[[alias]]
+published = "PLUS"
+party = "PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE"
+reason = "PLUS is the abbreviation of Libertate, Unitate si Solidaritate, the other member party of the USR PLUS alliances (pipeline/aep/data/alliances.csv)."
+
+[[alias]]
+published = "PMP"
+party = "PARTIDUL MISCAREA POPULARA"
+reason = "PMP is the registered abbreviation of the Popular Movement Party."
+
+[[alias]]
+published = "ALDE"
+party = "PARTIDUL ALIANTA LIBERALILOR SI DEMOCRATILOR - ALDE"
+reason = "AEP registers the party as 'Partidul Aliantei Liberalilor si Democratilor - ALDE'; BaniPartide writes the abbreviation."
+
+[[alias]]
+published = "UDMR"
+party = "UNIUNEA DEMOCRATA MAGHIARA DIN ROMANIA"
+reason = "UDMR is the registered abbreviation of the Democratic Alliance of Hungarians in Romania; AEP lists it under the full name."
+
+[[kept_apart]]
+published = "PDL"
+reason = "The Democratic-Liberal Party merged into the National Liberal Party in 2014. A donation to it is not a donation to PNL, and PNL's Mandates are not its successors'."
+
+[[kept_apart]]
+published = "PC"
+reason = "The Conservative Party merged into ALDE in 2015. A donation to it is not a donation to ALDE or to any alliance ALDE sits in."
+
+[[kept_apart]]
+published = "UNPR"
+reason = "The National Union for the Progress of Romania merged into PRO Romania in 2018. A donation to it is not a donation to its successor."
+
+[[kept_apart]]
+published = "PARTIDUL DEMOCRAT LIBERAL"
+reason = "The full name of PDL: the same predecessor, spelled out."

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "source": "banipartide",
+  "stream": "donors",
+  "kind": "firms",
+  "unit": "a27b538b1895",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://db.banipartide.ro/banipartide/Donatori%20persoane%20juridice.csv?_size=max&_stream=on",
+  "via": "BaniPartide, Donatori persoane juridice",
+  "files": [
+    {
+      "name": "donatori_persoane_juridice.csv",
+      "sha256": "52bed31fa0ac15ca678f892afdcc9b6fb5030fcb22bad70ef612092f983d7492",
+      "bytes": 1729
+    }
+  ],
+  "origin": {
+    "system": "db.banipartide.ro",
+    "database": "banipartide",
+    "table": "Donatori persoane juridice",
+    "databaseHash": "a27b538b18959ef0899003168196055f75664d82859ac1aab3ab48df4e408405",
+    "url": "https://db.banipartide.ro/banipartide/Donatori%20persoane%20juridice.csv?_size=max&_stream=on",
+    "datasetUrl": "https://www.banipartide.ro/donatori-persoane-juridice.html",
+    "license": "CC Attribution 4.0 License",
+    "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+    "source": "Expert Forum",
+    "sourceUrl": "https://expertforum.ro/tag/finantare-politica/",
+    "underlying": "Party annual donor publications in Monitorul Oficial and on AEP's pages, as BaniPartide's methodology states; BaniPartide's table carries no report reference per row",
+    "underlyingUrl": "https://www.banipartide.ro/metodologie.html",
+    "strippedFields": [
+      "Reprezentant societate"
+    ],
+    "upstreamSha256": "4eabcc09b6ae343d3e0fc228227be8de169070a0770418aee22e2168a88f01c6",
+    "upstreamBytes": 2032,
+    "rows": 14
+  }
+}

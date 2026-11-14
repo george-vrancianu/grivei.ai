@@ -21,6 +21,10 @@ statements that concerns the suppliers of this load, once, and returns None when
 optional `where(context) -> (sql, params)` narrows the rows streamed to the Records the context can concern. The context is never a Signal on its own:
 only a Record that matches the rule's thresholds is.
 
+A Restricted rule (`RESTRICTED = True`, the SOE-board rule of #185) has its Signals, Records and `signal_rule` row in the same tables, but the search rows' `signals` and
+`has_signals` never carry it: the public filters, the facets and the rollup then cannot show it whatever the host's switch says. The API reads it from `seap.signal`
+only when `GRIVEI_RESTRICTED=show` (explorer/packages/api/src/signals.ts).
+
 The base rate (story 80) is the fraction of contracting authorities, among those the rule could see (an authority with at least one
 Record of the rule's kinds in the year), that have at least one Signal of the rule dated in `baseRateYear`: the latest calendar year
 before the data-through year that the rule has Records for (a complete year), else the latest year it has. The window starts on 1 January
@@ -37,14 +41,21 @@ from types import ModuleType
 import psycopg
 from psycopg.types.json import Jsonb
 
-from . import (after_strike_off, few_employees, framework_overrun, insolvency, no_construction_caen, no_financial_statement, no_publication, over_cap,
-               splitting, young_firm)
+from . import (after_strike_off, donor_to_party, few_employees, framework_overrun, insolvency, no_construction_caen, no_financial_statement, no_publication,
+               over_cap, soe_board_in_supplier, splitting, young_firm)
 from .common import Hit
 
 # The contract's SignalRuleSlug order. Every rule is a module with SLUG, KINDS, WHERE and detect; the last six (#184) also read a Reference source
 # (ONRC, ANAF, the financial statements) and so declare `load` too (see below).
 RULES: tuple[ModuleType, ...] = (over_cap, splitting, framework_overrun, no_publication, young_firm, no_construction_caen, after_strike_off, insolvency,
-                                 few_employees, no_financial_statement)
+                                 few_employees, no_financial_statement, donor_to_party, soe_board_in_supplier)
+# The last two (#185) join several Sources (BaniPartide with AEP's Mandates; AMEPIP with ONRC's people). The second is Restricted.
+
+
+def restricted_slugs() -> list[str]:
+    """The rules the API serves only when `GRIVEI_RESTRICTED=show` (ADR 0015): a rule module says so with `RESTRICTED = True`."""
+    return [r.SLUG for r in RULES if getattr(r, "RESTRICTED", False)]
+
 
 ROW_COLUMNS = "code, kind, channel, authority_key, award_date, value_bani, counted_bani, suspect, cpv_code, contract_type, procedure, winners, notice_code, framework_role, ceiling_bani"
 
@@ -145,8 +156,8 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
     cur.execute(
         """UPDATE seap.search s SET signals = m.rules, has_signals = true
              FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
-                     FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id GROUP BY sm.record_code) m
-            WHERE s.record_code = m.record_code""")
+                     FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule <> ALL(%s) GROUP BY sm.record_code) m
+            WHERE s.record_code = m.record_code""", (restricted_slugs(),))  # a Restricted rule is never on a search row (#185)
     cur.execute("ANALYZE seap.signal")
     counts = {r.SLUG: 0 for r in RULES}
     for h in hits:
