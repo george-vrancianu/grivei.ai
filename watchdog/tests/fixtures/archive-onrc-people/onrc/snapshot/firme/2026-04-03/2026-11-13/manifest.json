@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "source": "onrc",
+  "stream": "snapshot",
+  "kind": "firme",
+  "unit": "2026-04-03",
+  "fetchedAt": "2026-11-13T04:00:00Z",
+  "url": "https://data.gov.ro/dataset/firme-03-04-2026",
+  "via": "Firme înregistrate la Registrul Comerțului până la data de 03.04.2026",
+  "files": [
+    {
+      "name": "n_stare_firma.csv",
+      "sha256": "c5517876304e18ec808acf044e7f9c8cceab47be88de1ecd56078bdfba9243e7",
+      "bytes": 161
+    },
+    {
+      "name": "od_caen_autorizat.csv",
+      "sha256": "68eb89d147967249b504de41064bea8d2ae58151a1bf80897e0721d7a24a84d9",
+      "bytes": 248
+    },
+    {
+      "name": "od_firme.csv",
+      "sha256": "4ab2bda3175a0d553a24894fff7fbdc690895510637eae568cde73d4f6caad06",
+      "bytes": 1768
+    },
+    {
+      "name": "od_reprezentanti_if.csv",
+      "sha256": "8d608f6085d75a54a5a32d7e50fe5f5b22c5905a3e6e820ddff09418299f57df",
+      "bytes": 268
+    },
+    {
+      "name": "od_reprezentanti_legali.csv",
+      "sha256": "bfebedcc4f149314d8102d07c4bcd91fb4c235d4ab4ebd8bc1eda5d9fcde45be",
+      "bytes": 1509
+    },
+    {
+      "name": "od_stare_firma.csv",
+      "sha256": "afafb8a3c0d0cac386da79e293be1710d7640171df8c4a64d1d364eb370ed28e",
+      "bytes": 291
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "firme-03-04-2026",
+    "datasetId": "id-firme-03-04-2026",
+    "datasetTitle": "Firme înregistrate la Registrul Comerțului până la data de 03.04.2026",
+    "layout": "current",
+    "snapshot": "2026-04-03",
+    "resources": [
+      {
+        "role": "firme",
+        "resourceId": "7568099a-0000-4000-8000-000000000000",
+        "name": "OD_FIRME.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/7568099a-0000-4000-8000-000000000000/download/od_firme.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 1741,
+        "hash": "",
+        "format": "CSV",
+        "rows": 12
+      },
+      {
+        "role": "stare",
+        "resourceId": "21350fcf-0000-4000-8000-000000000001",
+        "name": "OD_STARE_FIRMA.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/21350fcf-0000-4000-8000-000000000001/download/od_stare_firma.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 289,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "caen",
+        "resourceId": "ece0c652-0000-4000-8000-000000000002",
+        "name": "OD_CAEN_AUTORIZAT.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/ece0c652-0000-4000-8000-000000000002/download/od_caen_autorizat.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 246,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "legali",
+        "resourceId": "cf6b5dde-0000-4000-8000-000000000003",
+        "name": "OD_REPREZENTANTI_LEGALI.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/cf6b5dde-0000-4000-8000-000000000003/download/od_reprezentanti_legali.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 1476,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "if",
+        "resourceId": "7fb03273-0000-4000-8000-000000000004",
+        "name": "OD_REPREZENTANTI_IF.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/7fb03273-0000-4000-8000-000000000004/download/od_reprezentanti_if.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 264,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "nomenclature",
+        "resourceId": "a579aca7-0000-4000-8000-000000000000",
+        "name": "N_STARE_FIRMA.CSV",
+        "url": "https://data.gov.ro/dataset/nomenclatoare-03-04-2026/resource/a579aca7-0000-4000-8000-000000000000/download/n_stare_firma.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 151,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      }
+    ]
+  }
+}

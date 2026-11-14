@@ -28,6 +28,7 @@ from ..archive import Archive, Unit
 from ..identity import compare_name
 from ..placement.tables import load_gazetteer
 from . import read
+from .people import PeopleSummary, PersonOverrides, build_people, has_people
 from .fetch import KIND, SOURCE, STREAM
 
 log = logging.getLogger("pipeline.onrc")
@@ -44,12 +45,14 @@ class OnrcSummary:
     status_spans: int = 0
     skipped: list[str] = field(default_factory=list)  # snapshots that did not read, and incomplete units
     entities_only: int = 0  # registrations that became an entity because no SEAP Record names the CUI
+    people: PeopleSummary = field(default_factory=PeopleSummary)  # the roles of the newest snapshot with a people file (#177)
 
     def line(self) -> str:
         if not self.snapshots:
             return "onrc: no snapshot archived (run `pipeline fetch-onrc`)" + "".join(f"; skipped {s}" for s in self.skipped)
         return (f"onrc: {self.snapshots} snapshot(s) {self.first}..{self.latest}, {self.companies} registrations ({self.with_cui} with a CUI), {self.caen} authorised CAEN codes, "
-                f"{self.status_spans} status spans, {self.entities_only} ONRC-only entities" + "".join(f"; skipped {s}" for s in self.skipped))
+                f"{self.status_spans} status spans, {self.entities_only} ONRC-only entities" + (f", people: {self.people.line()}" if self.people.snapshot else "")
+                + "".join(f"; skipped {s}" for s in self.skipped))
 
 
 def snapshot_units(units: list[Unit]) -> list[Unit]:
@@ -139,7 +142,7 @@ def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | 
     return n, with_cui, caen
 
 
-def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None) -> OnrcSummary:
+def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None, person_overrides: PersonOverrides | None = None) -> OnrcSummary:
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
     summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
@@ -168,6 +171,8 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
                 break
         cur.execute("SELECT count(*) FROM onrc.status_span")
         summary.status_spans = cur.fetchone()[0]
+        # the roles of the newest snapshot that carries the people files (#177; older snapshots have none): needs the person-id secret when there are any
+        summary.people = build_people(cur, next((u for u in reversed(held) if has_people(u)), None), person_overrides)
     cur.execute("DROP TABLE IF EXISTS onrc_obs")
     cur.execute("ANALYZE onrc.registration")
     return summary
