@@ -27,7 +27,6 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from urllib.parse import quote
 
 import requests
 
@@ -69,8 +68,15 @@ class CheckResult:
     detail: str = ""
 
 
+def tilde_encode(name: str) -> str:
+    """Datasette's path encoding of a table name (0.62+): every byte outside [A-Za-z0-9_-] becomes ~XX. A %-encoded name is
+    answered with a redirect that encodes the `.csv` suffix into the name too, which then 404s."""
+    safe = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+    return "".join(chr(b) if b in safe else f"~{b:02X}" for b in name.encode("utf-8"))
+
+
 def table_url() -> str:
-    return f"{DB}/{DATABASE}/{quote(TABLE)}.csv?_size=max&_stream=on"
+    return f"{DB}/{DATABASE}/{tilde_encode(TABLE)}.csv?_size=max&_stream=on"
 
 
 def held_manifests(archive: Archive) -> list[dict]:

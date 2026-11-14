@@ -89,7 +89,7 @@ def datasette_stub(db_hash: str = DB_HASH, body: bytes | None = None, requested:
             return _Response({DATABASE: {"name": DATABASE, "hash": db_hash}})
         if url == f"{DB}/-/metadata.json":
             return _Response(METADATA)
-        if url.startswith(f"{DB}/{DATABASE}/Donatori%20persoane%20juridice.csv"):
+        if url.startswith(f"{DB}/{DATABASE}/Donatori~20persoane~20juridice.csv"):
             return _Response(table)
         raise AssertionError(f"unexpected request {url}")
 
