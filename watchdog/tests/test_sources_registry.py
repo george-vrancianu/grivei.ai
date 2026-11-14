@@ -24,8 +24,8 @@ def test_every_entry_is_complete_and_ids_are_unique():
         assert callable(s.status) and s.data_through_sql.strip().upper().startswith("SELECT")
 
 
-def test_today_the_registry_holds_seap_only():
-    assert [s.id for s in SOURCES] == ["SEAP"] and by_id("SEAP").schema == "seap"
+def test_today_the_registry_holds_seap_and_onrc():
+    assert [s.id for s in SOURCES] == ["SEAP", "ONRC"] and by_id("SEAP").schema == "seap" and by_id("ONRC").schema == "onrc"
 
 
 def test_each_entry_has_its_own_schema_file_and_the_landing_pages_carry_its_row():

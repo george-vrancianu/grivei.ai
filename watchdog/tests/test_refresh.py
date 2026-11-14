@@ -13,6 +13,7 @@ from pipeline.archive import Archive
 from pipeline.crawl import EliClient
 from pipeline.datagov import FetchSummary
 from pipeline.mf.fetch import MfFetchSummary
+from pipeline.onrc.fetch import OnrcFetchSummary
 from pipeline.rebuild import RebuildSummary
 from pipeline.refresh import DeterministicError, Ledger, Pinger, StepResult, TransientError, classify, run_refresh, run_seed
 from pipeline.refresh.engine import BACKOFF, LOCK_NAME
@@ -159,7 +160,7 @@ def test_the_ledger_records_each_step_with_times_counts_and_the_archive_paths_it
     go()
     run = Ledger(archive.root / "refresh-ledger.json").runs[-1]
     crawl = run["steps"][0]
-    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "anaf", "load", "backup", "pgdump"])
+    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "onrc", "anaf", "load", "backup", "pgdump"])
     assert crawl["status"] == "ok" and crawl["counts"] == {"n": 1} and crawl["ended"] and crawl["touched"] == ["crawl/s/k/u1/2026-11-12"]
 
 
@@ -333,6 +334,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "make_client", lambda delay, log: EliClient(post=eli.post, sleep=clock.sleep, clock=lambda: clock.moment.timestamp(), log=log, delay=0))
     monkeypatch.setattr(cli, "fetch_datagov", lambda a: FetchSummary())
     monkeypatch.setattr(cli, "fetch_mf", lambda a: MfFetchSummary())
+    monkeypatch.setattr(cli, "fetch_onrc", lambda a: OnrcFetchSummary())
     monkeypatch.setattr(cli, "AnafClient", lambda endpoint=None: AnafClient(post=lambda *a, **k: pytest.fail("ANAF has no CUI to ask about"), endpoint=endpoint or "x"))
     loads = []
 
@@ -364,7 +366,7 @@ def test_refresh_at_the_cli_crawls_loads_and_status_shows_runs_cursor_data_throu
     cli.main(["--archive", str(archive.root), "status"])
     status = capsys.readouterr().out
     assert "#2 refresh" in status and "#1 refresh" in status
-    assert "crawl ok, datagov ok, anaf ok, load ok" in status
+    assert "crawl ok, datagov ok, onrc ok, anaf ok, load ok" in status
     assert "load warning: quarantined (not loaded, shown as not yet loaded)" in status
     yesterday = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
     assert f"crawl cursor: {yesterday}" in status

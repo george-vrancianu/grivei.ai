@@ -68,8 +68,20 @@ const seap: SourceAdapter = {
   },
 };
 
+// ONRC (#175): its data-through date is the newest snapshot. Its Coverage (the snapshot grid, the count lens) is ticket #176's: until then the grid and the areas are empty.
+const onrc: SourceAdapter = {
+  dataThrough: (store) => store.onrcDataThrough(),
+  coverage: (_store, { from, to }) => ({
+    window: { from, to },
+    grid: async () => [],
+    counties: async () => [],
+    unplacedAuthorities: async () => ({ authorities: 0, total: {} }),
+    referenceSnapshot: async () => null,
+  }),
+};
+
 /** Adapters by Source id: one per entry of the registry. */
-export const SOURCE_ADAPTERS: Readonly<Record<string, SourceAdapter>> = { SEAP: seap };
+export const SOURCE_ADAPTERS: Readonly<Record<string, SourceAdapter>> = { SEAP: seap, ONRC: onrc };
 
 /** The adapter of a registry Source. A row without one means the database was built by a newer pipeline than this API: say which Source. */
 export function adapterOf(id: string): SourceAdapter {

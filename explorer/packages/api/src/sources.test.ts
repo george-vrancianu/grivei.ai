@@ -23,7 +23,7 @@ describe("adapterOf", () => {
   });
 
   it("names the Source in the error when a registry row has no adapter (a database built by a newer pipeline)", () => {
-    expect(() => adapterOf("ONRC")).toThrow(/ONRC/);
-    expect(() => adapterOf("ONRC")).toThrow(/adapter/);
+    expect(() => adapterOf("ANI")).toThrow(/ANI/);
+    expect(() => adapterOf("ANI")).toThrow(/adapter/);
   });
 });

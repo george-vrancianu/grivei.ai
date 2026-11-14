@@ -328,8 +328,73 @@ type Entity {
   "Spellings under which this entity was published, with dates. Never used to merge."
   aliases: [Alias!]!
 
-  "Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only."
+  "Source-specific facets, one sibling per explorable Source (ADR 0005): SEAP, and ONRC below."
   seap: SeapEntity!
+  "The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier."
+  onrc: OnrcRegistration
+}
+
+"""
+One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
+undated). No person of the registration is served here: its administrators and legal representatives are ticket #177's, and an organisation
+that exists only in ONRC never names anyone (ADR 0018).
+"""
+type OnrcRegistration {
+  "ONRC's registration number (COD_INMATRICULARE), e.g. J40/1234/2010. Source data, shown as published."
+  registrationNumber: String!
+  "Null when the newest snapshot is in the legacy layout, which carries no registration date."
+  registrationDate: Date
+  "FORMA_JURIDICA as published, e.g. SRL; null when the snapshot has none."
+  legalForm: String
+  "The statuses the newest snapshot shows (a company can carry several, e.g. in operation and in insolvency), by code."
+  statuses: [OnrcStatus!]!
+  "The authorised CAEN codes of the newest snapshot, by code."
+  caen: [OnrcCaen!]!
+  "The registered seat, as published."
+  seat: OnrcSeat!
+  "ONRC's legal name and earlier names, newest first, each with the snapshots it was seen in. Aliases only: they never rename the entity (ADR 0018)."
+  aliases: [OnrcAlias!]!
+  "The snapshot the registration, CAEN codes and seat come from."
+  snapshot: Date!
+  "Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it."
+  provenance: Provenance!
+}
+
+type OnrcStatus {
+  "ONRC's status code, e.g. 1048."
+  code: Int!
+  "The status as ONRC's nomenclature names it (Romanian, source data); null when the held nomenclature does not list the code."
+  name: String
+  "The first held snapshot that showed this status (the one it was first seen in; ONRC dates no status itself)."
+  firstSeen: Date!
+  "True when the earliest held snapshot already showed it: the status is at least that old, and firstSeen is a lower bound."
+  sinceAtLeast: Boolean!
+}
+
+type OnrcCaen {
+  code: String!
+  "The CAEN revision ONRC records (0 = 1998, 1 = 2003, 2 = 2008, 3 = 2025); null when unknown."
+  version: Int
+}
+
+type OnrcSeat {
+  "The county as ONRC writes it."
+  county: String
+  locality: String
+  "The seat as one line, as published."
+  address: String
+  postalCode: String
+}
+
+type OnrcAlias {
+  name: String!
+  "The first and the last held snapshot that listed this name."
+  firstSeen: Date!
+  lastSeen: Date!
+  "True when the earliest held snapshot already listed it: it is at least that old."
+  sinceAtLeast: Boolean!
+  "True when the newest snapshot lists it: ONRC's legal name today."
+  current: Boolean!
 }
 
 enum EntityIdentity { CUI NAME_ONLY }
