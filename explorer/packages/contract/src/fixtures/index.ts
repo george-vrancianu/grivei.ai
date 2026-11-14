@@ -5,7 +5,7 @@ import { coverageLensHand, coveragePageHand } from "./coverage.ts";
 import { entityOverviewHand, entityRecordsHand, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
 import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
-import { methodologyBaseRates } from "./methodology.ts";
+import { methodologyBaseRates, methodologyReferenceSources } from "./methodology.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedEntityRecords } from "./recorded/records.ts";
@@ -43,6 +43,7 @@ export const fixtures = {
   CoverageLens: [...recordedCoverageLens, ...coverageLensHand],
   CoveragePage: [...recordedCoveragePage, ...coveragePageHand],
   MethodologyBaseRates: [...methodologyBaseRates, ...recordedSignalsMethodology],
+  MethodologyReferenceSources: methodologyReferenceSources,
 } as const;
 
 export type OperationName = keyof typeof fixtures;

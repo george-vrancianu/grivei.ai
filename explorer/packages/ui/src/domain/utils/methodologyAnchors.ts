@@ -15,6 +15,7 @@ export const METHODOLOGY_ANCHORS = {
   supplierIdentity: "supplier-identity",
   placement: "placement",
   coverageStatuses: "coverage-statuses",
+  publicEnterprises: "public-enterprises",
   signals: "signals",
 } as const;
 
@@ -22,7 +23,7 @@ export type MethodologySectionKey = keyof typeof METHODOLOGY_ANCHORS;
 /** The sections in the order the page shows them (the table of contents follows it). */
 export const METHODOLOGY_SECTIONS: readonly Exclude<MethodologySectionKey, "signals">[] = [
   "awardedValue", "frameworkCeilings", "consortiumShares", "suspectValues", "blankValues", "contractModifications", "backfilledValues",
-  "supplierIdentity", "placement", "coverageStatuses",
+  "supplierIdentity", "placement", "coverageStatuses", "publicEnterprises",
 ];
 
 /** The anchor of a Signal rule's section: `signal-over-cap`, `signal-framework-overrun` (the rule's slug in lower case with hyphens). */

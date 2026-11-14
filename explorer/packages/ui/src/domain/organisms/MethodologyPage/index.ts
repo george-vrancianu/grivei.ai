@@ -1,5 +1,5 @@
 export {
-  MethodologyPage, type MethodologyBaseRates, type MethodologyPageCopy, type MethodologyPageProps, type MethodologyRuleCopy,
+  MethodologyPage, type MethodologyBaseRates, type MethodologyReferenceDates, type MethodologyPageCopy, type MethodologyPageProps, type MethodologyRuleCopy,
 } from "./MethodologyPage.tsx";
 export type { MethodologySectionCopy } from "./components/MethodologySection/index.ts";
 export { plainMethodologyText, withAmounts, type MethodologyAmountText, type MethodologyText } from "./components/MethodologySection/index.ts";

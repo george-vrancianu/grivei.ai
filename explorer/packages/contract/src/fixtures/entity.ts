@@ -10,8 +10,8 @@ import * as w from "./world.ts";
 type Role = "AUTHORITY" | "SUPPLIER";
 type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
-/** The EntityOverview's entity: the header, the SEAP role and the ONRC section (`onrc`, null when ONRC lists no registration). */
-const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null });
+/** The EntityOverview's entity: the header, the SEAP role, the ONRC section (`onrc`, null when ONRC lists no registration) and the AMEPIP mark (`publicEnterprise`, #183: null here, the recorded cases carry the listed ones). */
+const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null, publicEnterprise: null });
 
 /** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
 const overviewSignal = (s: SignalFieldsFragment) => ({ ...s, records: [{ code: "DA12345678", provenance: { url: "/source/seap/DA12345678" } }] });

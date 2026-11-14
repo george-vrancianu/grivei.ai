@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, PublicEnterpriseFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 export type { RecordBadge };
@@ -30,6 +30,8 @@ export type MoneyMap = MoneyMapFieldsFragment;
 
 /** What an Entity page's header shows (`EntityHeaderFields`). */
 export type EntityHeaderData = EntityHeaderFieldsFragment;
+/** The basis of the "public enterprise (AMEPIP)" mark (`PublicEnterpriseFields`), present only on the Overview's entity. */
+export type PublicEnterpriseData = PublicEnterpriseFieldsFragment;
 /** The contract's `Role` (AUTHORITY | SUPPLIER) an Entity page asks for; `EntityRole` above is the lowercase URL segment. */
 export type EntityPageRole = Role;
 /** The three tabs of an Entity page; each has its own URL. */

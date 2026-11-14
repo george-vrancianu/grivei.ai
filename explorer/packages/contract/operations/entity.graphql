@@ -6,6 +6,7 @@ query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrde
   entity(key: $key) {
     ...EntityHeaderFields
     onrc { ...OnrcRegistrationFields }
+    publicEnterprise { ...PublicEnterpriseFields }
     seap {
       role(role: $role) {
         role

@@ -1,4 +1,4 @@
-import { EntityHeader, EntityOverview, EntityPageLayout, OnrcSection, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, OnrcSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -68,6 +68,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const entity = state.entity;
   // The ONRC section: the same on both role pages of an entity that is an authority and a supplier; an entity with no SEAP role at all exists in ONRC only
   const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} />;
+  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI appears in AMEPIP's tables (the same on both role pages)
+  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
   return (
@@ -108,6 +110,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
           <Stack spacing={3} aria-busy={loading}>
             {onrcSection}
+            {publicEnterpriseSection}
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               signalsToolbar={
                 <SignalOrderToggle

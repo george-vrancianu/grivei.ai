@@ -48,6 +48,7 @@ from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
 from .mf.build import MfSummary, build_mf
 from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
+from .amepip.build import AmepipSummary, build_amepip
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
@@ -60,6 +61,7 @@ log = logging.getLogger("pipeline.rebuild")
 SQL_DIR = Path(__file__).parent / "sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
+AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
 
 
 @dataclass
@@ -75,6 +77,7 @@ class RebuildSummary:
     placement: PlacementSummary | None = None
     mf: MfSummary | None = None  # the MF list step (#80)
     onrc: OnrcSummary | None = None  # the ONRC step (#175)
+    amepip: AmepipSummary | None = None  # the AMEPIP public-enterprise list step (#183)
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
@@ -96,6 +99,8 @@ class RebuildSummary:
             out.append(self.mf.line())
         if self.onrc is not None:
             out.append(self.onrc.line())
+        if self.amepip is not None:
+            out.append(self.amepip.line())
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
@@ -469,6 +474,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                     cur.execute((SQL_DIR / f"{source.schema}_schema.sql").read_text(encoding="utf-8"))
                 store_sources(cur)
                 cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
+                cur.execute(AMEPIP_SQL.read_text(encoding="utf-8"))  # a Reference source's own tables (#183): not in the registry
             with step("anaf-identities"):
                 anaf_names = load_anaf(cur, archive, summary)
             with step("onrc"):
@@ -524,6 +530,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             with step("mf"):
                 summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
+            with step("amepip"):
+                summary.amepip = build_amepip(cur, archive)  # #183: AMEPIP's public enterprises, flagged by CUI on the entities
             with step("coverage"):
                 cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
                 summary.coverage = flagged_cells(cells)

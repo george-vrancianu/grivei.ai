@@ -610,7 +610,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -953,7 +954,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -1495,7 +1497,19 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": {
+          "listedAs": "ALFA DEMO SRL",
+          "registrationNumber": "J40/1/2005",
+          "status": "funcţiune",
+          "firstYear": 2022,
+          "lastYear": 2023,
+          "snapshot": "2026-01-13",
+          "url": "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo",
+          "via": "Date financiare si non-financiare",
+          "license": "CC-BY-4.0",
+          "fetchedAt": "2026-11-14T09:00:00Z"
+        }
       }
     }
   },
@@ -1683,7 +1697,19 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": {
+          "listedAs": "CNAIR DEMO S.A.",
+          "registrationNumber": "J40/2/2005",
+          "status": "este sub incidenţa Legii nr. 85/2014, insolvenţă",
+          "firstYear": 2023,
+          "lastYear": 2023,
+          "snapshot": "2026-01-13",
+          "url": "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo",
+          "via": "Date financiare si non-financiare",
+          "license": "CC-BY-4.0",
+          "fetchedAt": "2026-11-14T09:00:00Z"
+        }
       }
     }
   },
@@ -1855,7 +1881,19 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": {
+          "listedAs": "CNAIR DEMO S.A.",
+          "registrationNumber": "J40/2/2005",
+          "status": "este sub incidenţa Legii nr. 85/2014, insolvenţă",
+          "firstYear": 2023,
+          "lastYear": 2023,
+          "snapshot": "2026-01-13",
+          "url": "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo",
+          "via": "Date financiare si non-financiare",
+          "license": "CC-BY-4.0",
+          "fetchedAt": "2026-11-14T09:00:00Z"
+        }
       }
     }
   },
@@ -2006,7 +2044,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -2128,7 +2167,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -2175,7 +2215,8 @@
           ],
           "role": null
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -2230,7 +2271,19 @@
           ],
           "role": null
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": {
+          "listedAs": "ALFA DEMO SRL",
+          "registrationNumber": "J40/1/2005",
+          "status": "funcţiune",
+          "firstYear": 2022,
+          "lastYear": 2023,
+          "snapshot": "2026-01-13",
+          "url": "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo",
+          "via": "Date financiare si non-financiare",
+          "license": "CC-BY-4.0",
+          "fetchedAt": "2026-11-14T09:00:00Z"
+        }
       }
     }
   },
@@ -2749,7 +2802,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -2827,7 +2881,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -3062,7 +3117,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -3230,7 +3286,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -3458,7 +3515,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -4459,7 +4517,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -5460,7 +5519,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -6314,7 +6374,8 @@
             }
           }
         },
-        "onrc": null
+        "onrc": null,
+        "publicEnterprise": null
       }
     }
   },
@@ -6540,7 +6601,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -6891,7 +6953,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7069,7 +7132,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7240,7 +7304,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7415,7 +7480,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7587,7 +7653,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7759,7 +7826,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7845,7 +7913,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   },
@@ -7924,7 +7993,8 @@
             "kind": "BULK",
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
-        }
+        },
+        "publicEnterprise": null
       }
     }
   }

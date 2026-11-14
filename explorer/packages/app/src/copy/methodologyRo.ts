@@ -85,6 +85,13 @@ export const methodologyRo: MethodologyPageCopy = {
         "O lacună cunoscută este o perioadă și un tip de înregistrare pentru care înregistrările unei Surse lipsesc sau pot fi incomplete, fie marcate de o regulă publicată, fie introduse manual cu un motiv scris.",
       ],
     },
+    publicEnterprises: {
+      heading: "Întreprinderi publice (AMEPIP)",
+      paragraphs: [
+        "Pagina unei organizații spune „întreprindere publică (AMEPIP)” când CUI-ul ei apare în tabelele de indicatori pe care AMEPIP le publică ca date deschise: societățile cărora li se aplică Ordonanța de urgență nr. 109/2011 privind guvernanța corporativă a întreprinderilor publice. AMEPIP este Agenția pentru Monitorizarea și Evaluarea Performanțelor Întreprinderilor Publice. Potrivirea se face doar după CUI, niciodată după nume, iar pagina arată rândul din tabel pe care se sprijină, cu anii financiari pentru care apare.",
+        "AMEPIP nu are o listă proprie de CUI-uri: exploratorul citește CUI-urile din cea mai nouă ediție a indicatorilor financiari și de guvernanță pe care AMEPIP o publică pe data.gov.ro, sub licența CC-BY-4.0. O ediție cuprinde mai mulți ani financiari, iar o societate este marcată dacă apare în oricare dintre ei. Așadar o societate privatizată, fuzionată sau scoasă din monitorizare într-un an anterior al ediției rămâne marcată, motiv pentru care pagina arată anii pentru care apare. AMEPIP publică o ediție o dată sau de două ori pe an, așa că o societate devenită între timp întreprindere publică poate să nu fie încă marcată. Lipsa marcajului spune doar că CUI-ul nu se află în ediția pe care o avem, nu că societatea este privată. Denumirea, numărul de înregistrare și starea ONRC apar așa cum le scrie AMEPIP.",
+      ],
+    },
   },
   signals: {
     heading: "Regulile Semnalelor",
@@ -139,6 +146,7 @@ export const methodologyRo: MethodologyPageCopy = {
       lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
     },
   },
+  referenceDataThrough: (date) => `Date până la ${date}`,
   baseRate: {
     windowLabel: "Fereastra de timp",
     range: (from, to) => `${from} – ${to}`,

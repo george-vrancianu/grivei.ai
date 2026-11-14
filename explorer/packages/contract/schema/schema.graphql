@@ -27,6 +27,9 @@ type Query {
   "Signal rules with their methodology numbers (base rate recomputed per load)."
   signalRules: [SignalRule!]!
 
+  "The Reference sources held beside the explorable ones (today AMEPIP's public enterprises), each with its data-through date; for the methodology page."
+  referenceSources: [ReferenceSource!]!
+
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
   counties: [County!]!
   uats(county: CountyCode!): [Uat!]!
@@ -322,6 +325,8 @@ type Entity {
   "ANAF status (ACTIV, RADIERE, FUZIUNE ...), badged when not active."
   anafStatus: String
   identityCurated: Boolean!
+  "Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages."
+  publicEnterprise: PublicEnterprise
   placement: Placement
   "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP."
   provenance: [Provenance!]!
@@ -398,6 +403,44 @@ type OnrcAlias {
 }
 
 enum EntityIdentity { CUI NAME_ONLY }
+
+"""
+The basis of the "public enterprise (AMEPIP)" mark: the entity's CUI is on AMEPIP's open-data list of the companies under OUG 109/2011
+(the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises), as the newest held list names it. AMEPIP is a
+Reference source (it has no pages of its own here); its facts are source data, shown as published.
+"""
+type PublicEnterprise {
+  "The company's name as AMEPIP's list writes it (it may differ from the entity's display name)."
+  listedAs: String!
+  "ONRC's registration number as AMEPIP writes it, e.g. J05/14/1991."
+  registrationNumber: String
+  "The ONRC status as AMEPIP writes it for the newest year (Romanian source data)."
+  status: String
+  "The first and the last financial year AMEPIP holds indicators for."
+  firstYear: Int
+  lastYear: Int
+  "The day AMEPIP published the list this comes from: the list's data-through date."
+  snapshot: Date!
+  "AMEPIP's dataset page on data.gov.ro."
+  url: String
+  "The resource as the portal titles it (source data, verbatim)."
+  via: String
+  "The licence the list is published under, e.g. CC-BY-4.0."
+  license: String
+  "When we fetched it (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
+"A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is."
+type ReferenceSource {
+  "The source's short name, e.g. AMEPIP."
+  id: String!
+  name: String!
+  "The day the held list was published; null when none is held yet."
+  dataThrough: Date
+  "Where the list comes from; null when none is held yet."
+  url: String
+}
 
 type Placement {
   county: County

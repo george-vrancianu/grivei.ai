@@ -5,7 +5,7 @@ that table), `pipeline status` calls each entry's `status` hook, and the landing
 (`tests/test_sources_registry.py`; `site/` is static HTML and cannot read the registry).
 
 Adding a Source means adding an entry here and its own schema file (`sql/<schema>_schema.sql`, applied by the rebuild's schema step), and
-its API adapter (`explorer/packages/api/src/sources.ts`). No SEAP code path changes. Reference sources (ANAF, the MF list) are not entries:
+its API adapter (`explorer/packages/api/src/sources.ts`). No SEAP code path changes. Reference sources (ANAF, the MF list, AMEPIP's public enterprises) are not entries:
 they are never explorable on their own.
 """
 from __future__ import annotations
