@@ -27,7 +27,7 @@ P="docker compose run --rm -T pipeline"
 | `GRIVEI_RESTRICTED` | the `api` service (`compose.yaml` passes `${GRIVEI_RESTRICTED:-}`) | **unset, or absent from `.env`, on the machine that is proven here**: only the exact value `show` reveals Restricted content (ADR 0015). Do not set it for this run, except for the one comparison in acceptance F |
 | `GRIVEI_DB_PASSWORD`, `GRIVEI_ARCHIVE_DIR`, `GRIVEI_GEO_DIR`, `GRIVEI_HEALTHCHECK_URL`, `RESTIC_*` | `.env` | as in Release 1; no other `GRIVEI_*` or `PIPELINE_*` variable was added by tickets #174 to #186 (grepped in `compose.yaml`, `deploy/`, `watchdog/pipeline` and `explorer/packages/api/src`) |
 
-The ONRC fetch is detached and chunked (each snapshot is over a gigabyte): `nohup docker compose run --rm -T pipeline fetch-onrc --limit 10 >> ~/grivei-data/fetch-onrc.log 2>&1 &`. The memory, lock and "do not run beside a seed or refresh" rules of Release 1's Conventions apply to every verb below: **`fetch-onrc`, `fetch-aep`, `fetch-banipartide`, `fetch-financials`, `fetch-amepip` and `fetch-mf` do not take the lock**, so none of them may run beside a `seed`, a `refresh` or a `rebuild`. Stop the timer first (`systemctl --user stop grivei-refresh.timer`) and start it again at the end of step 4.
+The ONRC fetch is detached and chunked (each snapshot is over a gigabyte): `nohup docker compose run --rm -T pipeline fetch-onrc --limit 10 >> ~/grivei-data/fetch-onrc.log 2>&1 &`. The memory, lock and "do not run beside a seed or refresh" rules of Release 1's Conventions apply to every verb below: **`fetch-onrc`, `fetch-aep`, `fetch-banipartide`, `fetch-financials`, `fetch-amepip` and `fetch-mf` do not take the lock**, so none of them may run beside a `seed`, a `refresh` or a `rebuild`. Stop the timer first (`systemctl --user stop grivei-refresh.timer`) and start it again only after acceptance B and the post-switchover backup of E (see the end of acceptance E).
 
 ## What changes for the deploy: schemas that need a rebuild before the API
 
@@ -51,7 +51,7 @@ The rebuild's steps for them, in order, are `onrc`, `entities`, `placement`, `mf
 
 ```bash
 git fetch && git status --short            # the integration branch of #173, merged, clean
-systemctl --user stop grivei-refresh.timer # nothing may write the archive from here to the end of step 4
+systemctl --user stop grivei-refresh.timer # nothing may write the archive until the timer is restarted at the end of acceptance E
 docker compose build pipeline api web      # the pipeline image carries the new connectors and the new SQL
 docker compose --profile pipeline config | grep -E 'RESTIC_REPOSITORY'
 df -h ~/grivei-data/raw /var/lib/docker; free -g
@@ -126,13 +126,13 @@ SQL
 
 Record the real counts in the closing comment. Also read two lines of the rebuild log, which the reports ask a human to judge on real data: the `aep:` line (`N attributed authorities, M subordinate bodies, Party on K Records`) and the `amepip list:` line (`... X of them entities of the graph`). **`[TO MEASURE]`**: attributed authorities against the roughly 3,200 UATs and 41 county councils (ticket #180 follow-up 1: list the unmatched UATs and, if the matching misses real ones, build a reviewed `watchdog/pipeline/aep/data/authority_overrides.csv`); the AMEPIP public enterprises and how many matched an entity (ticket #183 follow-up 8: look at a sample of the matches by eye).
 
-**Before the timer starts again: its first night rebuilds everything.** `fetch-*` and `rebuild` write nothing to the refresh ledger, so the ledger's last `load` marker is still Release 1's, and the first timer-triggered refresh finds "the archive changed since the last load" and runs `load`: a second full national rebuild and switchover (three graph copies on disk again, and it replaces `<db>_prev`, which closes the `$P rollback` window of this step). Every new refresh step (`onrc`, `amepip`, `aep`, `financials`, `banipartide`) has no success in the ledger either, so each runs that first night. **`[TO MEASURE]`**: that night's `load` duration and peak disk. Do any rollback of this step **before** the timer starts, and make sure the disk has room for the second rebuild (a follow-up could record a `load` marker at the end of a hand `rebuild`).
+**Before the timer starts again: its first night rebuilds everything.** `fetch-*` and `rebuild` write nothing to the refresh ledger, so the ledger's last `load` marker is still Release 1's, and the first timer-triggered refresh finds "the archive changed since the last load" and runs `load`: a second full national rebuild and switchover (three graph copies on disk again, and it replaces `<db>_prev`, which closes the `$P rollback` window of this step). Every new refresh step (`onrc`, `amepip`, `aep`, `financials`, `banipartide`) has no success in the ledger either, so each runs that first night. **`[TO MEASURE]`**: that night's `load` duration and peak disk. So **keep the timer stopped through acceptance B and E's backup** (B restarts `db` and times queries: a night-1 rebuild overlapping it would be killed by the restart and would skew the latencies), and do any rollback of this step **before** the timer starts, and make sure the disk has room for the second rebuild (a follow-up could record a `load` marker at the end of a hand `rebuild`).
 
 Only now:
 
 ```bash
 docker compose up -d --build api web             # the API reads the new graph; then open http://localhost:8080/explore ; wait for `docker compose logs api | grep 'cache warmed'` before any API-mode benchmark
-systemctl --user start grivei-refresh.timer      # the timer again (read the warning below first: night 1 is a full rebuild); day 0 of the week is in acceptance G
+# the timer stays stopped until the end of acceptance E (read the warning above)
 ```
 
 ### 5. Review the Party coverage and the placement of ONRC
@@ -152,7 +152,7 @@ Check also: `ls geo/counties.topo.json` still present; the Unplaced tile of the 
 
 ## Acceptance
 
-Run B right after step 4, C and D after B, E at any time, F with `GRIVEI_RESTRICTED` unset, G after seven days. Save every output under `~/grivei-data/bench/` and paste the findings into the closing comment.
+Run B right after step 4, with the timer still stopped, C and D after B, E (its backup, then the timer restart) right after B, F with `GRIVEI_RESTRICTED` unset, G after seven days. Save every output under `~/grivei-data/bench/` and paste the findings into the closing comment.
 
 ### B. Latency: ONRC search and the Party-filtered SEAP search
 
@@ -197,7 +197,7 @@ Check the registry's methodology anchor for ONRC: `watchdog/pipeline/sources.py`
 
 ### D. Coverage, the Source selector, and all copy in both languages
 
-- ONRC on the Coverage lens and on the Coverage page. The lens is the ONRC screen's map lens: open `/explore/?source=onrc&lens=coverage` and `/ro/explore/?source=onrc&lens=coverage` (the same cells as below, on the map). The page: `/explore/coverage?source=onrc` and `/ro/explore/coverage?source=onrc` (SEAP's page is the one without the parameter; the selector switches between them). Expected: one cell per snapshot read (`LOADED`, its date, the registrations it lists), one `KNOWN_GAP` cell per calendar month since March 2026 with no snapshot, the data-through date of the newest snapshot, and "no denominator" stated as such (`denominator: NONE`; the grid has 42 counties and no National row). Check it against the database:
+- ONRC on the Coverage lens and on the Coverage page. The lens is the ONRC screen's map lens: open `/explore/?lens=coverage&source=onrc` and `/ro/explore/?lens=coverage&source=onrc` (the same cells as below, on the map). The page: `/explore/coverage?source=onrc` and `/ro/explore/coverage?source=onrc` (SEAP's page is the one without the parameter; the selector switches between them). Expected: one cell per snapshot read (`LOADED`, its date, the registrations it lists), one `KNOWN_GAP` cell per calendar month since March 2026 with no snapshot, the data-through date of the newest snapshot, and "no denominator" stated as such (`denominator: NONE`; the grid has 42 counties and no National row). Check it against the database:
 
 ```bash
 docker compose exec db psql -U grivei -d grivei -c "SELECT kind, state, count(*), min(period), max(period) FROM onrc.coverage_cell GROUP BY 1,2 ORDER BY 1,2"
@@ -211,7 +211,9 @@ docker compose exec db psql -U grivei -d grivei -c "SELECT kind, state, count(*)
 
 ### E. Backups cover the new Sources
 
-`$P backup all` ended without a warning after step 2, so the archive holds the Release 2 fetches; but its `pgdump` (if any) predates the rebuild and holds the Release 1 graph. After the switchover run `$P backup dump` (or `all`) and check the snapshot list (`docker compose run --rm -T --entrypoint restic pipeline snapshots`): an `archive` snapshot newer than the ONRC fetch and a `pgdump` snapshot newer than the switchover. That `pgdump` holds `withheld.natural_person_name` (ADR 0003 as amended) and `onrc.person`: treat the repository as personal data (`watchdog/README.md`, "Backups and restore"). **`[TO MEASURE]`**: archive snapshot size and the backup's duration with ONRC in it.
+`$P backup all` ended without a warning after step 2, so the archive holds the Release 2 fetches; but its `pgdump` (if any) predates the rebuild and holds the Release 1 graph. After the switchover run `$P backup dump` (or `all`) and check the snapshot list (`docker compose run --rm -T --entrypoint restic pipeline snapshots`): an `archive` snapshot newer than the ONRC fetch and a `pgdump` snapshot newer than the switchover. That `pgdump` holds `withheld.natural_person_name` (ADR 0003 as amended) and `onrc.person`: treat the repository as personal data (`watchdog/README.md`, "Backups and restore").
+
+**Only now restart the timer** (B is done and the post-switchover backup is in): `systemctl --user start grivei-refresh.timer`. Its first night is the full rebuild of step 4's warning; day 0 of the week is in acceptance G. **`[TO MEASURE]`**: archive snapshot size and the backup's duration with ONRC in it.
 
 ### F. Restricted check with the switch off, on the national build
 
@@ -272,7 +274,7 @@ Recorded by the tickets #174 to #186; none is blocking the runbook, but each nee
 - [ ] The rebuild and switchover log is attached: steps 2 to 4, acceptance A (ONRC and the four Reference sources fetched, `rebuild done`, no quarantine without an accepted reason, `verify` passes, counts and peak memory and disk noted, the ONRC download's time and size noted).
 - [ ] Benchmark results for ONRC search and the Party-filtered SEAP search are attached: acceptance B (`bench-onrc` JSON and `bench --only party` JSON, every query under about 500 ms or the finding explained).
 - [ ] Re-measured firing rates are written into the methodology sections: acceptance C (every rule's rate from `seap.signal_rule`, the 24% no-turnover placeholder replaced in both languages and the test, the Party coverage stated at its measured figure against 26.0% and 30.5%, #185's rules once merged).
-- [ ] ONRC's Coverage shows on the Coverage lens (`?source=onrc&lens=coverage`) and on the Coverage page, and all copy is bilingual: acceptance D (copy parity test green, both languages checked by eye).
+- [ ] ONRC's Coverage shows on the Coverage lens (`?lens=coverage&source=onrc`) and on the Coverage page, and all copy is bilingual: acceptance D (copy parity test green, both languages checked by eye).
 - [ ] A week of the pipeline ledger with no alerts: acceptance G (and which new steps were exercised in it).
 - [ ] A Restricted check against the national build with the switch off passes: acceptance F.
 - [ ] A runbook for Release 2, in the shape of the Release 1 runbook, is committed (this page).
@@ -306,7 +308,7 @@ Run on <date range>, <commit>, <machine: CPUs, RAM, disk>, compose stack as in `
 - ONRC Coverage (lens and page, EN and RO): <snapshots, gaps>; parity test green; both languages checked by eye on <pages>
 
 ### Restricted check (switch off)
-- `GRIVEI_RESTRICTED` in the api container: empty (switch off); PersonPage on <n> real ids: all null; no SOE-board Signal, count or rate: <yes>; comparison with `show`: <as expected>; switch left off: <yes>
+- `GRIVEI_RESTRICTED` in the api container: empty (switch off); PersonPage on <n> real ids: all null; no SOE-board Signal, count or rate: <yes>; an ONRC-only organisation lists no holders: <yes>; no full birth date or birthplace in a holder's JSON: <yes>; comparison with `show`: <as expected>; switch left off: <yes>
 
 ### Unattended week
 - <first night> to <last night>: <7> runs, triggers: <timer only | mix>, alerts: <none>; transient failures: <...>; warnings: <...>
