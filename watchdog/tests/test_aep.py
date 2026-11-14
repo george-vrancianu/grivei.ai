@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from pipeline.aep import fetch as aep_fetch
-from pipeline.aep.mandates import (HANDOVER_WINDOW, INTERIM, LOCAL_2020, LOCAL_2024, NO_RESULTS, PARTIAL_2025, REPEAT_2020, derive, in_force, vacancies)
+from pipeline.aep.mandates import (HANDOVER_WINDOW, Gap, INTERIM, LOCAL_2020, LOCAL_2024, NO_RESULTS, PARTIAL_2025, REPEAT_2020, derive, in_force, vacancies)
 from pipeline.aep.read import Candidate, Race, MAYOR, is_independent, key, read_minutes, read_partial, read_repeat_round, split_header, tidy
 from pipeline.archive import Archive
 
@@ -89,11 +89,22 @@ def test_derive_a_known_vacancy_cuts_the_mandate_there_and_the_interim_gap_runs_
     races = {LOCAL_2020.id: race(("A", "P", 5)), LOCAL_2024.id: race(("B", "Q", 9))}
     mandates, gaps = derive(races, {}, date(2025, 5, 26))  # no partial election held yet: the interim leader is still in office
     assert [(m.leader, m.end, m.end_basis) for m in mandates] == [("A", date(2024, 9, 27), "HANDOVER_START"), ("B", date(2025, 5, 26), "VACANCY_DATE")]
-    assert gaps[-1] == (gaps[-1].__class__(date(2025, 5, 26), None, INTERIM)) and in_force(mandates, date(2025, 6, 1)) is None
+    assert gaps[-1] == Gap(date(2025, 5, 26), None, INTERIM) and in_force(mandates, date(2025, 6, 1)) is None
     mandates, gaps = derive({**races, PARTIAL_2025.id: race(("C", "R", 7))}, {}, date(2025, 5, 26))  # the vacancy date wins over the 90-day bound (7 Dec 2025)
     assert [(m.leader, m.end) for m in mandates] == [("A", date(2024, 9, 27)), ("B", date(2025, 5, 26)), ("C", None)]
     assert (gaps[-1].reason, gaps[-1].start, gaps[-1].end) == (INTERIM, date(2025, 5, 26), date(2026, 1, 6))
     assert vacancies()["GENERAL:B"] == date(2025, 5, 26)  # the checked-in table
+
+
+def test_a_vacancy_date_before_the_2024_mandate_starts_is_refused_not_applied_over_the_2024_mandate(tmp_path):
+    races = {LOCAL_2020.id: race(("A", "P", 5)), LOCAL_2024.id: race(("B", "Q", 9))}
+    for early in (date(2022, 3, 1), date(2024, 10, 1)):  # inside the 2020 term, and inside the 2024 handover window
+        with pytest.raises(ValueError, match="before the 2024 mandates start"):
+            derive(races, {}, early)
+    csv_file = tmp_path / "vacancies.csv"
+    csv_file.write_text("area,vacancy_date,note\nGENERAL:X,2022-03-01,too early\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="before the 2024 mandates start"):
+        vacancies(csv_file)
 
 
 def test_derive_a_mandate_without_results_is_a_gap_not_a_guess():

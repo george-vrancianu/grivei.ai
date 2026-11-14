@@ -72,16 +72,25 @@ def _mandate(race: Race, winner: Candidate, election: Election, start: date, end
                    winner.votes, start, end, end_basis)
 
 
+def _checked_vacancy(day: date) -> date:
+    """A vacancy cuts the 2024 mandate and opens an interim gap, so it can only fall after the 2024 mandates start; an earlier one (2021-2023) would
+    erase the 2024 mandate, so it is refused until `derive` cuts per mandate."""
+    if day < LOCAL_2024.in_force_from:
+        raise ValueError(f"vacancy date {day} is before the 2024 mandates start ({LOCAL_2024.in_force_from}); only vacancies in the 2024 term are supported")
+    return day
+
+
 def vacancies(path: Path | None = None) -> dict[str, date]:
-    """Area -> the known date its leader's mandate ended early (`data/vacancies.csv`: area, vacancy_date, note)."""
+    """Area -> the known date its leader's mandate ended early (`data/vacancies.csv`: area, vacancy_date, note). Only dates in the 2024 term."""
     with (path or DATA / "vacancies.csv").open(encoding="utf-8", newline="") as f:
-        return {r["area"].strip(): date.fromisoformat(r["vacancy_date"].strip()) for r in csv.DictReader(f) if r.get("area")}
+        return {r["area"].strip(): _checked_vacancy(date.fromisoformat(r["vacancy_date"].strip())) for r in csv.DictReader(f) if r.get("area")}
 
 
 def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = None, vacancy: date | None = None) -> tuple[list[Mandate], list[Gap]]:
     """One authority's Mandates and gaps from its race in each election (`races` is keyed by Election id; a missing or None race = no result).
     `vacancy` is the known date the leader's mandate ended early, if any: the mandate is cut there and what follows is an interim gap."""
     table = alliances() if table is None else table
+    vacancy = _checked_vacancy(vacancy) if vacancy is not None else None
     first = races.get(REPEAT_2020.id) or races.get(LOCAL_2020.id)  # a repeat round replaces the September result of its UAT
     first_election = REPEAT_2020 if races.get(REPEAT_2020.id) else LOCAL_2020
     slots = [(first, first_election, HANDOVER_START), (races.get(LOCAL_2024.id), LOCAL_2024, None)]
@@ -107,10 +116,9 @@ def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = N
             trimmed.append(m)
         mandates = trimmed
         gaps = [Gap(g.start, cut, g.reason) if g.end is None else g for g in gaps if not (g.end is None and g.start >= cut)]
-        winner = partial.winner() if partial is not None else None
         if partial is None:
             gaps.append(Gap(cut, None, INTERIM))  # no partial election held: the interim leader is still in office
-        elif winner is None:
+        elif (winner := partial.winner()) is None:
             gaps.append(Gap(cut, None, NO_RESULTS))
         else:
             gaps.append(Gap(cut, PARTIAL_2025.in_force_from, INTERIM))
