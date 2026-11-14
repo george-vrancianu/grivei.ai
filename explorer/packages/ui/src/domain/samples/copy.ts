@@ -30,6 +30,8 @@ import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts"
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
 import type { OnrcSectionCopy } from "../organisms/OnrcSection/index.ts";
+import type { PeopleSectionCopy } from "../organisms/PeopleSection/index.ts";
+import type { PersonDetailCopy } from "../organisms/PersonDetail/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import { partyCopy } from "./leadership.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
@@ -661,6 +663,48 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
   },
 };
 
+const peopleSection: Record<Locale, PeopleSectionCopy> = {
+  en: {
+    heading: "Administrators and legal representatives",
+    intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
+    none: "ONRC lists no administrator or legal representative for this organisation.",
+    born: (year) => `born ${year}`,
+    unlinked: "no birth date in ONRC: listed on this page only, linked to no one",
+    personLink: (name) => `${name}: person page`,
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+  },
+  ro: {
+    heading: "Administratori și reprezentanți legali",
+    intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
+    none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
+    born: (year) => `anul nașterii ${year}`,
+    unlinked: "fără dată a nașterii în ONRC: listat doar pe această pagină, nelegat de nimeni",
+    personLink: (name) => `${name}: pagina persoanei`,
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+  },
+};
+
+const personDetail: Record<Locale, PersonDetailCopy> = {
+  en: {
+    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
+    born: (year) => `born ${year}`,
+    rolesHeading: "Roles",
+    roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    noPage: "no organisation page",
+    basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+  },
+  ro: {
+    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
+    born: (year) => `anul nașterii ${year}`,
+    rolesHeading: "Roluri",
+    roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    noPage: "fără pagină de organizație",
+    basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+  },
+};
+
 const entityOverview = (locale: Locale): EntityOverviewCopy => {
   const party: PartyNameCopy = { naturalPerson: "Persoană fizică", entityLink: entityLink[locale] };
   return locale === "ro"
@@ -814,6 +858,8 @@ export const sampleCopy = {
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,
   onrcSection: (locale: Locale): OnrcSectionCopy => onrcSection[locale],
+  peopleSection: (locale: Locale): PeopleSectionCopy => peopleSection[locale],
+  personDetail: (locale: Locale): PersonDetailCopy => personDetail[locale],
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,

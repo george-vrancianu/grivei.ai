@@ -116,7 +116,9 @@ export function donationsObject(found: FirmDonationsRow | null) {
   };
 }
 
-export function rootValue(store: Store) {
+export function rootValue(store: Store, options: { restricted?: boolean } = {}) {
+  // Restricted content (ADR 0015): fail closed. Only an explicit `true` (the host's `GRIVEI_RESTRICTED` is `show`, restricted.ts) reveals it.
+  const restricted = options.restricted === true;
   /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
   const entityObject = (e: EntityRow) => ({
     __typename: "Entity" as const,
@@ -142,6 +144,19 @@ export function rootValue(store: Store) {
     onrc: async () => {
       const found = e.cui ? await store.onrc(e.cui) : null;
       return found && onrcRegistrationObject(found);
+    },
+    // ONRC's administrators and legal representatives (#177), public tier: named only on a SEAP counterparty (ADR 0009); an organisation that exists only in ONRC is not named.
+    // The person link of a linked holder is Restricted (ADR 0015): the store is not even asked for the ids unless the switch shows them.
+    people: async () => {
+      if (!e.cui || (await store.roles(e.key)).length === 0) return null;
+      const found = await store.people(e.cui, { personIds: restricted });
+      return (
+        found && {
+          snapshot: found.snapshot,
+          provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+          holders: found.holders.map((h) => ({ name: h.name, role: h.role, birthYear: h.birthYear, person: restricted && h.personId ? { id: h.personId } : null })),
+        }
+      );
     },
     // AMEPIP's list holds CUIs only (#183): an entity with no CUI is never a public enterprise
     publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
@@ -375,6 +390,22 @@ export function rootValue(store: Store) {
       return { source: named, ...adapter.coverage(store, { from: window?.from || null, to: window?.to || null }, zeroTotal) };
     },
     referenceSources: () => store.referenceSources(),
+    // RESTRICTED (ADR 0015): with the switch off the resolver answers null before it asks the store anything, so not even the existence or the count of a person's roles is served
+    person: async ({ id }: { id: string }) => {
+      if (!restricted) return null;
+      const found = await store.person(id);
+      return (
+        found && {
+          id: found.id,
+          name: found.name,
+          birthYear: found.birthYear,
+          roleCount: found.roles.length,
+          roles: found.roles,
+          snapshot: found.snapshot,
+          provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+        }
+      );
+    },
     signalRules: async () =>
       (await store.signalRules()).map((r) => ({ slug: r.slug, window: r.window, baseRate: r.baseRate, baseRateYear: r.baseRateYear, dataThrough: r.dataThrough })),
     counties: async () => (await store.counties()).map(county),

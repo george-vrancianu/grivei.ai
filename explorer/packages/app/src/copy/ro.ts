@@ -327,6 +327,16 @@ export const ro: Copy = {
       mandateBasis,
     },
   },
+  personPage: {
+    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
+    born: (year) => `anul nașterii ${year}`,
+    rolesHeading: "Roluri",
+    roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    noPage: "fără pagină de organizație",
+    basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    notFound: { title: "Pagina persoanei nu este disponibilă", body: "Această pagină nu este disponibilă pe această gazdă sau nicio persoană nu are acest id. Paginile persoanelor apar doar într-o vedere privată." },
+  },
   entityPage: {
     layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
@@ -385,6 +395,15 @@ export const ro: Copy = {
       },
       source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
       onrcOnly: "Această organizație există doar în ONRC: nicio achiziție din SEAP nu o numește. Nicio persoană a ei nu este afișată.",
+    },
+    people: {
+      heading: "Administratori și reprezentanți legali",
+      intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
+      none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
+      born: (year) => `anul nașterii ${year}`,
+      unlinked: "fără dată a nașterii în ONRC: listat doar pe această pagină, nelegat de nimeni",
+      personLink: (name) => `${name}: pagina persoanei`,
+      source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     relationships: {

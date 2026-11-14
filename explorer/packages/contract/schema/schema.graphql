@@ -30,6 +30,12 @@ type Query {
   "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page."
   referenceSources: [ReferenceSource!]!
 
+  """
+  RESTRICTED (ADR 0015): a person page by its id (ticket #177). Null unless the host's `GRIVEI_RESTRICTED` is `show` (a Private view): the resolver returns nothing, not even a count,
+  when the switch is off, and also null for an id no confirmed person has.
+  """
+  person(id: ID!): Person
+
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
   counties: [County!]!
   uats(county: CountyCode!): [Uat!]!
@@ -513,11 +519,16 @@ type Entity {
   seap: SeapEntity!
   "The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier."
   onrc: OnrcRegistration
+  """
+  The administrators and legal representatives ONRC lists for this organisation (ticket #177, public tier, ADR 0015). Named only on a SEAP counterparty (a supplier or an authority
+  in the graph, ADR 0009): null for an organisation that exists only in ONRC, for an entity with no CUI, and when no snapshot with ONRC's people files is held. The same on both role pages.
+  """
+  people: OrganisationPeople
 }
 
 """
 One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
-undated). No person of the registration is served here: its administrators and legal representatives are ticket #177's, and an organisation
+undated). No person of the registration is served here: its administrators and legal representatives are `Entity.people`, and an organisation
 that exists only in ONRC never names anyone (ADR 0018).
 """
 type OnrcRegistration {
@@ -545,6 +556,65 @@ type OnrcRegistration {
   snapshot: Date!
   "Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it."
   provenance: Provenance!
+}
+
+"""
+An organisation's administrators and legal representatives as the newest held ONRC snapshot lists them (ADR 0011, 0015). Holders are listed as ONRC publishes them; a holder with no
+birth date is an unlinked role holder (shown here only). Never served: a birthplace, a full birth date, a CNP, a beneficial owner, a relative, a possible match (a same name and
+birth date with birthplaces in different counties), and the holders of a sole trader (PFA/II) or of an IF.
+"""
+type OrganisationPeople {
+  holders: [RoleHolder!]!
+  "The ONRC snapshot the roles come from: the basis of every holder."
+  snapshot: Date!
+  "ONRC's dataset page, the snapshot's title, and when we fetched it."
+  provenance: Provenance!
+}
+
+type RoleHolder {
+  "As ONRC writes it (source data, shown as published)."
+  name: String!
+  "CALITATE as ONRC publishes it, e.g. administrator (source data, never translated)."
+  role: String!
+  "The year of birth. Null for an unlinked role holder (ONRC lists no birth date). The full date is never served."
+  birthYear: Int
+  """
+  RESTRICTED (ADR 0015): the holder's person page. Null unless the host's `GRIVEI_RESTRICTED` is `show` (only a Private view), and null for an unlinked role holder.
+  """
+  person: PersonRef
+}
+
+type PersonRef {
+  id: ID!
+}
+
+"""
+RESTRICTED (ADR 0015): one person (a confirmed person key, ADR 0011) and their roles across organisations. Served only when the host's `GRIVEI_RESTRICTED` is `show`; otherwise
+`Query.person` is null. A person page shows the name and the birth year only, never the full birth date or the birthplace.
+"""
+type Person {
+  "A keyed hash of the person key: deterministic across rebuilds, not reversible (the secret is held outside the repo)."
+  id: ID!
+  "As ONRC writes it (source data)."
+  name: String!
+  birthYear: Int!
+  "How many roles the person holds across organisations. Restricted like the list."
+  roleCount: Int!
+  roles: [PersonRole!]!
+  "The ONRC snapshot the roles come from: the basis of each."
+  snapshot: Date!
+  provenance: Provenance!
+}
+
+type PersonRole {
+  "The organisation as ONRC names it (source data)."
+  organisationName: String!
+  "The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page."
+  entityKey: ID
+  "The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is."
+  entityRole: Role
+  "CALITATE as ONRC publishes it (source data)."
+  role: String!
 }
 
 type OnrcStatus {

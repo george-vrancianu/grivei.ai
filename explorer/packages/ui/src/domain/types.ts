@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   MethodologyBaseRatesQuery, PartyCoverageFieldsFragment, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
@@ -97,6 +97,10 @@ export type OverviewCounterparties = EntityOverviewData["counterparties"];
 export type OverviewConsortium = EntityOverviewData["consortia"][number];
 export type OverviewProcedure = EntityOverviewData["procedures"][number];
 export type OverviewFrameworks = EntityOverviewData["frameworks"];
+/** The administrators and legal representatives ONRC lists for an organisation (`EntityOverview`'s `people`, public tier). `person` on a holder is Restricted: set only in a Private view. */
+export type OrganisationPeopleData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["people"]>;
+/** A person page (`PersonPage`'s `person`, Restricted: only a Private view receives it). */
+export type PersonPageData = NonNullable<PersonPageQuery["person"]>;
 /** The ONRC registration of an entity (`EntityOverview`'s `onrc`): facts from the newest snapshot, history derived by comparing snapshots. */
 export type OnrcRegistrationData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["onrc"]>;
 /** Every spelling of an Entity's name in SEAP ("Appears in SEAP as"). */

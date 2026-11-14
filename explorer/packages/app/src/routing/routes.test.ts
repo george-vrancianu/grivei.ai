@@ -11,6 +11,7 @@ const ROUTES: Route[] = [
   { name: "entity", entity: "supplier", key: "vat-DE123", view: "records" },
   { name: "entity", entity: "supplier", key: "name-ü ș/x", view: "relationships" },
   { name: "record", code: "CAN1170001" },
+  { name: "person", id: "0123456789abcdef0123456789abcdef" },
   { name: "coverage" },
   { name: "methodology" },
 ];
@@ -27,7 +28,7 @@ describe("routes", () => {
     expect(parsePath("/ro/explore").locale).toBe("ro");
   });
 
-  it.each(["/explore/nope", "/explore/authority", "/explore/authority/1/overview", "/explore/authority/1/records/x", "/explore/record", "/explore/coverage/x", "/explore/authority/%E0%A4%A"])(
+  it.each(["/explore/nope", "/explore/authority", "/explore/authority/1/overview", "/explore/authority/1/records/x", "/explore/record", "/explore/person", "/explore/person/a/b", "/explore/coverage/x", "/explore/authority/%E0%A4%A"])(
     "treats %s as not found",
     (path) => expect(parsePath(path).route).toEqual({ name: "not-found" }),
   );

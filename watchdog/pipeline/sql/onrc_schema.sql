@@ -1,6 +1,6 @@
 -- The `onrc` schema (spec #173, #175): ONRC's registrations as the open "Firme inregistrate la Registrul Comertului" snapshots list them,
 -- joined to the shared core only through the CUI (`registration.cui` = `core.entity.key`, ADR 0018). Derived data: `pipeline rebuild` drops
--- and recreates it from the raw archive (ADR 0004). ONRC carries no CNP and no field is stripped; the people files are ticket #177's.
+-- and recreates it from the raw archive (ADR 0004). ONRC carries no CNP and no field is stripped; the people tables at the end are ticket #177's.
 DROP SCHEMA IF EXISTS onrc CASCADE;
 CREATE SCHEMA onrc;
 
@@ -105,4 +105,53 @@ CREATE TABLE onrc.coverage_cell (
     records      integer NOT NULL,                   -- registrations the snapshot lists (0 for a gap)
     data_through date,                               -- the snapshot date (null for a gap)
     PRIMARY KEY (period, kind)
+);
+
+-- ---- People (ticket #177, ADR 0011) ----------------------------------------------------------------------------------------------------
+-- The roles of the newest snapshot that carries ONRC's people files (administrators, legal representatives, IF members). ONRC carries no CNP;
+-- the birthplace is read for possible-match detection and kept only in the review queue below, never served. Only the birth year is stored here.
+--   link LINKED         the holder has a person key (name + full birth date); `person_id` is the keyed hash (HMAC, secret outside the repo)
+--        UNLINKED       no usable birth date: an unlinked role holder, named on the organisation's page only
+--        POSSIBLE_MATCH same key, birthplaces in different counties: never served, in any mode (see onrc.possible_match)
+--        SOLE_TRADER    a PFA/II registration: the holder is the registration itself, never linked and never served as a person
+CREATE TABLE onrc.role (
+    reg_no        text NOT NULL,
+    holder_name   text NOT NULL,                -- as ONRC writes it (comma-below letters)
+    role          text NOT NULL,                -- CALITATE as published
+    kind          text NOT NULL CHECK (kind IN ('LEGAL', 'IF')),  -- OD_REPREZENTANTI_LEGALI or OD_REPREZENTANTI_IF
+    birth_year    integer,                      -- null for an unlinked holder and for a sole trader's row
+    link          text NOT NULL CHECK (link IN ('LINKED', 'UNLINKED', 'POSSIBLE_MATCH', 'SOLE_TRADER')),
+    person_id     text,                         -- set only when link = 'LINKED'
+    snapshot_date date NOT NULL
+);
+CREATE INDEX role_reg_no ON onrc.role (reg_no);
+CREATE INDEX role_person ON onrc.role (person_id) WHERE person_id IS NOT NULL;
+
+-- One row per confirmed person key: the page a Private view serves (Restricted, ADR 0015).
+CREATE TABLE onrc.person (
+    id         text PRIMARY KEY,
+    name       text NOT NULL,                   -- the most frequent spelling among the person's roles
+    birth_year integer NOT NULL
+);
+
+-- The review queue (ADR 0011): a same-name, same-date pair with birthplaces in different counties. Operator data: never read by the API, never
+-- served. Only an identity override (`[[person_merge]]`) settles it; `id` is the id a merge entry names.
+CREATE TABLE onrc.possible_match (
+    id            text PRIMARY KEY,
+    holder_name   text NOT NULL,
+    birth_date    date NOT NULL,
+    areas         text[] NOT NULL,              -- the birth counties (or countries) that disagree
+    reg_nos       text[] NOT NULL,
+    snapshot_date date NOT NULL
+);
+
+-- The person overrides applied by this rebuild (identity_overrides.toml): what was split or merged, why, by whom, on which document.
+CREATE TABLE onrc.person_override (
+    kind     text NOT NULL CHECK (kind IN ('SPLIT', 'MERGE')),
+    ids      text[] NOT NULL,
+    reg_nos  text[],
+    reason   text NOT NULL,
+    reviewer text NOT NULL,
+    document text,
+    matched  integer NOT NULL                   -- role rows the entry changed; 0 = it matched nothing in this snapshot (the summary says so)
 );

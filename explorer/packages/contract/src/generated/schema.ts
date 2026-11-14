@@ -195,6 +195,11 @@ export type Entity = {
   leadership: Maybe<Leadership>;
   /** The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier. */
   onrc: Maybe<OnrcRegistration>;
+  /**
+   * The administrators and legal representatives ONRC lists for this organisation (ticket #177, public tier, ADR 0015). Named only on a SEAP counterparty (a supplier or an authority
+   * in the graph, ADR 0009): null for an organisation that exists only in ONRC, for an entity with no CUI, and when no snapshot with ONRC's people files is held. The same on both role pages.
+   */
+  people: Maybe<OrganisationPeople>;
   placement: Maybe<Placement>;
   /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP. */
   provenance: Array<Provenance>;
@@ -595,7 +600,7 @@ export type OnrcQuerySearchArgs = {
 
 /**
  * One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
- * undated). No person of the registration is served here: its administrators and legal representatives are ticket #177's, and an organisation
+ * undated). No person of the registration is served here: its administrators and legal representatives are `Entity.people`, and an organisation
  * that exists only in ONRC never names anyone (ADR 0018).
  */
 export type OnrcRegistration = {
@@ -698,6 +703,20 @@ export type OnrcStatus = {
   sinceAtLeast: Scalars['Boolean']['output'];
 };
 
+/**
+ * An organisation's administrators and legal representatives as the newest held ONRC snapshot lists them (ADR 0011, 0015). Holders are listed as ONRC publishes them; a holder with no
+ * birth date is an unlinked role holder (shown here only). Never served: a birthplace, a full birth date, a CNP, a beneficial owner, a relative, a possible match (a same name and
+ * birth date with birthplaces in different counties), and the holders of a sole trader (PFA/II) or of an IF.
+ */
+export type OrganisationPeople = {
+  __typename?: 'OrganisationPeople';
+  holders: Array<RoleHolder>;
+  /** ONRC's dataset page, the snapshot's title, and when we fetched it. */
+  provenance: Provenance;
+  /** The ONRC snapshot the roles come from: the basis of every holder. */
+  snapshot: Scalars['Date']['output'];
+};
+
 export type OverCapNumbers = {
   __typename?: 'OverCapNumbers';
   cap: Scalars['Bani']['output'];
@@ -756,6 +775,42 @@ export type Period = {
   __typename?: 'Period';
   from: Maybe<Scalars['Date']['output']>;
   to: Maybe<Scalars['Date']['output']>;
+};
+
+/**
+ * RESTRICTED (ADR 0015): one person (a confirmed person key, ADR 0011) and their roles across organisations. Served only when the host's `GRIVEI_RESTRICTED` is `show`; otherwise
+ * `Query.person` is null. A person page shows the name and the birth year only, never the full birth date or the birthplace.
+ */
+export type Person = {
+  __typename?: 'Person';
+  birthYear: Scalars['Int']['output'];
+  /** A keyed hash of the person key: deterministic across rebuilds, not reversible (the secret is held outside the repo). */
+  id: Scalars['ID']['output'];
+  /** As ONRC writes it (source data). */
+  name: Scalars['String']['output'];
+  provenance: Provenance;
+  /** How many roles the person holds across organisations. Restricted like the list. */
+  roleCount: Scalars['Int']['output'];
+  roles: Array<PersonRole>;
+  /** The ONRC snapshot the roles come from: the basis of each. */
+  snapshot: Scalars['Date']['output'];
+};
+
+export type PersonRef = {
+  __typename?: 'PersonRef';
+  id: Scalars['ID']['output'];
+};
+
+export type PersonRole = {
+  __typename?: 'PersonRole';
+  /** The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page. */
+  entityKey: Maybe<Scalars['ID']['output']>;
+  /** The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is. */
+  entityRole: Maybe<Role>;
+  /** The organisation as ONRC names it (source data). */
+  organisationName: Scalars['String']['output'];
+  /** CALITATE as ONRC publishes it (source data). */
+  role: Scalars['String']['output'];
 };
 
 export type Placement = {
@@ -824,6 +879,11 @@ export type Query = {
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
   onrc: OnrcQuery;
+  /**
+   * RESTRICTED (ADR 0015): a person page by its id (ticket #177). Null unless the host's `GRIVEI_RESTRICTED` is `show` (a Private view): the resolver returns nothing, not even a count,
+   * when the switch is off, and also null for an id no confirmed person has.
+   */
+  person: Maybe<Person>;
   /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
@@ -843,6 +903,11 @@ export type QueryCoverageArgs = {
 
 export type QueryEntityArgs = {
   key: Scalars['ID']['input'];
+};
+
+
+export type QueryPersonArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -978,6 +1043,18 @@ export type ReferenceSource = {
 export type Role =
   | 'AUTHORITY'
   | 'SUPPLIER';
+
+export type RoleHolder = {
+  __typename?: 'RoleHolder';
+  /** The year of birth. Null for an unlinked role holder (ONRC lists no birth date). The full date is never served. */
+  birthYear: Maybe<Scalars['Int']['output']>;
+  /** As ONRC writes it (source data, shown as published). */
+  name: Scalars['String']['output'];
+  /** RESTRICTED (ADR 0015): the holder's person page. Null unless the host's `GRIVEI_RESTRICTED` is `show` (only a Private view), and null for an unlinked role holder. */
+  person: Maybe<PersonRef>;
+  /** CALITATE as ONRC publishes it, e.g. administrator (source data, never translated). */
+  role: Scalars['String']['output'];
+};
 
 /**
  * SEAP side of an entity. The page asks for the role it shows, so one operation
@@ -1535,12 +1612,16 @@ export type ResolversTypes = {
   OnrcSearch: ResolverTypeWrapper<Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversTypes['OnrcFilterEcho'], organisations: ResolversTypes['OnrcResultPage'] }>;
   OnrcSeat: ResolverTypeWrapper<OnrcSeat>;
   OnrcStatus: ResolverTypeWrapper<OnrcStatus>;
+  OrganisationPeople: ResolverTypeWrapper<OrganisationPeople>;
   OverCapNumbers: ResolverTypeWrapper<OverCapNumbers>;
   Party: ResolverTypeWrapper<Omit<Party, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
   PartyCoverage: ResolverTypeWrapper<PartyCoverage>;
   PartyOption: ResolverTypeWrapper<PartyOption>;
   PartyShare: ResolverTypeWrapper<PartyShare>;
   Period: ResolverTypeWrapper<Period>;
+  Person: ResolverTypeWrapper<Person>;
+  PersonRef: ResolverTypeWrapper<PersonRef>;
+  PersonRole: ResolverTypeWrapper<PersonRole>;
   Placement: ResolverTypeWrapper<Placement>;
   Provenance: ResolverTypeWrapper<Provenance>;
   ProvenanceKind: ProvenanceKind;
@@ -1557,6 +1638,7 @@ export type ResolversTypes = {
   RecordResultPage: ResolverTypeWrapper<Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversTypes['RecordResult']> }>;
   ReferenceSource: ResolverTypeWrapper<ReferenceSource>;
   Role: Role;
+  RoleHolder: ResolverTypeWrapper<RoleHolder>;
   SeapEntity: ResolverTypeWrapper<Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversTypes['SeapRole']> }>;
   SeapQuery: ResolverTypeWrapper<Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversTypes['SeapRecord']>, search: ResolversTypes['SeapSearch'] }>;
   SeapRecord: ResolverTypeWrapper<Omit<SeapRecord, 'authority' | 'cpv' | 'signals' | 'winners'> & { authority: ResolversTypes['Entity'], cpv?: Maybe<ResolversTypes['Cpv']>, signals: Array<ResolversTypes['Signal']>, winners: Array<ResolversTypes['Party']> }>;
@@ -1645,12 +1727,16 @@ export type ResolversParentTypes = {
   OnrcSearch: Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversParentTypes['OnrcFilterEcho'], organisations: ResolversParentTypes['OnrcResultPage'] };
   OnrcSeat: OnrcSeat;
   OnrcStatus: OnrcStatus;
+  OrganisationPeople: OrganisationPeople;
   OverCapNumbers: OverCapNumbers;
   Party: Omit<Party, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
   PartyCoverage: PartyCoverage;
   PartyOption: PartyOption;
   PartyShare: PartyShare;
   Period: Period;
+  Person: Person;
+  PersonRef: PersonRef;
+  PersonRole: PersonRole;
   Placement: Placement;
   Provenance: Provenance;
   PublicEnterprise: PublicEnterprise;
@@ -1663,6 +1749,7 @@ export type ResolversParentTypes = {
   RecordResult: Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversParentTypes['MatchedField']>, record: ResolversParentTypes['SeapRecord'] };
   RecordResultPage: Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversParentTypes['RecordResult']> };
   ReferenceSource: ReferenceSource;
+  RoleHolder: RoleHolder;
   SeapEntity: Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversParentTypes['SeapRole']> };
   SeapQuery: Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversParentTypes['SeapRecord']>, search: ResolversParentTypes['SeapSearch'] };
   SeapRecord: Omit<SeapRecord, 'authority' | 'cpv' | 'signals' | 'winners'> & { authority: ResolversParentTypes['Entity'], cpv?: Maybe<ResolversParentTypes['Cpv']>, signals: Array<ResolversParentTypes['Signal']>, winners: Array<ResolversParentTypes['Party']> };
@@ -1797,6 +1884,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   leadership?: Resolver<Maybe<ResolversTypes['Leadership']>, ParentType, ContextType>;
   onrc?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType>;
+  people?: Resolver<Maybe<ResolversTypes['OrganisationPeople']>, ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
   provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
   publicEnterprise?: Resolver<Maybe<ResolversTypes['PublicEnterprise']>, ParentType, ContextType>;
@@ -2057,6 +2145,12 @@ export type OnrcStatusResolvers<ContextType = any, ParentType extends ResolversP
   sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
 };
 
+export type OrganisationPeopleResolvers<ContextType = any, ParentType extends ResolversParentTypes['OrganisationPeople'] = ResolversParentTypes['OrganisationPeople']> = {
+  holders?: Resolver<Array<ResolversTypes['RoleHolder']>, ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
 export type OverCapNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['OverCapNumbers'] = ResolversParentTypes['OverCapNumbers']> = {
   cap?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
   multiple?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -2095,6 +2189,27 @@ export type PeriodResolvers<ContextType = any, ParentType extends ResolversParen
   to?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
 };
 
+export type PersonResolvers<ContextType = any, ParentType extends ResolversParentTypes['Person'] = ResolversParentTypes['Person']> = {
+  birthYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  roleCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  roles?: Resolver<Array<ResolversTypes['PersonRole']>, ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
+export type PersonRefResolvers<ContextType = any, ParentType extends ResolversParentTypes['PersonRef'] = ResolversParentTypes['PersonRef']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+};
+
+export type PersonRoleResolvers<ContextType = any, ParentType extends ResolversParentTypes['PersonRole'] = ResolversParentTypes['PersonRole']> = {
+  entityKey?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  entityRole?: Resolver<Maybe<ResolversTypes['Role']>, ParentType, ContextType>;
+  organisationName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
 export type PlacementResolvers<ContextType = any, ParentType extends ResolversParentTypes['Placement'] = ResolversParentTypes['Placement']> = {
   county?: Resolver<Maybe<ResolversTypes['County']>, ParentType, ContextType>;
   locality?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -2129,6 +2244,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   coverage?: Resolver<ResolversTypes['Coverage'], ParentType, ContextType, RequireFields<QueryCoverageArgs, 'source'>>;
   entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType, RequireFields<QueryEntityArgs, 'key'>>;
   onrc?: Resolver<ResolversTypes['OnrcQuery'], ParentType, ContextType>;
+  person?: Resolver<Maybe<ResolversTypes['Person']>, ParentType, ContextType, RequireFields<QueryPersonArgs, 'id'>>;
   referenceSources?: Resolver<Array<ResolversTypes['ReferenceSource']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapQuery'], ParentType, ContextType>;
   signalRules?: Resolver<Array<ResolversTypes['SignalRule']>, ParentType, ContextType>;
@@ -2187,6 +2303,13 @@ export type ReferenceSourceResolvers<ContextType = any, ParentType extends Resol
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type RoleHolderResolvers<ContextType = any, ParentType extends ResolversParentTypes['RoleHolder'] = ResolversParentTypes['RoleHolder']> = {
+  birthYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  person?: Resolver<Maybe<ResolversTypes['PersonRef']>, ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };
 
 export type SeapEntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['SeapEntity'] = ResolversParentTypes['SeapEntity']> = {
@@ -2392,12 +2515,16 @@ export type Resolvers<ContextType = any> = {
   OnrcSearch?: OnrcSearchResolvers<ContextType>;
   OnrcSeat?: OnrcSeatResolvers<ContextType>;
   OnrcStatus?: OnrcStatusResolvers<ContextType>;
+  OrganisationPeople?: OrganisationPeopleResolvers<ContextType>;
   OverCapNumbers?: OverCapNumbersResolvers<ContextType>;
   Party?: PartyResolvers<ContextType>;
   PartyCoverage?: PartyCoverageResolvers<ContextType>;
   PartyOption?: PartyOptionResolvers<ContextType>;
   PartyShare?: PartyShareResolvers<ContextType>;
   Period?: PeriodResolvers<ContextType>;
+  Person?: PersonResolvers<ContextType>;
+  PersonRef?: PersonRefResolvers<ContextType>;
+  PersonRole?: PersonRoleResolvers<ContextType>;
   Placement?: PlacementResolvers<ContextType>;
   Provenance?: ProvenanceResolvers<ContextType>;
   PublicEnterprise?: PublicEnterpriseResolvers<ContextType>;
@@ -2409,6 +2536,7 @@ export type Resolvers<ContextType = any> = {
   RecordResult?: RecordResultResolvers<ContextType>;
   RecordResultPage?: RecordResultPageResolvers<ContextType>;
   ReferenceSource?: ReferenceSourceResolvers<ContextType>;
+  RoleHolder?: RoleHolderResolvers<ContextType>;
   SeapEntity?: SeapEntityResolvers<ContextType>;
   SeapQuery?: SeapQueryResolvers<ContextType>;
   SeapRecord?: SeapRecordResolvers<ContextType>;

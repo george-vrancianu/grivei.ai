@@ -5,6 +5,7 @@ import { EntityPage } from "./pages/EntityPage/index.ts";
 import { MainScreenPage } from "./pages/MainScreenPage/index.ts";
 import { NotFoundPage } from "./pages/NotFoundPage/index.ts";
 import { MethodologyPage } from "./pages/MethodologyPage/index.ts";
+import { PersonPage } from "./pages/PersonPage/index.ts";
 import { RecordPage } from "./pages/RecordPage/index.ts";
 import { SearchPage } from "./pages/SearchPage/index.ts";
 import { useLocation } from "./routing/location.tsx";
@@ -23,6 +24,8 @@ export function Routes() {
       return <EntityPage locale={locale} entity={route.entity} entityKey={route.key} view={route.view} />;
     case "record":
       return <RecordPage locale={locale} code={route.code} />;
+    case "person":
+      return <PersonPage locale={locale} id={route.id} />;
     case "coverage":
       return <CoveragePage locale={locale} />;
     case "methodology":

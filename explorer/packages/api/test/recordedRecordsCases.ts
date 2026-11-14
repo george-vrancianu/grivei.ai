@@ -11,7 +11,7 @@ export interface RecordedRecordsCase {
   operation: "EntityRecords";
   /** Unique within its operation. */
   name: string;
-  archive: Exclude<RecordedEntityArchive, "onrc" | "party">; // the ONRC and party archives are recorded for the EntityOverview only
+  archive: Exclude<RecordedEntityArchive, "onrc" | "party" | "people">; // the ONRC, party and people archives are recorded for the EntityOverview only
   kind: FixtureKind;
   description: string;
   variables: Record<string, unknown>;

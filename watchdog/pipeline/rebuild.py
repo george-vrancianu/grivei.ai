@@ -47,6 +47,7 @@ from .estimates import read_estimates
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
 from .mf.build import MfSummary, build_mf
+from .onrc.people import PersonOverrides
 from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
 from .onrc.search import SearchSummary as OnrcSearchSummary, build_onrc_search, vacuum as vacuum_onrc_search
 from .amepip.build import AmepipSummary, build_amepip
@@ -481,6 +482,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     today = today or datetime.now(timezone.utc).date()
     bulk_rows: dict[tuple[str, tuple[int, int]], int] = {}  # (kind, quarter) -> data rows of the largest loaded bulk unit: the possibly-incomplete rule's count
     overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
+    person_overrides = PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES)  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
 
     def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
         return progress.step(name) if progress else nullcontext()
@@ -500,7 +502,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("anaf-identities"):
                 anaf_names = load_anaf(cur, archive, summary)
             with step("onrc"):
-                summary.onrc = build_onrc(cur, archive, placement_dir)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
+                summary.onrc = build_onrc(cur, archive, placement_dir, person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
                 resolver = Resolver(OnrcNames(conn.cursor(), anaf_names), overrides)
             with step("estimates"):
                 estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network

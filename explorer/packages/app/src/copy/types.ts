@@ -1,5 +1,5 @@
 import type {
-  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -65,12 +65,16 @@ export interface Copy {
   partyCoverage: PartyCoverageCopy;
   /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */
   recordPage: Omit<RecordDetailCopy, "recordRow"> & { notFound: { title: string; body: (code: string) => string } };
+  /** The person page (Restricted, a Private view only): its display and the answer a host that hides Restricted content gives. */
+  personPage: PersonDetailCopy & { notFound: { title: string; body: string } };
   /** The Entity pages: the layout's tab names, the header and each tab's strings. */
   entityPage: {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
     /** The ONRC section of the Overview. */
     onrc: OnrcSectionCopy;
+    /** The administrators and legal representatives of a SEAP counterparty (public tier; the person link only in a Private view). */
+    people: PeopleSectionCopy;
     notFound: { title: string; body: string };
     /**
      * The Relationships tab: the graph, timeline and side panel's strings (the entity-link, Record row and page-link copy come from the catalogue's own `entityLink`, `results` and `fullResults`),
