@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { plainMethodologyText, type MethodologyText } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
+import { en } from "./en.ts";
 import { ro } from "./ro.ts";
 import { methodologyEn } from "./methodologyEn.ts";
 import { methodologyRo } from "./methodologyRo.ts";
@@ -50,5 +51,37 @@ describe("the money figures in the methodology prose follow the counting rule", 
       const plain = [...Object.values(copy.sections), copy.signals, ...Object.values(copy.rules)].flatMap((s) => [...s.paragraphs, ...(s.items ?? []).filter((i): i is string => typeof i === "string")]);
       for (const text of plain) expect(text, text).not.toMatch(/\d[\d.,]*\s*(RON|miliard)/);
     }
+  });
+});
+
+describe("the data caveats of ONRC and its Reference sources (#186) are on the page in both languages", () => {
+  /** Each caveat as a pattern per language: the page must carry it, wherever the section puts it. */
+  const caveats: [string, "onrcRegister" | "financialStatements" | "partyAndLeadership" | "firmDonations" | "publicEnterprises", RegExp, RegExp][] = [
+    ["ONRC statuses are undated", "onrcRegister", /undated/, /nu sunt datate/],
+    ["dates come from comparing snapshots", "onrcRegister", /comparing snapshots/, /comparând instantaneele/],
+    ["no main CAEN", "onrcRegister", /does not say which is its main one/, /nu spune care este cel principal/],
+    ["no SIRUTA", "onrcRegister", /no SIRUTA code/, /Nici codul SIRUTA/],
+    ["birth dates only since March 2026", "onrcRegister", /only in the snapshots since March 2026/, /doar în instantaneele din martie 2026/],
+    ["administrators named only on SEAP counterparties", "onrcRegister", /a SEAP supplier or authority, are named/, /furnizor sau autoritate în SEAP: /],
+    ["blank turnover share", "financialStatements", /\(24%\) report no turnover/, /\(24%\) nu declară cifra de afaceri/],
+    ["first release revised once", "financialStatements", /revised at most once/, /revizuită cel mult o dată/],
+    ["the subordinate body's tie is today's, applied across the window", "partyAndLeadership", /rests on a tie that is today's/, /legătură de azi/],
+    ["BaniPartide is a secondary copy", "firmDonations", /secondary source/, /sursă secundară/],
+    ["AMEPIP leaves out companies outside the Ordinance", "publicEnterprises", /outside the Ordinance/, /în afara ordonanței/],
+  ];
+
+  it.each(caveats)("%s", (_name, key, en, ro) => {
+    expect(methodologyEn.sections[key].paragraphs.join(" ")).toMatch(en);
+    expect(methodologyRo.sections[key].paragraphs.join(" ")).toMatch(ro);
+  });
+
+  it("has the ONRC section, with the same number of paragraphs in both languages", () => {
+    expect(methodologyEn.sections.onrcRegister.paragraphs.length).toBeGreaterThan(0);
+    expect(methodologyRo.sections.onrcRegister.paragraphs).toHaveLength(methodologyEn.sections.onrcRegister.paragraphs.length);
+  });
+
+  it("quotes the ONRC-only badge as the catalogue words it, in both languages", () => {
+    expect(methodologyEn.sections.onrcRegister.paragraphs.join(" ")).toContain(`"${en.entityPage.header.identity.onrcOnly.label}"`);
+    expect(methodologyRo.sections.onrcRegister.paragraphs.join(" ")).toContain(`„${ro.entityPage.header.identity.onrcOnly.label}”`);
   });
 });
