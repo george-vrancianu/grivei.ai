@@ -20,6 +20,11 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
   /** A county ISO 3166-2:RO code, or one of the off-map tiles. */
   MapArea: { input: string; output: string; }
+  /**
+   * Integer bani that may be negative (a loss, negative equity), serialised as a decimal string. Only a company's own statements (`FinancialYear`) can be negative;
+   * every awarded value is a plain `Bani`.
+   */
+  SignedBani: { input: string; output: string; }
   Siruta: { input: string; output: string; }
 };
 
@@ -144,6 +149,11 @@ export type Entity = {
   anafStatus: Maybe<Scalars['String']['output']>;
   cui: Maybe<Scalars['String']['output']>;
   displayName: Scalars['String']['output'];
+  /**
+   * MF's annual financial statements for this entity's CUI, one row per fiscal year (a Reference source; ticket #179). Null when MF holds none for the CUI, and for an entity
+   * with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
+   */
+  financials: Maybe<FinancialStatements>;
   foreignVatId: Maybe<Scalars['String']['output']>;
   identity: EntityIdentity;
   identityCurated: Scalars['Boolean']['output'];
@@ -194,6 +204,68 @@ export type FacetCount = {
   __typename?: 'FacetCount';
   total: Total;
   value: Scalars['String']['output'];
+};
+
+/** Which release of MF's file a year's figures come from. */
+export type FinancialRevision =
+  /** The year's first release: MF may still revise it. */
+  | 'FIRST_RELEASE'
+  /** MF's re-published (`actualizat`) file for the year, a year after the first. */
+  | 'REVISED';
+
+/** The MF file a year's figures were read from, as the portal publishes it. */
+export type FinancialSource = {
+  __typename?: 'FinancialSource';
+  /** MF's dataset page on data.gov.ro. */
+  datasetUrl: Maybe<Scalars['String']['output']>;
+  /** When we fetched it (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The file's name as MF gives it, e.g. WEB_BL_BS_SL_AN2024.txt. */
+  file: Scalars['String']['output'];
+  /** The file's own download link. */
+  fileUrl: Maybe<Scalars['String']['output']>;
+  license: Maybe<Scalars['String']['output']>;
+  /** The day MF published this file. */
+  published: Maybe<Scalars['Date']['output']>;
+  /** The dataset as the portal titles it (source data, verbatim). */
+  via: Maybe<Scalars['String']['output']>;
+};
+
+/**
+ * A company's annual financial statements as the Ministry of Finance publishes them (bulk files on data.gov.ro, from fiscal year 2021): turnover, profit or loss, debts,
+ * equity and the average number of employees, newest year first. A Reference source, shown as context beside the awards; its figures are never added to awarded value (ADR 0014).
+ */
+export type FinancialStatements = {
+  __typename?: 'FinancialStatements';
+  years: Array<FinancialYear>;
+};
+
+/** One fiscal year of one company's statements. Every figure may be null (a blank cell in MF's file); a blank is never read as zero. */
+export type FinancialYear = {
+  __typename?: 'FinancialYear';
+  /** The average number of employees. Null when the cell is blank: reads "not reported", never zero. A cell that says 0 is 0. */
+  averageEmployees: Maybe<Scalars['Int']['output']>;
+  awardShareOfTurnover: Maybe<Scalars['Float']['output']>;
+  /**
+   * Context, never a Signal and never added to awarded value (ADR 0014): what this entity was awarded as a supplier in the calendar year (the awarded value of the Records
+   * awarded that year, the same counting rule as every Total) as bani, and that as a share of the year's turnover. A contract's whole value counts in its award year, so the
+   * share can exceed 1 and is no revenue share. Null share when the turnover is blank or zero.
+   */
+  awardedInYear: Scalars['Bani']['output'];
+  /** Debts (datorii). Signed, like the turnover. */
+  debts: Maybe<Scalars['SignedBani']['output']>;
+  /** Equity (capitaluri - total); negative when the company owes more than it owns. */
+  equity: Maybe<Scalars['SignedBani']['output']>;
+  fiscalYear: Scalars['Int']['output'];
+  /** True for the newest fiscal year MF's files hold (for any company) while it is a first release: the page notes it may be revised. */
+  mayBeRevised: Scalars['Boolean']['output'];
+  /** Net profit minus net loss: negative is a loss. Null when MF's file has both blank. */
+  profitOrLoss: Maybe<Scalars['SignedBani']['output']>;
+  revision: FinancialRevision;
+  /** The file the figures come from: each figure cites MF and it. */
+  source: FinancialSource;
+  /** Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is. */
+  turnover: Maybe<Scalars['SignedBani']['output']>;
 };
 
 export type FrameworkLink = {
@@ -519,7 +591,7 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
-  /** The Reference sources held beside the explorable ones (today AMEPIP's public enterprises), each with its data-through date; for the methodology page. */
+  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
@@ -651,8 +723,10 @@ export type RecordResultPage = {
 /** A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is. */
 export type ReferenceSource = {
   __typename?: 'ReferenceSource';
-  /** The day the held list was published; null when none is held yet. */
+  /** The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet. */
   dataThrough: Maybe<Scalars['Date']['output']>;
+  /** For a source published by fiscal year (MF's financial statements): the newest fiscal year held. Null for the others, and when none is held. */
+  fiscalYear: Maybe<Scalars['Int']['output']>;
   /** The source's short name, e.g. AMEPIP. */
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
@@ -1169,6 +1243,10 @@ export type ResolversTypes = {
   EntityResult: ResolverTypeWrapper<Omit<EntityResult, 'entity'> & { entity: ResolversTypes['Entity'] }>;
   EntityResultPage: ResolverTypeWrapper<EntityResultPage>;
   FacetCount: ResolverTypeWrapper<FacetCount>;
+  FinancialRevision: FinancialRevision;
+  FinancialSource: ResolverTypeWrapper<FinancialSource>;
+  FinancialStatements: ResolverTypeWrapper<FinancialStatements>;
+  FinancialYear: ResolverTypeWrapper<FinancialYear>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FrameworkLink: ResolverTypeWrapper<Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversTypes['SeapRecord']>, subsequent: Array<ResolversTypes['SeapRecord']> }>;
   FrameworkOverrunNumbers: ResolverTypeWrapper<FrameworkOverrunNumbers>;
@@ -1226,6 +1304,7 @@ export type ResolversTypes = {
   SignalPage: ResolverTypeWrapper<Omit<SignalPage, 'rows'> & { rows: Array<ResolversTypes['Signal']> }>;
   SignalRule: ResolverTypeWrapper<SignalRule>;
   SignalRuleSlug: SignalRuleSlug;
+  SignedBani: ResolverTypeWrapper<Scalars['SignedBani']['output']>;
   Siruta: ResolverTypeWrapper<Scalars['Siruta']['output']>;
   Source: ResolverTypeWrapper<Source>;
   SourceId: SourceId;
@@ -1264,6 +1343,9 @@ export type ResolversParentTypes = {
   EntityResult: Omit<EntityResult, 'entity'> & { entity: ResolversParentTypes['Entity'] };
   EntityResultPage: EntityResultPage;
   FacetCount: FacetCount;
+  FinancialSource: FinancialSource;
+  FinancialStatements: FinancialStatements;
+  FinancialYear: FinancialYear;
   Float: Scalars['Float']['output'];
   FrameworkLink: Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversParentTypes['SeapRecord']>, subsequent: Array<ResolversParentTypes['SeapRecord']> };
   FrameworkOverrunNumbers: FrameworkOverrunNumbers;
@@ -1309,6 +1391,7 @@ export type ResolversParentTypes = {
   SignalNumbers: ResolversUnionTypes<ResolversParentTypes>['SignalNumbers'];
   SignalPage: Omit<SignalPage, 'rows'> & { rows: Array<ResolversParentTypes['Signal']> };
   SignalRule: SignalRule;
+  SignedBani: Scalars['SignedBani']['output'];
   Siruta: Scalars['Siruta']['output'];
   Source: Source;
   SourceRecord: ResolversInterfaceTypes<ResolversParentTypes>['SourceRecord'];
@@ -1414,6 +1497,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   anafStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   displayName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  financials?: Resolver<Maybe<ResolversTypes['FinancialStatements']>, ParentType, ContextType>;
   foreignVatId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   identity?: Resolver<ResolversTypes['EntityIdentity'], ParentType, ContextType>;
   identityCurated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -1441,6 +1525,34 @@ export type EntityResultPageResolvers<ContextType = any, ParentType extends Reso
 export type FacetCountResolvers<ContextType = any, ParentType extends ResolversParentTypes['FacetCount'] = ResolversParentTypes['FacetCount']> = {
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
   value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type FinancialSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialSource'] = ResolversParentTypes['FinancialSource']> = {
+  datasetUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  file?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  fileUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  published?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type FinancialStatementsResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialStatements'] = ResolversParentTypes['FinancialStatements']> = {
+  years?: Resolver<Array<ResolversTypes['FinancialYear']>, ParentType, ContextType>;
+};
+
+export type FinancialYearResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialYear'] = ResolversParentTypes['FinancialYear']> = {
+  averageEmployees?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  awardShareOfTurnover?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  awardedInYear?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  debts?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  equity?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  mayBeRevised?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  profitOrLoss?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  revision?: Resolver<ResolversTypes['FinancialRevision'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['FinancialSource'], ParentType, ContextType>;
+  turnover?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
 };
 
 export type FrameworkLinkResolvers<ContextType = any, ParentType extends ResolversParentTypes['FrameworkLink'] = ResolversParentTypes['FrameworkLink']> = {
@@ -1679,6 +1791,7 @@ export type RecordResultPageResolvers<ContextType = any, ParentType extends Reso
 
 export type ReferenceSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReferenceSource'] = ResolversParentTypes['ReferenceSource']> = {
   dataThrough?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  fiscalYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1773,6 +1886,10 @@ export type SignalRuleResolvers<ContextType = any, ParentType extends ResolversP
   window?: Resolver<ResolversTypes['Period'], ParentType, ContextType>;
 };
 
+export interface SignedBaniScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['SignedBani'], any> {
+  name: 'SignedBani';
+}
+
 export interface SirutaScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Siruta'], any> {
   name: 'Siruta';
 }
@@ -1848,6 +1965,9 @@ export type Resolvers<ContextType = any> = {
   EntityResult?: EntityResultResolvers<ContextType>;
   EntityResultPage?: EntityResultPageResolvers<ContextType>;
   FacetCount?: FacetCountResolvers<ContextType>;
+  FinancialSource?: FinancialSourceResolvers<ContextType>;
+  FinancialStatements?: FinancialStatementsResolvers<ContextType>;
+  FinancialYear?: FinancialYearResolvers<ContextType>;
   FrameworkLink?: FrameworkLinkResolvers<ContextType>;
   FrameworkOverrunNumbers?: FrameworkOverrunNumbersResolvers<ContextType>;
   FrameworkSummary?: FrameworkSummaryResolvers<ContextType>;
@@ -1889,6 +2009,7 @@ export type Resolvers<ContextType = any> = {
   SignalNumbers?: SignalNumbersResolvers<ContextType>;
   SignalPage?: SignalPageResolvers<ContextType>;
   SignalRule?: SignalRuleResolvers<ContextType>;
+  SignedBani?: GraphQLScalarType;
   Siruta?: GraphQLScalarType;
   Source?: SourceResolvers<ContextType>;
   SourceRecord?: SourceRecordResolvers<ContextType>;

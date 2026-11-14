@@ -33,15 +33,22 @@ export const methodologyBaseRates: FixtureSet<MethodologyBaseRatesQuery, Methodo
 export const methodologyReferenceSources: FixtureSet<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables> = [
   {
     name: "amepip-held", kind: "typical",
-    description: "AMEPIP's list of public enterprises is held: the day it was published is its data-through date; AEP's one-off 2025 file states its own",
+    description: "AMEPIP's list of public enterprises, AEP's one-off 2025 file and MF's financial statements are held: the day AMEPIP published its list, the stated date of AEP's file and the newest fiscal year are the data-through dates",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" },
-      { id: "AEP", name: "AEP", dataThrough: "2025-12-09", url: null }] },
+    data: { referenceSources: [
+      { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" },
+      { id: "AEP", name: "AEP", dataThrough: "2025-12-09", fiscalYear: null, url: null },
+      { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" },
+    ] },
   },
   {
     name: "amepip-not-held", kind: "empty",
-    description: "no AMEPIP list has been fetched yet (a graph built before the first fetch): no data-through date",
+    description: "no AMEPIP list and no financial statements have been fetched yet (a graph built before the first fetch): no data-through dates",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }, { id: "AEP", name: "AEP", dataThrough: null, url: null }] },
+    data: { referenceSources: [
+      { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
+      { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
+      { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
+    ] },
   },
 ];

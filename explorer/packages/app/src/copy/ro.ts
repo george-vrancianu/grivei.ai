@@ -490,6 +490,20 @@ export const ro: Copy = {
         },
       },
     },
+    financials: {
+      heading: "Situații financiare",
+      intro: "Situațiile financiare anuale depuse de companie, așa cum le publică Ministerul Finanțelor (MF) pe data.gov.ro, în RON. O celulă goală în fișierul MF se afișează „nedeclarat”, niciodată zero.",
+      caption: "Situații financiare anuale pe an fiscal, cu atribuirile aceluiași an",
+      columns: { year: "An fiscal", turnover: "Cifra de afaceri", profitOrLoss: "Profit sau pierdere", debts: "Datorii", equity: "Capitaluri", employees: "Număr mediu de salariați", awarded: "Atribuit în acel an", share: "Atribuiri ca pondere din cifra de afaceri", source: "Sursa" },
+      row: {
+        notReported: "nedeclarat",
+        revision: { firstRelease: "prima publicare", revised: "revizuit", firstReleaseMayBeRevised: "prima publicare, poate fi revizuit" },
+        source: (file) => `MF, ${file}`,
+        published: (published) => `Publicat la ${published}`,
+      },
+      mayBeRevisedNote: "Cel mai recent an este prima publicare: MF republică situațiile fiecărui an după un an, cu corecturi, așa că citiți-l cu grijă.",
+      contextNote: "Atribuirile ca pondere din cifra de afaceri sunt context, nu un Semnal, și nu se adună niciodată la valoarea atribuită. Valoarea întreagă a unui contract se numără în anul atribuirii, așa că ponderea poate depăși 100% și nu este o pondere din venituri.",
+    },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",

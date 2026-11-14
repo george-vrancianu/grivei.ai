@@ -59,6 +59,8 @@ describe("operations", () => {
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
       // AEP's mandates (#180): the leader's name and the list as registered (source data), an alliance's member parties, the authority's display name
       "Mandate.leaderName", "Mandate.list", "Mandate.memberParties", "LeadershipVia.authorityName", "RecordParty.list", "RecordParty.memberParties",
+      // MF's statements (#179): the file's name, its links, the dataset's title and the licence, as the portal publishes them
+      "FinancialSource.file", "FinancialSource.datasetUrl", "FinancialSource.fileUrl", "FinancialSource.via", "FinancialSource.license",
     ]);
     const found: string[] = [];
     for (const type of Object.values(schema.getTypeMap())) {

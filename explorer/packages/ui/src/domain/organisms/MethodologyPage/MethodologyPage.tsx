@@ -33,6 +33,8 @@ export interface MethodologyPageCopy {
   baseRate: SignalRuleBaseRateCopy;
   /** The line under a Reference source's section: "Data through 13 January 2026". */
   referenceDataThrough: (date: string) => string;
+  /** The line under the financial statements' section: "Data through fiscal year 2025" (the newest fiscal year held). */
+  referenceFiscalYearThrough: (year: number) => string;
 }
 
 /** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
@@ -43,6 +45,8 @@ export interface MethodologyReferenceDates {
   publicEnterprises: string | null;
   /** The day AEP's one-off partial-election file runs through (#180). */
   partyAndLeadership: string | null;
+  /** The newest fiscal year MF's statements held (null when none is held or the query failed). */
+  financialStatements: number | null;
 }
 
 export interface MethodologyPageProps {
@@ -104,6 +108,9 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
             )}
             {key === "partyAndLeadership" && referenceDates?.partyAndLeadership && (
               <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.partyAndLeadership, locale, "long"))}</Typography>
+            )}
+            {key === "financialStatements" && referenceDates?.financialStatements != null && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceFiscalYearThrough(referenceDates.financialStatements)}</Typography>
             )}
           </MethodologySection>
         ))}

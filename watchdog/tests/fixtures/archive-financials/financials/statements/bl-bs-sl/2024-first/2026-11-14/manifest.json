@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source": "financials",
+  "stream": "statements",
+  "kind": "bl-bs-sl",
+  "unit": "2024-first",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://data.gov.ro/dataset/ds/resource/r2024bl/download/web_bl_bs_sl_an2024.txt",
+  "via": "WEB_BL_BS_SL_AN2024.txt",
+  "files": [
+    {
+      "name": "web_bl_bs_sl_an2024.txt",
+      "sha256": "0bdf55e19c03b4cc043da0cdd8dc8bc9e0310db0dd42b0a06ff2c981e822fea4",
+      "bytes": 223
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "situatii_financiare_2024",
+    "datasetId": "00000000-0000-0000-0000-003095464531",
+    "datasetTitle": "Situațiile financiare 2024",
+    "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2024",
+    "license": "CC-BY-4.0",
+    "resourceId": "r2024bl",
+    "resourceName": "WEB_BL_BS_SL_AN2024.txt",
+    "url": "https://data.gov.ro/dataset/ds/resource/r2024bl/download/web_bl_bs_sl_an2024.txt",
+    "lastModified": "2025-06-30T11:29:07.618294",
+    "size": 1,
+    "hash": "",
+    "format": "TXT"
+  }
+}

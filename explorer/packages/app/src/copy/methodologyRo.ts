@@ -100,6 +100,14 @@ export const methodologyRo: MethodologyPageCopy = {
         "Partidul unei înregistrări este Partidul mandatului în funcție la data atribuirii, la autoritatea ei. Un organism subordonat îl moștenește când ordonatorul lui principal de credite, în lista entităților publice a Ministerului Finanțelor, este exact o primărie, un sector, o primărie generală sau un consiliu județean, iar fiecare instantaneu lunar păstrat al listei care îl menționează spune același lucru: pagina arată atunci „prin autoritate, ordonator principal de credite, lista MF din data, relație de finanțare, legătură actuală”. O școală (finanțată dublu, cu un minister printre ordonatori), o companie municipală, o asociație de dezvoltare intercomunitară (ADI), un organism a cărui legătură este contrazisă de un instantaneu păstrat și administrația centrală nu au Partid. Un furnizor nu are niciodată Partid.",
       ],
     },
+    financialStatements: {
+      heading: "Situații financiare (MF)",
+      paragraphs: [
+        "Pagina unui furnizor arată situațiile lui financiare anuale pe ani: cifra de afaceri, profitul sau pierderea, datoriile, capitalurile și numărul mediu de salariați. Provin din fișierele de date în masă pe care Ministerul Finanțelor (MF) le publică pe data.gov.ro, sub licența CC-BY-4.0, câte un set pe an fiscal, începând cu anul fiscal 2021. Exploratorul citește fișierele societăților: bilanț lung și scurt, formatul prescurtat și raportorii IFRS. Băncile, asigurătorii, fondurile și organizațiile non-profit depun alte formulare și nu sunt afișate. Fiecare rând numește MF și fișierul din care au fost citite cifrele. Sumele sunt în RON, așa cum au fost depuse, iar profitul sau pierderea este profitul net minus pierderea netă.",
+        "MF publică fișierele unui an în iunie anul următor și le republică după un an, cu corecturi. Fiecare rând spune din ce publicare provine: un an republicat de MF arată cifrele revizuite, iar cel mai recent an este prima publicare și poate fi încă revizuit. O celulă lăsată goală de MF se afișează „nedeclarat”, niciodată zero: un număr mediu de salariați necompletat nu înseamnă o firmă fără salariați. O societate care nu a depus pentru un an nu are rând pentru acel an.",
+        "Lângă cifre, pagina arată atribuirile aceluiași an calendaristic și ponderea lor în cifra de afaceri a anului. Este context, niciodată un Semnal, și nu se adună niciodată la valoarea atribuită: situațiile unei societăți și atribuirile ei sunt măsuri diferite și rămân separate. Atribuirile sunt valoarea atribuită a furnizorului, numărată după aceeași regulă ca orice alt total, după anul datei atribuirii. Valoarea întreagă a unui contract se numără în anul atribuirii, oricâți ani ar dura, așa că ponderea poate depăși 100% și nu este o pondere din veniturile societății. O cifră de afaceri necompletată sau zero nu dă nicio pondere.",
+      ],
+    },
   },
   signals: {
     heading: "Regulile Semnalelor",
@@ -155,6 +163,7 @@ export const methodologyRo: MethodologyPageCopy = {
     },
   },
   referenceDataThrough: (date) => `Date până la ${date}`,
+  referenceFiscalYearThrough: (year) => `Date până la anul fiscal ${year}`,
   baseRate: {
     windowLabel: "Fereastra de timp",
     range: (from, to) => `${from} – ${to}`,

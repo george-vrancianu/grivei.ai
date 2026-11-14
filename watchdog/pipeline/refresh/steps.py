@@ -43,6 +43,7 @@ class Impl:
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
     fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
     check_aep: Callable | None = None  # (archive) -> list of alert texts (#180): only checks the one-off 2025 file for a newer upstream set; None = not wired
+    fetch_financials: Callable | None = None  # (archive) -> FinancialsFetchSummary (#179); None = not wired, the step is left out
 
     def crawl(self) -> StepResult:
         progress = CrawlProgress(self.archive.root / "crawl-progress.json", now=self.now)  # prints its own timestamped lines
@@ -91,6 +92,16 @@ class Impl:
         """AEP's one-off 2025 file (#180): the step only CHECKS for a newer upstream file and alerts (a warning in the run); it never downloads."""
         alerts = self.check_aep(self.archive)
         return StepResult({"alerts": len(alerts)}, [], list(alerts))
+
+    def financials(self) -> StepResult:
+        """MF's annual financial statements (#179): its own step, so a failing portal never holds back data.gov.ro, ANAF or the load. A download that is not a statements file is deterministic (the same file again), a portal or network error is transient."""
+        summary = self.fetch_financials(self.archive)
+        if summary.invalid:
+            raise DeterministicError(f"{len(summary.invalid)} financial-statements file(s) are not what they should be: {summary.invalid[0]}")
+        if summary.failed:
+            raise TransientError(f"{len(summary.failed)} financial-statements fetch failure(s): {summary.failed[0]}")
+        warnings = [f"financial-statements resource not classified: {t}" for t in summary.unclassified]
+        return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
 
     def anaf(self) -> StepResult:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")

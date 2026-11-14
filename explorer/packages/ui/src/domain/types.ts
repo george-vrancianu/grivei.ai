@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 export type { RecordBadge };
@@ -34,6 +34,10 @@ export type EntityHeaderData = EntityHeaderFieldsFragment;
 export type LeadershipData = LeadershipFieldsFragment;
 /** The Party of a Record (`RecordPartyFields`): the mandate in force on its award date. Never a winner's. */
 export type RecordPartyData = RecordPartyFieldsFragment;
+/** MF's annual financial statements of an entity with the awards of each year beside them (`FinancialStatementsFields`), present only on the Overview's entity. */
+export type FinancialStatementsData = FinancialStatementsFieldsFragment;
+/** One fiscal year of them. */
+export type FinancialYearData = FinancialStatementsFieldsFragment["years"][number];
 /** The basis of the "public enterprise (AMEPIP)" mark (`PublicEnterpriseFields`), present only on the Overview's entity. */
 export type PublicEnterpriseData = PublicEnterpriseFieldsFragment;
 /** The contract's `Role` (AUTHORITY | SUPPLIER) an Entity page asks for; `EntityRole` above is the lowercase URL segment. */

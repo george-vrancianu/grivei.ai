@@ -612,7 +612,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -957,7 +958,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -1512,7 +1514,659 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
-        "leadership": null
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2025,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": true,
+              "turnover": "3000000000",
+              "profitOrLoss": "90000000",
+              "debts": null,
+              "equity": "300000000",
+              "averageEmployees": null,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": 0,
+              "source": {
+                "file": "web_bl_bs_sl_an2025.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2025",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2025bl/download/web_bl_bs_sl_an2025.txt",
+                "via": "Situatii financiare 2025",
+                "license": "CC-BY-4.0",
+                "published": "2026-06-11",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2024,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "2000000000",
+              "profitOrLoss": "100000000",
+              "debts": "300000000",
+              "equity": "250000000",
+              "averageEmployees": 0,
+              "awardedInYear": "2500000",
+              "awardShareOfTurnover": 0.00125,
+              "source": {
+                "file": "web_bl_bs_sl_an2024.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2024",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2024bl/download/web_bl_bs_sl_an2024.txt",
+                "via": "Situațiile financiare 2024",
+                "license": "CC-BY-4.0",
+                "published": "2025-06-30",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2023,
+              "revision": "REVISED",
+              "mayBeRevised": false,
+              "turnover": "1200000000",
+              "profitOrLoss": "-15000000",
+              "debts": "210000000",
+              "equity": "135000000",
+              "averageEmployees": 41,
+              "awardedInYear": "589000000",
+              "awardShareOfTurnover": 0.49083333333333334,
+              "source": {
+                "file": "web_bl_bs_sl_an2023.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare2023",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2023bl-rev/download/web_bl_bs_sl_an2023.txt",
+                "via": "Situații financiare 2023",
+                "license": "CC-BY-4.0",
+                "published": "2025-07-27",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2022,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "400000000",
+              "profitOrLoss": "20000000",
+              "debts": "100000000",
+              "equity": "90000000",
+              "averageEmployees": null,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": 0,
+              "source": {
+                "file": "web_bl_bs_sl_an2022.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2022",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2022bl/download/web_bl_bs_sl_an2022.txt",
+                "via": "Situații financiare 2022",
+                "license": "CC-BY-4.0",
+                "published": "2023-08-28",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "supplier-financials-blank-turnover",
+    "kind": "typical",
+    "description": "a supplier whose newest MF year (a first release) has a blank turnover and whose older year is revised: no award share for the blank year, the revision marker on the other",
+    "variables": {
+      "key": "2000015",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "2000015",
+        "displayName": "BETA DEMO SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "2000015",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "BETA DEMO SRL",
+            "records": 7,
+            "first": "2023-02-10",
+            "last": "2024-02-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "136500000",
+              "records": 7,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 3,
+              "topShare": 0.498168498,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "1000017",
+                    "displayName": "SPITALUL EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "68000000",
+                    "records": 4,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "1000009",
+                    "displayName": "COMUNA EXEMPLU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "38500000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "2000031",
+                    "displayName": "CNAIR DEMO SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "30000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0.047619047,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "70000000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "value": "Negociere",
+                "total": {
+                  "awarded": "60000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "90000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "40000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "40000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "total": {
+                  "awarded": "80000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "members": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "total": {
+                  "awarded": "60000000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9600003~1",
+                "title": "Contract CAN9600003 1",
+                "date": "2023-02-14",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "70000000",
+                "counted": "70000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "35000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600002~1",
+                "title": "Contract CAN9600002 1",
+                "date": "2023-02-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "90000000",
+                "counted": "90000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000023",
+                      "displayName": "GAMMA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600004~1",
+                "title": "Contract CAN9600004 1",
+                "date": "2023-03-02",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Negociere",
+                "value": "60000000",
+                "counted": "60000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "30000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": true,
+                    "publishedName": null,
+                    "share": "30000000",
+                    "entity": null
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600007~1",
+                "title": "Contract CAN9600007 1",
+                "date": "2023-02-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "30000000",
+                "counted": "30000000",
+                "badges": [],
+                "authority": {
+                  "key": "2000031",
+                  "displayName": "CNAIR DEMO SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "CAN9600005~1",
+                "title": "Contract CAN9600005 1",
+                "date": "2023-03-15",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [
+                  "CONSORTIUM_SHARE"
+                ],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ALFA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  },
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": "5000000",
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96100002",
+                "title": "Achizitie DA96100002",
+                "date": "2024-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3500000",
+                "counted": "3500000",
+                "badges": [],
+                "authority": {
+                  "key": "1000009",
+                  "displayName": "COMUNA EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA96000003",
+                "title": "Achizitie DA96000003",
+                "date": "2023-02-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "1000017",
+                  "displayName": "SPITALUL EXEMPLU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000015",
+                      "displayName": "BETA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2025,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": true,
+              "turnover": null,
+              "profitOrLoss": "10000000",
+              "debts": "50000000",
+              "equity": "40000000",
+              "averageEmployees": 12,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": null,
+              "source": {
+                "file": "web_uu_an2025.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2025",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2025uu/download/web_uu_an2025.txt",
+                "via": "Situatii financiare 2025",
+                "license": "CC-BY-4.0",
+                "published": "2026-06-11",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2024,
+              "revision": "REVISED",
+              "mayBeRevised": false,
+              "turnover": "800000000",
+              "profitOrLoss": "35000000",
+              "debts": "110000000",
+              "equity": "85000000",
+              "averageEmployees": 26,
+              "awardedInYear": "3500000",
+              "awardShareOfTurnover": 0.004375,
+              "source": {
+                "file": "web_bl_bs_sl_an2024.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2024_actualizat",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2024bl-rev/download/web_bl_bs_sl_an2024.txt",
+                "via": "Situatii financiare 2024 actualizat iunie 2026",
+                "license": "CC-BY-4.0",
+                "published": "2026-06-24",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        }
       }
     }
   },
@@ -1713,7 +2367,32 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
-        "leadership": null
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2023,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "10000000000",
+              "profitOrLoss": "500000000",
+              "debts": "3000000000",
+              "equity": "6000000000",
+              "averageEmployees": 3000,
+              "awardedInYear": "202000000",
+              "awardShareOfTurnover": 0.0202,
+              "source": {
+                "file": "web_bl_bs_sl_an2023.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare2023",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2023bl/download/web_bl_bs_sl_an2023.txt",
+                "via": "Situații financiare 2023",
+                "license": "CC-BY-4.0",
+                "published": "2024-07-12",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        }
       }
     }
   },
@@ -1898,7 +2577,32 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
-        "leadership": null
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2023,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "10000000000",
+              "profitOrLoss": "500000000",
+              "debts": "3000000000",
+              "equity": "6000000000",
+              "averageEmployees": 3000,
+              "awardedInYear": "202000000",
+              "awardShareOfTurnover": 0.0202,
+              "source": {
+                "file": "web_bl_bs_sl_an2023.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare2023",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2023bl/download/web_bl_bs_sl_an2023.txt",
+                "via": "Situații financiare 2023",
+                "license": "CC-BY-4.0",
+                "published": "2024-07-12",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        }
       }
     }
   },
@@ -2051,7 +2755,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -2175,7 +2880,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -2224,7 +2930,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -2292,7 +2999,95 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
-        "leadership": null
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2025,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": true,
+              "turnover": "3000000000",
+              "profitOrLoss": "90000000",
+              "debts": null,
+              "equity": "300000000",
+              "averageEmployees": null,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": 0,
+              "source": {
+                "file": "web_bl_bs_sl_an2025.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2025",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2025bl/download/web_bl_bs_sl_an2025.txt",
+                "via": "Situatii financiare 2025",
+                "license": "CC-BY-4.0",
+                "published": "2026-06-11",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2024,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "2000000000",
+              "profitOrLoss": "100000000",
+              "debts": "300000000",
+              "equity": "250000000",
+              "averageEmployees": 0,
+              "awardedInYear": "2500000",
+              "awardShareOfTurnover": 0.00125,
+              "source": {
+                "file": "web_bl_bs_sl_an2024.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2024",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2024bl/download/web_bl_bs_sl_an2024.txt",
+                "via": "Situațiile financiare 2024",
+                "license": "CC-BY-4.0",
+                "published": "2025-06-30",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2023,
+              "revision": "REVISED",
+              "mayBeRevised": false,
+              "turnover": "1200000000",
+              "profitOrLoss": "-15000000",
+              "debts": "210000000",
+              "equity": "135000000",
+              "averageEmployees": 41,
+              "awardedInYear": "589000000",
+              "awardShareOfTurnover": 0.49083333333333334,
+              "source": {
+                "file": "web_bl_bs_sl_an2023.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare2023",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2023bl-rev/download/web_bl_bs_sl_an2023.txt",
+                "via": "Situații financiare 2023",
+                "license": "CC-BY-4.0",
+                "published": "2025-07-27",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2022,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "400000000",
+              "profitOrLoss": "20000000",
+              "debts": "100000000",
+              "equity": "90000000",
+              "averageEmployees": null,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": 0,
+              "source": {
+                "file": "web_bl_bs_sl_an2022.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2022",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/r2022bl/download/web_bl_bs_sl_an2022.txt",
+                "via": "Situații financiare 2022",
+                "license": "CC-BY-4.0",
+                "published": "2023-08-28",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        }
       }
     }
   },
@@ -2813,7 +3608,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -2893,7 +3689,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -3130,7 +3927,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -3300,7 +4098,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -3530,7 +4329,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -4533,7 +5333,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -5536,7 +6337,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -6392,7 +7194,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -6620,7 +7423,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -6973,7 +7777,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7153,7 +7958,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7326,7 +8132,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7503,7 +8310,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7677,7 +8485,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7851,7 +8660,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -7939,7 +8749,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -8020,7 +8831,8 @@
           }
         },
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   },
@@ -8246,7 +9058,8 @@
             }
           ],
           "via": null
-        }
+        },
+        "financials": null
       }
     }
   },
@@ -8517,7 +9330,8 @@
             }
           ],
           "via": null
-        }
+        },
+        "financials": null
       }
     }
   },
@@ -8708,7 +9522,8 @@
             }
           ],
           "via": null
-        }
+        },
+        "financials": null
       }
     }
   },
@@ -8870,7 +9685,8 @@
             "snapshotDate": "2026-12-01",
             "snapshots": 2
           }
-        }
+        },
+        "financials": null
       }
     }
   },
@@ -8994,7 +9810,8 @@
         },
         "onrc": null,
         "publicEnterprise": null,
-        "leadership": null
+        "leadership": null,
+        "financials": null
       }
     }
   }

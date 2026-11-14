@@ -1,4 +1,4 @@
-import { EntityHeader, EntityOverview, EntityPageLayout, OnrcSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, FinancialStatementsSection, OnrcSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -74,6 +74,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const leadershipSection = state.leadership && (
     <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} />
   );
+  // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
+  const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
   return (
@@ -116,6 +118,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             {onrcSection}
             {publicEnterpriseSection}
             {leadershipSection}
+            {financialsSection}
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               signalsToolbar={
                 <SignalOrderToggle
@@ -147,6 +150,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           // ready, but the entity has nothing in this role: its ONRC section (an organisation that exists only in ONRC) still shows
           <Stack spacing={3}>
             {onrcSection}
+            {financialsSection}
             <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
           </Stack>
         )

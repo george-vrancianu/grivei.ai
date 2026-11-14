@@ -80,11 +80,29 @@ export interface RecordPartyRow {
   via: LeadershipViaRow | null;
 }
 
+/** One fiscal year of an entity's MF statements, with the awards of the same calendar year as context (`financials.*` and `seap.rollup_entity`, #179). Money is bani as text; null = a blank cell. */
+export interface FinancialYearRow {
+  fiscalYear: number;
+  revision: "FIRST" | "REVISED";
+  /** The newest fiscal year MF's files hold (for any company). */
+  newest: boolean;
+  turnover: string | null;
+  profitOrLoss: string | null;
+  debts: string | null;
+  equity: string | null;
+  averageEmployees: number | null;
+  /** The supplier's awarded value (the stored counting rule) of the Records awarded in this calendar year; "0" when none. */
+  awardedInYear: string;
+  source: { file: string; datasetUrl: string | null; fileUrl: string | null; via: string | null; license: string | null; published: string | null; fetchedAt: string };
+}
+
 /** A Reference source as the methodology page names it: when the held list was published (null when none is held). */
 export interface ReferenceSourceRow {
   id: string;
   name: string;
   dataThrough: string | null;
+  /** The newest fiscal year held, for a source published by fiscal year (MF's financial statements); null otherwise. */
+  fiscalYear: number | null;
   url: string | null;
 }
 
@@ -326,6 +344,8 @@ export interface Store extends RoleStore, SignalStore {
   aliases(key: string): Promise<AliasRow[]>;
   /** The AMEPIP list's row for a CUI (the entity's key), or null when the CUI is not on the list or no list is held (#183). */
   publicEnterprise(cui: string): Promise<PublicEnterpriseRow | null>;
+  /** MF's annual statements for a CUI, newest year first, each with the awards of that calendar year as the entity's supplier role (`key` is its entity key); empty when MF holds none (#179). */
+  financials(cui: string, key: string): Promise<FinancialYearRow[]>;
   /** The Reference sources held, each with its data-through date (#183). */
   referenceSources(): Promise<ReferenceSourceRow[]>;
   /** The Leadership list of an entity that is an attributed authority or a subordinate body; null for every other entity (never a supplier, #180). */
@@ -467,6 +487,12 @@ const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as con
 
 /** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
 const AGG_BUCKET_CAP = 65_000;
+
+/** A missing table (42P01, undefined_table) means "nothing loaded yet": an empty result. Any other failure is thrown on (cf. cache.ts). */
+function noTable(e: unknown): { rows: never[] } {
+  if ((e as { code?: string }).code === "42P01") return { rows: [] };
+  throw e;
+}
 
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
@@ -1027,12 +1053,33 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         via: r.viaKey ? { authority: r.viaKey, authorityName: r.viaName, snapshotDate: r.snapshotDate, snapshots: Number(r.snapshots) } : null,
       };
     },
+    async financials(cui, key) {
+      // A graph built before the financials schema existed (deployed ahead of a rebuild) has no statements: the Overview still works.
+      const { rows } = await pool.query(
+        `SELECT s.fiscal_year AS "fiscalYear", s.revision, s.fiscal_year = (SELECT max(fiscal_year) FROM financials.source_file) AS newest,
+                s.turnover_bani::text AS turnover, s.profit_loss_bani::text AS "profitOrLoss", s.debts_bani::text AS debts, s.equity_bani::text AS equity,
+                s.employees AS "averageEmployees", coalesce(a.awarded, 0)::text AS "awardedInYear",
+                f.file_name AS file, f.dataset_url AS "datasetUrl", f.resource_url AS "fileUrl", f.dataset_title AS via, f.license, f.published::text AS published,
+                to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM financials.statement s
+           JOIN financials.source_file f ON f.id = s.source_file_id
+           LEFT JOIN (SELECT award_year, sum(awarded) AS awarded FROM seap.rollup_entity WHERE side = 'SUPPLIER' AND entity_key = $2 GROUP BY award_year) a
+                  ON a.award_year = s.fiscal_year
+          WHERE s.cui = $1
+          ORDER BY s.fiscal_year DESC`,
+        [cui, key],
+      ).catch(noTable);
+      return rows.map(({ file, datasetUrl, fileUrl, via, license, published, fetchedAt, ...year }) => ({ ...year, source: { file, datasetUrl, fileUrl, via, license, published, fetchedAt } })) as FinancialYearRow[];
+    },
     async referenceSources() {
-      const { rows } = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
+      const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
       const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`); // the one-off file's stated date (#180)
+      const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
+      const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
       return [
-        { id: "AMEPIP", name: "AMEPIP", dataThrough: (rows[0]?.d as string | undefined) ?? null, url: (rows[0]?.url as string | null | undefined) ?? null },
-        { id: "AEP", name: "AEP", dataThrough: (aep.rows[0]?.d as string | undefined) ?? null, url: null },
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: (amepip.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: (amepip.rows[0]?.url as string | null | undefined) ?? null },
+        { id: "AEP", name: "AEP", dataThrough: (aep.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: null },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: year === null ? null : `${year}-12-31`, fiscalYear: year, url: year === null ? null : "https://data.gov.ro/organization/mfp" },
       ];
     },
     async counties() {

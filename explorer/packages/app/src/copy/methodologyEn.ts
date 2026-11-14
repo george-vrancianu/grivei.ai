@@ -100,6 +100,14 @@ export const methodologyEn: MethodologyPageCopy = {
         "A Record's Party is the Party of the mandate in force on its award date at its authority. A subordinate body inherits it when its principal credit holder, in the Ministry of Finance's list of public entities, is exactly one town hall, sector, city hall or county council, and every held monthly snapshot of the list that names the body says the same: the page then states \"via the authority, principal credit holder, MF list snapshot, funding relation, current tie\". A school (dual-funded, with a ministry among its principals), a municipal company, an intercommunity development association (ADI), a body whose tie a held snapshot contradicts, and central government have no Party. A supplier never has a Party.",
       ],
     },
+    financialStatements: {
+      heading: "Financial statements (MF)",
+      paragraphs: [
+        "A supplier's page shows its annual financial statements by year: turnover, profit or loss, debts, equity and the average number of employees. They come from the bulk files the Ministry of Finance (MF) publishes on data.gov.ro under the licence CC-BY-4.0, one set of files per fiscal year, from fiscal year 2021. The explorer reads the companies' files: long and short balance sheets, the abbreviated format and IFRS reporters. Banks, insurers, funds and non-profits file other forms and are not shown. Every row names MF and the file its figures were read from. Amounts are in RON as filed, and profit or loss is net profit minus net loss.",
+        "MF publishes a year's files the following June and re-publishes them a year later with corrections. Each row says which release it comes from: a year MF has re-published shows the revised figures, and the newest year is a first release that may still be revised. A cell MF leaves blank is shown as \"not reported\", never as zero: a blank average number of employees is not a firm of no employees. A company that did not file for a year has no row for it.",
+        "Beside the figures the page shows the awards of the same calendar year and their share of that year's turnover. It is context, never a Signal, and it is never added to awarded value: a company's statements and its awards are unlike measures and stay apart. The awards are the supplier's awarded value, counted by the same rule as every other total, by the year of the award date. A contract's whole value counts in the year it was awarded, however many years it runs, so the share can exceed 100% and is not a share of the company's revenue. A blank or zero turnover gives no share.",
+      ],
+    },
   },
   signals: {
     heading: "Signal rules",
@@ -155,6 +163,7 @@ export const methodologyEn: MethodologyPageCopy = {
     },
   },
   referenceDataThrough: (date) => `Data through ${date}`,
+  referenceFiscalYearThrough: (year) => `Data through fiscal year ${year}`,
   baseRate: {
     windowLabel: "Time window",
     range: (from, to) => `${from} to ${to}`,
