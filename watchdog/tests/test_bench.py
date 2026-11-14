@@ -95,7 +95,7 @@ class Recorder:
 
 def test_the_empty_state_reads_the_rollup_for_total_and_entities_but_scans_the_map():
     t = _tasks({})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup", "data_through": "record"}
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "mixed", "entities_supplier": "mixed", "records": "rollup", "data_through": "record"}
     assert t["total"].rollup_statements == ["total"] and t["entities_supplier"].rollup_statements == ["entities_supplier_rank"]
     rec = Recorder({"entities_supplier_rank": [("k1", "1", 1)]})
     t["total"].run(rec)
@@ -136,7 +136,7 @@ def test_a_chip_that_is_not_a_cube_dimension_falls_back_to_the_scan():
 
 def test_the_chips_only_records_page_is_mixed_the_top_k_is_an_index_query_by_design():
     t = _tasks({"channel": "CONTRACT"})
-    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "mixed", "data_through": "record"}
+    assert {n: x.serving for n, x in t.items()} == {"total": "rollup", "map": "scan", "entities_authority": "mixed", "entities_supplier": "mixed", "records": "mixed", "data_through": "record"}
     assert t["records"].judged_in_rollup_state
 
 
@@ -187,14 +187,14 @@ def test_an_empty_entity_page_asks_for_no_signal_counts():
     assert not any(c[0].endswith("signal_counts") for c in rec.calls)
 
 
-def test_the_area_share_runs_after_the_page_hydrate_only_for_a_supplier_side_county():
+def test_the_area_share_runs_last_only_for_a_supplier_side_county():
     f = {"q": "ma", "county": "RO-BV", "countySide": "SUPPLIER"}
     t = _tasks(f)["records"]
-    assert t.statements == ["records_count", "records_page", "records_hydrate", "records_area_share", "records_entities", "records_placement", "records_files"]
+    assert t.statements == ["records_count", "records_page", "records_hydrate", "records_entities", "records_placement", "records_files", "records_area_share"]
     rec = Recorder({"records_page": [("DA1",), ("DA2",)], "records_hydrate": [("4384206", 3, [])]})
     t.run(rec)
     names = [c[0] for c in rec.calls]
-    assert names.index("records_area_share") == names.index("records_hydrate") + 1
+    assert names[-1] == "records_area_share"  # store.ts reads it after the rows are built (entities, placement, source files)
     _, sql, params = next(c for c in rec.calls if c[0] == "records_area_share")
     w = build_where(f)
     assert sql == f"SELECT record_code, sum(share_bani)::text AS share FROM seap.search WHERE {w.sql} AND record_code = ANY(%s) GROUP BY record_code"
@@ -345,7 +345,7 @@ def test_api_mode_fails_a_warmed_state_whose_first_request_was_slow_and_says_so(
 def test_the_scan_counters_of_an_uncached_request_are_held_to_what_the_state_measured_and_the_rollup_must_be_read():
     before = {"seap.search": 10, "seap.rollup_cube": 4, "seap.rollup_entity": 4}
     miss = {"seap.search": 13, "seap.rollup_cube": 5, "seap.rollup_entity": 6}
-    served = judge_scans("chips", before, miss, 3, need_rollup=True)  # allowed = what the map and the Top-K page cost in SQL mode (calibrate_scans)
+    served = judge_scans("chips", before, miss, 3, need_rollup=True)  # allowed = what the map, the entity tabs' Signal counts and the Top-K page cost in SQL mode (calibrate_scans)
     assert served == {"search": 3, "cube": 1, "entity": 2, "allowed": 3, "need_rollup": True, "ok": True}
     assert judge_scans("empty", before, before, 9)["ok"]  # a warmed-cache answer: nothing moved, and no rollup read is demanded
     assert not judge_scans("chips", before, before, 3, need_rollup=True)["ok"]  # a miss that read no rollup (cached, or the API scanned)
