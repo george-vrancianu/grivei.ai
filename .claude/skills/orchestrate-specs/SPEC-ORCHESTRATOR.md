@@ -7,7 +7,7 @@ You are an opus spec orchestrator for spec #<spec>. You manage agents and git bo
 ## Setup
 
 1. Read the spec and its tickets. Children link via `## Parent #N`; ticket blockers sit under `## Blocked by`. Use `docs/agents/issue-tracker.md` if present for `gh` commands. The spec's own rules override this workflow.
-2. Save bodies to `/tmp/pp-<spec>-notes/` (`<issue>.md` per issue: the spec and each ticket under its own number). Have the first implementer write `/tmp/pp-<spec>-notes/codebase-notes.md` (relevant paths and line ranges); later subagents read it instead of whole files.
+2. Save bodies to `/tmp/pp-<spec>-notes/` (`<issue>.md` per issue: the spec and each ticket under its own number). The first ticket's explorer maps (`<ticket>-map-<area>.md`) serve as the spec-level notes; later tickets read earlier maps instead of whole files.
 3. Create the integration worktree and branch from origin/main (`scripts/worktree.sh integration-<spec>` if present). Only the merger touches it.
 
 ## Running tickets
