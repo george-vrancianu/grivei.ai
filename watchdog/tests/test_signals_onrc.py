@@ -130,12 +130,12 @@ def test_a_record_on_the_strike_off_day_is_not_after_it():
 @pytest.mark.parametrize("name,expected", [("insolvență", True), ("Reorganizare judiciară", True), ("faliment", True), ("INSOLVENTA", True),
                                            ("închidere procedură insolvență", False), ("ieșire din insolvență", False),
                                            ("dizolvare", False), ("lichidare", False), ("radiată", False), ("funcțiune", False), (None, False)])
-def test_insolvency_rate_window_is_the_six_months_to_the_snapshot():
-    assert insolvency.base_window(insolvency.Context(date(2026, 5, 6), {})) == (date(2025, 11, 6), date(2026, 5, 6))
-
-
 def test_the_status_is_read_by_the_name_ONRC_publishes(name, expected):
     assert insolvency.is_insolvency_status(name) is expected
+
+
+def test_insolvency_rate_window_is_the_six_months_to_the_snapshot():
+    assert insolvency.base_window(insolvency.Context(date(2026, 5, 6), {})) == (date(2025, 11, 6), date(2026, 5, 6))
 
 
 def test_the_insolvency_window_is_the_six_months_up_to_the_snapshot_and_the_status_is_undated():
