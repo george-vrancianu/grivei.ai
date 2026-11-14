@@ -35,6 +35,51 @@ export interface PublicEnterpriseRow {
   fetchedAt: string;
 }
 
+/** One Mandate of a Leadership list (`aep.mandate`, #180). Dates are `YYYY-MM-DD`; the end is null while the mandate is still in force. */
+export interface MandateRow {
+  leaderName: string;
+  list: string;
+  independent: boolean;
+  memberParties: string[];
+  electionDate: string;
+  basis: "FINAL_MINUTES" | "REPEAT_ROUND" | "PARTIAL_MINUTES";
+  dataThrough: string;
+  startDate: string;
+  endDate: string | null;
+}
+
+export interface LeadershipGapRow {
+  startDate: string;
+  endDate: string | null;
+  kind: "HANDOVER_WINDOW" | "INTERIM" | "NO_RESULTS";
+}
+
+/** For a subordinate body: the authority whose Leadership list it shows and the MF snapshot the tie rests on (`aep.subordinate`). */
+export interface LeadershipViaRow {
+  authority: string;
+  authorityName: string;
+  snapshotDate: string;
+  snapshots: number;
+}
+
+/** An attributed authority's Mandates and gaps, or a subordinate body's authority's with the basis of the tie. */
+export interface LeadershipRow {
+  mandates: MandateRow[];
+  gaps: LeadershipGapRow[];
+  via: LeadershipViaRow | null;
+}
+
+/** The Party of a Record: the Mandate in force on its award date at its authority (or its principal credit holder). Never the leader's name. */
+export interface RecordPartyRow {
+  list: string;
+  independent: boolean;
+  memberParties: string[];
+  electionDate: string;
+  basis: MandateRow["basis"];
+  dataThrough: string;
+  via: LeadershipViaRow | null;
+}
+
 /** One fiscal year of an entity's MF statements, with the awards of the same calendar year as context (`financials.*` and `seap.rollup_entity`, #179). Money is bani as text; null = a blank cell. */
 export interface FinancialYearRow {
   fiscalYear: number;
@@ -312,6 +357,10 @@ export interface Store extends RoleStore, SignalStore {
   donations(cui: string): Promise<FirmDonationsRow | null>;
   /** The Reference sources held, each with its data-through date (#183). */
   referenceSources(): Promise<ReferenceSourceRow[]>;
+  /** The Leadership list of an entity that is an attributed authority or a subordinate body; null for every other entity (never a supplier, #180). */
+  leadership(key: string): Promise<LeadershipRow | null>;
+  /** The Party of a SEAP Record (the Mandate in force on its award date), or null: no attributed authority, or a gap. */
+  recordParty(code: string): Promise<RecordPartyRow | null>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
   roles(key: string): Promise<("AUTHORITY" | "SUPPLIER")[]>;
   /** Every county, by ISO code. */
@@ -972,6 +1021,48 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       return (rows[0] as PublicEnterpriseRow | undefined) ?? null;
     },
+    async leadership(key) {
+      // A graph built before the aep schema existed (deployed ahead of a rebuild) has no Leadership list or Party: the pages still work.
+      const direct = await pool.query(`SELECT area FROM aep.authority WHERE entity_key = $1`, [key]).catch(noTable);
+      let area = direct.rows[0]?.area as string | undefined;
+      let via: LeadershipViaRow | null = null;
+      if (!area) {
+        const sub = await pool.query(
+          `SELECT s.authority_key AS "authorityKey", e.display_name AS "authorityName", s.snapshot_date::text AS "snapshotDate", s.snapshots, a.area
+             FROM aep.subordinate s JOIN aep.authority a ON a.entity_key = s.authority_key JOIN core.entity e ON e.key = s.authority_key WHERE s.entity_key = $1`,
+          [key],
+        ).catch(noTable);
+        if (!sub.rows[0]) return null;
+        ({ area } = sub.rows[0] as { area: string });
+        via = { authority: sub.rows[0].authorityKey, authorityName: sub.rows[0].authorityName, snapshotDate: sub.rows[0].snapshotDate, snapshots: Number(sub.rows[0].snapshots) };
+      }
+      const mandates = await pool.query(
+        `SELECT leader_name AS "leaderName", list_name AS "list", independent, member_parties AS "memberParties", election_date::text AS "electionDate", basis,
+                data_through::text AS "dataThrough", start_date::text AS "startDate", end_date::text AS "endDate"
+           FROM aep.mandate WHERE area = $1 ORDER BY start_date`,
+        [area],
+      );
+      const gaps = await pool.query(`SELECT start_date::text AS "startDate", end_date::text AS "endDate", reason AS kind FROM aep.gap WHERE area = $1 ORDER BY start_date`, [area]);
+      return { mandates: mandates.rows as MandateRow[], gaps: gaps.rows as LeadershipGapRow[], via };
+    },
+    async recordParty(code) {
+      const { rows } = await pool.query(
+        `SELECT m.list_name AS list, m.independent, m.member_parties AS "memberParties", m.election_date::text AS "electionDate", m.basis, m.data_through::text AS "dataThrough",
+                p.via_key AS "viaKey", e.display_name AS "viaName", s.snapshot_date::text AS "snapshotDate", s.snapshots
+           FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
+           JOIN seap.record r ON r.code = p.record_code
+           LEFT JOIN aep.subordinate s ON s.entity_key = r.authority_key AND p.via_key IS NOT NULL
+           LEFT JOIN core.entity e ON e.key = p.via_key
+          WHERE p.record_code = $1`,
+        [code],
+      ).catch(noTable);
+      const r = rows[0];
+      if (!r) return null;
+      return {
+        list: r.list, independent: r.independent, memberParties: r.memberParties, electionDate: r.electionDate, basis: r.basis, dataThrough: r.dataThrough,
+        via: r.viaKey ? { authority: r.viaKey, authorityName: r.viaName, snapshotDate: r.snapshotDate, snapshots: Number(r.snapshots) } : null,
+      };
+    },
     async financials(cui, key) {
       // A graph built before the financials schema existed (deployed ahead of a rebuild) has no statements: the Overview still works.
       const { rows } = await pool.query(
@@ -1011,12 +1102,14 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async referenceSources() {
       const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
+      const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`).catch(noTable); // the one-off file's stated date (#180)
       const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
       const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
       const bp = await pool.query(`SELECT through_year AS year, dataset_url AS url FROM donations.source_file ORDER BY id DESC LIMIT 1`).catch(noTable);
       const bpYear = (bp.rows[0]?.year as number | null | undefined) ?? null;
       return [
         { id: "AMEPIP", name: "AMEPIP", dataThrough: (amepip.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: (amepip.rows[0]?.url as string | null | undefined) ?? null },
+        { id: "AEP", name: "AEP", dataThrough: (aep.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: year === null ? null : `${year}-12-31`, fiscalYear: year, url: year === null ? null : "https://data.gov.ro/organization/mfp" },
         { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: bpYear === null ? null : `${bpYear}-12-31`, fiscalYear: bpYear, url: (bp.rows[0]?.url as string | null | undefined) ?? null },
       ];

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "source": "aep",
+  "stream": "final",
+  "kind": "local",
+  "unit": "2024-06-09",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://example.invalid/aep",
+  "via": "AEP final minutes, local elections 9 June 2024 (Code for Romania backup)",
+  "files": [
+    {
+      "name": "pv_b_final.json",
+      "sha256": "2638a5106a40979ec17da482b9628ebc944b5f7f37508efa7a129e6fe7e5cc9a",
+      "bytes": 1291
+    },
+    {
+      "name": "pv_bv_final.json",
+      "sha256": "5eb41d0ddae60532dd644792fe0ec522dfe7907b93599ea923d015153d625f1c",
+      "bytes": 2153
+    },
+    {
+      "name": "pv_cj_final.json",
+      "sha256": "eea7b319053274f856099fe3cb4df738c6c74f86d959727da952f2dd64ac8d84",
+      "bytes": 1702
+    }
+  ],
+  "origin": {
+    "system": "AEP"
+  }
+}

@@ -12,6 +12,7 @@ query RecordPage($code: ID!) {
       value
       counted
       authority { ...EntityRef }
+      party { ...RecordPartyFields }
       winners { ...PartyFields }
       cpv { code description }
       badges

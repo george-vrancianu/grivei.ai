@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "source": "aep",
+  "stream": "partial",
+  "kind": "local",
+  "unit": "2025-12-07",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://example.invalid/aep",
+  "via": "AEP partial elections, December 2025 (Code for Romania backup)",
+  "files": [
+    {
+      "name": "pv_part_uat_p_bv_880030.csv",
+      "sha256": "e3e635e51a9c0df93163c06ec8bfdca369e2346769863a254378646a6030bdb9",
+      "bytes": 641
+    }
+  ],
+  "origin": {
+    "system": "AEP",
+    "dataThrough": "2025-12-09",
+    "oneOff": true,
+    "upstream": {
+      "pv_part_uat_p_bv_880030.csv": "sha-fixture"
+    }
+  }
+}

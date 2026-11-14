@@ -1,5 +1,5 @@
 import type {
-  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -92,6 +92,8 @@ export interface Copy {
     };
     /** The "public enterprise (AMEPIP)" section on the Overview: the mark and its basis (#183). */
     publicEnterprise: PublicEnterpriseSectionCopy;
+    /** The Leadership list on an authority's (or a subordinate body's) Overview (#180). */
+    leadership: LeadershipSectionCopy;
     financials: FinancialStatementsSectionCopy;
     /** BaniPartide's firm donations on the Overview, with "also a firm donor" on a supplier's page (#182). */
     donations: FirmDonationsSectionCopy;

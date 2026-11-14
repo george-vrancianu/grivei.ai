@@ -10,6 +10,7 @@ import type { EntityRef, EntityRole, RecordPageData, RecordSignal } from "../../
 import { BadgeExplanations, type BadgeExplanationsCopy } from "./components/BadgeExplanations/index.ts";
 import { FrameworkLine, type FrameworkLineCopy } from "./components/FrameworkLine/index.ts";
 import { FrameworkSection, type FrameworkSectionCopy } from "./components/FrameworkSection/index.ts";
+import { PartySection, type PartySectionCopy } from "./components/PartySection/index.ts";
 import { RecordActions } from "./components/RecordActions/index.ts";
 import { RecordFacts } from "./components/RecordFacts/index.ts";
 import { WinnersSection, type WinnersSectionCopy } from "./components/WinnersSection/index.ts";
@@ -29,6 +30,8 @@ export interface RecordDetailCopy {
   badges: BadgeExplanationsCopy;
   signals: SignalsSectionCopy;
   provenance: ProvenanceSectionCopy;
+  /** The Party section (#180). */
+  party: PartySectionCopy;
   /** The Record's citable URL line: its name and the copy button's texts. */
   cite: CiteLineCopy;
   /** The Record row's copy (badges, party names, labels): the subsequent contracts list uses the rows of the Records tab. */
@@ -42,6 +45,8 @@ export interface RecordDetailProps {
   citeUrl: string;
   /** The entity page's URL for the authority or a winner's Entity. The caller owns routing (language prefix). */
   entityHref: (entity: EntityRef, role: EntityRole) => string;
+  /** The entity page of the authority a subordinate body's Party is inherited through. */
+  authorityHref?: ((key: string) => string) | undefined;
   /** A Record page's URL, for the framework agreement, the subsequent contracts and a Signal's Records. */
   recordHref: (code: string) => string;
   methodologyHref: string;
@@ -59,7 +64,7 @@ export interface RecordDetailProps {
  * consortium shares labelled as a convention) beside a column of panels (the Record's facts, every badge explained, its Signals, where it came from)
  * that stacks under the main column below the medium breakpoint. The page owns its width and gutter. Presentational: it fetches nothing and knows no router.
  */
-export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodologyHref, onNavigate, locale, copy, renderSignalCard }: RecordDetailProps) {
+export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recordHref, methodologyHref, onNavigate, locale, copy, renderSignalCard }: RecordDetailProps) {
   const valueCard = (
     <ValueFacts record={record} locale={locale} copy={{ ...copy.value, ceilingCaption: copy.recordRow.valueCaption.ceiling }}>
       {record.framework && <FrameworkLine framework={record.framework} recordHref={recordHref} onNavigate={onNavigate} locale={locale} copy={copy.framework} />}
@@ -87,6 +92,7 @@ export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodol
             valueCard
           )}
           {record.suspect && <SuspectNote suspect={record.suspect} methodologyHref={methodologyHref} onNavigate={onNavigate} locale={locale} copy={copy.suspect} />}
+          {record.party && <PartySection party={record.party} authorityHref={authorityHref ?? ((key) => key)} onNavigate={onNavigate} locale={locale} copy={copy.party} />}
           <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} onNavigate={onNavigate} />
         </Stack>
         <Stack spacing={3} sx={{ minWidth: 0 }}>

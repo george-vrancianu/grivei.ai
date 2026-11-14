@@ -49,6 +49,7 @@ from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_
 from .mf.build import MfSummary, build_mf
 from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
 from .amepip.build import AmepipSummary, build_amepip
+from .aep.build import AepSummary, build_aep
 from .financials.build import FinancialsSummary, build_financials
 from .banipartide.build import DonationsSummary, build_donations
 from .placement.build import PlacementSummary, build_placement
@@ -64,6 +65,7 @@ SQL_DIR = Path(__file__).parent / "sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
+AEP_SQL = SQL_DIR / "aep_schema.sql"
 FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
 DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
 
@@ -82,6 +84,7 @@ class RebuildSummary:
     mf: MfSummary | None = None  # the MF list step (#80)
     onrc: OnrcSummary | None = None  # the ONRC step (#175)
     amepip: AmepipSummary | None = None  # the AMEPIP public-enterprise list step (#183)
+    aep: AepSummary | None = None  # AEP's Mandates, Leadership list and Party per Record (#180)
     financials: FinancialsSummary | None = None  # the MF annual financial statements step (#179)
     donations: DonationsSummary | None = None  # the BaniPartide firm donations step (#182)
     geo_line: str | None = None  # the TopoJSON step's one line
@@ -107,6 +110,8 @@ class RebuildSummary:
             out.append(self.onrc.line())
         if self.amepip is not None:
             out.append(self.amepip.line())
+        if self.aep is not None:
+            out.append(self.aep.line())
         if self.financials is not None:
             out.append(self.financials.line())
         if self.donations is not None:
@@ -485,6 +490,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 store_sources(cur)
                 cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
                 cur.execute(AMEPIP_SQL.read_text(encoding="utf-8"))  # a Reference source's own tables (#183): not in the registry
+                cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
                 cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
                 cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
             with step("anaf-identities"):
@@ -544,6 +550,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
             with step("amepip"):
                 summary.amepip = build_amepip(cur, archive)  # #183: AMEPIP's public enterprises, flagged by CUI on the entities
+            with step("aep"):
+                summary.aep = build_aep(cur, archive, placement_dir)  # #180: Mandates, Leadership gaps, subordinate bodies, Party per Record (after placement and the MF list)
             with step("financials"):
                 summary.financials = build_financials(cur, archive)  # #179: MF's annual statements, one row per CUI per fiscal year; read beside the awards, never added to them
             with step("donations"):

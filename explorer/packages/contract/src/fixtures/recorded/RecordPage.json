@@ -23,6 +23,7 @@
             "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -122,6 +123,7 @@
             "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -182,6 +184,7 @@
             "displayName": "COMUNA EXEMPLU (PRIMARIA COMUNEI EXEMPLU,JUDETUL TEST)",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -239,6 +242,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -296,6 +300,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -353,6 +358,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -476,6 +482,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -602,6 +609,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -695,6 +703,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -778,6 +787,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -830,6 +840,7 @@
             "displayName": "MUNICIPIUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -959,6 +970,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1030,6 +1042,7 @@
             "displayName": "CENTRUL MEDICAL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1097,6 +1110,7 @@
             "displayName": "SCOALA GIMNAZIALA EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1152,6 +1166,7 @@
             "displayName": "COMUNA EXEMPLU (PRIMARIA EXEMPLU)",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1207,6 +1222,7 @@
             "displayName": "COMUNA EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": true,
@@ -1258,6 +1274,7 @@
             "displayName": "COMUNA EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1315,6 +1332,7 @@
             "displayName": "COMUNA EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1372,6 +1390,7 @@
             "displayName": "COMUNA EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1430,6 +1449,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1500,6 +1520,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1552,6 +1573,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1609,6 +1631,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1666,6 +1689,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "NAME_ONLY"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1723,6 +1747,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -1835,6 +1860,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": true,
@@ -1901,6 +1927,371 @@
     }
   },
   {
+    "name": "party-direct",
+    "kind": "typical",
+    "description": "a town hall's Record in the 2024 mandate: the list the mayor ran on, the election and its basis",
+    "variables": {
+      "code": "DA95000002"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000002",
+          "title": "Achizitie DA95000002",
+          "date": "2024-11-15",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51000501",
+            "displayName": "MUNICIPIUL BRASOV",
+            "identity": "CUI"
+          },
+          "party": {
+            "list": "PARTIDUL NAȚIONAL LIBERAL",
+            "independent": false,
+            "memberParties": [],
+            "electionDate": "2024-06-09",
+            "basis": "FINAL_MINUTES",
+            "dataThrough": "2024-06-09",
+            "via": null
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000002",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "party-independent",
+    "kind": "typical",
+    "description": "an independent mayor's Record: the list reads Independent, which is no party",
+    "variables": {
+      "code": "DA95000008"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000008",
+          "title": "Achizitie DA95000008",
+          "date": "2024-11-25",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51000005",
+            "displayName": "COMUNA SANPETRU",
+            "identity": "CUI"
+          },
+          "party": {
+            "list": "Independent",
+            "independent": true,
+            "memberParties": [],
+            "electionDate": "2024-06-09",
+            "basis": "FINAL_MINUTES",
+            "dataThrough": "2024-06-09",
+            "via": null
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000008",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "party-subordinate-body",
+    "kind": "typical",
+    "description": "a hospital whose one principal credit holder is the town hall: the Party inherited, via the authority and the MF snapshot",
+    "variables": {
+      "code": "DA95000003"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000003",
+          "title": "Achizitie DA95000003",
+          "date": "2024-11-20",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51003206",
+            "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+            "identity": "CUI"
+          },
+          "party": {
+            "list": "PARTIDUL NAȚIONAL LIBERAL",
+            "independent": false,
+            "memberParties": [],
+            "electionDate": "2024-06-09",
+            "basis": "FINAL_MINUTES",
+            "dataThrough": "2024-06-09",
+            "via": {
+              "authority": "51000501",
+              "authorityName": "MUNICIPIUL BRASOV",
+              "snapshotDate": "2026-12-01",
+              "snapshots": 2
+            }
+          },
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000003",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "party-handover-window",
+    "kind": "empty",
+    "description": "a town hall's Record in the 2024 handover window: no Party, never the nearest leader's",
+    "variables": {
+      "code": "DA95000001"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000001",
+          "title": "Achizitie DA95000001",
+          "date": "2024-10-10",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51000501",
+            "displayName": "MUNICIPIUL BRASOV",
+            "identity": "CUI"
+          },
+          "party": null,
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000001",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "party-school-two-principals",
+    "kind": "empty",
+    "description": "a school whose principals are the town hall and a ministry: no Party",
+    "variables": {
+      "code": "DA95000004"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000004",
+          "title": "Achizitie DA95000004",
+          "date": "2024-11-20",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51001507",
+            "displayName": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+            "identity": "CUI"
+          },
+          "party": null,
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000004",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
+    "name": "party-contradicted-tie",
+    "kind": "empty",
+    "description": "a roads directorate whose newest snapshot names Brasov but an older one names Rasnov: a contradicted tie inherits no Party",
+    "variables": {
+      "code": "DA95000005"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000005",
+          "title": "Achizitie DA95000005",
+          "date": "2024-11-20",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51003303",
+            "displayName": "DIRECTIA DRUMURILOR DEMO BRASOV",
+            "identity": "CUI"
+          },
+          "party": null,
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000005",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
     "name": "splitting-signal",
     "kind": "typical",
     "description": "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records",
@@ -1924,6 +2315,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,
@@ -2042,6 +2434,7 @@
             "displayName": "SPITALUL EXEMPLU",
             "identity": "CUI"
           },
+          "party": null,
           "winners": [
             {
               "naturalPerson": false,

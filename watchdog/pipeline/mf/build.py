@@ -41,6 +41,7 @@ class MfRow:
     name: str
     county: str  # `Judet` as written
     uat: str
+    principals: tuple[str, ...] = ()  # the normalised CUIs of the principal credit holders (`CIF Ordonator principal de credite (1)`, `(2)` ...), blanks dropped
 
 
 @dataclass
@@ -52,6 +53,7 @@ class MfSummary:
     duplicates: int = 0
     unmatched: Counter = field(default_factory=Counter)  # `Judet` values that are no county (non-national rows), with their rows
     skipped: list[str] = field(default_factory=list)  # newer units that did not parse
+    principal_snapshots: int = 0  # snapshots whose principal credit holders were stored (#180)
 
     def _unmatched_text(self) -> str:
         top = self.unmatched.most_common(5)
@@ -93,6 +95,7 @@ def read_list(path: Path) -> list[MfRow]:
     for index, row in enumerate(rows[:10]):
         folded = [fold(str(c)) if c is not None else "" for c in row]
         columns = {key: next((i for i, h in enumerate(folded) if h.startswith(prefix)), None) for key, prefix in _HEADERS.items()}
+        principal_columns = [i for i, h in enumerate(folded) if h.startswith("CIF ORDONATOR")]
         if all(columns[k] is not None for k in ("county", "cui", "name")):
             break
     else:
@@ -102,7 +105,8 @@ def read_list(path: Path) -> list[MfRow]:
         cell = lambda key: str(row[columns[key]]).strip() if columns[key] is not None and columns[key] < len(row) and row[columns[key]] is not None else ""  # noqa: E731
         cui = normalise_cui(row[columns["cui"]] if columns["cui"] < len(row) else "")
         if cui:
-            out.append(MfRow(cui, cell("name"), cell("county"), cell("uat")))
+            principals = tuple(dict.fromkeys(p for i in principal_columns if i < len(row) and (p := normalise_cui(row[i]))))
+            out.append(MfRow(cui, cell("name"), cell("county"), cell("uat"), principals))
     return out
 
 
@@ -138,6 +142,33 @@ def classify(rows: list[MfRow], gaz: Gazetteer, observations: Mapping[str, Obser
     return out, summary
 
 
+def _store_principals(cur: psycopg.Cursor, archive: Archive, newest: Unit, newest_rows: list[MfRow]) -> int:
+    """`core.mf_principal`: the principal credit holders of every entity in EVERY held snapshot (#180), so a tie can be checked against the older
+    ones. The newest snapshot's rows are already read; an older one that does not parse is skipped with a log line (one row per snapshot date;
+    a re-uploaded file of the same date: the newest fetch wins)."""
+    done: set[date] = set()
+    for unit in [newest] + [u for u in latest_units(archive) if u is not newest and u.path != newest.path]:
+        when = snapshot_of(unit)
+        if when is None or when in done:
+            continue
+        try:
+            rows = newest_rows if unit is newest else read_list(unit.file_path(next(f for f in unit.files if f.lower().endswith((".xls", ".xlsx")))))
+        except Exception as e:  # noqa: BLE001 - an older broken file never stops the rebuild
+            log.warning("mf list %s skipped for principals: %s", unit.path, e)
+            continue
+        done.add(when)
+        seen: set[str] = set()
+        data = []
+        for r in rows:
+            if r.cui not in seen:  # the first row of a repeated CUI, as the entity table does
+                seen.add(r.cui)
+                data.extend((when, r.cui, p) for p in r.principals)
+                if not r.principals:
+                    data.append((when, r.cui, None))  # on the list, no principal named: the snapshot still shows the entity
+        cur.executemany("INSERT INTO core.mf_principal (snapshot_date, cui, principal_cui) VALUES (%s, %s, %s)", data)
+    return len(done)
+
+
 def build_mf(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None, observations: Mapping[str, Observation] | None = None,
              entries: Mapping[str, Entry] | None = None) -> MfSummary:
     """`observations` and `entries` are the national-authority inputs the placement step already read (read here when not given)."""
@@ -163,5 +194,6 @@ def build_mf(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None 
         cur.executemany("INSERT INTO core.mf_entity (cui, name, county_iso, uat_name, national, national_by) VALUES (%s, %s, %s, %s, %s, %s)", data)
         if summary.no_county:
             log.warning("mf list: %d entities have a Judet that is no county; they count in no county's M: %s", summary.no_county, dict(summary.unmatched.most_common(10)))
+        summary.principal_snapshots = _store_principals(cur, archive, unit, rows)
         return summary
     return MfSummary(skipped=skipped)
