@@ -20,6 +20,14 @@ describe("SnapshotCoverage", () => {
     expect(rows[2]).toHaveTextContent("Snapshot of 2 March 2026");
   });
 
+  it("lists the newest snapshot once when a ROLE cell shares its period, counting only registrations", () => {
+    const withRole: SnapshotCellData[] = [...cells, { ...cells[2]!, kind: "ROLE", records: 99 }];
+    renderInUi(<SnapshotCoverage cells={withRole} dataThrough={dataThrough} locale="en" copy={sampleOnrcCopy.snapshots("en")} />);
+    const rows = within(screen.getByRole("table", { name: "ONRC snapshots" })).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(3);
+    expect(screen.queryByText("99")).toBeNull();
+  });
+
   it("says a month with no snapshot is not held, for a gap whose rule is null, and does not say why ONRC published nothing", () => {
     renderInUi(<SnapshotCoverage cells={cells} dataThrough={dataThrough} locale="en" copy={sampleOnrcCopy.snapshots("en")} />);
     const gap = screen.getAllByRole("row").find((r) => r.getAttribute("data-state") === "KNOWN_GAP")!;

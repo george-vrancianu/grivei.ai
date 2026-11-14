@@ -50,7 +50,8 @@ const reasonOf = (cell: SnapshotCellData, copy: SnapshotCoverageCopy): string | 
  * known gap and says so. ONRC has no quarter grid, so the quarter-by-kind grid of SEAP does not apply; the period of a cell is the snapshot's own date.
  */
 export function SnapshotCoverage({ cells, dataThrough, locale, copy }: SnapshotCoverageProps) {
-  const rows = [...cells].sort((a, b) => b.quarter.localeCompare(a.quarter));
+  // one row per snapshot: its REGISTRATION cell (a ROLE cell shares the newest snapshot's period and would show it twice)
+  const rows = cells.filter((cell) => cell.kind === "REGISTRATION").sort((a, b) => b.quarter.localeCompare(a.quarter));
   return (
     <Stack spacing={2}>
       {dataThrough && (

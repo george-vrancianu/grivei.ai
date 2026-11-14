@@ -102,7 +102,7 @@ CREATE TABLE onrc.coverage_cell (
     period_end   date NOT NULL,
     kind         text NOT NULL CHECK (kind IN ('REGISTRATION', 'ROLE')),
     state        text NOT NULL CHECK (state IN ('LOADED', 'KNOWN_GAP')),
-    records      integer NOT NULL,                   -- registrations the snapshot lists (0 for a gap)
+    records      integer NOT NULL,                   -- rows of its kind the snapshot lists (0 for a gap)
     data_through date,                               -- the snapshot date (null for a gap)
     PRIMARY KEY (period, kind)
 );
