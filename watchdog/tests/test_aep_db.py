@@ -105,3 +105,15 @@ def test_the_spital_that_is_named_after_a_commune_is_no_town_hall(built):
     keys = {r[0] for r in q(url, "SELECT e.display_name FROM aep.authority a JOIN core.entity e ON e.key = a.entity_key")}
     assert "COMUNA UCEA SPITAL ASIMILAT" not in keys and "MUNICIPIUL BRASOV" in keys and "CONSILIUL JUDETEAN CLUJ" in keys and "PRIMARIA SECTORULUI 3" in keys
 
+
+
+def test_the_search_rows_carry_the_party_per_record_for_the_filter(built):
+    """#181: `seap.search.party` / `party_basis` mirror `aep.record_party`, for every winner row of a Record; an Independent has a basis and no party."""
+    url, _ = built
+    assert q(url, "SELECT count(*) FROM seap.search s WHERE s.party_basis IS NULL <> NOT EXISTS (SELECT 1 FROM aep.record_party p WHERE p.record_code = s.record_code)") == [(0,)]
+    assert q(url, "SELECT count(*) FROM aep.record_party") == q(url, "SELECT count(DISTINCT record_code) FROM seap.search WHERE party_basis IS NOT NULL")
+    assert q(url, "SELECT count(*) FROM seap.search s JOIN aep.record_party p ON p.record_code = s.record_code JOIN aep.mandate m ON m.id = p.mandate_id "
+                  "WHERE s.party IS DISTINCT FROM CASE WHEN m.independent THEN NULL ELSE m.list_name END "
+                  "OR s.party_basis <> CASE WHEN p.via_key IS NULL THEN 'DIRECT' ELSE 'SUBORDINATE' END") == [(0,)]
+    assert q(url, "SELECT count(*) FROM seap.search WHERE party_basis = 'SUBORDINATE'")[0][0] > 0  # the hospital's Records
+    assert q(url, "SELECT count(*) FROM seap.search WHERE party = 'Independent'") == [(0,)]  # an Independent is never a party

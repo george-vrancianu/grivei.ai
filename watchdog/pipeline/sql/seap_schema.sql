@@ -158,6 +158,9 @@ CREATE TABLE seap.search (
     supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
     supplier_curated boolean NOT NULL DEFAULT false,
     supplier_differs boolean NOT NULL DEFAULT false,  -- the spelling differs from ANAF's name under a confirmed CUI
+    -- Party per Record (#181), copied from aep.record_party at the end of the aep step (null on every row when the Record has no Mandate): the party filter reads these indexed columns
+    party            text,                -- the list as registered ('PSD', an alliance's own name); null for no Mandate AND for an Independent leader, who is never a party
+    party_basis      text,                -- DIRECT (the authority's own Mandate) | SUBORDINATE (inherited through its principal credit holder); null = no Mandate. Set for an Independent too (the coverage counts it apart)
     doc              text NOT NULL,       -- folded text: title, authority name, every winner's name, CPV code and description, public code, CUIs
     UNIQUE (record_code, winner_position)
 );
