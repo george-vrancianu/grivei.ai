@@ -33,7 +33,7 @@ A big call is any of:
 - a test that contradicts the spec;
 - a choice between two designs the ticket leaves open.
 
-When an agent meets a big call, it pauses and hands back (the one hand-back allowed before its work is done) a message that begins `QUESTION:`, gives the options it sees (each with its consequence), and says which it favours. A pause is not a hand-over: the agent keeps its own work and is resumed to finish it, whatever its context size. Smaller choices stay with the agent; it decides them and notes them in its report.
+When an agent meets a big call, it pauses and hands back (the hard rules allow it) a message that begins `QUESTION:`, gives the options it sees (each with its consequence), and says which it favours. A pause is not a hand-over: the agent keeps its own work and is resumed to finish it, whatever its context size. Smaller choices stay with the agent; it decides them and notes them in its report.
 
 Your side: answer from the ticket, the spec, the ADRs and the glossary, then resume the same agent with SendMessage (the hard rules allow it, it is your child) with the decision and the reason. A question only the user can answer goes up the chain in your own hand-back, as in "## Hand-back"; resume the agent with the user's answer once it comes down. Record each question and its answer in your report.
 
