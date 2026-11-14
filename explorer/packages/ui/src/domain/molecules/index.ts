@@ -12,7 +12,7 @@ export * from "./ChipGroup/index.ts";
 export * from "./SearchBar/index.ts";
 export * from "./SourceEyebrow/index.ts";
 export * from "./StateNote/index.ts";
-export * from "./SignalChip/index.ts";
+export * from "./SignalLinkChip/index.ts";
 export * from "./SignalBadge/index.ts";
 export * from "./SignalCountChip/index.ts";
 export * from "./SignalOrderToggle/index.ts";

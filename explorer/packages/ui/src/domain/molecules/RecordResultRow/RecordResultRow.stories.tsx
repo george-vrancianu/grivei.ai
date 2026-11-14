@@ -26,7 +26,7 @@ const list = (rows: RecordResult[], locale: "en" | "ro", withSignals = false) =>
   </Stack>
 );
 
-/** After a supplier-county click, a consortium Record's share in that county sits under the full value, labelled as the equal-share convention. */
+/** After a supplier-county click, a consortium Record's share in that county sits under the full value, labelled as the consortium share. */
 export const ConsortiumWithAreaShare: Story = {
   render: (_a, { globals }) => list([{ ...consortiumRecord, areaShare: consortiumRecord.record.winners[0]?.share ?? null }], localeOf(globals["locale"])),
 };

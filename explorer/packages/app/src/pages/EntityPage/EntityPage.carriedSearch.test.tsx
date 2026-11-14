@@ -143,8 +143,6 @@ function withGoTo(data: unknown, goTo: unknown): unknown {
   return answer;
 }
 
-// The Overview's Signals page links keep the carried search, like the tab links and the order toggle do. The recorded hospital has one page of
-// Signals, so the count is raised to 45 for a second page (as in the signalOrder test).
 describe("the Records tab's suspect-value link keeps the carried search", () => {
   it("the '1 suspect value left out' link carries the search on", async () => {
     const { view } = open("/explore/authority/1000017/records?search=q%3Dcomuna");
@@ -154,6 +152,8 @@ describe("the Records tab's suspect-value link keeps the carried search", () => 
   });
 });
 
+// The Overview's Signals page links keep the carried search, like the tab links and the order toggle do. The recorded hospital has one page of
+// Signals, so the count is raised to 45 for a second page (as in the signalOrder test).
 describe("the Overview's Signals page links keep the carried search", () => {
   it("following Signals page 2, the Records tab still offers 'only Records matching'", async () => {
     const recorded = overviewNamed("authority-with-signals");

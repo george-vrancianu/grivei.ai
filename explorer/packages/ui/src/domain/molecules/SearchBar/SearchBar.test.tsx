@@ -25,6 +25,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  document.getElementById("eyebrow")?.remove();
 });
 
 describe("SearchBar", () => {
@@ -35,7 +36,6 @@ describe("SearchBar", () => {
     eyebrow.textContent = "Source: SEAP";
     document.body.append(eyebrow);
     expect(box()).toHaveAccessibleDescription(`${en.hint} Source: SEAP`);
-    eyebrow.remove();
   });
 
   it("emits ONE query after a burst of keystrokes, once typing pauses", async () => {

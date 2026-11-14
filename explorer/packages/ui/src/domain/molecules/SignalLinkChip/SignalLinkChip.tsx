@@ -3,7 +3,7 @@ import { Chip, type ChipProps } from "../../../atoms/Chip/index.ts";
 import { color } from "../../../theme/tokens.ts";
 import { SignalMark } from "../../atoms/SignalMark/index.ts";
 
-export type SignalChipProps = Omit<ChipProps<"a">, "component" | "clickable" | "size" | "variant" | "icon" | "href"> & {
+export type SignalLinkChipProps = Omit<ChipProps<"a">, "component" | "clickable" | "size" | "variant" | "icon" | "href"> & {
   /** Where the chip leads. */
   href: string;
 };
@@ -13,7 +13,7 @@ export type SignalChipProps = Omit<ChipProps<"a">, "component" | "clickable" | "
  * `SignalBadge` (a Signal's rule and date) and `SignalCountChip` ("n Signals") both render it, so the two cannot drift. Other props
  * (`label`, `onClick`, and the ones a Tooltip adds) pass through to the Chip.
  */
-export const SignalChip = forwardRef<HTMLAnchorElement, SignalChipProps>(function SignalChip({ sx, ...props }, ref) {
+export const SignalLinkChip = forwardRef<HTMLAnchorElement, SignalLinkChipProps>(function SignalLinkChip({ sx, ...props }, ref) {
   return (
     <Chip
       ref={ref}
