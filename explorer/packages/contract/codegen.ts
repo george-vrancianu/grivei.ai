@@ -5,6 +5,7 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 //  - src/generated/operations.ts  schema types + operation result/variable types, for the app and fixtures
 const scalars = {
   Bani: "string",
+  SignedBani: "string",
   Date: "string",
   DateTime: "string",
   MapArea: "string",

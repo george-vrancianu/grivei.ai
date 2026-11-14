@@ -29,6 +29,7 @@ export const ENTITY_KEYS = {
   hospital: "1000017", // SPITALUL EXEMPLU: an authority only
   commune: "1000009", // COMUNA EXEMPLU: an authority only
   alfa: "2000007", // ALFA DEMO SRL: a supplier only
+  beta: "2000015", // BETA DEMO SRL: a supplier with MF statements where the newest year has a blank turnover (#179)
   cnair: "2000031", // CNAIR DEMO SA: both roles
   localSupplier: "name-furnizor-local-srl", // no tax id published: name-only
   foreignSupplier: "vat-bg103029862", // a foreign VAT id: name-only
@@ -64,6 +65,11 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "supplier", archive: "overview", kind: "typical",
     description: "a supplier only: its own share of each Record, consortium shares, a framework agreement and its subsequent contracts",
     variables: page(ENTITY_KEYS.alfa, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "supplier-financials-blank-turnover", archive: "overview", kind: "typical",
+    description: "a supplier whose newest MF year (a first release) has a blank turnover and whose older year is revised: no award share for the blank year, the revision marker on the other",
+    variables: page(ENTITY_KEYS.beta, "SUPPLIER"),
   },
   {
     operation: "EntityOverview", name: "both-roles-authority-page", archive: "overview", kind: "typical",

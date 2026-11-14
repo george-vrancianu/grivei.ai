@@ -7,7 +7,7 @@ import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
@@ -80,6 +80,26 @@ const matchSource = (r: RecordRow) => ({
   winners: r.winners.filter((w) => !w.naturalPerson).map((w) => ({ name: w.name, cui: w.entity?.cui ?? null, foreignVatId: w.entity?.foreignVatId ?? null })),
 });
 
+/** The statements of an entity as the contract serves them; the award share is context (ADR 0014): awarded in the calendar year over the year's turnover, null when that is blank or zero. */
+export function financialsObject(rows: FinancialYearRow[]) {
+  if (rows.length === 0) return null;
+  return {
+    years: rows.map((y) => ({
+      fiscalYear: y.fiscalYear,
+      revision: y.revision === "REVISED" ? ("REVISED" as const) : ("FIRST_RELEASE" as const),
+      mayBeRevised: y.newest && y.revision === "FIRST",
+      turnover: y.turnover,
+      profitOrLoss: y.profitOrLoss,
+      debts: y.debts,
+      equity: y.equity,
+      averageEmployees: y.averageEmployees,
+      awardedInYear: y.awardedInYear,
+      awardShareOfTurnover: y.turnover !== null && BigInt(y.turnover) > 0n ? Number(y.awardedInYear) / Number(y.turnover) : null,
+      source: y.source,
+    })),
+  };
+}
+
 export function rootValue(store: Store) {
   /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
   const entityObject = (e: EntityRow) => ({
@@ -109,6 +129,8 @@ export function rootValue(store: Store) {
     },
     // AMEPIP's list holds CUIs only (#183): an entity with no CUI is never a public enterprise
     publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
+    // MF's annual statements for the CUI (#179), with the awards of each year beside them as context: null when MF holds none
+    financials: async () => (e.cui ? financialsObject(await store.financials(e.cui, e.key)) : null),
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73

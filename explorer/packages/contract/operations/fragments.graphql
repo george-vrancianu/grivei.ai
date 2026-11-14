@@ -164,3 +164,19 @@ fragment PublicEnterpriseFields on PublicEnterprise {
   license
   fetchedAt
 }
+
+fragment FinancialStatementsFields on FinancialStatements {
+  years {
+    fiscalYear
+    revision
+    mayBeRevised
+    turnover
+    profitOrLoss
+    debts
+    equity
+    averageEmployees
+    awardedInYear
+    awardShareOfTurnover
+    source { file datasetUrl fileUrl via license published fetchedAt }
+  }
+}

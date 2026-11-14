@@ -33,14 +33,20 @@ export const methodologyBaseRates: FixtureSet<MethodologyBaseRatesQuery, Methodo
 export const methodologyReferenceSources: FixtureSet<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables> = [
   {
     name: "amepip-held", kind: "typical",
-    description: "AMEPIP's list of public enterprises is held: the day it was published is its data-through date",
+    description: "AMEPIP's list of public enterprises and MF's financial statements are held: the day AMEPIP published its list and the newest fiscal year are the data-through dates",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" }] },
+    data: { referenceSources: [
+      { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" },
+      { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" },
+    ] },
   },
   {
     name: "amepip-not-held", kind: "empty",
-    description: "no AMEPIP list has been fetched yet (a graph built before the first fetch): no data-through date",
+    description: "no AMEPIP list and no financial statements have been fetched yet (a graph built before the first fetch): no data-through dates",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }] },
+    data: { referenceSources: [
+      { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
+      { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
+    ] },
   },
 ];

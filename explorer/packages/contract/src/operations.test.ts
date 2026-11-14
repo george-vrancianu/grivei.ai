@@ -57,6 +57,8 @@ describe("operations", () => {
       // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
+      // MF's statements (#179): the file's name, its links, the dataset's title and the licence, as the portal publishes them
+      "FinancialSource.file", "FinancialSource.datasetUrl", "FinancialSource.fileUrl", "FinancialSource.via", "FinancialSource.license",
     ]);
     const found: string[] = [];
     for (const type of Object.values(schema.getTypeMap())) {
