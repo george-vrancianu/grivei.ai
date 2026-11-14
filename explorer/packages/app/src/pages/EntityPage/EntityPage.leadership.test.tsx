@@ -56,4 +56,18 @@ describe("the Leadership list", () => {
     await opened("/explore/authority/51001507");
     expect(screen.queryByRole("region", { name: "Leadership list" })).toBeNull();
   });
+
+  it("is absent from the supplier role page of an entity that is also an authority", async () => {
+    await opened("/explore/supplier/51000501");
+    expect(screen.queryByRole("region", { name: "Leadership list" })).toBeNull();
+  });
+
+  it("shows an alliance with its member parties and an independent as no party", async () => {
+    await opened("/explore/authority/51000005?signalOrder=value-desc");
+    const section = within(await screen.findByRole("region", { name: "Leadership list" }));
+    const items = section.getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent("ALIANȚA USR PLUS");
+    expect(items[0]).toHaveTextContent("alliance; member parties: PARTIDUL USR, PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE");
+    expect(items[1]).toHaveTextContent("Independent (not a party)");
+  });
 });

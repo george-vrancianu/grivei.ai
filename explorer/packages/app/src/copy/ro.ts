@@ -70,6 +70,16 @@ const signalCard: Copy["signalCard"] = {
   },
 };
 
+const mandateBasis: Copy["entityPage"]["leadership"]["mandateBasis"] = {
+  independent: "Independent (nu este partid)",
+  alliance: (members) => `alianță; partide membre: ${members.join(", ")}`,
+  basis: {
+    finalMinutes: (election) => `procesele-verbale finale AEP, alegerile din ${election}`,
+    repeatRound: (election) => `turul de repetare AEP din ${election}`,
+    partialMinutes: (election, through) => `alegeri parțiale AEP din ${election}; rezultate parțiale dintr-un fișier unic (copia Code for Romania), date până la ${through}`,
+  },
+};
+
 export const ro: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Principal", explore: "Explorează", search: "Căutare", coverage: "Acoperire", methodology: "Despre cifre" },
@@ -299,17 +309,9 @@ export const ro: Copy = {
     },
     party: {
       heading: "Partid",
-      note: "Lista mandatului în funcție la data atribuirii, așa cum a fost înscrisă la alegeri. Liderul își poate fi schimbat partidul de atunci.",
+      note: "Lista mandatului în funcție la data atribuirii, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp.",
       via: (authority, snapshot) => `Prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
-      mandateBasis: {
-        independent: "Independent (nu este partid)",
-        alliance: (members) => `alianță; partide membre: ${members.join(", ")}`,
-        basis: {
-          finalMinutes: (election) => `procesele-verbale finale AEP, alegerile din ${election}`,
-          repeatRound: (election) => `turul de repetare AEP din ${election}`,
-          partialMinutes: (election, through) => `alegeri parțiale AEP din ${election}; rezultate parțiale dintr-un fișier unic (copia Code for Romania), date până la ${through}`,
-        },
-      },
+      mandateBasis,
     },
   },
   entityPage: {
@@ -470,25 +472,17 @@ export const ro: Copy = {
     },
     leadership: {
       heading: "Lista conducerii",
-      caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Un lider își poate fi schimbat partidul de atunci: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
+      caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
       inForce: "în funcție",
       period: (from, to) => `${from} – ${to}`,
       gapHeading: "Goluri (fără mandat, niciodată presupuse)",
       gaps: {
         HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat la 27 septembrie 2024, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
-        INTERIM: "Lider interimar după o vacanță, până la jurământul câștigătorului alegerilor parțiale",
+        INTERIM: "Lider interimar după o vacanță, până la jurământul următorului lider",
         NO_RESULTS: "Mandat fără rezultate: procesele-verbale AEP nu dau un câștigător pentru această autoritate",
       },
       via: (authority, snapshot) => `Afișată prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
-      mandateBasis: {
-        independent: "Independent (nu este partid)",
-        alliance: (members) => `alianță; partide membre: ${members.join(", ")}`,
-        basis: {
-          finalMinutes: (election) => `procesele-verbale finale AEP, alegerile din ${election}`,
-          repeatRound: (election) => `turul de repetare AEP din ${election}`,
-          partialMinutes: (election, through) => `alegeri parțiale AEP din ${election}; rezultate parțiale dintr-un fișier unic (copia Code for Romania), date până la ${through}`,
-        },
-      },
+      mandateBasis,
     },
     financials: {
       heading: "Situații financiare",

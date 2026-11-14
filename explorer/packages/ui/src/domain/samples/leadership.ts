@@ -35,7 +35,7 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
     gapHeading: "Gaps (no Mandate, never guessed)",
     gaps: {
       HANDOVER_WINDOW: "Handover window: the previous mandates ended on 27 September 2024 and the new oaths followed (AEP publishes no per-UAT oath dates)",
-      INTERIM: "Interim leader after a vacancy, until the partial election winner's oath",
+      INTERIM: "Interim leader after a vacancy, until the next leader's oath",
       NO_RESULTS: "Mandate without results: AEP's minutes give no winner for this authority",
     },
     via: (authority, snapshot) => `Shown through ${authority}, principal credit holder, MF list snapshot ${snapshot}; funding relation, current tie.`,
@@ -43,13 +43,13 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
   },
   ro: {
     heading: "Lista conducerii",
-    caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Un lider își poate fi schimbat partidul de atunci: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
+    caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
     inForce: "în funcție",
     period: (from, to) => `${from} – ${to}`,
     gapHeading: "Goluri (fără mandat, niciodată presupuse)",
     gaps: {
       HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat la 27 septembrie 2024, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
-      INTERIM: "Lider interimar după o vacanță, până la jurământul câștigătorului alegerilor parțiale",
+      INTERIM: "Lider interimar după o vacanță, până la jurământul următorului lider",
       NO_RESULTS: "Mandat fără rezultate: procesele-verbale AEP nu dau un câștigător pentru această autoritate",
     },
     via: (authority, snapshot) => `Afișată prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
@@ -66,7 +66,7 @@ export const partyCopy: Record<Locale, PartySectionCopy> = {
   },
   ro: {
     heading: "Partid",
-    note: "Lista mandatului în funcție la data atribuirii, așa cum a fost înscrisă la alegeri. Liderul își poate fi schimbat partidul de atunci.",
+    note: "Lista mandatului în funcție la data atribuirii, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp.",
     via: (authority, snapshot) => `Prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
     mandateBasis: mandateBasisCopy.ro,
   },

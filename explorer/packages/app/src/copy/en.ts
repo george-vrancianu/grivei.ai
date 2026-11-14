@@ -65,6 +65,16 @@ const signalCard: Copy["signalCard"] = {
   },
 };
 
+const mandateBasis: Copy["entityPage"]["leadership"]["mandateBasis"] = {
+  independent: "Independent (not a party)",
+  alliance: (members) => `alliance; member parties: ${members.join(", ")}`,
+  basis: {
+    finalMinutes: (election) => `AEP final minutes, election of ${election}`,
+    repeatRound: (election) => `AEP repeat round of ${election}`,
+    partialMinutes: (election, through) => `AEP partial election of ${election}; partial counts from a one-off file (Code for Romania's backup), data through ${through}`,
+  },
+};
+
 export const en: Copy = {
   brand: "Grivei.ai",
   nav: { label: "Main", explore: "Explore", search: "Search", coverage: "Coverage", methodology: "About the numbers" },
@@ -296,15 +306,7 @@ export const en: Copy = {
       heading: "Party",
       note: "The list of the mandate in force on the award date, as registered at the election. The leader may have switched party since.",
       via: (authority, snapshot) => `Through ${authority}, principal credit holder, MF list snapshot ${snapshot}; funding relation, current tie.`,
-      mandateBasis: {
-        independent: "Independent (not a party)",
-        alliance: (members) => `alliance; member parties: ${members.join(", ")}`,
-        basis: {
-          finalMinutes: (election) => `AEP final minutes, election of ${election}`,
-          repeatRound: (election) => `AEP repeat round of ${election}`,
-          partialMinutes: (election, through) => `AEP partial election of ${election}; partial counts from a one-off file (Code for Romania's backup), data through ${through}`,
-        },
-      },
+      mandateBasis,
     },
   },
   entityPage: {
@@ -471,19 +473,11 @@ export const en: Copy = {
       gapHeading: "Gaps (no Mandate, never guessed)",
       gaps: {
         HANDOVER_WINDOW: "Handover window: the previous mandates ended on 27 September 2024 and the new oaths followed (AEP publishes no per-UAT oath dates)",
-        INTERIM: "Interim leader after a vacancy, until the partial election winner's oath",
+        INTERIM: "Interim leader after a vacancy, until the next leader's oath",
         NO_RESULTS: "Mandate without results: AEP's minutes give no winner for this authority",
       },
       via: (authority, snapshot) => `Shown through ${authority}, principal credit holder, MF list snapshot ${snapshot}; funding relation, current tie.`,
-      mandateBasis: {
-        independent: "Independent (not a party)",
-        alliance: (members) => `alliance; member parties: ${members.join(", ")}`,
-        basis: {
-          finalMinutes: (election) => `AEP final minutes, election of ${election}`,
-          repeatRound: (election) => `AEP repeat round of ${election}`,
-          partialMinutes: (election, through) => `AEP partial election of ${election}; partial counts from a one-off file (Code for Romania's backup), data through ${through}`,
-        },
-      },
+      mandateBasis,
     },
     financials: {
       heading: "Financial statements",
