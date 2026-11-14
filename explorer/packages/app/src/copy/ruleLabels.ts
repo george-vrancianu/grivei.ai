@@ -16,4 +16,6 @@ export const ruleLabels = (rules: SignalRulesCopy): Record<SignalRuleSlug, strin
   INSOLVENCY: rules.INSOLVENCY.label,
   FEW_EMPLOYEES: rules.FEW_EMPLOYEES.label,
   NO_FINANCIAL_STATEMENT: rules.NO_FINANCIAL_STATEMENT.label,
+  DONOR_TO_PARTY: rules.DONOR_TO_PARTY.label,
+  SOE_BOARD_IN_SUPPLIER: rules.SOE_BOARD_IN_SUPPLIER.label,
 });

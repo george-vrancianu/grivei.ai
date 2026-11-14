@@ -27,6 +27,8 @@ const SIGNAL_OF_NUMBERS: Record<string, string> = {
   InsolvencyNumbers: "insolvency",
   FewEmployeesNumbers: "few-employees",
   NoFinancialStatementNumbers: "no-financial-statement",
+  DonorToPartyNumbers: "donor-to-party",
+  SoeBoardInSupplierNumbers: "soe-board-in-supplier",
 };
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };

@@ -14,6 +14,8 @@ const numbers: SignalNumberTexts = {
   INSOLVENCY: { status: "insolvență", firstSeen: "2 septembrie 2024", sinceAtLeast: true },
   FEW_EMPLOYEES: { fiscalYear: "2023", employees: "1", employeesCount: 1, awarded: "5.400.000,00 RON" },
   NO_FINANCIAL_STATEMENT: { fiscalYear: "2023", previousYear: "2022", awarded: "12.800.000,00 RON", legalForm: "SA" },
+  DONOR_TO_PARTY: { days: "112", daysCount: 112, party: "PARTIDUL SOCIAL DEMOCRAT", derived: true, loan: true },
+  SOE_BOARD_IN_SUPPLIER: { persons: "2", personsCount: 2 },
 };
 
 /** Every string the Signal card and its compact form can say, with sample numbers: the rules' label, filled sentence and lawful line, then the rest of the card's copy. */
@@ -31,9 +33,9 @@ function signalTexts(locale: Locale): string[] {
 }
 
 describe.each(["en", "ro"] as const)("the Signal wording catalogue (%s)", (locale) => {
-  it("has a label, a sentence and a lawful-explanations line for each of the ten rules", () => {
+  it("has a label, a sentence and a lawful-explanations line for each of the twelve rules", () => {
     expect(Object.keys(catalogue[locale].signalCard.rules).sort()).toEqual([...SIGNAL_RULES].sort());
-    expect(ruleTexts(catalogue[locale].signalCard.rules, numbers)).toHaveLength(30);
+    expect(ruleTexts(catalogue[locale].signalCard.rules, numbers)).toHaveLength(36);
   });
 
   it("never says suspect, fraud, irregular, illegal or risk (nor the Romanian equivalents), in any part", () => {

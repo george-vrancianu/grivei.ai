@@ -7,7 +7,7 @@ import { SignalRuleBaseRate, type SignalRuleBaseRateCopy } from "../../molecules
 import type { SignalRule, SignalRuleBaseRateData } from "../../types.ts";
 import { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, signalAnchor, type MethodologySectionKey } from "../../utils/methodologyAnchors.ts";
 import { formatDate } from "../../utils/formatDate.ts";
-import { SIGNAL_RULES } from "../../utils/signalWording.ts";
+import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES } from "../../utils/signalWording.ts";
 import { MethodologyContents } from "./components/MethodologyContents/index.ts";
 import { MethodologySection, type MethodologySectionCopy } from "./components/MethodologySection/index.ts";
 import { useScrollToAnchor } from "./hooks/useScrollToAnchor.ts";
@@ -73,10 +73,14 @@ export interface MethodologyPageProps {
  */
 export function MethodologyPage({ baseRates, referenceDates, anchor = null, sectionHref, onNavigate, locale, copy }: MethodologyPageProps) {
   useScrollToAnchor(anchor);
+  // A Restricted rule's section (its window, its firing rate, its existence) appears only when the API returned the rule, which it does only when the host shows Restricted content.
+  // While the figures load, or when they fail, it stays out: nothing is revealed on a guess.
+  const served = baseRates.status === "ready" ? new Set(baseRates.rules.map((r) => r.slug)) : new Set<string>();
+  const rules = SIGNAL_RULES.filter((rule) => !RESTRICTED_SIGNAL_RULES.includes(rule) || served.has(rule));
   const contents = [
     ...METHODOLOGY_SECTIONS.map((key) => ({ anchor: METHODOLOGY_ANCHORS[key], label: copy.sections[key].heading })),
     { anchor: METHODOLOGY_ANCHORS.signals, label: copy.signals.heading },
-    ...SIGNAL_RULES.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
+    ...rules.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
   ];
   return (
     <Box
@@ -123,7 +127,7 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
         ))}
         <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals}>
           <Stack spacing={2} sx={{ mt: 2 }}>
-            {SIGNAL_RULES.map((rule) => (
+            {rules.map((rule) => (
               <MethodologySection key={rule} id={signalAnchor(rule)} level={3} locale={locale} copy={copy.rules[rule]}>
                 {baseRates.status === "ready" ? (
                   <SignalRuleBaseRate status="ready" rule={baseRates.rules.find((r) => r.slug === rule) ?? null} locale={locale} copy={copy.baseRate} />

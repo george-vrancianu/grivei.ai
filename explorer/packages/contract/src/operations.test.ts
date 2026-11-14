@@ -60,6 +60,8 @@ describe("operations", () => {
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
       // the ONRC and financial-statement Signals (#184): ONRC's status name as published and the legal form as an abbreviation (SRL, SA); no prose of ours
       "InsolvencyNumbers.status", "NoFinancialStatementNumbers.legalForm",
+      // the donor-to-Party Signal (#185): the list as registered and the source's own kind word (DONATION, LOAN); no prose of ours
+      "DonorToPartyNumbers.party", "DonorToPartyNumbers.kind",
       // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",

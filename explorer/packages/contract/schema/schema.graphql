@@ -1063,6 +1063,10 @@ enum SignalRuleSlug {
   OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION
   "ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds."
   YOUNG_FIRM NO_CONSTRUCTION_CAEN AFTER_STRIKE_OFF INSOLVENCY FEW_EMPLOYEES NO_FINANCIAL_STATEMENT
+  "Cross-Source rules (#185): a firm that gave to the authority's Party within a year before the award."
+  DONOR_TO_PARTY
+  "RESTRICTED (ADR 0011, ADR 0015): a board member of a public enterprise also holds a role in one of its private suppliers. Served only when the host's GRIVEI_RESTRICTED is `show`; otherwise no Signal, Record, count or rule row of it is returned."
+  SOE_BOARD_IN_SUPPLIER
 }
 
 type SignalRule {
@@ -1099,6 +1103,7 @@ type Signal {
 union SignalNumbers =
     OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
   | YoungFirmNumbers | NoConstructionCaenNumbers | AfterStrikeOffNumbers | InsolvencyNumbers | FewEmployeesNumbers | NoFinancialStatementNumbers
+  | DonorToPartyNumbers | SoeBoardInSupplierNumbers
 
 type OverCapNumbers { value: Bani!, cap: Bani!, multiple: Float! }
 type SplittingNumbers { purchases: Int!, sum: Bani!, cap: Bani!, cpvGroup: String!, from: Date!, to: Date! }
@@ -1116,6 +1121,13 @@ type InsolvencyNumbers { status: String!, firstSeen: Date!, sinceAtLeast: Boolea
 type FewEmployeesNumbers { fiscalYear: Int!, employees: Int!, awarded: Bani! }
 "The supplier's awards for the year and its legal form as ONRC lists it (SRL or SA); no statement is held for the year or the one before."
 type NoFinancialStatementNumbers { fiscalYear: Int!, awarded: Bani!, legalForm: String! }
+"""
+The fewest days between the nearest donation or loan by a winner and the award (0 to 365), the list the Party ran on at the election (`party`, as registered)
+and whether the Party is derived from a subordinate body (`derived`). `kind` is DONATION or LOAN, as the source states it. No donor name, amount or date is here.
+"""
+type DonorToPartyNumbers { days: Int!, party: String!, derived: Boolean!, kind: String! }
+"RESTRICTED. How many confirmed persons hold a role both in the public enterprise (the authority) and in the supplier; a count only, never a name, birth date or id."
+type SoeBoardInSupplierNumbers { persons: Int! }
 
 "Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use."
 type RecordFilterValue {

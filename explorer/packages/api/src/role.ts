@@ -4,7 +4,7 @@
 // rule is not applied here, only summed: a Record counts once per group (its winners' shares add up to its counted value), and
 // the supplier side adds the entity's own share. See store.ts `areaTotals` for the same shape per map area.
 import type pg from "pg";
-import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
+import { buildWhere as buildWhereFor, cancellableQuery, type SearchFilter } from "./search.ts";
 import type { EntityRow, RecordRow, SearchOptions, TotalRow } from "./store.ts";
 
 export type RoleSide = "AUTHORITY" | "SUPPLIER";
@@ -94,6 +94,8 @@ export interface RoleDeps {
   rowsOf(raw: unknown[]): Promise<RecordRow[]>;
   recordColumns: string;
   fallbackEntity(key: string, name: string | null, fetchedAt: string): EntityRow;
+  /** Restricted Signal rules are served (#185); default off. */
+  restricted?: boolean;
 }
 
 /**
@@ -134,6 +136,7 @@ function perRecord(groupSql: string, whereSql: string, extra = "", table = "seap
 export function roleStore(deps: RoleDeps): RoleStore {
   const { pool, entitiesOf, fallbackEntity } = deps;
   const { rowsOf } = deps;
+  const buildWhere = (filter: SearchFilter) => buildWhereFor(filter, deps.restricted === true);
 
   return {
     async roleCounterparties(side, filter, { limit }, { signal } = {}) {

@@ -1,6 +1,7 @@
 import pg from "pg";
-import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
-import { rollupPlan, rollupWhere } from "./rollup.ts";
+import { buildWhere as buildWhereFor, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
+import { rollupPlan as rollupPlanFor, rollupWhere } from "./rollup.ts";
+import { restrictedShown } from "./restricted.ts";
 import { onrcStore, type OnrcStore } from "./onrcSearch.ts";
 import { roleStore, type RoleStore } from "./role.ts";
 import type { SourceRow } from "./sources.ts";
@@ -561,6 +562,11 @@ export interface PostgresStoreOptions {
   exactGroupLimit?: number;
   /** Serve the empty and chips-only states from the rollup (default). `false` forces the full scan: the tests compare the two. */
   rollup?: boolean;
+  /**
+   * Whether Restricted Signal rules (#185) are served: their Signals, Records, counts and the rule's row. Default: the host's `GRIVEI_RESTRICTED` is exactly `show`
+   * (read once, when the store is created); anything else hides them. The API's own `restricted` option (server.ts) gates the resolvers; this gates the SQL.
+   */
+  restricted?: boolean;
 }
 
 const SEARCH_ORDER: Record<RecordOrderKey, string> = {
@@ -581,7 +587,11 @@ function noTable(e: unknown): { rows: never[] } {
   throw e;
 }
 
-export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
+export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true, restricted = restrictedShown() }: PostgresStoreOptions = {}): Store {
+  // every filter of this store is read with the Restricted switch it was created with (a Restricted rule's Records join the Signal chips only when shown)
+  const buildWhere = (filter: SearchFilter): Where => buildWhereFor(filter, restricted);
+  // the rollup counts the public rules only, so a has-Signals filter is answered from the index when Restricted rules are shown
+  const rollupPlan = (filter: SearchFilter) => (restricted && filter.hasSignals != null ? null : rollupPlanFor(filter));
   /** The ONRC registration a predicate on `onrc.registration r` (one bound parameter) finds, with the history derived from the held snapshots. */
   async function onrcWhere(where: string, param: string): Promise<OnrcRegistrationRow | null> {
     const { rows } = await pool.query(
@@ -664,7 +674,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
     }
-    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf);
+    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf, restricted);
     const now = new Date().toISOString();
     const fileOf = (id: number) => {
       const f = files.get(id);
@@ -792,9 +802,9 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   const searchPartyCoverage: Store["searchPartyCoverage"] = async (filter, options) => classifyPartyGroups(filter.party ?? "", await searchPartyGroups(filter, options));
 
   return {
-    ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
+    ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity, restricted }),
     ...onrcStore({ pool, entitiesOf }),
-    ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
+    ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, restricted }),
     searchTotal,
     searchPartyGroups,
     searchPartyCoverage,

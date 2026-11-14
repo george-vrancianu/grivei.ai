@@ -151,6 +151,19 @@ export const sNoFinancialStatement: SignalFieldsFragment = {
   numbers: { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: ron(12_800_000), legalForm: "SA" },
   reproduce: reproduce({ authority: "4000001", signal: "NO_FINANCIAL_STATEMENT", from: "2023-11-08", to: "2023-11-08" }),
 };
+export const sDonorToParty: SignalFieldsFragment = {
+  rule: "DONOR_TO_PARTY", date: "2023-11-20", firstDate: "2023-11-20", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "DonorToPartyNumbers", days: 112, party: "PARTIDUL SOCIAL DEMOCRAT", derived: false, kind: "DONATION" },
+  reproduce: reproduce({ authority: "4000001", signal: "DONOR_TO_PARTY", from: "2023-11-20", to: "2023-11-20" }),
+};
+/** Restricted: only served when the host shows Restricted content. */
+export const sSoeBoardInSupplier: SignalFieldsFragment = {
+  rule: "SOE_BOARD_IN_SUPPLIER", date: "2023-11-21", firstDate: "2023-11-21", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "SoeBoardInSupplierNumbers", persons: 1 },
+  reproduce: reproduce({ authority: "4000001", signal: "SOE_BOARD_IN_SUPPLIER", from: "2023-11-21", to: "2023-11-21" }),
+};
 
 /** A Signal as a Record's row carries it: rule, date, numbers and reproducing filter. */
 export const signalBadge = ({ rule, date, numbers, reproduce: r }: SignalFieldsFragment): SignalBadgeFieldsFragment => ({ rule, date, numbers, reproduce: r });

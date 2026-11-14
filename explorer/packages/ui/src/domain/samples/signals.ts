@@ -74,6 +74,19 @@ export const noFinancialStatementSignal: SignalData = {
   reproduce: { authority: "4000001", supplier: null, signal: "NO_FINANCIAL_STATEMENT", cpv: null, from: "2023-11-08", to: "2023-11-08" },
 };
 
+export const donorToPartySignal: SignalData = {
+  rule: "DONOR_TO_PARTY", date: "2023-11-20", firstDate: "2023-11-20", recordCount: 1, dataThrough: "2024-11-30", authority, suppliers: [constructii],
+  numbers: { __typename: "DonorToPartyNumbers", days: 112, party: "PARTIDUL SOCIAL DEMOCRAT", derived: false, kind: "DONATION" },
+  reproduce: { authority: "4000001", supplier: null, signal: "DONOR_TO_PARTY", cpv: null, from: "2023-11-20", to: "2023-11-20" },
+};
+
+/** Restricted: the card exists only when the API returns the rule. */
+export const soeBoardInSupplierSignal: SignalData = {
+  rule: "SOE_BOARD_IN_SUPPLIER", date: "2023-11-21", firstDate: "2023-11-21", recordCount: 1, dataThrough: "2024-11-30", authority, suppliers: [constructii],
+  numbers: { __typename: "SoeBoardInSupplierNumbers", persons: 1 },
+  reproduce: { authority: "4000001", supplier: null, signal: "SOE_BOARD_IN_SUPPLIER", cpv: null, from: "2023-11-21", to: "2023-11-21" },
+};
+
 /** A Signal with eleven suppliers (one name-only, one foreign) and a long procedure name: the card names five and counts the rest. */
 export const manySuppliersSignal: SignalData = {
   rule: "NO_PUBLICATION", date: "2023-12-14", firstDate: "2023-12-14", recordCount: 11, dataThrough: "2024-11-30", authority: roadAuthority,
@@ -92,6 +105,7 @@ export const signalSamples: Record<SignalRule, SignalData> = {
   OVER_CAP: overCapSignal, SPLITTING: splittingSignal, FRAMEWORK_OVERRUN: frameworkOverrunSignal, NO_PUBLICATION: noPublicationSignal,
   YOUNG_FIRM: youngFirmSignal, NO_CONSTRUCTION_CAEN: noConstructionCaenSignal, AFTER_STRIKE_OFF: afterStrikeOffSignal, INSOLVENCY: insolvencySignal,
   FEW_EMPLOYEES: fewEmployeesSignal, NO_FINANCIAL_STATEMENT: noFinancialStatementSignal,
+  DONOR_TO_PARTY: donorToPartySignal, SOE_BOARD_IN_SUPPLIER: soeBoardInSupplierSignal,
 };
 
 /** Sample numbers every rule's sentence is rendered with in the guard tests (English formats; the sentences only place them). */
@@ -106,4 +120,6 @@ export const sampleNumberTexts: SignalNumberTexts = {
   INSOLVENCY: { status: "insolvență", firstSeen: "2 September 2024", sinceAtLeast: false },
   FEW_EMPLOYEES: { fiscalYear: "2023", employees: "1", employeesCount: 1, awarded: "RON 5,400,000.00" },
   NO_FINANCIAL_STATEMENT: { fiscalYear: "2023", previousYear: "2022", awarded: "RON 12,800,000.00", legalForm: "SA" },
+  DONOR_TO_PARTY: { days: "112", daysCount: 112, party: "PARTIDUL SOCIAL DEMOCRAT", derived: false, loan: false },
+  SOE_BOARD_IN_SUPPLIER: { persons: "1", personsCount: 1 },
 };
