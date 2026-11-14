@@ -13,7 +13,8 @@ HARD RULES
 - A spec's own rules (e.g. "the user merges schema PRs") override the workflow.
 - Hand back once, when your work is done or only the user can unblock you. While a child agent runs, end your turn without a hand-back; you are resumed when it reports.
 - A denied command goes into your hand-back as denied; nothing stands in for it: no retry in the background, no other tool, no symlink.
-- Stop only processes you started, by PID. Wrap test runs in `timeout -s KILL <seconds>`. `/tmp` is RAM-backed: delete what you put there, apart from report files in the notes directory. No interactive git commands (`-p`, `-i`).
+- Stop only processes you started, by PID. Wrap test runs in `timeout -s KILL <seconds>`. `/tmp` is RAM-backed: delete what you put there, apart from report files in the notes directory.
+- Run git non-interactively: no `-p` or `-i`.
 - Follow-up tickets are never posted; list them in your hand-back.
 - No dev servers; no `db:*` commands against the dev database.
 - Never test GitHub write commands against real issues or PRs; `test -s` a body file before PATCHing a body.

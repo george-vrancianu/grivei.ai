@@ -18,6 +18,6 @@ Every agent you spawn writes its full report to `/tmp/pp-<spec>-notes/<ticket>-<
 
 ## Hand-back
 
-When to hand back: the hand-back hard rule. This section covers the content. Write the full report to `/tmp/pp-<spec>-notes/report-<ticket>.md`: branch, rounds, bugs found, deviations, context peak of every agent, new dev dependencies, anything needing a human, proposed follow-ups (listed, not posted). Done when each is answered, even if only "none".
+Hand back per the hand-back hard rule; this section lists what the hand-back contains. Write the full report to `/tmp/pp-<spec>-notes/report-<ticket>.md`: branch, rounds, bugs found, deviations, context peak of every agent, new dev dependencies, anything needing a human, proposed follow-ups (listed, not posted). Done when each is answered, even if only "none".
 
 Your hand-back message is at most 3 lines, e.g. "#592 done: 2 rounds, 3 bugs fixed, branch `ticket-592` at abc1234, needs a human: yes. Report: /tmp/pp-586-notes/report-592.md".
