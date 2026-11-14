@@ -1,9 +1,8 @@
-import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color, radius } from "../../../theme/tokens.ts";
-import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
+import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
 import type { OnrcRegistrationData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { AliasList, type AliasListCopy } from "./components/AliasList/index.ts";
@@ -47,8 +46,7 @@ export function OnrcSection({ registration, onrcOnly, locale, copy }: OnrcSectio
   const seatLine = [registration.seat.address, registration.seat.county].filter(Boolean).join(" · ");
   const snapshot = formatDate(registration.snapshot, locale, "long");
   return (
-    <Stack component="section" id="onrc" aria-label={copy.heading} spacing={2} sx={{ p: 2, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` }}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel id="onrc" heading={copy.heading} level="h2">
       {onrcOnly && (
         <Typography variant="body2" color="text.secondary">
           {copy.onrcOnly}
@@ -63,15 +61,7 @@ export function OnrcSection({ registration, onrcOnly, locale, copy }: OnrcSectio
       <StatusList statuses={registration.statuses} locale={locale} copy={copy.statuses} />
       <CaenList caen={registration.caen} copy={copy.caen} />
       <AliasList aliases={registration.aliases} locale={locale} copy={copy.aliases} />
-      <Typography variant="caption" color="text.secondary">
-        {registration.provenance.url ? (
-          <Link href={registration.provenance.url} target="_blank">
-            {copy.source(snapshot)}
-          </Link>
-        ) : (
-          copy.source(snapshot)
-        )}
-      </Typography>
-    </Stack>
+      <SourceCaption label={copy.source(snapshot)} url={registration.provenance.url} />
+    </Panel>
   );
 }

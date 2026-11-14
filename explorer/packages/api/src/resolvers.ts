@@ -13,8 +13,7 @@ import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyR
 
 const MAX_SUBSEQUENT = 200;
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
-// The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
-// the rest of what the main screen selects (maps, tabs, goTo), until the tickets that own them land.
+// The root serves `sources`, `coverage(source)`, `seap { search, record }`, `onrc { search, record }`, `person` and `referenceSources`.
 // No copy lives here: only data, enums and identifiers.
 
 const MAX_LIMIT = 200; // the SDL: "the server caps limit at 200"
@@ -331,12 +330,15 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
   /** ONRC's search (#176): the match count, the Organisations tab and the count lens of one filter. No person is ever in it (the search table holds organisations only). */
   function onrcSearchObject(filter: OnrcSearchFilter) {
     const queryTokens = foldTokens(filter.q ?? "");
+    // `count` and the Organisations page both need the match count: it is counted once per search object
+    let counted: Promise<number> | undefined;
+    const matchCount = (ctx: Ctx) => (counted ??= store.onrcCount(filter, { signal: ctx?.signal }));
     return {
       filter: { qFolded: queryTokens.length ? queryTokens.join(" ") : null },
-      count: (_: unknown, ctx: Ctx) => store.onrcCount(filter, { signal: ctx?.signal }),
+      count: (_: unknown, ctx: Ctx) => matchCount(ctx),
       defaultTab: "ORGANISATIONS" as const,
       organisations: async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
-        const page = await store.onrcSearch(filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
+        const page = await store.onrcSearch(filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal, count: await matchCount(ctx) });
         return {
           count: page.count,
           rows: page.rows.map((r) => ({

@@ -27,9 +27,9 @@ function useRegistrations(cui: string | null, chips: OnrcFilter | null): { key: 
 }
 
 /**
- * ONRC's registrations of an entity, for the Records tab's Source switch (#178). The CUI is the search (an entity with none has nothing in ONRC). One request finds
- * everything ONRC lists for it; a second, only when ONRC chips are on, finds what they leave. Never a sole trader's: the API leaves those out of the search.
- * `asked` false (another tab is open) asks nothing.
+ * ONRC's registrations of an entity, for the Records tab's ONRC side (#178). The CUI is the search. The caller asks only once it knows ONRC lists the CUI (the Records
+ * tab's `entity.onrc`) and the rows would be shown (the ONRC side is open, or SEAP has no Records): `asked` false asks nothing. One request finds everything ONRC lists
+ * for it; a second, only when ONRC chips are on, finds what they leave. Never a sole trader's: the API leaves those out of the search.
  */
 export function useEntityOnrc(cui: string | null, chips: OnrcFilter, asked: boolean): EntityOnrcState {
   const subject = asked ? cui : null;

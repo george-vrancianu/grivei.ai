@@ -2,8 +2,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color, radius } from "../../../theme/tokens.ts";
-import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import type { PersonPageData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { pageSx } from "../../utils/pageSx.ts";
@@ -54,8 +53,7 @@ export function PersonDetail({ person, entityHref, onNavigate, locale, copy }: P
         </Typography>
         <Typography color="text.secondary">{copy.born(person.birthYear)}</Typography>
       </Stack>
-      <Stack component="section" aria-label={copy.rolesHeading} spacing={2} sx={{ p: 2, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` }}>
-        <SectionHeading>{`${copy.rolesHeading} · ${copy.roleCount(person.roleCount)}`}</SectionHeading>
+      <Panel heading={`${copy.rolesHeading} · ${copy.roleCount(person.roleCount)}`} label={copy.rolesHeading} level="h2">
         <Typography variant="body2" color="text.secondary">
           {copy.basis}
         </Typography>
@@ -77,7 +75,7 @@ export function PersonDetail({ person, entityHref, onNavigate, locale, copy }: P
           ))}
         </Stack>
         <SourceCaption label={copy.source(snapshot)} url={person.provenance.url} />
-      </Stack>
+      </Panel>
     </Stack>
   );
 }

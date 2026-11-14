@@ -10,6 +10,8 @@ import * as w from "./world.ts";
 type Role = "AUTHORITY" | "SUPPLIER";
 type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
+/** The EntityRecords entity: the header, the SEAP role and whether ONRC lists a registration under the CUI (`onrc`, null here: the recorded cases carry the listed ones). */
+const withListedOnrc = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null });
 /** The EntityOverview's entity: the header, the SEAP role, the ONRC section (`onrc`, null when ONRC lists no registration), its administrators (`people`, #177: null here, the hand fixtures below and the recorded cases carry the listed ones) the AMEPIP mark (`publicEnterprise`, #183) and MF's statements (`financials`, #179): null here, the recorded cases carry the listed ones. */
 const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null, people: null, publicEnterprise: null, financials: null, leadership: null, donations: null });
 
@@ -243,7 +245,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-one-supplier", kind: "typical",
     description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { supplier: "30000001" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(598_400), records: 4 }),
@@ -256,7 +258,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-text-search", kind: "typical",
     description: "an authority's Records tab with a text search (RecordFilter.q): the row says which field matched and where (matchedField)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "deszăpezire" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(300_000), records: 1 }),
@@ -269,7 +271,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-estimated-total", kind: "extreme",
     description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 1 of many",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { to: "2030-12-31" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
@@ -285,7 +287,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-estimated-total-page-2", kind: "extreme",
     description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 2 of many (offset 100)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 100, filter: { to: "2030-12-31" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
@@ -301,7 +303,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "supplier-one-authority", kind: "typical",
     description: "a supplier's Records with one authority picked in the Relationships tab's graph (RecordFilter.authority): the side panel's list",
     variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { authority: "4000001" } },
-    data: { entity: withSeap(w.hachiHeader, {
+    data: { entity: withListedOnrc(w.hachiHeader, {
       role: "SUPPLIER" as Role,
       records: {
         total: total({ awarded: ron(598_400), records: 4 }),
@@ -314,7 +316,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-one-supplier-contract", kind: "typical",
     description: "an authority's Records with a contract supplier picked in the Relationships tab's graph (RecordFilter.supplier)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { supplier: "30000002" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(12_800_000), records: 1 }),

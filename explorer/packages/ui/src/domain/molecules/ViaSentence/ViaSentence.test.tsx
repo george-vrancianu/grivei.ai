@@ -13,4 +13,10 @@ describe("ViaSentence", () => {
     await userEvent.click(screen.getByRole("link", { name: "MUNICIPIUL BRASOV" }));
     expect(onNavigate).toHaveBeenCalledWith("/explore/authority/51000501");
   });
+
+  it("shows the authority's name as plain text, with no link, when no address is given", () => {
+    renderInUi(<p data-testid="p"><ViaSentence via={leadershipVia.via!} sentence={leadershipCopy.en.via} locale="en" /></p>);
+    expect(screen.getByTestId("p")).toHaveTextContent("Shown through MUNICIPIUL BRASOV, principal credit holder, MF list snapshot 1 December 2026; funding relation, current tie.");
+    expect(screen.queryByRole("link")).toBeNull();
+  });
 });

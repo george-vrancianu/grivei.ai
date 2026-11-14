@@ -46,6 +46,7 @@ query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrde
 query EntityRecords($key: ID!, $role: Role!, $filter: RecordFilter!, $limit: Int!, $offset: Int!, $order: RecordOrder) {
   entity(key: $key) {
     ...EntityHeaderFields
+    onrc { registrationNumber }
     seap {
       role(role: $role) {
         role

@@ -32,7 +32,7 @@ describe.each([
     expect(picker().getByRole("button", { name: `SEAP · ${s.counts.SEAP(8, "8")}`, pressed: true })).toBeVisible();
     await waitFor(() => expect(picker().getByRole("button", { name: `ONRC · ${s.counts.ONRC(ONRC_TYPICAL_COUNT, String(ONRC_TYPICAL_COUNT))}`, pressed: false })).toBeVisible());
     // SEAP's count is the screen's own: SEAP is asked once, for the screen; ONRC once, for the picker
-    expect(sent.map((r) => r.operation).sort()).toEqual(["MainScreen", "OnrcSearch"]);
+    expect(sent.map((r) => r.operation).sort()).toEqual(["MainScreen", "OnrcCount"]);
     // the two counts are never one figure: no sum on the page, and the results stay SEAP's
     expect(screen.getByRole("tab", { name: new RegExp(c.results.tabs.suppliers) })).toBeVisible();
   });

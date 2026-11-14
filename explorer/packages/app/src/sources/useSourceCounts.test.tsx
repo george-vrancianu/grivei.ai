@@ -1,14 +1,12 @@
 // The picker's count requests: each is superseded by the next query, and an answer that arrives late never lands (#178).
-import { fixtures } from "@grivei/contract/fixtures";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import type { GraphqlClient } from "../graphql/client.ts";
 import { ClientProvider } from "../graphql/ClientContext.tsx";
-import { COUNT_ONLY_LIMIT, useSourceCounts } from "./useSourceCounts.ts";
+import { useSourceCounts } from "./useSourceCounts.ts";
 
-const typical = fixtures.OnrcSearch.find((f) => f.name === "typical-name-and-alias-hits")!.data;
-const answerOf = (count: number) => ({ onrc: { search: { ...typical.onrc.search, count } } });
+const answerOf = (count: number) => ({ onrc: { search: { count } } });
 
 /** A client whose requests wait for the test: it records each request's variables and signal, and answers when told to. */
 function heldClient() {
@@ -20,12 +18,12 @@ function heldClient() {
 }
 
 describe("the Source picker's count of the other Source", () => {
-  it("asks for the count alone, aborts a request the next query supersedes, and never lets its late answer land", async () => {
+  it("asks the count-only operation, aborts a request the next query supersedes, and never lets its late answer land", async () => {
     const { client, requests } = heldClient();
     const wrapper = ({ children }: { children: ReactNode }) => <ClientProvider client={client}>{children}</ClientProvider>;
     const { result, rerender } = renderHook(({ q }) => useSourceCounts(q, "SEAP", { n: 8, estimated: false }), { wrapper, initialProps: { q: "alfa" } });
     await waitFor(() => expect(requests).toHaveLength(1));
-    expect(requests[0]?.variables).toEqual({ filter: { q: "alfa" }, limit: COUNT_ONLY_LIMIT, offset: 0 });
+    expect(requests[0]?.variables).toEqual({ filter: { q: "alfa" } });
 
     rerender({ q: "alfa beta" });
     await waitFor(() => expect(requests).toHaveLength(2));

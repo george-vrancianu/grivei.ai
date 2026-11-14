@@ -6,7 +6,7 @@ import type {
   EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables, PersonPageQuery, PersonPageQueryVariables, RecordPageQuery, RecordPageQueryVariables,
   ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "@grivei/contract";
-import type { OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables } from "@grivei/contract";
+import type { OnrcCountQuery, OnrcCountQueryVariables, OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables } from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
 export interface Operation<Data, Variables> {
@@ -37,4 +37,5 @@ export const CoveragePage = operation<CoveragePageQuery, CoveragePageQueryVariab
 export const MethodologyBaseRates = operation<MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables>("MethodologyBaseRates");
 export const MethodologyReferenceSources = operation<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables>("MethodologyReferenceSources");
 export const OnrcSearch = operation<OnrcSearchQuery, OnrcSearchQueryVariables>("OnrcSearch");
+export const OnrcCount = operation<OnrcCountQuery, OnrcCountQueryVariables>("OnrcCount");
 export const OnrcCoverage = operation<OnrcCoverageQuery, OnrcCoverageQueryVariables>("OnrcCoverage");

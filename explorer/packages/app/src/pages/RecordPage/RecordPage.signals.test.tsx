@@ -86,18 +86,18 @@ describe("the Signals on a Record page", () => {
     );
   });
 
-  it("uses no word a Signal never uses, on any recorded Record page that has a Signal, in both languages", async () => {
-    for (const f of fixtures.RecordPage.filter((x) => (x.data.seap.record?.signals.length ?? 0) > 0)) {
-      for (const [prefix, label, locale] of [["/explore", SIGNALS_EN, "en"], ["/ro/explore", "Semnalele din care face parte această înregistrare", "ro"]] as const) {
-        document.body.innerHTML = "";
-        openAt(`${prefix}/record/${encodeURIComponent(f.data.seap.record!.code)}`);
-        const { unmount } = render(<App client={fixtureClient().client} />);
-        const section = await screen.findByRole("region", { name: label });
-        expect(forbiddenWords(section.textContent ?? "", locale), `${f.name} ${locale}`).toEqual([]);
-        unmount();
-      }
-    }
-  });
+  const withSignals = fixtures.RecordPage.filter((x) => (x.data.seap.record?.signals.length ?? 0) > 0);
+  const languages = [["/explore", SIGNALS_EN, "en"], ["/ro/explore", "Semnalele din care face parte această înregistrare", "ro"]] as const;
+  // one test per recording and language, each with its own budget
+  it.each(withSignals.flatMap((f) => languages.map(([prefix, label, locale]) => [f.name, locale, f, prefix, label] as const)))(
+    "uses no word a Signal never uses, on the recorded Record page %s (%s)",
+    async (_name, locale, f, prefix, label) => {
+      openAt(`${prefix}/record/${encodeURIComponent(f.data.seap.record!.code)}`);
+      render(<App client={fixtureClient().client} />);
+      const section = await screen.findByRole("region", { name: label });
+      expect(forbiddenWords(section.textContent ?? "", locale)).toEqual([]);
+    },
+  );
 });
 
 describe("the Signals on a Record page, in Romanian", () => {

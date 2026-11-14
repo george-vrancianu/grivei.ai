@@ -7,7 +7,7 @@ import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSupplier
 import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
 import { methodologyBaseRates, methodologyReferenceSources } from "./methodology.ts";
 import { personPage } from "./person.ts";
-import { onrcCoverageHand, onrcRecordHand, onrcSearchHand } from "./onrc.ts";
+import { onrcCountHand, onrcCoverageHand, onrcRecordHand, onrcSearchHand } from "./onrc.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedPartyMainScreen } from "./recorded/party.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
@@ -50,6 +50,7 @@ export const fixtures = {
   MethodologyReferenceSources: methodologyReferenceSources,
   PersonPage: personPage,
   OnrcSearch: onrcSearchHand,
+  OnrcCount: onrcCountHand,
   OnrcRecord: onrcRecordHand,
   OnrcCoverage: onrcCoverageHand,
 } as const;

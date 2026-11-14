@@ -24,14 +24,15 @@ export interface EntityPageRequest {
 
 export type EntityPageState =
   /** `entity` is the header of the same entity (same key and role) from the tab before, so the page can keep it on screen. Null on a first load. */
-  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; relationships: null }
+  | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; onrcListed: boolean; relationships: null }
   | { status: "error" }
   /**
+   * `onrcListed` is whether ONRC lists a registration under the entity's CUI (the Records tab's question for its Source switch; false on the other tabs).
    * `onrc` is the Overview's ONRC section (null on the other tabs, or when ONRC lists no registration under the entity's CUI).
    * `entity` is null when no entity has that key. `records` is the Records tab's data (null on the other tabs, or when the role has none);
    * `overview` is the Overview tab's and `relationships` the Relationships tab's (each null on the other tabs, or when the entity lacks the page's role). While loading, the Overview keeps the last one of the same entity and filter, so a new Signals order or page leaves the page, its focus and scroll in place; a different entity or filter shows loading, since its numbers follow the filter.
    */
-  | { status: "ready"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; relationships: RelationshipsData | null };
+  | { status: "ready"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; onrcListed: boolean; relationships: RelationshipsData | null };
 type Settled = Exclude<EntityPageState, { status: "loading" }>;
 /** The entity a request is about: the header is the same across its tabs. */
 const subjectOf = (r: EntityPageRequest) => `${r.role}:${r.key}`;
@@ -43,6 +44,7 @@ interface Fetched {
   records: RecordsTabData | null;
   overview: EntityOverviewData | null;
   onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null;
+  onrcListed: boolean;
   relationships: RelationshipsData | null;
 }
 
@@ -51,13 +53,13 @@ function fetchPage(client: GraphqlClient, r: EntityPageRequest, signal: AbortSig
   const { key, role, filter } = r;
   switch (r.view) {
     case "overview":
-      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder, signalOffset: r.page && r.page > 1 ? (r.page - 1) * SIGNALS_PAGE_SIZE : undefined }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null, onrc: d.entity?.onrc ?? null, publicEnterprise: d.entity?.publicEnterprise ?? null, financials: d.entity?.financials ?? null, leadership: d.entity?.leadership ?? null, donations: d.entity?.donations ?? null, people: d.entity?.people ?? null, relationships: null }));
+      return client.query(EntityOverview, { key, role, filter, signalOrder: r.signalOrder, signalOffset: r.page && r.page > 1 ? (r.page - 1) * SIGNALS_PAGE_SIZE : undefined }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: d.entity?.seap.role ?? null, onrc: d.entity?.onrc ?? null, publicEnterprise: d.entity?.publicEnterprise ?? null, financials: d.entity?.financials ?? null, leadership: d.entity?.leadership ?? null, donations: d.entity?.donations ?? null, people: d.entity?.people ?? null, onrcListed: false, relationships: null }));
     case "records":
       return client
         .query(EntityRecords, { key, role, filter, limit: RECORDS_PAGE_SIZE, offset: ((r.page ?? 1) - 1) * RECORDS_PAGE_SIZE, order: r.order }, { signal })
-        .then((d) => ({ entity: d.entity, records: d.entity?.seap.role?.records ?? null, overview: null, onrc: null, publicEnterprise: null, financials: null, leadership: null, donations: null, people: null, relationships: null }));
+        .then((d) => ({ entity: d.entity, records: d.entity?.seap.role?.records ?? null, overview: null, onrc: null, publicEnterprise: null, financials: null, leadership: null, donations: null, people: null, onrcListed: d.entity?.onrc != null, relationships: null }));
     case "relationships":
-      return client.query(EntityRelationships, { key, role, filter }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: null, onrc: null, publicEnterprise: null, financials: null, leadership: null, donations: null, people: null, relationships: d.entity?.seap.role ?? null }));
+      return client.query(EntityRelationships, { key, role, filter }, { signal }).then((d) => ({ entity: d.entity, records: null, overview: null, onrc: null, publicEnterprise: null, financials: null, leadership: null, donations: null, people: null, onrcListed: false, relationships: d.entity?.seap.role ?? null }));
   }
 }
 
@@ -71,15 +73,15 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
   const subject = subjectOf(request);
   const [settled, setSettled] = useState<{ key: string; state: Settled } | null>(null);
   const scope = request.view === "overview" ? overviewScopeOf(request) : null;
-  const [last, setLast] = useState<{ subject: string; entity: EntityHeaderData; records: RecordsTabData | null; overview: { scope: string; data: EntityOverviewData } | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null } | null>(null);
+  const [last, setLast] = useState<{ subject: string; entity: EntityHeaderData; records: RecordsTabData | null; overview: { scope: string; data: EntityOverviewData } | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; onrcListed: boolean } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     fetchPage(client, JSON.parse(key) as EntityPageRequest, controller.signal)
-      .then(({ entity, records, overview, onrc, publicEnterprise, financials, leadership, donations, people, relationships }) => {
-        setSettled({ key, state: { status: "ready", entity, records, overview, onrc, publicEnterprise, financials, leadership, donations, people, relationships } });
+      .then(({ entity, records, overview, onrc, publicEnterprise, financials, leadership, donations, people, onrcListed, relationships }) => {
+        setSettled({ key, state: { status: "ready", entity, records, overview, onrc, publicEnterprise, financials, leadership, donations, people, onrcListed, relationships } });
         // the last Records of this entity stay on screen while the next filter loads (the panel keeps its place and focus)
-        if (entity) setLast((before) => ({ subject, entity, records: records ?? (before?.subject === subject ? before.records : null), overview: overview && scope ? { scope, data: overview } : null, onrc: scope ? onrc : null, publicEnterprise: scope ? publicEnterprise : null, financials: scope ? financials : null, leadership: scope ? leadership : null, donations: scope ? donations : null, people: scope ? people : null }));
+        if (entity) setLast((before) => ({ subject, entity, records: records ?? (before?.subject === subject ? before.records : null), overview: overview && scope ? { scope, data: overview } : null, onrc: scope ? onrc : null, publicEnterprise: scope ? publicEnterprise : null, financials: scope ? financials : null, leadership: scope ? leadership : null, donations: scope ? donations : null, people: scope ? people : null, onrcListed: onrcListed || (before?.subject === subject && before.onrcListed) }));
       })
       .catch(() => {
         if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
@@ -89,5 +91,5 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
 
   if (settled?.key === key) return settled.state;
   const same = last?.subject === subject ? last : null;
-  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: scope && same?.overview?.scope === scope ? same.overview.data : null, onrc: scope ? (same?.onrc ?? null) : null, publicEnterprise: scope && same?.overview?.scope === scope ? same.publicEnterprise : null, financials: scope && same?.overview?.scope === scope ? same.financials : null, leadership: scope && same?.overview?.scope === scope ? same.leadership : null, donations: scope && same?.overview?.scope === scope ? same.donations : null, people: scope && same?.overview?.scope === scope ? same.people : null, relationships: null };
+  return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: scope && same?.overview?.scope === scope ? same.overview.data : null, onrc: scope ? (same?.onrc ?? null) : null, publicEnterprise: scope && same?.overview?.scope === scope ? same.publicEnterprise : null, financials: scope && same?.overview?.scope === scope ? same.financials : null, leadership: scope && same?.overview?.scope === scope ? same.leadership : null, donations: scope && same?.overview?.scope === scope ? same.donations : null, people: scope && same?.overview?.scope === scope ? same.people : null, onrcListed: same?.onrcListed ?? false, relationships: null };
 }

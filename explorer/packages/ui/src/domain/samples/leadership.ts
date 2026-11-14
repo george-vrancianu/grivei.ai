@@ -34,7 +34,7 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
     period: (from, to) => `${from} – ${to}`,
     gapHeading: "Gaps (no Mandate, never guessed)",
     gaps: {
-      HANDOVER_WINDOW: "Handover window: the previous mandates ended on 27 September 2024 and the new oaths followed (AEP publishes no per-UAT oath dates)",
+      HANDOVER_WINDOW: "Handover window: the previous mandates ended and the new oaths followed (AEP publishes no per-UAT oath dates)",
       INTERIM: "Interim leader after a vacancy, until the next leader's oath",
       NO_RESULTS: "Mandate without results: AEP's minutes give no winner for this authority",
     },
@@ -48,7 +48,7 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
     period: (from, to) => `${from} – ${to}`,
     gapHeading: "Goluri (fără mandat, niciodată presupuse)",
     gaps: {
-      HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat la 27 septembrie 2024, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
+      HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
       INTERIM: "Lider interimar după o vacanță, până la jurământul următorului lider",
       NO_RESULTS: "Mandat fără rezultate: procesele-verbale AEP nu dau un câștigător pentru această autoritate",
     },

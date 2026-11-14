@@ -67,7 +67,7 @@ describe("FirmDonationsSection", () => {
     expect(row(1).getByText("15 martie 2023")).toBeVisible();
     expect(row(1).getByText("Donație")).toBeVisible();
     expect(row(2).getByText("Împrumut")).toBeVisible();
-    expect(screen.getByText(/Acest furnizor este și donator-firmă: 1 donație și 1 împrumut către partide/)).toBeVisible();
+    expect(screen.getByText(/Acest furnizor este și o firmă donatoare: 1 donație și 1 împrumut către partide/)).toBeVisible();
     expect(screen.getByText(/Date până în 2024/)).toBeVisible();
     expect(row(1).getByRole("link", { name: "BaniPartide, rândul 1" })).toBeVisible();
   });

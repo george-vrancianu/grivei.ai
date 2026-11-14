@@ -14,7 +14,11 @@ export function searchSourceHref(locale: Locale, source: SourceId, state: { q?: 
   return `${pathFor(locale, { name: "main" })}${query}`;
 }
 
-/** The Coverage page of a Source: SEAP's is the one every link from before the selector means; ONRC's is `source=onrc`. */
-export function coverageSourceHref(locale: Locale, source: SourceId): string {
-  return `${pathFor(locale, { name: "coverage" })}${encodeUrlState({ filter: {}, ...(source === "ONRC" ? { source } : {}) })}`;
+/**
+ * The Coverage page of a Source: SEAP's is the one every link from before the selector means; ONRC's is `source=onrc`. The date chip's window (`from`/`to`) goes along,
+ * so a switch there and back keeps the highlighted columns.
+ */
+export function coverageSourceHref(locale: Locale, source: SourceId, window: { from?: string | null | undefined; to?: string | null | undefined } = {}): string {
+  const filter = { ...(window.from ? { from: window.from } : {}), ...(window.to ? { to: window.to } : {}) };
+  return `${pathFor(locale, { name: "coverage" })}${encodeUrlState({ filter, ...(source === "ONRC" ? { source } : {}) })}`;
 }

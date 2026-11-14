@@ -33,7 +33,7 @@ export function CoveragePage({ locale }: CoveragePageProps) {
   const state = useCoveragePage(onrc ? null : WHOLE_GRID);
   const onrcState = useOnrcCoverage(onrc);
   const sourceSelector = (
-    <SourcePicker options={pickerOptions(t.sources, NO_COUNTS, locale)} selected={source} onSelect={(id) => navigate(coverageSourceHref(locale, asSource(id)), "push")} copy={t.sources.coverageSwitch} />
+    <SourcePicker options={pickerOptions(t.sources, NO_COUNTS, locale)} selected={source} onSelect={(id) => navigate(coverageSourceHref(locale, asSource(id), filter), "push")} copy={t.sources.coverageSwitch} />
   );
   if (onrc) {
     const copy = t.sources.onrc.coverage;

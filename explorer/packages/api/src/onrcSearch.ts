@@ -84,7 +84,7 @@ export interface OnrcStore {
   /** The registration under an ONRC registration number, or null (also for a sole trader's: ADR 0009). */
   onrcRecord(registrationNumber: string): Promise<OnrcRegistrationRow | null>;
   /** The match count and the page of registrations: text relevance, then newest registration first (undated last), then the table's own order. */
-  onrcSearch(filter: OnrcSearchFilter, page: { limit: number; offset: number }, options?: SearchOptions): Promise<{ count: number; rows: OnrcResultRow[] }>;
+  onrcSearch(filter: OnrcSearchFilter, page: { limit: number; offset: number }, options?: SearchOptions & { count?: number }): Promise<{ count: number; rows: OnrcResultRow[] }>;
   /** The match count alone. */
   onrcCount(filter: OnrcSearchFilter, options?: SearchOptions): Promise<number>;
   /** The count lens of the matching set. */
@@ -100,9 +100,9 @@ export function onrcStore({ pool, entitiesOf }: { pool: pg.Pool; entitiesOf: (ke
   return {
     onrcCount: (filter, { signal } = {}) => count(buildOnrcWhere(filter), signal),
 
-    async onrcSearch(filter, { limit, offset }, { signal } = {}) {
+    async onrcSearch(filter, { limit, offset }, { signal, count: known } = {}) {
       const w = buildOnrcWhere(filter);
-      const total = await count(w, signal);
+      const total = known ?? (await count(w, signal));
       if (limit <= 0 || offset >= total) return { count: total, rows: [] };
       // `id` is the tie-break: it follows the registration number (the table is filled in that order), and unlike the text column it lets the index sort and cut the top K itself
       const order = `${w.text ? "pdb.score(id) DESC, " : ""}registration_date DESC NULLS LAST, id`;

@@ -187,10 +187,14 @@ export function roleStore(deps: RoleDeps): RoleStore {
       let sql: string;
       if (dimension === "badge" || dimension === "signal") {
         // a Record has several badges (or belongs to several Signals' rules): one row per (value, Record). The inner select is what the index serves; the unnest is above it.
+        // with the Restricted switch shown, a Restricted rule's Records are in the facet too (as the has-Signals chip and the `signal` filter count them); hidden, the column is never read
+        const shown = dimension === "signal" && deps.restricted === true;
         const column = dimension === "badge" ? "badges" : "signals";
+        const columns = shown ? `${column}, restricted_signals` : column;
+        const unnested = shown ? `array_cat(${column}, coalesce(restricted_signals, '{}'::text[]))` : column;
         sql = `SELECT v AS value, ${totalColumns("")}
-                 FROM (SELECT record_code, ${column}, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
-                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, ${column}) r, unnest(${column}) AS v
+                 FROM (SELECT record_code, ${columns}, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, ${columns}) r, unnest(${unnested}) AS v
                 GROUP BY v ORDER BY coalesce(sum(sh), 0) DESC, v`;
       } else {
         const column = { channel: "channel", procedure: "procedure", year: "award_year::text" }[dimension];

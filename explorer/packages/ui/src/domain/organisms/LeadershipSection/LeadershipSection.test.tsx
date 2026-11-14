@@ -28,7 +28,7 @@ describe("LeadershipSection", () => {
     expect(region.getByText(/Independent \(not a party\) · AEP final minutes/)).toBeVisible();
     expect(region.getByText(/partial counts from a one-off file.*data through 9 December 2025/)).toBeVisible();
     expect(region.getByText("Gaps (no Mandate, never guessed)")).toBeVisible();
-    expect(region.getByText(/Handover window: the previous mandates ended on 27 September 2024/)).toBeVisible();
+    expect(region.getByText(/Handover window: the previous mandates ended and/)).toBeVisible();
     expect(region.getByText(/Interim leader after a vacancy/)).toBeVisible();
     expect(region.getByText(/Mandate without results/)).toBeVisible();
   });

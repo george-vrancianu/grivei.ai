@@ -46,7 +46,10 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const onrcUrl = useOnrcUrlState();
   // The Records tab's Source switch (#178): ONRC's registrations of the entity, found by its CUI. The query text is not a chip here (the CUI is the search).
   const onrcChips: OnrcFilter = onrcMode ? Object.fromEntries(Object.entries(onrcUrl.filter).filter(([field]) => field !== "q")) : NO_FILTER;
-  const registrations = useEntityOnrc(state.status !== "error" ? (state.entity?.cui ?? null) : null, onrcChips, view === "records");
+  // ONRC's rows are asked for only when they would be shown: on the ONRC side, or when SEAP has no Records of the entity. Whether ONRC lists the CUI at all comes with the Records tab (`onrcListed`).
+  const onrcListed = state.status !== "error" && state.onrcListed;
+  const seapEmpty = state.status === "ready" && state.records === null;
+  const registrations = useEntityOnrc(state.status !== "error" ? (state.entity?.cui ?? null) : null, onrcChips, view === "records" && onrcListed && (onrcMode || seapEmpty));
   const tabCounts = useTabCounts(`${role}:${entityKey}`, state, filter, locale);
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
@@ -101,9 +104,10 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const seapHasRecords = state.records !== null;
   const onrcHasRegistrations = registrations.status === "ready" && registrations.all.length > 0;
   // "SEAP has nothing" is decided once SEAP has settled: while its Records load (coming from another tab, say), the plain URL must not flash ONRC's registrations
-  const showOnrcRecords = onrcHasRegistrations && (onrcMode || (state.status === "ready" && !seapHasRecords));
-  const onrcPending = onrcMode && registrations.status === "loading";
-  const sourceSwitch = seapHasRecords && onrcHasRegistrations && (
+  const showOnrcRecords = onrcHasRegistrations && (onrcMode || seapEmpty);
+  // the ONRC side waits for the Records tab's answer on whether ONRC lists the CUI, then for the rows
+  const onrcPending = onrcMode && ((state.status === "loading" && !onrcListed) || registrations.status === "loading");
+  const sourceSwitch = seapHasRecords && onrcListed && (
     <SourcePicker
       options={[{ id: "SEAP", label: switches.options.SEAP }, { id: "ONRC", label: switches.options.ONRC }]}
       selected={showOnrcRecords ? "ONRC" : "SEAP"}
@@ -166,12 +170,6 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         state.overview && entity ? (
           // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
           <Stack spacing={3} aria-busy={loading}>
-            {onrcSection}
-            {peopleSection}
-            {publicEnterpriseSection}
-            {leadershipSection}
-            {financialsSection}
-            {donationsSection}
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               signalsToolbar={
                 <SignalOrderToggle
@@ -196,6 +194,13 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                   }}
                 />
               } {...overviewTab} />
+            {/* the Reference sources' panels come after the SEAP Overview (headline numbers and Signals), so a large entity's page does not open on up to six panels of other sources */}
+            {onrcSection}
+            {peopleSection}
+            {publicEnterpriseSection}
+            {leadershipSection}
+            {financialsSection}
+            {donationsSection}
           </Stack>
         ) : loading ? (
           <StateNote kind="loading">{t.status.loading}</StateNote>

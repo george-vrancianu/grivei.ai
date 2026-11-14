@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useClient } from "../graphql/ClientContext.tsx";
-import { FullResultsRecords, OnrcSearch } from "../graphql/operations.ts";
+import { FullResultsRecords, OnrcCount } from "../graphql/operations.ts";
 import type { SourceId } from "../urlState/codec.ts";
 import { NO_COUNTS, type SourceCount, type SourceCounts } from "./sourceCounts.ts";
 
 /** Rows per page of ONRC's Organisations tab. */
 export const ONRC_PAGE_SIZE = 50;
-/** The picker only reads a count: it asks for no rows (the API accepts a limit of 0 and answers the count alone). A count-only operation would also skip the map; that is a follow-up. */
+/** The picker only reads a count: SEAP's is asked with no rows (the API accepts a limit of 0 and answers the count alone); ONRC has its own count-only operation (no page, no map). */
 export const COUNT_ONLY_LIMIT = 0;
 
 /** Counts of one Source for one query (`q`), or null while nothing is asked. Each request is superseded by the next one and a stale answer never lands. */
@@ -20,7 +20,7 @@ function useCount(source: SourceId, q: string | null): SourceCount | null {
     const asked =
       source === "SEAP"
         ? client.query(FullResultsRecords, { filter: { q }, limit: COUNT_ONLY_LIMIT, offset: 0 }, { signal: controller.signal }).then((d): SourceCount => ({ n: d.seap.search.total.records, estimated: d.seap.search.total.estimated }))
-        : client.query(OnrcSearch, { filter: { q }, limit: COUNT_ONLY_LIMIT, offset: 0 }, { signal: controller.signal }).then((d): SourceCount => ({ n: d.onrc.search.count, estimated: false }));
+        : client.query(OnrcCount, { filter: { q } }, { signal: controller.signal }).then((d): SourceCount => ({ n: d.onrc.search.count, estimated: false }));
     asked
       .then((count) => !controller.signal.aborted && setSettled({ key, count }))
       .catch(() => !controller.signal.aborted && setSettled({ key, count: null })); // a Source whose count failed shows its name only

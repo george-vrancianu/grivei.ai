@@ -76,7 +76,7 @@ describe("the placeholder", () => {
 });
 
 /** The picker's count of the other Source (ONRC's, for the query typed) is not what these tests are about: it is answered at once, apart from the screen's own requests. */
-const isOnrcCount = (id: string) => allowlist.operations.find((o) => o.sha256 === id)?.name === "OnrcSearch";
+const isOnrcCount = (id: string) => allowlist.operations.find((o) => o.sha256 === id)?.name === "OnrcCount";
 
 /** A client that ignores the abort signal and holds every answer until the test releases it. */
 function heldClient() {
@@ -85,7 +85,7 @@ function heldClient() {
   const client: GraphqlClient = {
     query: (op, variables) => {
       const answer = real.query(op, variables);
-      if (op.name === "OnrcSearch") return answer;
+      if (op.name === "OnrcCount") return answer;
       return new Promise((resolve, reject) => void held.push(() => void answer.then(resolve, reject)));
     },
   };

@@ -1,11 +1,9 @@
 import type { Copy } from "./types.ts";
 import { ruleLabels } from "./ruleLabels.ts";
+import { CAEN_YEARS } from "./caenYears.ts";
 import { methodologyEn } from "./methodologyEn.ts";
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
-
-/** ONRC's N_VERSIUNE_CAEN: version 0 is the 1998 classification, 1 is 2003, 2 is 2008, 3 is 2025. */
-const CAEN_YEARS = [1998, 2003, 2008, 2025];
 
 const entityLink: Copy["entityLink"] = {
   nameOnly: { label: "name only", explanation: "Identified by its published name alone (no CUI). Figures may mix up namesakes." },
@@ -532,7 +530,7 @@ export const en: Copy = {
     signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     publicEnterprise: {
       heading: "Public enterprise (AMEPIP)",
-      basis: (cui, published) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}, for the financial years shown below. The match is by CUI.`,
+      basis: (cui, published, withYears) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}${withYears ? ", for the financial years shown below" : ""}. The match is by CUI.`,
       listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
       years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
       fetched: (fetched, license) => `Fetched ${fetched} from data.gov.ro${license ? `, licence ${license}` : ""}`,
@@ -545,7 +543,7 @@ export const en: Copy = {
       period: (from, to) => `${from} – ${to}`,
       gapHeading: "Gaps (no Mandate, never guessed)",
       gaps: {
-        HANDOVER_WINDOW: "Handover window: the previous mandates ended on 27 September 2024 and the new oaths followed (AEP publishes no per-UAT oath dates)",
+        HANDOVER_WINDOW: "Handover window: the previous mandates ended and the new oaths followed (AEP publishes no per-UAT oath dates)",
         INTERIM: "Interim leader after a vacancy, until the next leader's oath",
         NO_RESULTS: "Mandate without results: AEP's minutes give no winner for this authority",
       },

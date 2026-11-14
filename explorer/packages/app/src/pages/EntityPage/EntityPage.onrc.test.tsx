@@ -27,6 +27,15 @@ describe("the ONRC section on an entity page", () => {
     expect(screen.getByRole("heading", { name: "Signals (2)" })).toBeVisible(); // the SEAP Overview is still there beneath it, with the two insolvency Signals (#184: ALFA is in insolvency now and has Records in the six months up to the snapshot)
   });
 
+  it("puts the SEAP Overview (headline numbers, Signals) before the Reference sources' panels", async () => {
+    const section = await opened("/explore/supplier/3100020");
+    const numbers = screen.getByRole("list", { name: "Headline numbers" });
+    const signals = screen.getByRole("heading", { name: "Signals (2)" });
+    // DOCUMENT_POSITION_FOLLOWING: the second node comes after the first
+    expect(numbers.compareDocumentPosition(section.getByRole("heading", { name: "ONRC registration" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(signals.compareDocumentPosition(section.getByRole("heading", { name: "ONRC registration" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("shows it on an authority page", async () => {
     const section = await opened("/explore/authority/3100012");
     expect(section.getByText("J03/1006/1995")).toBeVisible();
@@ -65,7 +74,7 @@ describe("the ONRC section on an entity page", () => {
 
   it("is in Romanian under /ro/ and keeps ONRC's words as published", async () => {
     const section = await opened("/ro/explore/supplier/3100020");
-    expect(section.getByText("văzută prima oară în extrasul din 3 aprilie 2026")).toBeVisible();
+    expect(section.getByText("văzută prima oară în instantaneul din 3 aprilie 2026")).toBeVisible();
     expect(section.getByText("insolvență")).toBeVisible();
     expect(section.getByText(/ONRC publică stările fără date/)).toBeVisible();
   });

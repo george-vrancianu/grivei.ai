@@ -2,8 +2,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color, radius } from "../../../theme/tokens.ts";
-import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import type { OrganisationPeopleData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
@@ -43,8 +42,7 @@ export interface PeopleSectionProps {
 export function PeopleSection({ people, personHref, onNavigate, locale, copy }: PeopleSectionProps) {
   const snapshot = formatDate(people.snapshot, locale, "long");
   return (
-    <Stack component="section" id="people" aria-label={copy.heading} spacing={2} sx={{ p: 2, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` }}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel id="people" heading={copy.heading} level="h2">
       <Typography variant="body2" color="text.secondary">
         {copy.intro}
       </Typography>
@@ -70,6 +68,6 @@ export function PeopleSection({ people, personHref, onNavigate, locale, copy }: 
         </Stack>
       )}
       <SourceCaption label={copy.source(snapshot)} url={people.provenance.url} />
-    </Stack>
+    </Panel>
   );
 }

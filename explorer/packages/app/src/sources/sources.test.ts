@@ -39,5 +39,8 @@ describe("the links between Sources", () => {
     expect(coverageSourceHref("en", "SEAP")).toBe("/explore/coverage");
     expect(coverageSourceHref("en", "ONRC")).toBe("/explore/coverage?source=onrc");
     expect(coverageSourceHref("ro", "ONRC")).toBe("/ro/explore/coverage?source=onrc");
+    // the date chip's window goes along, in both directions
+    expect(coverageSourceHref("en", "SEAP", { from: "2023-01-01", to: "2023-12-31" })).toBe("/explore/coverage?from=2023-01-01&to=2023-12-31");
+    expect(coverageSourceHref("en", "ONRC", { from: "2023-01-01" })).toBe("/explore/coverage?from=2023-01-01&source=onrc");
   });
 });

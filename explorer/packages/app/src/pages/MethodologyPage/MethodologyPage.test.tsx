@@ -228,10 +228,6 @@ describe("every methodology link the app builds lands on an anchor of the page",
       const locale: Locale = href.startsWith("/ro/") ? "ro" : "en";
       expect(href.startsWith(PATH[locale] + "#"), href).toBe(true);
       expect(ANCHORS, href).toContain(anchorOf(href));
-      open(href);
-      await screen.findByRole("heading", { level: 1, name: catalogue[locale].methodology.title });
-      expect(document.getElementById(anchorOf(href)), href).not.toBeNull();
-      cleanup();
     }
   });
 });

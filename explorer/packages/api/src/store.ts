@@ -1270,7 +1270,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       } as FirmDonationsRow;
     },
     async referenceSources() {
-      const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
+      const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`).catch(noTable);
       const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`).catch(noTable); // the one-off file's stated date (#180)
       const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
       const year = (fs.rows[0]?.year as number | null | undefined) ?? null;

@@ -92,7 +92,7 @@ export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recor
             valueCard
           )}
           {record.suspect && <SuspectNote suspect={record.suspect} methodologyHref={methodologyHref} onNavigate={onNavigate} locale={locale} copy={copy.suspect} />}
-          {record.party && <PartySection party={record.party} authorityHref={authorityHref ?? ((key) => key)} onNavigate={onNavigate} locale={locale} copy={copy.party} />}
+          {record.party && <PartySection party={record.party} authorityHref={authorityHref} onNavigate={onNavigate} locale={locale} copy={copy.party} />}
           <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} onNavigate={onNavigate} />
         </Stack>
         <Stack spacing={3} sx={{ minWidth: 0 }}>

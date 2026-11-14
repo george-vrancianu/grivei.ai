@@ -1,6 +1,6 @@
 // Hand-written fixtures of ONRC's persisted operations (#176). Every name, CUI and registration number is invented. Seam 1 asserts the API's real answers
 // beside them; the ONRC screens (#178) are built against these.
-import type { OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcRecordQuery, OnrcRecordQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables } from "../generated/operations.ts";
+import type { OnrcCountQuery, OnrcCountQueryVariables, OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcRecordQuery, OnrcRecordQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables } from "../generated/operations.ts";
 import { entityRef } from "./builders.ts";
 import type { FixtureSet } from "./types.ts";
 import * as w from "./world.ts";
@@ -77,6 +77,21 @@ const record = {
   snapshot: "2026-05-06",
   provenance: { source: "ONRC" as const, url: "https://data.gov.ro/dataset/firme-06-05-2026", via: "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026", kind: "BULK" as const, fetchedAt: "2026-11-13T04:00:00Z" },
 };
+
+export const onrcCountHand: FixtureSet<OnrcCountQuery, OnrcCountQueryVariables> = [
+  {
+    name: "typical-text-query", kind: "typical",
+    description: "the picker's count for a text query: the match count alone (the same set as the typical OnrcSearch of this query)",
+    variables: { filter: { q: "alfa beta" } },
+    data: { onrc: { search: { count: 2 } } },
+  },
+  {
+    name: "empty-no-match", kind: "empty",
+    description: "a text query nothing in ONRC matches: a count of zero",
+    variables: { filter: { q: "nimic" } },
+    data: { onrc: { search: { count: 0 } } },
+  },
+];
 
 export const onrcRecordHand: FixtureSet<OnrcRecordQuery, OnrcRecordQueryVariables> = [
   { name: "typical-registration", kind: "typical", description: "a registration with a status change, CAEN codes and its entity page", variables: { registrationNumber: "J40/1001/2015" }, data: { onrc: { record: record } } },

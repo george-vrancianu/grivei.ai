@@ -180,6 +180,7 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns, restricte
   return {
     async signalRules() {
       // a Restricted rule's row (window, firing rate) is served only when the switch shows
+      // the order below is that of the SignalRuleSlug enum in the contract schema: a new rule goes in both places
       const { rows } = await pool.query(
         `SELECT slug, window_from::text AS window_from, window_to::text AS window_to, base_rate, base_rate_year, data_through::text AS data_through
            FROM seap.signal_rule WHERE slug <> ALL($1::text[])

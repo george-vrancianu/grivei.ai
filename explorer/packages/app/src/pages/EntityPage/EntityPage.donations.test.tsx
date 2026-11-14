@@ -66,7 +66,7 @@ describe("the firm donations section", () => {
   it("is in Romanian under /ro/", async () => {
     await opened("/ro/explore/supplier/2000007");
     const section = within(await screen.findByRole("region", { name: "Donații ale firmei către partide" }));
-    expect(section.getByText(/Acest furnizor este și donator-firmă: 1 donație și 1 împrumut către partide\. Doar context, nu un Semnal\./)).toBeVisible();
+    expect(section.getByText(/Acest furnizor este și o firmă donatoare: 1 donație și 1 împrumut către partide\. Doar context, nu un Semnal\./)).toBeVisible();
     expect(row(section, 1).getByText("Donație")).toBeVisible();
     expect(row(section, 1).getByText("15 martie 2023")).toBeVisible();
     expect(row(section, 2).getByText("Împrumut")).toBeVisible();

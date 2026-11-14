@@ -1,5 +1,6 @@
 import type { Copy } from "./types.ts";
 import { ruleLabels } from "./ruleLabels.ts";
+import { CAEN_YEARS } from "./caenYears.ts";
 import { methodologyRo } from "./methodologyRo.ts";
 
 /** Romanian count phrase: singular for 1, plural for 0 and 2..19 (mod 100), "de" + plural otherwise (20 de, 120 de; 101 and 5 take none). */
@@ -8,9 +9,6 @@ export const roCount = (n: number, formatted: string, one: string, other: string
   const r = n % 100;
   return n === 0 || (r >= 1 && r <= 19) ? `${formatted} ${other}` : `${formatted} de ${other}`;
 };
-
-/** ONRC's N_VERSIUNE_CAEN: version 0 is the 1998 classification, 1 is 2003, 2 is 2008, 3 is 2025. */
-const CAEN_YEARS = [1998, 2003, 2008, 2025];
 
 const entityLink: Copy["entityLink"] = {
   nameOnly: { label: "doar denumire", explanation: "Identificat doar după denumirea publicată (fără CUI). Cifrele pot amesteca entități omonime." },
@@ -55,12 +53,12 @@ const signalCard: Copy["signalCard"] = {
     },
     YOUNG_FIRM: {
       label: "Firmă tânără",
-      sentence: (n) => `O înregistrare este datată la ${roCount(n.daysCount, n.days, "zi", "zile")} după ce furnizorul s-a înregistrat, la ${n.registered}.`,
+      sentence: (n) => `O înregistrare este datată la ${roCount(n.daysCount, n.days, "zi", "zile")} după înmatricularea furnizorului, la ${n.registered}.`,
       lawful: "Explicații legale posibile: o societate înființată pentru un singur contract sau o afacere existentă care a primit o înmatriculare nouă după o restructurare ori o schimbare a formei juridice.",
     },
     NO_CONSTRUCTION_CAEN: {
       label: "Lucrări fără CAEN de construcții",
-      sentence: (n) => `O înregistrare de lucrări în valoare de ${n.value} a revenit unei firme fără niciun cod CAEN de construcții printre codurile sale autorizate (${n.codes}).`,
+      sentence: (n) => `O înregistrare de lucrări în valoare de ${n.value} a revenit unei firme fără niciun cod CAEN de construcții ${n.codesCount === 1 ? "în singurul său cod autorizat" : `printre cele ${roCount(n.codesCount, n.codes, "cod autorizat", "coduri autorizate")}`}.`,
       lawful: "Explicații legale posibile: construcția este făcută de un subcontractant sau de un asociat, registrul este depășit ori firma lucrează sub un cod pe care nu l-a înscris.",
     },
     AFTER_STRIKE_OFF: {
@@ -375,7 +373,7 @@ export const ro: Copy = {
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
-    source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
     notFound: { title: "Pagina persoanei nu este disponibilă", body: "Această pagină nu este disponibilă pe această gazdă sau nicio persoană nu are acest id. Paginile persoanelor apar doar într-o vedere privată." },
   },
   entityPage: {
@@ -413,7 +411,7 @@ export const ro: Copy = {
       heading: "Înmatriculare ONRC",
       registrationNumber: "Număr de înmatriculare",
       registrationDate: "Înmatriculată",
-      registrationDateUnknown: "nu apare în extrasul citit",
+      registrationDateUnknown: "nu apare în instantaneul citit",
       legalForm: "Formă juridică",
       seat: "Sediu social",
       seatUnknown: "niciun sediu publicat",
@@ -421,20 +419,20 @@ export const ro: Copy = {
         heading: "Stare",
         none: "ONRC nu listează nicio stare.",
         unnamed: (code) => `cod de stare ${code}`,
-        firstSeen: (snapshot) => `văzută prima oară în extrasul din ${snapshot}`,
-        sinceAtLeast: (snapshot) => `cel puțin din extrasul din ${snapshot}`,
-        caveat: "ONRC publică stările fără date. O dată de aici este primul extras pe care îl deținem și care arată starea, aflat prin compararea extraselor; schimbarea în sine poate fi mai veche.",
+        firstSeen: (snapshot) => `văzută prima oară în instantaneul din ${snapshot}`,
+        sinceAtLeast: (snapshot) => `cel puțin din instantaneul din ${snapshot}`,
+        caveat: "ONRC publică stările fără date. O dată de aici este primul instantaneu pe care îl deținem și care arată starea, aflat prin compararea instantaneelor; schimbarea în sine poate fi mai veche.",
       },
       caen: { heading: "Coduri CAEN autorizate", none: "ONRC nu listează niciun cod CAEN autorizat.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
       aliases: {
         heading: "Denumiri ONRC",
         none: "ONRC nu listează nicio denumire.",
         current: "denumirea legală azi",
-        range: (first, last) => (first === last ? `văzută în extrasul din ${first}` : `văzută în extrasele din ${first} până în ${last}`),
-        rangeSinceAtLeast: (first, last) => (first === last ? `văzută în extrasul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
+        range: (first, last) => (first === last ? `văzută în instantaneul din ${first}` : `văzută în instantaneele din ${first} până în ${last}`),
+        rangeSinceAtLeast: (first, last) => (first === last ? `văzută în instantaneul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
         note: "Acestea sunt grafiile ONRC, păstrate ca alias-uri. Nu schimbă niciodată numele din capul paginii.",
       },
-      source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
+      source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
       onrcOnly: "Această organizație există doar în ONRC: nicio achiziție din SEAP nu o numește. Nicio persoană a ei nu este afișată.",
     },
     people: {
@@ -444,7 +442,7 @@ export const ro: Copy = {
       born: (year) => `anul nașterii ${year}`,
       unlinked: "fără dată a nașterii în ONRC: listat doar pe această pagină, nelegat de nimeni",
       personLink: (name) => `${name}: pagina persoanei`,
-      source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
+      source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
     },
     notFound: { title: "Entitatea nu a fost găsită", body: "Nicio autoritate sau furnizor nu este publicat sub această cheie." },
     relationships: {
@@ -537,7 +535,7 @@ export const ro: Copy = {
     signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     publicEnterprise: {
       heading: "Întreprindere publică (AMEPIP)",
-      basis: (cui, published) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}, pentru anii financiari afișați mai jos. Potrivirea se face după CUI.`,
+      basis: (cui, published, withYears) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}${withYears ? ", pentru anii financiari afișați mai jos" : ""}. Potrivirea se face după CUI.`,
       listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
       years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
       fetched: (fetched, license) => `Preluată la ${fetched} de pe data.gov.ro${license ? `, licența ${license}` : ""}`,
@@ -550,7 +548,7 @@ export const ro: Copy = {
       period: (from, to) => `${from} – ${to}`,
       gapHeading: "Goluri (fără mandat, niciodată presupuse)",
       gaps: {
-        HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat la 27 septembrie 2024, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
+        HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
         INTERIM: "Lider interimar după o vacanță, până la jurământul următorului lider",
         NO_RESULTS: "Mandat fără rezultate: procesele-verbale AEP nu dau un câștigător pentru această autoritate",
       },
@@ -573,7 +571,7 @@ export const ro: Copy = {
     },
     donations: {
       heading: "Donații ale firmei către partide",
-      supplierContext: (donations, loans) => `Acest furnizor este și donator-firmă: ${donations} ${donations === 1 ? "donație" : "donații"} și ${loans} ${loans === 1 ? "împrumut" : "împrumuturi"} către partide. Doar context, nu un Semnal.`,
+      supplierContext: (donations, loans) => `Acest furnizor este și o firmă donatoare: ${donations} ${donations === 1 ? "donație" : "donații"} și ${loans} ${loans === 1 ? "împrumut" : "împrumuturi"} către partide. Doar context, nu un Semnal.`,
       intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
       caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",
       columns: { date: "Data", party: "Partid (cum este publicat)", kind: "Tip", amount: "Suma", source: "Sursa" },
@@ -703,7 +701,7 @@ export const ro: Copy = {
     recordsSwitch: { label: "Arată", options: { SEAP: "Înregistrări SEAP", ONRC: "Înmatriculări ONRC" } },
     coverageSwitch: { label: "Acoperirea pentru" },
     onrc: {
-      eyebrow: { search: "caută", scope: "național", period: "extrase lunare" },
+      eyebrow: { search: "caută", scope: "național", period: "instantanee lunare" },
       title: "Explorează registrul comerțului",
       searchBar: {
         label: "Căutare",
@@ -717,12 +715,12 @@ export const ro: Copy = {
         heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"),
         showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
         empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.",
-        emptyLink: "Verifică ce extrase ONRC deținem",
+        emptyLink: "Verifică ce instantanee ONRC deținem",
         row: {
           registrationNumber: "Nr. înmatriculare",
           cui: "CUI",
           registered: (date) => `înmatriculată pe ${date}`,
-          registrationDateUnknown: "data înmatriculării nu apare în extrasul citit",
+          registrationDateUnknown: "data înmatriculării nu apare în instantaneul citit",
           noCounty: "fără județ",
           seapCounterparty: "parte în SEAP",
           caen: "CAEN",
@@ -766,17 +764,17 @@ export const ro: Copy = {
       coverage: {
         eyebrow: "Acoperire",
         title: "Acoperirea ONRC",
-        intro: "ONRC publică registrul comerțului într-un fișier o dată pe lună. Acestea sunt extrasele pe care le deținem; o lună fără extras este o lacună cunoscută, iar pentru ea nu se numără nimic.",
-        heading: "Extrase lunare",
+        intro: "ONRC publică registrul comerțului într-un fișier o dată pe lună. Acestea sunt instantaneele pe care le deținem; o lună fără instantaneu este o lacună cunoscută, iar pentru ea nu se numără nimic.",
+        heading: "Instantanee lunare",
         snapshots: {
-          label: "Extrase ONRC",
+          label: "Instantanee ONRC",
           columns: { period: "Perioadă", state: "Stare", records: "Înmatriculări", reason: "Motiv" },
-          snapshot: (date) => `Extrasul din ${date}`,
+          snapshot: (date) => `Instantaneul din ${date}`,
           month: (month) => month,
-          missingSnapshot: "Nu deținem niciun extras din această lună.",
+          missingSnapshot: "Nu deținem niciun instantaneu din această lună.",
           dataThroughKind: "Înmatriculări",
           dataThrough: { through: "date până la" },
-          empty: "Nu deținem încă niciun extras ONRC.",
+          empty: "Nu deținem încă niciun instantaneu ONRC.",
         },
       },
     },

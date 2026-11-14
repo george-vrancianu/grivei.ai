@@ -33,6 +33,15 @@ query OnrcSearch($filter: OnrcFilter!, $limit: Int!, $offset: Int!) {
   }
 }
 
+# The match count of a filter, nothing else: what the Source picker shows beside ONRC. `OnrcSearch` also runs the Organisations page and the count lens's map.
+query OnrcCount($filter: OnrcFilter!) {
+  onrc {
+    search(filter: $filter) {
+      count
+    }
+  }
+}
+
 # One registration by its registration number.
 query OnrcRecord($registrationNumber: ID!) {
   onrc {

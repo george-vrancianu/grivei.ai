@@ -24,7 +24,7 @@ export const donationsCopy: Record<Locale, FirmDonationsSectionCopy> = {
   },
   ro: {
     heading: "Donații ale firmei către partide",
-    supplierContext: (donations, loans) => `Acest furnizor este și donator-firmă: ${plural(donations, "donație", "donații")} și ${plural(loans, "împrumut", "împrumuturi")} către partide. Doar context, nu un Semnal.`,
+    supplierContext: (donations, loans) => `Acest furnizor este și o firmă donatoare: ${plural(donations, "donație", "donații")} și ${plural(loans, "împrumut", "împrumuturi")} către partide. Doar context, nu un Semnal.`,
     intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
     caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",
     columns: { date: "Data", party: "Partid (cum este publicat)", kind: "Tip", amount: "Suma", source: "Sursa" },

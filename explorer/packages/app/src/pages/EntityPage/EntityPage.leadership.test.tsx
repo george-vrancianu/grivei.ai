@@ -20,7 +20,7 @@ describe("the Leadership list", () => {
     const items = section.getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("POPESCU ION · PARTIDUL SOCIAL DEMOCRAT27 October 2020 – 27 September 2024AEP final minutes, election of 27 September 2020");
     expect(items[1]).toHaveTextContent("POPESCU ION · PARTIDUL NAȚIONAL LIBERAL27 October 2024 – in forceAEP final minutes, election of 9 June 2024");
-    expect(section.getByText(/Handover window: the previous mandates ended on 27 September 2024/)).toBeVisible();
+    expect(section.getByText(/Handover window: the previous mandates ended and/)).toBeVisible();
     expect(section.queryByRole("link")).toBeNull(); // leaders are never linked
   });
 

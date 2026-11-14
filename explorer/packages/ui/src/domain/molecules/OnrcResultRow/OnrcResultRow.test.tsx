@@ -33,7 +33,7 @@ describe("OnrcResultRow", () => {
 
   it("says so for a registration with no date, in Romanian", () => {
     renderRow(legacy, "ro");
-    expect(screen.getByRole("listitem")).toHaveTextContent("data înmatriculării nu apare în extrasul citit");
+    expect(screen.getByRole("listitem")).toHaveTextContent("data înmatriculării nu apare în instantaneul citit");
   });
 
   it("says so for a registration with no county, and names a status the nomenclature does not", () => {

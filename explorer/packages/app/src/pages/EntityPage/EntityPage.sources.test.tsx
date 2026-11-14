@@ -28,9 +28,13 @@ const withOnrc: ExtraFixture[] = [
   { ...ask({ status: [1084] }), data: answer([]) },
 ];
 
-function open(url: string, extra: ExtraFixture[] = withOnrc, hold?: { operation: string; until: Promise<void> }) {
+/** The Records tab's answer says ONRC lists the entity (`entity.onrc`), as the API sends it for a CUI ONRC holds; `listed` false leaves the recorded answer (no registration). */
+const listedIn = (listed: boolean) => (operation: string, data: unknown) =>
+  listed && operation === "EntityRecords" ? { ...(data as { entity: object | null }), entity: (data as { entity: object | null }).entity && { ...(data as { entity: object }).entity, onrc: { registrationNumber: registration.registrationNumber } } } : data;
+
+function open(url: string, extra: ExtraFixture[] = withOnrc, hold?: { operation: string; until: Promise<void> }, listed = true) {
   openAt(url);
-  const fixture = fixtureClient({ extra, hold });
+  const fixture = fixtureClient({ extra, hold, rewrite: listedIn(listed) });
   render(<App client={fixture.client} />);
   return fixture;
 }
@@ -43,11 +47,8 @@ describe.each([
   const s = c.sources;
   const URL = `${base}/supplier/${CUI}/records`;
   const facets = () => screen.queryByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
-  /** The ONRC lookup was sent and answered (or failed): what "no switch" is asserted after. */
-  const lookedUp = async (sent: { operation: string }[]) => {
-    await waitFor(() => expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(true));
-    await new Promise((resolve) => setTimeout(resolve, 60));
-  };
+  /** Gives a request that was never to be sent time to show up. */
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 60));
   const switchGroup = () => within(screen.getByRole("group", { name: s.recordsSwitch.label }));
 
   it("opens the existing URL on SEAP Records and offers ONRC registrations beside it, since ONRC lists the entity", async () => {
@@ -57,9 +58,9 @@ describe.each([
     expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.SEAP, pressed: true })).toBeVisible();
     expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.ONRC, pressed: false })).toBeVisible();
     expect(here()).toBe(URL);
-    // the entity's SEAP Records as before, and one lookup of ONRC by its CUI
+    // the entity's SEAP Records as before; ONRC's own rows are not asked for while SEAP's side is open (the Records answer said ONRC lists it)
     expect(sent.filter((r) => r.operation === "EntityRecords")).toHaveLength(1);
-    expect(sent.filter((r) => r.operation === "OnrcSearch").map((r) => r.variables)).toEqual([{ filter: { q: CUI }, limit: 50, offset: 0 }]);
+    expect(sent.filter((r) => r.operation === "OnrcSearch")).toEqual([]);
   });
 
   it("switches to the registrations: the entity's own, not a look-alike CUI's, with ONRC's chips and its own filter in the URL", async () => {
@@ -110,24 +111,24 @@ describe.each([
   it("reads a SEAP filter in the URL as SEAP's: ONRC is not offered a county or a query as a chip there", async () => {
     const { sent } = open(`${URL}?channel=contract`);
     await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
-    await lookedUp(sent);
-    expect(sent.filter((r) => r.operation === "OnrcSearch")).toHaveLength(1); // the CUI lookup only: a SEAP chip is never an ONRC one
+    await settled();
+    expect(sent.filter((r) => r.operation === "OnrcSearch")).toHaveLength(0); // nothing of ONRC is asked on the SEAP side: a SEAP chip is never an ONRC one
     expect(sent.find((r) => r.operation === "EntityRecords")?.variables).toMatchObject({ filter: { channel: "CONTRACT" } });
   });
 
   it("shows no switch, and nothing of ONRC, for an entity ONRC lists nothing under", async () => {
-    const { sent } = open(URL, [{ ...ask({}), data: answer([lookalike]) }]);
+    const { sent } = open(URL, [], undefined, false);
     await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
-    await lookedUp(sent);
+    await settled();
+    expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(false);
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
     expect(screen.queryByRole("group", { name: s.onrc.filterChips.status.group })).toBeNull();
   });
 
-  it("shows no switch when the ONRC lookup fails, and the SEAP Records as before", async () => {
-    const { sent } = open(URL, []);
-    await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
-    await lookedUp(sent);
-    expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
+  it("falls back to the SEAP Records when ONRC's rows cannot be read on the ONRC side", async () => {
+    open(`${URL}?source=onrc`, []);
+    expect(await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
+    expect(screen.queryByText("J40/777/2015")).toBeNull();
   });
 
   it("does not show ONRC's registrations on the plain Records URL while SEAP's Records are still loading, then shows SEAP's with the switch", async () => {
@@ -136,10 +137,10 @@ describe.each([
     const { sent } = open(`${base}/supplier/${CUI}`, withOnrc, { operation: "EntityRecords", until });
     await screen.findByRole("heading", { level: 1, name: /ALFA DEMO SRL/ });
     await userEvent.click(within(screen.getByRole("navigation", { name: c.entityPage.layout.label })).getByRole("link", { name: new RegExp(`^${c.entityPage.layout.tabs.records}`) }));
-    // ONRC has answered (it has this entity) while SEAP's Records are still out: nothing of ONRC shows, and no switch yet
-    await waitFor(() => expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(true));
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(sent.some((r) => r.operation === "EntityRecords")).toBe(true);
+    // SEAP's Records are still out: nothing of ONRC shows (its rows are not even asked for), and no switch yet
+    await waitFor(() => expect(sent.some((r) => r.operation === "EntityRecords")).toBe(true));
+    await settled();
+    expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(false);
     expect(screen.queryByRole("heading", { level: 2, name: s.onrc.results.heading(1, "1") })).toBeNull();
     expect(screen.queryByText("J40/777/2015")).toBeNull();
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
@@ -169,7 +170,7 @@ describe.each([
   it("opens that entity's Records tab without the ONRC side as the page said before: no Records in the role, no switch", async () => {
     const asked = { operation: "OnrcSearch", variables: { filter: { q: "1000017" }, limit: 50, offset: 0 }, data: answer([]) };
     const { sent } = open(`${base}/supplier/1000017/records`, [asked]);
-    await lookedUp(sent);
+    await waitFor(() => expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(true));
     expect(await screen.findByText(c.entityPage.recordsNoRole.supplier)).toBeVisible();
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
   });

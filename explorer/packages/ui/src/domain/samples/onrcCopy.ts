@@ -17,7 +17,7 @@ const row: Record<Locale, OnrcResultRowCopy> = {
     fields: { NAME: "name", ALIAS: "earlier name", CUI: "CUI", CAEN: "CAEN code", REGISTRATION_NUMBER: "registration number" },
   },
   ro: {
-    registrationNumber: "Nr. înmatriculare", cui: "CUI", registered: (date) => `înmatriculată pe ${date}`, registrationDateUnknown: "data înmatriculării nu apare în extrasul citit", noCounty: "fără județ",
+    registrationNumber: "Nr. înmatriculare", cui: "CUI", registered: (date) => `înmatriculată pe ${date}`, registrationDateUnknown: "data înmatriculării nu apare în instantaneul citit", noCounty: "fără județ",
     seapCounterparty: "parte în SEAP", caen: "CAEN", statusUnnamed: (code) => `starea ${code}`, matchedIn: (field) => `Potrivit în ${field}`,
     fields: { NAME: "denumire", ALIAS: "denumire anterioară", CUI: "CUI", CAEN: "cod CAEN", REGISTRATION_NUMBER: "număr de înmatriculare" },
   },
@@ -35,7 +35,7 @@ const results: Record<Locale, OnrcResultsCopy> = {
   },
   ro: {
     heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"), showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
-    empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.", emptyLink: "Verifică ce extrase ONRC deținem", row: row.ro, pagination: pagination.ro,
+    empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.", emptyLink: "Verifică ce instantanee ONRC deținem", row: row.ro, pagination: pagination.ro,
   },
 };
 
@@ -82,9 +82,9 @@ const snapshots: Record<Locale, SnapshotCoverageCopy> = {
     snapshot: (date) => `Snapshot of ${date}`, month: (month) => month, missingSnapshot: "No snapshot of this month is held.", dataThroughKind: "Registrations", dataThrough: { through: "data through" }, empty: "No ONRC snapshot is held yet.",
   },
   ro: {
-    label: "Extrase ONRC", columns: { period: "Perioadă", state: "Stare", records: "Înmatriculări", reason: "Motiv" },
+    label: "Instantanee ONRC", columns: { period: "Perioadă", state: "Stare", records: "Înmatriculări", reason: "Motiv" },
     states: { LOADED: "Încărcat", KNOWN_GAP: "Lacună cunoscută", POSSIBLY_INCOMPLETE: "Posibil incomplet", NOT_IN_SOURCE: "Absent din sursă", CRAWLED_PROVISIONAL: "Provizoriu", NOT_YET_LOADED: "Încă neîncărcat" },
-    snapshot: (date) => `Extrasul din ${date}`, month: (month) => month, missingSnapshot: "Nu deținem niciun extras din această lună.", dataThroughKind: "Înmatriculări", dataThrough: { through: "date până la" }, empty: "Nu deținem încă niciun extras ONRC.",
+    snapshot: (date) => `Instantaneul din ${date}`, month: (month) => month, missingSnapshot: "Nu deținem niciun instantaneu din această lună.", dataThroughKind: "Înmatriculări", dataThrough: { through: "date până la" }, empty: "Nu deținem încă niciun instantaneu ONRC.",
   },
 };
 

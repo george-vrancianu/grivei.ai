@@ -9,8 +9,8 @@ import { formatDate } from "../../utils/formatDate.ts";
 export interface PublicEnterpriseSectionCopy {
   /** The section's title and the mark: "Public enterprise (AMEPIP)". */
   heading: string;
-  /** The basis in one sentence, given the formatted day AMEPIP published the list: why the entity is marked. */
-  basis: (cui: string, published: string) => string;
+  /** The basis in one sentence, given the formatted day AMEPIP published the list and whether the years are shown below it: why the entity is marked. */
+  basis: (cui: string, published: string, withYears: boolean) => string;
   /** The label of each fact AMEPIP's row gives; the values are source data, shown as published. */
   listedAs: string;
   registrationNumber: string;
@@ -46,7 +46,7 @@ export function PublicEnterpriseSection({ enterprise, cui, locale, copy }: Publi
   ];
   return (
     <Panel heading={copy.heading} level="h2">
-      <Typography>{copy.basis(cui, formatDate(enterprise.snapshot, locale, "long"))}</Typography>
+      <Typography>{copy.basis(cui, formatDate(enterprise.snapshot, locale, "long"), years !== null)}</Typography>
       <Stack component="dl" spacing={0.5} sx={{ m: 0 }}>
         {facts.map(([label, value]) => (
           <Stack key={label} direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>

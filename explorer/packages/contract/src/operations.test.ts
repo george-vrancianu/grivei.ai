@@ -28,7 +28,7 @@ describe("operations", () => {
     expect(names).toEqual([
       "CoverageLens", "CoveragePage", "EntityOverview", "EntityRecords", "EntityRelationships",
       "FullResultsAuthorities", "FullResultsRecords", "FullResultsSuppliers", "MainScreen",
-      "MethodologyBaseRates", "MethodologyReferenceSources", "OnrcCoverage", "OnrcRecord", "OnrcSearch", "PersonPage", "RecordPage", "ZoomedCounty",
+      "MethodologyBaseRates", "MethodologyReferenceSources", "OnrcCount", "OnrcCoverage", "OnrcRecord", "OnrcSearch", "PersonPage", "RecordPage", "ZoomedCounty",
     ]);
   });
   it("are queries only", () => {

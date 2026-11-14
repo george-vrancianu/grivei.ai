@@ -147,9 +147,14 @@ describe.skipIf(reason !== null)("the SOE-board Signal is served only when GRIVE
         const without = await records(mode.name, { hasSignals: false });
         const bySignal = await records(mode.name, { signal: RULE }, false); // names the rule in the request: not recorded as an unfiltered answer
         const onEntity = await signals(mode.name, "BETA ONRC SRL", "AUTHORITY", { signal: RULE }, false);
+        const onEntityRecords = mode.shown ? (await ask(mode.name, "EntityRecords", { key: keys.get("BETA ONRC SRL")!, role: "AUTHORITY", filter: { signal: RULE }, limit: 1, offset: 0 }, false)).entity.seap.role.records.total.records : 0;
         expect(all).toBeGreaterThan(0);
         expect(byChip + without).toBe(all);
         chips.set(mode.name, byChip);
+        // the entity's Signal facet agrees with the chip and the filter: it offers the rule when shown, and never names it when hidden
+        const facet = (await ask(mode.name, "EntityRecords", { key: keys.get("BETA ONRC SRL")!, role: "AUTHORITY", filter: {}, limit: 1, offset: 0 })).entity.seap.role.records.facets.signal as { value: string; total: { records: number } }[];
+        if (mode.shown) expect(facet.find((f) => f.value === RULE)?.total.records).toBe(onEntityRecords);
+        else expect(facet.map((f) => f.value)).not.toContain(RULE);
         if (mode.shown) {
           expect(bySignal).toBe(3); // ALFA's three Records of the enterprise
           expect(byChip).toBeGreaterThanOrEqual(3);

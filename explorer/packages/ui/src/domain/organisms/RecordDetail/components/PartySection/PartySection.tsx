@@ -16,7 +16,8 @@ export interface PartySectionCopy {
 
 export interface PartySectionProps {
   party: RecordPartyData;
-  authorityHref: (key: string) => string;
+  /** The authority's entity page; without it the authority's name in the basis is plain text. */
+  authorityHref?: ((key: string) => string) | undefined;
   onNavigate?: ((href: string) => void) | undefined;
   locale: Locale;
   copy: PartySectionCopy;
@@ -31,7 +32,7 @@ export function PartySection({ party, authorityHref, onNavigate, locale, copy }:
       <Typography variant="caption" color="text.secondary">{copy.note}</Typography>
       {party.via && (
         <Typography variant="caption" color="text.secondary">
-          <ViaSentence via={party.via} sentence={copy.via} href={authorityHref(party.via.authority)} onNavigate={onNavigate} locale={locale} />
+          <ViaSentence via={party.via} sentence={copy.via} href={authorityHref?.(party.via.authority)} onNavigate={onNavigate} locale={locale} />
         </Typography>
       )}
     </Panel>

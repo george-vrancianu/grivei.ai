@@ -38,4 +38,10 @@ describe("PublicEnterpriseSection", () => {
     expect(screen.getByText("Financial year 2023")).toBeVisible();
     expect(screen.getByText(/Fetched 14 November 2026 from data.gov.ro$/)).toBeVisible();
   });
+
+  it("does not point to financial years below when AMEPIP gives none", () => {
+    show({ ...publicEnterpriseBare, firstYear: null, lastYear: null });
+    expect(screen.getByText("CUI 2000007 appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published 13 January 2026. The match is by CUI.")).toBeVisible();
+    expect(screen.queryByText(/Financial year/)).not.toBeInTheDocument();
+  });
 });

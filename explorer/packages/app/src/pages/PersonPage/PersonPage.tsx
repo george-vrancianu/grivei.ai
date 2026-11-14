@@ -1,4 +1,4 @@
-import { PersonDetail, Typography, type Locale } from "@grivei/ui";
+import { PersonDetail, StateNote, Typography, type Locale } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -22,14 +22,14 @@ export function PersonPage({ locale, id }: PersonPageProps) {
   if (state.status === "loading") {
     return (
       <PageShell>
-        <Typography role="status">{t.status.loading}</Typography>
+        <StateNote kind="loading">{t.status.loading}</StateNote>
       </PageShell>
     );
   }
   if (state.status === "error") {
     return (
       <PageShell>
-        <Typography role="alert">{t.status.failed}</Typography>
+        <StateNote kind="error">{t.status.failed}</StateNote>
       </PageShell>
     );
   }
