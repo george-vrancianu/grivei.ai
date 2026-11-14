@@ -47,6 +47,7 @@ export const ENTITY_KEYS = {
   partySchool: "51001507", // SCOALA GIMNAZIALA FICTIVA BRASOV: the town hall and a ministry are its principals: no Leadership list
   partyRasnov: "51000307", // ORAS RASNOV: a partial election and its interim gap
   partySinca: "51000404", // COMUNA SINCA NOUA: a repeat round, then no results
+  partySanpetru: "51000005", // COMUNA SANPETRU: an alliance's list with its member parties in 2020, an independent in 2024
   partySupplier: "2000007", // SANTIERUL TARA DEMO SRL: a supplier of the party world: never a Leadership list (asked by seam1.test.ts, not recorded: the key and role are another archive's case)
   onrcDubla: "3100063", // DUBLA ONRC SA: both roles
   onrcOnly: "3100071", // OMEGA ONLY SRL: in ONRC only, seat in Cluj
@@ -221,5 +222,15 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "party-school", archive: "party", kind: "empty",
     description: "a school with the town hall and a ministry as principals: no Leadership list, no Party",
     variables: page(ENTITY_KEYS.partySchool, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-alliance-and-independent", archive: "party", kind: "typical",
+    description: "a commune won by an alliance in 2020 (its registered name with its member parties) and by an independent in 2024 (the list reads Independent, which is no party)",
+    variables: page(ENTITY_KEYS.partySanpetru, "AUTHORITY", { signalOrder: "VALUE_DESC" }), // asked in the Signals order the default is not, so it differs from the moneymap world's case for the same key
+  },
+  {
+    operation: "EntityOverview", name: "party-town-hall-supplier-page", archive: "party", kind: "empty",
+    description: "a town hall opened on its SUPPLIER role page: the entity carries its Leadership list, and the app shows it on the authority page only",
+    variables: page(ENTITY_KEYS.partyBrasov, "SUPPLIER"),
   },
 ];

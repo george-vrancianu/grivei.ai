@@ -2556,6 +2556,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(hospital.via).toEqual({ authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 });
       expect(hospital.mandates).toEqual(entityOf("party-town-hall")!.leadership!.mandates);
       expect(entityOf("party-school")!.leadership).toBeNull(); // the town hall AND a ministry are its principals
+      // an alliance keeps its registered name with its member parties (no party family); an independent is "Independent" and is no party
+      expect(entityOf("party-alliance-and-independent")!.leadership!.mandates.map((m) => [m.list, m.independent, m.memberParties])).toEqual([
+        ["ALIANȚA USR PLUS", false, ["PARTIDUL USR", "PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE"]],
+        ["Independent", true, []],
+      ]);
+      expect(entityOf("party-town-hall-supplier-page")!.leadership).not.toBeNull(); // the entity-level field: the page gates it by role
       const supplier = await ask(DBS.party, entityOverview.sha256, { key: ENTITY_KEYS.partySupplier, role: "SUPPLIER", filter: {} });
       expect((supplier.body.data as EntityOverviewQuery).entity).toMatchObject({ key: "2000007", leadership: null }); // a supplier never has a Party
       for (const name of ["authority", "supplier", "name-only-supplier", "both-roles-authority-page", "onrc-supplier"]) expect(entityOf(name)!.leadership, name).toBeNull();
@@ -3356,6 +3362,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(listOf("party-subordinate-body")).toMatchObject({ list: "PARTIDUL NAȚIONAL LIBERAL", via: { authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 } });
       expect(listOf("party-handover-window")).toBeNull();
       expect(listOf("party-school-two-principals")).toBeNull();
+      expect(listOf("party-contradicted-tie")).toBeNull(); // a held snapshot names another principal set: the tie is contradicted, nothing is inherited
       for (const c of RECORDED_RECORD_CASES) {
         const found = (answers.get(c.name)!.data as RecordPageQuery).seap.record;
         for (const winner of found?.winners ?? []) expect(Object.keys(winner).filter((k) => /party|leadership|mandate|list/i.test(k)), `${c.name}: a winner carries no Party`).toEqual([]);

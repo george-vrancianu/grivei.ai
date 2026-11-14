@@ -1013,7 +1013,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return (rows[0] as PublicEnterpriseRow | undefined) ?? null;
     },
     async leadership(key) {
-      const direct = await pool.query(`SELECT area FROM aep.authority WHERE entity_key = $1`, [key]);
+      // A graph built before the aep schema existed (deployed ahead of a rebuild) has no Leadership list or Party: the pages still work.
+      const direct = await pool.query(`SELECT area FROM aep.authority WHERE entity_key = $1`, [key]).catch(noTable);
       let area = direct.rows[0]?.area as string | undefined;
       let via: LeadershipViaRow | null = null;
       if (!area) {
@@ -1021,7 +1022,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
           `SELECT s.authority_key AS "authorityKey", e.display_name AS "authorityName", s.snapshot_date::text AS "snapshotDate", s.snapshots, a.area
              FROM aep.subordinate s JOIN aep.authority a ON a.entity_key = s.authority_key JOIN core.entity e ON e.key = s.authority_key WHERE s.entity_key = $1`,
           [key],
-        );
+        ).catch(noTable);
         if (!sub.rows[0]) return null;
         ({ area } = sub.rows[0] as { area: string });
         via = { authority: sub.rows[0].authorityKey, authorityName: sub.rows[0].authorityName, snapshotDate: sub.rows[0].snapshotDate, snapshots: Number(sub.rows[0].snapshots) };
@@ -1045,7 +1046,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
            LEFT JOIN core.entity e ON e.key = p.via_key
           WHERE p.record_code = $1`,
         [code],
-      );
+      ).catch(noTable);
       const r = rows[0];
       if (!r) return null;
       return {
@@ -1073,7 +1074,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async referenceSources() {
       const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
-      const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`); // the one-off file's stated date (#180)
+      const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`).catch(noTable); // the one-off file's stated date (#180)
       const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
       const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
       return [

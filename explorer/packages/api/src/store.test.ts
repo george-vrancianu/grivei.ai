@@ -29,3 +29,27 @@ describe("a graph without the financials schema (deployed before a rebuild)", ()
     await expect(postgresStore(pool, { rollup: false }).financials("2000007", "2000007")).rejects.toThrow("connection lost");
   });
 });
+
+/** A pool whose database has no `aep` schema yet (a graph built before #180): every query that names it answers 42P01. */
+function poolWithoutAep(): pg.Pool {
+  return {
+    query: async (sql: string) => {
+      if (sql.includes("aep.")) throw Object.assign(new Error('relation "aep.authority" does not exist'), { code: "42P01" });
+      if (sql.includes("amepip.snapshot") || sql.includes("financials.")) return { rows: [] };
+      throw new Error(`unexpected query: ${sql}`);
+    },
+  } as unknown as pg.Pool;
+}
+
+describe("a graph without the aep schema (deployed before a rebuild)", () => {
+  it("has no Leadership list and no Party, so entity and Record pages keep working", async () => {
+    const store = postgresStore(poolWithoutAep(), { rollup: false });
+    expect(await store.leadership("51000501")).toBeNull();
+    expect(await store.recordParty("DA95000002")).toBeNull();
+  });
+
+  it("still lists the Reference sources, with no data-through date for AEP", async () => {
+    const sources = await postgresStore(poolWithoutAep(), { rollup: false }).referenceSources();
+    expect(sources.map((s) => [s.id, s.dataThrough])).toEqual([["AMEPIP", null], ["AEP", null], ["FINANCIAL_STATEMENTS", null]]);
+  });
+});

@@ -2236,6 +2236,62 @@
     }
   },
   {
+    "name": "party-contradicted-tie",
+    "kind": "empty",
+    "description": "a roads directorate whose newest snapshot names Brasov but an older one names Rasnov: a contradicted tie inherits no Party",
+    "variables": {
+      "code": "DA95000005"
+    },
+    "data": {
+      "seap": {
+        "record": {
+          "code": "DA95000005",
+          "title": "Achizitie DA95000005",
+          "date": "2024-11-20",
+          "kind": "DA",
+          "channel": "DIRECT_PURCHASE",
+          "procedure": null,
+          "contractType": null,
+          "value": "100000",
+          "counted": "100000",
+          "authority": {
+            "key": "51003303",
+            "displayName": "DIRECTIA DRUMURILOR DEMO BRASOV",
+            "identity": "CUI"
+          },
+          "party": null,
+          "winners": [
+            {
+              "naturalPerson": false,
+              "publishedName": "SANTIERUL TARA DEMO SRL",
+              "share": null,
+              "entity": {
+                "key": "2000007",
+                "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                "identity": "CUI"
+              }
+            }
+          ],
+          "cpv": {
+            "code": "30197000-6",
+            "description": "Articole de papetarie (Rev.2)"
+          },
+          "badges": [],
+          "suspect": null,
+          "provenance": {
+            "source": "SEAP",
+            "url": "/source/seap/DA95000005",
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          },
+          "framework": null,
+          "signals": []
+        }
+      }
+    }
+  },
+  {
     "name": "splitting-signal",
     "kind": "typical",
     "description": "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records",
