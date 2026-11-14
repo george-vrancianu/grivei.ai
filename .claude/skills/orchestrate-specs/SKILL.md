@@ -34,7 +34,7 @@ Launch agents with the Agent tool, `general-purpose`, setting `model` explicitly
 Link these in briefs instead of restating them. Each is used if present; if one is missing, fall back to `gh --help`, `ls`, and reading `package.json` scripts.
 
 - `docs/agents/issue-tracker.md`: working `gh` commands. Some write commands there (label POST/DELETE, close PATCH, assignees POST, `gh issue create`, `gh issue comment`, `gh pr comment`, `gh pr close`) were syntax-checked but not run: verify on first use.
-- `docs/agents/codebase-map.md`: workspaces, check and test commands, schema and migration facts, lint tools, how to run the app, gotchas.
+- `docs/agents/codebase-map.md`: workspaces, check commands, how schema is applied at rebuild, Seam 1, test guards (watchdog), lint tools, how to run the app, worktrees.
 - `CODING_STANDARDS.md`: what the Standards review checks.
 - `scripts/worktree.sh`: create and remove agent worktrees (usage in its header comment: `scripts/worktree.sh <name> [base]`; `--remove <name>`). Without the script: `git worktree add .claude/worktrees/<name> -b <name> origin/main`, copy the `.env` and `.env.local` files that exist in the main checkout (read-only copy), and run the install commands the codebase map names.
 

@@ -34,7 +34,7 @@ The user keeps working in the main checkout. Only this level runs commands there
 [END-OF-RUN.md](../orchestrate-specs/END-OF-RUN.md) steps 4 to 6, plus:
 
 - Commands, ports, health route, restart and stop: [codebase map](../../../docs/agents/codebase-map.md), "Running the app". Anything this level starts by hand: `nohup`, output to `/tmp/pp-<name>.log`, note the PID or Compose project, and stop only that; `pkill -f`/`pgrep -f` patterns can match this agent's own shell.
-- A runtime already up (the user's or another session's) stays up; on the first run, when nothing was started earlier, start it and record what you started. A port already in use: find the holder and tell the user unless this level started it.
+- Who owns a running runtime, and what to start, restart or leave: END-OF-RUN step 4. A port already in use: find the holder and tell the user unless this level started it.
 - Tunnel: reuse one another session started; a tunnel pointing at another port belongs to something else. If the codebase map names no tunnel, say so rather than inventing one. Tell the user the URL whenever it changes.
 
 ## Reporting when a spec finishes

@@ -53,7 +53,7 @@ There is no dev server for the app: the explorer has no `dev` or `start:dev` scr
 - Ports: only `web` is published, as `127.0.0.1:8080` (Caddy: landing page `/` and `/ro/`, app `/explore/` and `/ro/explore/`, `/graphql`, `/source/*`, `/geo/*`). The API listens on 4000 and the database on 5432, both on the Compose network only.
 - Health: the API answers `GET /healthz` (`explorer/packages/api/src/server.ts`) on 4000, reachable from inside the network; Compose uses it as the `api` healthcheck, so `docker compose ps` shows `healthy`. Caddy does not route it. From the host, check `http://localhost:8080/explore/` for 200.
 - Same origin: Caddy serves app and API on one origin, so there is no CORS setting and no `CLIENT_ORIGIN`-style variable. The API reads `DATABASE_URL` (required), `PORT`, `API_CACHE_MAX_MB`, `SEAP_BASE_URL`, `SEAP_LINK_PUBLIC_BASE`, `GRIVEI_RESTRICTED` (list in `explorer/packages/api/src/main.ts`).
-- Restart and stop: re-running `docker compose up -d --build` recreates only the services whose image or config changed. Stop with `docker compose stop` (or `down`; never `down -v`, it deletes the database volume). A running `grivei` Compose project (`docker compose ps`) belongs to the user, who may have started it: this includes a project that was up before the run.
+- Restart and stop: re-running `docker compose up -d --build` recreates only the services whose image or config changed. Stop with `docker compose stop` (or `down`; never `down -v`, it deletes the database volume). A project that was already up before the run is the user's: leave it running.
 - Tunnel: the repo defines none.
 
 ## Worktrees
