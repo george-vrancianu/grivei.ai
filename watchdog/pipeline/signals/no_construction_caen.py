@@ -27,9 +27,10 @@ def load(cur) -> dict[str, list[tuple[str, int | None]]] | None:
     if not cur.fetchone()[0]:
         return None
     cur.execute(
-        """SELECT r.cui, c.code, c.version FROM onrc.registration r JOIN onrc.caen c ON c.reg_no = r.reg_no
-            WHERE r.primary_for_cui AND r.cui IS NOT NULL
-              AND EXISTS (SELECT 1 FROM seap.search s WHERE s.supplier_key = r.cui AND NOT s.suspect AND s.counted_bani >= %s)""", (THRESHOLD_BANI,))
+        """SELECT r.cui, c.code, c.version
+             FROM (SELECT DISTINCT supplier_key FROM seap.search WHERE supplier_key IS NOT NULL AND NOT suspect AND counted_bani >= %s) big
+             JOIN onrc.registration r ON r.cui = big.supplier_key AND r.primary_for_cui
+             JOIN onrc.caen c ON c.reg_no = r.reg_no""", (THRESHOLD_BANI,))
     codes: dict[str, list[tuple[str, int | None]]] = {}
     for cui, code, version in cur.fetchall():
         codes.setdefault(cui, []).append((code, version))

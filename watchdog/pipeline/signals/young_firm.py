@@ -39,15 +39,16 @@ def load(cur) -> Context | None:
     cur.execute("SELECT EXISTS (SELECT 1 FROM onrc.registration WHERE registration_date IS NOT NULL)")
     if not cur.fetchone()[0]:
         return None
+    # set-based on purpose: seap.search has no supplier index yet (the record indexes are built after the Signals), so no per-supplier probes
     cur.execute(
-        """SELECT r.cui, r.registration_date,
-                  (SELECT s.record_code FROM seap.search s WHERE s.supplier_key = r.cui AND NOT s.suspect ORDER BY s.award_date, s.record_code LIMIT 1)
-             FROM onrc.registration r
-            WHERE r.primary_for_cui AND r.cui IS NOT NULL AND r.registration_date IS NOT NULL
-              AND EXISTS (SELECT 1 FROM seap.search s WHERE s.supplier_key = r.cui AND NOT s.suspect
-                             AND s.award_date - r.registration_date BETWEEN 0 AND %s)""", (LARGE_RECORD_DAYS,))
-    rows = cur.fetchall()
-    return Context({cui: registered for cui, registered, _ in rows}, {cui: first for cui, _, first in rows})
+        """SELECT DISTINCT r.cui, r.registration_date
+             FROM onrc.registration r JOIN seap.search s ON s.supplier_key = r.cui
+            WHERE r.primary_for_cui AND r.registration_date IS NOT NULL AND NOT s.suspect AND s.award_date - r.registration_date BETWEEN 0 AND %s""", (LARGE_RECORD_DAYS,))
+    registered = dict(cur.fetchall())
+    cur.execute(
+        """SELECT DISTINCT ON (supplier_key) supplier_key, record_code FROM seap.search
+            WHERE supplier_key = ANY(%s) AND NOT suspect ORDER BY supplier_key, award_date, record_code""", (sorted(registered),))
+    return Context(registered, dict(cur.fetchall()))
 
 
 def where(context: Context) -> tuple[str, tuple]:

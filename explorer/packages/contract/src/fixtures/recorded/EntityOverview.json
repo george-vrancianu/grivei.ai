@@ -7506,7 +7506,26 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-10",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100012",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-10",
+                      "to": "2026-02-10"
+                    }
+                  }
+                ]
               },
               {
                 "code": "DA95000006",
@@ -7535,12 +7554,114 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-17",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100063",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-17",
+                      "to": "2026-02-17"
+                    }
+                  }
+                ]
               }
             ],
             "signals": {
-              "count": 0,
-              "rows": []
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-17",
+                  "firstDate": "2026-02-17",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100063",
+                    "displayName": "DUBLA ONRC SA",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100063",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-17",
+                    "to": "2026-02-17"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000006",
+                      "provenance": {
+                        "url": "/source/seap/DA95000006"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-10",
+                  "firstDate": "2026-02-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100012",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-10",
+                    "to": "2026-02-10"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000001",
+                      "provenance": {
+                        "url": "/source/seap/DA95000001"
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           }
         },
@@ -7785,7 +7906,26 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-10",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100012",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-10",
+                      "to": "2026-02-10"
+                    }
+                  }
+                ]
               },
               {
                 "code": "DA95000002",
@@ -7905,8 +8045,50 @@
               }
             ],
             "signals": {
-              "count": 0,
-              "rows": []
+              "count": 1,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-10",
+                  "firstDate": "2026-02-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100012",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-10",
+                    "to": "2026-02-10"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000001",
+                      "provenance": {
+                        "url": "/source/seap/DA95000001"
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           }
         },
@@ -8617,12 +8799,73 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-17",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100063",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-17",
+                      "to": "2026-02-17"
+                    }
+                  }
+                ]
               }
             ],
             "signals": {
-              "count": 0,
-              "rows": []
+              "count": 1,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-17",
+                  "firstDate": "2026-02-17",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100063",
+                    "displayName": "DUBLA ONRC SA",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100063",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-17",
+                    "to": "2026-02-17"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000006",
+                      "provenance": {
+                        "url": "/source/seap/DA95000006"
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           }
         },
@@ -10451,7 +10694,26 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-10",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100012",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-10",
+                      "to": "2026-02-10"
+                    }
+                  }
+                ]
               },
               {
                 "code": "DA95000006",
@@ -10480,12 +10742,114 @@
                     }
                   }
                 ],
-                "signals": []
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-17",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3100063",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-17",
+                      "to": "2026-02-17"
+                    }
+                  }
+                ]
               }
             ],
             "signals": {
-              "count": 0,
-              "rows": []
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-10",
+                  "firstDate": "2026-02-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100012",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-10",
+                    "to": "2026-02-10"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000001",
+                      "provenance": {
+                        "url": "/source/seap/DA95000001"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-17",
+                  "firstDate": "2026-02-17",
+                  "recordCount": 1,
+                  "dataThrough": "2026-03-20",
+                  "authority": {
+                    "key": "3100063",
+                    "displayName": "DUBLA ONRC SA",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3100063",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-17",
+                    "to": "2026-02-17"
+                  },
+                  "records": [
+                    {
+                      "code": "DA95000006",
+                      "provenance": {
+                        "url": "/source/seap/DA95000006"
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           }
         },
