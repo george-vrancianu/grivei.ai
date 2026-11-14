@@ -160,7 +160,7 @@ class Answer:
 
 def anaf_units(archive: Archive) -> list[Unit]:
     """Complete ANAF lookup units, oldest fetch first."""
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND) and RESPONSE_FILE in u.files]
+    units = [u for u in archive.units(SOURCE) if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND) and RESPONSE_FILE in u.files]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     return units
 
@@ -239,7 +239,7 @@ def archived_records(archive: Archive) -> Iterator[tuple[int, int, Unit, list | 
     from .crawl.records import parse_unit as parse_crawl_unit
 
     units = [
-        u for u in archive.units()
+        u for u in archive.units("seap")
         if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))
     ]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))

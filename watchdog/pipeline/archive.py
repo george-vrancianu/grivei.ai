@@ -191,13 +191,14 @@ class Archive:
             if directory.is_dir() and directory.relative_to(self.root).parts[0] != QUARANTINE_DIR:
                 yield directory
 
-    def units(self) -> list[Unit]:
-        """Complete units only, in a stable order (path, i.e. source/stream/kind/unit/fetch day)."""
-        return [u for u, _ in self._read_all() if u is not None]
+    def units(self, source: str | None = None) -> list[Unit]:
+        """Complete units only, in a stable order (path, i.e. source/stream/kind/unit/fetch day). Reading a unit hashes its files, so a reader
+        of one Source passes it: a Source's units are never read (and its multi-gigabyte files never hashed) by another Source's reader."""
+        return [u for u, _ in self._read_all(source) if u is not None]
 
-    def incomplete(self) -> list[Path]:
-        """Directories whose manifest is unreadable or whose files do not match it: skipped by a rebuild."""
-        return [p for u, p in self._read_all() if u is None]
+    def incomplete(self, source: str | None = None, skip: tuple[str, ...] = ()) -> list[Path]:
+        """Directories whose manifest is unreadable or whose files do not match it: skipped by a rebuild. `skip` leaves whole Sources out (they report their own)."""
+        return [p for u, p in self._read_all(source, skip) if u is None]
 
     def quarantined(self) -> list[Path]:
         base = self.root / QUARANTINE_DIR
@@ -207,8 +208,10 @@ class Archive:
         """Every fetch directory (or those `keep(directory)` accepts) with its Unit, None when incomplete. Read-only; hashes the files of the kept ones."""
         return [(self._read_unit(d), d) for d in self._unit_dirs() if keep is None or keep(d)]
 
-    def _read_all(self) -> list[tuple[Unit | None, Path]]:
-        return self.survey()
+    def _read_all(self, source: str | None = None, skip: tuple[str, ...] = ()) -> list[tuple[Unit | None, Path]]:
+        if source is None and not skip:
+            return self.survey()
+        return self.survey(lambda d: (source is None or d.relative_to(self.root).parts[0] == source) and d.relative_to(self.root).parts[0] not in skip)
 
     def _read_unit(self, directory: Path) -> Unit | None:
         try:

@@ -91,7 +91,7 @@ CREATE TABLE core.placement (
     sector            smallint,
     national          boolean NOT NULL,
     national_by       text NOT NULL,              -- award-notice | file | file-override | default
-    placed_by         text NOT NULL CHECK (placed_by IN ('ANAF', 'SEAP')),
+    placed_by         text NOT NULL CHECK (placed_by IN ('ANAF', 'SEAP', 'ONRC')),  -- ONRC: the seat's county of an entity neither ANAF nor SEAP places (#175)
     located_on        timestamptz,                -- when the answer it came from was fetched
     source_path       text                        -- that answer, relative to the archive root
 );

@@ -76,10 +76,10 @@
         <div class="block__head">
           <h2 class="label label--accent">data sources</h2>
           <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
-          <p class="label" id="sources-summary">1 live · 3 next · 1 skipped</p>
+          <p class="label" id="sources-summary">1 live · 1 in progress · 2 next · 1 skipped</p>
         </div>
         <div class="bar" id="sources-bar" aria-hidden="true">
-          <span data-status="live"></span><span data-status="next"></span><span data-status="next"></span><span data-status="next"></span><span data-status="skipped"></span>
+          <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="skipped"></span>
         </div>
 
         <!--
@@ -95,10 +95,10 @@
             <p class="source__what">Direct purchases, award notices, contracts</p>
             <p class="status">live</p>
           </li>
-          <li class="source" data-status="next">
+          <li class="source" data-status="wip">
             <h3 class="source__name">ONRC</h3>
             <p class="source__what">Company directors, status and activity codes</p>
-            <p class="status">next</p>
+            <p class="status">in progress</p>
           </li>
           <li class="source" data-status="next">
             <h3 class="source__name">Ministry of Finance</h3>
@@ -142,7 +142,7 @@
     <div class="wrap foot__in">
       <p>grivei.ai</p>
       <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ro/index.html. -->
-      <p>updated: <time datetime="2026-11-12">12 Nov 2026</time></p>
+      <p>updated: <time datetime="2026-11-14">14 Nov 2026</time></p>
     </div>
   </footer>
 

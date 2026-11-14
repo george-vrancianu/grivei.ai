@@ -15,6 +15,7 @@ from typing import Callable
 
 from .archive import Archive
 from . import seap_status
+from .onrc import status as onrc_status
 
 
 @dataclass(frozen=True)
@@ -63,8 +64,24 @@ SEAP = Source(
     status=seap_status.describe_status,
 )
 
+# ONRC's data-through date per Record kind: the newest snapshot read (the whole register is as of that date). Its roles join with ticket #177.
+ONRC_DATA_THROUGH_SQL = "SELECT 'REGISTRATION', max(snapshot_date)::text FROM onrc.snapshot HAVING count(*) > 0"
+
+ONRC = Source(
+    id="ONRC",
+    name="ONRC",
+    schema="onrc",
+    record_kinds=("REGISTRATION",),
+    lenses=("COUNT",),
+    placement_rule="the registered seat's county (the UAT from ANAF's placement when the CUI has one); a registration with no county goes to the Unplaced tile",
+    methodology_anchor="onrc-registrations",
+    landing_row=LandingRow("wip", "ONRC", {"en": "Company directors, status and activity codes", "ro": "Administratori, stare și coduri CAEN ale firmelor"}),
+    data_through_sql=ONRC_DATA_THROUGH_SQL,
+    status=onrc_status.describe_status,
+)
+
 # Order is the order the `sources` query lists them in (harvested Sources first, then the planned ones the API names).
-SOURCES: tuple[Source, ...] = (SEAP,)
+SOURCES: tuple[Source, ...] = (SEAP, ONRC)
 
 
 def by_id(source_id: str) -> Source:

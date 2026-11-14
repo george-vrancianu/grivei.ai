@@ -69,6 +69,7 @@ class FakeImpl:
 
     def crawl(self): return self._step("crawl")
     def datagov(self): return self._step("datagov")
+    def onrc(self): return StepResult({"n": 1})  # not recorded in `ran` either: ONRC has its own tests (test_onrc_refresh.py)
     def anaf(self): return self._step("anaf")
     def load(self): return self._step("load")
     def backup(self): return StepResult({"n": 1})  # not recorded in `ran`: the tests of the other steps list those
@@ -114,7 +115,7 @@ def test_a_first_run_runs_every_step_in_order_crawl_datagov_anaf_load_and_pings_
     assert (result.status, result.exit_code) == ("ok", 0)
     assert impl.ran == ["crawl", "datagov", "anaf", "load"]  # ANAF before the load: the load reads the archived answers
     assert pings.urls == ["https://hc.example/ping/abc"]  # a success ping, not /fail
-    assert "6 step(s) ran" in pings.calls[0][1]
+    assert "7 step(s) ran" in pings.calls[0][1]
 
 
 def test_a_duplicate_trigger_finds_nothing_due_and_still_pings_success(go, impl, clock, pings):

@@ -47,6 +47,7 @@ from .estimates import read_estimates
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
 from .mf.build import MfSummary, build_mf
+from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
@@ -73,6 +74,7 @@ class RebuildSummary:
     signals: dict[str, int] = field(default_factory=dict)  # Signals found per rule (#74)
     placement: PlacementSummary | None = None
     mf: MfSummary | None = None  # the MF list step (#80)
+    onrc: OnrcSummary | None = None  # the ONRC step (#175)
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
@@ -92,6 +94,8 @@ class RebuildSummary:
             out.append(self.placement.line())
         if self.mf is not None:
             out.append(self.mf.line())
+        if self.onrc is not None:
+            out.append(self.onrc.line())
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
@@ -262,8 +266,8 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
     Oldest fetch first, so a re-uploaded file (a later fetch of the same unit) is applied after the original. A file
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
     """
-    summary.incomplete = archive.incomplete()
-    units = [u for u in archive.units() if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
+    summary.incomplete = archive.incomplete(skip=("onrc",))  # ONRC reports its own (onrc/build.py): its files are too big to hash twice
+    units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     if progress:
         progress.start(len(units), archive.root)
@@ -371,13 +375,15 @@ SELECT k.key,
        CASE WHEN k.key ~ '^[0-9]+$' THEN 'CUI' ELSE 'NAME_ONLY' END,
        CASE WHEN k.key ~ '^[0-9]+$' THEN k.key END,
        k.vat,
-       coalesce(a.name, top.name, k.vat, k.key),
+       coalesce(a.name, nullif(o.name, ''), top.name, k.vat, k.key),
        a.status, k.curated,
-       CASE WHEN a.cui IS NOT NULL THEN 'ANAF' ELSE 'SEAP' END,
-       CASE WHEN a.cui IS NULL THEN f.via END,
-       coalesce(a.fetched_at, f.fetched_at)
+       CASE WHEN a.cui IS NOT NULL THEN 'ANAF' WHEN o.cui IS NOT NULL THEN 'ONRC' ELSE 'SEAP' END,
+       CASE WHEN a.cui IS NOT NULL THEN NULL WHEN o.cui IS NOT NULL THEN o.snapshot_date::text ELSE f.via END,
+       coalesce(a.fetched_at, os.fetched_at, f.fetched_at)
   FROM (SELECT key, max(vat) AS vat, bool_or(curated) AS curated, max(source_file_id) AS file_id FROM party GROUP BY key) k
   LEFT JOIN core.anaf_company a ON a.cui = k.key
+  LEFT JOIN onrc.registration o ON o.cui = k.key AND o.primary_for_cui AND a.cui IS NULL  -- ONRC names a CUI ANAF does not know (ADR 0018)
+  LEFT JOIN onrc.snapshot os ON os.snapshot_date = o.snapshot_date
   LEFT JOIN LATERAL (SELECT name FROM spelling WHERE entity_key = k.key ORDER BY records DESC, name LIMIT 1) top ON true
   JOIN seap.source_file f ON f.id = k.file_id
 """
@@ -403,7 +409,9 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
                 "FROM party WHERE name IS NOT NULL AND name <> '' GROUP BY key, name")
     cur.execute(_ENTITIES)  # entities first: core.alias references them
     cur.execute(_ALIASES)
-    cur.execute("UPDATE core.entity SET display_name = translate(display_name, 'ŞşŢţ', 'ȘșȚț') WHERE provenance_source = 'ANAF'")
+    if summary.onrc is not None:  # every registration no Record names becomes an entity too (ADR 0018); an override-pinned CUI keeps the override's entity
+        summary.onrc.entities_only = build_onrc_entities(cur, list(overrides.by_id))
+    cur.execute("UPDATE core.entity SET display_name = translate(display_name, 'ŞşŢţ', 'ȘșȚț') WHERE provenance_source IN ('ANAF', 'ONRC')")
     for override in (*overrides.by_id.values(), *overrides.by_name.values()):
         if override.display_name:
             cur.execute("UPDATE core.entity SET display_name = %s WHERE key = %s", (override.display_name, override.key))
@@ -461,7 +469,10 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 store_sources(cur)
                 cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
             with step("anaf-identities"):
-                resolver = Resolver(load_anaf(cur, archive, summary), overrides)
+                anaf_names = load_anaf(cur, archive, summary)
+            with step("onrc"):
+                summary.onrc = build_onrc(cur, archive, placement_dir)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
+                resolver = Resolver(OnrcNames(conn.cursor(), anaf_names), overrides)
             with step("estimates"):
                 estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
                 summary.estimates = len(estimates)
@@ -509,7 +520,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("entities"):
                 build_entities(cur, overrides, summary)
             with step("placement"):
-                summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+                summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             with step("mf"):
                 summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
             with step("coverage"):
