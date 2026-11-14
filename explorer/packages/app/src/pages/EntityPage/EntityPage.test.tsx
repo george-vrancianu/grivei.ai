@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { createClient } from "../../graphql/client.ts";
 import type { GraphqlClient } from "../../graphql/client.ts";
+import { EntityRelationships } from "../../graphql/operations.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -184,9 +185,8 @@ describe("an entity page", () => {
       const { client } = fixtureClient();
       let release!: () => void;
       const gate = new Promise<void>((resolve) => (release = resolve));
-      let calls = 0;
-      // the second request (the Relationships tab's) waits for `release()`, so the page can be read while it loads
-      const held: GraphqlClient = { query: async (op, variables, options) => (++calls === 2 ? gate.then(() => client.query(op, variables, options)) : client.query(op, variables, options)) };
+      // the Relationships tab's request waits for `release()`, so the page can be read while it loads
+      const held: GraphqlClient = { query: async (op, variables, options) => (op.name === EntityRelationships.name ? gate.then(() => client.query(op, variables, options)) : client.query(op, variables, options)) };
       render(<App client={held} />);
       await screen.findByRole("list", { name: "Headline numbers" });
       const shown = tabs().getByRole("link", { name: /^Records/ }).textContent;

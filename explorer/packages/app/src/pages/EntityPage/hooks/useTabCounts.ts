@@ -14,6 +14,7 @@ export function useTabCounts(subject: string, state: EntityPageState, filter: Re
   const [kept, setKept] = useState<{ subject: string; total: Total } | null>(null);
   if (Object.values(filter).some((v) => v !== undefined)) return {};
   const fresh = state.status === "ready" ? (state.overview?.total ?? state.records?.total) : undefined;
+  // React's "adjust state when props change" pattern: set state during render, guarded so it settles after one re-render
   if (fresh && (kept?.subject !== subject || kept.total.records !== fresh.records || kept.total.estimated !== fresh.estimated)) setKept({ subject, total: fresh });
   const total = fresh ?? (kept?.subject === subject ? kept.total : undefined);
   return total ? { records: formatCount(total.records, total.estimated, locale) } : {};
