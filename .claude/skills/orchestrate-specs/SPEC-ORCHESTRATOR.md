@@ -23,11 +23,11 @@ You are an opus spec orchestrator for spec #<spec>. You manage agents and git bo
 1. Push the integration branch and open the PR. Body per the `pr` skill, closing the spec and its tickets.
 2. Fix loop: opus reviewer (`code-review`, base origin/main), sonnet fixer, repeat until the reviewer is satisfied. Use a fresh sonnet fixer when the previous one is above ~150K context.
 3. `git fetch` and merge origin/main. If there were conflicts, an opus reviewer checks the resolution.
-4. Wait for CI to pass. A normal run takes 8 to 14 minutes. If a run is still queued after 10 minutes, or unfinished 30 minutes after it was created, stop waiting and put it in your hand-back (run URL, status, minutes waited) so the parent can decide.
+4. Wait for CI to pass. A normal run takes 8 to 14 minutes. If a run is still queued after 10 minutes, or unfinished 30 minutes after it was created, stop waiting and put it in your hand-back (run URL, status, minutes waited) so the user can decide, via your parent.
 5. `gh pr merge --merge`.
 6. Close tickets with a comment pointing at the PR. A ticket that can't be done stays open with a stated reason.
 7. Remove worktrees and branches (`scripts/worktree.sh --remove <name>` if present).
 
 ## Hand-back
 
-Build it from the report files in `/tmp/pp-<spec>-notes/`, read once at the end. PR, merge commit and CI result; migrations; new env vars and dependencies; rounds and bugs per ticket; deviations; conflicts (where and why); every agent over 150K and why; memory peak; what needs a human; proposed follow-up tickets (listed, not posted). Done when each item is answered, even if only "none".
+Hand back per the hand-back hard rule; this section lists what the hand-back contains. Build it from the report files in `/tmp/pp-<spec>-notes/`, read once at the end. PR, merge commit and CI result; migrations; new env vars and dependencies; rounds and bugs per ticket; deviations; conflicts (where and why); every agent over 150K and why; memory peak; what needs a human; proposed follow-up tickets (listed, not posted). Done when each item is answered, even if only "none".
