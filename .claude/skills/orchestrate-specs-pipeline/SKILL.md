@@ -18,6 +18,7 @@ This session is the top level the user talks to. It starts each spec with [orche
 - With the first spec, start the memory watcher as in orchestrate-specs step 1 (one watcher for the whole run, stopped by END-OF-RUN step 8 after the last spec).
 - Start each spec orchestrator in the background with the brief from [orchestrate-specs](../orchestrate-specs/SKILL.md). While quiet mode is on, add the [quiet-mode block](#quiet-mode) to it.
 - **Cross-spec dependency**: when a blocking spec merges, SendMessage the waiting spec orchestrator. Agents never poll.
+- A spec orchestrator `QUESTION:` hand-back: handled as in orchestrate-specs step 3.
 - A subagent report that reaches this level by mistake: relay it to the orchestrator it belongs to.
 - An interim "waiting on its own background work" notification is not a result. Say the spec is still running and predict no outcome.
 - Answer progress questions from completion messages only. Agents' transcript files stay unread.
@@ -30,7 +31,7 @@ The limits live in this one block, named `QUIET-MODE-LIMITS`. Paste it verbatim 
 
 ```
 QUIET-MODE-LIMITS (on until you are told "quiet mode off")
-- Paste this block verbatim into every brief you write for an orchestrator while it is on. SendMessage each running orchestrator you started when the mode changes (off: "quiet mode off, normal limits").
+- Paste this block verbatim into every brief you write for an orchestrator while it is on. SendMessage each running orchestrator you started (your own children, which the hard rules allow) when the mode changes (off: "quiet mode off, normal limits").
 - These limits replace the caps in your own brief (ticket orchestrators, ~18 GB wait).
 - One spec orchestrator in the pipeline, and one ticket orchestrator per spec (so one in all). Running agents above that finish; start nothing new until the count is under the limit.
 - No spawn while the watcher's latest sample is above 16 GB (16384 MB). The latest sample is the last line of `/tmp/mem-watch.log` (`date time MB`, `free -m` "used"); wait and re-check. Read it only: the top level owns the watcher, never start or stop it. `mem-watch.sh peak` is the run-wide maximum, for reports only.

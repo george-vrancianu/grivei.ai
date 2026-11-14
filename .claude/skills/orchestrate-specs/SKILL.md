@@ -12,7 +12,7 @@ Orchestrate the specs the user names. The top level (this session) and every orc
 
 ## Roles
 
-Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> sonnet implementer (uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
+Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> haiku explorers (in parallel, before the first implementer; see the loop in TICKET-ORCHESTRATOR.md), sonnet implementer (one or more per ticket, split per TICKET-ORCHESTRATOR.md step 3; uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
 
 The spec orchestrator follows `implement-spec`'s task-graph/frontier approach, and ticket orchestrators run each ticket per its loop.
 
@@ -20,13 +20,13 @@ Launch agents with the Agent tool, `general-purpose`, setting `model` explicitly
 
 ## Hard rules
 
-[HARD-RULES.md](HARD-RULES.md) holds the hard-rules block. Copy it verbatim into every brief at every level (spec orchestrator, ticket orchestrator, implementer, reviewer, fixer, merger), and point each brief at the notes directory. A brief is done when the block is in it character for character. Replace the `<<HARD-RULES.md block, verbatim>>` placeholder with the block.
+[HARD-RULES.md](HARD-RULES.md) holds the hard-rules block. Copy it verbatim into every brief at every level (spec orchestrator, ticket orchestrator, explorer, implementer, reviewer, fixer, merger), and point each brief at the notes directory. A brief is done when the block is in it character for character. Replace the `<<HARD-RULES.md block, verbatim>>` placeholder with the block.
 
 ## Steps
 
 1. Top level: resolve each spec number, check `free -g`, run `bash .claude/skills/orchestrate-specs/mem-watch.sh start` (idempotent; note whether it printed "started" or "reusing": only a watcher you started gets stopped, see END-OF-RUN step 8), then spawn one spec orchestrator per spec in the background with the brief from [SPEC-ORCHESTRATOR.md](SPEC-ORCHESTRATOR.md). Specs run in parallel only if they won't heavily conflict.
 2. Each spec orchestrator spawns ticket orchestrators from [TICKET-ORCHESTRATOR.md](TICKET-ORCHESTRATOR.md) and runs the final PR flow in SPEC-ORCHESTRATOR.md.
-3. Wait for the spec orchestrators' hand-backs. Follow-up tickets that agents propose are collected, never posted.
+3. Wait for the spec orchestrators' hand-backs. A hand-back beginning `QUESTION:` is a pause: put the question to the user, then SendMessage the answer to that same spec orchestrator. Follow-up tickets that agents propose are collected, never posted.
 4. Run the end-of-run steps in [END-OF-RUN.md](END-OF-RUN.md), then present the report. Done when every spec has a merged PR (or a stated reason it has none) and the report is presented.
 
 ## Repo docs
