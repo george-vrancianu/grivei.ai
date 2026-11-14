@@ -7,19 +7,16 @@ name says PFA, II or IF): a political donation is not published against a person
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
 
 import psycopg
 
 from ..archive import Archive, Unit
-from ..placement.matching import fold
+from ..sole_trader import is_sole_trader  # noqa: F401  (the shared rule; also imported from here by this Source's tests)
 from .fetch import FILE_NAME, KIND, SOURCE, STREAM
 from .read import BaniPartideError, Donation, ReadStats, read_donations
 
 log = logging.getLogger("pipeline.banipartide")
-_SOLE_FORM = re.compile(r"^(PERSOANA FIZICA|INTREPRINDERE INDIVIDUALA|INTREPRINDERE FAMILIALA)")
-_SOLE_NAME = re.compile(r"(?:^| )(?:PFA|PF|PERSOANA FIZICA AUTORIZATA|INTREPRINDERE INDIVIDUALA|INTREPRINDERE FAMILIALA)(?: |$)|(?: )(?:II|IF)$")
 
 
 @dataclass
@@ -40,10 +37,6 @@ class DonationsSummary:
             return "donations: none archived (run `pipeline fetch-banipartide`): no entity page lists firm donations" + extra
         return (f"donations: {self.loaded} firm donations and loans of {self.rows} rows (data through {self.through_year}); dropped {self.dropped_no_cui} not CUI-keyed, "
                 f"{self.dropped_sole_trader} sole traders, {self.dropped_other} unreadable" + extra)
-
-
-def is_sole_trader(name: str | None, legal_form: str | None) -> bool:
-    return bool((legal_form and _SOLE_FORM.match(fold(legal_form))) or (name and _SOLE_NAME.search(fold(name))))
 
 
 def held_unit(archive: Archive) -> tuple[Unit | None, list[str]]:

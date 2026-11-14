@@ -88,11 +88,11 @@ COMPANIES = {
 CAEN = {ALFA[2]: [("4211", 2), ("4120", 2)], BETA[2]: [("4321", 2)], GAMMA[2]: [("4120", 2)], DELTA[2]: [("6201", 3), ("6202", 3)], DUBLA[2]: [("4211", 2)], OMEGA[2]: [("6201", 2)], AUTH[2]: [("8411", 2)]}
 
 
-def _legacy_files(date_key: str) -> dict[str, str]:
+def _legacy_files(date_key: str, companies: dict | None = None) -> dict[str, str]:
     """The four company files of the legacy layout (2021 to mid-2025) and the `|`-separated nomenclature, as the register published them."""
     d = date_key
     rows = {n: [] for n in ("1neradiate_fara", "2radiate_fara", "3neradiate_cu", "4radiate_cu")}
-    for reg, snaps in COMPANIES.items():
+    for reg, snaps in (companies or COMPANIES).items():
         if d not in snaps:
             continue
         r = snaps[d]
@@ -111,17 +111,17 @@ def _legacy_files(date_key: str) -> dict[str, str]:
     return files
 
 
-def _current_files(date_key: str) -> dict[str, str]:
+def _current_files(date_key: str, companies: dict | None = None, caen_codes: dict | None = None) -> dict[str, str]:
     d = date_key
     firme = ["DENUMIRE^CUI^COD_INMATRICULARE^DATA_INMATRICULARE^EUID^FORMA_JURIDICA^ADR_TARA^ADR_JUDET^ADR_LOCALITATE^ADR_DEN_STRADA^ADR_NR_STRADA^ADR_BLOC^ADR_SCARA^ADR_ETAJ^ADR_APARTAMENT^ADR_COD_POSTAL^ADR_SECTOR^ADR_COMPLETARE^WEB^TARA_FIRMA_MAMA"]
     stare, caen = ["COD_INMATRICULARE^COD"], ["COD_INMATRICULARE^COD_CAEN_AUTORIZAT^VER_CAEN_AUTORIZAT"]
-    for reg, snaps in COMPANIES.items():
+    for reg, snaps in (companies or COMPANIES).items():
         if d not in snaps:
             continue
         r = snaps[d]
         firme.append(f"{r['name']}^{r['cui']}^{reg}^{r['registered']}^ROONRC.{reg}^{r['form']}^România^{r['county']}^{r['locality']}^EXEMPLU^1^^^^^400001^^^^")
         stare += [f"{reg}^{c}" for c in r["states"]]
-        caen += [f"{reg}^{code}^{version}" for code, version in CAEN.get(reg, [])]
+        caen += [f"{reg}^{code}^{version}" for code, version in (caen_codes or CAEN).get(reg, [])]
     return {"od_firme.csv": BOM + "\n".join(firme) + "\n", "od_stare_firma.csv": BOM + "\n".join(stare) + "\n", "od_caen_autorizat.csv": BOM + "\n".join(caen) + "\n"}
 
 
@@ -129,7 +129,7 @@ def _resource(dataset: str, name: str, file: str, size: int, rid: str) -> dict:
     return {"id": rid, "name": name, "url": f"https://data.gov.ro/dataset/{dataset}/resource/{rid}/download/{file}", "format": "CSV", "size": size, "last_modified": "2026-11-06T05:15:47", "hash": ""}
 
 
-def datasets() -> tuple[dict[str, dict], dict[str, str]]:
+def datasets(companies: dict | None = None, caen_codes: dict | None = None) -> tuple[dict[str, dict], dict[str, str]]:
     """(CKAN packages by name, file bodies by URL) of the stub data.gov.ro."""
     packages: dict[str, dict] = {}
     bodies: dict[str, str] = {}
@@ -142,18 +142,18 @@ def datasets() -> tuple[dict[str, dict], dict[str, str]]:
             bodies[res["url"]] = body
         packages[name] = {"id": f"id-{name}", "name": name, "title": title, "metadata_modified": f"{when}T06:00:00", "resources": resources}
 
-    legacy = _legacy_files(S1)
+    legacy = _legacy_files(S1, companies)
     add("firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025", "Firme înregistrate la Registrul Comerțului până la data de 18 martie 2025", S1, legacy,
         {"1neradiate_fara_sediu_2025-03-18.csv": "neradiate fără sediu", "2radiate_fara_sediu_2025-03-18.csv": "radiate fără sediu", "3neradiate_cu_sediu_2025-03-18.csv": "neradiate cu sediu",
          "4radiate_cu_sediu_2025-03-18.csv": "radiate cu sediu", "5nomenclator_stari_firma.csv": "nomenclator stări firmă"})
     for key, day in ((S2, "02-03-2026"), (S3, "03-04-2026"), (S4, "06-05-2026")):
-        add(f"firme-{day}", f"Firme înregistrate la Registrul Comerțului până la data de {day.replace('-', '.')}", key, _current_files(key))
+        add(f"firme-{day}", f"Firme înregistrate la Registrul Comerțului până la data de {day.replace('-', '.')}", key, _current_files(key, companies, caen_codes))
         nomenclature = "COD^DENUMIRE\n" + "\n".join(f"{c}^{n}" for c, n in STATUS_NAMES.items()) + "\n"
         add(f"nomenclatoare-{day}", f"Nomenclatoare utilizate în decodificarea stării firmei - {day.replace('-', '.')}", key, {"n_stare_firma.csv": BOM + nomenclature}, {"n_stare_firma.csv": "N_STARE_FIRMA.CSV"})
     # a dataset that is not a snapshot, and a quarterly snapshot inside the same quarter as another (only the last of a quarter is wanted)
     packages["buget-registrul-comertului-2013"] = {"id": "x", "name": "buget-registrul-comertului-2013", "title": "Buget Registrul Comerţului 2013", "metadata_modified": "2013-01-01T00:00:00", "resources": []}
-    add("firme-inregistrate-la-registrul-comertului-pana-la-data-de-08-februarie-2025", "Firme înregistrate la Registrul Comerțului până la data de 08 februarie 2025", "2025-02-08", _legacy_files(S1),
-        {f: f for f in _legacy_files(S1)})
+    add("firme-inregistrate-la-registrul-comertului-pana-la-data-de-08-februarie-2025", "Firme înregistrate la Registrul Comerțului până la data de 08 februarie 2025", "2025-02-08", _legacy_files(S1, companies),
+        {f: f for f in _legacy_files(S1, companies)})
     return packages, bodies
 
 
@@ -200,11 +200,12 @@ def ckan(packages: dict[str, dict], bodies: dict[str, str], *, fail_on: tuple[st
     return get
 
 
-def build() -> None:
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    a = Archive(OUT)
-    packages, bodies = datasets()
+def build(out: Path = OUT, companies: dict | None = None, caen: dict | None = None) -> None:
+    """`archive-onrc/` (no arguments) or a variant: the search archive passes `SEARCH_COMPANIES` and `SEARCH_CAEN`."""
+    if out.exists():
+        shutil.rmtree(out)
+    a = Archive(out)
+    packages, bodies = datasets(companies, caen)
     summary = fetch_onrc(a, now=FETCHED, http=ckan(packages, bodies))
     assert not summary.failed and not summary.invalid, summary.lines()
     at = lambda y, m, d, h=9: datetime(y, m, d, h, 0, tzinfo=timezone.utc)  # noqa: E731
@@ -220,6 +221,23 @@ def build() -> None:
     archive_batch(a, ids, date(2026, 11, 2), anaf_response(entries, [DELTA[1]]), at(2026, 11, 2, 8))
 
 
+# The search archive (#176): the same world plus sole traders with valid CUIs, which ONRC search must never make findable by name. Two of them carry
+# the name of a company of the world ("ALFA"), and one has an authorised CAEN code of its own that a CAEN filter would otherwise find.
+SOLO_PFA = ("IONESCU ALFA PFA", cui_with_check_digit(310011), "F12/2001/2019")
+SOLO_II = ("VASILESCU MARIA ALFA II", cui_with_check_digit(310012), "F40/2002/2020")
+SOLO_FORM = ("DEMETER PERSOANA FIZICA AUTORIZATA", cui_with_check_digit(310013), "F03/2003/2021")
+SEARCH_COMPANIES = {
+    **COMPANIES,
+    SOLO_PFA[2]: {d: row(SOLO_PFA[0], SOLO_PFA[1], [FUNCTIUNE], "Cluj", "Cluj-Napoca", "05/05/2019", "PFA") for d in (S2, S3, S4)},
+    SOLO_II[2]: {d: row(SOLO_II[0], SOLO_II[1], [FUNCTIUNE], "Bucureşti", "Bucureşti Sectorul 1", "01/09/2020", "II") for d in (S2, S3, S4)},
+    SOLO_FORM[2]: {d: row(SOLO_FORM[0], SOLO_FORM[1], [FUNCTIUNE], "Iaşi", "Iaşi", "02/02/2021", "PERSOANA FIZICA AUTORIZATA") for d in (S2, S3, S4)},
+}
+SEARCH_CAEN = {**CAEN, SOLO_PFA[2]: [("4211", 2)], SOLO_II[2]: [("5610", 2)], SOLO_FORM[2]: [("5610", 2)]}
+OUT_SEARCH = HERE / "archive-onrc-search"
+
+
 if __name__ == "__main__":
     build()
     print(f"wrote {OUT}")
+    build(OUT_SEARCH, SEARCH_COMPANIES, SEARCH_CAEN)
+    print(f"wrote {OUT_SEARCH}")

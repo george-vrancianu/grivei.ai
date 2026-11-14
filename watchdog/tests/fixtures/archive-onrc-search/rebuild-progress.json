@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pid": 3426908,
+  "host": "deskgiu",
+  "state": "finished",
+  "startedAt": "2026-11-14T06:16:16Z",
+  "updatedAt": "2026-11-14T06:16:18Z",
+  "total": 1,
+  "done": 1,
+  "loaded": 1,
+  "skipped": 0,
+  "quarantined": 0,
+  "records": 6,
+  "current": null,
+  "step": null,
+  "last": "2026-11-14T08:16:18+0200 rebuild step outlines done in 0:00:00",
+  "error": null,
+  "dataThrough": {
+    "DA": "2026-03-20"
+  }
+}
