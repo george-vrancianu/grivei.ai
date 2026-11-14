@@ -15,6 +15,7 @@ This session is the top level the user talks to. It starts each spec with [orche
 
 ## While specs run
 
+- With the first spec, start the memory watcher as in orchestrate-specs step 1 (one watcher for the whole run, stopped by END-OF-RUN step 8 after the last spec).
 - Start each spec orchestrator in the background with the brief from [orchestrate-specs](../orchestrate-specs/SKILL.md).
 - **Cross-spec dependency**: when a blocking spec merges, SendMessage the waiting spec orchestrator. Agents never poll.
 - A subagent report that reaches this level by mistake: relay it to the orchestrator it belongs to.
@@ -42,7 +43,7 @@ The user keeps working in the main checkout. Only this level runs commands there
 [END-OF-RUN.md](../orchestrate-specs/END-OF-RUN.md) step 7, per spec, built from the spec orchestrator's hand-back, plus:
 
 - Summary fields: PR, merge commit, CI, what was built, migrations, env vars, dependencies.
-- Health fields: review rounds and real bugs caught, memory peak, process slips.
+- Health fields: review rounds and real bugs caught, memory peak (`mem-watch.sh peak`), process slips.
 - Proposed follow-ups are shown and never posted without the user's approval; add them to the running list below.
 
 Done when each item is answered, even if only "none".
