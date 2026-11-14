@@ -100,7 +100,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const switches = t.sources.recordsSwitch;
   const seapHasRecords = state.records !== null;
   const onrcHasRegistrations = registrations.status === "ready" && registrations.all.length > 0;
-  const showOnrcRecords = onrcHasRegistrations && (onrcMode || !seapHasRecords);
+  // "SEAP has nothing" is decided once SEAP has settled: while its Records load (coming from another tab, say), the plain URL must not flash ONRC's registrations
+  const showOnrcRecords = onrcHasRegistrations && (onrcMode || (state.status === "ready" && !seapHasRecords));
   const onrcPending = onrcMode && registrations.status === "loading";
   const sourceSwitch = seapHasRecords && onrcHasRegistrations && (
     <SourcePicker

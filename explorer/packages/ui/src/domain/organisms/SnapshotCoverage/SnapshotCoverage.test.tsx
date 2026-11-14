@@ -31,7 +31,7 @@ describe("SnapshotCoverage", () => {
   it("reads in Romanian", () => {
     renderInUi(<SnapshotCoverage cells={cells} dataThrough={dataThrough} locale="ro" copy={sampleOnrcCopy.snapshots("ro")} />, "ro");
     const gap = screen.getAllByRole("row").find((r) => r.getAttribute("data-state") === "KNOWN_GAP")!;
-    expect(gap).toHaveTextContent("Nu deținem niciun instantaneu din această lună.");
+    expect(gap).toHaveTextContent("Nu deținem niciun extras din această lună.");
     expect(screen.getByText(/Înmatriculări: date până la/)).toBeVisible();
   });
 

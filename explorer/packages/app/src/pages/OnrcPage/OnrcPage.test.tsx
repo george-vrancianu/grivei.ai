@@ -39,7 +39,9 @@ describe.each([
     expect(picker.getByRole("button", { name: `ONRC · ${s.counts.ONRC(ONRC_TYPICAL_COUNT, String(ONRC_TYPICAL_COUNT))}`, pressed: true })).toBeVisible();
     await waitFor(() => expect(picker.getByRole("button", { name: `SEAP · ${s.counts.SEAP(SEAP_TEXT_QUERY_RECORDS, String(SEAP_TEXT_QUERY_RECORDS))}`, pressed: false })).toBeVisible());
     // one OnrcSearch for the screen; the other Source's count is its own request for the query text alone
-    expect(sent.map((r) => [r.operation, JSON.stringify((r.variables as { filter: unknown }).filter)])).toEqual([["OnrcSearch", '{"q":"alfa beta"}'], ["MainScreen", '{"q":"alfa beta"}']]);
+    expect(sent.map((r) => [r.operation, JSON.stringify((r.variables as { filter: unknown }).filter)])).toEqual([["OnrcSearch", '{"q":"alfa beta"}'], ["FullResultsRecords", '{"q":"alfa beta"}']]);
+    // ...and neither asks for rows: the picker only reads a count
+    expect(sent.map((r) => (r.variables as { limit?: number }).limit)).toEqual([50, 0]);
     // ONRC's results, and only those: no SEAP tab, no SEAP total
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.queryByTestId("main-total")).toBeNull();

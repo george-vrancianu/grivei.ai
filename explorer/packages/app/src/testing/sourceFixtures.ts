@@ -10,9 +10,13 @@ const seapTextQuery = fixtures.MainScreen.find((f) => f.name === "text-query")!;
 const onrcCoverage = fixtures.OnrcCoverage.find((f) => f.name === "typical-snapshots-and-a-known-gap")!;
 
 /** The picker's ONRC count for a query, from the typical ONRC answer (2 registrations). */
-export const onrcCountFor = (q: string): ExtraFixture => ({ operation: "OnrcSearch", variables: { filter: { q }, limit: 50, offset: 0 }, data: onrcTypical.data });
+export const onrcCountFor = (q: string): ExtraFixture => ({ operation: "OnrcSearch", variables: { filter: { q }, limit: 0, offset: 0 }, data: onrcTypical.data });
 /** The picker's SEAP count for a query, from the recorded text query (8 Records). */
-export const seapCountFor = (q: string): ExtraFixture => ({ operation: "MainScreen", variables: { filter: { q } }, data: seapTextQuery.data });
+export const seapCountFor = (q: string): ExtraFixture => ({
+  operation: "FullResultsRecords",
+  variables: { filter: { q }, limit: 0, offset: 0 },
+  data: { seap: { search: { total: seapTextQuery.data.seap.search.total, records: { count: seapTextQuery.data.seap.search.total.records, rows: [] } } } },
+});
 /** ONRC's whole coverage (no window), from the hand-written typical one: two snapshots and a month with none. */
 export const onrcWholeCoverage: ExtraFixture = { operation: "OnrcCoverage", variables: {}, data: onrcCoverage.data };
 export const SEAP_TEXT_QUERY_RECORDS = seapTextQuery.data.seap.search.total.records;

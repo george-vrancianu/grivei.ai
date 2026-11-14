@@ -28,9 +28,9 @@ const withOnrc: ExtraFixture[] = [
   { ...ask({ status: [1084] }), data: answer([]) },
 ];
 
-function open(url: string, extra: ExtraFixture[] = withOnrc) {
+function open(url: string, extra: ExtraFixture[] = withOnrc, hold?: { operation: string; until: Promise<void> }) {
   openAt(url);
-  const fixture = fixtureClient({ extra });
+  const fixture = fixtureClient({ extra, hold });
   render(<App client={fixture.client} />);
   return fixture;
 }
@@ -128,6 +128,25 @@ describe.each([
     await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
     await lookedUp(sent);
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
+  });
+
+  it("does not show ONRC's registrations on the plain Records URL while SEAP's Records are still loading, then shows SEAP's with the switch", async () => {
+    let release!: () => void;
+    const until = new Promise<void>((resolve) => (release = resolve));
+    const { sent } = open(`${base}/supplier/${CUI}`, withOnrc, { operation: "EntityRecords", until });
+    await screen.findByRole("heading", { level: 1, name: /ALFA DEMO SRL/ });
+    await userEvent.click(within(screen.getByRole("navigation", { name: c.entityPage.layout.label })).getByRole("link", { name: new RegExp(`^${c.entityPage.layout.tabs.records}`) }));
+    // ONRC has answered (it has this entity) while SEAP's Records are still out: nothing of ONRC shows, and no switch yet
+    await waitFor(() => expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(true));
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(sent.some((r) => r.operation === "EntityRecords")).toBe(true);
+    expect(screen.queryByRole("heading", { level: 2, name: s.onrc.results.heading(1, "1") })).toBeNull();
+    expect(screen.queryByText("J40/777/2015")).toBeNull();
+    expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
+    release();
+    await screen.findByRole("group", { name: s.recordsSwitch.label });
+    expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.SEAP, pressed: true })).toBeVisible();
+    expect(screen.queryByText("J40/777/2015")).toBeNull();
   });
 
   it("asks ONRC for nothing on the other tabs", async () => {

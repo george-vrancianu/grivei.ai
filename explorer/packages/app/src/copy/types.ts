@@ -1,6 +1,7 @@
 import type {
-  OnrcCountMapCopy, OnrcFilterChipsCopy, OnrcResultsCopy, SnapshotCoverageCopy, SourcePickerCopy, FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
+import type { OnrcCountMapCopy, OnrcFilterChipsCopy, OnrcResultsCopy, SnapshotCoverageCopy, SourcePickerCopy } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
 /**
@@ -150,7 +151,7 @@ export interface SourcesCopy {
     /** The lens toggle names of the ONRC screen (its first lens counts registrations) and the regions. */
     layout: MainScreenLayoutCopy;
     /** The ONRC registrations on an entity's Records tab. */
-    registrations: { none: string; noMatch: string };
+    registrations: { noMatch: string };
     coverage: {
       eyebrow: string;
       title: string;

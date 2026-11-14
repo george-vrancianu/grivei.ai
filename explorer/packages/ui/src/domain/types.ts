@@ -1,9 +1,10 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  OnrcCoverageQuery, OnrcSearchQuery, CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   MethodologyBaseRatesQuery, PartyCoverageFieldsFragment, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
+import type { OnrcCoverageQuery, OnrcSearchQuery } from "@grivei/contract";
 
 export type { RecordBadge };
 export type Total = TotalFieldsFragment;

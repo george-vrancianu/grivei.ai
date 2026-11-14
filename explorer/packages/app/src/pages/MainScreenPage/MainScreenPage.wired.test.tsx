@@ -49,7 +49,7 @@ describe.each([
     expect(asked(sent)).toEqual(['{}', '{"q":"comuna"}']);
     // ...bar the picker's one count of the other Source (ONRC, for the query text alone), which is not a MainScreen request
     expect(new Set(sent.map((s) => s.operation))).toEqual(new Set(["MainScreen", "OnrcSearch"]));
-    expect(sent.filter((s) => s.operation === "OnrcSearch").map((s) => s.variables)).toEqual([{ filter: { q: "comuna" }, limit: 50, offset: 0 }]);
+    expect(sent.filter((s) => s.operation === "OnrcSearch").map((s) => s.variables)).toEqual([{ filter: { q: "comuna" }, limit: 0, offset: 0 }]);
   });
 });
 

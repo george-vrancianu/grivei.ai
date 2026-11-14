@@ -1,11 +1,12 @@
 import allowlist from "@grivei/contract/persisted-queries.json";
 import type {
-  OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables, CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
+  CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
   EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables, PersonPageQuery, PersonPageQueryVariables, RecordPageQuery, RecordPageQueryVariables,
   ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "@grivei/contract";
+import type { OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables } from "@grivei/contract";
 
 /** Typed registry of the persisted operations the app sends: the name, its id on the allowlist, its result and variables. */
 export interface Operation<Data, Variables> {

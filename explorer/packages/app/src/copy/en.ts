@@ -716,7 +716,7 @@ export const en: Copy = {
         registrations: (n, f) => `${f} ${plural(n, "registration", "registrations")}`,
       },
       layout: { lens: { label: "Map lens", money: "Count", coverage: "Coverage" }, regions: { search: "Search", map: "Map", results: "Results" } },
-      registrations: { none: "ONRC lists no registration under this CUI.", noMatch: "No registration of this organisation matches these filters." },
+      registrations: { noMatch: "No registration of this organisation matches these filters." },
       coverage: {
         eyebrow: "Coverage",
         title: "Coverage of ONRC",
