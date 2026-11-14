@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Locale } from "../../../theme/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
@@ -27,6 +28,8 @@ export interface CoveragePageLayoutProps {
   /** Where the map's Coverage lens lives (the "N of M" block links to it). */
   lensHref: string;
   onNavigate?: (href: string) => void;
+  /** The Source selector (#178), shown under the intro in every state; absent = none (one Source). */
+  sourceSelector?: ReactNode;
   copy: CoveragePageLayoutCopy;
 }
 
@@ -35,12 +38,13 @@ export interface CoveragePageLayoutProps {
  * crawl-only counts, the list of known gaps with the reason or the rule for each, the rules in words, and the MF reference-list snapshot date.
  * It fetches nothing; loading, error and an empty grid are states of the same page.
  */
-export function CoveragePageLayout({ status, content, locale, methodologyHref, lensHref, onNavigate, copy }: CoveragePageLayoutProps) {
+export function CoveragePageLayout({ status, content, locale, methodologyHref, lensHref, onNavigate, sourceSelector, copy }: CoveragePageLayoutProps) {
   const head = (
     <>
       <Typography variant="label" component="p" color="primary.main" sx={{ m: 0 }}>{copy.eyebrow}</Typography>
       <Typography variant="h1" component="h1" sx={{ maxWidth: layout.titleMaxWidth, textWrap: "balance" }}>{copy.title}</Typography>
       <Typography variant="lead" sx={{ maxWidth: layout.leadMaxWidth, textWrap: "pretty" }}>{copy.intro}</Typography>
+      {sourceSelector}
     </>
   );
   if (status === "loading" || status === "error" || !content) {

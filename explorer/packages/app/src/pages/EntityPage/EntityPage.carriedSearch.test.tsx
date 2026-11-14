@@ -111,7 +111,7 @@ describe.each([
     const { sent } = open(`${prefix}/explore/supplier/2000007/records`);
     expect(await total(13)).toBeVisible();
     expect(screen.queryByRole("link", { name: /^(only Records|doar înregistrările)/ })).toBeNull();
-    expect(sent).toHaveLength(1); // supplementary guard beside the visible total: one EntityRecords request, nothing extra for a carried search
+    expect(sent.filter((s) => s.operation !== "OnrcSearch")).toHaveLength(1); // supplementary guard beside the visible total: one EntityRecords request, nothing extra for a carried search
   });
 
   it("carries nothing from a search with no query and no chips, and offers no link on the page it opens", async () => {

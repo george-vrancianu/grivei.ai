@@ -637,7 +637,7 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
     heading: "Înmatriculare ONRC",
     registrationNumber: "Număr de înmatriculare",
     registrationDate: "Înmatriculată",
-    registrationDateUnknown: "nu apare în instantaneul citit",
+    registrationDateUnknown: "nu apare în extrasul citit",
     legalForm: "Formă juridică",
     seat: "Sediu social",
     seatUnknown: "niciun sediu publicat",
@@ -645,20 +645,20 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
       heading: "Stare",
       none: "ONRC nu listează nicio stare.",
       unnamed: (code) => `cod de stare ${code}`,
-      firstSeen: (snapshot) => `văzută prima oară în instantaneul din ${snapshot}`,
-      sinceAtLeast: (snapshot) => `cel puțin din instantaneul din ${snapshot}`,
-      caveat: "ONRC publică stările fără date. O dată de aici este primul instantaneu pe care îl deținem și care arată starea, aflat prin compararea instantaneelor; schimbarea în sine poate fi mai veche.",
+      firstSeen: (snapshot) => `văzută prima oară în extrasul din ${snapshot}`,
+      sinceAtLeast: (snapshot) => `cel puțin din extrasul din ${snapshot}`,
+      caveat: "ONRC publică stările fără date. O dată de aici este primul extras pe care îl deținem și care arată starea, aflat prin compararea extraselor; schimbarea în sine poate fi mai veche.",
     },
     caen: { heading: "Coduri CAEN autorizate", none: "ONRC nu listează niciun cod CAEN autorizat.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
     aliases: {
       heading: "Denumiri ONRC",
       none: "ONRC nu listează nicio denumire.",
       current: "denumirea legală azi",
-      range: (first, last) => (first === last ? `văzută în instantaneul din ${first}` : `văzută în instantaneele din ${first} până în ${last}`),
-      rangeSinceAtLeast: (first, last) => (first === last ? `văzută în instantaneul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
+      range: (first, last) => (first === last ? `văzută în extrasul din ${first}` : `văzută în extrasele din ${first} până în ${last}`),
+      rangeSinceAtLeast: (first, last) => (first === last ? `văzută în extrasul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
       note: "Acestea sunt grafiile ONRC, păstrate ca alias-uri. Nu schimbă niciodată numele din capul paginii.",
     },
-    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
     onrcOnly: "Această organizație există doar în ONRC: nicio achiziție din SEAP nu o numește. Nicio persoană a ei nu este afișată.",
   },
 };
@@ -680,7 +680,7 @@ const peopleSection: Record<Locale, PeopleSectionCopy> = {
     born: (year) => `anul nașterii ${year}`,
     unlinked: "fără dată a nașterii în ONRC: listat doar pe această pagină, nelegat de nimeni",
     personLink: (name) => `${name}: pagina persoanei`,
-    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
   },
 };
 
@@ -701,7 +701,7 @@ const personDetail: Record<Locale, PersonDetailCopy> = {
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
-    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    source: (snapshot) => `Sursa: ONRC, extrasul din ${snapshot}`,
   },
 };
 

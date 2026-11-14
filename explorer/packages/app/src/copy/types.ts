@@ -1,6 +1,7 @@
 import type {
   FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
+import type { OnrcCountMapCopy, OnrcFilterChipsCopy, OnrcResultsCopy, SnapshotCoverageCopy, SourcePickerCopy } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
 /**
@@ -122,4 +123,42 @@ export interface Copy {
   coverage: CoveragePageLayoutCopy;
   /** The methodology page ("About the numbers"). */
   methodology: MethodologyPageCopy;
+  /** The Source picker, the ONRC screens, and the Source switch of the Records tab and of Coverage (#178). */
+  sources: SourcesCopy;
+}
+
+/** A Source's own words in the picker and its switches: the API's Source names are not translated, so these are the acronyms. */
+export type SourceNames = Record<"SEAP" | "ONRC", string>;
+
+export interface SourcesCopy {
+  names: SourceNames;
+  /** The Source picker beside the search bar. */
+  picker: SourcePickerCopy;
+  /** The match count beside each Source's name in the picker: a Source's own unit, never a shared one (SEAP counts Records, ONRC registrations). */
+  counts: Record<"SEAP" | "ONRC", (n: number, formatted: string) => string>;
+  /** The Source switch on an entity's Records tab: its name and the text of each option. */
+  recordsSwitch: SourcePickerCopy & { options: SourceNames };
+  /** The Source selector of the Coverage lens and page. */
+  coverageSwitch: SourcePickerCopy;
+  onrc: {
+    /** The eyebrow above the search bar on the ONRC screen. */
+    eyebrow: { search: string; scope: string; period: string };
+    title: string;
+    searchBar: SearchBarCopy;
+    results: OnrcResultsCopy;
+    filterChips: OnrcFilterChipsCopy;
+    countMap: OnrcCountMapCopy;
+    /** The lens toggle names of the ONRC screen (its first lens counts registrations) and the regions. */
+    layout: MainScreenLayoutCopy;
+    /** The ONRC registrations on an entity's Records tab. */
+    registrations: { noMatch: string };
+    coverage: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      /** The heading above the snapshots table. */
+      heading: string;
+      snapshots: Omit<SnapshotCoverageCopy, "states">;
+    };
+  };
 }

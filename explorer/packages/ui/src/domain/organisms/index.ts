@@ -22,3 +22,6 @@ export * from "./FinancialStatementsSection/index.ts";
 export * from "./FirmDonationsSection/index.ts";
 export * from "./PublicEnterpriseSection/index.ts";
 export * from "./LeadershipSection/index.ts";
+export * from "./OnrcResults/index.ts";
+export * from "./OnrcCountMap/index.ts";
+export * from "./SnapshotCoverage/index.ts";

@@ -30,7 +30,8 @@ async function opened(url: string) {
 describe("the Records tab of an authority", () => {
   it("opens with the facets, the total and the Records of the unfiltered page", async () => {
     const { sent } = await opened(AUTHORITY);
-    expect(sent.map((s) => s.operation)).toEqual(["EntityRecords"]);
+    // the Records tab also looks up what ONRC lists under the entity's CUI, for the Source switch (#178): the one request beside the tab's own
+    expect(sent.map((s) => s.operation).filter((op) => op !== "OnrcSearch")).toEqual(["EntityRecords"]);
     expect(sent[0]).toMatchObject({ variables: { key: "1000017", role: "AUTHORITY", filter: {}, limit: 100, offset: 0 } });
     expect(screen.getByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeVisible();
     expect(screen.getByText("16 Records")).toBeVisible();
@@ -268,7 +269,8 @@ describe("facet changes survive a reload", () => {
     expect(screen.getByText("6 Records").closest("div")?.textContent).toBe(total);
     expect(panel().getByRole("button", { name: /^Contract/, pressed: true })).toBeVisible();
     expect(panel().getByRole("button", { name: /^ALFA DEMO SRL/, pressed: true })).toBeVisible();
-    expect(sent.map((s) => s.operation)).toEqual(["EntityRecords"]);
+    // the Records tab also looks up what ONRC lists under the entity's CUI, for the Source switch (#178): the one request beside the tab's own
+    expect(sent.map((s) => s.operation).filter((op) => op !== "OnrcSearch")).toEqual(["EntityRecords"]);
     expect(sent[0]).toMatchObject({ variables: { key: "1000017", role: "AUTHORITY", filter: { from: "2023-01-01", to: "2023-12-31", channel: "CONTRACT", supplier: "2000007" }, offset: 0 } });
   });
 

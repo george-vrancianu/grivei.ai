@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { ONRC_FILTER_URL, RECORD_FILTER_URL, URL_ONLY_KEYS, type OnrcFilter, type RecordFilter } from "@grivei/contract";
-import { decodeOnrcUrlState, decodeUrlState, encodeOnrcUrlState, encodeUrlState } from "./codec.ts";
+import { decodeOnrcUrlState, decodeUrlState, encodeOnrcUrlState, encodeUrlState, sourceOf } from "./codec.ts";
 
 /** One citable query string per RecordFilter field, written in the codec's canonical form. A new field makes this fail to compile. */
 const QUERY_OF_FIELD: Record<keyof RecordFilter, string> = {
@@ -227,5 +227,24 @@ describe("the URL <-> OnrcFilter codec (#176)", () => {
 
   it("a SEAP-only key is ignored, so an ONRC URL never carries a SEAP chip", () => {
     expect(decodeOnrcUrlState("?channel=contract&supplier=123&q=alfa")).toEqual({ filter: { q: "alfa" } });
+  });
+});
+
+describe("the Source in the URL (#178)", () => {
+  it("leaves SEAP out: every link from before the picker means SEAP, whatever other keys it has", () => {
+    for (const query of ["", "q=deszapezire&from=2024-01-01&county=RO-BV&tab=suppliers&page=2", "lens=coverage&from=2023-01-01", "source=seap&q=a"]) {
+      expect(decodeUrlState(`?${query}`).source).toBeUndefined();
+      expect(sourceOf(`?${query}`)).toBe("SEAP");
+    }
+    expect(roundTrip("q=deszapezire&county=RO-BV&tab=suppliers")).toBe("?q=deszapezire&county=RO-BV&tab=suppliers");
+    expect(roundTrip("source=seap&q=a")).toBe("?q=a"); // the default is not spelled out
+  });
+
+  it("reads source=onrc and writes it last, after every other key, and an unknown Source is SEAP", () => {
+    expect(decodeUrlState("?source=onrc&tab=records").source).toBe("ONRC");
+    expect(roundTrip("tab=records&source=onrc")).toBe("?tab=records&source=onrc");
+    expect(encodeUrlState({ filter: { q: "a" }, lens: "coverage", source: "ONRC" })).toBe("?q=a&lens=coverage&source=onrc");
+    expect(sourceOf("?source=ONRC")).toBe("SEAP");
+    expect(sourceOf("?source=pnrr")).toBe("SEAP");
   });
 });

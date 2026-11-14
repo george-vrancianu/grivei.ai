@@ -65,7 +65,7 @@ describe("the ONRC section on an entity page", () => {
 
   it("is in Romanian under /ro/ and keeps ONRC's words as published", async () => {
     const section = await opened("/ro/explore/supplier/3100020");
-    expect(section.getByText("văzută prima oară în instantaneul din 3 aprilie 2026")).toBeVisible();
+    expect(section.getByText("văzută prima oară în extrasul din 3 aprilie 2026")).toBeVisible();
     expect(section.getByText("insolvență")).toBeVisible();
     expect(section.getByText(/ONRC publică stările fără date/)).toBeVisible();
   });

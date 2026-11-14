@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { CoverageLensQuery } from "@grivei/contract";
 import { Box, CoverageGridCompact, CoverageLensMap, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
@@ -16,6 +17,8 @@ export interface CoverageLensSectionProps {
   /** The Coverage page's path carrying the current search, for the compact grid's link. */
   pageHref: string;
   onNavigate: (href: string) => void;
+  /** The Source selector (#178), above the map: SEAP's coverage here, ONRC's on its own screen. Absent = none. */
+  sourceSelector?: ReactNode;
   /** The filter's `county` (the URL is its only home) and the county the filter should hold after a click (`undefined` clears it). */
   county: string | undefined;
   onSelect: (county: string | undefined) => void;
@@ -29,7 +32,7 @@ export interface CoverageLensSectionProps {
  * The Coverage lens of the main screen: the county map coloured by coverage status for the date chip's window, and under it the compact
  * Coverage grid with that window highlighted and the link to the Coverage page. A county click is the Money lens's: it filters the results.
  */
-export function CoverageLensSection({ lens, loading, failed, topology, cells, dateWindow, pageHref, onNavigate, county, onSelect, locale, copy, status }: CoverageLensSectionProps) {
+export function CoverageLensSection({ lens, loading, failed, topology, cells, dateWindow, pageHref, onNavigate, sourceSelector, county, onSelect, locale, copy, status }: CoverageLensSectionProps) {
   let map;
   if (topology.status === "error") map = <Typography role="alert">{status.unavailable}</Typography>;
   else if (failed) map = <Typography role="alert">{status.failed}</Typography>;
@@ -47,6 +50,7 @@ export function CoverageLensSection({ lens, loading, failed, topology, cells, da
     );
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {sourceSelector}
       {map}
       {cells !== null && <CoverageGridCompact cells={cells} dateWindow={dateWindow} locale={locale} copy={copy.grid} href={pageHref} onNavigate={onNavigate} />}
     </Box>

@@ -58,7 +58,7 @@ describe("OnrcSection", () => {
   it("speaks Romanian and keeps ONRC's own words as published", () => {
     show(onrcRegistration, false, "ro");
     expect(screen.getByRole("region", { name: "Înmatriculare ONRC" })).toBeVisible();
-    expect(screen.getByText("văzută prima oară în instantaneul din 3 aprilie 2026")).toBeVisible();
+    expect(screen.getByText("văzută prima oară în extrasul din 3 aprilie 2026")).toBeVisible();
     expect(screen.getByText("insolvență")).toBeVisible();
     expect(screen.getByText(/ONRC publică stările fără date/)).toBeVisible();
   });
