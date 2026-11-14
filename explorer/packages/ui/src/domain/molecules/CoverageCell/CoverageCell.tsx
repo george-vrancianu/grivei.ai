@@ -1,4 +1,5 @@
 import type { Locale } from "../../../theme/index.ts";
+import { coverage } from "../../../theme/tokens.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
 import type { GapCellData } from "../../types.ts";
 import type { CoverageGridCopy } from "../../utils/coverageGrid.types.ts";
@@ -29,13 +30,13 @@ export function CoverageCell({ cell, quarter, kind, inRange, compact = false, lo
       data-in-range={inRange ? "true" : undefined}
       sx={{
         p: 0,
-        minWidth: compact ? 16 : 36,
-        width: compact ? 16 : 36,
-        height: compact ? 16 : 32,
+        minWidth: compact ? coverage.cellCompact.size : coverage.cell.width,
+        width: compact ? coverage.cellCompact.size : coverage.cell.width,
+        height: compact ? coverage.cellCompact.size : coverage.cell.height,
         textAlign: "center",
         verticalAlign: "middle",
         typography: "meta",
-        fontSize: compact ? 10 : 12,
+        fontSize: compact ? coverage.cellCompact.fontSize : coverage.cell.fontSize,
         fontWeight: 600,
         lineHeight: 1,
         ...(cell ? stateSx(cell.state) : { border: 1, borderColor: "divider", color: "text.secondary" }),

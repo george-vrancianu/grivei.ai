@@ -44,7 +44,7 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate }: EntityR
   const count = formatCount(matched.records, false, locale);
   const meta = [copy.records(matched.records, count), placeLabel(entity.placement, copy), ...(entity.identity === "CUI" ? [`${copy.cui} ${entity.key}`] : [])];
   return (
-    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 16px", py: 1.5 }}>
+    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 2, py: 1.5 }}>
       <Stack spacing={0.25} sx={{ flex: "1 1 240px", minWidth: 0 }}>
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
           <EntityLink entity={entity} href={href} copy={copy.entityLink} onNavigate={onNavigate} />

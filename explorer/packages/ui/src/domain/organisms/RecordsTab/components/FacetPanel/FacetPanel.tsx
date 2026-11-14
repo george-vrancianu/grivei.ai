@@ -19,7 +19,7 @@ export interface FacetPanelProps {
 /** The Records tab's side panel: facets by Signal, channel, procedure, year, counterparty and badge, each value with its count. Controlled. */
 export function FacetPanel({ facets, filter, role, onFilterChange, locale, copy }: FacetPanelProps) {
   return (
-    <Box component="aside" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "16px 28px" }}>
+    <Box component="aside" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 2, columnGap: 3.5 }}>
       {facetGroups(facets, filter, role, copy, onFilterChange).map((group) => (
         <FacetGroup key={group.id} title={group.title} options={group.options} optionText={copy.option} locale={locale} />
       ))}

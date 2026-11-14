@@ -1,5 +1,5 @@
-import { Box } from "../../../atoms/Box/index.ts";
-import { Button } from "../../../atoms/Button/index.ts";
+import { ToggleButton } from "../../../atoms/ToggleButton/index.ts";
+import { ToggleButtonGroup } from "../../../atoms/ToggleButtonGroup/index.ts";
 
 export interface OptionToggleProps<T extends string> {
   /** The choices, in display order. */
@@ -12,15 +12,15 @@ export interface OptionToggleProps<T extends string> {
   label: string;
 }
 
-/** One of a few choices, as a named group of toggle buttons with the chosen one pressed. */
+/** One of a few choices, as a segmented control (the ToggleButtonGroup the language switch also uses) with the chosen one pressed. */
 export function OptionToggle<T extends string>({ options, value, onChange, labels, label }: OptionToggleProps<T>) {
   return (
-    <Box role="group" aria-label={label} sx={{ display: "inline-flex", gap: 1 }}>
+    <ToggleButtonGroup exclusive aria-label={label} value={value} onChange={(_event, next: T | null) => next !== null && onChange(next)}>
       {options.map((option) => (
-        <Button key={option} size="small" variant={value === option ? "contained" : "outlined"} aria-pressed={value === option} onClick={() => onChange(option)}>
+        <ToggleButton key={option} value={option}>
           {labels[option]}
-        </Button>
+        </ToggleButton>
       ))}
-    </Box>
+    </ToggleButtonGroup>
   );
 }

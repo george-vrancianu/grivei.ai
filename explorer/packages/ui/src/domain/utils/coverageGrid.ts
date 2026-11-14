@@ -106,6 +106,12 @@ export function quarterSpan(quarters: readonly string[]): string[] {
   return Array.from({ length: hi - lo + 1 }, (_, i) => `${Math.floor((lo + i) / 4)}-Q${((lo + i) % 4) + 1}`);
 }
 
+/** The year of the earliest quarter in the cells; null when there is none. */
+export function firstYearOf(cells: readonly GapCellData[]): number | null {
+  const years = cells.map((c) => parseQuarter(c.quarter)?.year).filter((y): y is number => y !== undefined);
+  return years.length === 0 ? null : Math.min(...years);
+}
+
 /** Record kinds present in the cells: the known SEAP ones in their order, then any others alphabetically. */
 export function kindsOf(cells: readonly GapCellData[]): string[] {
   const present = [...new Set(cells.map((c) => c.kind))];

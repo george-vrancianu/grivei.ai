@@ -51,7 +51,7 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       ))
     : [];
   return (
-    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "8px 20px", py: 1.75 }}>
+    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75 }}>
       <Stack spacing={0.75} sx={{ flex: "1 1 320px", minWidth: 0 }}>
         <RecordMetaLine record={record} locale={locale} copy={copy} />
         <Typography component="div" variant="subtitle1">

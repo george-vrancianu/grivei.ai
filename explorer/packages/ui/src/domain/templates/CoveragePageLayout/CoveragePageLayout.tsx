@@ -2,7 +2,10 @@ import type { Locale } from "../../../theme/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { CoverageGrid } from "../../organisms/CoverageGrid/index.ts";
-import { crawlOnlyCells, explainedCells } from "../../utils/coverageGrid.ts";
+import { COVERAGE_SOURCE_ID } from "../../organisms/CoverageLensMap/index.ts";
+import { coverageSource } from "../../organisms/CoverageLensMap/coverageLensMap.utils.ts";
+import { FIRST_YEAR } from "../../molecules/FilterChips/index.ts";
+import { crawlOnlyCells, explainedCells, firstYearOf } from "../../utils/coverageGrid.ts";
 import { layout } from "../../../theme/tokens.ts";
 import { CoverageSection } from "./components/CoverageSection/index.ts";
 import { CrawlOnlyList } from "./components/CrawlOnlyList/index.ts";
@@ -81,7 +84,7 @@ export function CoveragePageLayout({ status, content, locale, methodologyHref, l
         <SnapshotLine date={referenceSnapshot} locale={locale} copy={copy} />
       </CoverageSection>
 
-      <PerCountyNote lensHref={lensHref} onNavigate={onNavigate} copy={copy} />
+      <PerCountyNote lensHref={lensHref} onNavigate={onNavigate} source={coverageSource(sources)?.name ?? COVERAGE_SOURCE_ID} since={String(firstYearOf(cells) ?? FIRST_YEAR)} copy={copy} />
     </Stack>
   );
 }

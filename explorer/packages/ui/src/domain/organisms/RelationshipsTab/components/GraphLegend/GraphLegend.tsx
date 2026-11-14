@@ -28,7 +28,7 @@ export function GraphLegend({ copy, hasWonTogether, hasSignals }: GraphLegendPro
     <Box component="section" aria-label={copy.title} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
       <Typography variant="meta" component="h4" sx={{ color: color.text, fontWeight: 600 }}>{copy.title}</Typography>
       <Typography variant="meta" component="p" data-legend="edge-rule" sx={{ m: 0 }}>{copy.edgeColour}</Typography>
-      <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexWrap: "wrap", gap: "6px 20px", color: color.text2 }}>
+      <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexWrap: "wrap", rowGap: 0.75, columnGap: 2.5, color: color.text2 }}>
         <Box component="li" data-legend="centre" sx={item}>
           <Box component="svg" aria-hidden width={22} height={22} sx={icon}><circle cx={11} cy={11} r={8} fill={CENTRE_COLOR} /></Box>
           <Typography variant="meta">{copy.centre}</Typography>

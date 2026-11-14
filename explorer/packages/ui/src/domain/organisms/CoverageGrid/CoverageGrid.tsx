@@ -1,4 +1,5 @@
 import type { Locale } from "../../../theme/index.ts";
+import { coverage } from "../../../theme/tokens.ts";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { Table } from "../../../atoms/Table/index.ts";
@@ -39,7 +40,7 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
     <Box sx={{ minWidth: 0 }}>
       {!hideLegend && <Typography variant="meta" component="p" sx={{ m: 0, mb: 1, textAlign: { sm: "right" } }}>{copy.windowNote}</Typography>}
       <TableContainer sx={{ overflowX: "auto", maxWidth: "100%" }} tabIndex={0} aria-label={copy.label} role="region">
-        <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: "3px", width: "auto" }}>
+        <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: `${coverage.gridGap}px`, width: "auto" }}>
           <TableHead>
             <TableRow>
               <TableCell component="th" scope="col" rowSpan={2} sx={{ ...stickyLabel, zIndex: 3, verticalAlign: "bottom" }}>{copy.kindHeader}</TableCell>
@@ -65,7 +66,7 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
                     sx={{
                       p: 0.5,
                       textAlign: "center",
-                      fontSize: 11,
+                      fontSize: coverage.quarterFontSize,
                       lineHeight: 1.2,
                       border: 0,
                       borderBottom: 2,
