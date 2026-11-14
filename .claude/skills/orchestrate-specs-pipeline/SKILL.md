@@ -8,7 +8,7 @@ This session is the top level the user talks to. It starts each spec with [orche
 
 ## Intake
 
-- **"Add #N to the pipeline"**: read the issue, list its sub-issues (issue-tracker.md, "Make an issue a sub-issue of a parent") and each child's `## Blocked by` lines, and confirm it carries `ready-for-agent`. A single ticket that is not a spec runs as a one-ticket spec.
+- **"Add #N to the pipeline"**: read the issue, list its sub-issues (`gh api repos/<owner>/<repo>/issues/<n>/sub_issues --jq '.[].number'`) and each child's `## Blocked by` lines, and confirm it carries `ready-for-agent`. A single ticket that is not a spec runs as a one-ticket spec.
 - **"What new issues in the last X hours can be implemented?"**: list only parent issues (not children) labelled `ready-for-agent`. For each give whether its blockers, including other specs, are closed, and which children belong to it.
 - **Before starting a spec**: compare it with the running specs for shared files or modules. Start in parallel only when conflict is light and `free -g` leaves memory well under 30 GB: about 2 to 3 spec orchestrators at once ([SPEC-ORCHESTRATOR](../orchestrate-specs/SPEC-ORCHESTRATOR.md) caps each at 2 ticket orchestrators).
 - **Unsettled blocker**: ask the user before starting. Once the user says the blocker "is settled", start the spec.
@@ -33,8 +33,8 @@ The user keeps working in the main checkout. Only this level runs commands there
 
 [END-OF-RUN.md](../orchestrate-specs/END-OF-RUN.md) steps 4 to 6, plus:
 
-- Commands, ports and the health route: [codebase map](../../../docs/agents/codebase-map.md), "Running the app". Run long-lived servers with `nohup`, output to `/tmp/pp-<name>.log`, and note each PID. Stop only those PIDs; `pkill -f`/`pgrep -f` patterns can match this agent's own shell.
-- A port already in use (EADDRINUSE): find the holder; stop it only if this level started it, otherwise tell the user.
+- Commands, ports, health route, restart and stop: [codebase map](../../../docs/agents/codebase-map.md), "Running the app". Anything this level starts by hand: `nohup`, output to `/tmp/pp-<name>.log`, note the PID or Compose project, and stop only that; `pkill -f`/`pgrep -f` patterns can match this agent's own shell.
+- A runtime already up (the user's or another session's) stays up; on the first run, when nothing was started earlier, start it and record what you started. A port already in use: find the holder and tell the user unless this level started it.
 - Tunnel: reuse one another session started; a tunnel pointing at another port belongs to something else. If the codebase map names no tunnel, say so rather than inventing one. Tell the user the URL whenever it changes.
 
 ## Reporting when a spec finishes

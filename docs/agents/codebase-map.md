@@ -22,7 +22,7 @@ CI is `.github/workflows/explorer.yml`; run the same commands locally. Read the 
 - `seam1` job: `pip install -r watchdog/requirements-dev.txt`, then `pytest -q` under `watchdog/`, then the seam 1 vitest files under `explorer/packages/api` (command in the workflow).
 - `compose` job: `docker compose --profile pipeline config -q` and `build`.
 
-The watchdog test dependencies (`pytest`, `xlwt`) are in `watchdog/requirements-dev.txt`. A venv missing them was not installed from that file. A fresh worktree with all of this set up: `scripts/worktree.sh <name>` (below).
+The watchdog test dependencies (`pytest`, `xlwt`) are in `watchdog/requirements-dev.txt`. A venv missing them was not installed from that file. Install commands: `npm ci` under `explorer/`; for the watchdog a venv at `watchdog/.venv` (Python 3.12, as CI) with `pip install -r watchdog/requirements-dev.txt`. A fresh worktree with all of this set up: `scripts/worktree.sh <name>` (below).
 
 ## Schema is applied at rebuild
 
@@ -47,18 +47,15 @@ The main test seam: miniature raw archive, then `pipeline rebuild`, then the app
 
 ## Running the app
 
-There is no dev server: the explorer has no `dev` or `start:dev` script and the app has no vite dev server. The runtime is the Compose project (`compose.yaml`, runbook `deploy/README.md`).
+There is no dev server for the app: the explorer has no `dev` or `start:dev` script and the app has no vite dev server. For UI work Storybook dev runs on 6006 (`npm run storybook` under `explorer/`). The runtime is the Compose project (`compose.yaml`, runbook `deploy/README.md`).
 
 - Start: `docker compose up -d --build` from the repo root starts `db`, `api` and `web` (Caddy). The `pipeline` service is a one-shot behind a profile: `docker compose run --rm pipeline rebuild`.
 - Ports: only `web` is published, as `127.0.0.1:8080` (Caddy: landing page `/` and `/ro/`, app `/explore/` and `/ro/explore/`, `/graphql`, `/source/*`, `/geo/*`). The API listens on 4000 and the database on 5432, both on the Compose network only.
 - Health: the API answers `GET /healthz` (`explorer/packages/api/src/server.ts`) on 4000, reachable from inside the network; Compose uses it as the `api` healthcheck, so `docker compose ps` shows `healthy`. Caddy does not route it. From the host, check `http://localhost:8080/explore/` for 200.
 - Same origin: Caddy serves app and API on one origin, so there is no CORS setting and no `CLIENT_ORIGIN`-style variable. The API reads `DATABASE_URL` (required), `PORT`, `API_CACHE_MAX_MB`, `SEAP_BASE_URL`, `SEAP_LINK_PUBLIC_BASE`, `GRIVEI_RESTRICTED` (list in `explorer/packages/api/src/main.ts`).
+- Restart and stop: re-running `docker compose up -d --build` recreates only the services whose image or config changed. Stop with `docker compose stop` (or `down`; never `down -v`, it deletes the database volume). A running `grivei` Compose project (`docker compose ps`) belongs to the user, who may have started it: this includes a project that was up before the run.
 - Tunnel: the repo defines none.
 
 ## Worktrees
 
 `scripts/worktree.sh` creates and removes ready-to-work worktrees under `.claude/worktrees/`; its header comment is the usage. `scripts/worktree.test.sh` tests it (minutes; not in CI).
-
-## Gotchas
-
-- Subagents' `Write` of report files into `/tmp/pp-<spec>-notes/` was refused in two runs ("Subagents should return findings as text"), although the orchestration workflow asks for those files. When that happens, the report goes in the hand-back text.

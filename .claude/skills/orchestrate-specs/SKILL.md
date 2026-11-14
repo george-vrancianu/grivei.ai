@@ -36,7 +36,7 @@ Link these in briefs instead of restating them. Each is used if present; if one 
 - `docs/agents/issue-tracker.md`: working `gh` commands. Some write commands there (label POST/DELETE, close PATCH, assignees POST, `gh issue create`, `gh issue comment`, `gh pr comment`, `gh pr close`) were syntax-checked but not run: verify on first use.
 - `docs/agents/codebase-map.md`: workspaces, check and test commands, schema and migration facts, lint tools, how to run the app, gotchas.
 - `CODING_STANDARDS.md`: what the Standards review checks.
-- `scripts/worktree.sh`: create and remove agent worktrees (usage in its header comment: `scripts/worktree.sh <name> [base]`; `--remove <name>`). Without the script: `git worktree add .claude/worktrees/<name> -b <name> origin/main`, copy the `.env` and `.env.local` files that exist in the main checkout (read-only copy), and run `npm ci` under `explorer/`.
+- `scripts/worktree.sh`: create and remove agent worktrees (usage in its header comment: `scripts/worktree.sh <name> [base]`; `--remove <name>`). Without the script: `git worktree add .claude/worktrees/<name> -b <name> origin/main`, copy the `.env` and `.env.local` files that exist in the main checkout (read-only copy), and run the install commands the codebase map names.
 
 ## Gotchas
 
