@@ -8,7 +8,7 @@ from pathlib import Path
 from ..archive import QUARANTINE_DIR, Archive
 from .ledger import Ledger
 
-STEP_ORDER = ("crawl", "datagov", "onrc", "amepip", "financials", "anaf", "load")
+STEP_ORDER = ("crawl", "datagov", "onrc", "amepip", "financials", "banipartide", "anaf", "load")
 
 
 def quarantine_lines(archive: Archive) -> list[str]:

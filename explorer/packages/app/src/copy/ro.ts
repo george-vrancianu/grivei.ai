@@ -468,6 +468,22 @@ export const ro: Copy = {
       mayBeRevisedNote: "Cel mai recent an este prima publicare: MF republică situațiile fiecărui an după un an, cu corecturi, așa că citiți-l cu grijă.",
       contextNote: "Atribuirile ca pondere din cifra de afaceri sunt context, nu un Semnal, și nu se adună niciodată la valoarea atribuită. Valoarea întreagă a unui contract se numără în anul atribuirii, așa că ponderea poate depăși 100% și nu este o pondere din venituri.",
     },
+    donations: {
+      heading: "Donații ale firmei către partide",
+      supplierContext: (donations, loans) => `Acest furnizor este și donator-firmă: ${donations} ${donations === 1 ? "donație" : "donații"} și ${loans} ${loans === 1 ? "împrumut" : "împrumuturi"} către partide. Doar context, nu un Semnal.`,
+      intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
+      caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",
+      columns: { date: "Data", party: "Partid (cum este publicat)", kind: "Tip", amount: "Suma", source: "Sursa" },
+      row: {
+        kind: { DONATION: "Donație", LOAN: "Împrumut" },
+        dateNotStated: "nespecificată",
+        source: (row) => `BaniPartide, rândul ${row}`,
+        underlying: "din publicările partidelor (Monitorul Oficial, AEP)",
+      },
+      contextNote: "O donație a unei firme este context, nu un Semnal. Nu este niciodată un Partid, iar sumele ei nu se adună niciodată între ele și nici la valoarea atribuită. Data apare doar unde celula publicată de BaniPartide dă una; altfel celula este arătată așa cum a fost publicată.",
+      attribution: (publisher, license, fetched) => `BaniPartide${publisher ? ` (${publisher})` : ""}${license ? `, licența ${license}` : ""}; tabel preluat la ${fetched}.`,
+      methodologyLink: "Cum își culege BaniPartide datele",
+    },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",

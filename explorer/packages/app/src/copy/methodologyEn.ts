@@ -100,6 +100,14 @@ export const methodologyEn: MethodologyPageCopy = {
         "Beside the figures the page shows the awards of the same calendar year and their share of that year's turnover. It is context, never a Signal, and it is never added to awarded value: a company's statements and its awards are unlike measures and stay apart. The awards are the supplier's awarded value, counted by the same rule as every other total, by the year of the award date. A contract's whole value counts in the year it was awarded, however many years it runs, so the share can exceed 100% and is not a share of the company's revenue. A blank or zero turnover gives no share.",
       ],
     },
+    firmDonations: {
+      heading: "Firm donations (BaniPartide)",
+      paragraphs: [
+        "An organisation's page lists the donations and loans that companies made to parties, when the company's CUI appears in BaniPartide's table of firm donors. BaniPartide is a platform of Expert Forum, published under the licence CC Attribution 4.0. It compiles the table from the parties' annual publications in Monitorul Oficial and on the pages of the Permanent Electoral Authority (AEP). BaniPartide gives no report reference per row, so every line cites BaniPartide and, through its methodology, those publications. The match is by CUI alone, never by name. The party is shown exactly as BaniPartide publishes it: it is not matched to a Party, and a firm donation is never a Party.",
+        "The explorer loads the table once from an archived copy and only checks from time to time whether BaniPartide has published a newer one, so recent donations may be missing: the page states the newest year the table covers. A row is filed under a year. A date is shown only where BaniPartide's published cell holds a single date; otherwise the cell is shown as published. Only companies are loaded. Individual donors are never loaded, shown or counted here, and a sole trader (PFA, II or IF) is not shown as a donor.",
+        "On a supplier's page, \"this supplier is also a firm donor\" is context, never a Signal: a company that wins public contracts and gives to a party is not by that fact doing anything wrong. A donation is a different measure from awarded value, so its amount is never added to it, and donations are never summed together.",
+      ],
+    },
   },
   signals: {
     heading: "Signal rules",
@@ -156,6 +164,7 @@ export const methodologyEn: MethodologyPageCopy = {
   },
   referenceDataThrough: (date) => `Data through ${date}`,
   referenceFiscalYearThrough: (year) => `Data through fiscal year ${year}`,
+  referenceYearThrough: (year) => `Data through ${year}`,
   baseRate: {
     windowLabel: "Time window",
     range: (from, to) => `${from} to ${to}`,

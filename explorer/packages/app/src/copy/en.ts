@@ -463,6 +463,22 @@ export const en: Copy = {
       mayBeRevisedNote: "The newest year is a first release: MF re-publishes each year's statements a year later, with corrections, so read it with care.",
       contextNote: "Awards as a share of turnover is context, not a Signal, and is never added to awarded value. A contract's whole value counts in the year it was awarded, so a share can exceed 100% and is no share of revenue.",
     },
+    donations: {
+      heading: "Firm donations to parties",
+      supplierContext: (donations, loans) => `This supplier is also a firm donor: ${donations} ${donations === 1 ? "donation" : "donations"} and ${loans} ${loans === 1 ? "loan" : "loans"} to parties. Context only, not a Signal.`,
+      intro: (year) => `Donations and loans this company made to parties, as BaniPartide lists them from the parties' annual publications, in RON. Data through ${year}: donations after that may be missing.`,
+      caption: "Firm donations and loans to parties, newest first",
+      columns: { date: "Date", party: "Party (as published)", kind: "Kind", amount: "Amount", source: "Source" },
+      row: {
+        kind: { DONATION: "Donation", LOAN: "Loan" },
+        dateNotStated: "not stated",
+        source: (row) => `BaniPartide, row ${row}`,
+        underlying: "from the parties' publications (Monitorul Oficial, AEP)",
+      },
+      contextNote: "A firm donation is context, not a Signal. It is never a Party, and its amounts are never summed or added to awarded value. Dates are shown only where BaniPartide's published cell gives one; otherwise the cell is shown as published.",
+      attribution: (publisher, license, fetched) => `BaniPartide${publisher ? ` (${publisher})` : ""}${license ? `, licence ${license}` : ""}; table fetched ${fetched}.`,
+      methodologyLink: "How BaniPartide sources its data",
+    },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",

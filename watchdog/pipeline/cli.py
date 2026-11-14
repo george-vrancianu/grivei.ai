@@ -12,6 +12,8 @@ from pathlib import Path
 
 from .amepip.fetch import fetch_amepip
 from .amepip.status import describe as describe_amepip
+from .banipartide.fetch import check_banipartide, fetch_banipartide
+from .banipartide.status import describe as describe_banipartide
 from .financials.fetch import fetch_financials
 from .financials.status import describe as describe_financials
 from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
@@ -138,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
     on = sub.add_parser("fetch-onrc", help="fetch ONRC's open company-register snapshots from data.gov.ro into the raw archive: every monthly one since March 2026 and the last of each quarter back to 2021, whatever is not held yet (no loading; resumable)")
     on.add_argument("--limit", type=int, default=None, help="download at most this many snapshots in this run (each is over a gigabyte); rerun to continue")
 
+    bp = sub.add_parser("fetch-banipartide", help="archive BaniPartide's table of firm donors and lenders (Expert Forum, CC BY 4.0) into the raw archive: a one-off load, nothing happens while a copy is held (no loading)")
+    bp.add_argument("--again", action="store_true", help="archive a newer dated copy although one is held (after the refresh check reported a newer upstream database)")
     sub.add_parser("fetch-financials", help="fetch MF's annual financial-statement bulk files (FY2021 on, first releases and the re-published `actualizat` files) from data.gov.ro into the raw archive (no loading; resumable)")
     sub.add_parser("fetch-amepip", help="fetch AMEPIP's newest list of public enterprises (CUIs) from data.gov.ro into the raw archive (no loading; resumable)")
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
@@ -290,6 +294,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in summary.lines():
             print(line)
         return 1 if summary.failed else 0
+    if args.verb == "fetch-banipartide":
+        _logging_to_stderr()
+        summary = fetch_banipartide(archive, again=args.again)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed or summary.invalid else 0
     if args.verb == "fetch-financials":
         _logging_to_stderr()
         summary = fetch_financials(archive)
@@ -411,7 +421,7 @@ def _impl(archive: Archive, args) -> Impl:
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
                 crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
                 fetch_onrc=lambda a, limit=None: fetch_onrc(a, limit=limit),
-                fetch_amepip=lambda a: fetch_amepip(a), fetch_financials=lambda a: fetch_financials(a))
+                fetch_amepip=lambda a: fetch_amepip(a), fetch_financials=lambda a: fetch_financials(a), check_banipartide=lambda a: check_banipartide(a))
 
 
 def _logging_to_stderr() -> None:
@@ -483,6 +493,8 @@ def _status(archive: Archive, args) -> int:
     for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
         code = source.status(archive, args, status, anaf, code)
     for line in describe_amepip(archive):  # the Reference source's own section (#183): not a registry entry, so not one of SOURCES' hooks
+        print(line)
+    for line in describe_banipartide(archive):  # BaniPartide's firm donations (#182): a one-off archived load with its data-through year
         print(line)
     for line in describe_financials(archive):  # likewise MF's annual financial statements (#179): data-through fiscal year
         print(line)

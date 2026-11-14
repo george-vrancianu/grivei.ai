@@ -1,4 +1,4 @@
-import { EntityHeader, EntityOverview, EntityPageLayout, FinancialStatementsSection, OnrcSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -72,6 +72,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
   // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
   const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
+  // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
+  const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
   return (
@@ -114,6 +116,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             {onrcSection}
             {publicEnterpriseSection}
             {financialsSection}
+            {donationsSection}
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               signalsToolbar={
                 <SignalOrderToggle
@@ -146,6 +149,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           <Stack spacing={3}>
             {onrcSection}
             {financialsSection}
+            {donationsSection}
             <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
           </Stack>
         )

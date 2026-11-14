@@ -7,7 +7,7 @@ import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow, FirmDonationsRow } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
@@ -100,6 +100,18 @@ export function financialsObject(rows: FinancialYearRow[]) {
   };
 }
 
+/** An entity's firm donations as the contract serves them (#182): counts of each kind, never a sum; context, never a Signal (ADR 0014). */
+export function donationsObject(found: FirmDonationsRow | null) {
+  if (found === null) return null;
+  return {
+    dataThroughYear: found.dataThroughYear,
+    donationCount: found.items.filter((i) => i.kind === "DONATION").length,
+    loanCount: found.items.filter((i) => i.kind === "LOAN").length,
+    items: found.items,
+    source: found.source,
+  };
+}
+
 export function rootValue(store: Store) {
   /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
   const entityObject = (e: EntityRow) => ({
@@ -131,6 +143,8 @@ export function rootValue(store: Store) {
     publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
     // MF's annual statements for the CUI (#179), with the awards of each year beside them as context: null when MF holds none
     financials: async () => (e.cui ? financialsObject(await store.financials(e.cui, e.key)) : null),
+    // BaniPartide's firm donations and loans under the CUI (#182): null when it lists none; on a supplier the page reads it as "also a firm donor", context only
+    donations: async () => (e.cui ? donationsObject(await store.donations(e.cui)) : null),
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
