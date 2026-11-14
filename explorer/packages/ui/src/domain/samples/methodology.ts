@@ -27,12 +27,12 @@ const sections = {
   en: {
     awardedValue: "Awarded value", frameworkCeilings: "Framework ceilings", consortiumShares: "Consortium shares", suspectValues: "Suspect values", blankValues: "Blank values",
     contractModifications: "Contract modifications", backfilledValues: "Values of backfilled 2021–22 Records", supplierIdentity: "Supplier identity", placement: "Placement",
-    coverageStatuses: "Coverage statuses", publicEnterprises: "Public enterprises (AMEPIP)", partyAndLeadership: "Party and leadership (AEP)", financialStatements: "Financial statements (MF)", firmDonations: "Firm donations (BaniPartide)",
+    coverageStatuses: "Coverage statuses", publicEnterprises: "Public enterprises (AMEPIP)", partyAndLeadership: "Party and leadership (AEP)", financialStatements: "Financial statements (MF)", firmDonations: "Firm donations (BaniPartide)", onrcRegister: "ONRC registrations (trade register)",
   },
   ro: {
     awardedValue: "Valoarea atribuită", frameworkCeilings: "Plafoane de acord-cadru", consortiumShares: "Părți din asociere", suspectValues: "Valori suspecte", blankValues: "Valori lipsă",
     contractModifications: "Modificările contractelor", backfilledValues: "Valorile înregistrărilor 2021–22 completate ulterior", supplierIdentity: "Identitatea furnizorului",
-    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", partyAndLeadership: "Partid și conducere (AEP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)",
+    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", partyAndLeadership: "Partid și conducere (AEP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)", onrcRegister: "Înmatriculările ONRC (registrul comerțului)",
   },
 } as const;
 const rules = {
@@ -58,7 +58,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
     sections: {
       awardedValue: section(s.awardedValue), frameworkCeilings: section(s.frameworkCeilings), consortiumShares: section(s.consortiumShares), suspectValues: section(s.suspectValues),
       blankValues: section(s.blankValues), contractModifications: section(s.contractModifications), backfilledValues: section(s.backfilledValues),
-      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses), publicEnterprises: section(s.publicEnterprises), partyAndLeadership: section(s.partyAndLeadership), financialStatements: section(s.financialStatements), firmDonations: section(s.firmDonations),
+      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses), publicEnterprises: section(s.publicEnterprises), partyAndLeadership: section(s.partyAndLeadership), financialStatements: section(s.financialStatements), firmDonations: section(s.firmDonations), onrcRegister: section(s.onrcRegister),
     },
     signals: { heading: en ? "Signal rules" : "Regulile Semnalelor", paragraphs: [en ? "A Signal is a set of Records matched by a published rule." : "Un Semnal este un set de înregistrări potrivite de o regulă publicată."] },
     rules: {
