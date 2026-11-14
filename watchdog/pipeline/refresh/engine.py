@@ -46,6 +46,7 @@ ANAF_EVERY_DAYS = 7
 ONRC_EVERY_DAYS = 28
 ONRC_RETRY_DAYS = 7
 ONRC_REFRESH_LIMIT = 2  # snapshots a nightly refresh downloads per ONRC step (each is over 1 GB): the backlog is the seed's (or `fetch-onrc --limit`), never the refresh lock's
+AEP_EVERY_DAYS = 7  # the check for a newer 2025 partial-election file (#180); nothing is downloaded
 AMEPIP_EVERY_DAYS = 7  # AMEPIP publishes a list once or twice a year; a weekly look is cheap (an unchanged resource is not downloaded)
 PGDUMP_EVERY_DAYS = 7
 ALERT_AFTER_FAILED_RUNS = 2  # alert when MORE than this many runs in a row failed
@@ -192,11 +193,13 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     # AMEPIP's public-enterprise list (#183) has its own isolated step: its failure never blocks data.gov.ro, ANAF or the load
     amepip = [Step("amepip", impl.amepip, weekly("amepip", AMEPIP_EVERY_DAYS))] if _has_amepip(impl) else []
+    aep = [Step("aep", impl.aep, weekly("aep", AEP_EVERY_DAYS))] if getattr(impl, "check_aep", None) is not None and hasattr(impl, "aep") else []
     return [
         Step("crawl", impl.crawl, daily),
         Step("datagov", impl.datagov, weekly("datagov", DATAGOV_EVERY_DAYS)),
         Step("onrc", lambda: impl.onrc(limit=ONRC_REFRESH_LIMIT), onrc_due),  # its own step (#175): ONRC failing never blocks SEAP's; its snapshots change the archive, so the load follows
         *amepip,
+        *aep,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),
         Step("load", impl.load, load_due, fingerprint_all),
         *backups,  # step 5 (#82): the raw archive to restic nightly, a pg_dump of the graph weekly, same repository

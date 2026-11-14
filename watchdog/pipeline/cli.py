@@ -12,6 +12,8 @@ from pathlib import Path
 
 from .amepip.fetch import fetch_amepip
 from .amepip.status import describe as describe_amepip
+from .aep.fetch import check_partial as check_aep_partial, fetch_aep
+from .aep.status import describe as describe_aep
 from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
 from .anaf import ENDPOINT as ANAF_ENDPOINT
 from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
@@ -136,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     on = sub.add_parser("fetch-onrc", help="fetch ONRC's open company-register snapshots from data.gov.ro into the raw archive: every monthly one since March 2026 and the last of each quarter back to 2021, whatever is not held yet (no loading; resumable)")
     on.add_argument("--limit", type=int, default=None, help="download at most this many snapshots in this run (each is over a gigabyte); rerun to continue")
 
+    g = sub.add_parser("fetch-aep", help="archive AEP's local-election results (2020 and 2024 final minutes, the October 2020 repeat round, the one-off 2025 partial elections) into the raw archive; archived units are not fetched again")
+    g.add_argument("--partial-again", action="store_true", help="archive the 2025 partial-election files again (after the refresh alert says a newer upstream set exists)")
     sub.add_parser("fetch-amepip", help="fetch AMEPIP's newest list of public enterprises (CUIs) from data.gov.ro into the raw archive (no loading; resumable)")
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
 
@@ -278,6 +282,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in summary.lines():
             print(line)
         return 1 if summary.failed or summary.invalid else 0
+    if args.verb == "fetch-aep":
+        _logging_to_stderr()
+        summary = fetch_aep(archive, partial_again=args.partial_again)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed else 0
     if args.verb == "fetch-amepip":
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
@@ -402,7 +412,7 @@ def _impl(archive: Archive, args) -> Impl:
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
                 crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
                 fetch_onrc=lambda a, limit=None: fetch_onrc(a, limit=limit),
-                fetch_amepip=lambda a: fetch_amepip(a))
+                fetch_amepip=lambda a: fetch_amepip(a), check_aep=lambda a: check_aep_partial(a))
 
 
 def _logging_to_stderr() -> None:
@@ -473,6 +483,8 @@ def _status(archive: Archive, args) -> int:
             code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record (a Source's hook below may still set 1)
     for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
         code = source.status(archive, args, status, anaf, code)
+    for line in describe_aep(archive):  # AEP's rounds with the one-off file's data-through date (#180)
+        print(line)
     for line in describe_amepip(archive):  # the Reference source's own section (#183): not a registry entry, so not one of SOURCES' hooks
         print(line)
     ledger = Ledger(archive.root / LEDGER_NAME)

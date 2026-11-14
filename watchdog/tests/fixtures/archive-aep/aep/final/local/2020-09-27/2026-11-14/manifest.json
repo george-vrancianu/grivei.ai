@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "source": "aep",
+  "stream": "final",
+  "kind": "local",
+  "unit": "2020-09-27",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://example.invalid/aep",
+  "via": "AEP final minutes, local elections 27 September 2020",
+  "files": [
+    {
+      "name": "pv_b_final.json",
+      "sha256": "fb16a52e4aebd0a2b80a6299523b46773eb24ab415d1c90719f354c177182674",
+      "bytes": 1289
+    },
+    {
+      "name": "pv_bv_final.json",
+      "sha256": "d333d55a7e98a6019d88a99cfc376ebd0f0550ebe6ea8259b2a8095a39c116d6",
+      "bytes": 2707
+    },
+    {
+      "name": "pv_cj_final.json",
+      "sha256": "71ab26d2687ddca7447ceb82e62ce39f06a5b6fd4419aecf0094dda318725683",
+      "bytes": 1680
+    }
+  ],
+  "origin": {
+    "system": "AEP"
+  }
+}

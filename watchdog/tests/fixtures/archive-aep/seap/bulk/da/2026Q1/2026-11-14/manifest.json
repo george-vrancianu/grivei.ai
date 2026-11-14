@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "da",
+  "unit": "2026Q1",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-achizitii-directe-t1-2026.csv",
+  "via": "Achizitii directe 2026Q1",
+  "files": [
+    {
+      "name": "raport-achizitii-directe-t1-2026.csv",
+      "sha256": "0b9596ca8daba4ca885b8b6daf179899d0fd4ce7f1289fe5c30a68f1649c9d57",
+      "bytes": 437
+    }
+  ]
+}

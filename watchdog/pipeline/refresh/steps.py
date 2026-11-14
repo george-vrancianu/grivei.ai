@@ -42,6 +42,7 @@ class Impl:
     fetch_onrc: Callable | None = None  # (archive, limit=) -> OnrcFetchSummary: ONRC's snapshots (#175); None = not wired, the step skips
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
     fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
+    check_aep: Callable | None = None  # (archive) -> list of alert texts (#180): only checks the one-off 2025 file for a newer upstream set; None = not wired
 
     def crawl(self) -> StepResult:
         progress = CrawlProgress(self.archive.root / "crawl-progress.json", now=self.now)  # prints its own timestamped lines
@@ -85,6 +86,11 @@ class Impl:
         if summary.failed:
             raise TransientError(f"{len(summary.failed)} AMEPIP fetch failure(s): {summary.failed[0]}")
         return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def aep(self) -> StepResult:
+        """AEP's one-off 2025 file (#180): the step only CHECKS for a newer upstream file and alerts (a warning in the run); it never downloads."""
+        alerts = self.check_aep(self.archive)
+        return StepResult({"alerts": len(alerts)}, [], list(alerts))
 
     def anaf(self) -> StepResult:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "source": "mf",
+  "stream": "list",
+  "kind": "entities",
+  "unit": "2026-10-01",
+  "fetchedAt": "2026-10-05T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/lista_ep_portal_01102026.xls",
+  "via": "lista_ep_portal_01102026.xls",
+  "files": [
+    {
+      "name": "lista_ep_portal_01102026.xls",
+      "sha256": "afcfbf45ad5a60b55b6a22236bf9a50c7a5f078f6849e347d5ca79a17c689c33",
+      "bytes": 9728
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "listaentitatipublice",
+    "resourceId": "00000000-fixture-2026-10-01",
+    "resourceName": "lista_ep_portal_01102026.xls",
+    "url": "https://data.gov.ro/fixture/lista_ep_portal_01102026.xls",
+    "lastModified": "2026-11-06T11:28:26.101125",
+    "size": 9728,
+    "hash": "",
+    "format": "XLS"
+  }
+}

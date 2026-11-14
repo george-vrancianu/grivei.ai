@@ -340,6 +340,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "fetch_mf", lambda a: MfFetchSummary())
     monkeypatch.setattr(cli, "fetch_onrc", lambda a, limit=None: OnrcFetchSummary())
     monkeypatch.setattr(cli, "fetch_amepip", lambda a: AmepipFetchSummary())
+    monkeypatch.setattr(cli, "check_aep_partial", lambda a: [])
     monkeypatch.setattr(cli, "AnafClient", lambda endpoint=None: AnafClient(post=lambda *a, **k: pytest.fail("ANAF has no CUI to ask about"), endpoint=endpoint or "x"))
     loads = []
 
@@ -363,7 +364,7 @@ def test_refresh_at_the_cli_crawls_loads_and_status_shows_runs_cursor_data_throu
     archive.quarantine(archive.units()[0], "header mismatch (fixture)")
     assert cli.main(["--archive", str(archive.root), "refresh", "--db", "postgresql://x/y", "--trigger", "timer"]) == 0
     out = capsys.readouterr().out
-    assert "step crawl: ok" in out and "step datagov: ok" in out and "step amepip: ok" in out and "step anaf: ok" in out and "step load: ok" in out
+    assert "step crawl: ok" in out and "step datagov: ok" in out and "step amepip: ok" in out and "step aep: ok" in out and "step anaf: ok" in out and "step load: ok" in out
     assert loads == ["postgresql://x/y"]
     assert cli.main(["--archive", str(archive.root), "refresh", "--db", "postgresql://x/y"]) == 0
     assert "step crawl: not due" in capsys.readouterr().out and loads == ["postgresql://x/y"]  # a duplicate trigger loads nothing
@@ -371,7 +372,7 @@ def test_refresh_at_the_cli_crawls_loads_and_status_shows_runs_cursor_data_throu
     cli.main(["--archive", str(archive.root), "status"])
     status = capsys.readouterr().out
     assert "#2 refresh" in status and "#1 refresh" in status
-    assert "crawl ok, datagov ok, onrc ok, amepip ok, anaf ok, load ok" in status
+    assert "crawl ok, datagov ok, onrc ok, amepip ok, aep ok, anaf ok, load ok" in status
     assert "load warning: quarantined (not loaded, shown as not yet loaded)" in status
     yesterday = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
     assert f"crawl cursor: {yesterday}" in status
