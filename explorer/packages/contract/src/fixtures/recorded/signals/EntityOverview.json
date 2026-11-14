@@ -4846,5 +4846,3036 @@
         "donations": null
       }
     }
+  },
+  {
+    "name": "young-firm-authority",
+    "kind": "typical",
+    "description": "an authority's young-firm Signals: days from registering, the registration date and the Record's counted value",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "YOUNG_FIRM"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "8000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.625,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201017",
+                    "displayName": "YF FIRST EARLY SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "5000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3201025",
+                    "displayName": "YF FIRST 90 SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "3000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000001",
+                "title": "Achizitie DA97000001",
+                "date": "2025-03-11",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "YF FIRST EARLY SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201017",
+                      "displayName": "YF FIRST EARLY SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "YOUNG_FIRM",
+                    "date": "2025-03-11",
+                    "numbers": {
+                      "__typename": "YoungFirmNumbers",
+                      "days": 10,
+                      "registered": "2025-03-01",
+                      "counted": "5000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "YOUNG_FIRM",
+                      "cpv": null,
+                      "from": "2025-03-11",
+                      "to": "2025-03-11"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "DA97000003",
+                "title": "Achizitie DA97000003",
+                "date": "2025-05-30",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "YF FIRST 90 SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201025",
+                      "displayName": "YF FIRST 90 SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "YOUNG_FIRM",
+                    "date": "2025-05-30",
+                    "numbers": {
+                      "__typename": "YoungFirmNumbers",
+                      "days": 90,
+                      "registered": "2025-03-01",
+                      "counted": "3000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "YOUNG_FIRM",
+                      "cpv": null,
+                      "from": "2025-05-30",
+                      "to": "2025-05-30"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "YOUNG_FIRM",
+                  "date": "2025-05-30",
+                  "firstDate": "2025-05-30",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201025",
+                      "displayName": "YF FIRST 90 SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "YoungFirmNumbers",
+                    "days": 90,
+                    "registered": "2025-03-01",
+                    "counted": "3000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "YOUNG_FIRM",
+                    "cpv": null,
+                    "from": "2025-05-30",
+                    "to": "2025-05-30"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000003",
+                      "provenance": {
+                        "url": "/source/seap/DA97000003"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "YOUNG_FIRM",
+                  "date": "2025-03-11",
+                  "firstDate": "2025-03-11",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201017",
+                      "displayName": "YF FIRST EARLY SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "YoungFirmNumbers",
+                    "days": 10,
+                    "registered": "2025-03-01",
+                    "counted": "5000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "YOUNG_FIRM",
+                    "cpv": null,
+                    "from": "2025-03-11",
+                    "to": "2025-03-11"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000001",
+                      "provenance": {
+                        "url": "/source/seap/DA97000001"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "no-construction-caen-authority",
+    "kind": "typical",
+    "description": "an authority's works Signals for firms with no construction CAEN: the value and the number of authorised codes",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "NO_CONSTRUCTION_CAEN"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "300000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.666666666,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201130",
+                    "displayName": "NC REV2 DIV45 SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "200000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3201092",
+                    "displayName": "NC NONE 1M SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "100000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000015",
+                "title": "Achizitie DA97000015",
+                "date": "2025-04-14",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "200000000",
+                "counted": "200000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "NC REV2 DIV45 SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201130",
+                      "displayName": "NC REV2 DIV45 SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_CONSTRUCTION_CAEN",
+                    "date": "2025-04-14",
+                    "numbers": {
+                      "__typename": "NoConstructionCaenNumbers",
+                      "value": "200000000",
+                      "authorisedCodes": 1
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "NO_CONSTRUCTION_CAEN",
+                      "cpv": null,
+                      "from": "2025-04-14",
+                      "to": "2025-04-14"
+                    }
+                  },
+                  {
+                    "rule": "OVER_CAP",
+                    "date": "2025-04-14",
+                    "numbers": {
+                      "__typename": "OverCapNumbers",
+                      "value": "200000000",
+                      "cap": "90040000",
+                      "multiple": 2.221235
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "OVER_CAP",
+                      "cpv": null,
+                      "from": "2025-04-14",
+                      "to": "2025-04-14"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "DA97000011",
+                "title": "Achizitie DA97000011",
+                "date": "2025-04-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "NC NONE 1M SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201092",
+                      "displayName": "NC NONE 1M SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_CONSTRUCTION_CAEN",
+                    "date": "2025-04-10",
+                    "numbers": {
+                      "__typename": "NoConstructionCaenNumbers",
+                      "value": "100000000",
+                      "authorisedCodes": 1
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "NO_CONSTRUCTION_CAEN",
+                      "cpv": null,
+                      "from": "2025-04-10",
+                      "to": "2025-04-10"
+                    }
+                  },
+                  {
+                    "rule": "OVER_CAP",
+                    "date": "2025-04-10",
+                    "numbers": {
+                      "__typename": "OverCapNumbers",
+                      "value": "100000000",
+                      "cap": "90040000",
+                      "multiple": 1.110618
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "OVER_CAP",
+                      "cpv": null,
+                      "from": "2025-04-10",
+                      "to": "2025-04-10"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "NO_CONSTRUCTION_CAEN",
+                  "date": "2025-04-14",
+                  "firstDate": "2025-04-14",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201130",
+                      "displayName": "NC REV2 DIV45 SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoConstructionCaenNumbers",
+                    "value": "200000000",
+                    "authorisedCodes": 1
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "NO_CONSTRUCTION_CAEN",
+                    "cpv": null,
+                    "from": "2025-04-14",
+                    "to": "2025-04-14"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000015",
+                      "provenance": {
+                        "url": "/source/seap/DA97000015"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "NO_CONSTRUCTION_CAEN",
+                  "date": "2025-04-10",
+                  "firstDate": "2025-04-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201092",
+                      "displayName": "NC NONE 1M SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoConstructionCaenNumbers",
+                    "value": "100000000",
+                    "authorisedCodes": 1
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "NO_CONSTRUCTION_CAEN",
+                    "cpv": null,
+                    "from": "2025-04-10",
+                    "to": "2025-04-10"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000011",
+                      "provenance": {
+                        "url": "/source/seap/DA97000011"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "after-strike-off-authority",
+    "kind": "typical",
+    "description": "an authority's Records dated after the supplier's ANAF strike-off: the strike-off date and the days after it",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "AFTER_STRIKE_OFF"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "2000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201173",
+                    "displayName": "SO STRUCK SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000021",
+                "title": "Achizitie DA97000021",
+                "date": "2025-03-16",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SO STRUCK SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201173",
+                      "displayName": "SO STRUCK SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "AFTER_STRIKE_OFF",
+                    "date": "2025-03-16",
+                    "numbers": {
+                      "__typename": "AfterStrikeOffNumbers",
+                      "struckOff": "2025-03-15",
+                      "daysAfter": 1
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "AFTER_STRIKE_OFF",
+                      "cpv": null,
+                      "from": "2025-03-16",
+                      "to": "2025-03-16"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 1,
+              "rows": [
+                {
+                  "rule": "AFTER_STRIKE_OFF",
+                  "date": "2025-03-16",
+                  "firstDate": "2025-03-16",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201173",
+                      "displayName": "SO STRUCK SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "AfterStrikeOffNumbers",
+                    "struckOff": "2025-03-15",
+                    "daysAfter": 1
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "AFTER_STRIKE_OFF",
+                    "cpv": null,
+                    "from": "2025-03-16",
+                    "to": "2025-03-16"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000021",
+                      "provenance": {
+                        "url": "/source/seap/DA97000021"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "insolvency-authority",
+    "kind": "typical",
+    "description": "an authority's Records of suppliers now in insolvency or reorganisation: the status as ONRC names it, undated, first seen in a snapshot (one only since the earliest snapshot held)",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "INSOLVENCY"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "6000000",
+              "records": 3,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.666666666,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201203",
+                    "displayName": "IN FIRST APR SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "4000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3201211",
+                    "displayName": "IN SINCE AT LEAST SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000026",
+                "title": "Achizitie DA97000026",
+                "date": "2025-11-06",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN FIRST APR SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2025-11-06",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2025-11-06",
+                      "to": "2025-11-06"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "DA97000027",
+                "title": "Achizitie DA97000027",
+                "date": "2026-05-06",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN FIRST APR SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-05-06",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-05-06",
+                      "to": "2026-05-06"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "DA97000029",
+                "title": "Achizitie DA97000029",
+                "date": "2026-01-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN SINCE AT LEAST SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201211",
+                      "displayName": "IN SINCE AT LEAST SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-01-15",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2025-03-18",
+                      "sinceAtLeast": true
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-01-15",
+                      "to": "2026-01-15"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 3,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-05-06",
+                  "firstDate": "2026-05-06",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-05-06",
+                    "to": "2026-05-06"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000027",
+                      "provenance": {
+                        "url": "/source/seap/DA97000027"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-01-15",
+                  "firstDate": "2026-01-15",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201211",
+                      "displayName": "IN SINCE AT LEAST SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2025-03-18",
+                    "sinceAtLeast": true
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-01-15",
+                    "to": "2026-01-15"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000029",
+                      "provenance": {
+                        "url": "/source/seap/DA97000029"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2025-11-06",
+                  "firstDate": "2025-11-06",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2025-11-06",
+                    "to": "2025-11-06"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000026",
+                      "provenance": {
+                        "url": "/source/seap/DA97000026"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "few-employees-authority",
+    "kind": "typical",
+    "description": "an authority's Signals for suppliers reporting at most one average employee: the fiscal year, the count and the year's awards",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "FEW_EMPLOYEES"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "800000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.625,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201254",
+                    "displayName": "FE BOUNDARY SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "500000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3201297",
+                    "displayName": "FE SUMMED SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "300000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "800000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9700005~1",
+                "title": "Contract CAN9700005 1",
+                "date": "2023-06-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "500000000",
+                "counted": "500000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FE BOUNDARY SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201254",
+                      "displayName": "FE BOUNDARY SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FEW_EMPLOYEES",
+                    "date": "2023-06-10",
+                    "numbers": {
+                      "__typename": "FewEmployeesNumbers",
+                      "fiscalYear": 2023,
+                      "employees": 1,
+                      "awarded": "500000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "FEW_EMPLOYEES",
+                      "cpv": null,
+                      "from": "2023-06-10",
+                      "to": "2023-06-10"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700009~1",
+                "title": "Contract CAN9700009 1",
+                "date": "2024-02-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "300000000",
+                "counted": "300000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FE SUMMED SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FEW_EMPLOYEES",
+                    "date": "2024-02-01",
+                    "numbers": {
+                      "__typename": "FewEmployeesNumbers",
+                      "fiscalYear": 2024,
+                      "employees": 0,
+                      "awarded": "500000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "FEW_EMPLOYEES",
+                      "cpv": null,
+                      "from": "2024-02-01",
+                      "to": "2024-02-01"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "FEW_EMPLOYEES",
+                  "date": "2024-02-01",
+                  "firstDate": "2024-02-01",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "FewEmployeesNumbers",
+                    "fiscalYear": 2024,
+                    "employees": 0,
+                    "awarded": "500000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "FEW_EMPLOYEES",
+                    "cpv": null,
+                    "from": "2024-02-01",
+                    "to": "2024-02-01"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700009~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700009~1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "FEW_EMPLOYEES",
+                  "date": "2023-06-10",
+                  "firstDate": "2023-06-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201254",
+                      "displayName": "FE BOUNDARY SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "FewEmployeesNumbers",
+                    "fiscalYear": 2023,
+                    "employees": 1,
+                    "awarded": "500000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "FEW_EMPLOYEES",
+                    "cpv": null,
+                    "from": "2023-06-10",
+                    "to": "2023-06-10"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700005~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700005~1"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "no-financial-statement-authority",
+    "kind": "typical",
+    "description": "an authority's Signals for an SRL or SA with no statement for the year or the year before: the year, the awards and the legal form",
+    "variables": {
+      "key": "3200011",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "NO_FINANCIAL_STATEMENT"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200011",
+        "displayName": "PRIMARIA SEMNAL UNU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200011",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "PRIMARIA SEMNAL UNU",
+            "records": 47,
+            "first": "2022-05-17",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "300000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.666666666,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201335",
+                    "displayName": "NF SA SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "200000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3201319",
+                    "displayName": "NF EXACT SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "100000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "300000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9700014~1",
+                "title": "Contract CAN9700014 1",
+                "date": "2023-05-12",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "200000000",
+                "counted": "200000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "NF SA SA",
+                    "share": null,
+                    "entity": {
+                      "key": "3201335",
+                      "displayName": "NF SA SA",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_FINANCIAL_STATEMENT",
+                    "date": "2023-05-12",
+                    "numbers": {
+                      "__typename": "NoFinancialStatementNumbers",
+                      "fiscalYear": 2023,
+                      "awarded": "200000000",
+                      "legalForm": "SA"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "NO_FINANCIAL_STATEMENT",
+                      "cpv": null,
+                      "from": "2023-05-12",
+                      "to": "2023-05-12"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700012~1",
+                "title": "Contract CAN9700012 1",
+                "date": "2023-05-10",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "100000000",
+                "counted": "100000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "NF EXACT SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201319",
+                      "displayName": "NF EXACT SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "NO_FINANCIAL_STATEMENT",
+                    "date": "2023-05-10",
+                    "numbers": {
+                      "__typename": "NoFinancialStatementNumbers",
+                      "fiscalYear": 2023,
+                      "awarded": "100000000",
+                      "legalForm": "SRL"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "NO_FINANCIAL_STATEMENT",
+                      "cpv": null,
+                      "from": "2023-05-10",
+                      "to": "2023-05-10"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "NO_FINANCIAL_STATEMENT",
+                  "date": "2023-05-12",
+                  "firstDate": "2023-05-12",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201335",
+                      "displayName": "NF SA SA",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoFinancialStatementNumbers",
+                    "fiscalYear": 2023,
+                    "awarded": "200000000",
+                    "legalForm": "SA"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "NO_FINANCIAL_STATEMENT",
+                    "cpv": null,
+                    "from": "2023-05-12",
+                    "to": "2023-05-12"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700014~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700014~1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "NO_FINANCIAL_STATEMENT",
+                  "date": "2023-05-10",
+                  "firstDate": "2023-05-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201319",
+                      "displayName": "NF EXACT SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "NoFinancialStatementNumbers",
+                    "fiscalYear": 2023,
+                    "awarded": "100000000",
+                    "legalForm": "SRL"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "NO_FINANCIAL_STATEMENT",
+                    "cpv": null,
+                    "from": "2023-05-10",
+                    "to": "2023-05-10"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700012~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700012~1"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200011/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "PRIMARIA SEMNAL UNU",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "insolvency-reorganisation-authority",
+    "kind": "typical",
+    "description": "a second authority's insolvency Signal, for a supplier in judicial reorganisation (told by the status name)",
+    "variables": {
+      "key": "3200020",
+      "role": "AUTHORITY",
+      "filter": {
+        "signal": "INSOLVENCY"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3200020",
+        "displayName": "SPITALUL SEMNAL DOI",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3200020",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL SEMNAL DOI",
+            "records": 5,
+            "first": "2024-09-01",
+            "last": "2026-02-10",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "2000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3201246",
+                    "displayName": "IN REORG SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000032",
+                "title": "Achizitie DA97000032",
+                "date": "2026-02-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200020",
+                  "displayName": "SPITALUL SEMNAL DOI",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN REORG SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201246",
+                      "displayName": "IN REORG SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-02-10",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "reorganizare judiciară",
+                      "firstSeen": "2026-05-06",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3200020",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-02-10",
+                      "to": "2026-02-10"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 1,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-02-10",
+                  "firstDate": "2026-02-10",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200020",
+                    "displayName": "SPITALUL SEMNAL DOI",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201246",
+                      "displayName": "IN REORG SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "reorganizare judiciară",
+                    "firstSeen": "2026-05-06",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3200020",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-02-10",
+                    "to": "2026-02-10"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000032",
+                      "provenance": {
+                        "url": "/source/seap/DA97000032"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J03/3200020/1995",
+          "registrationDate": "1995-02-02",
+          "legalForm": "ADMINISTRATIE",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Bistriţa-Năsăud",
+            "locality": "Bistriţa",
+            "address": "Bistriţa, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "SPITALUL SEMNAL DOI",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "few-employees-supplier",
+    "kind": "typical",
+    "description": "a supplier whose awards of 5M RON in one year, over two authorities, make two Signals (the sum is the supplier's, not the authority's)",
+    "variables": {
+      "key": "3201297",
+      "role": "SUPPLIER",
+      "filter": {
+        "signal": "FEW_EMPLOYEES"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3201297",
+        "displayName": "FE SUMMED SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3201297",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "FE SUMMED SRL",
+            "records": 2,
+            "first": "2024-02-01",
+            "last": "2024-09-01",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "500000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.6,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "300000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3200020",
+                    "displayName": "SPITALUL SEMNAL DOI",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "200000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 0,
+            "procedures": [
+              {
+                "value": "Licitatie deschisa",
+                "total": {
+                  "awarded": "500000000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "CAN9700009~1",
+                "title": "Contract CAN9700009 1",
+                "date": "2024-02-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "300000000",
+                "counted": "300000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FE SUMMED SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FEW_EMPLOYEES",
+                    "date": "2024-02-01",
+                    "numbers": {
+                      "__typename": "FewEmployeesNumbers",
+                      "fiscalYear": 2024,
+                      "employees": 0,
+                      "awarded": "500000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "FEW_EMPLOYEES",
+                      "cpv": null,
+                      "from": "2024-02-01",
+                      "to": "2024-02-01"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "CAN9700010~1",
+                "title": "Contract CAN9700010 1",
+                "date": "2024-09-01",
+                "kind": "CONTRACT",
+                "channel": "CONTRACT",
+                "procedure": "Licitatie deschisa",
+                "value": "200000000",
+                "counted": "200000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200020",
+                  "displayName": "SPITALUL SEMNAL DOI",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FE SUMMED SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "FEW_EMPLOYEES",
+                    "date": "2024-09-01",
+                    "numbers": {
+                      "__typename": "FewEmployeesNumbers",
+                      "fiscalYear": 2024,
+                      "employees": 0,
+                      "awarded": "500000000"
+                    },
+                    "reproduce": {
+                      "authority": "3200020",
+                      "supplier": null,
+                      "signal": "FEW_EMPLOYEES",
+                      "cpv": null,
+                      "from": "2024-09-01",
+                      "to": "2024-09-01"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "FEW_EMPLOYEES",
+                  "date": "2024-09-01",
+                  "firstDate": "2024-09-01",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200020",
+                    "displayName": "SPITALUL SEMNAL DOI",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "FewEmployeesNumbers",
+                    "fiscalYear": 2024,
+                    "employees": 0,
+                    "awarded": "500000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200020",
+                    "supplier": null,
+                    "signal": "FEW_EMPLOYEES",
+                    "cpv": null,
+                    "from": "2024-09-01",
+                    "to": "2024-09-01"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700010~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700010~1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "FEW_EMPLOYEES",
+                  "date": "2024-02-01",
+                  "firstDate": "2024-02-01",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201297",
+                      "displayName": "FE SUMMED SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "FewEmployeesNumbers",
+                    "fiscalYear": 2024,
+                    "employees": 0,
+                    "awarded": "500000000"
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "FEW_EMPLOYEES",
+                    "cpv": null,
+                    "from": "2024-02-01",
+                    "to": "2024-02-01"
+                  },
+                  "records": [
+                    {
+                      "code": "CAN9700009~1",
+                      "provenance": {
+                        "url": "/source/seap/CAN9700009~1"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J40/2029/2015",
+          "registrationDate": "2015-03-10",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2026-05-06",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Cluj-Napoca",
+            "address": "Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "FE SUMMED SRL",
+              "firstSeen": "2026-05-06",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": {
+          "years": [
+            {
+              "fiscalYear": 2024,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": true,
+              "turnover": "600000000",
+              "profitOrLoss": null,
+              "debts": null,
+              "equity": null,
+              "averageEmployees": 0,
+              "awardedInYear": "500000000",
+              "awardShareOfTurnover": 0.8333333333333334,
+              "source": {
+                "file": "web_bl_bs_sl_an2024.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare_2024",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/s2024/download/web_bl_bs_sl_an2024.txt",
+                "via": "Situațiile financiare 2024",
+                "license": "CC-BY-4.0",
+                "published": "2025-06-30",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            },
+            {
+              "fiscalYear": 2023,
+              "revision": "FIRST_RELEASE",
+              "mayBeRevised": false,
+              "turnover": "400000000",
+              "profitOrLoss": null,
+              "debts": null,
+              "equity": null,
+              "averageEmployees": 9,
+              "awardedInYear": "0",
+              "awardShareOfTurnover": 0,
+              "source": {
+                "file": "web_bl_bs_sl_an2023.txt",
+                "datasetUrl": "https://data.gov.ro/dataset/situatii_financiare2023",
+                "fileUrl": "https://data.gov.ro/dataset/ds/resource/s2023/download/web_bl_bs_sl_an2023.txt",
+                "via": "Situații financiare 2023",
+                "license": "CC-BY-4.0",
+                "published": "2024-07-12",
+                "fetchedAt": "2026-11-14T09:00:00Z"
+              }
+            }
+          ]
+        },
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "insolvency-supplier",
+    "kind": "typical",
+    "description": "a supplier in insolvency: its Signals on its own page, one per authority and day inside the six-month window",
+    "variables": {
+      "key": "3201203",
+      "role": "SUPPLIER",
+      "filter": {
+        "signal": "INSOLVENCY"
+      }
+    },
+    "data": {
+      "entity": {
+        "key": "3201203",
+        "displayName": "IN FIRST APR SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3201203",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "IN FIRST APR SRL",
+            "records": 4,
+            "first": "2025-11-05",
+            "last": "2026-05-07",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "4000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "4000000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA97000026",
+                "title": "Achizitie DA97000026",
+                "date": "2025-11-06",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN FIRST APR SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2025-11-06",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2025-11-06",
+                      "to": "2025-11-06"
+                    }
+                  }
+                ]
+              },
+              {
+                "code": "DA97000027",
+                "title": "Achizitie DA97000027",
+                "date": "2026-05-06",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3200011",
+                  "displayName": "PRIMARIA SEMNAL UNU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "IN FIRST APR SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": [
+                  {
+                    "rule": "INSOLVENCY",
+                    "date": "2026-05-06",
+                    "numbers": {
+                      "__typename": "InsolvencyNumbers",
+                      "status": "insolvență",
+                      "firstSeen": "2026-04-03",
+                      "sinceAtLeast": false
+                    },
+                    "reproduce": {
+                      "authority": "3200011",
+                      "supplier": null,
+                      "signal": "INSOLVENCY",
+                      "cpv": null,
+                      "from": "2026-05-06",
+                      "to": "2026-05-06"
+                    }
+                  }
+                ]
+              }
+            ],
+            "signals": {
+              "count": 2,
+              "rows": [
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2026-05-06",
+                  "firstDate": "2026-05-06",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2026-05-06",
+                    "to": "2026-05-06"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000027",
+                      "provenance": {
+                        "url": "/source/seap/DA97000027"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "rule": "INSOLVENCY",
+                  "date": "2025-11-06",
+                  "firstDate": "2025-11-06",
+                  "recordCount": 1,
+                  "dataThrough": "2026-04-20",
+                  "authority": {
+                    "key": "3200011",
+                    "displayName": "PRIMARIA SEMNAL UNU",
+                    "identity": "CUI"
+                  },
+                  "suppliers": [
+                    {
+                      "key": "3201203",
+                      "displayName": "IN FIRST APR SRL",
+                      "identity": "CUI"
+                    }
+                  ],
+                  "numbers": {
+                    "__typename": "InsolvencyNumbers",
+                    "status": "insolvență",
+                    "firstSeen": "2026-04-03",
+                    "sinceAtLeast": false
+                  },
+                  "reproduce": {
+                    "authority": "3200011",
+                    "supplier": null,
+                    "signal": "INSOLVENCY",
+                    "cpv": null,
+                    "from": "2025-11-06",
+                    "to": "2025-11-06"
+                  },
+                  "records": [
+                    {
+                      "code": "DA97000026",
+                      "provenance": {
+                        "url": "/source/seap/DA97000026"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J40/2020/2015",
+          "registrationDate": "2015-03-10",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2026-03-02",
+              "sinceAtLeast": false
+            },
+            {
+              "code": 1107,
+              "name": "insolvență",
+              "firstSeen": "2026-04-03",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Cluj-Napoca",
+            "address": "Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "IN FIRST APR SRL",
+              "firstSeen": "2026-03-02",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
   }
 ]

@@ -28,6 +28,25 @@ export const methodologyBaseRates: FixtureSet<MethodologyBaseRatesQuery, Methodo
       ],
     },
   },
+  {
+    name: "with-reference-rules", kind: "typical",
+    description: "the six ONRC and financial-statement rules (#184) beside the first four: windows, base rates recomputed per load and the year each rule measures in (the statements' rules can only see years a statement covers)",
+    variables: {},
+    data: {
+      signalRules: [
+        { slug: "OVER_CAP", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.057, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "SPLITTING", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.112, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "FRAMEWORK_OVERRUN", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.004, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.031, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "YOUNG_FIRM", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.021, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "NO_CONSTRUCTION_CAEN", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.009, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "AFTER_STRIKE_OFF", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.003, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "INSOLVENCY", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.014, baseRateYear: 2024, dataThrough: "2024-11-30" },
+        { slug: "FEW_EMPLOYEES", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.017, baseRateYear: 2023, dataThrough: "2024-11-30" },
+        { slug: "NO_FINANCIAL_STATEMENT", window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.026, baseRateYear: 2023, dataThrough: "2024-11-30" },
+      ],
+    },
+  },
 ];
 
 export const methodologyReferenceSources: FixtureSet<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables> = [

@@ -24,7 +24,7 @@ describe("the ONRC section on an entity page", () => {
     expect(section.getByText("4211")).toBeVisible();
     expect(section.getByText(/Cluj-Napoca, Str\. EXEMPLU/)).toBeVisible();
     expect(section.getByRole("link", { name: "Source: ONRC, snapshot of 6 May 2026" })).toHaveAttribute("href", "https://data.gov.ro/dataset/firme-06-05-2026");
-    expect(screen.getByRole("heading", { name: "Signals (0)" })).toBeVisible(); // the SEAP Overview is still there beneath it
+    expect(screen.getByRole("heading", { name: "Signals (2)" })).toBeVisible(); // the SEAP Overview is still there beneath it, with the two insolvency Signals (#184: ALFA is in insolvency now and has Records in the six months up to the snapshot)
   });
 
   it("shows it on an authority page", async () => {

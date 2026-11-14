@@ -1059,7 +1059,11 @@ type FrameworkLink {
 #  Signals: no stored id, addressed by their reproducing filter
 # =====================================================================
 
-enum SignalRuleSlug { OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION }
+enum SignalRuleSlug {
+  OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION
+  "ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds."
+  YOUNG_FIRM NO_CONSTRUCTION_CAEN AFTER_STRIKE_OFF INSOLVENCY FEW_EMPLOYEES NO_FINANCIAL_STATEMENT
+}
 
 type SignalRule {
   slug: SignalRuleSlug!
@@ -1092,12 +1096,26 @@ type Signal {
   dataThrough: Date!
 }
 
-union SignalNumbers = OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
+union SignalNumbers =
+    OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
+  | YoungFirmNumbers | NoConstructionCaenNumbers | AfterStrikeOffNumbers | InsolvencyNumbers | FewEmployeesNumbers | NoFinancialStatementNumbers
 
 type OverCapNumbers { value: Bani!, cap: Bani!, multiple: Float! }
 type SplittingNumbers { purchases: Int!, sum: Bani!, cap: Bani!, cpvGroup: String!, from: Date!, to: Date! }
 type FrameworkOverrunNumbers { ceiling: Bani!, subsequent: Bani!, ratio: Float! }
 type NoPublicationNumbers { procedure: String! }
+"The fewest days between registering and a Record of the Signal; `counted` is that Record's counted value (null when it has none)."
+type YoungFirmNumbers { days: Int!, registered: Date!, counted: Bani }
+"The largest counted value of the Signal's works Records and the fewest authorised CAEN codes among its winners."
+type NoConstructionCaenNumbers { value: Bani!, authorisedCodes: Int! }
+"ANAF's strike-off date and how many days after it the Signal's latest Record is."
+type AfterStrikeOffNumbers { struckOff: Date!, daysAfter: Int! }
+"The status as ONRC names it and the snapshot it was first seen in; the status itself is undated. `sinceAtLeast`: first seen in the earliest snapshot held."
+type InsolvencyNumbers { status: String!, firstSeen: Date!, sinceAtLeast: Boolean! }
+"The supplier's awards for the fiscal year and the average employee count it reported for it (0 or 1)."
+type FewEmployeesNumbers { fiscalYear: Int!, employees: Int!, awarded: Bani! }
+"The supplier's awards for the year and its legal form as ONRC lists it (SRL or SA); no statement is held for the year or the one before."
+type NoFinancialStatementNumbers { fiscalYear: Int!, awarded: Bani!, legalForm: String! }
 
 "Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use."
 type RecordFilterValue {

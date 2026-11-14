@@ -45,6 +45,16 @@
           "baseRate": 0.3333333333333333,
           "baseRateYear": 2023,
           "dataThrough": "2024-02-01"
+        },
+        {
+          "slug": "AFTER_STRIKE_OFF",
+          "window": {
+            "from": "2021-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2023,
+          "dataThrough": "2024-02-01"
         }
       ]
     }
@@ -75,6 +85,126 @@
           "baseRate": 1,
           "baseRateYear": 2022,
           "dataThrough": "2023-09-10"
+        },
+        {
+          "slug": "AFTER_STRIKE_OFF",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2022,
+          "dataThrough": "2023-09-10"
+        }
+      ]
+    }
+  },
+  {
+    "name": "onrc-signals-archive",
+    "kind": "typical",
+    "description": "the six ONRC and financial-statement rules beside the four SEAP ones: firing rates recomputed in this load (the statements' rules measure in the newest year they can see)",
+    "variables": {},
+    "data": {
+      "signalRules": [
+        {
+          "slug": "OVER_CAP",
+          "window": {
+            "from": "2025-01-01",
+            "to": null
+          },
+          "baseRate": 0.5,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-05-07"
+        },
+        {
+          "slug": "SPLITTING",
+          "window": {
+            "from": "2025-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-05-07"
+        },
+        {
+          "slug": "FRAMEWORK_OVERRUN",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "NO_PUBLICATION",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "YOUNG_FIRM",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "NO_CONSTRUCTION_CAEN",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 0.5,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "AFTER_STRIKE_OFF",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2025,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "INSOLVENCY",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2026,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "FEW_EMPLOYEES",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2024,
+          "dataThrough": "2026-04-20"
+        },
+        {
+          "slug": "NO_FINANCIAL_STATEMENT",
+          "window": {
+            "from": "2022-01-01",
+            "to": null
+          },
+          "baseRate": 1,
+          "baseRateYear": 2023,
+          "dataThrough": "2026-04-20"
         }
       ]
     }
@@ -98,6 +228,16 @@
         },
         {
           "slug": "NO_PUBLICATION",
+          "window": {
+            "from": "2020-01-01",
+            "to": null
+          },
+          "baseRate": 0,
+          "baseRateYear": 2020,
+          "dataThrough": "2023-03-20"
+        },
+        {
+          "slug": "AFTER_STRIKE_OFF",
           "window": {
             "from": "2020-01-01",
             "to": null

@@ -53,6 +53,17 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     }) },
   },
   {
+    name: "supplier-reference-signals", kind: "extreme",
+    description: "a supplier with a Signal of each ONRC and financial-statement rule (#184): numbers from the Reference sources, undated insolvency, no score",
+    variables: { key: "30000002", role: "SUPPLIER", filter: { signal: "INSOLVENCY" } },
+    data: { entity: withOverview(w.constructiiHeader, {
+      ...emptyOverview("SUPPLIER"),
+      total: total({ awarded: ron(14_200_000), records: 98 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(14_200_000), records: 98 }) }] },
+      signals: { count: 6, rows: [w.sYoungFirm, w.sNoConstructionCaen, w.sAfterStrikeOff, w.sInsolvency, w.sFewEmployees, w.sNoFinancialStatement].map(overviewSignal) },
+    }) },
+  },
+  {
     name: "authority-both-roles", kind: "typical",
     description: "an entity that buys and sells (roles has both), identity curated, with a framework and a framework-overrun Signal",
     variables: { key: "4000002", role: "AUTHORITY", filter: { from: "2021-01-01" } },

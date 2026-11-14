@@ -53,6 +53,36 @@ const signalCard: Copy["signalCard"] = {
       sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
       lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
     },
+    YOUNG_FIRM: {
+      label: "Firmă tânără",
+      sentence: (n) => `O înregistrare este datată la ${roCount(n.daysCount, n.days, "zi", "zile")} după ce furnizorul s-a înregistrat, la ${n.registered}.`,
+      lawful: "Explicații legale posibile: o societate înființată pentru un singur contract sau o afacere existentă care a primit o înmatriculare nouă după o restructurare ori o schimbare a formei juridice.",
+    },
+    NO_CONSTRUCTION_CAEN: {
+      label: "Lucrări fără CAEN de construcții",
+      sentence: (n) => `O înregistrare de lucrări în valoare de ${n.value} a revenit unei firme fără niciun cod CAEN de construcții printre codurile sale autorizate (${n.codes}).`,
+      lawful: "Explicații legale posibile: construcția este făcută de un subcontractant sau de un asociat, registrul este depășit ori firma lucrează sub un cod pe care nu l-a înscris.",
+    },
+    AFTER_STRIKE_OFF: {
+      label: "După radiere",
+      sentence: (n) => `O înregistrare este datată la ${roCount(n.daysAfterCount, n.daysAfter, "zi", "zile")} după radierea furnizorului din evidența ANAF, la ${n.struckOff}.`,
+      lawful: "Explicații legale posibile: o întârziere între atribuire și publicare, o societate succesoare care a preluat activitatea sub alt număr sau o radiere pe care ANAF a anulat-o ulterior.",
+    },
+    INSOLVENCY: {
+      label: "Insolvență",
+      sentence: (n) => `ONRC înscrie furnizorul cu starea „${n.status}”, văzută prima oară în instantaneul din ${n.firstSeen}${n.sinceAtLeast ? " (cel mai vechi păstrat, deci poate mai veche)" : ""}. Starea nu este datată; furnizorul are înregistrări în ultimele șase luni până la cel mai recent instantaneu ONRC.`,
+      lawful: "Explicații legale posibile: înregistrarea a fost atribuită înainte de începerea procedurii sau procedura permite continuarea activității printr-un plan de reorganizare.",
+    },
+    FEW_EMPLOYEES: {
+      label: "Cel mult un angajat",
+      sentence: (n) => `Furnizorului i s-au atribuit ${n.awarded} în ${n.fiscalYear}, iar pentru acel an fiscal a raportat în medie ${roCount(n.employeesCount, n.employees, "angajat", "angajați")}.`,
+      lawful: "Explicații legale posibile: lucrarea este subcontractată sau făcută de personal angajat printr-o altă societate ori media anuală subestimează o forță de muncă sezonieră.",
+    },
+    NO_FINANCIAL_STATEMENT: {
+      label: "Fără situații financiare",
+      sentence: (n) => `Unei ${n.legalForm} i s-au atribuit ${n.awarded} în ${n.fiscalYear}; nu avem nicio situație financiară pentru ${n.fiscalYear} sau ${n.previousYear}.`,
+      lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
+    },
   },
   compact: { text: (label, when) => `${label}, ${when}` },
   date: (when) => `Ultima înregistrare: ${when}`,

@@ -213,7 +213,7 @@ CREATE TABLE seap.rollup_prefix (prefix text PRIMARY KEY);
 -- reproducing filter (`reproduce`).
 CREATE TABLE seap.signal (
     id             integer PRIMARY KEY,
-    rule           text NOT NULL,        -- the GraphQL SignalRuleSlug: OVER_CAP | SPLITTING | FRAMEWORK_OVERRUN | NO_PUBLICATION
+    rule           text NOT NULL,        -- the GraphQL SignalRuleSlug: OVER_CAP | SPLITTING | FRAMEWORK_OVERRUN | NO_PUBLICATION | YOUNG_FIRM | NO_CONSTRUCTION_CAEN | AFTER_STRIKE_OFF | INSOLVENCY | FEW_EMPLOYEES | NO_FINANCIAL_STATEMENT
     authority_key  text NOT NULL,        -- one authority per Signal
     last_date      date NOT NULL,        -- dated by its latest Record (award date, ADR 0002)
     first_date     date NOT NULL,
