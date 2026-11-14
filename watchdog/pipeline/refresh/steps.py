@@ -42,6 +42,7 @@ class Impl:
     fetch_onrc: Callable | None = None  # (archive, limit=) -> OnrcFetchSummary: ONRC's snapshots (#175); None = not wired, the step skips
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
     fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
+    check_aep: Callable | None = None  # (archive) -> list of alert texts (#180): only checks the one-off 2025 file for a newer upstream set; None = not wired
     fetch_financials: Callable | None = None  # (archive) -> FinancialsFetchSummary (#179); None = not wired, the step is left out
     check_banipartide: Callable | None = None  # (archive) -> CheckResult (#182): only a check; None = not wired, the step is left out
 
@@ -87,6 +88,11 @@ class Impl:
         if summary.failed:
             raise TransientError(f"{len(summary.failed)} AMEPIP fetch failure(s): {summary.failed[0]}")
         return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def aep(self) -> StepResult:
+        """AEP's one-off 2025 file (#180): the step only CHECKS for a newer upstream file and alerts (a warning in the run); it never downloads."""
+        alerts = self.check_aep(self.archive)
+        return StepResult({"alerts": len(alerts)}, [], list(alerts))
 
     def financials(self) -> StepResult:
         """MF's annual financial statements (#179): its own step, so a failing portal never holds back data.gov.ro, ANAF or the load. A download that is not a statements file is deterministic (the same file again), a portal or network error is transient."""

@@ -612,6 +612,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -958,6 +959,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -1514,6 +1516,7 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
+        "leadership": null,
         "financials": {
           "years": [
             {
@@ -2153,6 +2156,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": {
           "years": [
             {
@@ -2424,6 +2428,7 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
+        "leadership": null,
         "financials": {
           "years": [
             {
@@ -2658,6 +2663,7 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
+        "leadership": null,
         "financials": {
           "years": [
             {
@@ -2860,6 +2866,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -2985,6 +2992,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -3035,6 +3043,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -3104,6 +3113,7 @@
           "license": "CC-BY-4.0",
           "fetchedAt": "2026-11-14T09:00:00Z"
         },
+        "leadership": null,
         "financials": {
           "years": [
             {
@@ -3746,6 +3756,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -3827,6 +3838,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -4065,6 +4077,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -4236,6 +4249,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -4467,6 +4481,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -5471,6 +5486,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -6475,6 +6491,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -7332,6 +7349,7 @@
         },
         "onrc": null,
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -7561,6 +7579,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -7915,6 +7934,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8096,6 +8116,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8270,6 +8291,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8448,6 +8470,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8623,6 +8646,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8798,6 +8822,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8887,6 +8912,7 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
@@ -8969,6 +8995,1289 @@
           }
         },
         "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-town-hall",
+    "kind": "typical",
+    "description": "a town hall: its Leadership list with a party switch (two mandates for the same leader), the handover window shown as a gap",
+    "variables": {
+      "key": "51000501",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000501",
+        "displayName": "MUNICIPIUL BRASOV",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880001",
+            "name": "Brașov"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000501",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "MUNICIPIUL BRASOV",
+            "records": 3,
+            "first": "2023-03-13",
+            "last": "2024-11-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "300000",
+              "records": 3,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "300000",
+                    "records": 3,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA94000003",
+                "title": "Achizitie DA94000003",
+                "date": "2023-03-13",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000001",
+                "title": "Achizitie DA95000001",
+                "date": "2024-10-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000002",
+                "title": "Achizitie DA95000002",
+                "date": "2024-11-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL SOCIAL DEMOCRAT",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2020-09-27",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2020-09-27",
+              "startDate": "2020-10-27",
+              "endDate": "2024-09-27"
+            },
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL NAȚIONAL LIBERAL",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2024-06-09",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2024-06-09",
+              "startDate": "2024-10-27",
+              "endDate": null
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            }
+          ],
+          "via": null
+        },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-partial-election",
+    "kind": "extreme",
+    "description": "a town hall with a partial election: the old mandate cut at the vacancy bound, an interim gap, the partial winner's mandate (partial counts, a one-off file)",
+    "variables": {
+      "key": "51000307",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000307",
+        "displayName": "ORAS RASNOV",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880030",
+            "name": "Râșnov"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000307",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ORAS RASNOV",
+            "records": 4,
+            "first": "2023-03-19",
+            "last": "2026-02-10",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "400000",
+              "records": 4,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "400000",
+                    "records": 4,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA94000009",
+                "title": "Achizitie DA94000009",
+                "date": "2023-03-19",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000012",
+                "title": "Achizitie DA95000012",
+                "date": "2025-06-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000013",
+                "title": "Achizitie DA95000013",
+                "date": "2025-10-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000014",
+                "title": "Achizitie DA95000014",
+                "date": "2026-02-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "STAN MIRCEA",
+              "list": "PARTIDUL NAȚIONAL LIBERAL",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2020-09-27",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2020-09-27",
+              "startDate": "2020-10-27",
+              "endDate": "2024-09-27"
+            },
+            {
+              "leaderName": "STAN MIRCEA",
+              "list": "PARTIDUL SOCIAL DEMOCRAT",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2024-06-09",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2024-06-09",
+              "startDate": "2024-10-27",
+              "endDate": "2025-09-08"
+            },
+            {
+              "leaderName": "DOBRE SORIN",
+              "list": "PARTIDUL NAȚIONAL LIBERAL",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2025-12-07",
+              "basis": "PARTIAL_MINUTES",
+              "dataThrough": "2025-12-09",
+              "startDate": "2026-01-06",
+              "endDate": null
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            },
+            {
+              "startDate": "2025-09-08",
+              "endDate": "2026-01-06",
+              "kind": "INTERIM"
+            }
+          ],
+          "via": null
+        },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-repeat-round-and-no-results",
+    "kind": "extreme",
+    "description": "a commune decided by the October 2020 repeat round and absent from the 2024 minutes: a mandate without results is a gap",
+    "variables": {
+      "key": "51000404",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000404",
+        "displayName": "COMUNA SINCA NOUA",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880060",
+            "name": "Șinca Nouă"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000404",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "COMUNA SINCA NOUA",
+            "records": 2,
+            "first": "2023-03-22",
+            "last": "2024-11-27",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "200000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "200000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA94000012",
+                "title": "Achizitie DA94000012",
+                "date": "2023-03-22",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000010",
+                "title": "Achizitie DA95000010",
+                "date": "2024-11-27",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "GHEORGHE TUDOR",
+              "list": "PARTIDUL SOCIAL DEMOCRAT",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2020-10-11",
+              "basis": "REPEAT_ROUND",
+              "dataThrough": "2020-10-11",
+              "startDate": "2020-11-10",
+              "endDate": "2024-09-27"
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            },
+            {
+              "startDate": "2024-10-27",
+              "endDate": null,
+              "kind": "NO_RESULTS"
+            }
+          ],
+          "via": null
+        },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-subordinate-body",
+    "kind": "typical",
+    "description": "a hospital that is a subordinate body of the town hall: the authority's Leadership list with the basis of the tie",
+    "variables": {
+      "key": "51003206",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51003206",
+        "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "51003206",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+            "records": 1,
+            "first": "2024-11-20",
+            "last": "2024-11-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "100000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "100000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000003",
+                "title": "Achizitie DA95000003",
+                "date": "2024-11-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51003206",
+                  "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL SOCIAL DEMOCRAT",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2020-09-27",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2020-09-27",
+              "startDate": "2020-10-27",
+              "endDate": "2024-09-27"
+            },
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL NAȚIONAL LIBERAL",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2024-06-09",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2024-06-09",
+              "startDate": "2024-10-27",
+              "endDate": null
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            }
+          ],
+          "via": {
+            "authority": "51000501",
+            "authorityName": "MUNICIPIUL BRASOV",
+            "snapshotDate": "2026-12-01",
+            "snapshots": 2
+          }
+        },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-school",
+    "kind": "empty",
+    "description": "a school with the town hall and a ministry as principals: no Leadership list, no Party",
+    "variables": {
+      "key": "51001507",
+      "role": "AUTHORITY",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51001507",
+        "displayName": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": null,
+        "cui": "51001507",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+            "records": 1,
+            "first": "2024-11-20",
+            "last": "2024-11-20",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "SEAP",
+            "url": null,
+            "via": "Achizitii directe 2024Q4",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-14T09:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "100000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "100000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000004",
+                "title": "Achizitie DA95000004",
+                "date": "2024-11-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51001507",
+                  "displayName": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-alliance-and-independent",
+    "kind": "typical",
+    "description": "a commune won by an alliance in 2020 (its registered name with its member parties) and by an independent in 2024 (the list reads Independent, which is no party)",
+    "variables": {
+      "key": "51000005",
+      "role": "AUTHORITY",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "51000005",
+        "displayName": "COMUNA SANPETRU",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880010",
+            "name": "Sânpetru"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000005",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "COMUNA SANPETRU",
+            "records": 2,
+            "first": "2023-03-20",
+            "last": "2024-11-25",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": {
+            "role": "AUTHORITY",
+            "total": {
+              "awarded": "200000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "2000007",
+                    "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "200000",
+                    "records": 2,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA94000010",
+                "title": "Achizitie DA94000010",
+                "date": "2023-03-20",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000008",
+                "title": "Achizitie DA95000008",
+                "date": "2024-11-25",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "100000",
+                "counted": "100000",
+                "badges": [],
+                "authority": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "SANTIERUL TARA DEMO SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "2000007",
+                      "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "MARIN ANA",
+              "list": "ALIANȚA USR PLUS",
+              "independent": false,
+              "memberParties": [
+                "PARTIDUL USR",
+                "PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE"
+              ],
+              "electionDate": "2020-09-27",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2020-09-27",
+              "startDate": "2020-10-27",
+              "endDate": "2024-09-27"
+            },
+            {
+              "leaderName": "TOMA LUCIAN",
+              "list": "Independent",
+              "independent": true,
+              "memberParties": [],
+              "electionDate": "2024-06-09",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2024-06-09",
+              "startDate": "2024-10-27",
+              "endDate": null
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            }
+          ],
+          "via": null
+        },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "party-town-hall-supplier-page",
+    "kind": "empty",
+    "description": "a town hall opened on its SUPPLIER role page: the entity carries its Leadership list, and the app shows it on the authority page only",
+    "variables": {
+      "key": "51000501",
+      "role": "SUPPLIER",
+      "filter": {}
+    },
+    "data": {
+      "entity": {
+        "key": "51000501",
+        "displayName": "MUNICIPIUL BRASOV",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": {
+            "siruta": "880001",
+            "name": "Brașov"
+          },
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "51000501",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "MUNICIPIUL BRASOV",
+            "records": 3,
+            "first": "2023-03-13",
+            "last": "2024-11-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-01T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "AUTHORITY"
+          ],
+          "role": null
+        },
+        "onrc": null,
+        "publicEnterprise": null,
+        "leadership": {
+          "mandates": [
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL SOCIAL DEMOCRAT",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2020-09-27",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2020-09-27",
+              "startDate": "2020-10-27",
+              "endDate": "2024-09-27"
+            },
+            {
+              "leaderName": "POPESCU ION",
+              "list": "PARTIDUL NAȚIONAL LIBERAL",
+              "independent": false,
+              "memberParties": [],
+              "electionDate": "2024-06-09",
+              "basis": "FINAL_MINUTES",
+              "dataThrough": "2024-06-09",
+              "startDate": "2024-10-27",
+              "endDate": null
+            }
+          ],
+          "gaps": [
+            {
+              "startDate": "2024-09-27",
+              "endDate": "2024-10-27",
+              "kind": "HANDOVER_WINDOW"
+            }
+          ],
+          "via": null
+        },
         "financials": null,
         "donations": null
       }

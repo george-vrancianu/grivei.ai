@@ -46,6 +46,7 @@ ANAF_EVERY_DAYS = 7
 ONRC_EVERY_DAYS = 28
 ONRC_RETRY_DAYS = 7
 ONRC_REFRESH_LIMIT = 2  # snapshots a nightly refresh downloads per ONRC step (each is over 1 GB): the backlog is the seed's (or `fetch-onrc --limit`), never the refresh lock's
+AEP_EVERY_DAYS = 7  # the check for a newer 2025 partial-election file (#180); nothing is downloaded
 FINANCIALS_EVERY_DAYS = 7  # MF publishes each year's files in June and re-publishes them a year later; a weekly look is cheap (an unchanged resource is not downloaded)
 BANIPARTIDE_EVERY_DAYS = 28  # BaniPartide is a one-off archived load; the step only checks (two small JSON documents) whether a newer upstream database exists
 AMEPIP_EVERY_DAYS = 7  # AMEPIP publishes a list once or twice a year; a weekly look is cheap (an unchanged resource is not downloaded)
@@ -204,6 +205,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     # AMEPIP's public-enterprise list (#183) has its own isolated step: its failure never blocks data.gov.ro, ANAF or the load
     amepip = [Step("amepip", impl.amepip, weekly("amepip", AMEPIP_EVERY_DAYS))] if _has_amepip(impl) else []
+    aep = [Step("aep", impl.aep, weekly("aep", AEP_EVERY_DAYS))] if getattr(impl, "check_aep", None) is not None else []
     # MF's annual financial statements (#179) likewise: isolated, due from its last success
     financials = [Step("financials", impl.financials, weekly("financials", FINANCIALS_EVERY_DAYS))] if _has_financials(impl) else []
     # BaniPartide's firm donations (#182) are an archived one-off load: this step only checks for a newer upstream file and warns, it never fetches
@@ -213,6 +215,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
         Step("datagov", impl.datagov, weekly("datagov", DATAGOV_EVERY_DAYS)),
         Step("onrc", lambda: impl.onrc(limit=ONRC_REFRESH_LIMIT), onrc_due),  # its own step (#175): ONRC failing never blocks SEAP's; its snapshots change the archive, so the load follows
         *amepip,
+        *aep,
         *financials,
         *banipartide,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),

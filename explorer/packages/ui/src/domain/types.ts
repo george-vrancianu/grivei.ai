@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, PublicEnterpriseFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 export type { RecordBadge };
@@ -30,6 +30,10 @@ export type MoneyMap = MoneyMapFieldsFragment;
 
 /** What an Entity page's header shows (`EntityHeaderFields`). */
 export type EntityHeaderData = EntityHeaderFieldsFragment;
+/** An authority's Mandates and gaps (`LeadershipFields`), present only on the Overview's entity: a town hall, sector, Bucharest city hall, county council or a subordinate body of one (#180). */
+export type LeadershipData = LeadershipFieldsFragment;
+/** The Party of a Record (`RecordPartyFields`): the mandate in force on its award date. Never a winner's. */
+export type RecordPartyData = RecordPartyFieldsFragment;
 /** MF's annual financial statements of an entity with the awards of each year beside them (`FinancialStatementsFields`), present only on the Overview's entity. */
 export type FinancialStatementsData = FinancialStatementsFieldsFragment;
 /** One fiscal year of them. */

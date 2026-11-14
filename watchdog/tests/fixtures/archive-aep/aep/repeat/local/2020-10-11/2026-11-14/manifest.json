@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "source": "aep",
+  "stream": "repeat",
+  "kind": "local",
+  "unit": "2020-10-11",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://example.invalid/aep",
+  "via": "AEP repeat round, 11 October 2020",
+  "files": [
+    {
+      "name": "bd_p_11.10.2020.csv",
+      "sha256": "c33b065d99ac03272b90412e3dba01bf15ea56646939e8ea742412c84f73a94b",
+      "bytes": 232
+    },
+    {
+      "name": "pv_final_cntry_p_tur2.csv",
+      "sha256": "f0d614b43164518baca31d264bb891643067bc6077c53273f76c7cb418fa9c6b",
+      "bytes": 283
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro"
+  }
+}

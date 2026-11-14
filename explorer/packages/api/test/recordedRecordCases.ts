@@ -13,7 +13,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals" | "splitting";
+export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals" | "splitting" | "party";
 
 export interface RecordedRecordCase {
   operation: "RecordPage";
@@ -63,6 +63,13 @@ export const RECORDED_RECORD_CASES: readonly RecordedRecordCase[] = [
   // signals (archive-signals)
   c("signals", "typical", "over-cap-signal", "DA98000001", "a direct purchase above the cap: the over-cap Signal with its two Records and its numbers"),
   c("signals", "typical", "signal-natural-person", "DA98000010", "an over-cap Signal whose only winner is a natural person: no name, no link"),
+  // party (the placement world + AEP's minutes + MF's snapshots, #180)
+  c("party", "typical", "party-direct", "DA95000002", "a town hall's Record in the 2024 mandate: the list the mayor ran on, the election and its basis"),
+  c("party", "typical", "party-independent", "DA95000008", "an independent mayor's Record: the list reads Independent, which is no party"),
+  c("party", "typical", "party-subordinate-body", "DA95000003", "a hospital whose one principal credit holder is the town hall: the Party inherited, via the authority and the MF snapshot"),
+  c("party", "empty", "party-handover-window", "DA95000001", "a town hall's Record in the 2024 handover window: no Party, never the nearest leader's"),
+  c("party", "empty", "party-school-two-principals", "DA95000004", "a school whose principals are the town hall and a ministry: no Party"),
+  c("party", "empty", "party-contradicted-tie", "DA95000005", "a roads directorate whose newest snapshot names Brasov but an older one names Rasnov: a contradicted tie inherits no Party"),
   c("splitting", "typical", "splitting-signal", "DA97000005", "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records"),
   c("signals", "typical", "no-publication-signal", "CAN9400001", "a backfilled award notice negotiated without prior publication: the no-publication Signal, crawl-only badge and provenance"),
 ];

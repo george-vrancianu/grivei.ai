@@ -51,6 +51,7 @@ export function RecordPage({ locale, code }: RecordPageProps) {
       record={state.record}
       citeUrl={currentUrl()}
       entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
+      authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })}
       recordHref={(c) => pathFor(locale, { name: "record", code: c })}
       methodologyHref={methodologyHref(locale, "suspectValues")}
       // plain clicks on the page's own links change page without a load; the links keep their real hrefs

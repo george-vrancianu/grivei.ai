@@ -26,7 +26,7 @@ import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
-import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
+import { ENTITY_KEYS, RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
@@ -50,6 +50,7 @@ const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snaps
 const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
 const banipartideArchive = join(watchdog, "tests/fixtures/archive-banipartide"); // BaniPartide's firm-donor table: a donation, a loan with two dates, three rows that are not firms (individuals), a donor with no entity; copied onto archive-overview (#182)
 const amepipArchive = join(watchdog, "tests/fixtures/archive-amepip"); // AMEPIP's list of public enterprises (CUIs of two roles-world entities, two that no Record names), copied onto archive-overview (#183)
+const aepArchive = join(watchdog, "tests/fixtures/archive-aep"); // AEP's minutes (2020, 2024, the repeat round, the 2025 partial election), two MF snapshots with principal credit holders and the Records that meet the mandates; overlaid on archive-mf (#180)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
@@ -139,6 +140,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(placementArchive, join(scratch, "archive-mf"), { recursive: true });
     cpSync(mfArchive, join(scratch, "archive-mf"), { recursive: true }); // merges: the MF unit lands beside the placement world's units
     cpSync(placementData, join(scratch, "mf-data"), { recursive: true });
+    cpSync(placementArchive, join(scratch, "archive-party"), { recursive: true }); // the placement world + MF's list + AEP's results: Party and Leadership lists (#180)
+    cpSync(mfArchive, join(scratch, "archive-party"), { recursive: true });
+    cpSync(aepArchive, join(scratch, "archive-party"), { recursive: true });
     appendFileSync(join(scratch, "mf-data/national_authorities.csv"), `${M.nationalOnly},true,false,INSTITUTUL NATIONAL FICTIV,"fictional: an MF-only national institute"\n`);
     // The default for every rebuild that passes no --placement-data: the fixture's reviewed files without a UAT table, so placement
     // is by county only. Never the checked-in national tables (pipeline/placement/data): this seam's answers must not move with them.
@@ -215,6 +219,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
     return r.stdout;
   };
+
+  /** The party world (#180): a rebuild with the placement tables and MF's known gaps of the fixture, in its own database and geography directory. */
+  const partyRebuild = (db: string) => rebuild(db, "archive-party", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, `geo-${db}`), "--today", "2026-11-20", "--known-gaps", mfGaps]);
 
   const apis = new Map<string, ReturnType<typeof createApi>>(); // one pool per database: a response needs a few connections, a test asks for many
   const ask = async (db: string, id: string, variables: unknown = EMPTY_FILTER) => {
@@ -2487,7 +2494,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
     const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
-    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d" } as const;
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d", party: "entity_rec_e" } as const;
 
     beforeAll(async () => {
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
@@ -2501,6 +2508,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
       rebuild(DBS.onrc, "archive-onrc");
+      partyRebuild(DBS.party);
       rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-entity-recorded")]);
     });
 
@@ -2524,6 +2532,47 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
     });
 
+    it("shows the Leadership list of a town hall: a party switch is two mandates, the handover window is a gap, the party is as registered (#180)", () => {
+      const mandate = (leaderName: string, list: string, election: string, start: string, end: string | null, extra: object = {}) => ({
+        leaderName, list, independent: false, memberParties: [], electionDate: election, basis: "FINAL_MINUTES", dataThrough: election, startDate: start, endDate: end, ...extra,
+      });
+      const brasov = entityOf("party-town-hall")!.leadership!;
+      expect(brasov.mandates).toEqual([
+        mandate("POPESCU ION", "PARTIDUL SOCIAL DEMOCRAT", "2020-09-27", "2020-10-27", "2024-09-27"),
+        mandate("POPESCU ION", "PARTIDUL NAȚIONAL LIBERAL", "2024-06-09", "2024-10-27", null), // the same person, another list: never a "current party"
+      ]);
+      expect(brasov.gaps).toEqual([{ startDate: "2024-09-27", endDate: "2024-10-27", kind: "HANDOVER_WINDOW" }]);
+      expect(brasov.via).toBeNull();
+      // a partial election: the old mandate cut 90 days before it, an interim gap, the winner from partial counts of a one-off file with its stated date
+      const rasnov = entityOf("party-partial-election")!.leadership!;
+      expect(rasnov.mandates.map((m) => [m.list, m.startDate, m.endDate, m.basis, m.dataThrough])).toEqual([
+        ["PARTIDUL NAȚIONAL LIBERAL", "2020-10-27", "2024-09-27", "FINAL_MINUTES", "2020-09-27"],
+        ["PARTIDUL SOCIAL DEMOCRAT", "2024-10-27", "2025-09-08", "FINAL_MINUTES", "2024-06-09"],
+        ["PARTIDUL NAȚIONAL LIBERAL", "2026-01-06", null, "PARTIAL_MINUTES", "2025-12-09"],
+      ]);
+      expect(rasnov.gaps.map((g) => [g.kind, g.startDate, g.endDate])).toEqual([["HANDOVER_WINDOW", "2024-09-27", "2024-10-27"], ["INTERIM", "2025-09-08", "2026-01-06"]]);
+      // a repeat round replaces a September tie; a UAT missing from the 2024 minutes has a mandate without results: a gap, never a guess
+      const sinca = entityOf("party-repeat-round-and-no-results")!.leadership!;
+      expect(sinca.mandates.map((m) => [m.leaderName, m.basis, m.electionDate, m.startDate])).toEqual([["GHEORGHE TUDOR", "REPEAT_ROUND", "2020-10-11", "2020-11-10"]]);
+      expect(sinca.gaps.map((g) => g.kind)).toEqual(["HANDOVER_WINDOW", "NO_RESULTS"]);
+    });
+
+    it("gives a subordinate body its authority's Leadership list with the basis of the tie, and a school, a supplier and every other entity none (#180)", async () => {
+      const hospital = entityOf("party-subordinate-body")!.leadership!;
+      expect(hospital.via).toEqual({ authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 });
+      expect(hospital.mandates).toEqual(entityOf("party-town-hall")!.leadership!.mandates);
+      expect(entityOf("party-school")!.leadership).toBeNull(); // the town hall AND a ministry are its principals
+      // an alliance keeps its registered name with its member parties (no party family); an independent is "Independent" and is no party
+      expect(entityOf("party-alliance-and-independent")!.leadership!.mandates.map((m) => [m.list, m.independent, m.memberParties])).toEqual([
+        ["ALIANȚA USR PLUS", false, ["PARTIDUL USR", "PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE"]],
+        ["Independent", true, []],
+      ]);
+      expect(entityOf("party-town-hall-supplier-page")!.leadership).not.toBeNull(); // the entity-level field: the page gates it by role
+      const supplier = await ask(DBS.party, entityOverview.sha256, { key: ENTITY_KEYS.partySupplier, role: "SUPPLIER", filter: {} });
+      expect((supplier.body.data as EntityOverviewQuery).entity).toMatchObject({ key: "2000007", leadership: null }); // a supplier never has a Party
+      for (const name of ["authority", "supplier", "name-only-supplier", "both-roles-authority-page", "onrc-supplier"]) expect(entityOf(name)!.leadership, name).toBeNull();
+    });
+
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
       expectDistinctVariables(RECORDED_ENTITY_CASES);
     });
@@ -2534,6 +2583,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const sources = (r.body.data as MainScreenQuery).sources;
       expect(sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
       expect(sources.map((x) => x.id)).toEqual(["SEAP", "ONRC", "ANI", "MFINANTE", "JUST"]); // held first, then the planned ones: ONRC once
+    });
+
+    it("states AEP's one-off file's data-through date for the methodology page once held (#180)", async () => {
+      const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
+      const held = await ask(DBS.party, op.sha256, {});
+      expect((held.body.data as { referenceSources: { id: string; dataThrough: string | null }[] }).referenceSources.find((r) => r.id === "AEP")!.dataThrough).toBe("2025-12-09");
     });
 
     it("returns the ONRC section for a SEAP supplier, an authority and an organisation that exists only in ONRC (#175)", () => {
@@ -2655,6 +2710,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(held.body.errors).toBeUndefined();
       expect(held.body.data).toEqual({ referenceSources: [
         { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" },
+        { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" }, // the latest fiscal year held
         { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: "2024-12-31", fiscalYear: 2024, url: "https://www.banipartide.ro/donatori-persoane-juridice.html" }, // the newest year any firm row is filed under (#182)
       ] });
@@ -2662,6 +2718,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds neither
       expect(none.body.data).toEqual({ referenceSources: [
         { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
+        { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
         { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: null, fiscalYear: null, url: null },
       ] });
@@ -3286,6 +3343,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       crawl: { db: "record_crawl", dir: "archive-crawl", extra: [] as string[] },
       signals: { db: "record_signals", dir: "archive-signals", extra: [] as string[] },
       splitting: { db: "record_splitting", dir: "archive-splitting", extra: [] as string[] },
+      party: { db: "record_party", dir: "archive-party", get extra() { return ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-record-party"), "--today", "2026-11-20", "--known-gaps", mfGaps]; } },  // scratch is set in beforeAll
     };
 
     beforeAll(async () => {
@@ -3361,6 +3419,19 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(recordOf("crawled-provisional")).toMatchObject({ badges: ["CRAWLED_PROVISIONAL"], provenance: { kind: "CRAWL", url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013", fetchedAt: "2026-11-12T09:00:00Z" } });
       expect(recordOf("crawled-request-for-quotation").provenance.url).toBe("https://e-licitatie.ro/pub/notices/ca-notices/view-rfq/92000014");
       expect(recordOf("bulk-over-crawl")).toMatchObject({ badges: [], provenance: { kind: "BULK", via: "Contracte 2026 - T1" } });
+      // Party (#180): the mandate in force on the award date at the authority; a gap or a school has none; never on a winner, never the leader's name
+      const listOf = (name: string) => recordOf(name).party;
+      expect(listOf("party-direct")).toEqual({ list: "PARTIDUL NAȚIONAL LIBERAL", independent: false, memberParties: [], electionDate: "2024-06-09", basis: "FINAL_MINUTES", dataThrough: "2024-06-09", via: null });
+      expect(listOf("party-independent")).toMatchObject({ list: "Independent", independent: true, memberParties: [], via: null });
+      expect(listOf("party-subordinate-body")).toMatchObject({ list: "PARTIDUL NAȚIONAL LIBERAL", via: { authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 } });
+      expect(listOf("party-handover-window")).toBeNull();
+      expect(listOf("party-school-two-principals")).toBeNull();
+      expect(listOf("party-contradicted-tie")).toBeNull(); // a held snapshot names another principal set: the tie is contradicted, nothing is inherited
+      for (const c of RECORDED_RECORD_CASES) {
+        const found = (answers.get(c.name)!.data as RecordPageQuery).seap.record;
+        for (const winner of found?.winners ?? []) expect(Object.keys(winner).filter((k) => /party|leadership|mandate|list/i.test(k)), `${c.name}: a winner carries no Party`).toEqual([]);
+        if (found) expect(JSON.stringify(found.party ?? null)).not.toMatch(/leaderName/); // the leader's name is only on the Leadership list
+      }
       // Signals: the Record lists its Signals with their Records and numbers
       const over = recordOf("over-cap-signal");
       expect(over.signals).toHaveLength(1);

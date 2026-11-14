@@ -12,6 +12,8 @@ from pathlib import Path
 
 from .amepip.fetch import fetch_amepip
 from .amepip.status import describe as describe_amepip
+from .aep.fetch import check_partial as check_aep_partial, fetch_aep
+from .aep.status import describe as describe_aep
 from .banipartide.fetch import check_banipartide, fetch_banipartide
 from .banipartide.status import describe as describe_banipartide
 from .financials.fetch import fetch_financials
@@ -140,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
     on = sub.add_parser("fetch-onrc", help="fetch ONRC's open company-register snapshots from data.gov.ro into the raw archive: every monthly one since March 2026 and the last of each quarter back to 2021, whatever is not held yet (no loading; resumable)")
     on.add_argument("--limit", type=int, default=None, help="download at most this many snapshots in this run (each is over a gigabyte); rerun to continue")
 
+    g = sub.add_parser("fetch-aep", help="archive AEP's local-election results (2020 and 2024 final minutes, the October 2020 repeat round, the one-off 2025 partial elections) into the raw archive; archived units are not fetched again")
+    g.add_argument("--partial-again", action="store_true", help="archive the 2025 partial-election files again (after the refresh alert says a newer upstream set exists)")
     bp = sub.add_parser("fetch-banipartide", help="archive BaniPartide's table of firm donors and lenders (Expert Forum, CC BY 4.0) into the raw archive: a one-off load, nothing happens while a copy is held (no loading)")
     bp.add_argument("--again", action="store_true", help="archive a newer dated copy although one is held (after the refresh check reported a newer upstream database)")
     sub.add_parser("fetch-financials", help="fetch MF's annual financial-statement bulk files (FY2021 on, first releases and the re-published `actualizat` files) from data.gov.ro into the raw archive (no loading; resumable)")
@@ -285,6 +289,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in summary.lines():
             print(line)
         return 1 if summary.failed or summary.invalid else 0
+    if args.verb == "fetch-aep":
+        _logging_to_stderr()
+        summary = fetch_aep(archive, partial_again=args.partial_again)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed else 0
     if args.verb == "fetch-amepip":
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
@@ -421,7 +431,7 @@ def _impl(archive: Archive, args) -> Impl:
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
                 crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
                 fetch_onrc=lambda a, limit=None: fetch_onrc(a, limit=limit),
-                fetch_amepip=lambda a: fetch_amepip(a), fetch_financials=lambda a: fetch_financials(a), check_banipartide=lambda a: check_banipartide(a))
+                fetch_amepip=lambda a: fetch_amepip(a), check_aep=lambda a: check_aep_partial(a), fetch_financials=lambda a: fetch_financials(a), check_banipartide=lambda a: check_banipartide(a))
 
 
 def _logging_to_stderr() -> None:
@@ -492,6 +502,8 @@ def _status(archive: Archive, args) -> int:
             code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record (a Source's hook below may still set 1)
     for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
         code = source.status(archive, args, status, anaf, code)
+    for line in describe_aep(archive):  # AEP's rounds with the one-off file's data-through date (#180)
+        print(line)
     for line in describe_amepip(archive):  # the Reference source's own section (#183): not a registry entry, so not one of SOURCES' hooks
         print(line)
     for line in describe_banipartide(archive):  # BaniPartide's firm donations (#182): a one-off archived load with its data-through year

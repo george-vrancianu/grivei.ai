@@ -3,7 +3,7 @@
 -- through entity keys: the CUI, `vat-<id>`, `name-<slug>` or a key the identity override file pins. (The operational
 -- pipeline ledger, which is not rebuilt, lives beside them and is never dropped here.)
 CREATE SCHEMA IF NOT EXISTS core;
-DROP TABLE IF EXISTS core.source, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+DROP TABLE IF EXISTS core.source, core.mf_principal, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
 
 -- The `sources` registry (pipeline/sources.py), stored at every rebuild: one row per explorable Source. The API's `sources` query and
 -- `coverage(source)` read it; a Source's own tables sit in the schema named here.
@@ -115,3 +115,13 @@ CREATE TABLE core.mf_entity (
     national          boolean NOT NULL DEFAULT false,
     national_by       text NOT NULL DEFAULT 'default'  -- award-notice | file | file-override | default
 );
+
+-- The principal credit holders (`CIF Ordonator principal de credite`) of every entity in EVERY held monthly snapshot (#180): the tie a subordinate
+-- body's Party rests on. One row per (snapshot, entity, principal); an entity with no principal named has one row with a null principal_cui.
+-- A body inherits Party only when its principal set is exactly one attributed authority in every snapshot that lists it.
+CREATE TABLE core.mf_principal (
+    snapshot_date     date NOT NULL,
+    cui               text NOT NULL,              -- the entity (as in core.mf_entity)
+    principal_cui     text                        -- normalised like cui
+);
+CREATE INDEX mf_principal_cui_idx ON core.mf_principal (cui);

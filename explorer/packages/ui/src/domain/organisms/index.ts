@@ -19,3 +19,4 @@ export * from "./MethodologyPage/index.ts";
 export * from "./FinancialStatementsSection/index.ts";
 export * from "./FirmDonationsSection/index.ts";
 export * from "./PublicEnterpriseSection/index.ts";
+export * from "./LeadershipSection/index.ts";

@@ -165,6 +165,24 @@ fragment PublicEnterpriseFields on PublicEnterprise {
   fetchedAt
 }
 
+# The Leadership list of an authority (AEP's mandates, #180), and of a subordinate body (its authority's, with the basis of the tie).
+fragment LeadershipFields on Leadership {
+  mandates { leaderName list independent memberParties electionDate basis dataThrough startDate endDate }
+  gaps { startDate endDate kind }
+  via { authority authorityName snapshotDate snapshots }
+}
+
+# The Party of a SEAP Record (#180).
+fragment RecordPartyFields on RecordParty {
+  list
+  independent
+  memberParties
+  electionDate
+  basis
+  dataThrough
+  via { authority authorityName snapshotDate snapshots }
+}
+
 fragment FinancialStatementsFields on FinancialStatements {
   years {
     fiscalYear

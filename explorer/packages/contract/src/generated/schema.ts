@@ -191,6 +191,8 @@ export type Entity = {
   identity: EntityIdentity;
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
+  /** The Leadership list (AEP's election results, ADR 0012): set for a town hall, Bucharest sector, Bucharest city hall or county council, and for a subordinate body of one (its authority's list, with the basis of the tie). Null for every other entity, and always null for an entity that is only a supplier. Leaders are never linked to a person page or to ONRC. */
+  leadership: Maybe<Leadership>;
   /** The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier. */
   onrc: Maybe<OnrcRegistration>;
   placement: Maybe<Placement>;
@@ -394,6 +396,66 @@ export type GapState =
   | 'NOT_IN_SOURCE'
   | 'NOT_YET_LOADED'
   | 'POSSIBLY_INCOMPLETE';
+
+/**
+ * An authority's Mandates, newest last, with the gaps between them. A Mandate runs from the oath to the successor's oath; the handover window, an interim leader
+ * and a mandate without results get no Mandate and are listed as gaps, never guessed. The party is as registered at the election: the leader may have
+ * switched party since (the page says so). Leader names appear only here.
+ */
+export type Leadership = {
+  __typename?: 'Leadership';
+  gaps: Array<LeadershipGap>;
+  mandates: Array<Mandate>;
+  /** Set for a subordinate body: the authority this list is, and the MF snapshot its principal-credit-holder tie comes from (a funding relation, the current tie). */
+  via: Maybe<LeadershipVia>;
+};
+
+export type LeadershipGap = {
+  __typename?: 'LeadershipGap';
+  endDate: Maybe<Scalars['Date']['output']>;
+  kind: LeadershipGapKind;
+  startDate: Scalars['Date']['output'];
+};
+
+export type LeadershipGapKind =
+  | 'HANDOVER_WINDOW'
+  | 'INTERIM'
+  | 'NO_RESULTS';
+
+/** The authority a subordinate body takes its Leadership list and Party from, and the basis: principal credit holder in MF's list of public entities, as every held snapshot says. */
+export type LeadershipVia = {
+  __typename?: 'LeadershipVia';
+  authority: Scalars['ID']['output'];
+  authorityName: Scalars['String']['output'];
+  /** The newest MF snapshot that shows the tie. */
+  snapshotDate: Scalars['Date']['output'];
+  /** How many held snapshots list the body (all show the same single principal). */
+  snapshots: Scalars['Int']['output'];
+};
+
+export type Mandate = {
+  __typename?: 'Mandate';
+  basis: MandateBasis;
+  /** The day the basis data runs through: the election day for final minutes, the stated date of the one-off 2025 file. */
+  dataThrough: Scalars['Date']['output'];
+  electionDate: Scalars['Date']['output'];
+  /** Null while the mandate is still in force. */
+  endDate: Maybe<Scalars['Date']['output']>;
+  independent: Scalars['Boolean']['output'];
+  /** The elected leader's name as AEP wrote it (source data). Never linked to a person. */
+  leaderName: Scalars['String']['output'];
+  /** The list the leader ran on, as registered at the election: a party, an alliance under its registered name, or 'Independent' (which is no party). */
+  list: Scalars['String']['output'];
+  /** An alliance's member parties (empty for a party or an independent). */
+  memberParties: Array<Scalars['String']['output']>;
+  /** From the oath (assumed: AEP publishes no per-UAT oath dates, see the methodology page). */
+  startDate: Scalars['Date']['output'];
+};
+
+export type MandateBasis =
+  | 'FINAL_MINUTES'
+  | 'PARTIAL_MINUTES'
+  | 'REPEAT_ROUND';
 
 export type MatchableField =
   | 'AUTHORITY'
@@ -728,7 +790,7 @@ export type Query = {
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
   onrc: OnrcQuery;
-  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
+  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
@@ -822,6 +884,19 @@ export type RecordOrder =
   | 'DATE_ASC'
   | 'DATE_DESC'
   | 'VALUE_DESC';
+
+/** The Party of a SEAP Record: the Mandate in force on its award date at its authority, or through its principal credit holder. Never a supplier's, never a person's. */
+export type RecordParty = {
+  __typename?: 'RecordParty';
+  basis: MandateBasis;
+  dataThrough: Scalars['Date']['output'];
+  electionDate: Scalars['Date']['output'];
+  independent: Scalars['Boolean']['output'];
+  list: Scalars['String']['output'];
+  memberParties: Array<Scalars['String']['output']>;
+  /** Set for a subordinate body's Record: the authority it is inherited through. */
+  via: Maybe<LeadershipVia>;
+};
 
 export type RecordResult = {
   __typename?: 'RecordResult';
@@ -920,6 +995,8 @@ export type SeapRecord = SourceRecord & {
   /** Set for a framework agreement (ceiling) and for its subsequent contracts. */
   framework: Maybe<FrameworkLink>;
   kind: SeapRecordKind;
+  /** The Party of the mandate in force on the award date at the authority (ADR 0012). Null when the authority is not a town hall, sector, Bucharest city hall or county council (or a subordinate body of one), or the date falls in a gap. */
+  party: Maybe<RecordParty>;
   procedure: Maybe<Scalars['String']['output']>;
   provenance: Provenance;
   /** Signals this Record belongs to. */
@@ -1383,6 +1460,12 @@ export type ResolversTypes = {
   GapState: GapState;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  Leadership: ResolverTypeWrapper<Leadership>;
+  LeadershipGap: ResolverTypeWrapper<LeadershipGap>;
+  LeadershipGapKind: LeadershipGapKind;
+  LeadershipVia: ResolverTypeWrapper<LeadershipVia>;
+  Mandate: ResolverTypeWrapper<Mandate>;
+  MandateBasis: MandateBasis;
   MapArea: ResolverTypeWrapper<Scalars['MapArea']['output']>;
   MatchableField: MatchableField;
   MatchedField: ResolverTypeWrapper<MatchedField>;
@@ -1420,6 +1503,7 @@ export type ResolversTypes = {
   RecordFilterEcho: ResolverTypeWrapper<Omit<RecordFilterEcho, 'authority' | 'supplier'> & { authority?: Maybe<ResolversTypes['Entity']>, supplier?: Maybe<ResolversTypes['Entity']> }>;
   RecordFilterValue: ResolverTypeWrapper<RecordFilterValue>;
   RecordOrder: RecordOrder;
+  RecordParty: ResolverTypeWrapper<RecordParty>;
   RecordResult: ResolverTypeWrapper<Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversTypes['MatchedField']>, record: ResolversTypes['SeapRecord'] }>;
   RecordResultPage: ResolverTypeWrapper<Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversTypes['RecordResult']> }>;
   ReferenceSource: ResolverTypeWrapper<ReferenceSource>;
@@ -1488,6 +1572,10 @@ export type ResolversParentTypes = {
   GapCell: GapCell;
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
+  Leadership: Leadership;
+  LeadershipGap: LeadershipGap;
+  LeadershipVia: LeadershipVia;
+  Mandate: Mandate;
   MapArea: Scalars['MapArea']['output'];
   MatchedField: MatchedField;
   MoneyMap: MoneyMap;
@@ -1519,6 +1607,7 @@ export type ResolversParentTypes = {
   RecordFilter: RecordFilter;
   RecordFilterEcho: Omit<RecordFilterEcho, 'authority' | 'supplier'> & { authority?: Maybe<ResolversParentTypes['Entity']>, supplier?: Maybe<ResolversParentTypes['Entity']> };
   RecordFilterValue: RecordFilterValue;
+  RecordParty: RecordParty;
   RecordResult: Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversParentTypes['MatchedField']>, record: ResolversParentTypes['SeapRecord'] };
   RecordResultPage: Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversParentTypes['RecordResult']> };
   ReferenceSource: ReferenceSource;
@@ -1654,6 +1743,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   identity?: Resolver<ResolversTypes['EntityIdentity'], ParentType, ContextType>;
   identityCurated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  leadership?: Resolver<Maybe<ResolversTypes['Leadership']>, ParentType, ContextType>;
   onrc?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
   provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
@@ -1754,6 +1844,37 @@ export type GapCellResolvers<ContextType = any, ParentType extends ResolversPare
   records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   rule?: Resolver<Maybe<ResolversTypes['GapRule']>, ParentType, ContextType>;
   state?: Resolver<ResolversTypes['GapState'], ParentType, ContextType>;
+};
+
+export type LeadershipResolvers<ContextType = any, ParentType extends ResolversParentTypes['Leadership'] = ResolversParentTypes['Leadership']> = {
+  gaps?: Resolver<Array<ResolversTypes['LeadershipGap']>, ParentType, ContextType>;
+  mandates?: Resolver<Array<ResolversTypes['Mandate']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['LeadershipVia']>, ParentType, ContextType>;
+};
+
+export type LeadershipGapResolvers<ContextType = any, ParentType extends ResolversParentTypes['LeadershipGap'] = ResolversParentTypes['LeadershipGap']> = {
+  endDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['LeadershipGapKind'], ParentType, ContextType>;
+  startDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
+export type LeadershipViaResolvers<ContextType = any, ParentType extends ResolversParentTypes['LeadershipVia'] = ResolversParentTypes['LeadershipVia']> = {
+  authority?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  authorityName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  snapshotDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  snapshots?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type MandateResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mandate'] = ResolversParentTypes['Mandate']> = {
+  basis?: Resolver<ResolversTypes['MandateBasis'], ParentType, ContextType>;
+  dataThrough?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  electionDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  endDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  leaderName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  list?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  memberParties?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  startDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
 };
 
 export interface MapAreaScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['MapArea'], any> {
@@ -1968,6 +2089,16 @@ export type RecordFilterValueResolvers<ContextType = any, ParentType extends Res
   to?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
 };
 
+export type RecordPartyResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordParty'] = ResolversParentTypes['RecordParty']> = {
+  basis?: Resolver<ResolversTypes['MandateBasis'], ParentType, ContextType>;
+  dataThrough?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  electionDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  list?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  memberParties?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['LeadershipVia']>, ParentType, ContextType>;
+};
+
 export type RecordResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordResult'] = ResolversParentTypes['RecordResult']> = {
   areaShare?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
   matchedField?: Resolver<Maybe<ResolversTypes['MatchedField']>, ParentType, ContextType>;
@@ -2008,6 +2139,7 @@ export type SeapRecordResolvers<ContextType = any, ParentType extends ResolversP
   date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   framework?: Resolver<Maybe<ResolversTypes['FrameworkLink']>, ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['SeapRecordKind'], ParentType, ContextType>;
+  party?: Resolver<Maybe<ResolversTypes['RecordParty']>, ParentType, ContextType>;
   procedure?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
   signals?: Resolver<Array<ResolversTypes['Signal']>, ParentType, ContextType>;
@@ -2164,6 +2296,10 @@ export type Resolvers<ContextType = any> = {
   FrameworkOverrunNumbers?: FrameworkOverrunNumbersResolvers<ContextType>;
   FrameworkSummary?: FrameworkSummaryResolvers<ContextType>;
   GapCell?: GapCellResolvers<ContextType>;
+  Leadership?: LeadershipResolvers<ContextType>;
+  LeadershipGap?: LeadershipGapResolvers<ContextType>;
+  LeadershipVia?: LeadershipViaResolvers<ContextType>;
+  Mandate?: MandateResolvers<ContextType>;
   MapArea?: GraphQLScalarType;
   MatchedField?: MatchedFieldResolvers<ContextType>;
   MoneyMap?: MoneyMapResolvers<ContextType>;
@@ -2193,6 +2329,7 @@ export type Resolvers<ContextType = any> = {
   RecordFacets?: RecordFacetsResolvers<ContextType>;
   RecordFilterEcho?: RecordFilterEchoResolvers<ContextType>;
   RecordFilterValue?: RecordFilterValueResolvers<ContextType>;
+  RecordParty?: RecordPartyResolvers<ContextType>;
   RecordResult?: RecordResultResolvers<ContextType>;
   RecordResultPage?: RecordResultPageResolvers<ContextType>;
   ReferenceSource?: ReferenceSourceResolvers<ContextType>;
