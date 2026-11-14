@@ -8,4 +8,5 @@ Only the top level runs these, in the main checkout, after all spec orchestrator
 4. Restart API and web by PID (never `pkill -f`: it can kill your own shell; watch for an orphan `apps/api/dist/main` holding port 3000).
 5. Make sure a cloudflared tunnel to 5173 is running and `CLIENT_ORIGIN` in `.env` matches its URL.
 6. Verify web, `/api/health`, the tunnel and CORS.
-7. Present to the user: summary; health status (how easily the agents worked, conflicts and why, every context window over 150K and why); what needs a human; the proposed follow-up tickets for the user's review.
+7. Present to the user: summary; memory peak with its time (`bash .claude/skills/orchestrate-specs/mem-watch.sh peak`); health status (how easily the agents worked, conflicts and why, every context window over 150K and why); what needs a human; the proposed follow-up tickets for the user's review.
+8. After the last spec's step 7 (queue empty, nothing running): `bash .claude/skills/orchestrate-specs/mem-watch.sh stop`.
