@@ -4,6 +4,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { color } from "../../../theme/tokens.ts";
 import type { EntityRef } from "../../types.ts";
+import { followLink } from "../../utils/followLink.ts";
 
 export interface GoToCardCopy {
   /** The card's heading: "Go to page" / "Mergi la pagină". */
@@ -19,11 +20,13 @@ export interface GoToCardProps {
   /** `SeapSearch.goTo`: the one entity the query names exactly. */
   entity: EntityRef;
   href: string;
+  /** A plain click on the link goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
   copy: GoToCardCopy;
 }
 
 /** The pinned "Go to page" card above the result tabs: the entity, how it is identified, and a link to its page. */
-export function GoToCard({ entity, href, copy }: GoToCardProps) {
+export function GoToCard({ entity, href, onNavigate, copy }: GoToCardProps) {
   return (
     <Card component="section" variant="outlined" aria-label={copy.heading} sx={{ borderColor: color.accent }}>
       <CardContent>
@@ -36,7 +39,7 @@ export function GoToCard({ entity, href, copy }: GoToCardProps) {
         <Typography variant="body2" color="text.secondary">
           {entity.identity === "CUI" ? `${copy.cui} ${entity.key}` : copy.nameOnly}
         </Typography>
-        <Link href={href} aria-label={`${copy.open}: ${entity.displayName}`}>
+        <Link href={href} onClick={followLink(href, onNavigate)} aria-label={`${copy.open}: ${entity.displayName}`}>
           {copy.open}
         </Link>
       </CardContent>

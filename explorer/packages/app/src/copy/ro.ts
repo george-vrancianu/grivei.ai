@@ -296,7 +296,7 @@ export const ro: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+    layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
       identity: {
         cui: "CUI",
@@ -508,7 +508,7 @@ export const ro: Copy = {
     },
     perCounty: {
       heading: "pe județ: N din M",
-      body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+      body: (source, since) => `Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări ${source} începând cu ${since}, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.`,
       lensLink: "deschide lentila Acoperire pe hartă →",
     },
     snapshot: {

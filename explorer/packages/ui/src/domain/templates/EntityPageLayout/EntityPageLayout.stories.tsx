@@ -36,7 +36,7 @@ function page(entity: EntityHeaderData, role: EntityPageRole, view: EntityPageVi
           view={view}
           tabHrefs={hrefs(entity, role)}
           tabCounts={{ records: "1,817" }}
-          citeUrl={`grivei.ai${hrefs(entity, role)[view]}`}
+          citeUrl={`https://grivei.ai${hrefs(entity, role)[view]}`}
           copy={sampleCopy.entityPageLayout(locale)}
         >
           <Typography>{sampleCopy.entityPageLayout(locale).tabs[view]}</Typography>

@@ -4,7 +4,7 @@ import type { SignalData } from "../../types.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { signalSentence, type SignalRulesCopy } from "../../utils/signalWording.ts";
-import { SignalChip } from "../SignalChip/index.ts";
+import { SignalLinkChip } from "../SignalLinkChip/index.ts";
 
 export interface SignalBadgeCopy {
   rules: SignalRulesCopy;
@@ -31,7 +31,7 @@ export function SignalBadge({ signal, href, onNavigate, locale, copy }: SignalBa
   const label = copy.rules[signal.rule].label;
   return (
     <Tooltip title={signalSentence(signal, locale, copy.rules)} describeChild>
-      <SignalChip
+      <SignalLinkChip
         href={href}
         label={copy.compact.text(label, formatDate(signal.date, locale))}
         onClick={followLink(href, onNavigate)}

@@ -24,6 +24,15 @@ describe("the Coverage page", () => {
     expect(rows.find((r) => text(r).includes("Q1 2021") && text(r).includes("Award notices"))).toBeDefined();
   });
 
+  it("words the N of M block with the Source's name and the grid's first year, not fixed text", () => {
+    const content = samplePageContent();
+    const sources = content.sources.map((s) => (s.id === "SEAP" ? { ...s, name: "SEAP-X" } : s));
+    const cells = content.cells.filter((c) => !c.quarter.startsWith("2021"));
+    show({ ...content, sources, cells });
+    const note = section("per county: N of M");
+    expect(note.getByText(/have SEAP-X records since 2022,/)).toBeVisible();
+  });
+
   it("lists no Not yet loaded cell, whatever its rule: a quarantined file cannot be told from a file not published yet", () => {
     show(samplePageContent());
     const rows = section("Known gaps").getAllByRole("row").map((r) => r.textContent ?? "");

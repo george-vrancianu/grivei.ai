@@ -54,7 +54,7 @@ export function Counterparties({ counterparties, total, role, entityHref, locale
             const share = shareOfTotal(row.total.awarded, total);
             return (
               <Stack key={row.entity?.key ?? `person-${index}`} component="li" spacing={0.75} sx={{ py: 1.25 }}>
-                <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "2px 14px" }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", rowGap: 0.25, columnGap: 1.75 }}>
                   <Typography component="div" sx={{ fontWeight: 600 }}>
                     <PartyName
                       party={{ naturalPerson: row.naturalPerson, publishedName: null, share: null, entity: row.entity }}

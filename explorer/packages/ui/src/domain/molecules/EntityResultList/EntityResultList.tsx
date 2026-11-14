@@ -11,14 +11,15 @@ export interface EntityResultListProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   locale: Locale;
   copy: EntityResultRowCopy;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /** The rows of the Authorities or Suppliers tab. */
-export function EntityResultList({ rows, role, entityHref, locale, copy }: EntityResultListProps) {
+export function EntityResultList({ rows, role, entityHref, locale, copy, onNavigate }: EntityResultListProps) {
   return (
     <Stack component="ul" sx={listSx}>
       {rows.map((row) => (
-        <EntityResultRow key={row.entity.key} row={row} href={entityHref(row.entity, role)} locale={locale} copy={copy} />
+        <EntityResultRow key={row.entity.key} row={row} href={entityHref(row.entity, role)} locale={locale} copy={copy} onNavigate={onNavigate} />
       ))}
     </Stack>
   );

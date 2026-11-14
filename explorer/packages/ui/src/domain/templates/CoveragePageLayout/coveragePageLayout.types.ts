@@ -41,7 +41,12 @@ export interface CoveragePageLayoutCopy {
     methodology: string;
   };
   /** The "N of M" block: what a county reads on the map's Coverage lens. */
-  perCounty: { heading: string; body: string; lensLink: string };
+  perCounty: {
+    heading: string;
+    /** From the coverage Source's name ("SEAP") and the year its grid starts ("2021"): neither is fixed text. */
+    body: (source: string, since: string) => string;
+    lensLink: string;
+  };
   snapshot: { heading: string; line: (date: string) => string; notLoaded: string };
   /** The window holds no quarter of the Source. */
   empty: string;

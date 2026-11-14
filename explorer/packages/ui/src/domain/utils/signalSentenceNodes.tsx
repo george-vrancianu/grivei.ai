@@ -13,6 +13,8 @@ export function signalSentenceNodes(signal: Pick<SignalData, "numbers">, locale:
   const { numbers } = signal;
   const money = (bani: string) => <MoneyAmount bani={bani} locale={locale} showBani />;
   const filled = signalNumberTexts(numbers, locale);
+  // `filled.rule` narrows the texts but not `numbers`; the `__typename` guards below narrow the raw amounts for the money nodes. They cannot fail
+  // (`signalNumberTexts` derives the rule from the same `__typename`) and replace a cast.
   switch (filled.rule) {
     case "OVER_CAP":
       if (numbers.__typename !== "OverCapNumbers") return null;

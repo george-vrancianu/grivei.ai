@@ -30,8 +30,8 @@ export interface RoleSwitchProps {
 const chipSx = {
   display: "inline-flex",
   alignItems: "center",
-  px: "10px",
-  py: "3px",
+  px: 1.25,
+  py: 0.375,
   borderRadius: `${radius.chip}px`,
   border: `1px solid transparent`,
   fontFamily: font.mono,
@@ -72,7 +72,7 @@ export function RoleSwitch({ role, roles, hrefFor, onNavigate, copy }: RoleSwitc
       </Box>
     );
   });
-  const rowSx = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px" } as const;
+  const rowSx = { display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 1.25 } as const;
   return both ? (
     <Box component="nav" aria-label={copy.label} sx={rowSx}>
       {chips}

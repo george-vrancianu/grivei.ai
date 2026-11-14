@@ -12,14 +12,15 @@ export interface RecordResultListProps {
   copy: RecordResultRowCopy;
   /** Each row's Signal badges; absent = none shown. */
   signalBadges?: RecordSignalBadges | undefined;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /** The rows of the Records tab. */
-export function RecordResultList({ rows, entityHref, recordHref, locale, copy, signalBadges }: RecordResultListProps) {
+export function RecordResultList({ rows, entityHref, recordHref, locale, copy, signalBadges, onNavigate }: RecordResultListProps) {
   return (
     <Stack component="ul" sx={listSx}>
       {rows.map((row) => (
-        <RecordResultRow key={row.record.code} row={row} recordHref={recordHref(row.record)} entityHref={entityHref} locale={locale} copy={copy} signalBadges={signalBadges} />
+        <RecordResultRow key={row.record.code} row={row} recordHref={recordHref(row.record)} entityHref={entityHref} locale={locale} copy={copy} signalBadges={signalBadges} onNavigate={onNavigate} />
       ))}
     </Stack>
   );

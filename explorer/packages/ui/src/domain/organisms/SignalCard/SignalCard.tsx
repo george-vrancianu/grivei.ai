@@ -61,7 +61,7 @@ export function SignalCard({ signal, reproduceHref, methodologyHref, seapHref, e
           <Typography variant="body2" color="text.secondary" sx={{ textWrap: "pretty" }}>
             {rule.lawful}
           </Typography>
-          <SignalParties authority={signal.authority} suppliers={signal.suppliers} entityHref={entityHref} locale={locale} copy={copy.parties} />
+          <SignalParties authority={signal.authority} suppliers={signal.suppliers} entityHref={entityHref} locale={locale} copy={copy.parties} onNavigate={onNavigate} />
           <SignalLinks
             recordCount={signal.recordCount}
             reproduceHref={reproduceHref}

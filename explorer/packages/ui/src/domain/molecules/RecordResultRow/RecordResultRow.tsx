@@ -3,6 +3,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { followLink } from "../../utils/followLink.ts";
 import { signalKeys } from "../../utils/signalKey.ts";
 import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
 import { SignalBadge, type SignalBadgeCopy } from "../SignalBadge/index.ts";
@@ -32,6 +33,8 @@ export interface RecordResultRowProps {
   locale: Locale;
   copy: RecordResultRowCopy;
   signalBadges?: RecordSignalBadges | undefined;
+  /** A plain click on the title or an entity link goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /**
@@ -39,7 +42,7 @@ export interface RecordResultRowProps {
  * authority and winners, then the badges and Signal badges. Right: the full value over its caption (`RecordValue`; it takes children,
  * the slot under the caption). After a supplier-county click a multi-winner Record has `areaShare`: its in-county share is the second line, labelled with the consortium-share convention's name (#103). The right column wraps under the left one on a narrow screen.
  */
-export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges }: RecordResultRowProps) {
+export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges, onNavigate }: RecordResultRowProps) {
   const { record, matchedField } = row;
   const keys = signalKeys(record.signals);
   const signals = signalBadges
@@ -48,16 +51,16 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       ))
     : [];
   return (
-    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "8px 20px", py: 1.75 }}>
+    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75 }}>
       <Stack spacing={0.75} sx={{ flex: "1 1 320px", minWidth: 0 }}>
         <RecordMetaLine record={record} locale={locale} copy={copy} />
         <Typography component="div" variant="subtitle1">
-          <Link href={recordHref} color="text.primary" underline="hover" sx={{ fontWeight: 500, lineHeight: 1.4, textWrap: "pretty" }}>
+          <Link href={recordHref} onClick={followLink(recordHref, onNavigate)} color="text.primary" underline="hover" sx={{ fontWeight: 500, lineHeight: 1.4, textWrap: "pretty" }}>
             {record.title}
           </Link>
         </Typography>
         {matchedField && <MatchedLine matchedField={matchedField} copy={copy} />}
-        <RecordParties record={record} entityHref={entityHref} copy={copy} />
+        <RecordParties record={record} entityHref={entityHref} copy={copy} onNavigate={onNavigate} />
         <RecordBadges record={record} copy={copy}>
           {signals.length > 0 ? signals : null}
         </RecordBadges>

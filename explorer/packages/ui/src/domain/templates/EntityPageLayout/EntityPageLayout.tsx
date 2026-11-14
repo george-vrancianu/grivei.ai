@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
+import { CiteLine, type CiteLineCopy } from "../../molecules/CiteLine/index.ts";
 import { pageSx } from "../../utils/pageSx.ts";
 import type { EntityPageView } from "../../types.ts";
-import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { EntityTabNav, type EntityTabNavCopy } from "./components/EntityTabNav/index.ts";
 
-export type EntityPageLayoutCopy = EntityTabNavCopy;
+export interface EntityPageLayoutCopy extends EntityTabNavCopy {
+  /** The line that shows this view's address and copies it ("Address of this view"). */
+  cite: CiteLineCopy;
+}
 
 export interface EntityPageLayoutProps {
   /** The page's header: an `EntityHeader`, or a stand-in while the entity loads. */
@@ -18,7 +20,7 @@ export interface EntityPageLayoutProps {
   tabHrefs: Record<EntityPageView, string>;
   /** The number beside a tab's name, formatted by the caller ("1,817"). Absent for a tab whose count is not known. */
   tabCounts?: Partial<Record<EntityPageView, string>>;
-  /** The address of this view as a reader would cite it ("grivei.ai/explore/authority/4384206"), shown under the tabs. */
+  /** The full URL of this view, scheme included ("https://grivei.ai/explore/authority/4384206"): shown without the scheme under the tabs, with a button that copies it. */
   citeUrl?: string;
   /** Called with the href on a plain click on a tab, so the app can change page without a load. */
   onNavigate?: (href: string) => void;
@@ -34,14 +36,7 @@ export function EntityPageLayout({ header, view, tabHrefs, tabCounts, citeUrl, o
       {header}
       <Stack spacing={0.75}>
         <EntityTabNav view={view} hrefs={tabHrefs} counts={tabCounts} onNavigate={onNavigate} copy={copy} />
-        {citeUrl && (
-          <Typography variant="meta" component="p" sx={{ overflowWrap: "anywhere" }}>
-            <Box component="span" sx={visuallyHidden}>
-              {copy.cite}:{" "}
-            </Box>
-            {citeUrl}
-          </Typography>
-        )}
+        {citeUrl && <CiteLine url={citeUrl} copy={copy.cite} />}
       </Stack>
       <Box component="section" aria-label={copy.tabs[view]} sx={{ minWidth: 0 }}>
         {children}

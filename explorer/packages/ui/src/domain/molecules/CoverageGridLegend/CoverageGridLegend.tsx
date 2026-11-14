@@ -1,6 +1,7 @@
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { CoverageGridCopy } from "../../utils/coverageGrid.types.ts";
+import { coverage } from "../../../theme/tokens.ts";
 import { GAP_STATES, RANGE_COLOR, STATE_GLYPHS, stateSx } from "../../utils/coverageGrid.ts";
 
 export interface CoverageGridLegendProps {
@@ -13,14 +14,15 @@ export interface CoverageGridLegendProps {
 
 /** The six states with their swatch (colour, glyph and border) and name, and, when a range is active, the range mark. */
 export function CoverageGridLegend({ copy, condensed = false, showRange = false }: CoverageGridLegendProps) {
-  const size = condensed ? 12 : 18;
+  const swatch = condensed ? coverage.legendSwatchCondensed : coverage.legendSwatch;
+  const size = swatch.size;
   return (
     <Box component="section" aria-label={copy.legend.title} sx={{ mt: 1 }}>
       {!condensed && <Typography variant="caption" component="h3" sx={{ fontWeight: 600 }}>{copy.legend.title}</Typography>}
       <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexWrap: "wrap", columnGap: condensed ? 1.5 : 2.5, rowGap: 0.5 }}>
         {GAP_STATES.map((state) => (
           <Box component="li" key={state} data-state={state} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <Box aria-hidden sx={{ ...stateSx(state), width: size, height: size, display: "grid", placeItems: "center", fontSize: condensed ? 9 : 11, fontWeight: 600, flex: "none" }}>
+            <Box aria-hidden sx={{ ...stateSx(state), width: size, height: size, display: "grid", placeItems: "center", fontSize: swatch.fontSize, fontWeight: 600, flex: "none" }}>
               {STATE_GLYPHS[state]}
             </Box>
             <Typography variant="caption">{copy.states[state]}</Typography>

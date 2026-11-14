@@ -1,19 +1,19 @@
-import type { RecordFilter } from "@grivei/contract";
-import { EntityHeader, EntityOverview, EntityPageLayout, formatCount, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type EntityPageView as TabView, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
+import { currentUrl } from "../../routing/currentUrl.ts";
 import { navigate } from "../../routing/location.tsx";
 import { useScrollToHash } from "../../routing/useScrollToHash.ts";
 import { pathFor, type EntityRoute, type EntityView } from "../../routing/routes.ts";
-import { decodeUrlState, encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { roleHref, roleOf, tabHref, tabHrefs } from "./entityPage.utils.ts";
 import { SIGNALS_PAGE_SIZE, useEntityPage } from "./hooks/useEntityPage.ts";
 import { useOverviewTab } from "./hooks/useOverviewTab.ts";
 import { usePickedCounterparty } from "./hooks/usePickedCounterparty.ts";
+import { useTabCounts } from "./hooks/useTabCounts.ts";
 import { useRecordsTab } from "./hooks/useRecordsTab.tsx";
 import { useRelationshipsTab } from "./hooks/useRelationshipsTab.ts";
 
@@ -34,6 +34,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const { filter, page, order, signalOrder, lens, counterparty, carried, update } = useUrlState();
   const role = roleOf(routeRole);
   const state = useEntityPage({ key: entityKey, role, view, filter, page, order, signalOrder });
+  const tabCounts = useTabCounts(`${role}:${entityKey}`, state, filter, locale);
   const recordsTab = useRecordsTab(locale, routeRole, entityKey);
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
   const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
@@ -83,8 +84,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       }
       view={view}
       tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter, carried)}
-      tabCounts={tabCounts(state, filter, locale)}
-      citeUrl={citeUrl()}
+      tabCounts={tabCounts}
+      citeUrl={currentUrl()}
       onNavigate={onNavigate}
       copy={t.entityPage.layout}
     >
@@ -177,17 +178,4 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       )}
     </EntityPageLayout>
   );
-}
-
-/** The Records count beside the tab: the entity's own, so only when no filter narrows it and the open tab has loaded it (the Relationships tab has none). */
-function tabCounts(state: ReturnType<typeof useEntityPage>, filter: RecordFilter, locale: Locale): Partial<Record<TabView, string>> {
-  if (state.status !== "ready" || Object.values(filter).some((v) => v !== undefined)) return {};
-  const total = state.overview?.total ?? state.records?.total;
-  return total ? { records: formatCount(total.records, total.estimated, locale) } : {};
-}
-
-/** The address of this view as a reader would cite it: host, path and query, without the scheme. The carried search is navigation, not part of the citation, so it is left out. */
-function citeUrl(): string {
-  const state = decodeUrlState(window.location.search);
-  return `${window.location.host}${window.location.pathname}${encodeUrlState({ ...state, carried: undefined })}`;
 }

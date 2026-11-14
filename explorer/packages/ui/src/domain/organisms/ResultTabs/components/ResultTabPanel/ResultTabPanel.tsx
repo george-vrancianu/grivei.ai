@@ -43,7 +43,7 @@ export function ResultTabPanel({ id, tabId, selected, children, shown, count, em
           )}
           {showAll && count > shown && (
             <Box sx={{ pt: 2, borderTop: 1, borderColor: "divider" }}>
-              <Link href={showAll.href} sx={neutralLinkSx}>{showAll.text}</Link>
+              <Link href={showAll.href} onClick={followLink(showAll.href, onNavigate)} sx={neutralLinkSx}>{showAll.text}</Link>
             </Box>
           )}
         </>
