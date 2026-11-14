@@ -1,0 +1,19 @@
+[
+  {"label": "al (2-char prefix)", "filter": {"q": "al"}},
+  {"label": "ma (2-char prefix)", "filter": {"q": "ma"}},
+  {"label": "construct", "filter": {"q": "construct"}},
+  {"label": "alfa onrc (multi-token, prefix)", "filter": {"q": "alfa onr"}},
+  {"label": "CUI", "filter": {"q": "3100020"}},
+  {"label": "CUI prefix", "filter": {"q": "31000"}},
+  {"label": "registration number", "filter": {"q": "J40/1001/2015"}},
+  {"label": "CAEN code as text", "filter": {"q": "4211"}},
+  {"label": "empty query", "filter": {}},
+  {"label": "legal-form word only (folds to nothing)", "filter": {"q": "SRL"}},
+  {"label": "status chip", "filter": {"status": [1107, 1084]}},
+  {"label": "CAEN prefix chip", "filter": {"caen": "42"}},
+  {"label": "county chip", "filter": {"county": "RO-CJ"}},
+  {"label": "Unplaced tile", "filter": {"county": "UNPLACED"}},
+  {"label": "registration date range", "filter": {"registeredFrom": "2015-01-01", "registeredTo": "2020-12-31"}},
+  {"label": "SEAP counterparties only", "filter": {"seapCounterparty": true}},
+  {"label": "text and every chip", "filter": {"q": "alfa", "status": [1048], "caen": "42", "county": "RO-CJ", "registeredFrom": "2010-01-01", "registeredTo": "2026-12-31", "seapCounterparty": true}}
+]
