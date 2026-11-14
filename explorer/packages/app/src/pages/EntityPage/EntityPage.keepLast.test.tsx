@@ -50,7 +50,7 @@ describe.each(["en", "ro"] as const)("the Overview while a different filter load
     expect(await within(await screen.findByRole("list", { name: w.headline })).findByText(w.old)).toBeVisible();
 
     act(() => navigate(`${w.base}?from=2023-06-01`, "replace"));
-    expect(screen.getByText(w.loading)).toBeVisible();
+    expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain(w.loading);
     expect(screen.queryByRole("list", { name: w.headline })).toBeNull();
     expect(screen.queryByText(w.old)).toBeNull();
 
@@ -73,7 +73,7 @@ describe.each(["en", "ro"] as const)("the Overview while the other role loads (%
     expect(await within(await screen.findByRole("list", { name: w.headline })).findByText(w.old)).toBeVisible();
 
     await userEvent.setup().click(screen.getByRole("link", { name: w.other }));
-    expect(screen.getByText(w.loading)).toBeVisible();
+    expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain(w.loading);
     expect(screen.queryByText(w.old)).toBeNull();
 
     release();

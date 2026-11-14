@@ -82,7 +82,7 @@ describe("an entity page", () => {
     await user.click(tabs().getByRole("link", { name: /^Records/ }));
     expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
-    expect(screen.getByText("Loading…")).toBeVisible();
+    expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
     expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
 
     release();
@@ -193,7 +193,7 @@ describe("an entity page", () => {
       expect(shown).toMatch(/^Records\d/);
 
       await userEvent.setup().click(tabs().getByRole("link", { name: /^Relationships/ }));
-      expect(screen.getByText("Loading…")).toBeVisible();
+      expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
       expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
       release();
       await screen.findByRole("heading", { level: 2 });
