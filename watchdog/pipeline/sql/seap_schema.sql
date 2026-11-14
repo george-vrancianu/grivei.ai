@@ -134,6 +134,7 @@ CREATE TABLE seap.search (
     value_bucket     text,                -- the ValueBucket enum (contract value-buckets.ts, bani, upper edge inclusive); null = no value
     has_signals      boolean NOT NULL DEFAULT false,  -- the Record belongs to at least one public Signal (pipeline/signals, set before the rollup and the index are built; a Restricted rule does not count)
     signals          text[] NOT NULL DEFAULT '{}',    -- the rule slugs (OVER_CAP, ...) of the Signals it belongs to, Restricted rules left out (#185): the `signal` filter reads this
+    restricted_signals text[] NOT NULL DEFAULT '{}',  -- the Restricted rules' slugs of the Record (#185, ADR 0015): never read by a public request. The API reads it only when the host shows Restricted content, so the has-Signals chip and the `signal` filter find those Records then; it is in the index so those filters push down like the public ones. Not in the rollup.
     badges           text[] NOT NULL DEFAULT '{}',    -- the Record's badges (counting, identity, crawl), also the filter chips
     procedure        text,
     cpv_code         text,                -- as published (45233140-2): a prefix filter and a text token

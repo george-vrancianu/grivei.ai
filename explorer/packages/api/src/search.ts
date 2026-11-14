@@ -79,22 +79,21 @@ export function buildWhere(filter: SearchFilter, restricted = false): Where {
   }
   if (filter.uat) add(`authority_uat = ${bind(filter.uat)}`);
   // has_signals / signals are filled by the pipeline's Signal step (watchdog/pipeline/signals) before the index is built
-  // The search rows carry public rules only. With the Restricted switch on, the Records of a Restricted rule (#185) count as having Signals and a `signal` filter
-  // on such a rule finds them, read from the Signal tables (the rollup is bypassed for hasSignals then, rollupPlan). Off, the rule leaves no trace here.
-  const restrictedMember = (slugs: string) =>
-    `record_code IN (SELECT m.record_code FROM seap.signal_member m JOIN seap.signal g ON g.id = m.signal_id WHERE g.rule = ANY(${slugs}))`;
+  // `has_signals` and `signals` carry the public rules only. With the Restricted switch on, the Records of a Restricted rule (#185), marked on `restricted_signals`,
+  // count as having Signals and a `signal` filter on such a rule finds them (the rollup is bypassed for hasSignals then, store.ts). Off, the column is never read.
+  const restrictedMember = (slugs: readonly string[]) => slugs.map((slug) => `restricted_signals @> ARRAY[${bind(slug)}]::text[]`).join(" OR ");
   if (filter.hasSignals != null) {
     if (!restricted) add(`has_signals = ${bind(filter.hasSignals)}`);
     else {
-      const member = restrictedMember(bind(RESTRICTED_RULES, "::text[]"));
-      add(filter.hasSignals ? `(has_signals OR ${member})` : `(NOT has_signals AND NOT ${member})`);
+      const member = restrictedMember(RESTRICTED_RULES);
+      add(filter.hasSignals ? `(has_signals OR ${member})` : `(NOT has_signals AND NOT (${member}))`);
     }
   }
   // Party per Record (#181): one exact term on the search row (filled at rebuild from aep.record_party, Independent leaders and Records with no Mandate hold null).
   // An alliance is matched under its own registered name only: a member party never matches it, and no party family exists (ADR 0012).
   if (filter.party) add(`party = ${bind(filter.party)}`);
   if (filter.signal) {
-    if (restricted && RESTRICTED_RULES.includes(filter.signal)) add(restrictedMember(`ARRAY[${bind(filter.signal)}]::text[]`));
+    if (restricted && RESTRICTED_RULES.includes(filter.signal)) add(restrictedMember([filter.signal]));
     else add(`signals @> ARRAY[${bind(filter.signal)}]::text[]`);
   }
   if (filter.county) {

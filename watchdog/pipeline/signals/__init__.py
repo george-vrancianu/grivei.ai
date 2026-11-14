@@ -158,8 +158,14 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
              FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
                      FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule <> ALL(%s) GROUP BY sm.record_code) m
             WHERE s.record_code = m.record_code""", (restricted_slugs(),))  # a Restricted rule is never on a search row (#185)
+    # a Restricted rule's Records are marked on their own column, which no public request reads (the API reads it only when `GRIVEI_RESTRICTED=show`)
+    cur.execute(
+        """UPDATE seap.search s SET restricted_signals = m.rules
+             FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
+                     FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule = ANY(%s) GROUP BY sm.record_code) m
+            WHERE s.record_code = m.record_code""", (restricted_slugs(),))
     cur.execute("ANALYZE seap.signal")
-    counts = {r.SLUG: 0 for r in RULES}
+    counts ={r.SLUG: 0 for r in RULES}
     for h in hits:
         counts[h.rule] += 1
     return counts

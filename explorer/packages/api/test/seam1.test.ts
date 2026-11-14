@@ -4306,6 +4306,113 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
+  describe("cross-Source Signals (#185): archive-cross-donors on the party world, archive-cross-soe on the people world -> rebuild -> the two rules", () => {
+    // The worlds of watchdog/tests/fixtures/build_cross_signals_archive.py (its docstring lists every case): each donor firm is one case named by its label; the SOE world's BETA
+    // (a public enterprise) awards ALFA (private, one confirmed person administers both), GAMMA (a namesake), FAM TOMA IF (an IF) and DUBLA awards OMEGA (also a public enterprise).
+    const DB = { donors: "cross_donors", soe: "cross_soe" } as const;
+    type Sig = { rule: string; date: string; recordCount: number; authority: { key: string }; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Record<string, string | null> };
+    const keys = new Map<string, string>(); // display name -> entity key, per database
+    const keyOf = (db: string, name: string) => keys.get(`${db}/${name}`)!;
+    const donorName = (label: string) => (label === "PFA" ? "ZAMFIR DEMO PFA" : `DONATOR ${label.replace("_", " ")} SRL`);
+    // `show` for the Restricted rule needs the host's switch on: the store and the API both read it (a test passes it, the host's environment is never touched)
+    const showApi = new Map<string, ReturnType<typeof createApi>>();
+    const askShown = (db: string, id: string, variables: unknown) => showApi.get(db)!.respond({ id, variables });
+
+    beforeAll(async () => {
+      // the party world plus BaniPartide's donors and their Records (a rebuild reads the whole archive); the people world plus AMEPIP's list and the enterprises' Records
+      cpSync(placementArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(mfArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(aepArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-cross-donors"), join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(onrcPeopleArchive, join(scratch, "archive-cross-soe"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-cross-soe"), join(scratch, "archive-cross-soe"), { recursive: true });
+      for (const db of Object.values(DB)) await admin.query(`CREATE DATABASE ${db}`);
+      const out = rebuild(DB.donors, "archive-cross-donors", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-cross-donors"), "--today", "2026-11-20", "--known-gaps", mfGaps]);
+      expect(out).toContain("DONOR_TO_PARTY 7"); // the seven cases that fire; the SOE rule does not exist in this world's data
+      expect(rebuild(DB.soe, "archive-cross-soe")).toContain("SOE_BOARD_IN_SUPPLIER 2");
+      for (const db of Object.values(DB)) {
+        const pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
+        pools.push(pool);
+        for (const r of (await pool.query("SELECT key, display_name FROM core.entity")).rows) keys.set(`${db}/${r.display_name}`, r.key);
+        showApi.set(db, createApi(postgresStore(pool, { restricted: true }), schema, { restricted: true }));
+      }
+    });
+
+    const rolePage = async (db: string, key: string, role: string, rule?: string, shown = false) => {
+      const variables = { key, role, filter: rule ? { signal: rule } : {}, signalOrder: "DATE_DESC", signalOffset: 0 };
+      const r = shown ? await askShown(db, entityOverview.sha256, variables) : await ask(db, entityOverview.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(entityOverview.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as any).entity.seap.role.signals as { count: number; rows: Sig[] }; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const donorSignals = async (label: string) => (await rolePage(DB.donors, keyOf(DB.donors, donorName(label)), "SUPPLIER", "DONOR_TO_PARTY"));
+
+    it("donor to the authority's Party: inside the window (the award day and day 365 included), a loan, an alliance's member party and a derived Party fire", async () => {
+      const expected: Record<string, [string, number, string, boolean, string]> = {
+        WITHIN: ["2023-06-01", 92, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        SAME_DAY: ["2023-06-02", 0, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        DAY_365: ["2023-06-05", 365, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        LOAN: ["2023-06-08", 38, "PARTIDUL SOCIAL DEMOCRAT", false, "LOAN"],
+        PNL: ["2023-06-21", 51, "PARTIDUL NAȚIONAL LIBERAL", false, "DONATION"],
+        DERIVED: ["2023-06-12", 42, "PARTIDUL SOCIAL DEMOCRAT", true, "DONATION"],
+      };
+      for (const [label, [date, days, party, derived, kind]] of Object.entries(expected)) {
+        const found = await donorSignals(label);
+        expect(found.count, label).toBe(1);
+        const s = found.rows[0]!;
+        expect([s.rule, s.date, s.recordCount, s.suppliers.map((x) => x.key)], label).toEqual(["DONOR_TO_PARTY", date, 1, [keyOf(DB.donors, donorName(label))]]);
+        expect(s.numbers, label).toEqual({ __typename: "DonorToPartyNumbers", days, party, derived, kind });
+      }
+      const alliance = (await donorSignals("ALLIANCE")).rows;
+      expect(alliance).toHaveLength(1); // USR is a recorded member party of the alliance that holds the Mandate
+      expect(alliance[0]!.numbers).toMatchObject({ __typename: "DonorToPartyNumbers", days: 98, derived: false, kind: "DONATION" });
+    });
+
+    it("donor to the authority's Party: day 366, a donation after the award, another party, no readable day, a predecessor party, a non-member of the alliance and a sole trader do not fire", async () => {
+      for (const label of ["DAY_366", "AFTER", "OTHER_PARTY", "NO_DAY", "PREDECESSOR", "NOT_MEMBER", "PFA"]) expect((await donorSignals(label)).count, label).toBe(0);
+    });
+
+    it("donor to the authority's Party: is a public rule, in the methodology answer with its window and firing rate, and filters the search by `signal`", async () => {
+      const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+      const r = await ask(DB.donors, methodology.sha256, {});
+      expect(r.body.errors).toBeUndefined();
+      const rule = (r.body.data as any).signalRules.find((x: { slug: string }) => x.slug === "DONOR_TO_PARTY"); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(rule).toMatchObject({ window: { from: "2023-01-01" }, baseRateYear: 2023 }); // the window starts at the first year of Records (2023 here; never before 2021); the rate year is the newest year BaniPartide's rows are filed under
+      expect(rule.baseRate).toBeGreaterThan(0);
+      const filter = { signal: "DONOR_TO_PARTY" };
+      const found = await ask(DB.donors, mainScreen.sha256, { filter });
+      expect(found.body.errors).toBeUndefined();
+      expect((found.body.data as MainScreenQuery).seap.search.total.records).toBe(7);
+      const chip = await ask(DB.donors, mainScreen.sha256, { filter: { hasSignals: true } });
+      expect((chip.body.data as MainScreenQuery).seap.search.total.records).toBe(7); // a public rule is behind the chip too
+    });
+
+    it("SOE board member in a supplier (Restricted), shown: a confirmed person in the enterprise and a private supplier fires; a public-enterprise supplier, a namesake and an IF do not", async () => {
+      const beta = keyOf(DB.soe, "BETA ONRC SRL");
+      const found = await rolePage(DB.soe, beta, "AUTHORITY", "SOE_BOARD_IN_SUPPLIER", true);
+      expect(found.rows.map((s) => [s.date, s.recordCount, s.suppliers.map((x) => x.key), s.numbers])).toEqual([
+        ["2026-04-27", 1, [keyOf(DB.soe, "ALFA ONRC SRL")], { __typename: "SoeBoardInSupplierNumbers", persons: 1 }],
+        ["2026-04-20", 2, [keyOf(DB.soe, "ALFA ONRC SRL")], { __typename: "SoeBoardInSupplierNumbers", persons: 1 }],
+      ]);
+      expect(found.count).toBe(2);
+      for (const [role, name] of [["AUTHORITY", "DUBLA ONRC SA"], ["SUPPLIER", "OMEGA ONLY SRL"], ["SUPPLIER", "GAMMA ONRC SRL"], ["SUPPLIER", "FAM TOMA IF"]] as const) {
+        expect((await rolePage(DB.soe, keyOf(DB.soe, name), role, "SOE_BOARD_IN_SUPPLIER", true)).count, name).toBe(0);
+      }
+    });
+
+    it("SOE board member in a supplier (Restricted), shown: the Signals filter and the has-Signals chip find its Records, with the same count as the Signals' Records", async () => {
+      const bySignal = await askShown(DB.soe, mainScreen.sha256, { filter: { signal: "SOE_BOARD_IN_SUPPLIER" } });
+      const byChip = await askShown(DB.soe, mainScreen.sha256, { filter: { hasSignals: true } });
+      const without = await askShown(DB.soe, mainScreen.sha256, { filter: { hasSignals: false } });
+      const all = await askShown(DB.soe, mainScreen.sha256, EMPTY_FILTER);
+      for (const r of [bySignal, byChip, without, all]) expect(r.body.errors).toBeUndefined();
+      const records = (r: typeof bySignal) => (r.body.data as MainScreenQuery).seap.search.total.records;
+      expect(records(bySignal)).toBe(3); // ALFA's three Records of the enterprise BETA
+      expect(records(byChip)).toBeGreaterThanOrEqual(3); // the public rules' Records too
+      expect(records(without) + records(byChip)).toBe(records(all)); // the chip's two sides partition the set
+    });
+  });
+
 });
 
 async function waitForPostgres(pool: pg.Pool): Promise<void> {
