@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -30,6 +30,7 @@ from ..placement.tables import load_gazetteer
 from . import read
 from .people import PeopleSummary, PersonOverrides, build_people, has_people
 from .fetch import KIND, SOURCE, STREAM
+from .status import missing_months
 
 log = logging.getLogger("pipeline.onrc")
 
@@ -46,6 +47,7 @@ class OnrcSummary:
     skipped: list[str] = field(default_factory=list)  # snapshots that did not read, and incomplete units
     entities_only: int = 0  # registrations that became an entity because no SEAP Record names the CUI
     people: PeopleSummary = field(default_factory=PeopleSummary)  # the roles of the newest snapshot with a people file (#177)
+    coverage_cells: int = 0  # Coverage grid cells: one per snapshot, one per missing month since March 2026 (#176)
 
     def line(self) -> str:
         if not self.snapshots:
@@ -142,6 +144,20 @@ def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | 
     return n, with_cui, caen
 
 
+def _store_coverage(cur: psycopg.Cursor, held: list[date]) -> int:
+    """`onrc.coverage_cell` (#176): one LOADED cell per snapshot read and one KNOWN_GAP cell per calendar month since March 2026 with none (the monthly
+    snapshots the birth dates and the status dates rest on, see `status.missing_months`). A snapshot that did not read is as if it were not held. Returns the cells."""
+    cur.execute("INSERT INTO onrc.coverage_cell (period, period_start, period_end, kind, state, records, data_through) "
+                "SELECT snapshot_date::text, snapshot_date, snapshot_date, 'REGISTRATION', 'LOADED', companies, snapshot_date FROM onrc.snapshot")
+    cells = len(held)
+    for month in missing_months(held):
+        first = date.fromisoformat(f"{month}-01")
+        last = date(first.year + (first.month == 12), first.month % 12 + 1, 1) - timedelta(days=1)
+        cur.execute("INSERT INTO onrc.coverage_cell (period, period_start, period_end, kind, state, records, data_through) VALUES (%s, %s, %s, 'REGISTRATION', 'KNOWN_GAP', 0, NULL)", (month, first, last))
+        cells += 1
+    return cells
+
+
 def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None, person_overrides: PersonOverrides | None = None) -> OnrcSummary:
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
@@ -164,6 +180,7 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
         summary.snapshots += 1
     if held:
         summary.first, summary.latest = date.fromisoformat(held[0].unit), date.fromisoformat(held[-1].unit)
+        summary.coverage_cells = _store_coverage(cur, [date.fromisoformat(u.unit) for u in held])
         summary.companies, summary.with_cui, summary.caen = _load_registrations(cur, held[-1], data_dir)
         for unit in reversed(held):  # the nomenclature of the newest snapshot that carries one
             if names := read.read_status_names(unit):

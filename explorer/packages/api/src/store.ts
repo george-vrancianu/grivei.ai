@@ -1,6 +1,7 @@
 import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
 import { rollupPlan, rollupWhere } from "./rollup.ts";
+import { onrcStore, type OnrcStore } from "./onrcSearch.ts";
 import { roleStore, type RoleStore } from "./role.ts";
 import type { SourceRow } from "./sources.ts";
 import { signalStore, signalsOfRecords, type SignalRow, type SignalStore } from "./signals.ts";
@@ -127,6 +128,10 @@ export interface PlacementRow {
 /** The ONRC registration under an entity's CUI (`onrc.registration`) with the history derived from the held snapshots (ADR 0018). */
 export interface OnrcRegistrationRow {
   registrationNumber: string;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: string;
+  /** The CUI when it passes the check digit. */
+  cui: string | null;
   registrationDate: string | null;
   legalForm: string | null;
   statuses: { code: number; name: string | null; firstSeen: string; sinceAtLeast: boolean }[];
@@ -322,7 +327,7 @@ export interface SearchOptions {
 
 export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 
-export interface Store extends RoleStore, SignalStore {
+export interface Store extends RoleStore, SignalStore, OnrcStore {
   total(): Promise<TotalRow>;
   records(page: { limit: number; offset: number; order: RecordOrderKey }): Promise<RecordRow[]>;
   /** A Record by its public code (DA, DAN, `<award notice>~<contract number>`, award notice), or null. */
@@ -528,6 +533,42 @@ function noTable(e: unknown): { rows: never[] } {
 }
 
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
+  /** The ONRC registration a predicate on `onrc.registration r` (one bound parameter) finds, with the history derived from the held snapshots. */
+  async function onrcWhere(where: string, param: string): Promise<OnrcRegistrationRow | null> {
+    const { rows } = await pool.query(
+      `SELECT r.reg_no, r.name, r.cui, r.registration_date::text AS registration_date, r.legal_form, r.county_name, r.locality, r.address, r.postal_code, r.snapshot_date::text AS snapshot,
+              s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+         FROM onrc.registration r JOIN onrc.snapshot s ON s.snapshot_date = r.snapshot_date WHERE ${where}`,
+      [param],
+    );
+    const r = rows[0];
+    if (!r) return null;
+    const statuses = await pool.query(
+      `SELECT sp.code, n.name, sp.first_seen::text AS "firstSeen", sp.since_at_least AS "sinceAtLeast"
+         FROM onrc.status_span sp LEFT JOIN onrc.status_name n ON n.code = sp.code WHERE sp.reg_no = $1 AND sp.last_seen = $2::date ORDER BY sp.code`,
+      [r.reg_no, r.snapshot],
+    );
+    const caen = await pool.query(`SELECT code, version FROM onrc.caen WHERE reg_no = $1 ORDER BY code`, [r.reg_no]);
+    const aliases = await pool.query(
+      `SELECT name, first_seen::text AS "firstSeen", last_seen::text AS "lastSeen", since_at_least AS "sinceAtLeast", last_seen = $2::date AS current
+         FROM onrc.name_span WHERE reg_no = $1 ORDER BY last_seen DESC, first_seen DESC, name`,
+      [r.reg_no, r.snapshot],
+    );
+    return {
+      registrationNumber: r.reg_no,
+      name: r.name,
+      cui: r.cui,
+      registrationDate: r.registration_date,
+      legalForm: r.legal_form,
+      statuses: statuses.rows,
+      caen: caen.rows,
+      seat: { county: r.county_name, locality: r.locality, address: r.address, postalCode: r.postal_code },
+      aliases: aliases.rows,
+      snapshot: r.snapshot,
+      provenance: { url: r.url, via: r.title, fetchedAt: r.fetched_at },
+    };
+  }
+
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
@@ -689,6 +730,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
 
   return {
     ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
+    ...onrcStore({ pool, entitiesOf }),
     ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
     searchTotal,
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
@@ -1033,36 +1075,11 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return rows;
     },
     async onrc(cui) {
-      const { rows } = await pool.query(
-        `SELECT r.reg_no, r.registration_date::text AS registration_date, r.legal_form, r.county_name, r.locality, r.address, r.postal_code, r.snapshot_date::text AS snapshot,
-                s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
-           FROM onrc.registration r JOIN onrc.snapshot s ON s.snapshot_date = r.snapshot_date WHERE r.cui = $1 AND r.primary_for_cui`,
-        [cui],
-      );
-      const r = rows[0];
-      if (!r) return null;
-      const statuses = await pool.query(
-        `SELECT sp.code, n.name, sp.first_seen::text AS "firstSeen", sp.since_at_least AS "sinceAtLeast"
-           FROM onrc.status_span sp LEFT JOIN onrc.status_name n ON n.code = sp.code WHERE sp.reg_no = $1 AND sp.last_seen = $2::date ORDER BY sp.code`,
-        [r.reg_no, r.snapshot],
-      );
-      const caen = await pool.query(`SELECT code, version FROM onrc.caen WHERE reg_no = $1 ORDER BY code`, [r.reg_no]);
-      const aliases = await pool.query(
-        `SELECT name, first_seen::text AS "firstSeen", last_seen::text AS "lastSeen", since_at_least AS "sinceAtLeast", last_seen = $2::date AS current
-           FROM onrc.name_span WHERE reg_no = $1 ORDER BY last_seen DESC, first_seen DESC, name`,
-        [r.reg_no, r.snapshot],
-      );
-      return {
-        registrationNumber: r.reg_no,
-        registrationDate: r.registration_date,
-        legalForm: r.legal_form,
-        statuses: statuses.rows,
-        caen: caen.rows,
-        seat: { county: r.county_name, locality: r.locality, address: r.address, postalCode: r.postal_code },
-        aliases: aliases.rows,
-        snapshot: r.snapshot,
-        provenance: { url: r.url, via: r.title, fetchedAt: r.fetched_at },
-      };
+      return onrcWhere("r.cui = $1 AND r.primary_for_cui", cui);
+    },
+    async onrcRecord(regNo) {
+      // only a registration ONRC search can list: a sole trader's (PFA, II, IF) is not served by its number either (ADR 0009)
+      return onrcWhere("r.reg_no = $1 AND EXISTS (SELECT 1 FROM onrc.search x WHERE x.reg_no = r.reg_no)", regNo);
     },
     async entity(key) {
       return (await entitiesOf([key])).get(key) ?? null;

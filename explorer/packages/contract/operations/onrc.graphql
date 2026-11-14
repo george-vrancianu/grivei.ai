@@ -1,0 +1,57 @@
+# ONRC's search surface (#176; the Source picker and the ONRC screens are #178's). One matching set, three views of it: the match count, the
+# Organisations tab and the count lens. The filter is the URL's search state (`ONRC_FILTER_URL`).
+fragment OnrcResultFields on OnrcResult {
+  registrationNumber
+  name
+  cui
+  legalForm
+  registrationDate
+  seat { county locality }
+  statuses { code name }
+  caen { code version }
+  seapCounterparty
+  entity { ...EntityRef }
+  matched { field text highlights }
+}
+
+# /explore/onrc?...: the main screen of the ONRC Source and its full-results view (limit and offset page the Organisations tab).
+query OnrcSearch($filter: OnrcFilter!, $limit: Int!, $offset: Int!) {
+  onrc {
+    search(filter: $filter) {
+      filter { qFolded }
+      count
+      defaultTab
+      organisations(limit: $limit, offset: $offset) {
+        count
+        rows { ...OnrcResultFields }
+      }
+      map {
+        counties { area name registrations }
+        unplacedRegistrations
+      }
+    }
+  }
+}
+
+# One registration by its registration number.
+query OnrcRecord($registrationNumber: ID!) {
+  onrc {
+    record(registrationNumber: $registrationNumber) {
+      ...OnrcRegistrationFields
+      name
+      cui
+      entity { ...EntityRef }
+    }
+  }
+}
+
+# The Coverage lens and page of ONRC: one cell per snapshot, the data-through date, no denominator.
+query OnrcCoverage($window: DateRange) {
+  sources { ...DataThroughFields }
+  coverage(source: ONRC, window: $window) {
+    window { from to }
+    denominator
+    counties { county status withRecords publicEntities otherAuthorities }
+    grid { quarter kind state rule note records crawlOnly dataThrough }
+  }
+}

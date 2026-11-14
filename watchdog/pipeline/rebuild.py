@@ -49,6 +49,7 @@ from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_
 from .mf.build import MfSummary, build_mf
 from .onrc.people import PersonOverrides
 from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
+from .onrc.search import SearchSummary as OnrcSearchSummary, build_onrc_search, vacuum as vacuum_onrc_search
 from .amepip.build import AmepipSummary, build_amepip
 from .aep.build import AepSummary, build_aep
 from .financials.build import FinancialsSummary, build_financials
@@ -84,6 +85,7 @@ class RebuildSummary:
     placement: PlacementSummary | None = None
     mf: MfSummary | None = None  # the MF list step (#80)
     onrc: OnrcSummary | None = None  # the ONRC step (#175)
+    onrc_search: OnrcSearchSummary | None = None  # ONRC's search table (#176)
     amepip: AmepipSummary | None = None  # the AMEPIP public-enterprise list step (#183)
     aep: AepSummary | None = None  # AEP's Mandates, Leadership list and Party per Record (#180)
     financials: FinancialsSummary | None = None  # the MF annual financial statements step (#179)
@@ -109,6 +111,8 @@ class RebuildSummary:
             out.append(self.mf.line())
         if self.onrc is not None:
             out.append(self.onrc.line())
+        if self.onrc_search is not None:
+            out.append(self.onrc_search.line())
         if self.amepip is not None:
             out.append(self.amepip.line())
         if self.aep is not None:
@@ -585,6 +589,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             with step("analyze-search"):
                 cur.execute("ANALYZE seap.search")
+            with step("onrc-search"):
+                summary.onrc_search = build_onrc_search(cur)  # #176: after the SEAP search table (it reads who is a SEAP counterparty); its BM25 index is in this transaction too
             with step("commit"):
                 conn.commit()  # what leaving the `with` would do; explicit so the commit is timed
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
@@ -604,8 +610,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     try:
         with step("vacuum"):
             vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+            vacuum_onrc_search(db_url)
     except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
-        log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
+        log.warning("VACUUM ANALYZE of seap.search or onrc.search failed after the commit (search is correct, but slower until it runs): %s", e)
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 

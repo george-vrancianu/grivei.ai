@@ -29,6 +29,8 @@ export interface CoverageParts {
   counties: () => Promise<{ county: string; status: ReturnType<typeof coverageStatus>; withRecords: number; publicEntities: number; otherAuthorities: number }[]>;
   unplacedAuthorities: () => Promise<{ authorities: number; total: Record<string, unknown> }>;
   referenceSnapshot: () => Promise<string | null>;
+  /** What the counties' N of M is counted against: SEAP's is MF's list of public entities; a Source with no such population says NONE. */
+  denominator: "PUBLIC_ENTITIES" | "NONE";
 }
 
 /** What a Source's Coverage needs to answer; each Source reads its own tables. */
@@ -64,20 +66,31 @@ const seap: SourceAdapter = {
         return { authorities: unplaced.authorities, total: { ...zeroTotal(), ...unplaced.total } };
       },
       referenceSnapshot: () => store.referenceSnapshot(),
+      denominator: "PUBLIC_ENTITIES",
     };
   },
 };
 
-// ONRC (#175): its data-through date is the newest snapshot. Its Coverage (the snapshot grid, the count lens) is ticket #176's: until then the grid and the areas are empty.
+// ONRC (#175, #176): its data-through date is the newest snapshot read. Its Coverage grid has one cell per snapshot (the period is the snapshot's date) and a
+// known gap for each month since March 2026 with none. The register is complete up to the snapshot and ONRC has no denominator, so there is no N of M: every county
+// carries the same status (the window's cells, as for SEAP, which is harvested nationally) and zeros where SEAP states its tally (`denominator: NONE` says why).
 const onrc: SourceAdapter = {
   dataThrough: (store) => store.onrcDataThrough(),
-  coverage: (_store, { from, to }) => ({
-    window: { from, to },
-    grid: async () => [],
-    counties: async () => [],
-    unplacedAuthorities: async () => ({ authorities: 0, total: {} }),
-    referenceSnapshot: async () => null,
-  }),
+  coverage: (store, { from, to }) => {
+    let cached: Promise<Awaited<ReturnType<Store["coverageGrid"]>>> | undefined;
+    const grid = () => (cached ??= store.onrcCoverageGrid({ from, to }));
+    return {
+      window: { from, to },
+      grid,
+      counties: async () => {
+        const status = coverageStatus(await grid());
+        return (await store.counties()).map((c) => ({ county: `RO-${c.iso}`, status, withRecords: 0, publicEntities: 0, otherAuthorities: 0 }));
+      },
+      unplacedAuthorities: async () => ({ authorities: 0, total: {} }),
+      referenceSnapshot: async () => null,
+      denominator: "NONE",
+    };
+  },
 };
 
 /** Adapters by Source id: one per entry of the registry. */

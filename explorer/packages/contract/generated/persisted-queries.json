@@ -57,6 +57,21 @@
       "document": "query MethodologyReferenceSources {\n  referenceSources {\n    id\n    name\n    dataThrough\n    fiscalYear\n    url\n  }\n}"
     },
     {
+      "name": "OnrcCoverage",
+      "sha256": "2cd5914db9a6b2b473e6c07abe8021a16b10464b85b0a8b5e82735b6210e85e5",
+      "document": "query OnrcCoverage($window: DateRange) {\n  sources {\n    ...DataThroughFields\n  }\n  coverage(source: ONRC, window: $window) {\n    window {\n      from\n      to\n    }\n    denominator\n    counties {\n      county\n      status\n      withRecords\n      publicEntities\n      otherAuthorities\n    }\n    grid {\n      quarter\n      kind\n      state\n      rule\n      note\n      records\n      crawlOnly\n      dataThrough\n    }\n  }\n}\n\nfragment DataThroughFields on Source {\n  id\n  name\n  harvested\n  dataThrough {\n    kind\n    date\n  }\n}"
+    },
+    {
+      "name": "OnrcRecord",
+      "sha256": "6636d57175d769971e27707ab90c54913168dcc4b120009b2e88fdbbd847d3cf",
+      "document": "query OnrcRecord($registrationNumber: ID!) {\n  onrc {\n    record(registrationNumber: $registrationNumber) {\n      ...OnrcRegistrationFields\n      name\n      cui\n      entity {\n        ...EntityRef\n      }\n    }\n  }\n}\n\nfragment EntityRef on Entity {\n  key\n  displayName\n  identity\n}\n\nfragment OnrcRegistrationFields on OnrcRegistration {\n  registrationNumber\n  registrationDate\n  legalForm\n  statuses {\n    code\n    name\n    firstSeen\n    sinceAtLeast\n  }\n  caen {\n    code\n    version\n  }\n  seat {\n    county\n    locality\n    address\n    postalCode\n  }\n  aliases {\n    name\n    firstSeen\n    lastSeen\n    sinceAtLeast\n    current\n  }\n  snapshot\n  provenance {\n    ...ProvenanceFields\n  }\n}\n\nfragment ProvenanceFields on Provenance {\n  source\n  url\n  via\n  kind\n  fetchedAt\n}"
+    },
+    {
+      "name": "OnrcSearch",
+      "sha256": "6c5d3a1439da7fe9a10ba3244ec3b3ffe1b4015044e424558eee39369fcc23c9",
+      "document": "query OnrcSearch($filter: OnrcFilter!, $limit: Int!, $offset: Int!) {\n  onrc {\n    search(filter: $filter) {\n      filter {\n        qFolded\n      }\n      count\n      defaultTab\n      organisations(limit: $limit, offset: $offset) {\n        count\n        rows {\n          ...OnrcResultFields\n        }\n      }\n      map {\n        counties {\n          area\n          name\n          registrations\n        }\n        unplacedRegistrations\n      }\n    }\n  }\n}\n\nfragment EntityRef on Entity {\n  key\n  displayName\n  identity\n}\n\nfragment OnrcResultFields on OnrcResult {\n  registrationNumber\n  name\n  cui\n  legalForm\n  registrationDate\n  seat {\n    county\n    locality\n  }\n  statuses {\n    code\n    name\n  }\n  caen {\n    code\n    version\n  }\n  seapCounterparty\n  entity {\n    ...EntityRef\n  }\n  matched {\n    field\n    text\n    highlights\n  }\n}"
+    },
+    {
       "name": "PersonPage",
       "sha256": "31953588c43989326d866384106914c3f54a3ee402f1e83166ad26490a556415",
       "document": "query PersonPage($id: ID!) {\n  person(id: $id) {\n    ...PersonFields\n  }\n}\n\nfragment PersonFields on Person {\n  id\n  name\n  birthYear\n  roleCount\n  roles {\n    organisationName\n    entityKey\n    entityRole\n    role\n  }\n  snapshot\n  provenance {\n    ...ProvenanceFields\n  }\n}\n\nfragment ProvenanceFields on Provenance {\n  source\n  url\n  via\n  kind\n  fetchedAt\n}"

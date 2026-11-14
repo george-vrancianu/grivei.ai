@@ -1,13 +1,15 @@
 import { GraphQLError } from "graphql";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { matchedFieldOf } from "./matched.ts";
+import { onrcMatchedFields } from "./onrcMatched.ts";
+import type { OnrcSearchFilter } from "./onrcSearch.ts";
 import { foldTokens } from "./fold.ts";
 import { adapterOf, plannedSources, SOURCE_ADAPTERS, type SourceRow } from "./sources.ts";
 import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow, FirmDonationsRow } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow, FirmDonationsRow, OnrcRegistrationRow } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
@@ -141,7 +143,7 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
     // the ONRC section (#175): the same on both role pages; null for an entity with no CUI or no registration
     onrc: async () => {
       const found = e.cui ? await store.onrc(e.cui) : null;
-      return found && { ...found, provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance } };
+      return found && onrcRegistrationObject(found);
     },
     // ONRC's administrators and legal representatives (#177), public tier: named only on a SEAP counterparty (ADR 0009); an organisation that exists only in ONRC is not named.
     // The person link of a linked holder is Restricted (ADR 0015): the store is not even asked for the ids unless the switch shows them.
@@ -170,6 +172,13 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
       role: async ({ role }: { role: "AUTHORITY" | "SUPPLIER" }) =>
         (await store.roles(e.key)).includes(role) ? roleObject(store, role, e.key, { entityObject, recordRow, search: (f, other) => searchObject(f, other), moneyMap, withEstimated: (t) => ({ ...zeroTotal(), ...t }), signalObject }) : null,
     }),
+  });
+
+  /** An ONRC registration as the contract serves it (the entity page's section and `onrc.record`): its provenance is ONRC's snapshot dataset; its entity is the page of its CUI. */
+  const onrcRegistrationObject = (found: OnrcRegistrationRow) => ({
+    ...found,
+    provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+    entity: async () => (found.cui ? ((await store.entity(found.cui).then((e) => (e ? entityObject(e) : null))) ?? null) : null),
   });
 
   const signalObject = (s: SignalRow) => makeSignal(store, s, { entityObject, recordRow });
@@ -313,6 +322,40 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
     };
   }
 
+  /** ONRC's search (#176): the match count, the Organisations tab and the count lens of one filter. No person is ever in it (the search table holds organisations only). */
+  function onrcSearchObject(filter: OnrcSearchFilter) {
+    const queryTokens = foldTokens(filter.q ?? "");
+    return {
+      filter: { qFolded: queryTokens.length ? queryTokens.join(" ") : null },
+      count: (_: unknown, ctx: Ctx) => store.onrcCount(filter, { signal: ctx?.signal }),
+      defaultTab: "ORGANISATIONS" as const,
+      organisations: async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
+        const page = await store.onrcSearch(filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
+        return {
+          count: page.count,
+          rows: page.rows.map((r) => ({
+            registrationNumber: r.registrationNumber,
+            name: r.name,
+            cui: r.cui,
+            legalForm: r.legalForm,
+            registrationDate: r.registrationDate,
+            seat: r.seat,
+            statuses: r.statuses,
+            caen: r.caen,
+            seapCounterparty: r.seapCounterparty,
+            entity: r.entity ? entityObject(r.entity) : null,
+            matched: onrcMatchedFields({ name: r.name, aliases: r.aliases, cui: r.cui, registrationNumber: r.registrationNumber, caen: r.caen }, queryTokens),
+          })),
+        };
+      },
+      map: async (_: unknown, ctx: Ctx) => {
+        const [m, counties] = await Promise.all([store.onrcCountMap(filter, { signal: ctx?.signal }), store.counties()]);
+        const names = new Map(counties.map((c) => [`RO-${c.iso}`, c.name]));
+        return { counties: m.counties.map((c) => ({ area: c.area, name: names.get(c.area) ?? c.area, registrations: c.registrations })), unplacedRegistrations: m.unplaced };
+      },
+    };
+  }
+
   /** A registry entry as the `Source` type: its data-through dates come from its adapter. */
   const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => {
     const dataThrough = await adapterOf(row.id).dataThrough(store);
@@ -362,6 +405,13 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
     counties: async () => (await store.counties()).map(county),
     uats: async ({ county: code }: { county: string }) =>
       (await store.uats(code.replace(/^RO-/, ""))).map((u) => ({ siruta: u.siruta, name: u.name, county: county(u.county) })),
+    onrc: () => ({
+      search: ({ filter }: { filter: OnrcSearchFilter }) => onrcSearchObject(filter),
+      record: async ({ registrationNumber }: { registrationNumber: string }) => {
+        const found = await store.onrcRecord(registrationNumber);
+        return found ? onrcRegistrationObject(found) : null;
+      },
+    }),
     seap: () => ({
       record: async ({ code }: { code: string }) => {
         const found = await store.record(code);
