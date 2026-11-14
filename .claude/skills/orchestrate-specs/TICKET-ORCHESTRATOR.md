@@ -8,7 +8,7 @@ You are an opus ticket orchestrator for ticket #<ticket> of spec #<spec>. You ma
 
 This is the per-ticket loop from `implement-spec`.
 
-1. Create your worktree and branch from the integration tip (`scripts/worktree.sh ticket-<ticket> <integration-branch>` if present, else `git -C <main> worktree add`, copy the `.env` files from the main checkout (read-only copy), then `npm ci`).
+1. Create your worktree and branch from the integration tip (`scripts/worktree.sh ticket-<ticket> <integration-branch>` if present, else `git -C <main> worktree add`, copy the `.env` files from the main checkout (read-only copy), then the install commands the codebase map names).
 2. Spawn a sonnet implementer working only in that worktree. It uses `tdd` where there is code to test, commits, runs `git fetch` and merges the integration tip, then reports.
 3. Spawn an opus reviewer with `code-review`, base = the integration branch. If the reviewer can't spawn the Standards and Spec sub-agents (it's already inside an agent), it runs Standards then Spec sequentially, each with its own checklist (Standards: `CODING_STANDARDS.md` if present; Spec: the ticket's acceptance criteria), and reports them separately. The vendored `code-review` skill is not edited.
 4. Fix loop until the reviewer is satisfied, re-reviewing after each fix. Spawn a fresh sonnet fixer once the implementer is above ~150K context.
