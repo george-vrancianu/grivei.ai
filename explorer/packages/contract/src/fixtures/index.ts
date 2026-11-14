@@ -8,6 +8,7 @@ import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
 import { methodologyBaseRates, methodologyReferenceSources } from "./methodology.ts";
 import { onrcCoverageHand, onrcRecordHand, onrcSearchHand } from "./onrc.ts";
 import { recordPageHand } from "./record-page.ts";
+import { recordedPartyMainScreen } from "./recorded/party.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedEntityRecords } from "./recorded/records.ts";
 import { recordedRecordPage } from "./recorded/record.ts";
@@ -19,6 +20,7 @@ import { recordedEntityRecordsSidePanel, recordedEntityRelationships } from "./r
 import { recordedCoverageLens, recordedCoveragePage, recordedFullResultsAuthorities, recordedFullResultsRecords, recordedFullResultsSuppliers, recordedMainScreen, recordedZoomedCounty } from "./recorded/index.ts";
 
 export type { Fixture, FixtureKind, FixtureSet } from "./types.ts";
+export { recordedPartyMainScreen } from "./recorded/party.ts";
 export { recordedEntityOverview } from "./recorded/entity.ts";
 export { recordedEntityRecords } from "./recorded/records.ts";
 export { recordedRecordPage } from "./recorded/record.ts";
@@ -32,7 +34,7 @@ export { recordedCoverageLens, recordedCoveragePage, recordedMainScreen, recorde
  * states a recorded run cannot produce (pagination past 100 Records, estimated counts, every Record state at once).
  */
 export const fixtures = {
-  MainScreen: [...recordedMainScreen, ...recordedSignalsMainScreen, ...mainScreenHand],
+  MainScreen: [...recordedMainScreen, ...recordedSignalsMainScreen, ...recordedPartyMainScreen, ...mainScreenHand],
   ZoomedCounty: [...recordedZoomedCounty, ...zoomedCountyHand],
   FullResultsAuthorities: [...recordedFullResultsAuthorities, ...recordedSignalsFullResultsAuthorities, ...fullResultsAuthoritiesHand],
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...recordedSignalsFullResultsSuppliers, ...fullResultsSuppliersHand],

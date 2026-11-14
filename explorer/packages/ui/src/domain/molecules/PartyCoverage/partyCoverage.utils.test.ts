@@ -11,11 +11,11 @@ describe("unattributedShare", () => {
   it("is the unattributed part of the whole set, to a tenth of a percent", () => {
     expect(unattributedShare(coverage({ direct: slice("1000"), unattributed: slice("1000") }), "en")).toBe("50%");
     expect(unattributedShare(coverage({ direct: slice("22"), subordinate: slice("8"), otherParties: slice("14"), independent: slice("1"), unattributed: slice("15") }), "en")).toBe("25%");
-    expect(unattributedShare(coverage({ direct: slice("2"), unattributed: slice("1") }), "en")).toBe("33.3%");
+    expect(unattributedShare(coverage({ direct: slice("2"), unattributed: slice("1") }), "en")).toBe("33.4%");
   });
 
   it("formats the number in the reader's language", () => {
-    expect(unattributedShare(coverage({ direct: slice("2"), unattributed: slice("1") }), "ro")).toMatch(/^33,3\s?%$/);
+    expect(unattributedShare(coverage({ direct: slice("2"), unattributed: slice("1") }), "ro")).toMatch(/^33,4\s?%$/);
   });
 
   it("is exact for sums beyond 2^53 bani", () => {
@@ -28,7 +28,8 @@ describe("unattributedShare", () => {
     expect(unattributedShare(coverage({ direct: slice("5") }), "en")).toBe("0%");
   });
 
-  it("never rounds the unattributed share up", () => {
-    expect(unattributedShare(coverage({ direct: slice("1"), unattributed: slice("1999") }), "en")).toBe("99.9%");
+  it("never understates what is not attributed: it rounds up, so a sliver is not shown as nothing", () => {
+    expect(unattributedShare(coverage({ direct: slice("1999"), unattributed: slice("1") }), "en")).toBe("0.1%");
+    expect(unattributedShare(coverage({ direct: slice("1"), unattributed: slice("1999") }), "en")).toBe("100%");
   });
 });

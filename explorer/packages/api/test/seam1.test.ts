@@ -33,6 +33,7 @@ import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecord
 import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_SIGNAL_CASES, type RecordedSignalCase } from "./recordedSignalCases.ts";
+import { RECORDED_PARTY_CASES } from "./recordedPartyCases.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 import { RECORDED_COVERAGE_CASES } from "./recordedCoverageCases.ts";
 
@@ -3978,6 +3979,25 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const search = (r.body.data as MainScreenQuery).seap.search;
       return { total: search.total, coverage: search.total.partyCoverage, codes: search.records.rows.map((x) => x.record.code).sort() };
     };
+
+    it("records the main screen answers the app's Party tests run on (recorded/party/MainScreen.json)", async () => {
+      const file = resolve(here, "../../contract/src/fixtures/recorded/party/MainScreen.json");
+      const recorded = [];
+      for (const c of RECORDED_PARTY_CASES) {
+        const r = await ask(DB, mainScreen.sha256, c.variables);
+        expect(r.status, c.name).toBe(200);
+        expect(r.body.errors, c.name).toBeUndefined();
+        expect(validateResponse(schema, parse(mainScreen.document), r.body.data, c.variables), c.name).toEqual([]);
+        recorded.push({ name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data });
+      }
+      if (process.env.RECORD_FIXTURES === "1") {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      }
+      // through JSON, so undefined and key order do not matter
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      expect(new Set(RECORDED_PARTY_CASES.map((c) => JSON.stringify(c.variables))).size).toBe(RECORDED_PARTY_CASES.length);
+    });
 
     it("returns only the Records whose Mandate matches, direct and derived, and states the coverage of its Total", async () => {
       const pnl = await searched({ party: PNL });

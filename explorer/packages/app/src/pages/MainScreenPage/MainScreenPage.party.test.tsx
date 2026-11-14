@@ -1,4 +1,5 @@
 // Seam 3 for the Party filter (#181): the chip and the URL are two views of one RecordFilter, and the Total states what the filter covers.
+// Runs on the answers recorded from the party archive (contract/src/fixtures/recorded/party/); the hand-written `party-psd` is only the fixture for tests of other screens.
 import type { RecordFilter } from "@grivei/contract";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,6 +12,8 @@ import { openAt } from "../../testing/openAt.ts";
 import { plain, readTotal } from "../../testing/total.ts";
 
 const PSD = "PARTIDUL SOCIAL DEMOCRAT";
+const PNL = "PARTIDUL NAȚIONAL LIBERAL";
+const CHANNEL = "channel=direct-purchase"; // the recorded run of the party archive (its answers offer the lists and state the coverage) is asked with this chip
 const filterInUrl = (): RecordFilter => decodeUrlState(window.location.search).filter;
 const opened = async (url: string, options: Parameters<typeof fixtureClient>[0] = {}) => {
   openAt(url);
@@ -23,36 +26,36 @@ const select = () => screen.findByRole("combobox", { name: "List as registered" 
 
 describe("the Party filter on the main screen", () => {
   it("offers the lists the API names, as registered, and writes the one picked to the URL, replacing the history entry", async () => {
-    await opened("/explore/?q=contract"); // the hand-written answer that lists them: a recorded run has no AEP archive, so its answers offer none
+    await opened(`/explore/?${CHANNEL}`);
     const before = window.history.length;
     const picker = await select();
     expect(within(picker).getAllByRole("option").map((o) => o.textContent)).toEqual([
-      "Any party", PSD, "PARTIDUL NAȚIONAL LIBERAL", "ALIANȚA USR PLUS", "UNIUNEA DEMOCRATĂ MAGHIARĂ DIN ROMÂNIA",
+      "Any party", PNL, PSD, "ALIANȚA USR PLUS",
     ]);
     await userEvent.setup().selectOptions(picker, PSD);
-    await waitFor(() => expect(filterInUrl()).toEqual({ q: "contract", party: PSD }));
-    expect(window.location.search).toBe("?q=contract&party=PARTIDUL+SOCIAL+DEMOCRAT");
+    await waitFor(() => expect(filterInUrl()).toEqual({ channel: "DIRECT_PURCHASE", party: PSD }));
+    expect(window.location.search).toBe("?channel=direct-purchase&party=PARTIDUL+SOCIAL+DEMOCRAT");
     expect(window.history.length).toBe(before);
     expect(await select()).toHaveValue(PSD);
   });
 
   it("opens with the list a URL names chosen, and lists it as an active chip", async () => {
-    await opened(`/explore/?party=${encodeURIComponent(PSD)}`);
+    await opened(`/explore/?${CHANNEL}&party=${encodeURIComponent(PSD)}`);
     expect(await select()).toHaveValue(PSD);
     expect(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: `Remove Party: ${PSD}` })).toBeVisible();
   });
 
   it("removing the chip, or choosing Any, drops only the party from the URL", async () => {
-    await opened("/explore/?q=contract");
+    await opened(`/explore/?${CHANNEL}`);
     const user = userEvent.setup();
     await user.selectOptions(await select(), PSD);
     await waitFor(() => expect(filterInUrl().party).toBe(PSD));
     await user.click(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: `Remove Party: ${PSD}` }));
-    await waitFor(() => expect(window.location.search).toBe("?q=contract"));
+    await waitFor(() => expect(window.location.search).toBe(`?${CHANNEL}`));
     await user.selectOptions(await select(), PSD);
     await waitFor(() => expect(filterInUrl().party).toBe(PSD));
     await user.selectOptions(await select(), "Any party");
-    await waitFor(() => expect(window.location.search).toBe("?q=contract"));
+    await waitFor(() => expect(window.location.search).toBe(`?${CHANNEL}`));
   });
 
   it("Clear all removes the party with the other chips and keeps the rest of the URL", async () => {
@@ -62,19 +65,19 @@ describe("the Party filter on the main screen", () => {
   });
 
   it("states the coverage beside the Total: direct and subordinate, what the filter leaves out and the unattributed share", async () => {
-    await opened(`/explore/?party=${encodeURIComponent(PSD)}`);
+    await opened(`/explore/?${CHANNEL}&party=${encodeURIComponent(PNL)}`);
     const coverage = await screen.findByTestId("party-coverage");
-    await waitFor(() => expect(readTotal().records).toBe("5 Records"));
-    expect(readTotal().awarded).toBe("RON 30,000,000"); // direct + subordinate: 22m + 8m
+    await waitFor(() => expect(readTotal().records).toBe("7 Records"));
+    expect(readTotal().awarded).toBe("RON 7,000"); // direct + subordinate: 6,000 + 1,000
     const lines = within(coverage).getAllByRole("listitem").map((li) => plain(li.textContent));
     expect(lines).toEqual([
-      "Led by this list directly: 3 Records · RON 22,000,000",
-      "Through subordinate bodies: 2 Records · RON 8,000,000",
-      "Led by other lists: 2 Records · RON 14,000,000",
-      "Led by independent leaders (not a party): 1 Record · RON 1,000,000",
-      "Not attributed to a party: 3 Records · RON 15,000,000",
+      "Led by this list directly: 6 Records · RON 6,000",
+      "Through subordinate bodies: 1 Record · RON 1,000",
+      "Led by other lists: 6 Records · RON 6,000",
+      "Led by independent leaders (not a party): 2 Records · RON 2,000",
+      "Not attributed to a party: 13 Records · RON 13,000",
     ]);
-    expect(within(coverage).getByText(/25% of the value in this set is not attributed to any party/)).toBeVisible();
+    expect(within(coverage).getByText(/46.5% of the value in this set is not attributed to any party/)).toBeVisible();
     expect(within(coverage).getByRole("link", { name: "How a Party is attributed" })).toHaveAttribute("href", "/explore/methodology#party-and-leadership");
   });
 
@@ -85,7 +88,7 @@ describe("the Party filter on the main screen", () => {
   });
 
   it("is in Romanian at /ro/explore/, the list as registered unchanged", async () => {
-    openAt(`/ro/explore/?party=${encodeURIComponent(PSD)}`);
+    openAt(`/ro/explore/?${CHANNEL}&party=${encodeURIComponent(PSD)}`);
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
     expect(await within(bar).findByRole("combobox", { name: "Lista, așa cum a fost înregistrată" })).toHaveValue(PSD);
@@ -105,7 +108,7 @@ describe("the Party filter on the main screen", () => {
   });
 
   it("keeps offering the lists while the next answer loads, so the chip does not blink out on a keystroke", async () => {
-    await opened("/explore/?q=contract"); // the hand-written answer that lists them
+    await opened(`/explore/?${CHANNEL}`);
     await select();
     await userEvent.setup().type(screen.getByRole("searchbox"), "x");
     expect(screen.getByRole("combobox", { name: "List as registered" })).toBeVisible();

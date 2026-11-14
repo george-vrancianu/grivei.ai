@@ -10,6 +10,7 @@ const SLICES = ["direct", "subordinate", "otherParties", "independent", "unattri
 export function unattributedShare(coverage: PartyCoverageData, locale: Locale): string | null {
   const total = SLICES.reduce((sum, slice) => sum + BigInt(coverage[slice].awarded), 0n);
   if (total === 0n) return null;
-  const tenths = (BigInt(coverage.unattributed.awarded) * 1000n) / total; // tenths of a percent, rounded down: never claims more than is attributed
+  const unattributed = BigInt(coverage.unattributed.awarded);
+  const tenths = (unattributed * 1000n + total - 1n) / total; // tenths of a percent, rounded up: never understates what is not attributed (a sliver is never shown as 0%)
   return new Intl.NumberFormat(locale === "ro" ? "ro-RO" : "en-GB", { style: "percent", minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(Number(tenths) / 1000);
 }

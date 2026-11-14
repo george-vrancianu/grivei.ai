@@ -6,7 +6,6 @@ import * as w from "./world.ts";
 
 const { sources } = w;
 
-/** Procedure names as SEAP publishes them (the chips offer these). */
 /** The lists the Party chip offers (#181), as AEP registers them (source data): a recorded run has no AEP archive, so its answers offer none. */
 const partyOptions = [
   { party: "PARTIDUL SOCIAL DEMOCRAT", records: 4200 },
@@ -15,6 +14,7 @@ const partyOptions = [
   { party: "UNIUNEA DEMOCRATĂ MAGHIARĂ DIN ROMÂNIA", records: 640 },
 ];
 
+/** Procedure names as SEAP publishes them (the chips offer these). */
 const procedureFacet = [{ value: "Achiziție directă" }, { value: "Licitație deschisă" }, { value: "Negociere fără publicare prealabilă" }];
 
 /** What a recorded run cannot produce (a record state of every kind, counts a fixture archive cannot reach). The rest is `recorded/`. */

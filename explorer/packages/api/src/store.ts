@@ -227,6 +227,21 @@ export interface TotalRow {
   frameworkCeilings: string;
 }
 
+/** One group of the coverage scan: the Records (and the awarded bani) of one (party, basis) pair. A null basis is a Record no Mandate is attributed to; a null party with a basis is an independent leader. */
+export interface PartyGroupRow { party: string | null; basis: string | null; awarded: string; records: number }
+
+/** Sorts the groups into the five slices of `PartyCoverageRow` for one list; the bani are summed as integers. */
+export function classifyPartyGroups(party: string, rows: readonly PartyGroupRow[]): PartyCoverageRow {
+  const sums = { direct: { records: 0, awarded: 0n }, subordinate: { records: 0, awarded: 0n }, otherParties: { records: 0, awarded: 0n }, independent: { records: 0, awarded: 0n }, unattributed: { records: 0, awarded: 0n } };
+  for (const r of rows) {
+    const slice = r.basis === null ? sums.unattributed : r.party === null ? sums.independent : r.party !== party ? sums.otherParties : r.basis === "SUBORDINATE" ? sums.subordinate : sums.direct;
+    slice.records += r.records;
+    slice.awarded += BigInt(r.awarded);
+  }
+  const out = (x: { records: number; awarded: bigint }): PartyShareRow => ({ records: x.records, awarded: x.awarded.toString() });
+  return { party, direct: out(sums.direct), subordinate: out(sums.subordinate), otherParties: out(sums.otherParties), independent: out(sums.independent), unattributed: out(sums.unattributed) };
+}
+
 /** One slice of the Party coverage: the Records and the awarded value (bani, summed like a Total's) in it. */
 export interface PartyShareRow {
   records: number;
@@ -367,6 +382,8 @@ export interface Store extends RoleStore, SignalStore, OnrcStore {
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
   /** The Party coverage of the matching set (the filter's `party` is set): how its Total splits, and what the party filter leaves out. */
   searchPartyCoverage(filter: SearchFilter, options?: SearchOptions): Promise<PartyCoverageRow>;
+  /** What `searchPartyCoverage` is made of: the groups of the set the rest of the filter selects, the same for every party (the filter's `party` is ignored), so a cache can keep one scan for all of them. */
+  searchPartyGroups(filter: SearchFilter, options?: SearchOptions): Promise<PartyGroupRow[]>;
   /** The lists present in `aep.record_party`, largest first (an Independent is never one); empty when the `aep` schema is missing. */
   partyOptions(): Promise<PartyOptionRow[]>;
   /** The Money lens of the matching set, on the side the filter's `countySide` names (the filter is not narrowed by the lens). */
@@ -736,11 +753,9 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
   };
 
-  /** Party coverage (#181): the set the rest of the filter selects, grouped on the indexed party columns; see `PartyCoverageRow`. A Record counts once, as in `searchTotal`. */
-  const searchPartyCoverage: Store["searchPartyCoverage"] = async (filter, { signal } = {}) => {
-    const party = filter.party ?? "";
+  /** The rows behind the Party coverage (#181): the set the rest of the filter selects (the party left out), grouped on the indexed party columns. A Record counts once, as in `searchTotal`. */
+  const searchPartyGroups: Store["searchPartyGroups"] = async (filter, { signal } = {}) => {
     const w = buildWhere({ ...filter, party: undefined });
-    type Row = { party: string | null; basis: string | null; awarded: string; records: number };
     const sql = w.winnerSide
       ? `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records
            FROM (SELECT party, party_basis, record_code, sum(share_bani) AS sh FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, record_code) g
@@ -748,22 +763,16 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       : `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, coalesce(sum(n) FILTER (WHERE pos = 1), 0)::int AS records
            FROM (SELECT party, party_basis, winner_position AS pos, sum(share_bani) AS sh, count(*) AS n FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, winner_position) g
           GROUP BY party, party_basis`;
-    const rows = (await cancellableQuery<Row>(pool, signal, sql, w.params)).rows;
-    const sums = { direct: { records: 0, awarded: 0n }, subordinate: { records: 0, awarded: 0n }, otherParties: { records: 0, awarded: 0n }, independent: { records: 0, awarded: 0n }, unattributed: { records: 0, awarded: 0n } };
-    for (const r of rows) {
-      const slice = r.basis === null ? sums.unattributed : r.party === null ? sums.independent : r.party !== party ? sums.otherParties : r.basis === "SUBORDINATE" ? sums.subordinate : sums.direct;
-      slice.records += r.records;
-      slice.awarded += BigInt(r.awarded);
-    }
-    const out = (s: { records: number; awarded: bigint }): PartyShareRow => ({ records: s.records, awarded: s.awarded.toString() });
-    return { party, direct: out(sums.direct), subordinate: out(sums.subordinate), otherParties: out(sums.otherParties), independent: out(sums.independent), unattributed: out(sums.unattributed) };
+    return (await cancellableQuery<PartyGroupRow>(pool, signal, sql, w.params)).rows;
   };
+  const searchPartyCoverage: Store["searchPartyCoverage"] = async (filter, options) => classifyPartyGroups(filter.party ?? "", await searchPartyGroups(filter, options));
 
   return {
     ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
     ...onrcStore({ pool, entitiesOf }),
     ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
     searchTotal,
+    searchPartyGroups,
     searchPartyCoverage,
     async partyOptions() {
       // No `aep` schema (a graph built before it) offers no party: the chip is simply absent. The list is capped so a native select stays usable; the largest lists come first.

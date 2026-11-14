@@ -9,7 +9,7 @@
 import pg from "pg";
 import { foldTokens } from "./fold.ts";
 import type { SearchFilter } from "./search.ts";
-import type { RecordOrderKey, Store } from "./store.ts";
+import { classifyPartyGroups, type RecordOrderKey, type Store } from "./store.ts";
 
 /**
  * The canonical form of a filter: the query folded, chips sorted and de-duplicated, defaults filled, empty values dropped.
@@ -311,7 +311,9 @@ export function cachedStore(
     searchRecords: (filter, p, options) => cached(`records|${canonicalFilter(filter)}|${page(p)}|${p.order satisfies RecordOrderKey}`, (signal) => inner.searchRecords(filter, p, { ...options, signal }), options?.signal),
     // the Go-to entity depends on the folded query alone (chips never restrict it), so the key is the folded text
     goTo: (qFolded, options) => cached(`goto|${qFolded}`, (signal) => inner.goTo(qFolded, { ...options, signal }), options?.signal),
-    searchPartyCoverage: (filter, options) => cached(`party-coverage|${canonicalFilter(filter)}`, (signal) => inner.searchPartyCoverage(filter, { ...options, signal }), options?.signal),
+    // the scan does not depend on the party (it is grouped by it), so one cached scan serves every list picked under the same other filters
+    searchPartyGroups: (filter, options) => cached(`party-groups|${canonicalFilter({ ...filter, party: undefined })}`, (signal) => inner.searchPartyGroups(filter, { ...options, signal }), options?.signal),
+    searchPartyCoverage: async (filter, options) => classifyPartyGroups(filter.party ?? "", await store.searchPartyGroups(filter, options)),
     // the options depend on the load alone: kept for its generation
     partyOptions: () => cached("party-options", () => inner.partyOptions()),
     searchMap: (side, filter, options) => cached(`map|${side}|${canonicalFilter(filter)}`, (signal) => inner.searchMap(side, filter, { ...options, signal }), options?.signal),

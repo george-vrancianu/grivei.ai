@@ -47,6 +47,7 @@ const store: Store = {
     const none = { records: 0, awarded: "0" };
     return { party: f.party ?? "", direct: { records: 1, awarded: "420050" }, subordinate: none, otherParties: none, independent: none, unattributed: { records: 1, awarded: "0" } };
   },
+  searchPartyGroups: async () => [],
   partyOptions: async () => [{ party: "PARTIDUL SOCIAL DEMOCRAT", records: 1 }],
   searchTotal: async (f) => (f.q ? { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } : { awarded: "420050", records: 2, suspectLeftOut: 0, noValue: 1, frameworkCeilings: "0" }),
   searchEntities: async () => ({ count: 0, estimated: false, rows: [] }),
