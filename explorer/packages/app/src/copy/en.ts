@@ -291,7 +291,7 @@ export const en: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+    layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
       identity: {
         cui: "CUI",
@@ -503,7 +503,7 @@ export const en: Copy = {
     },
     perCounty: {
       heading: "per county: N of M",
-      body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+      body: (source, since) => `On the map, each county reads “N of M public entities have ${source} records since ${since}, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.`,
       lensLink: "open the Coverage lens on the map →",
     },
     snapshot: {

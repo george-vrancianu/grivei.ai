@@ -54,7 +54,7 @@ describe.each([
     await screen.findByRole("heading", { level: 1 });
     expect(state()).toEqual({ filter: {}, carried: { q: "comuna" } }); // the entity's own filter is empty
     expect(window.location.pathname).toBe(`${prefix}/explore/supplier/2000007`);
-    // the page URL carries the search, but the address the reader sees (and would cite) is the clean one
+    // the page URL carries the search, but the address the reader sees (and would cite, and copy) is the clean one
     expect(window.location.search).toContain("search=");
     expect(screen.getByText(`${window.location.host}${prefix}/explore/supplier/2000007`)).toBeVisible();
     expect(screen.queryByText(/search=/)).toBeNull();
@@ -143,8 +143,6 @@ function withGoTo(data: unknown, goTo: unknown): unknown {
   return answer;
 }
 
-// The Overview's Signals page links keep the carried search, like the tab links and the order toggle do. The recorded hospital has one page of
-// Signals, so the count is raised to 45 for a second page (as in the signalOrder test).
 describe("the Records tab's suspect-value link keeps the carried search", () => {
   it("the '1 suspect value left out' link carries the search on", async () => {
     const { view } = open("/explore/authority/1000017/records?search=q%3Dcomuna");
@@ -154,6 +152,8 @@ describe("the Records tab's suspect-value link keeps the carried search", () => 
   });
 });
 
+// The Overview's Signals page links keep the carried search, like the tab links and the order toggle do. The recorded hospital has one page of
+// Signals, so the count is raised to 45 for a second page (as in the signalOrder test).
 describe("the Overview's Signals page links keep the carried search", () => {
   it("following Signals page 2, the Records tab still offers 'only Records matching'", async () => {
     const recorded = overviewNamed("authority-with-signals");

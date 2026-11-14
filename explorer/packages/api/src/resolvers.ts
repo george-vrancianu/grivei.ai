@@ -277,8 +277,8 @@ export function rootValue(store: Store) {
     // The grid (#79) and the per-county figures (#80) follow the date window: quarters overlapping it, Records dated in it.
     coverage: ({ source, window }: { source: string; window?: { from?: string | null; to?: string | null } | null }) => {
       if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
-      const from = window?.from ?? null;
-      const to = window?.to ?? null;
+      const from = window?.from || null;
+      const to = window?.to || null;
       let cached: Promise<Awaited<ReturnType<typeof store.coverageGrid>>> | undefined; // one read per request even when grid and counties are both selected
       const grid = () => (cached ??= store.coverageGrid().then((cells) => cells.filter((cell) => overlaps(cell.quarter, from, to))));
       return {

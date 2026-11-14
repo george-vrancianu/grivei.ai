@@ -266,8 +266,8 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
 };
 
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
-  en: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
-  ro: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+  en: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: copyLink.en }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: copyLink.ro }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
 };
 
 const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {
@@ -1036,7 +1036,7 @@ export const sampleCopy = {
         },
         perCounty: {
           heading: "pe județ: N din M",
-          body: "Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări SEAP din 2021, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.",
+          body: (source, since) => `Pe hartă, fiecare județ se citește „N din M entități publice au înregistrări ${source} începând cu ${since}, plus K alte autorități contractante”. M vine din lista entităților publice a Ministerului Finanțelor. O entitate fără înregistrări poate pur și simplu să nu fi cumpărat nimic, de aceea numărul nu este arătat niciodată ca procent.`,
           lensLink: "deschide lentila Acoperire pe hartă →",
         },
         snapshot: {
@@ -1121,7 +1121,7 @@ export const sampleCopy = {
         },
         perCounty: {
           heading: "per county: N of M",
-          body: "On the map, each county reads “N of M public entities have SEAP records since 2021, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.",
+          body: (source, since) => `On the map, each county reads “N of M public entities have ${source} records since ${since}, plus K other contracting authorities”. M comes from the Ministry of Finance list of public entities. An entity without records may simply have bought nothing, so the count is never shown as a percentage.`,
           lensLink: "open the Coverage lens on the map →",
         },
         snapshot: {

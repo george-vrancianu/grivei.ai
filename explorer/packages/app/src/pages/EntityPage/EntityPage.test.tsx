@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { createClient } from "../../graphql/client.ts";
 import type { GraphqlClient } from "../../graphql/client.ts";
+import { EntityRelationships } from "../../graphql/operations.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
@@ -81,12 +82,12 @@ describe("an entity page", () => {
     await user.click(tabs().getByRole("link", { name: /^Records/ }));
     expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
-    expect(screen.getByRole("status")).toHaveTextContent("Loading");
+    expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
     expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
 
     release();
     expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByText("Loading…")).toBeNull();
   });
 
   it("reaches every tab link with the Tab key", async () => {
@@ -177,6 +178,26 @@ describe("an entity page", () => {
       await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" });
       await screen.findByRole("list", { name: "Headline numbers" });
       expect(tabs().getByRole("link", { name: "Records" })).toBeVisible();
+    });
+
+    it("keeps the Records count on screen while another tab loads", async () => {
+      openAt(SUPPLIER);
+      const { client } = fixtureClient();
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      // the Relationships tab's request waits for `release()`, so the page can be read while it loads
+      const held: GraphqlClient = { query: async (op, variables, options) => (op.name === EntityRelationships.name ? gate.then(() => client.query(op, variables, options)) : client.query(op, variables, options)) };
+      render(<App client={held} />);
+      await screen.findByRole("list", { name: "Headline numbers" });
+      const shown = tabs().getByRole("link", { name: /^Records/ }).textContent;
+      expect(shown).toMatch(/^Records\d/);
+
+      await userEvent.setup().click(tabs().getByRole("link", { name: /^Relationships/ }));
+      expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
+      expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
+      release();
+      await screen.findByRole("heading", { level: 2 });
+      expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
     });
 
     it("shows the address of the view under the tabs, query included, in both languages", async () => {

@@ -17,11 +17,14 @@ Two modes:
   prefixes must be answered from the warmed cache (`expect_cached`): their first request is held to `--cached-ms`.
 
 What one keystroke runs here, per part of the screen: `total`, ONE Money-lens map (the side the filter's `countySide` names, default
-AUTHORITY, as MainScreen asks for one), both entity tabs (rank, then the page's entities and placement), the Records tab (the Top-K
-page, hydrated with its entities and source files; the empty state's page is `seap.record`, as `store.records` reads it) and, for a
-text query, the Go-to lookup, and `dataThrough` (every MainScreen request asks for it, and the API does not cache it: it is a scan of
-`seap.record`, `store.dataThrough`). Left out: `signalsOfRecords` (the Signal badges of the page), `facets`, `counties()` and the
-echo of a chip's entity: small keyed reads that share the 8-connection pool but never scan the index.
+AUTHORITY, as MainScreen asks for one), both entity tabs (rank, then the page's entities and placement, then the page's Signal counts:
+`entitySignalCounts`, #104, a read of `seap.search` for the page's keys that the rollup states pay too, so their entity tabs are "mixed",
+not "rollup", and the rollup-state judgment includes them), the Records tab (the Top-K page, hydrated with its entities and source files;
+after a supplier-side county click also the in-area share of the page's Records, `areaShare` #103, run last; the empty state's page is
+`seap.record`, as `store.records` reads it) and, for a text query, the Go-to lookup, and `dataThrough` (every MainScreen request asks for
+it, and the API does not cache it: it is a scan of `seap.record`, `store.dataThrough`). Left out: `signalsOfRecords` (the Signal badges of
+the page), `facets`, `counties()` and the echo of a chip's entity: small keyed reads that share the 8-connection pool but never scan the
+index.
 
 Pure parts (no database): `build_where`, `rollup_plan`, `plan_tasks`, `summarize`, `verdict`, `render_table`, `load_queries`.
 """
@@ -195,12 +198,31 @@ class Task:
     """One part of the screen: a name, how it is served, and a function that runs its statements through `timed`."""
 
     name: str
-    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design) or "record" (a read of seap.record)
+    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design; a rollup-ranked entity tab: its Signal counts read the index) or "record" (a read of seap.record)
     statements: list[str]  # the statement names, in the order they run (the API runs them in sequence within a task)
     alternatives: list[str] = field(default_factory=list)  # statements that replace one of the above in some case (the terms aggregation instead of the exact rank)
     rollup_statements: list[str] = field(default_factory=list)  # the statements that must read the rollup tables (checked with EXPLAIN)
     judged_in_rollup_state: bool = True  # False: reported, but judged only with --strict-maps (the Money lens map has no rollup path)
     run: Callable[[Callable], None] = field(repr=False, default=lambda timed: None)
+
+
+def _signal_counts(timed: Callable, name: str, side: str, w: Where, f: dict, keys: list[str]) -> None:
+    """store.ts `entitySignalCounts` (#104, signals.ts): per key of the tab's page, the distinct Signals of its Records in the set. The API
+    runs it once per tab, on the page's keys, when the query selects `signalCount` (MainScreen does); a `signal` in the filter narrows which count."""
+    if not keys:
+        return
+    column = SIDE_KEY[side]
+    params = [*w.params, keys]
+    rule = ""
+    if f.get("signal"):
+        params.append(f["signal"])
+        rule = " AND g.rule = %s"
+    timed(
+        name,
+        f"SELECT s.key, count(DISTINCT m.signal_id)::int AS n FROM (SELECT DISTINCT {column} AS key, record_code FROM seap.search WHERE {w.sql} AND {column} = ANY(%s::text[])) s "
+        f"JOIN seap.signal_member m ON m.record_code = s.record_code JOIN seap.signal g ON g.id = m.signal_id{rule} GROUP BY s.key",
+        params,
+    )
 
 
 def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUCKET_CAP) -> list[Task]:
@@ -264,14 +286,15 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                 f"FROM seap.rollup_entity WHERE side = %s AND {rwhere} GROUP BY entity_key ORDER BY sum(awarded) DESC NULLS LAST, entity_key LIMIT {PAGE} OFFSET 0"
             )
 
-            def run_rollup_entities(timed, n=name, s=sql, p=[side, *rparams]):
+            def run_rollup_entities(timed, n=name, s=sql, p=[side, *rparams], side=side):
                 ranked = timed(f"{n}_rank", s, p)
                 _hydrate_entities(timed, n, [row[0] for row in ranked])
+                _signal_counts(timed, f"{n}_signal_counts", side, w, f, [row[0] for row in ranked])
 
-            tasks.append(Task(name, "rollup", [f"{name}_rank", f"{name}_entities", f"{name}_placement"], rollup_statements=[f"{name}_rank"], run=run_rollup_entities))
+            tasks.append(Task(name, "mixed", [f"{name}_rank", f"{name}_entities", f"{name}_placement", f"{name}_signal_counts"], rollup_statements=[f"{name}_rank"], run=run_rollup_entities))
             continue
 
-        def run_entities(timed, key=key, name=name):
+        def run_entities(timed, key=key, name=name, side=side):
             card = timed(f"{name}_cardinality", f"SELECT pdb.agg('{{\"cardinality\":{{\"field\":\"{key}\"}}}}'::jsonb) FROM seap.search WHERE {w.sql}", w.params)
             estimate = round(float(card[0][0]["value"])) if card and card[0][0] else 0
             ranked = None
@@ -300,12 +323,16 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
                     [*w.params, keys],
                 )
                 _hydrate_entities(timed, name, keys)
+            _signal_counts(timed, f"{name}_signal_counts", side, w, f, keys)
 
-        tasks.append(Task(name, "scan", [f"{name}_cardinality", f"{name}_rank", f"{name}_stats", f"{name}_entities", f"{name}_placement"], alternatives=[f"{name}_terms"], run=run_entities))
+        tasks.append(Task(name, "scan", [f"{name}_cardinality", f"{name}_rank", f"{name}_stats", f"{name}_entities", f"{name}_placement", f"{name}_signal_counts"], alternatives=[f"{name}_terms"], run=run_entities))
 
     # the Records tab: the empty state's page is `store.records` on seap.record (its count is the total's); otherwise the count (from the
     # rollup total when chips-only) and the Top-K page on the index; either way the page is hydrated (entities, placement, source files)
+    area_share = bool(f.get("county")) and f.get("countySide") == "SUPPLIER"
+
     def run_records(timed):
+        codes: list = []
         if w.empty:
             rows = timed("records_page", f"SELECT authority_key, source_file_id, winners, {RECORD_COLUMNS} FROM seap.record ORDER BY {RECORD_TABLE_ORDER} LIMIT {PAGE} OFFSET 0", [])
         else:
@@ -327,11 +354,14 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
         files = sorted({r[1] for r in rows})
         if files:
             timed("records_files", "SELECT id, via, fetched_at FROM seap.source_file WHERE id = ANY(%s)", [files])
+        if codes and area_share:
+            # the in-area share of each Record of the page (#103, store.ts `searchRecords`): the same WHERE, summed per Record, only after a supplier-side county click
+            timed("records_area_share", f"SELECT record_code, sum(share_bani)::text AS share FROM seap.search WHERE {w.sql} AND record_code = ANY(%s) GROUP BY record_code", [*w.params, [r[0] for r in codes]])
 
     if w.empty:
         names, replaced = ["records_page", "records_entities", "records_placement", "records_files"], []
     else:
-        names = ["records_page", "records_hydrate", "records_entities", "records_placement", "records_files"]
+        names = ["records_page", "records_hydrate", "records_entities", "records_placement", "records_files", *(["records_area_share"] if area_share else [])]
         replaced = [] if plan else ["records_count"]
     # chips-only: the page itself is always the Top-K query on the index (store.ts `searchRecords`), so the task is "mixed", not "rollup"
     tasks.append(Task("records", ("rollup" if w.empty else "mixed") if plan else "scan", [*replaced, *names], run=run_records))
@@ -385,11 +415,12 @@ def summarize(values: list[float]) -> dict:
 
 def verdict(entry: dict, threshold_ms: float, *, strict_maps: bool = False) -> tuple[bool, str]:
     """Pass/fail of one query. A text query: the whole keystroke (every task). An empty or chips-only state: the rollup-served tasks,
-    which must really be served by the rollup (`entry["rollup_judged"]` names them); the map scan of those states is answered by the
+    which must really be served by the rollup (`entry["rollup_judged"]` names them; the entity tabs' Signal counts, a read of `seap.search`
+    by design, are part of the judged time); the map scan of those states is answered by the
     API's warmed cache and is judged only with `strict_maps` (it is always reported). The judged number is the p95 of the warm runs,
     and the cold run too. An API-mode entry may also carry `expect_cached` (the empty state and the 2-character prefixes), which
     must be answered by the warmed cache (`cached_ms`), and `scan_ok` (False: the first request scanned `seap.search` more than its
-    map and Top-K page need, or a request that had to miss the cache did not read the rollup tables)."""
+    map, entity tabs' Signal counts and Top-K page need, or a request that had to miss the cache did not read the rollup tables)."""
     state = entry["state"]
     judged = entry["rollup_wall_ms"] if (state in ("empty", "chips") and not strict_maps) else entry["wall_ms"]
     reasons: list[str] = []
@@ -540,9 +571,11 @@ def verify_rollup(conn, sqls: dict[str, tuple[str, list]], must_read_rollup: lis
 
 
 # What an uncached API request may do to `seap.search` in a state the rollup serves: the rollup takes the total, the Records count and the
-# entity tabs, what is left is the Money-lens map and, for the chips-only state, the Top-K Records page on the index. `pg_stat_user_tables`
+# entity tabs' ranking, what is left is the Money-lens map, the entity tabs' Signal counts (#104: they read `seap.search` for the page's keys)
+# and, for the chips-only state, the Top-K Records page on the index. `pg_stat_user_tables`
 # counts scan *nodes* (every index scan of a BitmapAnd, every parallel worker), not statements, so the allowance is measured, not a
-# constant: `calibrate_scans` runs the map and the Records page of the state in SQL mode first and counts what they do.
+# constant: `calibrate_scans` runs the map, the entity tabs (their rollup reads are not counted) and the Records page of the state in SQL mode first
+# and counts what they do.
 SCAN_STATES = ("empty", "chips")
 SCAN_TABLES = ("seap.search", "seap.rollup_cube", "seap.rollup_entity")
 STATS_LAG_S = 12.0  # an idle session reports its statistics to others after up to 10 s (PostgreSQL 18): wait that long after an API request
@@ -558,8 +591,8 @@ def scan_counts(conn) -> dict[str, int]:
 
 
 def calibrate_scans(conn, f: dict) -> int:
-    """The scans of `seap.search` the map and the Records page of filter `f` cost on this database, run once in SQL mode (the work an
-    API miss of an empty or chips-only state cannot avoid). Every statement forces the session's statistics out
+    """The scans of `seap.search` the map, the entity tabs' Signal counts and the Records page of filter `f` cost on this database, run once in
+    SQL mode (the work an API miss of an empty or chips-only state cannot avoid). Every statement forces the session's statistics out
     (`pg_stat_force_next_flush`) so they are visible at once to this connection and to others, with no wait."""
 
     def timed(name: str, sql: str, params: list):
@@ -572,7 +605,7 @@ def calibrate_scans(conn, f: dict) -> int:
 
     before = scan_counts(conn)
     for task in plan_tasks(f):
-        if task.name in ("map", "records"):
+        if task.name in ("map", "records") or task.name.startswith("entities_"):
             task.run(timed)
     return scan_counts(conn).get("seap.search", 0) - before.get("seap.search", 0)
 
@@ -683,7 +716,7 @@ def run_api(url: str, op_id: str, queries: list[dict], *, repetitions: int = 5, 
     state, the 2-character prefixes: `expect_cached`) must answer their *first* request within `cached_ms`, else the cache was not
     warmed yet (read `docker compose logs api | grep 'cache warmed'` before running this) and the entry fails. With `db_url`, the
     first request of an empty or chips-only state is also checked against the scan counters of the database (`judge_scans`): it must
-    not scan `seap.search` more than the map and the Top-K page cost in SQL mode (`calibrate_scans`, run before the request), and a
+    not scan `seap.search` more than the map, the entity tabs' Signal counts and the Top-K page cost in SQL mode (`calibrate_scans`, run before the request), and a
     request that must miss the cache (not `expect_cached`) must have read the rollup tables. Only the first API-mode run after a cache
     flush measures misses: to repeat it, restart the api and wait for `cache warmed`."""
     conn = None

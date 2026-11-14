@@ -10,8 +10,6 @@ export interface EntityTabNavCopy {
   /** The accessible name of the navigation, e.g. "Sections of this page". */
   label: string;
   tabs: Record<EntityPageView, string>;
-  /** The accessible name of the line that shows this view's address, e.g. "Address of this view". */
-  cite: string;
 }
 
 export interface EntityTabNavProps {
@@ -31,7 +29,7 @@ export interface EntityTabNavProps {
  */
 export function EntityTabNav({ view, hrefs, counts, onNavigate, copy }: EntityTabNavProps) {
   return (
-    <Box component="nav" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", columnGap: "28px", borderBottom: 1, borderColor: "divider" }}>
+    <Box component="nav" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", columnGap: 3.5, borderBottom: 1, borderColor: "divider" }}>
       {ENTITY_PAGE_VIEWS.map((v) => {
         const current = v === view;
         return (
@@ -43,7 +41,7 @@ export function EntityTabNav({ view, hrefs, counts, onNavigate, copy }: EntityTa
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
+              gap: 1,
               minHeight: size.tab,
               fontFamily: font.mono,
               fontSize: type.tab.size,

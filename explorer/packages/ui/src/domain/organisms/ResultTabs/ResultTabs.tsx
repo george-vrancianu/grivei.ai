@@ -48,7 +48,7 @@ export interface ResultTabsProps {
   showAllHref?: (tab: ResultTab) => string | undefined;
   /** Where an empty tab's link (`copy.emptyLink`) goes (the Coverage lens, built by the caller); absent = no link. */
   emptyHref?: string;
-  /** A plain click on a link goes here instead of loading the page; leave it out and the browser follows the links. */
+  /** A plain click on any link in the results (the pinned card, Record titles, entity names, the "n Signals" chip, the "show all" and empty-state links) goes here instead of loading the page; leave it out and the browser follows the links. */
   onNavigate?: (href: string) => void;
   locale: Locale;
   copy: ResultTabsCopy;
@@ -71,14 +71,14 @@ export function ResultTabs(props: ResultTabsProps) {
     return href === undefined ? undefined : { href, text: copy.showAll(counts[name].count, formatCount(counts[name].count, false, locale)) };
   };
   const rows = {
-    authorities: <EntityResultList rows={authorities.rows} role="authority" entityHref={entityHref} locale={locale} copy={copy.entityRow} />,
-    suppliers: <EntityResultList rows={suppliers.rows} role="supplier" entityHref={entityHref} locale={locale} copy={copy.entityRow} />,
-    records: <RecordResultList rows={records.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} />,
+    authorities: <EntityResultList rows={authorities.rows} role="authority" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} />,
+    suppliers: <EntityResultList rows={suppliers.rows} role="supplier" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} />,
+    records: <RecordResultList rows={records.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} />,
   };
 
   return (
     <Stack spacing={2}>
-      {goTo && <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} copy={copy.goTo} />}
+      {goTo && <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} onNavigate={onNavigate} copy={copy.goTo} />}
       <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label}>
         {RESULT_TABS.map((name) => (
           <Tab

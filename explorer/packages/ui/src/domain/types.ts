@@ -5,9 +5,9 @@ import type {
   MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
-/** Integer bani (1/100 RON) as a decimal string. */
 export type { RecordBadge };
 export type Total = TotalFieldsFragment;
+/** Integer bani (1/100 RON) as a decimal string. */
 export type Bani = Total["awarded"];
 export type EntityRef = EntityRefFragment;
 /** `SeapSearch.goTo`: an entity reference with the SEAP roles it has, which say which page to open. */

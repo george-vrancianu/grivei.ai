@@ -48,7 +48,7 @@ export function EntityHeader({ entity, role, roleHref, onNavigate, locale, copy 
         </Typography>
         <AnafStatusBadge status={entity.anafStatus} copy={copy.anafStatus} />
       </Stack>
-      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px" }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 1.5 }}>
         <RoleSwitch role={role} roles={entity.seap.roles} hrefFor={roleHref} onNavigate={onNavigate} copy={copy.roles} />
         <IdentityMarkers entity={entity} copy={copy.identity} />
         <PlacementLine entity={entity} copy={copy.placement} />

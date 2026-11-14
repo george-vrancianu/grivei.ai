@@ -1,5 +1,5 @@
 // Seam 3 for ticket #103: after a supplier-county click the Record rows reconcile with the Total: a multi-winner Record shows its
-// in-county share under the full value, labelled as the equal-share convention; a single-winner row, or any row on the authority side, shows none.
+// in-county share under the full value, labelled as the consortium share; a single-winner row, or any row on the authority side, shows none.
 // The supplier-side Brașov answer is the recorded one (CAN9800001~1: two winners, one in Brașov: 500.01 of 1,000.01 RON).
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

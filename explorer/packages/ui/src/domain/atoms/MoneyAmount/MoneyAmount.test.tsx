@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
-import { baniToRon, formatMoney } from "./index.ts";
-import { MoneyAmount } from "./index.ts";
+import { baniToRon, formatMoney, MoneyAmount } from "./index.ts";
 
 // Intl separates digits with a no-break space in some locales; compare as a reader would.
 const flat = (text: string) => text.replace(/[\s\u00a0\u202f]+/g, " ");

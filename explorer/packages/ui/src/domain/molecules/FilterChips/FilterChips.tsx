@@ -6,7 +6,7 @@ import { ActiveChips } from "./components/ActiveChips/index.ts";
 import { BadgeChips } from "./components/BadgeChips/index.ts";
 import { ChoiceChips } from "./components/ChoiceChips/index.ts";
 import { ProcedureChips } from "./components/ProcedureChips/index.ts";
-import { SignalsChip } from "./components/SignalsChip/index.ts";
+import { HasSignalsChip } from "./components/HasSignalsChip/index.ts";
 import { YearRange } from "./components/YearRange/index.ts";
 import type { FilterChipsCopy } from "./filterChips.types.ts";
 import {
@@ -72,7 +72,7 @@ export function FilterChips({ filter, onChange, procedureOptions, firstYear = FI
           selected={filter.channel}
           onChoose={(channel) => onChange(toggleChannel(filter, channel))}
         />
-        <SignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
+        <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
       </Stack>
       <ChoiceChips
         label={copy.valueBucket.group}

@@ -37,7 +37,7 @@ export function ProcedureTypes({ procedures, total, locale, copy }: ProcedureTyp
         <Stack component="ul" sx={listSx}>
           {procedures.map(({ value, total: amount }) => (
             <Stack key={value} component="li" spacing={0.75} sx={{ py: 1.25 }}>
-              <Box sx={{ display: "flex", gap: "2px 14px", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", rowGap: 0.25, columnGap: 1.75, flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between" }}>
                 <Typography>{value}</Typography>
                 <Typography variant="label" component="span" sx={{ fontVariantNumeric: "tabular-nums" }}>
                   <MoneyAmount bani={amount.awarded} locale={locale} />{" "}

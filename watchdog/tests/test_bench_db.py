@@ -47,7 +47,7 @@ def test_every_statement_of_every_state_runs_and_is_timed_on_a_rebuilt_graph(bui
                                        "records_hydrate", "records_entities", "records_files", "go_to"}
     assert "map_supplier_totals" not in text["statements"]  # one side of the Money lens per request
     assert text["wall_ms"]["n"] == 2 and text["wall_ms"]["cold"] > 0 and text["tasks"]["records"]["median"] > 0
-    assert by["empty"]["serving"] == {"total": "rollup", "map": "scan", "entities_authority": "rollup", "entities_supplier": "rollup", "records": "rollup", "data_through": "record"}
+    assert by["empty"]["serving"] == {"total": "rollup", "map": "scan", "entities_authority": "mixed", "entities_supplier": "mixed", "records": "rollup", "data_through": "record"}
     assert by["chips"]["serving"]["records"] == "mixed" and "data_through" in by["text"]["statements"]
     assert "total" in by["empty"]["statements"] and "records_count" not in by["empty"]["statements"] and "records_page" in by["empty"]["statements"]
     assert by["supplier county"]["statements"]["map_totals"] is not None and "map_totals" in by["supplier county"]["statements"]
@@ -74,7 +74,7 @@ def test_the_scan_counters_read_the_three_tables_the_budget_names(built):
 
 def test_the_scan_budget_of_a_real_chips_miss_is_calibrated_and_passes(built):
     """The counters count scan nodes, not statements (S-R2-1): the chips state's map + Top-K page cost more than 3 on the fixture, and the
-    budget is what `calibrate_scans` measured, so the statements the API runs on a miss (map, rollup total/entities, Top-K page) pass."""
+    budget is what `calibrate_scans` measured, so the statements the API runs on a miss (map, rollup total/entities, the entity tabs' Signal counts, Top-K page) pass."""
     f = {"channel": "CONTRACT", "from": "2023-01-01", "to": "2023-12-31"}
     with psycopg.connect(built) as conn:
         allowed = bench.calibrate_scans(conn, f)

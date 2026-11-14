@@ -38,7 +38,7 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
       <SectionHeading>{copy.heading}</SectionHeading>
       <Stack component="ul" sx={listSx}>
         {consortia.map((consortium, index) => (
-          <Box key={index} component="li" sx={{ py: 1.25, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 14px" }}>
+          <Box key={index} component="li" sx={{ py: 1.25, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", rowGap: 0.5, columnGap: 1.75 }}>
             <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
               {consortium.members.map((member, i) => (
                 <Box key={member.entity?.key ?? `person-${i}`} component="span">

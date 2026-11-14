@@ -34,5 +34,5 @@ export const map = {
 /** The layout limits of a page. */
 export const layout = tokensJson.layout;
 
-/** Coverage grid colours: harvested, the known-gap stripes, possibly incomplete, awaiting the bulk file. A state is never colour alone (glyph, stripe or border). */
+/** Coverage grid colours and sizes (cell, gap, font, swatch): harvested, the known-gap stripes, possibly incomplete, awaiting the bulk file. A state is never colour alone (glyph, stripe or border). */
 export const coverage = tokensJson.coverage;

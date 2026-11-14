@@ -16,7 +16,7 @@ export function ChannelTag({ channel, labels }: ChannelTagProps) {
   return (
     <Box
       component="span"
-      sx={{ border: `1px solid ${color.lineStrong}`, borderRadius: `${radius.chip}px`, px: 1, py: "2px", color: "text.primary", minWidth: 0, overflowWrap: "anywhere" }}
+      sx={{ border: `1px solid ${color.lineStrong}`, borderRadius: `${radius.chip}px`, px: 1, py: 0.25, color: "text.primary", minWidth: 0, overflowWrap: "anywhere" }}
     >
       {labels[channel]}
     </Box>

@@ -12,6 +12,8 @@ export interface PartyNameProps {
   /** Entity page URL for the winner's Entity; not called for a natural person. */
   entityHref: (entity: NonNullable<Party["entity"]>) => string;
   copy: PartyNameCopy;
+  /** A plain click on the winner's link goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /**
@@ -19,8 +21,8 @@ export interface PartyNameProps {
  * only the label shows, and `publishedName` is not read at all.
  * A party with neither an Entity nor a published name renders nothing.
  */
-export function PartyName({ party, entityHref, copy }: PartyNameProps) {
+export function PartyName({ party, entityHref, copy, onNavigate }: PartyNameProps) {
   if (party.naturalPerson) return <span>{copy.naturalPerson}</span>;
-  if (party.entity) return <EntityLink entity={party.entity} href={entityHref(party.entity)} copy={copy.entityLink} />;
+  if (party.entity) return <EntityLink entity={party.entity} href={entityHref(party.entity)} copy={copy.entityLink} onNavigate={onNavigate} />;
   return party.publishedName ? <span>{party.publishedName}</span> : null;
 }

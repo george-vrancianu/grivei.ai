@@ -14,13 +14,14 @@ export interface RecordPartiesProps {
   /** The entity page's URL for an authority or a winner, built by the caller. */
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   copy: RecordPartiesCopy;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /** "Authority: X · Winners: A, B": both sides link to their entity pages, with the name-only marker where it applies. */
-export function RecordParties({ record, entityHref, copy }: RecordPartiesProps) {
+export function RecordParties({ record, entityHref, copy, onNavigate }: RecordPartiesProps) {
   return (
     <Typography component="div" variant="body2" color="text.secondary">
-      {copy.authority}: <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={copy.party.entityLink} />
+      {copy.authority}: <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={copy.party.entityLink} onNavigate={onNavigate} />
       {record.winners.length > 0 && (
         <>
           {" · "}
@@ -28,7 +29,7 @@ export function RecordParties({ record, entityHref, copy }: RecordPartiesProps) 
           {record.winners.map((party, index) => (
             <span key={index}>
               {index > 0 && ", "}
-              <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} />
+              <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} onNavigate={onNavigate} />
             </span>
           ))}
         </>

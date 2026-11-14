@@ -10,11 +10,15 @@ export interface PerCountyNoteProps {
   /** Where the map's Coverage lens lives (the app supplies the locale path and the query). */
   lensHref: string;
   onNavigate?: ((href: string) => void) | undefined;
+  /** The coverage Source's name as published. */
+  source: string;
+  /** The first year of the Source's grid. */
+  since: string;
   copy: CoveragePageLayoutCopy;
 }
 
 /** The "N of M" block: how each county reads on the Coverage lens, why it is never a percentage, and the link to the lens. */
-export function PerCountyNote({ lensHref, onNavigate, copy }: PerCountyNoteProps) {
+export function PerCountyNote({ lensHref, onNavigate, source, since, copy }: PerCountyNoteProps) {
   const id = useId();
   const { perCounty } = copy;
   return (
@@ -22,7 +26,7 @@ export function PerCountyNote({ lensHref, onNavigate, copy }: PerCountyNoteProps
       <Typography id={id} variant="label" component="h2" color="primary.main" sx={{ fontWeight: 500 }}>
         {perCounty.heading}
       </Typography>
-      <Typography sx={{ maxWidth: layout.titleMaxWidth }}>{perCounty.body}</Typography>
+      <Typography sx={{ maxWidth: layout.titleMaxWidth }}>{perCounty.body(source, since)}</Typography>
       <Link href={lensHref} onClick={followLink(lensHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
         {perCounty.lensLink}
       </Link>

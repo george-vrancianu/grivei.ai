@@ -48,7 +48,7 @@ export function EntityOverview({ overview, aliases, role, entityHref, recordHref
   return (
     <Stack spacing={3}>
       <HeadlineNumbers overview={overview} locale={locale} copy={copy.headline} methodologyHref={methodologyHref} suspectHref={suspectHref} />
-      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "24px 32px" }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 3, columnGap: 4 }}>
         <Stack spacing={3.5} sx={{ flex: "1.2 1 480px", minWidth: 0 }}>
           <SignalsSection count={overview.signals.count} locale={locale} copy={copy.signals} toolbar={signalsToolbar}>
             {signals}

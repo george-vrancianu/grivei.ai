@@ -13,12 +13,12 @@ function show(count: number, locale: Locale = "en") {
 describe("the Signals count chip", () => {
   it("is a link to the entity's Signals section, named by the count and the entity", () => {
     show(3);
-    expect(screen.getByRole("link", { name: "3 Signals , Alfa SRL" })).toHaveAttribute("href", "/explore/supplier/2000007#signals");
+    expect(screen.getByRole("link", { name: "3 Signals, Alfa SRL" })).toHaveAttribute("href", "/explore/supplier/2000007#signals");
   });
 
   it("uses the singular for one Signal", () => {
     show(1);
-    expect(screen.getByRole("link", { name: "1 Signal , Alfa SRL" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "1 Signal, Alfa SRL" })).toBeVisible();
   });
 
   it.each([
@@ -30,7 +30,7 @@ describe("the Signals count chip", () => {
     [1200, "1.200 de Semnale"],
   ])("reads %i in Romanian as %s", (n, text) => {
     show(n, "ro");
-    expect(screen.getByRole("link", { name: `${text} , Alfa SRL` })).toBeVisible();
+    expect(screen.getByRole("link", { name: `${text}, Alfa SRL` })).toBeVisible();
   });
 
   it("carries the amber ring and no accusing word", () => {
