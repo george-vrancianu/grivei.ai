@@ -2533,7 +2533,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         mandate("POPESCU ION", "PARTIDUL SOCIAL DEMOCRAT", "2020-09-27", "2020-10-27", "2024-09-27"),
         mandate("POPESCU ION", "PARTIDUL NAȚIONAL LIBERAL", "2024-06-09", "2024-10-27", null), // the same person, another list: never a "current party"
       ]);
-      expect(brasov.gaps).toEqual([{ startDate: "2024-09-27", endDate: "2024-10-27", reason: "HANDOVER_WINDOW" }]);
+      expect(brasov.gaps).toEqual([{ startDate: "2024-09-27", endDate: "2024-10-27", kind: "HANDOVER_WINDOW" }]);
       expect(brasov.via).toBeNull();
       // a partial election: the old mandate cut 90 days before it, an interim gap, the winner from partial counts of a one-off file with its stated date
       const rasnov = entityOf("party-partial-election")!.leadership!;
@@ -2542,11 +2542,11 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         ["PARTIDUL SOCIAL DEMOCRAT", "2024-10-27", "2025-09-08", "FINAL_MINUTES", "2024-06-09"],
         ["PARTIDUL NAȚIONAL LIBERAL", "2026-01-06", null, "PARTIAL_MINUTES", "2025-12-09"],
       ]);
-      expect(rasnov.gaps.map((g) => [g.reason, g.startDate, g.endDate])).toEqual([["HANDOVER_WINDOW", "2024-09-27", "2024-10-27"], ["INTERIM", "2025-09-08", "2026-01-06"]]);
+      expect(rasnov.gaps.map((g) => [g.kind, g.startDate, g.endDate])).toEqual([["HANDOVER_WINDOW", "2024-09-27", "2024-10-27"], ["INTERIM", "2025-09-08", "2026-01-06"]]);
       // a repeat round replaces a September tie; a UAT missing from the 2024 minutes has a mandate without results: a gap, never a guess
       const sinca = entityOf("party-repeat-round-and-no-results")!.leadership!;
       expect(sinca.mandates.map((m) => [m.leaderName, m.basis, m.electionDate, m.startDate])).toEqual([["GHEORGHE TUDOR", "REPEAT_ROUND", "2020-10-11", "2020-11-10"]]);
-      expect(sinca.gaps.map((g) => g.reason)).toEqual(["HANDOVER_WINDOW", "NO_RESULTS"]);
+      expect(sinca.gaps.map((g) => g.kind)).toEqual(["HANDOVER_WINDOW", "NO_RESULTS"]);
     });
 
     it("gives a subordinate body its authority's Leadership list with the basis of the tie, and a school, a supplier and every other entity none (#180)", async () => {
@@ -2569,6 +2569,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const sources = (r.body.data as MainScreenQuery).sources;
       expect(sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
       expect(sources.map((x) => x.id)).toEqual(["SEAP", "ONRC", "ANI", "MFINANTE", "JUST"]); // held first, then the planned ones: ONRC once
+    });
+
+    it("states AEP's one-off file's data-through date for the methodology page once held (#180)", async () => {
+      const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
+      const held = await ask(DBS.party, op.sha256, {});
+      expect((held.body.data as { referenceSources: { id: string; dataThrough: string | null }[] }).referenceSources.find((r) => r.id === "AEP")!.dataThrough).toBe("2025-12-09");
     });
 
     it("returns the ONRC section for a SEAP supplier, an authority and an organisation that exists only in ONRC (#175)", () => {
@@ -2688,10 +2694,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
       const held = await ask(DBS.overview, op.sha256, {});
       expect(held.body.errors).toBeUndefined();
-      expect(held.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" }] });
+      expect(held.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" }, { id: "AEP", name: "AEP", dataThrough: null, url: null }] });
       expect(validateResponse(schema, parse(op.document), held.body.data, {})).toEqual([]);
       const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds no AMEPIP list
-      expect(none.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }] });
+      expect(none.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }, { id: "AEP", name: "AEP", dataThrough: null, url: null }] });
     });
   });
 

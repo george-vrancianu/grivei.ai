@@ -1,5 +1,5 @@
 import type {
-  PublicEnterpriseSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -92,6 +92,8 @@ export interface Copy {
     };
     /** The "public enterprise (AMEPIP)" section on the Overview: the mark and its basis (#183). */
     publicEnterprise: PublicEnterpriseSectionCopy;
+    /** The Leadership list on an authority's (or a subordinate body's) Overview (#180). */
+    leadership: LeadershipSectionCopy;
     /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
     recordsNoRole: { authority: string; supplier: string };
     /** The page links under the Overview's Signals when they run over one page. */

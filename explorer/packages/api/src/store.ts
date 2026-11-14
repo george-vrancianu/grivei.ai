@@ -51,7 +51,7 @@ export interface MandateRow {
 export interface LeadershipGapRow {
   startDate: string;
   endDate: string | null;
-  reason: "HANDOVER_WINDOW" | "INTERIM" | "NO_RESULTS";
+  kind: "HANDOVER_WINDOW" | "INTERIM" | "NO_RESULTS";
 }
 
 /** For a subordinate body: the authority whose Leadership list it shows and the MF snapshot the tie rests on (`aep.subordinate`). */
@@ -1006,7 +1006,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
            FROM aep.mandate WHERE area = $1 ORDER BY start_date`,
         [area],
       );
-      const gaps = await pool.query(`SELECT start_date::text AS "startDate", end_date::text AS "endDate", reason FROM aep.gap WHERE area = $1 ORDER BY start_date`, [area]);
+      const gaps = await pool.query(`SELECT start_date::text AS "startDate", end_date::text AS "endDate", reason AS kind FROM aep.gap WHERE area = $1 ORDER BY start_date`, [area]);
       return { mandates: mandates.rows as MandateRow[], gaps: gaps.rows as LeadershipGapRow[], via };
     },
     async recordParty(code) {
@@ -1029,7 +1029,11 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async referenceSources() {
       const { rows } = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
-      return [{ id: "AMEPIP", name: "AMEPIP", dataThrough: (rows[0]?.d as string | undefined) ?? null, url: (rows[0]?.url as string | null | undefined) ?? null }];
+      const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`); // the one-off file's stated date (#180)
+      return [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: (rows[0]?.d as string | undefined) ?? null, url: (rows[0]?.url as string | null | undefined) ?? null },
+        { id: "AEP", name: "AEP", dataThrough: (aep.rows[0]?.d as string | undefined) ?? null, url: null },
+      ];
     },
     async counties() {
       const { rows } = await pool.query(`SELECT iso, name FROM core.county ORDER BY iso`);

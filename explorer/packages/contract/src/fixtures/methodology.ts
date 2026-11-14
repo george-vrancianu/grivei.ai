@@ -33,14 +33,15 @@ export const methodologyBaseRates: FixtureSet<MethodologyBaseRatesQuery, Methodo
 export const methodologyReferenceSources: FixtureSet<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables> = [
   {
     name: "amepip-held", kind: "typical",
-    description: "AMEPIP's list of public enterprises is held: the day it was published is its data-through date",
+    description: "AMEPIP's list of public enterprises is held: the day it was published is its data-through date; AEP's one-off 2025 file states its own",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" }] },
+    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-nefinanciari-si-de-guvernanta-corporativa" },
+      { id: "AEP", name: "AEP", dataThrough: "2025-12-09", url: null }] },
   },
   {
     name: "amepip-not-held", kind: "empty",
     description: "no AMEPIP list has been fetched yet (a graph built before the first fetch): no data-through date",
     variables: {},
-    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }] },
+    data: { referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }, { id: "AEP", name: "AEP", dataThrough: null, url: null }] },
   },
 ];

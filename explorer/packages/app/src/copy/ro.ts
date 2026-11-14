@@ -297,6 +297,20 @@ export const ro: Copy = {
       checkIn: (source) => `Verifică în ${source}`,
       noPublicPage: (source) => `${source} nu are încă o pagină publică stabilă pentru această înregistrare.`,
     },
+    party: {
+      heading: "Partid",
+      note: "Lista mandatului în funcție la data atribuirii, așa cum a fost înscrisă la alegeri. Liderul își poate fi schimbat partidul de atunci.",
+      via: (authority, snapshot) => `Prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
+      mandateBasis: {
+        independent: "Independent (nu este partid)",
+        alliance: (members) => `alianță; partide membre: ${members.join(", ")}`,
+        basis: {
+          finalMinutes: (election) => `procesele-verbale finale AEP, alegerile din ${election}`,
+          repeatRound: (election) => `turul de repetare AEP din ${election}`,
+          partialMinutes: (election, through) => `alegeri parțiale AEP din ${election}; rezultate parțiale dintr-un fișier unic (copia Code for Romania), date până la ${through}`,
+        },
+      },
+    },
   },
   entityPage: {
     layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
@@ -453,6 +467,28 @@ export const ro: Copy = {
       years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
       fetched: (fetched, license) => `Preluată la ${fetched} de pe data.gov.ro${license ? `, licența ${license}` : ""}`,
       link: "Tabelele de indicatori AMEPIP pe data.gov.ro",
+    },
+    leadership: {
+      heading: "Lista conducerii",
+      caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Un lider își poate fi schimbat partidul de atunci: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
+      inForce: "în funcție",
+      period: (from, to) => `${from} – ${to}`,
+      gapHeading: "Goluri (fără mandat, niciodată presupuse)",
+      gaps: {
+        HANDOVER_WINDOW: "Fereastra de predare: mandatele anterioare au încetat la 27 septembrie 2024, iar noile jurăminte au urmat (AEP nu publică date de depunere a jurământului pe UAT)",
+        INTERIM: "Lider interimar după o vacanță, până la jurământul câștigătorului alegerilor parțiale",
+        NO_RESULTS: "Mandat fără rezultate: procesele-verbale AEP nu dau un câștigător pentru această autoritate",
+      },
+      via: (authority, snapshot) => `Afișată prin ${authority}, ordonator principal de credite, lista MF din ${snapshot}; relație de finanțare, legătură actuală.`,
+      mandateBasis: {
+        independent: "Independent (nu este partid)",
+        alliance: (members) => `alianță; partide membre: ${members.join(", ")}`,
+        basis: {
+          finalMinutes: (election) => `procesele-verbale finale AEP, alegerile din ${election}`,
+          repeatRound: (election) => `turul de repetare AEP din ${election}`,
+          partialMinutes: (election, through) => `alegeri parțiale AEP din ${election}; rezultate parțiale dintr-un fișier unic (copia Code for Romania), date până la ${through}`,
+        },
+      },
     },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {

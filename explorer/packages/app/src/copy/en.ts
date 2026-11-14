@@ -292,6 +292,20 @@ export const en: Copy = {
       checkIn: (source) => `Check in ${source}`,
       noPublicPage: (source) => `${source} has no stable public page for this Record yet.`,
     },
+    party: {
+      heading: "Party",
+      note: "The list of the mandate in force on the award date, as registered at the election. The leader may have switched party since.",
+      via: (authority, snapshot) => `Through ${authority}, principal credit holder, MF list snapshot ${snapshot}; funding relation, current tie.`,
+      mandateBasis: {
+        independent: "Independent (not a party)",
+        alliance: (members) => `alliance; member parties: ${members.join(", ")}`,
+        basis: {
+          finalMinutes: (election) => `AEP final minutes, election of ${election}`,
+          repeatRound: (election) => `AEP repeat round of ${election}`,
+          partialMinutes: (election, through) => `AEP partial election of ${election}; partial counts from a one-off file (Code for Romania's backup), data through ${through}`,
+        },
+      },
+    },
   },
   entityPage: {
     layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
@@ -448,6 +462,28 @@ export const en: Copy = {
       years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
       fetched: (fetched, license) => `Fetched ${fetched} from data.gov.ro${license ? `, licence ${license}` : ""}`,
       link: "AMEPIP's indicator tables on data.gov.ro",
+    },
+    leadership: {
+      heading: "Leadership list",
+      caveat: "Each list is the one the leader was elected on, as registered at that election. A leader may have switched party since: this is not current party membership. Leaders are never linked to a person page.",
+      inForce: "in force",
+      period: (from, to) => `${from} – ${to}`,
+      gapHeading: "Gaps (no Mandate, never guessed)",
+      gaps: {
+        HANDOVER_WINDOW: "Handover window: the previous mandates ended on 27 September 2024 and the new oaths followed (AEP publishes no per-UAT oath dates)",
+        INTERIM: "Interim leader after a vacancy, until the partial election winner's oath",
+        NO_RESULTS: "Mandate without results: AEP's minutes give no winner for this authority",
+      },
+      via: (authority, snapshot) => `Shown through ${authority}, principal credit holder, MF list snapshot ${snapshot}; funding relation, current tie.`,
+      mandateBasis: {
+        independent: "Independent (not a party)",
+        alliance: (members) => `alliance; member parties: ${members.join(", ")}`,
+        basis: {
+          finalMinutes: (election) => `AEP final minutes, election of ${election}`,
+          repeatRound: (election) => `AEP repeat round of ${election}`,
+          partialMinutes: (election, through) => `AEP partial election of ${election}; partial counts from a one-off file (Code for Romania's backup), data through ${through}`,
+        },
+      },
     },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {

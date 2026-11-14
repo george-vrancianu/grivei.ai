@@ -30,6 +30,7 @@ import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
 import type { OnrcSectionCopy } from "../organisms/OnrcSection/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
+import { partyCopy } from "./leadership.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
@@ -107,6 +108,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       checkIn: (source) => `Check in ${source}`,
       noPublicPage: (source) => `${source} has no stable public page for this Record yet.`,
     },
+    party: partyCopy.en,
   },
   ro: {
     heading: {
@@ -166,6 +168,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       checkIn: (source) => `Verifică în ${source}`,
       noPublicPage: (source) => `${source} nu are încă o pagină publică stabilă pentru această înregistrare.`,
     },
+    party: partyCopy.ro,
   },
 };
 

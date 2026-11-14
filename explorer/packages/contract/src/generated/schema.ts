@@ -277,11 +277,11 @@ export type Leadership = {
 export type LeadershipGap = {
   __typename?: 'LeadershipGap';
   endDate: Maybe<Scalars['Date']['output']>;
-  reason: LeadershipGapReason;
+  kind: LeadershipGapKind;
   startDate: Scalars['Date']['output'];
 };
 
-export type LeadershipGapReason =
+export type LeadershipGapKind =
   | 'HANDOVER_WINDOW'
   | 'INTERIM'
   | 'NO_RESULTS';
@@ -1180,7 +1180,7 @@ export type ResolversTypes = {
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Leadership: ResolverTypeWrapper<Leadership>;
   LeadershipGap: ResolverTypeWrapper<LeadershipGap>;
-  LeadershipGapReason: LeadershipGapReason;
+  LeadershipGapKind: LeadershipGapKind;
   LeadershipVia: ResolverTypeWrapper<LeadershipVia>;
   Mandate: ResolverTypeWrapper<Mandate>;
   MandateBasis: MandateBasis;
@@ -1483,7 +1483,7 @@ export type LeadershipResolvers<ContextType = any, ParentType extends ResolversP
 
 export type LeadershipGapResolvers<ContextType = any, ParentType extends ResolversParentTypes['LeadershipGap'] = ResolversParentTypes['LeadershipGap']> = {
   endDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  reason?: Resolver<ResolversTypes['LeadershipGapReason'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['LeadershipGapKind'], ParentType, ContextType>;
   startDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
 };
 

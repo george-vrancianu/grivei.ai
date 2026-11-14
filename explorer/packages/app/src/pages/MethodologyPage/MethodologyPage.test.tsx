@@ -73,7 +73,7 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
 
   it("covers every section the ticket names", () => {
     expect(Object.keys(METHODOLOGY_ANCHORS).sort()).toEqual(
-      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
+      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "partyAndLeadership", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
     );
   });
 

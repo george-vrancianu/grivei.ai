@@ -26,3 +26,5 @@ export * from "./Panel/index.ts";
 export * from "./CopyLinkButton/index.ts";
 export * from "./CiteLine/index.ts";
 export * from "./OrderSelect/index.ts";
+export * from "./MandateBasisLine/index.ts";
+export * from "./ViaSentence/index.ts";

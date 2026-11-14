@@ -41,6 +41,8 @@ export type MethodologyBaseRates = { status: "loading" | "error" } | { status: "
 /** What the `MethodologyReferenceSources` query gives the page: the day AMEPIP's held list was published (null when none is held or the query failed: the prose stands alone). */
 export interface MethodologyReferenceDates {
   publicEnterprises: string | null;
+  /** The day AEP's one-off partial-election file runs through (#180). */
+  partyAndLeadership: string | null;
 }
 
 export interface MethodologyPageProps {
@@ -99,6 +101,9 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
           <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]}>
             {key === "publicEnterprises" && referenceDates?.publicEnterprises && (
               <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.publicEnterprises, locale, "long"))}</Typography>
+            )}
+            {key === "partyAndLeadership" && referenceDates?.partyAndLeadership && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.partyAndLeadership, locale, "long"))}</Typography>
             )}
           </MethodologySection>
         ))}

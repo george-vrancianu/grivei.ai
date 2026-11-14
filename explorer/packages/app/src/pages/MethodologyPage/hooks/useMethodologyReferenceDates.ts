@@ -6,14 +6,14 @@ import { MethodologyReferenceSources } from "../../../graphql/operations.ts";
 /** Runs `MethodologyReferenceSources` once: the day AMEPIP's held list was published. Until it answers, and when it cannot, the date is absent and the prose stands alone. */
 export function useMethodologyReferenceDates(): MethodologyReferenceDates {
   const client = useClient();
-  const [dates, setDates] = useState<MethodologyReferenceDates>({ publicEnterprises: null });
+  const [dates, setDates] = useState<MethodologyReferenceDates>({ publicEnterprises: null, partyAndLeadership: null });
 
   useEffect(() => {
     const controller = new AbortController();
     client
       .query(MethodologyReferenceSources, {}, { signal: controller.signal })
       .then((data) => {
-        if (!controller.signal.aborted) setDates({ publicEnterprises: data.referenceSources.find((s) => s.id === "AMEPIP")?.dataThrough ?? null });
+        if (!controller.signal.aborted) setDates({ publicEnterprises: data.referenceSources.find((s) => s.id === "AMEPIP")?.dataThrough ?? null, partyAndLeadership: data.referenceSources.find((s) => s.id === "AEP")?.dataThrough ?? null });
       })
       .catch(() => undefined);
     return () => controller.abort();

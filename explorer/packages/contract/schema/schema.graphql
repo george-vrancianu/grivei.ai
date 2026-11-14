@@ -468,10 +468,10 @@ enum MandateBasis { FINAL_MINUTES REPEAT_ROUND PARTIAL_MINUTES }
 type LeadershipGap {
   startDate: Date!
   endDate: Date
-  reason: LeadershipGapReason!
+  kind: LeadershipGapKind!
 }
 
-enum LeadershipGapReason { HANDOVER_WINDOW INTERIM NO_RESULTS }
+enum LeadershipGapKind { HANDOVER_WINDOW INTERIM NO_RESULTS }
 
 "The authority a subordinate body takes its Leadership list and Party from, and the basis: principal credit holder in MF's list of public entities, as every held snapshot says."
 type LeadershipVia {

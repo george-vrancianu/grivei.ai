@@ -57,6 +57,8 @@ describe("operations", () => {
       // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
+      // AEP's mandates (#180): the leader's name and the list as registered (source data), an alliance's member parties, the authority's display name
+      "Mandate.leaderName", "Mandate.list", "Mandate.memberParties", "LeadershipVia.authorityName", "RecordParty.list", "RecordParty.memberParties",
     ]);
     const found: string[] = [];
     for (const type of Object.values(schema.getTypeMap())) {
