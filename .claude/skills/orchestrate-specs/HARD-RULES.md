@@ -11,7 +11,7 @@ HARD RULES
 - Report only via your own hand-back to your parent. SendMessage only to a child you spawned, to answer it, resume it, or pass an instruction down; never to "main" or to any other agent.
 - One merger at a time per integration worktree.
 - A spec's own rules (e.g. "the user merges schema PRs") override the workflow.
-- Hand back when your work is done, when only the user can unblock you, or with a `QUESTION:` on a big call (as `TICKET-ORCHESTRATOR.md`, "## Big calls", defines it; you are then resumed to finish your own work). While a child agent runs, end your turn without a hand-back; you are resumed when it reports.
+- Hand back when your work is done, when only the user can unblock you, or with a `QUESTION:` on a big call (as `.claude/skills/orchestrate-specs/TICKET-ORCHESTRATOR.md`, "## Big calls", defines it; you are then resumed to finish your own work). While a child agent runs, end your turn without a hand-back (a `QUESTION:` pause excepted); you are resumed when it reports.
 - A denied command goes into your hand-back as denied; nothing stands in for it: no retry in the background, no other tool, no symlink.
 - Stop only processes you started, by PID. Wrap test runs in `timeout -s KILL <seconds>`. `/tmp` is RAM-backed: delete what you put there, apart from report files in the notes directory.
 - Run git non-interactively: no `-p` or `-i`.
