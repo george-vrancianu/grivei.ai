@@ -24,7 +24,7 @@ You are an opus spec orchestrator for spec #<spec>. You manage agents and git bo
 ## Final PR
 
 1. Push the integration branch and open the PR. Body per the `pr` skill, closing the spec and its tickets.
-2. Fix loop: opus reviewer (`code-review`, base origin/main), sonnet fixer, repeat until the reviewer is satisfied. Use a fresh sonnet fixer when the previous one is above ~150K context.
+2. Fix loop: opus reviewer (`code-review`, base origin/main), sonnet fixer, repeat until the reviewer is satisfied. Use a fresh sonnet fixer when the previous one is above ~150K context. Fixer briefs point at `TICKET-ORCHESTRATOR.md`, "## Quiet test output".
 3. `git fetch` and merge origin/main. If there were conflicts, an opus reviewer checks the resolution.
 4. Wait for CI to pass. A normal run takes 8 to 14 minutes. If a run is still queued after 10 minutes, or unfinished 30 minutes after it was created, stop waiting and put it in your hand-back (run URL, status, minutes waited) so the user can decide, via your parent.
 5. `gh pr merge --merge`.
