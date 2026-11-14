@@ -108,6 +108,14 @@ export const methodologyRo: MethodologyPageCopy = {
         "Lângă cifre, pagina arată atribuirile aceluiași an calendaristic și ponderea lor în cifra de afaceri a anului. Este context, niciodată un Semnal, și nu se adună niciodată la valoarea atribuită: situațiile unei societăți și atribuirile ei sunt măsuri diferite și rămân separate. Atribuirile sunt valoarea atribuită a furnizorului, numărată după aceeași regulă ca orice alt total, după anul datei atribuirii. Valoarea întreagă a unui contract se numără în anul atribuirii, oricâți ani ar dura, așa că ponderea poate depăși 100% și nu este o pondere din veniturile societății. O cifră de afaceri necompletată sau zero nu dă nicio pondere.",
       ],
     },
+    firmDonations: {
+      heading: "Donații ale firmelor (BaniPartide)",
+      paragraphs: [
+        "Pagina unei organizații listează donațiile și împrumuturile pe care companiile le-au făcut partidelor, când CUI-ul companiei apare în tabelul BaniPartide cu donatorii-firme. BaniPartide este o platformă a Expert Forum, publicată sub licența CC Attribution 4.0. Tabelul este întocmit din publicările anuale ale partidelor din Monitorul Oficial și de pe paginile Autorității Electorale Permanente (AEP). BaniPartide nu dă o referință la raport pentru fiecare rând, așa că fiecare linie citează BaniPartide și, prin metodologia acesteia, acele publicări. Potrivirea se face doar după CUI, niciodată după nume. Partidul apare exact cum îl publică BaniPartide: nu este potrivit cu un Partid, iar o donație a unei firme nu este niciodată un Partid.",
+        "Exploratorul încarcă tabelul o singură dată dintr-o copie arhivată și verifică doar din când în când dacă BaniPartide a publicat unul mai nou, așa că donațiile recente pot lipsi: pagina spune care este cel mai recent an acoperit de tabel. Un rând este trecut sub un an. O dată apare doar unde celula publicată de BaniPartide conține o singură dată; altfel celula este arătată așa cum a fost publicată. Sunt încărcate doar companiile. Donatorii persoane fizice nu sunt niciodată încărcați, afișați sau numărați aici, iar un comerciant persoană fizică (PFA, II sau IF) nu apare ca donator.",
+        "Pe pagina unui furnizor, „acest furnizor este și donator-firmă” este context, niciodată un Semnal: o companie care câștigă contracte publice și donează unui partid nu face, prin aceasta, ceva greșit. O donație este o măsură diferită de valoarea atribuită, așa că suma ei nu se adună niciodată la aceasta, iar donațiile nu se adună niciodată între ele.",
+      ],
+    },
   },
   signals: {
     heading: "Regulile Semnalelor",
@@ -164,6 +172,7 @@ export const methodologyRo: MethodologyPageCopy = {
   },
   referenceDataThrough: (date) => `Date până la ${date}`,
   referenceFiscalYearThrough: (year) => `Date până la anul fiscal ${year}`,
+  referenceYearThrough: (year) => `Date până în ${year}`,
   baseRate: {
     windowLabel: "Fereastra de timp",
     range: (from, to) => `${from} – ${to}`,

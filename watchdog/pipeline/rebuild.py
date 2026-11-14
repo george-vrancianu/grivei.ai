@@ -51,6 +51,7 @@ from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities,
 from .amepip.build import AmepipSummary, build_amepip
 from .aep.build import AepSummary, build_aep
 from .financials.build import FinancialsSummary, build_financials
+from .banipartide.build import DonationsSummary, build_donations
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
@@ -66,6 +67,7 @@ WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
 AEP_SQL = SQL_DIR / "aep_schema.sql"
 FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
+DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
 
 
 @dataclass
@@ -84,6 +86,7 @@ class RebuildSummary:
     amepip: AmepipSummary | None = None  # the AMEPIP public-enterprise list step (#183)
     aep: AepSummary | None = None  # AEP's Mandates, Leadership list and Party per Record (#180)
     financials: FinancialsSummary | None = None  # the MF annual financial statements step (#179)
+    donations: DonationsSummary | None = None  # the BaniPartide firm donations step (#182)
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
@@ -111,6 +114,8 @@ class RebuildSummary:
             out.append(self.aep.line())
         if self.financials is not None:
             out.append(self.financials.line())
+        if self.donations is not None:
+            out.append(self.donations.line())
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
@@ -487,6 +492,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 cur.execute(AMEPIP_SQL.read_text(encoding="utf-8"))  # a Reference source's own tables (#183): not in the registry
                 cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
                 cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
+                cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
             with step("anaf-identities"):
                 anaf_names = load_anaf(cur, archive, summary)
             with step("onrc"):
@@ -548,6 +554,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 summary.aep = build_aep(cur, archive, placement_dir)  # #180: Mandates, Leadership gaps, subordinate bodies, Party per Record (after placement and the MF list)
             with step("financials"):
                 summary.financials = build_financials(cur, archive)  # #179: MF's annual statements, one row per CUI per fiscal year; read beside the awards, never added to them
+            with step("donations"):
+                summary.donations = build_donations(cur, archive)  # #182: BaniPartide's firm donors and lenders by CUI; context beside an entity, never a Party or a Signal
             with step("coverage"):
                 cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
                 summary.coverage = flagged_cells(cells)

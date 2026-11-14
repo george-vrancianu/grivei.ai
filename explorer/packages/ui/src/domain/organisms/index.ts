@@ -17,5 +17,6 @@ export * from "./CoverageGrid/index.ts";
 export * from "./CoverageGridCompact/index.ts";
 export * from "./MethodologyPage/index.ts";
 export * from "./FinancialStatementsSection/index.ts";
+export * from "./FirmDonationsSection/index.ts";
 export * from "./PublicEnterpriseSection/index.ts";
 export * from "./LeadershipSection/index.ts";

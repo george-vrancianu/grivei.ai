@@ -47,6 +47,7 @@ const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // ev
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
 const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
+const banipartideArchive = join(watchdog, "tests/fixtures/archive-banipartide"); // BaniPartide's firm-donor table: a donation, a loan with two dates, three rows that are not firms (individuals), a donor with no entity; copied onto archive-overview (#182)
 const amepipArchive = join(watchdog, "tests/fixtures/archive-amepip"); // AMEPIP's list of public enterprises (CUIs of two roles-world entities, two that no Record names), copied onto archive-overview (#183)
 const aepArchive = join(watchdog, "tests/fixtures/archive-aep"); // AEP's minutes (2020, 2024, the repeat round, the 2025 partial election), two MF snapshots with principal credit holders and the Records that meet the mandates; overlaid on archive-mf (#180)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
@@ -2498,6 +2499,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true });
       cpSync(amepipArchive, join(scratch, "archive-overview"), { recursive: true }); // AMEPIP's list: a Reference source beside the roles world's SEAP units (#183)
       cpSync(financialsArchive, join(scratch, "archive-overview"), { recursive: true }); // MF's annual financial statements: another Reference source (#179)
+      cpSync(banipartideArchive, join(scratch, "archive-overview"), { recursive: true }); // BaniPartide's firm donors and lenders: another Reference source (#182)
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
@@ -2706,6 +2708,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" },
         { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" }, // the latest fiscal year held
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: "2024-12-31", fiscalYear: 2024, url: "https://www.banipartide.ro/donatori-persoane-juridice.html" }, // the newest year any firm row is filed under (#182)
       ] });
       expect(validateResponse(schema, parse(op.document), held.body.data, {})).toEqual([]);
       const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds neither
@@ -2713,6 +2716,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
         { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
         { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: null, fiscalYear: null, url: null },
       ] });
     });
 
@@ -2795,6 +2799,62 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         } finally {
           client.release();
         }
+      });
+    });
+
+    describe("BaniPartide's firm donations on the entity page (#182)", () => {
+      const RON = (n: number) => String(n * 100);
+      const donationsOf = (name: string) => entityOf(name)!.donations!;
+      const source = {
+        datasetUrl: "https://www.banipartide.ro/donatori-persoane-juridice.html", license: "CC Attribution 4.0 License", licenseUrl: "http://creativecommons.org/licenses/by/4.0/",
+        publisher: "Expert Forum", publisherUrl: "https://expertforum.ro/tag/finantare-politica/", underlyingUrl: "https://www.banipartide.ro/metodologie.html", fetchedAt: "2026-11-14T09:00:00Z",
+      };
+
+      it("lists a supplier's donation and loan newest first with the party as published, the date only where one is readable, and the citation", () => {
+        const d = donationsOf("supplier"); // ALFA DEMO SRL: a supplier that is also a firm donor
+        expect(entityOf("supplier")!.seap.role).not.toBeNull(); // the supplier page carries the donor context beside its awards
+        expect([d.dataThroughYear, d.donationCount, d.loanCount]).toEqual([2024, 1, 1]);
+        expect(d.items).toEqual([
+          { kind: "LOAN", party: "PSD", year: 2024, date: null, dateText: "20.01.2024; 15.05.2024", amount: "25000050", sourceRow: 2 }, // the cell lists two dates: none is claimed
+          { kind: "DONATION", party: "PNL", year: 2023, date: "2023-03-15", dateText: "15.03.2023", amount: RON(50_000), sourceRow: 1 },
+        ]);
+        expect(d.source).toEqual(source);
+      });
+
+      it("serves the same donations on both role pages of an entity with both roles, the party exactly as published", () => {
+        expect(entityOf("both-roles-authority-page")!.donations).toEqual(entityOf("both-roles-supplier-page")!.donations);
+        expect(donationsOf("both-roles-supplier-page").items).toEqual([{ kind: "DONATION", party: "PSD+PC", year: 2021, date: "2021-06-09", dateText: "9 iunie 2021", amount: RON(12_000), sourceRow: 4 }]);
+        expect(entityOf("supplier-financials-blank-turnover")!.donations!.items).toEqual([{ kind: "DONATION", party: "USR", year: 2022, date: "2022-10-04", dateText: "4102022", amount: "800536", sourceRow: 3 }]);
+      });
+
+      it("is context, never summed: the page's Total still counts awards only, and nothing else of the page changes", async () => {
+        const all = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        expect(((all.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded).toBe(RON(5_915_000)); // the donation and the loan add nothing
+        expect(Object.keys((all.body.data as EntityOverviewQuery).entity!.donations!).sort()).toEqual(["donationCount", "items", "loanCount", "dataThroughYear", "source"].sort()); // no Signal, no sum, no Party
+      });
+
+      it("has no donations for an entity BaniPartide does not list, and none can be reached for a donor with no entity", async () => {
+        for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.donations, name).toBeNull();
+        const orphan = await ask(DBS.overview, entityOverview.sha256, { key: "5443785", role: "SUPPLIER", filter: {} }); // a valid CUI in the table that no Record or register names
+        expect((orphan.body.data as EntityOverviewQuery).entity).toBeNull();
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect((gamma.body.data as EntityOverviewQuery).entity!.donations).toBeNull();
+      });
+
+      it("never serves an individual donor's name, or a company representative's, anywhere in an API response or a table of the graph (ADR 0009)", async () => {
+        const needles = ["ZAMFIR", "POPA ELENA", "Reprezentant Fictiv", "1,85E+12"];
+        const everything = JSON.stringify([...answers.values()]);
+        const rows = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        for (const n of needles) expect(everything + JSON.stringify(rows.body), n).not.toContain(n);
+        const db = new pg.Pool({ connectionString: `${baseUrl}/${DBS.overview}`, max: 1 });
+        pools.push(db);
+        const tables = (await db.query(`SELECT table_schema AS s, table_name AS t FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_type = 'BASE TABLE'`)).rows;
+        expect(tables.some((t) => t.s === "donations")).toBe(true);
+        for (const { s, t } of tables) {
+          const dump = ((await db.query(`SELECT string_agg(x::text, ' ') AS d FROM "${s}"."${t}" x`)).rows[0].d as string | null) ?? "";
+          for (const n of needles) expect(dump, `${s}.${t} ${n}`).not.toContain(n);
+        }
+        expect((await db.query(`SELECT count(*)::int AS n FROM donations.donation`)).rows[0].n).toBe(5); // the three non-firm rows and two unreadable ones were dropped at the read
       });
     });
   });

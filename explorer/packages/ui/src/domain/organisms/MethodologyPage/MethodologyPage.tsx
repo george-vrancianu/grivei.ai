@@ -35,6 +35,8 @@ export interface MethodologyPageCopy {
   referenceDataThrough: (date: string) => string;
   /** The line under the financial statements' section: "Data through fiscal year 2025" (the newest fiscal year held). */
   referenceFiscalYearThrough: (year: number) => string;
+  /** The line under the firm donations' section: "Data through 2024" (the newest year BaniPartide's donation rows are filed under). */
+  referenceYearThrough: (year: number) => string;
 }
 
 /** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
@@ -47,6 +49,8 @@ export interface MethodologyReferenceDates {
   partyAndLeadership: string | null;
   /** The newest fiscal year MF's statements held (null when none is held or the query failed). */
   financialStatements: number | null;
+  /** The newest year BaniPartide's firm donations cover (null when none is held or the query failed). */
+  firmDonations: number | null;
 }
 
 export interface MethodologyPageProps {
@@ -111,6 +115,9 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
             )}
             {key === "financialStatements" && referenceDates?.financialStatements != null && (
               <Typography sx={{ color: "text.secondary" }}>{copy.referenceFiscalYearThrough(referenceDates.financialStatements)}</Typography>
+            )}
+            {key === "firmDonations" && referenceDates?.firmDonations != null && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceYearThrough(referenceDates.firmDonations)}</Typography>
             )}
           </MethodologySection>
         ))}

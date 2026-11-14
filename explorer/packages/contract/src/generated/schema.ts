@@ -136,6 +136,27 @@ export type DateRange = {
   to?: InputMaybe<Scalars['Date']['input']>;
 };
 
+export type DonationKind =
+  | 'DONATION'
+  | 'LOAN';
+
+/** BaniPartide's firm-donor table as we hold it. Each row cites BaniPartide and, through its methodology, the underlying publications (Monitorul Oficial, AEP's pages); BaniPartide gives no report reference per row. */
+export type DonationSource = {
+  __typename?: 'DonationSource';
+  /** BaniPartide's page for the table. */
+  datasetUrl: Maybe<Scalars['String']['output']>;
+  /** When we fetched the table (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The licence as BaniPartide gives it (CC Attribution 4.0). */
+  license: Maybe<Scalars['String']['output']>;
+  licenseUrl: Maybe<Scalars['String']['output']>;
+  /** The publisher, Expert Forum, as BaniPartide names it. */
+  publisher: Maybe<Scalars['String']['output']>;
+  publisherUrl: Maybe<Scalars['String']['output']>;
+  /** BaniPartide's methodology page, where it names its underlying sources. */
+  underlyingUrl: Maybe<Scalars['String']['output']>;
+};
+
 /**
  * One contracting authority, supplier, or both. URLs use the role
  * (/explore/authority/<key>, /explore/supplier/<key>), the API doesn't:
@@ -149,6 +170,12 @@ export type Entity = {
   anafStatus: Maybe<Scalars['String']['output']>;
   cui: Maybe<Scalars['String']['output']>;
   displayName: Scalars['String']['output'];
+  /**
+   * The firm donations and loans to parties that BaniPartide lists under this entity's CUI (a Reference source; ticket #182), newest first. Null when it lists none, for an entity
+   * with no CUI and for a sole trader (never published against a person's name). The same on both role pages; on a supplier it is context ("also a firm donor"): never a Signal
+   * (ADR 0014), never a Party, and never added to awarded value. No individual donor is ever served (ADR 0009).
+   */
+  donations: Maybe<FirmDonations>;
   /**
    * MF's annual financial statements for this entity's CUI, one row per fiscal year (a Reference source; ticket #179). Null when MF holds none for the CUI, and for an entity
    * with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
@@ -266,6 +293,36 @@ export type FinancialYear = {
   source: FinancialSource;
   /** Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is. */
   turnover: Maybe<Scalars['SignedBani']['output']>;
+};
+
+/** One donation or loan as BaniPartide lists it. The party is exactly as published: it is no Party entity and is not normalised. */
+export type FirmDonation = {
+  __typename?: 'FirmDonation';
+  amount: Scalars['Bani']['output'];
+  /** Set only when exactly one date is readable from the published cell and it falls in the year. */
+  date: Maybe<Scalars['Date']['output']>;
+  /** The published date cell, verbatim (it can list several dates, or none). */
+  dateText: Scalars['String']['output'];
+  kind: DonationKind;
+  party: Scalars['String']['output'];
+  /** The row's number in the BaniPartide table export we hold: what a citation points at. */
+  sourceRow: Scalars['Int']['output'];
+  /** The year BaniPartide files the row under; null when the row has none. */
+  year: Maybe<Scalars['Int']['output']>;
+};
+
+/**
+ * A company's donations and loans to parties as BaniPartide (Expert Forum, CC BY 4.0) lists them from the parties' annual publications, newest first. Amounts are not summed anywhere:
+ * a donation is a different measure from awarded value (ADR 0014).
+ */
+export type FirmDonations = {
+  __typename?: 'FirmDonations';
+  /** The newest year BaniPartide covers, for any donor: the list's data-through year. Later donations may be missing. */
+  dataThroughYear: Scalars['Int']['output'];
+  donationCount: Scalars['Int']['output'];
+  items: Array<FirmDonation>;
+  loanCount: Scalars['Int']['output'];
+  source: DonationSource;
 };
 
 export type FrameworkLink = {
@@ -591,7 +648,7 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
-  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements), each with its data-through date; for the methodology page. */
+  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
@@ -725,7 +782,7 @@ export type ReferenceSource = {
   __typename?: 'ReferenceSource';
   /** The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet. */
   dataThrough: Maybe<Scalars['Date']['output']>;
-  /** For a source published by fiscal year (MF's financial statements): the newest fiscal year held. Null for the others, and when none is held. */
+  /** For a source published by year (MF's financial statements by fiscal year, BaniPartide's donations by the year they are filed under): the newest year held. Null for the others, and when none is held. */
   fiscalYear: Maybe<Scalars['Int']['output']>;
   /** The source's short name, e.g. AMEPIP. */
   id: Scalars['String']['output'];
@@ -1238,6 +1295,8 @@ export type ResolversTypes = {
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   DateRange: DateRange;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DonationKind: DonationKind;
+  DonationSource: ResolverTypeWrapper<DonationSource>;
   Entity: ResolverTypeWrapper<Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversTypes['Alias']>, seap: ResolversTypes['SeapEntity'] }>;
   EntityIdentity: EntityIdentity;
   EntityResult: ResolverTypeWrapper<Omit<EntityResult, 'entity'> & { entity: ResolversTypes['Entity'] }>;
@@ -1247,6 +1306,8 @@ export type ResolversTypes = {
   FinancialSource: ResolverTypeWrapper<FinancialSource>;
   FinancialStatements: ResolverTypeWrapper<FinancialStatements>;
   FinancialYear: ResolverTypeWrapper<FinancialYear>;
+  FirmDonation: ResolverTypeWrapper<FirmDonation>;
+  FirmDonations: ResolverTypeWrapper<FirmDonations>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FrameworkLink: ResolverTypeWrapper<Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversTypes['SeapRecord']>, subsequent: Array<ResolversTypes['SeapRecord']> }>;
   FrameworkOverrunNumbers: ResolverTypeWrapper<FrameworkOverrunNumbers>;
@@ -1339,6 +1400,7 @@ export type ResolversParentTypes = {
   Date: Scalars['Date']['output'];
   DateRange: DateRange;
   DateTime: Scalars['DateTime']['output'];
+  DonationSource: DonationSource;
   Entity: Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversParentTypes['Alias']>, seap: ResolversParentTypes['SeapEntity'] };
   EntityResult: Omit<EntityResult, 'entity'> & { entity: ResolversParentTypes['Entity'] };
   EntityResultPage: EntityResultPage;
@@ -1346,6 +1408,8 @@ export type ResolversParentTypes = {
   FinancialSource: FinancialSource;
   FinancialStatements: FinancialStatements;
   FinancialYear: FinancialYear;
+  FirmDonation: FirmDonation;
+  FirmDonations: FirmDonations;
   Float: Scalars['Float']['output'];
   FrameworkLink: Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversParentTypes['SeapRecord']>, subsequent: Array<ResolversParentTypes['SeapRecord']> };
   FrameworkOverrunNumbers: FrameworkOverrunNumbers;
@@ -1492,11 +1556,22 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
   name: 'DateTime';
 }
 
+export type DonationSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['DonationSource'] = ResolversParentTypes['DonationSource']> = {
+  datasetUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  licenseUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publisher?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publisherUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  underlyingUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
 export type EntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['Entity'] = ResolversParentTypes['Entity']> = {
   aliases?: Resolver<Array<ResolversTypes['Alias']>, ParentType, ContextType>;
   anafStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   displayName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  donations?: Resolver<Maybe<ResolversTypes['FirmDonations']>, ParentType, ContextType>;
   financials?: Resolver<Maybe<ResolversTypes['FinancialStatements']>, ParentType, ContextType>;
   foreignVatId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   identity?: Resolver<ResolversTypes['EntityIdentity'], ParentType, ContextType>;
@@ -1553,6 +1628,24 @@ export type FinancialYearResolvers<ContextType = any, ParentType extends Resolve
   revision?: Resolver<ResolversTypes['FinancialRevision'], ParentType, ContextType>;
   source?: Resolver<ResolversTypes['FinancialSource'], ParentType, ContextType>;
   turnover?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+};
+
+export type FirmDonationResolvers<ContextType = any, ParentType extends ResolversParentTypes['FirmDonation'] = ResolversParentTypes['FirmDonation']> = {
+  amount?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  dateText?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['DonationKind'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sourceRow?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  year?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+};
+
+export type FirmDonationsResolvers<ContextType = any, ParentType extends ResolversParentTypes['FirmDonations'] = ResolversParentTypes['FirmDonations']> = {
+  dataThroughYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  donationCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  items?: Resolver<Array<ResolversTypes['FirmDonation']>, ParentType, ContextType>;
+  loanCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['DonationSource'], ParentType, ContextType>;
 };
 
 export type FrameworkLinkResolvers<ContextType = any, ParentType extends ResolversParentTypes['FrameworkLink'] = ResolversParentTypes['FrameworkLink']> = {
@@ -1961,6 +2054,7 @@ export type Resolvers<ContextType = any> = {
   DataThrough?: DataThroughResolvers<ContextType>;
   Date?: GraphQLScalarType;
   DateTime?: GraphQLScalarType;
+  DonationSource?: DonationSourceResolvers<ContextType>;
   Entity?: EntityResolvers<ContextType>;
   EntityResult?: EntityResultResolvers<ContextType>;
   EntityResultPage?: EntityResultPageResolvers<ContextType>;
@@ -1968,6 +2062,8 @@ export type Resolvers<ContextType = any> = {
   FinancialSource?: FinancialSourceResolvers<ContextType>;
   FinancialStatements?: FinancialStatementsResolvers<ContextType>;
   FinancialYear?: FinancialYearResolvers<ContextType>;
+  FirmDonation?: FirmDonationResolvers<ContextType>;
+  FirmDonations?: FirmDonationsResolvers<ContextType>;
   FrameworkLink?: FrameworkLinkResolvers<ContextType>;
   FrameworkOverrunNumbers?: FrameworkOverrunNumbersResolvers<ContextType>;
   FrameworkSummary?: FrameworkSummaryResolvers<ContextType>;

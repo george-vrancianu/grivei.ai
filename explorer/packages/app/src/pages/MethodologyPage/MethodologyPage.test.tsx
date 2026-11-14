@@ -73,7 +73,7 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
 
   it("covers every section the ticket names", () => {
     expect(Object.keys(METHODOLOGY_ANCHORS).sort()).toEqual(
-      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "financialStatements", "frameworkCeilings", "partyAndLeadership", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
+      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "financialStatements", "firmDonations", "frameworkCeilings", "partyAndLeadership", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
     );
   });
 
@@ -130,6 +130,17 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     open(PATH[locale], "typical-after-backfill", "amepip-not-held");
     await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
     expect(region(t.sections.financialStatements.heading).queryByText(t.referenceFiscalYearThrough(2025))).toBeNull();
+  });
+
+  it("states the newest year of BaniPartide's firm donations in its section, and only when the table is held (#182)", async () => {
+    open(PATH[locale]);
+    const section = region(t.sections.firmDonations.heading);
+    expect(await section.findByText(t.referenceYearThrough(2024))).toBeVisible();
+    expect(section.getByText(t.sections.firmDonations.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.firmDonations.heading).queryByText(t.referenceYearThrough(2024))).toBeNull();
   });
 
   it("keeps every section's prose when the figures are loading", async () => {

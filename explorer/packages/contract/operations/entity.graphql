@@ -9,6 +9,7 @@ query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrde
     publicEnterprise { ...PublicEnterpriseFields }
     leadership { ...LeadershipFields }
     financials { ...FinancialStatementsFields }
+    donations { ...FirmDonationsFields }
     seap {
       role(role: $role) {
         role

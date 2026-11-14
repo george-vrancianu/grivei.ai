@@ -6,7 +6,7 @@ import { postgresStore } from "./store.ts";
 function poolWithoutFinancials(): pg.Pool {
   return {
     query: async (sql: string) => {
-      if (sql.includes("financials.")) throw Object.assign(new Error('relation "financials.statement" does not exist'), { code: "42P01" });
+      if (sql.includes("financials.") || sql.includes("donations.")) throw Object.assign(new Error('relation "financials.statement" does not exist'), { code: "42P01" });
       if (sql.includes("amepip.snapshot")) return { rows: [] };
       if (sql.includes("aep.snapshot")) return { rows: [] };
       throw new Error(`unexpected query: ${sql}`);
@@ -21,7 +21,11 @@ describe("a graph without the financials schema (deployed before a rebuild)", ()
 
   it("still lists the Reference sources, with no fiscal year for the financial statements", async () => {
     const sources = await postgresStore(poolWithoutFinancials(), { rollup: false }).referenceSources();
-    expect(sources.map((s) => [s.id, s.dataThrough, s.fiscalYear])).toEqual([["AMEPIP", null, null], ["AEP", null, null], ["FINANCIAL_STATEMENTS", null, null]]);
+    expect(sources.map((s) => [s.id, s.dataThrough, s.fiscalYear])).toEqual([["AMEPIP", null, null], ["AEP", null, null], ["FINANCIAL_STATEMENTS", null, null], ["BANIPARTIDE", null, null]]);
+  });
+
+  it("has no firm donations either (BaniPartide's schema, #182), so the Overview keeps working", async () => {
+    expect(await postgresStore(poolWithoutFinancials(), { rollup: false }).donations("2000007")).toBeNull();
   });
 
   it("does not hide another failure", async () => {
@@ -35,6 +39,7 @@ function poolWithoutAep(): pg.Pool {
   return {
     query: async (sql: string) => {
       if (sql.includes("aep.")) throw Object.assign(new Error('relation "aep.authority" does not exist'), { code: "42P01" });
+      if (sql.includes("donations.")) throw Object.assign(new Error('relation "donations.source_file" does not exist'), { code: "42P01" });
       if (sql.includes("amepip.snapshot") || sql.includes("financials.")) return { rows: [] };
       throw new Error(`unexpected query: ${sql}`);
     },
@@ -50,6 +55,6 @@ describe("a graph without the aep schema (deployed before a rebuild)", () => {
 
   it("still lists the Reference sources, with no data-through date for AEP", async () => {
     const sources = await postgresStore(poolWithoutAep(), { rollup: false }).referenceSources();
-    expect(sources.map((s) => [s.id, s.dataThrough])).toEqual([["AMEPIP", null], ["AEP", null], ["FINANCIAL_STATEMENTS", null]]);
+    expect(sources.map((s) => [s.id, s.dataThrough])).toEqual([["AMEPIP", null], ["AEP", null], ["FINANCIAL_STATEMENTS", null], ["BANIPARTIDE", null]]);
   });
 });

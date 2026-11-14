@@ -27,7 +27,7 @@ type Query {
   "Signal rules with their methodology numbers (base rate recomputed per load)."
   signalRules: [SignalRule!]!
 
-  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements), each with its data-through date; for the methodology page."
+  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page."
   referenceSources: [ReferenceSource!]!
 
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
@@ -336,6 +336,12 @@ type Entity {
   with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
   """
   financials: FinancialStatements
+  """
+  The firm donations and loans to parties that BaniPartide lists under this entity's CUI (a Reference source; ticket #182), newest first. Null when it lists none, for an entity
+  with no CUI and for a sole trader (never published against a person's name). The same on both role pages; on a supplier it is context ("also a firm donor"): never a Signal
+  (ADR 0014), never a Party, and never added to awarded value. No individual donor is ever served (ADR 0009).
+  """
+  donations: FirmDonations
   "Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages."
   publicEnterprise: PublicEnterprise
   "The Leadership list (AEP's election results, ADR 0012): set for a town hall, Bucharest sector, Bucharest city hall or county council, and for a subordinate body of one (its authority's list, with the basis of the tie). Null for every other entity, and always null for an entity that is only a supplier. Leaders are never linked to a person page or to ONRC."
@@ -549,6 +555,55 @@ type FinancialYear {
   source: FinancialSource!
 }
 
+"""
+A company's donations and loans to parties as BaniPartide (Expert Forum, CC BY 4.0) lists them from the parties' annual publications, newest first. Amounts are not summed anywhere:
+a donation is a different measure from awarded value (ADR 0014).
+"""
+type FirmDonations {
+  "The newest year BaniPartide covers, for any donor: the list's data-through year. Later donations may be missing."
+  dataThroughYear: Int!
+  donationCount: Int!
+  loanCount: Int!
+  items: [FirmDonation!]!
+  source: DonationSource!
+}
+
+enum DonationKind {
+  DONATION
+  LOAN
+}
+
+"One donation or loan as BaniPartide lists it. The party is exactly as published: it is no Party entity and is not normalised."
+type FirmDonation {
+  kind: DonationKind!
+  party: String!
+  "The year BaniPartide files the row under; null when the row has none."
+  year: Int
+  "Set only when exactly one date is readable from the published cell and it falls in the year."
+  date: Date
+  "The published date cell, verbatim (it can list several dates, or none)."
+  dateText: String!
+  amount: Bani!
+  "The row's number in the BaniPartide table export we hold: what a citation points at."
+  sourceRow: Int!
+}
+
+"BaniPartide's firm-donor table as we hold it. Each row cites BaniPartide and, through its methodology, the underlying publications (Monitorul Oficial, AEP's pages); BaniPartide gives no report reference per row."
+type DonationSource {
+  "BaniPartide's page for the table."
+  datasetUrl: String
+  "The licence as BaniPartide gives it (CC Attribution 4.0)."
+  license: String
+  licenseUrl: String
+  "The publisher, Expert Forum, as BaniPartide names it."
+  publisher: String
+  publisherUrl: String
+  "BaniPartide's methodology page, where it names its underlying sources."
+  underlyingUrl: String
+  "When we fetched the table (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
 "The MF file a year's figures were read from, as the portal publishes it."
 type FinancialSource {
   "The file's name as MF gives it, e.g. WEB_BL_BS_SL_AN2024.txt."
@@ -573,7 +628,7 @@ type ReferenceSource {
   name: String!
   "The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet."
   dataThrough: Date
-  "For a source published by fiscal year (MF's financial statements): the newest fiscal year held. Null for the others, and when none is held."
+  "For a source published by year (MF's financial statements by fiscal year, BaniPartide's donations by the year they are filed under): the newest year held. Null for the others, and when none is held."
   fiscalYear: Int
   "Where the list comes from; null when none is held yet."
   url: String
