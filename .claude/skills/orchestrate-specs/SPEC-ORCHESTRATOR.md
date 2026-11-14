@@ -30,4 +30,4 @@ You are an opus spec orchestrator for spec #<spec>. You manage agents and git bo
 
 ## Hand-back
 
-Build it from the report files in `/tmp/pp-<spec>-notes/`, read once at the end. PR, merge commit and CI result; migrations; new env vars and dependencies; rounds and bugs per ticket; deviations; conflicts (where and why); every agent over 150K and why; memory peak; what needs a human; proposed follow-up tickets (listed, not posted). Done when each item is answered, even if only "none".
+When to hand back: the hand-back hard rule. This section covers the content. Build it from the report files in `/tmp/pp-<spec>-notes/`, read once at the end. PR, merge commit and CI result; migrations; new env vars and dependencies; rounds and bugs per ticket; deviations; conflicts (where and why); every agent over 150K and why; memory peak; what needs a human; proposed follow-up tickets (listed, not posted). Done when each item is answered, even if only "none".
