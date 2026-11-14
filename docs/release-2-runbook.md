@@ -9,7 +9,7 @@ order, the costs and the checks. **Nothing in it was measured end to end**: the 
 
 ## Conventions
 
-**Placeholders.** Every figure that only a real run can give is marked **`[TO MEASURE]`** (with what to measure after a colon), so `grep -n 'TO MEASURE' docs/release-2-runbook.md` lists every number still owed; a number marked "estimate" comes from a ticket or from arithmetic and was never measured. Replace each marker in the closing comment, never leave one in a methodology section. A section that waits on a merge is marked **`[TO FILL when #185 merges]`**.
+**Placeholders.** Every figure that only a real run can give is marked **`[TO MEASURE]`** (with what to measure after a colon), so `grep -n 'TO MEASURE' docs/release-2-runbook.md` lists every number still owed; a number marked "estimate" comes from a ticket or from arithmetic and was never measured. Replace each marker in the closing comment, never leave one in a methodology section. 
 
 Shell setup is Release 1's (`.env` beside `compose.yaml`, `geo`, `P`). Release 2 adds two things to the `.env` and one to the API:
 
@@ -191,9 +191,20 @@ docker compose exec db psql -U grivei -d grivei -c "SELECT fiscal_year, count(*)
 Then write the measured figure into the methodology copy in **both languages and the test** (the three places above), and write the Party coverage figure of step 5 wherever a section quotes one (`partyAndLeadership` in both copy files; ADR 0012 says "about 30.5%": add a dated note there if the Release build differs, do not rewrite history). **Methodology sections that must exist and be re-read against the national build** (`sections` in the same files): `partyAndLeadership`, `financialStatements`, `firmDonations`, `publicEnterprises`, `onrcRegister`, plus the ten rule sections above (the four of Release 1 and the six of #184; twelve once #185 is in); each states its data-through date (financials: the newest fiscal year held; AEP: the elections loaded; BaniPartide: the last year; AMEPIP: the publication day; ONRC: the newest snapshot). Check each date on `/explore/methodology` against `$P status`.
 Check the registry's methodology anchor for ONRC: `watchdog/pipeline/sources.py` still points ONRC at `supplier-identity` ("until the methodology page has an ONRC section"), and `onrcRegister` now exists: point it at that section's anchor (the page's anchor for a section is `onrc-register`, from `explorer/packages/ui/src/domain/utils/methodologyAnchors.ts`), a one-line change checked by `watchdog/tests/test_sources_registry.py`.
 
-#### C2. Cross-Source Signal rules of #185 (donor to Party; SOE board member, Restricted): **[TO FILL when #185 merges]**
+#### C2. Cross-Source Signal rules of #185 (donor to Party; SOE board member, Restricted)
 
-#185 was not merged when this runbook was written. When it merges, fill in here, in the same form as C: the rates from `seap.signal_rule` for the donor-to-Party rule and (Restricted) the SOE-board rule; the `firmDonations` section's rewritten last paragraph (#185 and #186 conflict there: #185's paragraph, then #186's BaniPartide paragraph, then `onrcRegister`); the party-name equivalence table (versioned, a reason per entry: a human reviews it against the real BaniPartide party names, **`[TO MEASURE]`**: how many donations matched a Mandate's list or an alliance member, how many parties are unmatched, how many matched only through a derived Party); and that the SOE rule's counts, its Records and its **firing rate are absent unless `GRIVEI_RESTRICTED=show`** (acceptance F must include the SOE Signal once #185 is in: no Signal, no count, no methodology rate). Also add its row to the closing comment's rate list.
+#185 is merged. Two rules, both in `watchdog/pipeline/signals/` and both in `seap.signal_rule` (read the rates from there, as in C; the methodology copy states each rate over all contracting authorities with a Record that year, the denominator #185 documents):
+
+- **`DONOR_TO_PARTY`** (public tier): a firm's donation or loan to the Party of the Mandate in force at the awarding authority, made 0 to 365 days before the award (both ends included). Alliance member parties count; a Party derived from a name is counted and labelled as derived; predecessor parties are not merged; sole traders and similar donors (PFA, II, IF) are dropped. Firing rate: **`[TO MEASURE]`** (national build, `seap.signal_rule`), written into the methodology copy in both languages and the test.
+- **`SOE_BOARD_IN_SUPPLIER`** (**Restricted**): an AMEPIP enterprise as authority, a private supplier (not in AMEPIP), and a person confirmed on both sides (`onrc.role` LINKED, legal entities only, shared person key). Firing rate: **`[TO MEASURE]`**, recorded in the closing comment only if measured with `GRIVEI_RESTRICTED=show`.
+
+**Restricted gating.** `GRIVEI_RESTRICTED` (exactly `show`; read once) gates the SOE rule: with the switch off there is no SOE Signal in Signals, no entity count, no chip, no filter value, no rule row or firing rate on the methodology page (the section is rendered only when the API returns the rule), and nothing on Record or role pages. Acceptance F must include this check (see F). Open decision for the user (not for the Release): whether the rule's name in the GraphQL schema and the JS bundle (copy only, no data) satisfies ADR 0015's "no trace".
+
+**Party-name equivalence table** (`watchdog/pipeline/signals/party_names.toml`: versioned, a reason per entry, a `kept_apart` list, a loader that refuses malformed entries; 22 unit tests). It was drafted by an agent and the AEP list names were not checked: **a named human reviews it against the real BaniPartide party names before Go-live** (decision 19). Measure after the national build: donations matched through a Mandate's list or an alliance member **`[TO MEASURE]`**, parties unmatched **`[TO MEASURE]`**, donations matched only through a derived Party **`[TO MEASURE]`**.
+
+**Rebuild.** `seap.search` gains `restricted_signals text[] NOT NULL DEFAULT '{}'` and a BM25 index entry: the live database needs a full rebuild and Switchover (no migration; Seam 1 applies the schema on a fresh database). The contract change is additive (two slugs, two numbers types, `DonationKind` on `kind`). The recorded methodology fixtures do not yet hold `DONOR_TO_PARTY` (re-record them: follow-up).
+
+The `firmDonations` section's last paragraph: #185's paragraph, then #186's BaniPartide paragraph, then `onrcRegister`. Add both rules' rows to the closing comment's rate list (the SOE row only if measured in show mode).
 
 ### D. Coverage, the Source selector, and all copy in both languages
 
@@ -267,7 +278,7 @@ Recorded by the tickets #174 to #186; none is blocking the runbook, but each nee
 | 16 | Post the **resolution comments at close**: #179 (commit ref `931278b`), #182, #183 (access, licence, cadence; commit ref `1774887`) and #186: the drafts are held by the orchestrator of spec #173 (not in the repo), so ask for them before closing | #179, #182, #183, #186 |
 | 17 | Native review of the RO copy: "(curată)" at `ro.ts` 323, "Radiată", "Întrerupere temporară", "Înmatriculată", "Data înmatriculării", "comerciant persoană fizică", RO "Partid"/"partid" capitalisation in `methodologyRo.ts` | #177, #178, #186 |
 | 18 | **Go-live itself**: flip ONRC's `landing_row` from `wip` to `live` (acceptance D), keep `GRIVEI_RESTRICTED` off on the public host, and the privacy notice with its contact for corrections that ADR 0015 requires | ADR 0015 |
-| 19 | #185's own decisions (the party-name equivalence table's reviewer, the SOE rule's supplier exclusion): **[TO FILL when #185 merges]** | #185 |
+| 19 | #185's own decisions: the party-name equivalence table needs a named reviewer before Go-live (agent-drafted, AEP list names unverified); the SOE rule excludes AMEPIP suppliers and uses only confirmed (LINKED) legal-entity person keys; whether the Restricted rule's name in the schema and bundle satisfies ADR 0015 "no trace" | #185 |
 
 ## Checklist (mirrors the ticket's acceptance criteria)
 
