@@ -448,6 +448,8 @@ type PersonRole {
   organisationName: String!
   "The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page."
   entityKey: ID
+  "The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is."
+  entityRole: Role
   "CALITATE as ONRC publishes it (source data)."
   role: String!
 }

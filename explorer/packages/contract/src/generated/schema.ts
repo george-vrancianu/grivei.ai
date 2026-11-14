@@ -630,6 +630,8 @@ export type PersonRole = {
   __typename?: 'PersonRole';
   /** The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page. */
   entityKey: Maybe<Scalars['ID']['output']>;
+  /** The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is. */
+  entityRole: Maybe<Role>;
   /** The organisation as ONRC names it (source data). */
   organisationName: Scalars['String']['output'];
   /** CALITATE as ONRC publishes it (source data). */
@@ -1905,6 +1907,7 @@ export type PersonRefResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type PersonRoleResolvers<ContextType = any, ParentType extends ResolversParentTypes['PersonRole'] = ResolversParentTypes['PersonRole']> = {
   entityKey?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  entityRole?: Resolver<Maybe<ResolversTypes['Role']>, ParentType, ContextType>;
   organisationName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };

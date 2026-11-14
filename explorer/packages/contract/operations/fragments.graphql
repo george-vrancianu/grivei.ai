@@ -164,7 +164,7 @@ fragment PersonFields on Person {
   name
   birthYear
   roleCount
-  roles { organisationName entityKey role }
+  roles { organisationName entityKey entityRole role }
   snapshot
   provenance { ...ProvenanceFields }
 }

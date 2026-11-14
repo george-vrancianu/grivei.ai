@@ -151,7 +151,7 @@ export interface PersonRow {
   id: string;
   name: string;
   birthYear: number;
-  roles: { organisationName: string; entityKey: string | null; role: string }[];
+  roles: { organisationName: string; entityKey: string | null; entityRole: "AUTHORITY" | "SUPPLIER" | null; role: string }[];
   snapshot: string;
   provenance: { url: string | null; via: string | null; fetchedAt: string };
 }
@@ -1013,7 +1013,9 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       const p = found.rows[0];
       if (!p) return null;
       const roles = await pool.query(
-        `SELECT coalesce(e.display_name, translate(coalesce(g.name, r.reg_no), 'ŞşŢţ', 'ȘșȚț')) AS "organisationName", e.key AS "entityKey", r.role
+        `SELECT coalesce(e.display_name, translate(coalesce(g.name, r.reg_no), 'ŞşŢţ', 'ȘșȚț')) AS "organisationName", e.key AS "entityKey",
+                CASE WHEN e.key IS NULL THEN NULL WHEN EXISTS (SELECT 1 FROM seap.search WHERE supplier_key = e.key) THEN 'SUPPLIER'
+                     WHEN EXISTS (SELECT 1 FROM seap.record WHERE authority_key = e.key) THEN 'AUTHORITY' ELSE 'SUPPLIER' END AS "entityRole", r.role
            FROM onrc.role r LEFT JOIN onrc.registration g ON g.reg_no = r.reg_no
            LEFT JOIN core.entity e ON e.key = g.cui AND g.primary_for_cui
           WHERE r.person_id = $1 AND r.link = 'LINKED' ORDER BY 1, r.role, r.reg_no`,

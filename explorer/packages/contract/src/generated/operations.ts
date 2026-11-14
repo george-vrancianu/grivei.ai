@@ -310,7 +310,7 @@ export type OnrcRegistrationFieldsFragment = { registrationNumber: string, regis
 
 export type OrganisationPeopleFieldsFragment = { snapshot: string, holders: Array<{ name: string, role: string, birthYear: number | null, person: { id: string } | null }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
 
-export type PersonFieldsFragment = { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
+export type PersonFieldsFragment = { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, entityRole: Role | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
 
 export type PublicEnterpriseFieldsFragment = { listedAs: string, registrationNumber: string | null, status: string | null, firstYear: number | null, lastYear: number | null, snapshot: string, url: string | null, via: string | null, license: string | null, fetchedAt: string };
 
@@ -390,7 +390,7 @@ export type PersonPageQueryVariables = Exact<{
 }>;
 
 
-export type PersonPageQuery = { person: { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null };
+export type PersonPageQuery = { person: { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, entityRole: Role | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null };
 
 export type RecordPageQueryVariables = Exact<{
   code: string | number;

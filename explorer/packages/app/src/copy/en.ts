@@ -309,6 +309,16 @@ export const en: Copy = {
       mandateBasis,
     },
   },
+  personPage: {
+    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
+    born: (year) => `born ${year}`,
+    rolesHeading: "Roles",
+    roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    noPage: "no organisation page",
+    basis: "Each role is the same name and full birth date in ONRC's register. The birth year is shown; the full date and the birthplace never are.",
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+    notFound: { title: "Person page not available", body: "This page is not available on this host, or no person has this id. Person pages are shown only in a Private view." },
+  },
   entityPage: {
     layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
@@ -367,6 +377,15 @@ export const en: Copy = {
       },
       source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
       onrcOnly: "This organisation is in ONRC only: no purchase in SEAP names it. No person of it is shown.",
+    },
+    people: {
+      heading: "Administrators and legal representatives",
+      intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
+      none: "ONRC lists no administrator or legal representative for this organisation.",
+      born: (year) => `born ${year}`,
+      unlinked: "no birth date in ONRC: listed on this page only, linked to no one",
+      personLink: (name) => `${name}: person page`,
+      source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     relationships: {

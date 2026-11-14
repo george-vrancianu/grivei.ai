@@ -58,8 +58,8 @@
     },
     {
       "name": "PersonPage",
-      "sha256": "5640e9c0bb41a6b85871231a2946055f81a7b6147d6e0a06d0122752894a2252",
-      "document": "query PersonPage($id: ID!) {\n  person(id: $id) {\n    ...PersonFields\n  }\n}\n\nfragment PersonFields on Person {\n  id\n  name\n  birthYear\n  roleCount\n  roles {\n    organisationName\n    entityKey\n    role\n  }\n  snapshot\n  provenance {\n    ...ProvenanceFields\n  }\n}\n\nfragment ProvenanceFields on Provenance {\n  source\n  url\n  via\n  kind\n  fetchedAt\n}"
+      "sha256": "31953588c43989326d866384106914c3f54a3ee402f1e83166ad26490a556415",
+      "document": "query PersonPage($id: ID!) {\n  person(id: $id) {\n    ...PersonFields\n  }\n}\n\nfragment PersonFields on Person {\n  id\n  name\n  birthYear\n  roleCount\n  roles {\n    organisationName\n    entityKey\n    entityRole\n    role\n  }\n  snapshot\n  provenance {\n    ...ProvenanceFields\n  }\n}\n\nfragment ProvenanceFields on Provenance {\n  source\n  url\n  via\n  kind\n  fetchedAt\n}"
     },
     {
       "name": "RecordPage",

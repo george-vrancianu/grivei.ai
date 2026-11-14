@@ -45,6 +45,9 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
   let pool: pg.Pool;
   const keys = new Map<string, string>(); // display name -> entity key
   const persons = new Map<string, string>(); // holder name -> person id
+  interface RoleJson { organisationName: string; entityKey: string | null; entityRole: string | null; role: string }
+  interface HolderJson { name: string; role: string; birthYear: number | null; person: { id: string } | null }
+  interface Answer { person: { id: string; birthYear: number; roleCount: number; roles: RoleJson[] } | null; entity: { people: { holders: HolderJson[] } | null } }
   const apis = new Map<string, ReturnType<typeof createApi>>();
   const cleanup = () => void spawnSync("docker", ["rm", "-f", "-v", container], { stdio: "ignore" });
   const everything: string[] = []; // every response body of every mode, to search for what must never be served
@@ -92,10 +95,10 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
     expect(r.body.errors, `${operation} ${JSON.stringify(variables)}`).toBeUndefined();
     expect(validateResponse(schema, parse(o.document), r.body.data, variables as Record<string, unknown>)).toEqual([]);
     everything.push(JSON.stringify(r.body));
-    return r.body.data as any;
+    return r.body.data as Answer;
   };
   const overview = (mode: string, name: string, role: "SUPPLIER" | "AUTHORITY" = "SUPPLIER") => ask(mode, "EntityOverview", { key: keys.get(name)!, role, filter: {} });
-  const holdersOf = async (mode: string, name: string, role: "SUPPLIER" | "AUTHORITY" = "SUPPLIER") => (await overview(mode, name, role)).entity.people?.holders as { name: string; role: string; birthYear: number | null; person: { id: string } | null }[] | undefined;
+  const holdersOf = async (mode: string, name: string, role: "SUPPLIER" | "AUTHORITY" = "SUPPLIER") => (await overview(mode, name, role)).entity.people?.holders;
 
   it("rebuilt the fixture: the persons, the possible match and the entities exist in the graph", () => {
     expect([...persons.keys()].sort()).toEqual(["DUMITRESCU ȘTEFAN-VLAD", "ION POPESCU", "IONESCU MARIA", "POPESCU ION", "TOMA ELENA", "TOMA GHEORGHE"].sort());
@@ -109,9 +112,9 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
         const popescu = persons.get("ION POPESCU")!; // the 1975 person: the most frequent spelling ties, so the alphabetically first wins
         if (mode.shown) {
           expect(alfa.filter((h) => h.birthYear !== null).every((h) => h.person !== null)).toBe(true);
-          const page = (await ask(mode.name, "PersonPage", { id: popescu })).person;
+          const page = (await ask(mode.name, "PersonPage", { id: popescu })).person!;
           expect(page).toMatchObject({ id: popescu, birthYear: 1975, roleCount: 2 });
-          expect(page.roles.map((r: any) => r.organisationName).sort()).toEqual(["ALFA ONRC SRL", "BETA ONRC SRL"]);
+          expect(page.roles.map((r: RoleJson) => r.organisationName).sort()).toEqual(["ALFA ONRC SRL", "BETA ONRC SRL"]);
         } else {
           expect(alfa.every((h) => h.person === null)).toBe(true);
           for (const id of persons.values()) expect((await ask(mode.name, "PersonPage", { id })).person).toBeNull();
@@ -143,13 +146,13 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
   }
 
   it("with the switch on, the person pages join roles across organisations, an IF and an ONRC-only company included", async () => {
-    const toma = (await ask("show", "PersonPage", { id: persons.get("TOMA GHEORGHE")! })).person;
+    const toma = (await ask("show", "PersonPage", { id: persons.get("TOMA GHEORGHE")! })).person!;
     expect(toma.roleCount).toBe(2);
-    expect(toma.roles.map((r: any) => [r.organisationName, r.role]).sort()).toEqual([["BETA ONRC SRL", "administrator"], ["FAM TOMA IF", "reprezentant întreprindere familiala"]]);
-    const dumitrescu = (await ask("show", "PersonPage", { id: persons.get("DUMITRESCU ȘTEFAN-VLAD")! })).person;
+    expect(toma.roles.map((r: RoleJson) => [r.organisationName, r.role]).sort()).toEqual([["BETA ONRC SRL", "administrator"], ["FAM TOMA IF", "reprezentant întreprindere familiala"]]);
+    const dumitrescu = (await ask("show", "PersonPage", { id: persons.get("DUMITRESCU ȘTEFAN-VLAD")! })).person!;
     expect(dumitrescu.roleCount).toBe(2);
-    expect(dumitrescu.roles.map((r: any) => r.organisationName).sort()).toEqual(["DUBLA ONRC SA", "OMEGA ONLY SRL"]); // the ONRC-only company's role is on the Private view only
-    expect(dumitrescu.roles.every((r: any) => typeof r.entityKey === "string")).toBe(true);
+    expect(dumitrescu.roles.map((r: RoleJson) => r.organisationName).sort()).toEqual(["DUBLA ONRC SA", "OMEGA ONLY SRL"]); // the ONRC-only company's role is on the Private view only
+    expect(dumitrescu.roles.every((r: RoleJson) => typeof r.entityKey === "string")).toBe(true);
     expect([...persons.keys()].some((n) => n.includes("RADU") || n.includes("NEGRU") || n.includes("DEMO"))).toBe(false); // no page for a possible match, an unlinked holder or a sole trader
   });
 

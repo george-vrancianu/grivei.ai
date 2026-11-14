@@ -19,9 +19,9 @@ export const personPage: FixtureSet<PersonPageQuery, PersonPageQueryVariables> =
     data: { person: {
       id: ID, name: "POPESCU ION", birthYear: 1975, roleCount: 3,
       roles: [
-        { organisationName: "ALFA SRL", entityKey: "30000002", role: "administrator" },
-        { organisationName: "BETA SRL", entityKey: "30000003", role: "reprezentant legal" },
-        { organisationName: "FARA CUI SRL", entityKey: null, role: "administrator" },
+        { organisationName: "ALFA SRL", entityKey: "30000002", entityRole: "SUPPLIER", role: "administrator" },
+        { organisationName: "BETA SRL", entityKey: "30000003", entityRole: "AUTHORITY", role: "reprezentant legal" },
+        { organisationName: "FARA CUI SRL", entityKey: null, entityRole: null, role: "administrator" },
       ],
       snapshot: "2026-05-06", provenance,
     } },
@@ -38,7 +38,7 @@ export const personPage: FixtureSet<PersonPageQuery, PersonPageQueryVariables> =
     variables: { id: "fedcba9876543210fedcba9876543210" },
     data: { person: {
       id: "fedcba9876543210fedcba9876543210", name: "DUMITRESCU ȘTEFAN-VLAD CONSTANTIN-ALEXANDRU", birthYear: 1970, roleCount: 1,
-      roles: [{ organisationName: "DUBLA ONRC SA", entityKey: "30000006", role: "administrator" }],
+      roles: [{ organisationName: "DUBLA ONRC SA", entityKey: "30000006", entityRole: "SUPPLIER", role: "administrator" }],
       snapshot: "2026-05-06", provenance,
     } },
   },
