@@ -34,7 +34,8 @@ def key(text: str) -> str:
 
 
 def is_independent(party: str | None) -> bool:
-    return not party or "INDEPENDENT" in key(party)
+    """No list at all, or AEP's own marker; a registered name that merely contains the word (a party of the independents) is a list as registered."""
+    return not party or key(party) == key(INDEPENDENT)
 
 
 def alliances(path: Path | None = None) -> dict[str, list[str]]:

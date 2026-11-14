@@ -33,7 +33,7 @@ CREATE TABLE aep.mandate (
     votes         integer NOT NULL,
     start_date    date NOT NULL,                  -- assumed oath date (pipeline/aep/mandates.py)
     end_date      date,
-    end_basis     text                            -- HANDOVER_START | PARTIAL_VACANCY_BOUND | null
+    end_basis     text                            -- HANDOVER_START | VACANCY_DATE | PARTIAL_VACANCY_BOUND | null
 );
 CREATE INDEX mandate_area_idx ON aep.mandate (area, start_date);
 

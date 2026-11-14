@@ -9,10 +9,12 @@ window, an interim leader, a mandate without results (a UAT absent from the minu
 """
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from datetime import date, timedelta
+from pathlib import Path
 
-from .read import Candidate, Race, alliances, is_independent, key
+from .read import DATA, Candidate, Race, alliances, is_independent, key
 
 ASSUMED_OATH_DAYS = 30
 HANDOVER_START = date(2024, 9, 27)  # the 2020 mandates end; the 2024 validation and oath deadlines start (OUG 21/2024 art. 34)
@@ -53,7 +55,7 @@ class Mandate:
     votes: int
     start: date
     end: date | None  # None = still in force
-    end_basis: str | None  # PARTIAL_VACANCY_BOUND when a partial election cut it short, else HANDOVER_START or None
+    end_basis: str | None  # VACANCY_DATE (a known vacancy) or PARTIAL_VACANCY_BOUND (the assumed bound) when it ended early, HANDOVER_START, or None
 
 
 @dataclass(frozen=True)
@@ -70,8 +72,15 @@ def _mandate(race: Race, winner: Candidate, election: Election, start: date, end
                    winner.votes, start, end, end_basis)
 
 
-def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = None) -> tuple[list[Mandate], list[Gap]]:
-    """One authority's Mandates and gaps from its race in each election (`races` is keyed by Election id; a missing or None race = no result)."""
+def vacancies(path: Path | None = None) -> dict[str, date]:
+    """Area -> the known date its leader's mandate ended early (`data/vacancies.csv`: area, vacancy_date, note)."""
+    with (path or DATA / "vacancies.csv").open(encoding="utf-8", newline="") as f:
+        return {r["area"].strip(): date.fromisoformat(r["vacancy_date"].strip()) for r in csv.DictReader(f) if r.get("area")}
+
+
+def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = None, vacancy: date | None = None) -> tuple[list[Mandate], list[Gap]]:
+    """One authority's Mandates and gaps from its race in each election (`races` is keyed by Election id; a missing or None race = no result).
+    `vacancy` is the known date the leader's mandate ended early, if any: the mandate is cut there and what follows is an interim gap."""
     table = alliances() if table is None else table
     first = races.get(REPEAT_2020.id) or races.get(LOCAL_2020.id)  # a repeat round replaces the September result of its UAT
     first_election = REPEAT_2020 if races.get(REPEAT_2020.id) else LOCAL_2020
@@ -86,19 +95,22 @@ def derive(races: dict[str, Race | None], table: dict[str, list[str]] | None = N
             mandates.append(_mandate(race, winner, election, election.in_force_from, end, "HANDOVER_START" if end else None, table))
     gaps.append(Gap(HANDOVER_START, LOCAL_2024.in_force_from, HANDOVER_WINDOW))
     partial = races.get(PARTIAL_2025.id)
-    if partial is not None:
-        cut = PARTIAL_2025.date - timedelta(days=VACANCY_BOUND_DAYS)
+    cut = vacancy or (PARTIAL_2025.date - timedelta(days=VACANCY_BOUND_DAYS) if partial is not None else None)
+    if cut is not None:
         trimmed = []
         for m in mandates:
             if m.end is None or m.end > cut:
                 if m.start >= cut:
-                    continue  # (not reachable with the dates above; a mandate starting after the bound is dropped rather than shown negative)
-                m = Mandate(m.office, m.siruta, m.county, m.leader, m.list_name, m.independent, m.member_parties, m.election, m.votes, m.start, cut, "PARTIAL_VACANCY_BOUND")
+                    continue  # a mandate starting after the vacancy is dropped rather than shown negative
+                m = Mandate(m.office, m.siruta, m.county, m.leader, m.list_name, m.independent, m.member_parties, m.election, m.votes, m.start, cut,
+                            "VACANCY_DATE" if vacancy else "PARTIAL_VACANCY_BOUND")
             trimmed.append(m)
         mandates = trimmed
         gaps = [Gap(g.start, cut, g.reason) if g.end is None else g for g in gaps if not (g.end is None and g.start >= cut)]
-        winner = partial.winner()
-        if winner is None:
+        winner = partial.winner() if partial is not None else None
+        if partial is None:
+            gaps.append(Gap(cut, None, INTERIM))  # no partial election held: the interim leader is still in office
+        elif winner is None:
             gaps.append(Gap(cut, None, NO_RESULTS))
         else:
             gaps.append(Gap(cut, PARTIAL_2025.in_force_from, INTERIM))

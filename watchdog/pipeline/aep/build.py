@@ -26,7 +26,7 @@ from ..archive import Archive, Unit
 from ..placement.matching import fold
 from ..placement.tables import load_gazetteer
 from .fetch import SOURCE
-from .mandates import ELECTIONS_BY_ID, LOCAL_2020, LOCAL_2024, PARTIAL_2025, REPEAT_2020, derive
+from .mandates import ELECTIONS_BY_ID, LOCAL_2020, LOCAL_2024, PARTIAL_2025, REPEAT_2020, derive, vacancies
 from .read import COUNTY_PRESIDENT, GENERAL_MAYOR, MAYOR, Race, alliances, key, read_minutes, read_partial, read_repeat_round
 
 log = logging.getLogger("pipeline.aep")
@@ -168,10 +168,10 @@ def build_aep(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None
         cur.execute("INSERT INTO aep.snapshot (election_id, election_date, basis, fetched_at, archive_path, data_through, races) VALUES (%s, %s, %s, %s, %s, %s, %s)",
                     (election_id, e.date, e.basis, unit.fetched_at, str(unit.path.relative_to(archive.root)), through, len(races[election_id])))
     through_of = {election_id: date.fromisoformat((unit.origin or {}).get("dataThrough") or ELECTIONS_BY_ID[election_id].date.isoformat()) for election_id, unit in used.items()}
-    table = alliances()
+    table, known_vacancies = alliances(), vacancies()
     next_id = 0
     for area, per_election in sorted(by_area.items()):
-        mandates, gaps = derive(per_election, table)
+        mandates, gaps = derive(per_election, table, known_vacancies.get(area))
         for m in mandates:
             next_id += 1
             cur.execute("INSERT INTO aep.mandate (id, area, office, leader_name, list_name, independent, member_parties, election_id, election_date, basis, data_through, votes, start_date, end_date, end_basis) "
@@ -185,7 +185,7 @@ def build_aep(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None
     authorities = attributed_authorities(cur)
     for _, area, _ in authorities:
         if area not in by_area:
-            _, gaps = derive({}, table)
+            _, gaps = derive({}, table, known_vacancies.get(area))
             cur.executemany("INSERT INTO aep.gap (area, start_date, end_date, reason) VALUES (%s, %s, %s, %s)", [(area, g.start, g.end, g.reason) for g in gaps])
             by_area[area] = {}
     cur.executemany("INSERT INTO aep.authority (entity_key, area, how) VALUES (%s, %s, %s)", authorities)

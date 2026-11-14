@@ -199,7 +199,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     # AMEPIP's public-enterprise list (#183) has its own isolated step: its failure never blocks data.gov.ro, ANAF or the load
     amepip = [Step("amepip", impl.amepip, weekly("amepip", AMEPIP_EVERY_DAYS))] if _has_amepip(impl) else []
-    aep = [Step("aep", impl.aep, weekly("aep", AEP_EVERY_DAYS))] if getattr(impl, "check_aep", None) is not None and hasattr(impl, "aep") else []
+    aep = [Step("aep", impl.aep, weekly("aep", AEP_EVERY_DAYS))] if getattr(impl, "check_aep", None) is not None else []
     # MF's annual financial statements (#179) likewise: isolated, due from its last success
     financials = [Step("financials", impl.financials, weekly("financials", FINANCIALS_EVERY_DAYS))] if _has_financials(impl) else []
     return [

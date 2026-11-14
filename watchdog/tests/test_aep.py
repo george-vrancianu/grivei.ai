@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from pipeline.aep import fetch as aep_fetch
-from pipeline.aep.mandates import (HANDOVER_WINDOW, INTERIM, LOCAL_2020, LOCAL_2024, NO_RESULTS, PARTIAL_2025, REPEAT_2020, derive, in_force)
+from pipeline.aep.mandates import (HANDOVER_WINDOW, INTERIM, LOCAL_2020, LOCAL_2024, NO_RESULTS, PARTIAL_2025, REPEAT_2020, derive, in_force, vacancies)
 from pipeline.aep.read import Candidate, Race, MAYOR, is_independent, key, read_minutes, read_partial, read_repeat_round, split_header, tidy
 from pipeline.archive import Archive
 
@@ -34,6 +34,7 @@ def test_party_names_keep_the_registered_spelling_with_comma_below_and_independe
     assert tidy("PARTIDUL  ALIANŢA LIBERALILOR ŞI DEMOCRAŢILOR") == "PARTIDUL ALIANȚA LIBERALILOR ȘI DEMOCRAȚILOR"
     assert key("ALIANȚA ELECTORALĂ \"PSD ALDE\"") == key("ALIANTA ELECTORALA PSD ALDE")  # the alliance table's key
     assert is_independent(None) and is_independent("CANDIDAT INDEPENDENT") and not is_independent("PARTIDUL NAȚIONAL LIBERAL")
+    assert not is_independent("ALIANȚA INDEPENDENȚILOR") and not is_independent("PARTIDUL INDEPENDENT")  # a registered list that contains the word is a list
 
 
 def test_the_final_minutes_are_read_per_county_with_mayors_and_the_county_president():
@@ -55,9 +56,9 @@ def test_partial_counts_are_never_read_as_final_minutes(tmp_path):
 
 def test_the_candidate_and_list_are_split_from_the_csv_column_names():
     parties = {"PARTIDUL SOCIAL DEMOCRAT", "PARTIDUL NAȚIONAL LIBERAL"}
-    assert split_header("COPIL IONEL-STELIAN-PARTIDUL SOCIAL DEMOCRAT-voturi", parties) == ("COPIL IONEL-STELIAN", "PARTIDUL SOCIAL DEMOCRAT")
-    assert split_header("TRIFU DĂNUȚ-ANGELO-CANDIDAT INDEPENDENT-voturi", parties) == ("TRIFU DĂNUȚ-ANGELO", None)
-    assert split_header("MORARU MIHAI-RĂZVAN-ALIANȚA PNL USR-voturi", parties) == ("MORARU MIHAI-RĂZVAN", "ALIANȚA PNL USR")  # an unknown list: after the first hyphen before a list word
+    assert split_header("POPA ANDREI-VLAD-PARTIDUL SOCIAL DEMOCRAT-voturi", parties) == ("POPA ANDREI-VLAD", "PARTIDUL SOCIAL DEMOCRAT")
+    assert split_header("LUPU MIRCEA-DAN-CANDIDAT INDEPENDENT-voturi", parties) == ("LUPU MIRCEA-DAN", None)
+    assert split_header("DOBRE SILVIU-RADU-ALIANȚA PNL USR-voturi", parties) == ("DOBRE SILVIU-RADU", "ALIANȚA PNL USR")  # an unknown list: after the first hyphen before a list word
 
 
 def test_the_repeat_round_and_the_partial_election_are_read_with_their_sirutas():
@@ -82,6 +83,17 @@ def test_derive_the_repeat_round_replaces_september_and_a_partial_election_cuts_
                              PARTIAL_2025.id: race(("C", "R", 7))}, {})
     assert [(m.leader, m.election.id, m.end) for m in mandates] == [("B", "local-2020-repeat", date(2024, 9, 27)), ("B", "local-2024", date(2025, 9, 8)), ("C", "local-2025-partial", None)]
     assert [(g.reason, g.start, g.end) for g in gaps] == [(HANDOVER_WINDOW, date(2024, 9, 27), date(2024, 10, 27)), (INTERIM, date(2025, 9, 8), date(2026, 1, 6))]
+
+
+def test_derive_a_known_vacancy_cuts_the_mandate_there_and_the_interim_gap_runs_to_the_partial_winner_or_stays_open():
+    races = {LOCAL_2020.id: race(("A", "P", 5)), LOCAL_2024.id: race(("B", "Q", 9))}
+    mandates, gaps = derive(races, {}, date(2025, 5, 26))  # no partial election held yet: the interim leader is still in office
+    assert [(m.leader, m.end, m.end_basis) for m in mandates] == [("A", date(2024, 9, 27), "HANDOVER_START"), ("B", date(2025, 5, 26), "VACANCY_DATE")]
+    assert gaps[-1] == (gaps[-1].__class__(date(2025, 5, 26), None, INTERIM)) and in_force(mandates, date(2025, 6, 1)) is None
+    mandates, gaps = derive({**races, PARTIAL_2025.id: race(("C", "R", 7))}, {}, date(2025, 5, 26))  # the vacancy date wins over the 90-day bound (7 Dec 2025)
+    assert [(m.leader, m.end) for m in mandates] == [("A", date(2024, 9, 27)), ("B", date(2025, 5, 26)), ("C", None)]
+    assert (gaps[-1].reason, gaps[-1].start, gaps[-1].end) == (INTERIM, date(2025, 5, 26), date(2026, 1, 6))
+    assert vacancies()["GENERAL:B"] == date(2025, 5, 26)  # the checked-in table
 
 
 def test_derive_a_mandate_without_results_is_a_gap_not_a_guess():
@@ -136,7 +148,7 @@ def test_fetch_archives_each_round_once_and_states_the_data_through_date_of_the_
     assert not any("dup" in c or "presence" in c for c in calls)  # only the race files, never a duplicate or the presence file
     [partial] = [u for u, _ in archive.survey() if u is not None and u.stream == "partial"]
     assert partial.origin["dataThrough"] == "2025-12-09" and partial.origin["oneOff"] and sorted(partial.files) == ["pv_part_uat_p_bv_880030.csv"]
-    again, calls2 = aep_fetch.fetch_aep(archive, http=stub([]), counties=("bv", "b")), []
+    again = aep_fetch.fetch_aep(archive, http=stub([]), counties=("bv", "b"))
     assert again.archived == [] and len(again.unchanged) == 4
 
 
