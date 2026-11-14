@@ -1665,6 +1665,28 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect((await zoom("RO-CJ", { county: "RO-BV" })).uats).toEqual([]);
     });
 
+    it("areaShare (#103): after a supplier-county click, the shares of the multi-winner rows plus the single winners' in-area shares equal total.awarded", async () => {
+      let multiWinner = 0;
+      for (const county of ["RO-CJ", "RO-BV"]) {
+        const variables = { filter: { county, countySide: "SUPPLIER" } };
+        const r = await ask("moneymap_a", mainScreen.sha256, variables);
+        expect(r.body.errors).toBeUndefined();
+        const { total, records } = (r.body.data as MainScreenQuery).seap.search;
+        expect(records.rows.length, county).toBe(records.count); // the page holds every Record, so the sum is over the whole set
+        const shares = records.rows.map(({ record, areaShare }) => {
+          if (areaShare !== null) {
+            multiWinner += 1;
+            expect(record.winners.length, `${record.code} has several winners`).toBeGreaterThan(1);
+            return areaShare;
+          }
+          expect(record.winners, `${record.code} has no areaShare, so one winner`).toHaveLength(1);
+          return record.counted ?? "0"; // a sole winner's share is null: the Record's whole counted value (nothing for a suspect or blank one)
+        });
+        expect(sum(shares).toString(), county).toBe(total.awarded);
+      }
+      expect(multiWinner).toBeGreaterThan(0); // the consortia of Cluj are in the set, so the multi-winner branch really ran
+    });
+
     it("gives identical maps after a second rebuild into a fresh database (#71, ADR 0004)", async () => {
       rebuild("moneymap_b", "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-money-b")]);
       for (const countySide of ["AUTHORITY", "SUPPLIER"]) expect((await main({ countySide }, "moneymap_b")).map).toEqual((await main({ countySide })).map);
@@ -2434,6 +2456,21 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       for (const filter of [{ hasSignals: true }, { hasSignals: false, channel: "DIRECT_PURCHASE" }]) {
         expect(await doc(tabs, { f: filter }, true)).toEqual(await doc(tabs, { f: filter }, false));
       }
+    });
+
+    it("signalCount (#104): with an empty filter the chip count of an entity row equals that entity's Overview Signals count for the same role", async () => {
+      const tabs = `query($f: RecordFilter!) { seap { search(filter: $f) { authorities(limit: 50) { rows { entity { key } signalCount } } suppliers(limit: 50) { rows { entity { key } signalCount } } } } }`;
+      await roleSignals(S, "AUTHORITY"); // opens this database's pool, which `doc` reuses
+      const search = (await doc(tabs, { f: {} })).seap.search as Record<"authorities" | "suppliers", { rows: { entity: { key: string }; signalCount: number }[] }>;
+      let withSignals = 0;
+      for (const [tab, role] of [["authorities", "AUTHORITY"], ["suppliers", "SUPPLIER"]] as const) {
+        expect(search[tab].rows.length).toBeGreaterThan(0);
+        for (const { entity, signalCount } of search[tab].rows) {
+          expect(signalCount, `${entity.key} as ${role}`).toBe((await roleSignals(entity.key, role)).count);
+          if (signalCount > 0) withSignals += 1;
+        }
+      }
+      expect(withSignals).toBeGreaterThan(0); // the Signals of this fixture show up on the rows, so the comparison is not 0 = 0 throughout
     });
   });
 
