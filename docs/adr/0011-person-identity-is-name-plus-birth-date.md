@@ -35,3 +35,7 @@ Two person records are the same person only when their normalised name and full 
 ## Amended 2026-11-13: cross-Source person links are Restricted
 
 [ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) makes confirmed links that join people across Sources (for example a deputy to an ONRC administrator) Restricted, along with Signals that join through people. They are shown only in a Private view. The linking rules here are unchanged; they no longer wait on Go-live.
+
+## Amended 2026-11-13: senat.ro is an official publication for senators
+
+All 134 senat.ro profiles carry a full birth date and birth county inside an HTML comment in the page source. The browser doesn't display it, but the Senate serves it to every visitor. That counts as an official publication for the person key, so senators link like deputies. 44 of 134 match ONRC on name + birth date, all consistent ([research](https://github.com/george-vrancianu/grivei.ai/issues/153)). The basis reads "birth date in the senat.ro profile source". Senators' names, mandates and parliamentary group, from the visible profile, are on the public tier like cdep.ro's deputies. Their links to ONRC are cross-Source, so they are Restricted under ADR 0015 and shown only in a Private view, birth year only. Whether this source holds for *public* links goes on ADR 0009's list for the later decision to publish Restricted content. Decision: [ticket](https://github.com/george-vrancianu/grivei.ai/issues/156).
