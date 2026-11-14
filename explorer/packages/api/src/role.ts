@@ -136,11 +136,11 @@ function perRecord(groupSql: string, whereSql: string, extra = "", table = "seap
 export function roleStore(deps: RoleDeps): RoleStore {
   const { pool, entitiesOf, fallbackEntity } = deps;
   const { rowsOf } = deps;
-  const buildWhere = (filter: SearchFilter) => buildWhereFor(filter, deps.restricted === true);
+  const whereOf = (filter: SearchFilter) => buildWhereFor(filter, deps.restricted === true);
 
   return {
     async roleCounterparties(side, filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // The counterparty's key: the supplier on an authority's page, the authority on a supplier's. A row with no key is either a natural
       // person (all of them one group, `#person`; the winner's `naturalPerson` flag on the Record says so) or a winner nobody could link,
       // or a Record with no winner (`#unknown`): those are NOT natural persons.
@@ -183,7 +183,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async searchFacet(dimension, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       let sql: string;
       if (dimension === "badge" || dimension === "signal") {
         // a Record has several badges (or belongs to several Signals' rules): one row per (value, Record). The inner select is what the index serves; the unnest is above it.
@@ -203,7 +203,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async searchMonths(filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const { rows } = await cancellableQuery<Record<string, unknown> & { month: string }>(
         pool, signal,
         `SELECT g AS month, ${totalColumns("")} FROM (${perRecord("to_char(award_date, 'YYYY-MM')", w.sql)}) r GROUP BY g ORDER BY g`,
@@ -213,7 +213,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleFrameworks(filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const { rows } = await cancellableQuery<{ count: number; ceilings: string; subsequent: string }>(
         pool, signal,
         `WITH m AS (SELECT record_code, max(ceiling_bani) AS ceil FROM seap.search WHERE ${w.sql} GROUP BY record_code),
@@ -228,7 +228,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleConsortia(filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // The Records of the set with more than one winner, grouped by who won them (the sorted member keys; natural persons have no key, they are `#person`).
       // The group's money is the Records' whole counted value on both sides, so one consortium reads the same on the authority's and the supplier's page.
       // (a natural person is `#person`; a winner nobody could link is `#unknown`: the two are different members)
@@ -278,7 +278,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleLargest(filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const codes = await cancellableQuery<{ record_code: string }>(
         pool, signal,
         `SELECT record_code FROM seap.search WHERE ${w.sql} GROUP BY record_code HAVING sum(share_bani) IS NOT NULL

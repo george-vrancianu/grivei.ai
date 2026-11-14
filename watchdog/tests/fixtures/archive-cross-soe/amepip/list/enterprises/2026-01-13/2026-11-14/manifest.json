@@ -10,8 +10,8 @@
   "files": [
     {
       "name": "datecompanii_ind-finnefin.xlsx",
-      "sha256": "6b10f3e29cedef010c52cc0f1bcf7a783e2d154b17d321a552788405ee5fc6ab",
-      "bytes": 6175
+      "sha256": "ccf4c2b404a5f099cb211b760dd86263974112e03c76fb948495c96f801c69eb",
+      "bytes": 6176
     }
   ],
   "origin": {
@@ -25,7 +25,7 @@
     "resourceName": "Date financiare si non-financiare",
     "url": "https://data.gov.ro/dataset/00000000-0000-0000-0000-00000000a001/resource/00000000-0000-0000-0000-00000000b001/download/datecompanii_ind-finnefin.xlsx",
     "lastModified": "2026-01-13T14:23:50.041841",
-    "size": 6175,
+    "size": 6176,
     "hash": "",
     "format": "XLSX"
   }

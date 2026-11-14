@@ -3,7 +3,7 @@ enterprise's private suppliers, and the enterprise awarded that supplier a Recor
 
 This is the only rule that joins one person's roles across organisations, so it is Restricted: the rule, its Signals, its Records, their counts and its firing rate
 are served only when the host's `GRIVEI_RESTRICTED` is exactly `show` (the API gates it; `seap.search.signals` and `has_signals` never carry it, so no public
-filter, facet or count can reveal it).
+filter, facet or count can reveal it; it is only on the search row's `restricted_signals`, read only under `show`).
 
 - Public enterprise: a CUI on AMEPIP's list (`amepip.enterprise`, in any financial year of the newest release; the list is not "currently listed"). Its Records as
   the awarding authority are the ones read.

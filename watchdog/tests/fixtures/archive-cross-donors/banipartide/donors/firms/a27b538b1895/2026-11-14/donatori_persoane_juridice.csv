@@ -13,3 +13,5 @@ rowid,Nume,Suma,An,Partid,Tip donație,CUI,Sediu,Naționalitatea donatorului,Dat
 12,DONATOR ALLIANCE SRL,21000,2023,USR,Donatii p. juridice,52001203,București Sector 1,română,01.02.2023,Bani,
 13,DONATOR NOT MEMBER SRL,22000,2023,PSD,Donatii p. juridice,52001300,București Sector 1,română,01.02.2023,Bani,
 14,DONATOR DERIVED SRL,23000,2023,PSD,Donatii p. juridice,52001408,București Sector 1,română,01.05.2023,Bani,
+15,DONATOR MANDATE OLD SRL,24000,2023,PSD,Donatii p. juridice,52001505,București Sector 1,română,15.12.2023,Bani,
+16,DONATOR MANDATE NEW SRL,25000,2023,PNL,Donatii p. juridice,52001602,București Sector 1,română,15.12.2023,Bani,

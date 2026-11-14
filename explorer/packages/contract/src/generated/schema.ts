@@ -178,7 +178,7 @@ export type DonorToPartyNumbers = {
   __typename?: 'DonorToPartyNumbers';
   days: Scalars['Int']['output'];
   derived: Scalars['Boolean']['output'];
-  kind: Scalars['String']['output'];
+  kind: DonationKind;
   party: Scalars['String']['output'];
 };
 
@@ -1979,7 +1979,7 @@ export type DonationSourceResolvers<ContextType = any, ParentType extends Resolv
 export type DonorToPartyNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['DonorToPartyNumbers'] = ResolversParentTypes['DonorToPartyNumbers']> = {
   days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   derived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['DonationKind'], ParentType, ContextType>;
   party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };

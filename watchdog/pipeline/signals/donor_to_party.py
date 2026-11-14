@@ -24,7 +24,6 @@ from datetime import date
 
 from .common import Hit, Row, authority_day_hits
 from .party_names import matches, table
-from .reference import supplier_where
 
 SLUG = "DONOR_TO_PARTY"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")

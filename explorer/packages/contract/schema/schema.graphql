@@ -1125,7 +1125,7 @@ type NoFinancialStatementNumbers { fiscalYear: Int!, awarded: Bani!, legalForm: 
 The fewest days between the nearest donation or loan by a winner and the award (0 to 365), the list the Party ran on at the election (`party`, as registered)
 and whether the Party is derived from a subordinate body (`derived`). `kind` is DONATION or LOAN, as the source states it. No donor name, amount or date is here.
 """
-type DonorToPartyNumbers { days: Int!, party: String!, derived: Boolean!, kind: String! }
+type DonorToPartyNumbers { days: Int!, party: String!, derived: Boolean!, kind: DonationKind! }
 "RESTRICTED. How many confirmed persons hold a role both in the public enterprise (the authority) and in the supplier; a count only, never a name, birth date or id."
 type SoeBoardInSupplierNumbers { persons: Int! }
 

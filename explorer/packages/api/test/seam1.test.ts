@@ -4328,7 +4328,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       cpSync(join(watchdog, "tests/fixtures/archive-cross-soe"), join(scratch, "archive-cross-soe"), { recursive: true });
       for (const db of Object.values(DB)) await admin.query(`CREATE DATABASE ${db}`);
       const out = rebuild(DB.donors, "archive-cross-donors", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-cross-donors"), "--today", "2026-11-20", "--known-gaps", mfGaps]);
-      expect(out).toContain("DONOR_TO_PARTY 7"); // the seven cases that fire; the SOE rule does not exist in this world's data
+      expect(out).toContain("DONOR_TO_PARTY 8"); // the eight cases that fire; the SOE rule does not exist in this world's data
       expect(rebuild(DB.soe, "archive-cross-soe")).toContain("SOE_BOARD_IN_SUPPLIER 2");
       for (const db of Object.values(DB)) {
         const pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
@@ -4346,6 +4346,13 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       return (r.body.data as any).entity.seap.role.signals as { count: number; rows: Sig[] }; // eslint-disable-line @typescript-eslint/no-explicit-any
     };
     const donorSignals = async (label: string) => (await rolePage(DB.donors, keyOf(DB.donors, donorName(label)), "SUPPLIER", "DONOR_TO_PARTY"));
+    // a Signal reproduces by its filter: the main screen run with `reproduce` (its non-null fields) finds exactly the Signal's Records
+    const reproduced = async (db: string, s: Sig, shown = false): Promise<number> => {
+      const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+      const r = shown ? await askShown(db, mainScreen.sha256, { filter }) : await ask(db, mainScreen.sha256, { filter });
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      return (r.body.data as MainScreenQuery).seap.search.total.records;
+    };
 
     it("donor to the authority's Party: inside the window (the award day and day 365 included), a loan, an alliance's member party and a derived Party fire", async () => {
       const expected: Record<string, [string, number, string, boolean, string]> = {
@@ -4355,6 +4362,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         LOAN: ["2023-06-08", 38, "PARTIDUL SOCIAL DEMOCRAT", false, "LOAN"],
         PNL: ["2023-06-21", 51, "PARTIDUL NAȚIONAL LIBERAL", false, "DONATION"],
         DERIVED: ["2023-06-12", 42, "PARTIDUL SOCIAL DEMOCRAT", true, "DONATION"],
+        MANDATE_NEW: ["2024-11-16", 337, "PARTIDUL NAȚIONAL LIBERAL", false, "DONATION"], // the Mandate in force on the award day (PNL since the 2024 handover) is the one that counts
       };
       for (const [label, [date, days, party, derived, kind]] of Object.entries(expected)) {
         const found = await donorSignals(label);
@@ -4362,14 +4370,19 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         const s = found.rows[0]!;
         expect([s.rule, s.date, s.recordCount, s.suppliers.map((x) => x.key)], label).toEqual(["DONOR_TO_PARTY", date, 1, [keyOf(DB.donors, donorName(label))]]);
         expect(s.numbers, label).toEqual({ __typename: "DonorToPartyNumbers", days, party, derived, kind });
+        // the awarding authority's own page lists the same Signal (same reproduce), and the filter reproduces its Records
+        const authorityPage = await rolePage(DB.donors, s.authority.key, "AUTHORITY", "DONOR_TO_PARTY");
+        expect(authorityPage.rows, `${label} on the authority's page`).toContainEqual(s);
+        expect(s.reproduce.signal, label).toBe("DONOR_TO_PARTY");
+        expect(await reproduced(DB.donors, s), `${label} reproduces`).toBe(s.recordCount);
       }
       const alliance = (await donorSignals("ALLIANCE")).rows;
       expect(alliance).toHaveLength(1); // USR is a recorded member party of the alliance that holds the Mandate
       expect(alliance[0]!.numbers).toMatchObject({ __typename: "DonorToPartyNumbers", days: 98, derived: false, kind: "DONATION" });
     });
 
-    it("donor to the authority's Party: day 366, a donation after the award, another party, no readable day, a predecessor party, a non-member of the alliance and a sole trader do not fire", async () => {
-      for (const label of ["DAY_366", "AFTER", "OTHER_PARTY", "NO_DAY", "PREDECESSOR", "NOT_MEMBER", "PFA"]) expect((await donorSignals(label)).count, label).toBe(0);
+    it("donor to the authority's Party: day 366, a donation after the award, another party, no readable day, a predecessor party, a non-member of the alliance, a sole trader and a donation to the outgoing Party of a changed Mandate do not fire", async () => {
+      for (const label of ["DAY_366", "AFTER", "OTHER_PARTY", "NO_DAY", "PREDECESSOR", "NOT_MEMBER", "PFA", "MANDATE_OLD"]) expect((await donorSignals(label)).count, label).toBe(0);
     });
 
     it("donor to the authority's Party: is a public rule, in the methodology answer with its window and firing rate, and filters the search by `signal`", async () => {
@@ -4382,9 +4395,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const filter = { signal: "DONOR_TO_PARTY" };
       const found = await ask(DB.donors, mainScreen.sha256, { filter });
       expect(found.body.errors).toBeUndefined();
-      expect((found.body.data as MainScreenQuery).seap.search.total.records).toBe(7);
+      expect((found.body.data as MainScreenQuery).seap.search.total.records).toBe(8);
       const chip = await ask(DB.donors, mainScreen.sha256, { filter: { hasSignals: true } });
-      expect((chip.body.data as MainScreenQuery).seap.search.total.records).toBe(7); // a public rule is behind the chip too
+      expect((chip.body.data as MainScreenQuery).seap.search.total.records).toBe(8); // a public rule is behind the chip too
     });
 
     it("SOE board member in a supplier (Restricted), shown: a confirmed person in the enterprise and a private supplier fires; a public-enterprise supplier, a namesake and an IF do not", async () => {
@@ -4395,6 +4408,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         ["2026-04-20", 2, [keyOf(DB.soe, "ALFA ONRC SRL")], { __typename: "SoeBoardInSupplierNumbers", persons: 1 }],
       ]);
       expect(found.count).toBe(2);
+      for (const s of found.rows) {
+        // the supplier's page lists the same Signal, and the filter reproduces its Records through the restricted branch (hidden, it would find none: restrictedSignals.test.ts)
+        expect((await rolePage(DB.soe, s.suppliers[0]!.key, "SUPPLIER", "SOE_BOARD_IN_SUPPLIER", true)).rows, "on the supplier's page").toContainEqual(s);
+        expect(s.reproduce.signal).toBe("SOE_BOARD_IN_SUPPLIER");
+        expect(await reproduced(DB.soe, s, true), `${s.date} reproduces`).toBe(s.recordCount);
+      }
       for (const [role, name] of [["AUTHORITY", "DUBLA ONRC SA"], ["SUPPLIER", "OMEGA ONLY SRL"], ["SUPPLIER", "GAMMA ONRC SRL"], ["SUPPLIER", "FAM TOMA IF"]] as const) {
         expect((await rolePage(DB.soe, keyOf(DB.soe, name), role, "SOE_BOARD_IN_SUPPLIER", true)).count, name).toBe(0);
       }

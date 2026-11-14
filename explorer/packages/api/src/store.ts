@@ -589,9 +589,9 @@ function noTable(e: unknown): { rows: never[] } {
 
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true, restricted = restrictedShown() }: PostgresStoreOptions = {}): Store {
   // every filter of this store is read with the Restricted switch it was created with (a Restricted rule's Records join the Signal chips only when shown)
-  const buildWhere = (filter: SearchFilter): Where => buildWhereFor(filter, restricted);
+  const whereOf = (filter: SearchFilter): Where => buildWhereFor(filter, restricted);
   // the rollup counts the public rules only, so a has-Signals filter is answered from the index when Restricted rules are shown
-  const rollupPlan = (filter: SearchFilter) => (restricted && filter.hasSignals != null ? null : rollupPlanFor(filter));
+  const planOf = (filter: SearchFilter) => (restricted && filter.hasSignals != null ? null : rollupPlanFor(filter));
   /** The ONRC registration a predicate on `onrc.registration r` (one bound parameter) finds, with the history derived from the held snapshots. */
   async function onrcWhere(where: string, param: string): Promise<OnrcRegistrationRow | null> {
     const { rows } = await pool.query(
@@ -762,7 +762,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   });
 
   const searchTotal: Store["searchTotal"] = async (filter, { signal } = {}) => {
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       if (plan) {
         const params: unknown[] = [];
         const where = rollupWhere(plan, params);
@@ -775,7 +775,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         );
         return totalOf(r.rows[0]!);
       }
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // Matched RON = the winners' shares that matched. A Record counts once: on its first winner's row, or, when the filter
       // restricts the winners (it can then match on several rows, or not on the first), once per Record after grouping.
       const sql = w.winnerSide
@@ -789,7 +789,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
 
   /** The rows behind the Party coverage (#181): the set the rest of the filter selects (the party left out), grouped on the indexed party columns. A Record counts once, as in `searchTotal`. */
   const searchPartyGroups: Store["searchPartyGroups"] = async (filter, { signal } = {}) => {
-    const w = buildWhere({ ...filter, party: undefined });
+    const w = whereOf({ ...filter, party: undefined });
     const sql = w.winnerSide
       ? `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records
            FROM (SELECT party, party_basis, record_code, sum(share_bani) AS sh FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, record_code) g
@@ -818,7 +818,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return rows as PartyOptionRow[];
     },
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       if (plan) {
         // the rollup holds every entity's numbers per chip cell: one exact GROUP BY, ordered as the scan orders (matched RON, then key)
         const params: unknown[] = [side];
@@ -837,7 +837,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         const now = new Date().toISOString();
         return { count, estimated: false, rows: r.rows.map((x) => ({ entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now), matched: totalOf(x) })) };
       }
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const key = SIDE_KEY[side];
       // 1. how many distinct entities: a HyperLogLog estimate, cheap and inside the index
       const card = await cancellableQuery(pool, signal, `SELECT pdb.agg('{"cardinality":{"field":"${key}"}}'::jsonb) AS c FROM seap.search WHERE ${w.sql}`, w.params);
@@ -906,10 +906,10 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return { count, estimated, rows };
     },
     async searchRecords(filter, { limit, offset, order }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record.
       // A chips-only count comes from the rollup; the page itself is always the Top-K query on the index (a Record page is not a rollup).
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       const count = plan
         ? (await searchTotal(filter, { signal })).records
         : (
@@ -948,7 +948,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return { count, rows: wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r) };
     },
     async searchMap(side, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const rows = await areaTotals(w, side === "AUTHORITY" ? "authority_area" : "supplier_area", side === "AUTHORITY" ? "authority_key" : "supplier_key", side === "SUPPLIER" || w.winnerSide, signal);
       const off = new Map(rows.map((r) => [r.area, r]));
       const unplaced = off.get("UNPLACED");
@@ -960,7 +960,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       };
     },
     async searchUatMap(county, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       w.params.push(county);
       w.sql += ` AND authority_county = $${w.params.length}`;
       // the zoomed county is the authority side (UATs place authorities); a Record counts once, even when the filter restricts the winners

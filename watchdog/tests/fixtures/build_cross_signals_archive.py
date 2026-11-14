@@ -25,6 +25,8 @@ DA Record; the days are the award day and the donation day, `+` marks a Signal.
   DON_ALLIANCE      Sanpetru 2023-05-10 donation USR 2023-02-01 (a member party of the alliance that holds the Mandate)  +
   DON_NOT_MEMBER    Sanpetru 2023-05-11 donation PSD 2023-02-01 (not a member of the alliance)
   DON_DERIVED       hospital 2023-06-12 donation PSD 2023-05-01 (the hospital inherits Brasov's Party: a derived Party) +  derived
+  DON_MANDATE_OLD   Brasov 2024-11-15   donation PSD 2023-12-15 (336 days; the Mandate in force on the award day is PNL since the 2024 handover: the outgoing Party is not it)
+  DON_MANDATE_NEW   Brasov 2024-11-16   donation PNL 2023-12-15 (337 days; the Party of the Mandate in force on the award day)                +
 
 `archive-cross-soe/` goes onto `archive-onrc-people` (build_onrc_people_archive.py: ONRC's people, SEAP counterparties): AMEPIP's list (BETA ONRC SRL, DUBLA ONRC SA
 and OMEGA ONLY SRL are public enterprises), one SEAP DA unit and ANAF's answer for OMEGA. The persons are that world's (BETA and ALFA share ION POPESCU 12/03/1975; BETA
@@ -64,7 +66,7 @@ OUT_DONORS = HERE / "archive-cross-donors"
 OUT_SOE = HERE / "archive-cross-soe"
 NOW = datetime(2026, 11, 14, 9, 0, tzinfo=timezone.utc)
 DON = {label: make_cui(5200000 + 10 * n) for n, label in enumerate(
-    ["WITHIN", "SAME_DAY", "DAY_365", "DAY_366", "AFTER", "LOAN", "OTHER_PARTY", "NO_DAY", "PFA", "PREDECESSOR", "PNL", "ALLIANCE", "NOT_MEMBER", "DERIVED"], start=1)}
+    ["WITHIN", "SAME_DAY", "DAY_365", "DAY_366", "AFTER", "LOAN", "OTHER_PARTY", "NO_DAY", "PFA", "PREDECESSOR", "PNL", "ALLIANCE", "NOT_MEMBER", "DERIVED", "MANDATE_OLD", "MANDATE_NEW"], start=1)}
 DON_NAMES = {label: ("ZAMFIR DEMO PFA" if label == "PFA" else f"DONATOR {label.replace('_', ' ')} SRL") for label in DON}
 AUTHORITIES = {"brasov": ("MUNICIPIUL BRASOV", CUI["brasov"]), "rasnov": ("ORAS RASNOV", CUI["rasnov"]), "sanpetru": ("COMUNA SANPETRU", CUI["sanpetru"]),
                "hospital": ("SPITALUL CLINIC JUDETEAN DEMO BRASOV", make_cui(5100320))}  # build_aep_archive.py NAMES / NEW (not imported: it needs xlwt)
@@ -85,6 +87,8 @@ CASES = {
     "ALLIANCE": ("sanpetru", date(2023, 5, 10), "USR", DONATION, "01.02.2023", "21000"),
     "NOT_MEMBER": ("sanpetru", date(2023, 5, 11), "PSD", DONATION, "01.02.2023", "22000"),
     "DERIVED": ("hospital", date(2023, 6, 12), "PSD", DONATION, "01.05.2023", "23000"),
+    "MANDATE_OLD": ("brasov", date(2024, 11, 15), "PSD", DONATION, "15.12.2023", "24000"),
+    "MANDATE_NEW": ("brasov", date(2024, 11, 16), "PNL", DONATION, "15.12.2023", "25000"),
 }
 
 

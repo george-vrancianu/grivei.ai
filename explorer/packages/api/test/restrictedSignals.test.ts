@@ -14,6 +14,7 @@ import allowlist from "@grivei/contract/persisted-queries.json" with { type: "js
 import { loadSchema, validateResponse } from "@grivei/contract/node";
 import { createApi } from "../src/server.ts";
 import { postgresStore } from "../src/store.ts";
+import { RESTRICTED_RULES } from "../src/restricted.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const watchdog = resolve(here, "../../../../watchdog");
@@ -114,6 +115,12 @@ describe.skipIf(reason !== null)("the SOE-board Signal is served only when GRIVE
     expect((await pool.query("SELECT count(*)::int AS n FROM seap.search WHERE restricted_signals @> ARRAY[$1]::text[]", [RULE])).rows[0].n).toBe(3); // on its own column
   });
 
+  it("every rule the pipeline keeps off the public search rows is on the API's own Restricted list (the API's list is the one that gates)", async () => {
+    const kept = (await pool.query("SELECT DISTINCT unnest(restricted_signals) AS rule FROM seap.search")).rows.map((r) => r.rule as string);
+    expect(kept.length).toBeGreaterThan(0);
+    for (const rule of kept) expect(RESTRICTED_RULES, rule).toContain(rule);
+  });
+
   for (const mode of MODES) {
     describe(`GRIVEI_RESTRICTED ${mode.name}`, () => {
       it(mode.shown ? "serves the Signals of the enterprise's page, their numbers and their count" : "serves no Signal, no Signal count and no row on the enterprise's page", async () => {
@@ -185,7 +192,7 @@ describe.skipIf(reason !== null)("the SOE-board Signal is served only when GRIVE
     expect(extra).toBeLessThanOrEqual(3);
   });
 
-  it("with the switch on, the rule's firing rate is the share of the enterprise authorities with a Signal, computed from the loaded graph", async () => {
+  it("with the switch on, the rule's firing rate is computed from the loaded graph (the share of all contracting authorities with a Record of its kinds that year that have a Signal)", async () => {
     const rule = (await pool.query("SELECT base_rate, base_rate_year FROM seap.signal_rule WHERE slug = $1", [RULE])).rows[0];
     expect(rule.base_rate).toBeGreaterThan(0);
     expect(rule.base_rate).toBeLessThanOrEqual(1);

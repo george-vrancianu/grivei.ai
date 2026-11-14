@@ -10,8 +10,8 @@
   "files": [
     {
       "name": "donatori_persoane_juridice.csv",
-      "sha256": "52bed31fa0ac15ca678f892afdcc9b6fb5030fcb22bad70ef612092f983d7492",
-      "bytes": 1729
+      "sha256": "4b69c27f7101be9e787466142c8188e07efb2388d0e84f8fbd50ef5af015ba59",
+      "bytes": 1965
     }
   ],
   "origin": {
@@ -30,8 +30,8 @@
     "strippedFields": [
       "Reprezentant societate"
     ],
-    "upstreamSha256": "4eabcc09b6ae343d3e0fc228227be8de169070a0770418aee22e2168a88f01c6",
-    "upstreamBytes": 2032,
-    "rows": 14
+    "upstreamSha256": "1173504314208e1661b28fcf2cbf6766277df3df206b0784bf64ac32e572006c",
+    "upstreamBytes": 2308,
+    "rows": 16
   }
 }

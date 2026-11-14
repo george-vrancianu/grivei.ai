@@ -1,6 +1,8 @@
 """The two cross-Source Signal rules (ticket #185) as pure functions over row dicts and context: no database. The Seam 1 cases are in explorer/packages/api/test/seam1.test.ts
 (watchdog/tests/fixtures/build_cross_signals_archive.py lists the fixture's cases)."""
+import re
 from datetime import date
+from pathlib import Path
 
 from pipeline.signals import RULES, donor_to_party, restricted_slugs, soe_board_in_supplier
 from test_signals import row, winner
@@ -18,6 +20,13 @@ def test_the_two_rules_read_reference_sources_and_only_the_soe_rule_is_restricte
     for r in new:
         assert callable(r.load) and callable(r.detect) and callable(r.where) and r.KINDS
     assert restricted_slugs() == ["SOE_BOARD_IN_SUPPLIER"]
+
+
+def test_the_pipelines_restricted_rules_equal_the_apis_list():
+    """The API's `RESTRICTED_RULES` is the list that gates the data; a rule marked RESTRICTED here and missing there would be served on the public host."""
+    source = (Path(__file__).resolve().parents[2] / "explorer/packages/api/src/restricted.ts").read_text()
+    listed = re.search(r"RESTRICTED_RULES: readonly string\[\] = \[(.*?)\]", source, re.S).group(1)
+    assert sorted(re.findall(r'"([A-Z_]+)"', listed)) == sorted(restricted_slugs())
 
 
 # ---- donor to Party -------------------------------------------------------------------------------------------------------------------

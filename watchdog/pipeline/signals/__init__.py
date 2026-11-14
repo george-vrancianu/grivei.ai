@@ -22,7 +22,7 @@ optional `where(context) -> (sql, params)` narrows the rows streamed to the Reco
 only a Record that matches the rule's thresholds is.
 
 A Restricted rule (`RESTRICTED = True`, the SOE-board rule of #185) has its Signals, Records and `signal_rule` row in the same tables, but the search rows' `signals` and
-`has_signals` never carry it: the public filters, the facets and the rollup then cannot show it whatever the host's switch says. The API reads it from `seap.signal`
+`has_signals` never carry it: the public filters, the facets and the rollup then cannot show it whatever the host's switch says. The search rows carry it only in `restricted_signals`; the API reads it (there and from `seap.signal`)
 only when `GRIVEI_RESTRICTED=show` (explorer/packages/api/src/signals.ts).
 
 The base rate (story 80) is the fraction of contracting authorities, among those the rule could see (an authority with at least one
@@ -157,7 +157,7 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
         """UPDATE seap.search s SET signals = m.rules, has_signals = true
              FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
                      FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule <> ALL(%s) GROUP BY sm.record_code) m
-            WHERE s.record_code = m.record_code""", (restricted_slugs(),))  # a Restricted rule is never on a search row (#185)
+            WHERE s.record_code = m.record_code""", (restricted_slugs(),))  # a Restricted rule is never in `signals` or `has_signals` (#185); it has its own `restricted_signals` column
     # a Restricted rule's Records are marked on their own column, which no public request reads (the API reads it only when `GRIVEI_RESTRICTED=show`)
     cur.execute(
         """UPDATE seap.search s SET restricted_signals = m.rules
@@ -165,7 +165,7 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
                      FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule = ANY(%s) GROUP BY sm.record_code) m
             WHERE s.record_code = m.record_code""", (restricted_slugs(),))
     cur.execute("ANALYZE seap.signal")
-    counts ={r.SLUG: 0 for r in RULES}
+    counts = {r.SLUG: 0 for r in RULES}
     for h in hits:
         counts[h.rule] += 1
     return counts
