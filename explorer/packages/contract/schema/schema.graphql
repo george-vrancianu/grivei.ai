@@ -275,7 +275,7 @@ type FacetCount { value: String!, total: Total! }
 
 enum SourceId { SEAP ANAF ONRC ANI MFINANTE JUST }
 
-"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer)."
+"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source); ONRC when ANAF does not know the CUI but ONRC lists it, ADR 0018; else SEAP)."
 type Provenance {
   source: SourceId!
   "Public page in the Source; null only when the Source has no stable public URL."
@@ -323,7 +323,7 @@ type Entity {
   anafStatus: String
   identityCurated: Boolean!
   placement: Placement
-  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer."
+  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP."
   provenance: [Provenance!]!
   "Spellings under which this entity was published, with dates. Never used to merge."
   aliases: [Alias!]!

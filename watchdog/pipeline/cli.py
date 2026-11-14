@@ -17,10 +17,9 @@ from .archive import Archive, ArchiveError
 from .bulk.records import KINDS
 from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
-from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through, missing_days
-from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME, describe_crawl
-from .crawl.backfill import PASSES as BACKFILL_PASSES, BulkIndex, archive_summary, plan_backfill, run_backfill, week_windows
-from .crawl.backfill import FIRST_DAY as BACKFILL_FIRST_DAY, LAST_DAY_2021_22 as BACKFILL_LAST_DAY
+from .crawl.unitdir import BACKFILL_KIND
+from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME
+from .crawl.backfill import PASSES as BACKFILL_PASSES, BulkIndex, archive_summary, plan_backfill, run_backfill
 from .crawl.backfill_progress import DEFAULT_BACKFILL_STATUS_NAME, BackfillProgress, describe_backfill
 from .datagov import fetch_datagov
 from .estimates import candidates as estimate_candidates
@@ -34,6 +33,8 @@ from .refresh.ledger import LEDGER_NAME
 from .refresh.steps import Impl
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
 from .rebuild import rebuild
+from .seap_status import backfill_totals
+from .sources import SOURCES
 from .validate import summary_lines, validate_archive
 from .bulk import KINDS
 from . import backup as backup_module
@@ -430,8 +431,7 @@ def _status(archive: Archive, args) -> int:
     status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
     crawl_file = Path(args.crawl_progress_file) if args.crawl_progress_file else archive.root / DEFAULT_CRAWL_STATUS_NAME
     anaf_file = Path(args.anaf_progress_file) if args.anaf_progress_file else archive.root / ANAF_STATUS_NAME
-    status, crawl_status, anaf = read_status(status_file), read_status(crawl_file), read_status(anaf_file)
-    days = complete_days(archive)
+    status, anaf = read_status(status_file), read_status(anaf_file)
     code = 0
     if status is None:
         print(f"no rebuild status at {status_file}")
@@ -446,25 +446,10 @@ def _status(archive: Archive, args) -> int:
             print(line)
         if effective_state(anaf) in ("failed", "interrupted"):
             code = 1
-        elif status is None and not (days or crawl_status is not None):
+        elif status is None and not (complete_days(archive) or read_status(crawl_file) is not None):
             code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record
-    if days or crawl_status is not None:
-        for line in describe_crawl(crawl_status, max(days) if days else None, len(days), through={k: contiguous_through(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()},
-                                 missing={k: missing_days(archive, bulk_kind=b) for k, b in CRAWLED_KINDS.items()}):
-            print(line)
-        if crawl_status is not None and effective_state(crawl_status) in ("failed", "interrupted"):
-            code = 1
-        elif status is None:
-            code = 0  # no rebuild yet is not a failure once a crawl is on record
-    held = archive_summary(archive)
-    backfill_status = read_status(Path(args.backfill_progress_file) if args.backfill_progress_file else archive.root / DEFAULT_BACKFILL_STATUS_NAME)
-    if held or backfill_status is not None:  # the backfill (#78) has its own unit kind and cursor, so it is listed apart from the crawl's
-        for line in describe_backfill(backfill_status, held, _backfill_totals(backfill_status)):
-            print(line)
-        if backfill_status is not None and effective_state(backfill_status) in ("failed", "interrupted", "aborted"):
-            code = 1
-        elif not any(x is not None and effective_state(x) in ("failed", "interrupted") for x in (status, anaf, crawl_status)):
-            code = 0  # no rebuild yet is not a failure once a backfill is on record
+    for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
+        code = source.status(archive, args, status, anaf, code)
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
     dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None, backup=None, pgdump=None)
@@ -475,18 +460,11 @@ def _status(archive: Archive, args) -> int:
     return code
 
 
-def _backfill_totals(status: dict | None) -> dict[str, int]:
-    """Weeks per pass: the 2021-22 pass is fixed; the 2023-today one is what the last run planned (it depends on today and on the bulk)."""
-    totals = {name: c["total"] for name, c in ((status or {}).get("passes") or {}).items()}
-    totals[BACKFILL_PASSES[0]] = len(week_windows(BACKFILL_FIRST_DAY, BACKFILL_LAST_DAY))
-    return totals
-
-
 def _backfill(archive: Archive, args) -> int:
     status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_BACKFILL_STATUS_NAME
     if args.status:
         status = read_status(status_file)
-        for line in describe_backfill(status, archive_summary(archive), _backfill_totals(status)):
+        for line in describe_backfill(status, archive_summary(archive), backfill_totals(status)):
             print(line)
         return 1 if status is not None and effective_state(status) in ("failed", "interrupted", "aborted") else 0
     progress = BackfillProgress(status_file)  # lines go to stdout, flushed one by one: a nohup log is current

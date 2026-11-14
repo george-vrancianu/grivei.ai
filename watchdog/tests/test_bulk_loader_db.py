@@ -92,6 +92,9 @@ def test_the_fixture_archive_loads_da_and_dan_and_the_same_file_twice_changes_no
         assert kinds == {"DA": 6, "DAN": 7}
         assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DA91000099'").fetchone() == (0,)
         assert c.execute("SELECT count(*) FROM seap.search").fetchone() == (13,)
+        # the sources registry is stored with the graph (core.source), SEAP only today
+        assert c.execute("SELECT id, name, schema_name, record_kinds, methodology_anchor, landing_status FROM core.source").fetchall() == [
+            ("SEAP", "SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "awarded-value", "live")]
         assert c.execute("SELECT load_notes FROM seap.record WHERE code = 'DAN9100022'").fetchone() == (["value:scientific_notation", "supplier_cui:scientific_notation"],)
         # DAN9100002 is in two quarters' files: it is there once, from the first
         assert c.execute("SELECT count(*), min(source_file_id) FROM seap.record WHERE code = 'DAN9100002'").fetchone() == (1, 3)

@@ -101,7 +101,7 @@ The second Source is the first to reuse the generic parts, so Release 2 also bui
 - the Source picker beside the search bar, with match counts per Source;
 - the Source switch on the Records tab;
 - the Source selector on the Coverage lens and page;
-- a `sources` registry: name, record kinds, lenses, placement rule, methodology anchor, and landing-page row;
+- a `sources` registry: name, record kinds, lenses, placement rule, methodology anchor, and landing-page row (`watchdog/pipeline/sources.py`; the rebuild stores it as `core.source`, and `sources`, `coverage(source)` and `pipeline status` read it through the API adapters in `explorer/packages/api/src/sources.ts`. A new Source adds an entry, its own `sql/<schema>_schema.sql` and an adapter, and `tests/test_sources_registry.py` checks its landing-page row, because `site/` is static HTML);
 - the move of SEAP's tables into a `seap` schema.
 
 Later Releases skip this section.

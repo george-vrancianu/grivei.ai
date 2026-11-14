@@ -3,7 +3,21 @@
 -- through entity keys: the CUI, `vat-<id>`, `name-<slug>` or a key the identity override file pins. (The operational
 -- pipeline ledger, which is not rebuilt, lives beside them and is never dropped here.)
 CREATE SCHEMA IF NOT EXISTS core;
-DROP TABLE IF EXISTS core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+DROP TABLE IF EXISTS core.source, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+
+-- The `sources` registry (pipeline/sources.py), stored at every rebuild: one row per explorable Source. The API's `sources` query and
+-- `coverage(source)` read it; a Source's own tables sit in the schema named here.
+CREATE TABLE core.source (
+    id                 text PRIMARY KEY,          -- the contract's SourceId: SEAP, ONRC ...
+    position           integer NOT NULL,          -- the order `sources` lists them in
+    name               text NOT NULL,
+    schema_name        text NOT NULL,             -- the Postgres schema of the Source's own tables
+    record_kinds       text[] NOT NULL,
+    lenses             text[] NOT NULL,
+    placement_rule     text NOT NULL,
+    methodology_anchor text NOT NULL,             -- the methodology page's section for the Source's measure
+    landing_status     text NOT NULL CHECK (landing_status IN ('live', 'wip', 'next', 'skipped'))
+);
 
 -- One row per CUI ANAF answered "found" for, from the latest archived answer. Placement (#67) reads the address columns:
 -- they are stored exactly as ANAF sent them (`sdenumire_Localitate`, `scod_JudetAuto`, `scod_Judet`, `scod_Postal`, ...).
@@ -29,8 +43,8 @@ CREATE TABLE core.entity (
     name_folded       text NOT NULL DEFAULT '',   -- fold(display_name) (pipeline/fold.py): the Go-to lookup of a name query (#69); '' when only legal forms
     anaf_status       text,
     identity_curated  boolean NOT NULL DEFAULT false,
-    provenance_source text NOT NULL CHECK (provenance_source IN ('ANAF', 'SEAP')),
-    provenance_via    text,                       -- SEAP: the file the latest naming Record came from; ANAF: null
+    provenance_source text NOT NULL CHECK (provenance_source IN ('ANAF', 'SEAP', 'ONRC')),  -- ANAF; ONRC when ANAF does not know the CUI but ONRC lists it (ADR 0018); else SEAP
+    provenance_via    text,                       -- SEAP: the file the latest naming Record came from; ONRC: the snapshot; ANAF: null
     fetched_at        timestamptz NOT NULL
 );
 

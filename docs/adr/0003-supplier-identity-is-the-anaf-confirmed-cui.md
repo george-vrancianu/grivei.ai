@@ -38,3 +38,7 @@ ADR 0011 carries this rule over to people. A person is confirmed only by name pl
 ## Amended 2026-11-13: natural-person supplier names show on the Record, with no threshold
 
 [ADR 0015](0015-go-live-needs-only-a-privacy-notice-restricted-data-sits-behind-a-toggle.md) drops the Naming threshold. A natural-person supplier's published name shows on the Record, in that winner slot, and in that Source's search, each record separately. It never gets an entity page or a person page, and records are never merged by name into a total. The two amendments of 2026-11-12 above are superseded on this point; `withheld.natural_person_name` becomes served data once the code follows (separate ticket). CNPs are still never stored or shown.
+
+## Amended 2026-11-14: ONRC also confirms a CUI
+
+[ADR 0018](0018-an-onrc-registration-maps-to-its-entity-by-cui-and-never-renames-it.md) adds ONRC beside ANAF: a CUI that ANAF doesn't know but ONRC lists becomes an entity keyed on that CUI, with an *ONRC only* badge, instead of a name-only supplier. The display name is still ANAF's wherever ANAF knows the CUI.
