@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fixtures, recordedSignalsMethodology } from "@grivei/contract/fixtures";
 import allowlist from "@grivei/contract/persisted-queries.json";
-import { SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
+import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES as ALL_SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
@@ -16,6 +16,8 @@ import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
 const PATH = { en: "/explore/methodology", ro: "/ro/explore/methodology" } as const;
+/** The rules these answers show: a Restricted rule's section appears only when the API returns the rule (these fixtures never do; the UI test covers it). */
+const SIGNAL_RULES = ALL_SIGNAL_RULES.filter((r) => !RESTRICTED_SIGNAL_RULES.includes(r));
 const ANCHORS = allMethodologyAnchors(SIGNAL_RULES);
 
 const scrolled: Element[] = [];
@@ -276,7 +278,8 @@ describe.each(["en", "ro"] as const)("the base rates from the API's own answers 
 
   it("shows every rule's non-zero rate in one of the three answers, and a rule the answer lacks says nothing was computed", async () => {
     const nonZero = new Set(recordedRates.flatMap((f) => f.data.signalRules.filter((r) => r.baseRate > 0).map((r) => r.slug)));
-    expect([...nonZero].sort()).toEqual([...SIGNAL_RULES].sort());
+    // DONOR_TO_PARTY (#185) joins the recorded answers when the explorer is next re-recorded against a built graph (#187)
+    expect([...nonZero].sort()).toEqual(SIGNAL_RULES.filter((r) => r !== "DONOR_TO_PARTY").sort());
     const splitting = recordedRates.find((f) => f.name === "splitting-archive")!;
     open(PATH[locale], splitting.name);
     await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/20\d\d/);

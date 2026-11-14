@@ -78,6 +78,17 @@ const signalCard: Copy["signalCard"] = {
       sentence: (n) => `An ${n.legalForm} was awarded ${n.awarded} in ${n.fiscalYear}; no financial statement is held for ${n.fiscalYear} or ${n.previousYear}.`,
       lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
     },
+    DONOR_TO_PARTY: {
+      label: "Donor to the authority's Party",
+      sentence: (n) =>
+        `A supplier made ${n.loan ? "a loan" : "a donation"} to ${n.party}, the Party of the authority's Mandate, ${n.days} ${n.daysCount === 1 ? "day" : "days"} before the award.${n.derived ? " The Party is derived: it comes from the Mandate of the body this authority is subordinate to." : ""}`,
+      lawful: "Possible lawful explanations: a donation or loan within the legal limits is lawful and public, a firm can support a Party and also win contracts in open competition, and a Party's local branch may have had no say in the award.",
+    },
+    SOE_BOARD_IN_SUPPLIER: {
+      label: "Public-enterprise board member in a supplier",
+      sentence: (n) => `${n.persons} confirmed ${n.personsCount === 1 ? "person holds" : "people hold"} a role both in this public enterprise and in the private supplier it awarded a Record to.`,
+      lawful: "Possible lawful explanations: a person may lawfully and openly sit on several boards, the roles may not have overlapped in time with the award, or the supplier won an open competition.",
+    },
   },
   compact: { text: (label, when) => `${label}, ${when}` },
   date: (when) => `Latest Record: ${when}`,

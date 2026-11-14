@@ -9,7 +9,7 @@ export type { OnrcCountMapData, OnrcResultData, OnrcSearchData, SnapshotCellData
 export { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type MethodologySectionKey } from "./utils/methodologyAnchors.ts";
 export { followLink } from "./utils/followLink.ts";
 export {
-  FORBIDDEN_STEMS, SIGNAL_RULES, forbiddenWords, ruleTexts, signalNumberTexts, signalSentence,
+  FORBIDDEN_STEMS, RESTRICTED_SIGNAL_RULES, SIGNAL_RULES, forbiddenWords, ruleTexts, signalNumberTexts, signalSentence,
   type SignalNumberTexts, type SignalRuleCopy, type SignalRulesCopy,
 } from "./utils/signalWording.ts";
 export { pageSx } from "./utils/pageSx.ts";

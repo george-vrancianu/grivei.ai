@@ -5,8 +5,11 @@ import { renderInUi } from "../../../testing/render.tsx";
 import type { Locale } from "../../../theme/index.ts";
 import { methodologyRates, sampleMethodologyCopy } from "../../samples/methodology.ts";
 import { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor } from "../../utils/methodologyAnchors.ts";
-import { SIGNAL_RULES } from "../../utils/signalWording.ts";
+import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES as ALL_SIGNAL_RULES } from "../../utils/signalWording.ts";
 import { MethodologyPage, type MethodologyPageProps } from "./index.ts";
+
+/** The rules the default answers show: a Restricted rule's section needs the API to return the rule (tested below). */
+const SIGNAL_RULES = ALL_SIGNAL_RULES.filter((r) => !RESTRICTED_SIGNAL_RULES.includes(r));
 
 const show = (props: Partial<MethodologyPageProps> = {}, locale: Locale = "en") =>
   renderInUi(
@@ -35,7 +38,9 @@ describe("the methodology page's anchors", () => {
     expect(SIGNAL_RULES.map(signalAnchor)).toEqual([
       "signal-over-cap", "signal-splitting", "signal-framework-overrun", "signal-no-publication",
       "signal-young-firm", "signal-no-construction-caen", "signal-after-strike-off", "signal-insolvency", "signal-few-employees", "signal-no-financial-statement",
+      "signal-donor-to-party",
     ]);
+    expect(ALL_SIGNAL_RULES.map(signalAnchor)).toContain("signal-soe-board-in-supplier");
     expect(METHODOLOGY_ANCHORS.awardedValue).toBe("awarded-value");
   });
 
@@ -54,6 +59,27 @@ describe("the contents", () => {
     expect(links.map((l) => l.getAttribute("href"))).toEqual(allMethodologyAnchors(SIGNAL_RULES).map((a) => `/explore/methodology#${a}`));
     await userEvent.setup().click(within(nav).getByRole("link", { name: "Suspect values" }));
     expect(onNavigate).toHaveBeenCalledWith("/explore/methodology#suspect-values");
+  });
+});
+
+describe("a Restricted rule's section (#185)", () => {
+  const SOE = { slug: "SOE_BOARD_IN_SUPPLIER" as const, window: { from: "2021-01-01", to: "2024-11-30" }, baseRate: 0.02, baseRateYear: 2024, dataThrough: "2024-11-30" };
+  const soeHeading = "Public-enterprise board member in a supplier";
+
+  it("is absent (section, contents entry, anchor) unless the API returned the rule", () => {
+    for (const baseRates of [{ status: "ready", rules: methodologyRates("typical-after-backfill") }, { status: "loading" }, { status: "error" }] as const) {
+      const { unmount } = show({ baseRates });
+      expect(document.getElementById("signal-soe-board-in-supplier")).toBeNull();
+      expect(screen.queryByText(soeHeading)).toBeNull();
+      unmount();
+    }
+  });
+
+  it("appears with its own window and firing rate when the API returned the rule", () => {
+    show({ baseRates: { status: "ready", rules: [...methodologyRates("typical-after-backfill"), SOE] } });
+    expect(document.getElementById("signal-soe-board-in-supplier")).not.toBeNull();
+    expect(within(screen.getByRole("region", { name: soeHeading })).getByText("2% of contracting authorities had at least one in 2024.")).toBeVisible();
+    expect(within(screen.getByRole("navigation", { name: "On this page" })).getByRole("link", { name: soeHeading })).toBeVisible();
   });
 });
 

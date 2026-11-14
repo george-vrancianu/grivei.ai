@@ -97,7 +97,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
-      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement" },
+      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
       date: (when) => `dated ${when}`,
       records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
     },
@@ -157,7 +157,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",
-      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare" },
+      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
       date: (when) => `din ${when}`,
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
     },
@@ -504,7 +504,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Contraparte ${key}`,
-        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare" },
+        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
         channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         badges: badges.ro,
       }
@@ -516,7 +516,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Counterparty ${key}`,
-        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement" },
+        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
         channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         badges: badges.en,
       };
@@ -821,6 +821,17 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         sentence: (n) => `An ${n.legalForm} was awarded ${n.awarded} in ${n.fiscalYear}; no financial statement is held for ${n.fiscalYear} or ${n.previousYear}.`,
         lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
       },
+      DONOR_TO_PARTY: {
+        label: "Donor to the authority's Party",
+        sentence: (n) =>
+          `A supplier made ${n.loan ? "a loan" : "a donation"} to ${n.party}, the Party of the authority's Mandate, ${n.days} ${n.daysCount === 1 ? "day" : "days"} before the award.${n.derived ? " The Party is derived: it comes from the Mandate of the body this authority is subordinate to." : ""}`,
+        lawful: "Possible lawful explanations: a donation or loan within the legal limits is lawful and public, a firm can support a Party and also win contracts in open competition, and a Party's local branch may have had no say in the award.",
+      },
+      SOE_BOARD_IN_SUPPLIER: {
+        label: "Public-enterprise board member in a supplier",
+        sentence: (n) => `${n.persons} confirmed ${n.personsCount === 1 ? "person holds" : "people hold"} a role both in this public enterprise and in the private supplier it awarded a Record to.`,
+        lawful: "Possible lawful explanations: a person may lawfully and openly sit on several boards, the roles may not have overlapped in time with the award, or the supplier won an open competition.",
+      },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
     date: (when) => `Latest Record: ${when}`,
@@ -888,6 +899,17 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         label: "Fără situații financiare",
         sentence: (n) => `Unei ${n.legalForm} i s-au atribuit ${n.awarded} în ${n.fiscalYear}; nu avem nicio situație financiară pentru ${n.fiscalYear} sau ${n.previousYear}.`,
         lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
+      },
+      DONOR_TO_PARTY: {
+        label: "Donator al Partidului autorității",
+        sentence: (n) =>
+          `Un furnizor a făcut ${n.loan ? "un împrumut" : "o donație"} către ${n.party}, Partidul mandatului autorității, cu ${roCount(n.daysCount, n.days, "zi", "zile")} înainte de atribuire.${n.derived ? " Partidul este derivat: provine din mandatul organismului căruia îi este subordonată această autoritate." : ""}`,
+        lawful: "Explicații legale posibile: o donație sau un împrumut în limitele legale este legal și public, o firmă poate sprijini un partid și poate câștiga contracte în competiție deschisă, iar filiala locală a partidului poate să nu fi avut niciun cuvânt de spus în atribuire.",
+      },
+      SOE_BOARD_IN_SUPPLIER: {
+        label: "Administrator al unei întreprinderi publice într-un furnizor",
+        sentence: (n) => `${roCount(n.personsCount, n.persons, "persoană confirmată are", "persoane confirmate au")} o funcție atât în această întreprindere publică, cât și în furnizorul privat căruia i-a atribuit o înregistrare.`,
+        lawful: "Explicații legale posibile: o persoană poate face parte legal și deschis din mai multe consilii, funcțiile s-ar putea să nu se fi suprapus în timp cu atribuirea sau furnizorul a câștigat o competiție deschisă.",
       },
     },
     compact: { text: (label, when) => `${label}, ${when}` },

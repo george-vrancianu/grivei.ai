@@ -16,6 +16,10 @@ export interface SignalNumberTexts {
   INSOLVENCY: { status: string; firstSeen: string; sinceAtLeast: boolean };
   FEW_EMPLOYEES: { fiscalYear: string; employees: string; employeesCount: number; awarded: string };
   NO_FINANCIAL_STATEMENT: { fiscalYear: string; previousYear: string; awarded: string; legalForm: string };
+  /** `party` is the list as registered at the election (source data); `derived` when the Party is that of a subordinate body's Mandate; `loan` when the nearest gift was a loan. */
+  DONOR_TO_PARTY: { days: string; daysCount: number; party: string; derived: boolean; loan: boolean };
+  /** Restricted: a count of persons only. */
+  SOE_BOARD_IN_SUPPLIER: { persons: string; personsCount: number };
 }
 
 /** One rule's wording: a neutral label, one sentence with the numbers filled in, and one line on the lawful explanations. */
@@ -29,7 +33,11 @@ export type SignalRulesCopy = { [R in SignalRule]: SignalRuleCopy<R> };
 
 export const SIGNAL_RULES: readonly SignalRule[] = [
   "OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT",
+  "DONOR_TO_PARTY", "SOE_BOARD_IN_SUPPLIER",
 ];
+
+/** The rules the API serves only when Restricted content is shown (ADR 0015): a page lists their methodology section only when the API returned the rule. */
+export const RESTRICTED_SIGNAL_RULES: readonly SignalRule[] = ["SOE_BOARD_IN_SUPPLIER"];
 
 /** A ratio as a percentage, cut (not rounded) at two decimals: 1.1004 reads "110.04%", never a rounded "110%" on a rule that fires above 110%. */
 const ratioPercent = (ratio: number, locale: Locale) =>
@@ -69,6 +77,10 @@ export function signalNumberTexts(numbers: SignalData["numbers"], locale: Locale
       return { rule: "FEW_EMPLOYEES", texts: { fiscalYear: String(numbers.fiscalYear), employees: count(numbers.employees, locale), employeesCount: numbers.employees, awarded: money(numbers.awarded) } };
     case "NoFinancialStatementNumbers":
       return { rule: "NO_FINANCIAL_STATEMENT", texts: { fiscalYear: String(numbers.fiscalYear), previousYear: String(numbers.fiscalYear - 1), awarded: money(numbers.awarded), legalForm: numbers.legalForm } };
+    case "DonorToPartyNumbers":
+      return { rule: "DONOR_TO_PARTY", texts: { days: count(numbers.days, locale), daysCount: numbers.days, party: numbers.party, derived: numbers.derived, loan: numbers.kind === "LOAN" } };
+    case "SoeBoardInSupplierNumbers":
+      return { rule: "SOE_BOARD_IN_SUPPLIER", texts: { persons: count(numbers.persons, locale), personsCount: numbers.persons } };
   }
 }
 
@@ -96,6 +108,10 @@ export function signalSentence(signal: Pick<SignalData, "numbers">, locale: Loca
       return rules.FEW_EMPLOYEES.sentence(filled.texts);
     case "NO_FINANCIAL_STATEMENT":
       return rules.NO_FINANCIAL_STATEMENT.sentence(filled.texts);
+    case "DONOR_TO_PARTY":
+      return rules.DONOR_TO_PARTY.sentence(filled.texts);
+    case "SOE_BOARD_IN_SUPPLIER":
+      return rules.SOE_BOARD_IN_SUPPLIER.sentence(filled.texts);
   }
 }
 

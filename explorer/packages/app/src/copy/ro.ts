@@ -83,6 +83,17 @@ const signalCard: Copy["signalCard"] = {
       sentence: (n) => `Unei ${n.legalForm} i s-au atribuit ${n.awarded} în ${n.fiscalYear}; nu avem nicio situație financiară pentru ${n.fiscalYear} sau ${n.previousYear}.`,
       lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
     },
+    DONOR_TO_PARTY: {
+      label: "Donator al Partidului autorității",
+      sentence: (n) =>
+        `Un furnizor a făcut ${n.loan ? "un împrumut" : "o donație"} către ${n.party}, Partidul mandatului autorității, cu ${roCount(n.daysCount, n.days, "zi", "zile")} înainte de atribuire.${n.derived ? " Partidul este derivat: provine din mandatul organismului căruia îi este subordonată această autoritate." : ""}`,
+      lawful: "Explicații legale posibile: o donație sau un împrumut în limitele legale este legal și public, o firmă poate sprijini un partid și poate câștiga contracte în competiție deschisă, iar filiala locală a partidului poate să nu fi avut niciun cuvânt de spus în atribuire.",
+    },
+    SOE_BOARD_IN_SUPPLIER: {
+      label: "Administrator al unei întreprinderi publice într-un furnizor",
+      sentence: (n) => `${roCount(n.personsCount, n.persons, "persoană confirmată are", "persoane confirmate au")} o funcție atât în această întreprindere publică, cât și în furnizorul privat căruia i-a atribuit o înregistrare.`,
+      lawful: "Explicații legale posibile: o persoană poate face parte legal și deschis din mai multe consilii, funcțiile s-ar putea să nu se fi suprapus în timp cu atribuirea sau furnizorul a câștigat o competiție deschisă.",
+    },
   },
   compact: { text: (label, when) => `${label}, ${when}` },
   date: (when) => `Ultima înregistrare: ${when}`,

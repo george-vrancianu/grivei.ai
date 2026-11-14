@@ -35,7 +35,7 @@ def days(n):
 
 def test_the_rule_is_registered_after_splitting_and_reads_streamed_rows():
     assert fo in RULES and RULES.index(fo) == [r.SLUG for r in RULES].index("FRAMEWORK_OVERRUN")
-    assert [r.SLUG for r in RULES] == ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT"]
+    assert [r.SLUG for r in RULES] == ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT", "DONOR_TO_PARTY", "SOE_BOARD_IN_SUPPLIER"]
     assert fo.KINDS == ("CONTRACT",) and fo.ORDER_BY == "notice_code, award_date, code" and "framework_role IS NOT NULL" in fo.WHERE
 
 

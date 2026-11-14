@@ -25,7 +25,7 @@ describe("the neutral-wording checker", () => {
 describe("the sample wording of every rule", () => {
   it.each(["en", "ro"] as const)("has no accusing word in %s (label, sentence, lawful line)", (locale) => {
     const texts = ruleTexts(sampleCopy.signalCard(locale).rules, sampleNumberTexts);
-    expect(texts).toHaveLength(30);
+    expect(texts).toHaveLength(36);
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
   });
 });

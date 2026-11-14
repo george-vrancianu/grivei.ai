@@ -8,6 +8,7 @@
 import type pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
 import type { EntityRow, RecordRow, SearchOptions } from "./store.ts";
+import { RESTRICTED_RULES } from "./restricted.ts";
 
 /** The union member each rule's `numbers` is. */
 export const NUMBERS_TYPE: Record<string, string> = {
@@ -21,7 +22,12 @@ export const NUMBERS_TYPE: Record<string, string> = {
   INSOLVENCY: "InsolvencyNumbers",
   FEW_EMPLOYEES: "FewEmployeesNumbers",
   NO_FINANCIAL_STATEMENT: "NoFinancialStatementNumbers",
+  DONOR_TO_PARTY: "DonorToPartyNumbers",
+  SOE_BOARD_IN_SUPPLIER: "SoeBoardInSupplierNumbers", // Restricted (RESTRICTED_RULES): hidden unless the switch shows
 };
+
+/** The rules a request may not see: the Restricted ones unless the switch shows (fail closed). Bound as a text[] to `g.rule <> ALL(...)`. */
+const hiddenRules = (restricted: boolean): string[] => (restricted ? [] : [...RESTRICTED_RULES]);
 
 /** The RecordFilterValue a Signal is reproduced by (the fields of the contract's output twin of RecordFilter). */
 export interface ReproduceRow {
@@ -131,13 +137,18 @@ async function withEntities(rows: SignalRow[], entitiesOf: (keys: string[]) => P
 }
 
 /** The Signals each of `codes` belongs to (latest first), one query: what `Record.signals` and a list's `signals { rule }` read. */
-export async function signalsOfRecords(pool: pg.Pool, codes: string[], entitiesOf: (keys: string[]) => Promise<Map<string, EntityRow>>): Promise<Map<string, SignalRow[]>> {
+export async function signalsOfRecords(
+  pool: pg.Pool,
+  codes: string[],
+  entitiesOf: (keys: string[]) => Promise<Map<string, EntityRow>>,
+  restricted = false,
+): Promise<Map<string, SignalRow[]>> {
   const out = new Map<string, SignalRow[]>();
   if (!codes.length) return out;
   const { rows } = await pool.query<RawSignal & { record_code: string }>(
     `SELECT m.record_code, ${SIGNAL_COLUMNS} FROM seap.signal_member m JOIN ${SIGNAL_FROM} ON g.id = m.signal_id
-      WHERE m.record_code = ANY($1) ORDER BY m.record_code, g.last_date DESC, g.rule, g.id`,
-    [codes],
+      WHERE m.record_code = ANY($1) AND g.rule <> ALL($2::text[]) ORDER BY m.record_code, g.last_date DESC, g.rule, g.id`,
+    [codes, hiddenRules(restricted)],
   );
   // a Signal read for several Records is one object, so the page's entities are attached once per Signal
   const byId = new Map<number, SignalRow>();
@@ -154,6 +165,8 @@ export interface SignalDeps {
   entitiesOf(keys: string[]): Promise<Map<string, EntityRow>>;
   rowsOf(raw: unknown[]): Promise<RecordRow[]>;
   recordColumns: string;
+  /** Restricted rules are served (#185); default off. */
+  restricted?: boolean;
 }
 
 // Fixed strings, never built from input.
@@ -162,22 +175,25 @@ const ORDER: Record<SignalOrderKey, string> = {
   VALUE_DESC: "g.value_bani DESC, g.last_date DESC, g.id",
 };
 
-export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalDeps): SignalStore {
+export function signalStore({ pool, entitiesOf, rowsOf, recordColumns, restricted = false }: SignalDeps): SignalStore {
+  const hidden = hiddenRules(restricted);
   return {
     async signalRules() {
+      // a Restricted rule's row (window, firing rate) is served only when the switch shows
       const { rows } = await pool.query(
         `SELECT slug, window_from::text AS window_from, window_to::text AS window_to, base_rate, base_rate_year, data_through::text AS data_through
-           FROM seap.signal_rule
-          ORDER BY array_position(ARRAY['OVER_CAP', 'SPLITTING', 'FRAMEWORK_OVERRUN', 'NO_PUBLICATION', 'YOUNG_FIRM', 'NO_CONSTRUCTION_CAEN', 'AFTER_STRIKE_OFF', 'INSOLVENCY', 'FEW_EMPLOYEES', 'NO_FINANCIAL_STATEMENT'], slug), slug`,
+           FROM seap.signal_rule WHERE slug <> ALL($1::text[])
+          ORDER BY array_position(ARRAY['OVER_CAP', 'SPLITTING', 'FRAMEWORK_OVERRUN', 'NO_PUBLICATION', 'YOUNG_FIRM', 'NO_CONSTRUCTION_CAEN', 'AFTER_STRIKE_OFF', 'INSOLVENCY', 'FEW_EMPLOYEES', 'NO_FINANCIAL_STATEMENT', 'DONOR_TO_PARTY', 'SOE_BOARD_IN_SUPPLIER'], slug), slug`,
+        [hidden],
       );
       return rows.map((r) => ({ slug: r.slug, window: { from: r.window_from, to: r.window_to }, baseRate: r.base_rate, baseRateYear: r.base_rate_year, dataThrough: r.data_through }));
     },
 
     async roleSignals(filter, { limit, offset, order }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = buildWhere(filter, restricted);
       const params = [...w.params];
       // a Signal is in when one of its Records is in the matching set; the rule filter also narrows which Signals, not only which Records
-      const rule = filter.signal ? ` AND g.rule = $${params.push(filter.signal)}` : "";
+      const rule = (filter.signal ? ` AND g.rule = $${params.push(filter.signal)}` : "") + ` AND g.rule <> ALL($${params.push(hidden)}::text[])`;
       const inSet = `g.id IN (SELECT m.signal_id FROM seap.signal_member m WHERE m.record_code IN (SELECT record_code FROM seap.search WHERE ${w.sql}))${rule}`;
       const { rows } = await cancellableQuery<RawSignal & { n: number }>(
         pool, signal,
@@ -193,12 +209,12 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalD
     async entitySignalCounts(side, filter, keys, { signal } = {}) {
       const out = new Map<string, number>();
       if (!keys.length) return out;
-      const w = buildWhere(filter);
+      const w = buildWhere(filter, restricted);
       const params = [...w.params, keys];
       const column = side === "AUTHORITY" ? "authority_key" : "supplier_key";
       // the entity's Records in the set (once each), then the Signals those Records belong to: `roleSignals`' rule per entity. A `signal` in the filter
       // narrows which Signals count, as it does there.
-      const rule = filter.signal ? ` AND g.rule = $${params.push(filter.signal)}` : "";
+      const rule = (filter.signal ? ` AND g.rule = $${params.push(filter.signal)}` : "") + ` AND g.rule <> ALL($${params.push(hidden)}::text[])`;
       const { rows } = await cancellableQuery<{ key: string; n: number }>(
         pool, signal,
         `SELECT s.key, count(DISTINCT m.signal_id)::int AS n

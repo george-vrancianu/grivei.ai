@@ -42,5 +42,9 @@ export function signalSentenceNodes(signal: Pick<SignalData, "numbers">, locale:
     case "NO_FINANCIAL_STATEMENT":
       if (numbers.__typename !== "NoFinancialStatementNumbers") return null;
       return withNodes((awarded) => rules.NO_FINANCIAL_STATEMENT.sentence({ ...filled.texts, awarded }), [money(numbers.awarded)]);
+    case "DONOR_TO_PARTY":
+      return rules.DONOR_TO_PARTY.sentence(filled.texts);
+    case "SOE_BOARD_IN_SUPPLIER":
+      return rules.SOE_BOARD_IN_SUPPLIER.sentence(filled.texts);
   }
 }

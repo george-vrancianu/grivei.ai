@@ -171,6 +171,18 @@ export type DonationSource = {
 };
 
 /**
+ * The fewest days between the nearest donation or loan by a winner and the award (0 to 365), the list the Party ran on at the election (`party`, as registered)
+ * and whether the Party is derived from a subordinate body (`derived`). `kind` is DONATION or LOAN, as the source states it. No donor name, amount or date is here.
+ */
+export type DonorToPartyNumbers = {
+  __typename?: 'DonorToPartyNumbers';
+  days: Scalars['Int']['output'];
+  derived: Scalars['Boolean']['output'];
+  kind: DonationKind;
+  party: Scalars['String']['output'];
+};
+
+/**
  * One contracting authority, supplier, or both. URLs use the role
  * (/explore/authority/<key>, /explore/supplier/<key>), the API doesn't:
  * the page asks for the role it shows.
@@ -1331,7 +1343,7 @@ export type SignalRecordsArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type SignalNumbers = AfterStrikeOffNumbers | FewEmployeesNumbers | FrameworkOverrunNumbers | InsolvencyNumbers | NoConstructionCaenNumbers | NoFinancialStatementNumbers | NoPublicationNumbers | OverCapNumbers | SplittingNumbers | YoungFirmNumbers;
+export type SignalNumbers = AfterStrikeOffNumbers | DonorToPartyNumbers | FewEmployeesNumbers | FrameworkOverrunNumbers | InsolvencyNumbers | NoConstructionCaenNumbers | NoFinancialStatementNumbers | NoPublicationNumbers | OverCapNumbers | SoeBoardInSupplierNumbers | SplittingNumbers | YoungFirmNumbers;
 
 export type SignalOrder =
   | 'DATE_DESC'
@@ -1356,6 +1368,8 @@ export type SignalRule = {
 
 export type SignalRuleSlug =
   | 'AFTER_STRIKE_OFF'
+  /** Cross-Source rules (#185): a firm that gave to the authority's Party within a year before the award. */
+  | 'DONOR_TO_PARTY'
   | 'FEW_EMPLOYEES'
   | 'FRAMEWORK_OVERRUN'
   | 'INSOLVENCY'
@@ -1363,9 +1377,17 @@ export type SignalRuleSlug =
   | 'NO_FINANCIAL_STATEMENT'
   | 'NO_PUBLICATION'
   | 'OVER_CAP'
+  /** RESTRICTED (ADR 0011, ADR 0015): a board member of a public enterprise also holds a role in one of its private suppliers. Served only when the host's GRIVEI_RESTRICTED is `show`; otherwise no Signal, Record, count or rule row of it is returned. */
+  | 'SOE_BOARD_IN_SUPPLIER'
   | 'SPLITTING'
   /** ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds. */
   | 'YOUNG_FIRM';
+
+/** RESTRICTED. How many confirmed persons hold a role both in the public enterprise (the authority) and in the supplier; a count only, never a name, birth date or id. */
+export type SoeBoardInSupplierNumbers = {
+  __typename?: 'SoeBoardInSupplierNumbers';
+  persons: Scalars['Int']['output'];
+};
 
 export type Source = {
   __typename?: 'Source';
@@ -1580,6 +1602,7 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 export type ResolversUnionTypes<_RefType extends Record<string, unknown>> = {
   SignalNumbers:
     | ( AfterStrikeOffNumbers )
+    | ( DonorToPartyNumbers )
     | ( FewEmployeesNumbers )
     | ( FrameworkOverrunNumbers )
     | ( InsolvencyNumbers )
@@ -1587,6 +1610,7 @@ export type ResolversUnionTypes<_RefType extends Record<string, unknown>> = {
     | ( NoFinancialStatementNumbers )
     | ( NoPublicationNumbers )
     | ( OverCapNumbers )
+    | ( SoeBoardInSupplierNumbers )
     | ( SplittingNumbers )
     | ( YoungFirmNumbers )
   ;
@@ -1623,6 +1647,7 @@ export type ResolversTypes = {
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DonationKind: DonationKind;
   DonationSource: ResolverTypeWrapper<DonationSource>;
+  DonorToPartyNumbers: ResolverTypeWrapper<DonorToPartyNumbers>;
   Entity: ResolverTypeWrapper<Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversTypes['Alias']>, seap: ResolversTypes['SeapEntity'] }>;
   EntityIdentity: EntityIdentity;
   EntityResult: ResolverTypeWrapper<Omit<EntityResult, 'entity'> & { entity: ResolversTypes['Entity'] }>;
@@ -1717,6 +1742,7 @@ export type ResolversTypes = {
   SignalRuleSlug: SignalRuleSlug;
   SignedBani: ResolverTypeWrapper<Scalars['SignedBani']['output']>;
   Siruta: ResolverTypeWrapper<Scalars['Siruta']['output']>;
+  SoeBoardInSupplierNumbers: ResolverTypeWrapper<SoeBoardInSupplierNumbers>;
   Source: ResolverTypeWrapper<Source>;
   SourceId: SourceId;
   SourceRecord: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['SourceRecord']>;
@@ -1753,6 +1779,7 @@ export type ResolversParentTypes = {
   DateRange: DateRange;
   DateTime: Scalars['DateTime']['output'];
   DonationSource: DonationSource;
+  DonorToPartyNumbers: DonorToPartyNumbers;
   Entity: Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversParentTypes['Alias']>, seap: ResolversParentTypes['SeapEntity'] };
   EntityResult: Omit<EntityResult, 'entity'> & { entity: ResolversParentTypes['Entity'] };
   EntityResultPage: EntityResultPage;
@@ -1831,6 +1858,7 @@ export type ResolversParentTypes = {
   SignalRule: SignalRule;
   SignedBani: Scalars['SignedBani']['output'];
   Siruta: Scalars['Siruta']['output'];
+  SoeBoardInSupplierNumbers: SoeBoardInSupplierNumbers;
   Source: Source;
   SourceRecord: ResolversInterfaceTypes<ResolversParentTypes>['SourceRecord'];
   SplittingNumbers: SplittingNumbers;
@@ -1946,6 +1974,14 @@ export type DonationSourceResolvers<ContextType = any, ParentType extends Resolv
   publisher?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   publisherUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   underlyingUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type DonorToPartyNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['DonorToPartyNumbers'] = ResolversParentTypes['DonorToPartyNumbers']> = {
+  days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  derived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['DonationKind'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type EntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['Entity'] = ResolversParentTypes['Entity']> = {
@@ -2490,7 +2526,7 @@ export type SignalResolvers<ContextType = any, ParentType extends ResolversParen
 };
 
 export type SignalNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalNumbers'] = ResolversParentTypes['SignalNumbers']> = {
-  __resolveType: TypeResolveFn<'AfterStrikeOffNumbers' | 'FewEmployeesNumbers' | 'FrameworkOverrunNumbers' | 'InsolvencyNumbers' | 'NoConstructionCaenNumbers' | 'NoFinancialStatementNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SplittingNumbers' | 'YoungFirmNumbers', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'AfterStrikeOffNumbers' | 'DonorToPartyNumbers' | 'FewEmployeesNumbers' | 'FrameworkOverrunNumbers' | 'InsolvencyNumbers' | 'NoConstructionCaenNumbers' | 'NoFinancialStatementNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SoeBoardInSupplierNumbers' | 'SplittingNumbers' | 'YoungFirmNumbers', ParentType, ContextType>;
 };
 
 export type SignalPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalPage'] = ResolversParentTypes['SignalPage']> = {
@@ -2513,6 +2549,11 @@ export interface SignedBaniScalarConfig extends GraphQLScalarTypeConfig<Resolver
 export interface SirutaScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Siruta'], any> {
   name: 'Siruta';
 }
+
+export type SoeBoardInSupplierNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['SoeBoardInSupplierNumbers'] = ResolversParentTypes['SoeBoardInSupplierNumbers']> = {
+  persons?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
 
 export type SourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Source'] = ResolversParentTypes['Source']> = {
   dataThrough?: Resolver<Array<ResolversTypes['DataThrough']>, ParentType, ContextType>;
@@ -2591,6 +2632,7 @@ export type Resolvers<ContextType = any> = {
   Date?: GraphQLScalarType;
   DateTime?: GraphQLScalarType;
   DonationSource?: DonationSourceResolvers<ContextType>;
+  DonorToPartyNumbers?: DonorToPartyNumbersResolvers<ContextType>;
   Entity?: EntityResolvers<ContextType>;
   EntityResult?: EntityResultResolvers<ContextType>;
   EntityResultPage?: EntityResultPageResolvers<ContextType>;
@@ -2664,6 +2706,7 @@ export type Resolvers<ContextType = any> = {
   SignalRule?: SignalRuleResolvers<ContextType>;
   SignedBani?: GraphQLScalarType;
   Siruta?: GraphQLScalarType;
+  SoeBoardInSupplierNumbers?: SoeBoardInSupplierNumbersResolvers<ContextType>;
   Source?: SourceResolvers<ContextType>;
   SourceRecord?: SourceRecordResolvers<ContextType>;
   SplittingNumbers?: SplittingNumbersResolvers<ContextType>;

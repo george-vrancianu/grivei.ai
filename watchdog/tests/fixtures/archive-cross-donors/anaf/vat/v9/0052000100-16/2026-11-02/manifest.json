@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "source": "anaf",
+  "stream": "vat",
+  "kind": "v9",
+  "unit": "0052000100-16",
+  "fetchedAt": "2026-11-02T08:00:00Z",
+  "url": "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva",
+  "via": "ANAF VAT v9",
+  "files": [
+    {
+      "name": "request.json",
+      "sha256": "a829b81e6dccdf0f1e1ad01e5209c5f6977a3424925b87defb5d68c41433c16b",
+      "bytes": 340
+    },
+    {
+      "name": "response.json",
+      "sha256": "5ec5d0139c3f3673b8f6c78a5e22724c08ad86148fe848f2b5d5c69af81b69b3",
+      "bytes": 24143
+    }
+  ]
+}
