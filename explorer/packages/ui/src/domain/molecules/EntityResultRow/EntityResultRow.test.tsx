@@ -1,4 +1,6 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import type { EntityResult, EntityRow } from "../../types.ts";
@@ -55,5 +57,19 @@ describe("EntityResultRow", () => {
     national.unmount();
     const unplaced = renderInUi(<EntityResultRow row={row(null)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
     expect(unplaced.container).toHaveTextContent("· county unknown");
+  });
+  it("hands a plain click on the name and on the Signals chip to onNavigate, and leaves a modified click to the browser", async () => {
+    const onNavigate = vi.fn();
+    renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 3 }} href="/explore/supplier/30000001" locale="en" copy={sampleCopy.entityRow("en")} onNavigate={onNavigate} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("link", { name: "HACHI INVEST S.R.L." }));
+    expect(onNavigate).toHaveBeenLastCalledWith("/explore/supplier/30000001");
+    await user.click(screen.getByRole("link", { name: /3 Signals/ }));
+    expect(onNavigate).toHaveBeenLastCalledWith("/explore/supplier/30000001#signals");
+    onNavigate.mockClear();
+    await user.keyboard("{Control>}");
+    await user.click(screen.getByRole("link", { name: "HACHI INVEST S.R.L." }));
+    await user.keyboard("{/Control}");
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 });

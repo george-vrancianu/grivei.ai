@@ -296,7 +296,7 @@ export const ro: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+    layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
       identity: {
         cui: "CUI",

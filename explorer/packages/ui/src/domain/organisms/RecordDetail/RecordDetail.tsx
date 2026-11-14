@@ -87,7 +87,7 @@ export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodol
             valueCard
           )}
           {record.suspect && <SuspectNote suspect={record.suspect} methodologyHref={methodologyHref} onNavigate={onNavigate} locale={locale} copy={copy.suspect} />}
-          <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} />
+          <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} onNavigate={onNavigate} />
         </Stack>
         <Stack spacing={3} sx={{ minWidth: 0 }}>
           <RecordFacts
@@ -95,6 +95,7 @@ export function RecordDetail({ record, citeUrl, entityHref, recordHref, methodol
             entityHref={entityHref}
             locale={locale}
             copy={{ heading: copy.heading.panel, kinds: copy.heading.kinds, facets: copy.heading.facets, authority: copy.parties.authority, entityLink: copy.recordRow.party.entityLink }}
+            onNavigate={onNavigate}
           />
           <BadgeExplanations badges={record.badges} copy={{ ...copy.badges, badges: copy.recordRow.badges }} />
           <SignalsSection signals={record.signals} recordHref={recordHref} onNavigate={onNavigate} renderCard={renderSignalCard} locale={locale} copy={copy.signals} />

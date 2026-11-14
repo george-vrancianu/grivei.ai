@@ -291,7 +291,7 @@ export const en: Copy = {
     },
   },
   entityPage: {
-    layout: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+    layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
       identity: {
         cui: "CUI",

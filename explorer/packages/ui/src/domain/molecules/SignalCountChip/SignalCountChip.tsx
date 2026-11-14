@@ -2,6 +2,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
+import { followLink } from "../../utils/followLink.ts";
 import { SignalChip } from "../SignalChip/index.ts";
 
 export interface SignalCountChipCopy {
@@ -18,15 +19,18 @@ export interface SignalCountChipProps {
   href: string;
   /** The entity the chip belongs to; read by a screen reader after the count, not shown. */
   entityName: string;
+  /** A plain click goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
   locale: Locale;
   copy: SignalCountChipCopy;
 }
 
 /** "n Signals": a link chip in the Signal style (amber ring, outlined, never red, no score) that opens the entity's Overview at its Signals section. */
-export function SignalCountChip({ count, href, entityName, locale, copy }: SignalCountChipProps) {
+export function SignalCountChip({ count, href, entityName, onNavigate, locale, copy }: SignalCountChipProps) {
   return (
     <SignalChip
       href={href}
+      onClick={followLink(href, onNavigate)}
       label={
         <>
           {copy.label(count, formatCount(count, false, locale))}

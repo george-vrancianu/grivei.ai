@@ -19,16 +19,17 @@ export interface SignalPartiesProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   locale: Locale;
   copy: SignalPartiesCopy;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /** The authority and the suppliers a Signal names (natural persons are already left out by the API), with the first few suppliers and a count of the rest. */
-export function SignalParties({ authority, suppliers, entityHref, locale, copy }: SignalPartiesProps) {
+export function SignalParties({ authority, suppliers, entityHref, locale, copy, onNavigate }: SignalPartiesProps) {
   const { shown, more } = shownSuppliers(suppliers);
   return (
     <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", columnGap: 2, rowGap: 0.5, m: 0, "& dd": { m: 0 } }}>
       <dt>{copy.authority}</dt>
       <dd>
-        <EntityLink entity={authority} href={entityHref(authority, "authority")} copy={copy.entityLink} />
+        <EntityLink entity={authority} href={entityHref(authority, "authority")} copy={copy.entityLink} onNavigate={onNavigate} />
       </dd>
       {suppliers.length > 0 && (
         <>
@@ -37,7 +38,7 @@ export function SignalParties({ authority, suppliers, entityHref, locale, copy }
             {shown.map((supplier, i) => (
               <span key={supplier.key}>
                 {i > 0 && "; "}
-                <EntityLink entity={supplier} href={entityHref(supplier, "supplier")} copy={copy.entityLink} />
+                <EntityLink entity={supplier} href={entityHref(supplier, "supplier")} copy={copy.entityLink} onNavigate={onNavigate} />
               </span>
             ))}
             {more > 0 && <span> {copy.moreSuppliers(more, formatCount(more, false, locale))}</span>}

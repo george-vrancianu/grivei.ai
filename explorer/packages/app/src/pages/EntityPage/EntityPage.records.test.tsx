@@ -231,7 +231,7 @@ describe("the Records tab of an entity that lacks the page's role, or that does 
     const { client } = fixtureClient();
     render(<App client={client} />);
     expect(await screen.findByText(sentence)).toBeVisible();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Loading…|Se încarcă…/)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeVisible();
   });
 

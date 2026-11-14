@@ -2,6 +2,7 @@ import { Chip } from "../../../atoms/Chip/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Tooltip } from "../../../atoms/Tooltip/index.ts";
 import type { EntityRef } from "../../types.ts";
+import { followLink } from "../../utils/followLink.ts";
 
 export interface MarkerText {
   label: string;
@@ -22,6 +23,8 @@ export interface EntityLinkProps {
   copy: EntityLinkCopy;
   /** `Entity.identityCurated`; only the entity page's header selects it. */
   identityCurated?: boolean;
+  /** A plain click goes here instead of loading the page; leave it out and the browser follows the link. */
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 function Marker({ label, explanation }: MarkerText) {
@@ -33,10 +36,10 @@ function Marker({ label, explanation }: MarkerText) {
 }
 
 /** An Entity's display name linking to its page, with markers for name-only identity and curated identity. */
-export function EntityLink({ entity, href, copy, identityCurated = false }: EntityLinkProps) {
+export function EntityLink({ entity, href, copy, identityCurated = false, onNavigate }: EntityLinkProps) {
   return (
     <span>
-      <Link href={href}>{entity.displayName}</Link>
+      <Link href={href} onClick={followLink(href, onNavigate)}>{entity.displayName}</Link>
       {entity.identity === "NAME_ONLY" && <Marker {...copy.nameOnly} />}
       {identityCurated && <Marker {...copy.identityCurated} />}
     </span>

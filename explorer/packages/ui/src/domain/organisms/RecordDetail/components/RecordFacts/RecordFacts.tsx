@@ -22,10 +22,11 @@ export interface RecordFactsProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   locale: Locale;
   copy: RecordFactsCopy;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /** The side panel of the Record's own facts: kind, date, contracting authority (linked), procedure, contract type and CPV, the last three as published. A fact the Record does not have is left out. */
-export function RecordFacts({ record, entityHref, locale, copy }: RecordFactsProps) {
+export function RecordFacts({ record, entityHref, locale, copy, onNavigate }: RecordFactsProps) {
   const { facets } = copy;
   return (
     <Panel heading={copy.heading} level="h2">
@@ -42,7 +43,7 @@ export function RecordFacts({ record, entityHref, locale, copy }: RecordFactsPro
         )}
         <dt>{copy.authority}</dt>
         <dd>
-          <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={copy.entityLink} />
+          <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={copy.entityLink} onNavigate={onNavigate} />
         </dd>
         {record.procedure && (
           <>

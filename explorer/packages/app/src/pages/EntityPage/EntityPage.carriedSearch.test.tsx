@@ -54,7 +54,7 @@ describe.each([
     await screen.findByRole("heading", { level: 1 });
     expect(state()).toEqual({ filter: {}, carried: { q: "comuna" } }); // the entity's own filter is empty
     expect(window.location.pathname).toBe(`${prefix}/explore/supplier/2000007`);
-    // the page URL carries the search, but the address the reader sees (and would cite) is the clean one
+    // the page URL carries the search, but the address the reader sees (and would cite, and copy) is the clean one
     expect(window.location.search).toContain("search=");
     expect(screen.getByText(`${window.location.host}${prefix}/explore/supplier/2000007`)).toBeVisible();
     expect(screen.queryByText(/search=/)).toBeNull();

@@ -31,13 +31,15 @@ export interface EntityResultRowProps {
   href: string;
   locale: Locale;
   copy: EntityResultRowCopy;
+  /** A plain click on the entity link or the Signals chip goes here instead of loading the page. */
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /**
  * A row of the Authorities or Suppliers tab, two columns. Left: the entity's name (linked) over a mono meta line, "n Records · county · CUI n"
  * (the CUI only for an entity identified by one). Right: the matched amount over its caption. Between them, an entity with Signals in the filter (`signalCount` above 0) has the "n Signals" chip (`SignalCountChip`), a link to the entity page's Signals section (`href` + `#signals`, the Overview's anchor); the row itself is not a link, so the chip is not nested in one.
  */
-export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProps) {
+export function EntityResultRow({ row, href, locale, copy, onNavigate }: EntityResultRowProps) {
   const { entity, matched, signalCount } = row;
   const count = formatCount(matched.records, false, locale);
   const meta = [copy.records(matched.records, count), placeLabel(entity.placement, copy), ...(entity.identity === "CUI" ? [`${copy.cui} ${entity.key}`] : [])];
@@ -45,13 +47,13 @@ export function EntityResultRow({ row, href, locale, copy }: EntityResultRowProp
     <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 16px", py: 1.5 }}>
       <Stack spacing={0.25} sx={{ flex: "1 1 240px", minWidth: 0 }}>
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
-          <EntityLink entity={entity} href={href} copy={copy.entityLink} />
+          <EntityLink entity={entity} href={href} copy={copy.entityLink} onNavigate={onNavigate} />
         </Typography>
         <Typography component="div" variant="caption">
           {meta.join(" · ")}
         </Typography>
       </Stack>
-      {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} />}
+      {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} onNavigate={onNavigate} />}
       <Stack spacing={0.25} sx={{ alignItems: "flex-end", flex: "none", ml: "auto", textAlign: "right" }}>
         <Typography component="span" variant="body1" sx={{ fontWeight: 600 }}>
           <MoneyAmount bani={matched.awarded} locale={locale} />

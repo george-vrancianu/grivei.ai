@@ -10,8 +10,6 @@ export interface EntityTabNavCopy {
   /** The accessible name of the navigation, e.g. "Sections of this page". */
   label: string;
   tabs: Record<EntityPageView, string>;
-  /** The accessible name of the line that shows this view's address, e.g. "Address of this view". */
-  cite: string;
 }
 
 export interface EntityTabNavProps {

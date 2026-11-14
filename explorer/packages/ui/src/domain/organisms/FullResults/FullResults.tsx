@@ -89,7 +89,7 @@ export function FullResults({
 
   const rows =
     results.tab === "records" ? (
-      <RecordResultList rows={results.page.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} />
+      <RecordResultList rows={results.page.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} />
     ) : (
       <EntityResultList
         rows={results.page.rows}
@@ -97,6 +97,7 @@ export function FullResults({
         entityHref={entityHref}
         locale={locale}
         copy={copy.entityRow}
+        onNavigate={onNavigate}
       />
     );
 

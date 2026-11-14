@@ -266,8 +266,8 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
 };
 
 const entityPageLayout: Record<Locale, EntityPageLayoutCopy> = {
-  en: { label: "Sections of this page", cite: "Address of this view", tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
-  ro: { label: "Secțiunile paginii", cite: "Adresa acestei vizualizări", tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
+  en: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: copyLink.en }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
+  ro: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: copyLink.ro }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
 };
 
 const mainScreenLayout: Record<Locale, MainScreenLayoutCopy> = {

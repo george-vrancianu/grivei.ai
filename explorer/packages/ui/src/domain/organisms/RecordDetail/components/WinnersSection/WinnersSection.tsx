@@ -27,13 +27,14 @@ export interface WinnersSectionProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   locale: Locale;
   copy: WinnersSectionCopy;
+  onNavigate?: ((href: string) => void) | undefined;
 }
 
 /**
  * Every winner, in a grid of two columns that stacks on a phone. A natural person is never named or linked (ADR 0003, `PartyName`);
  * a winner with no Entity shows its published name unlinked. A consortium lists each member with its equal share and says the share is a convention.
  */
-export function WinnersSection({ record, entityHref, locale, copy }: WinnersSectionProps) {
+export function WinnersSection({ record, entityHref, locale, copy, onNavigate }: WinnersSectionProps) {
   const consortium = isConsortium(record);
   return (
     <Stack spacing={1.5}>
@@ -61,7 +62,7 @@ export function WinnersSection({ record, entityHref, locale, copy }: WinnersSect
         {record.winners.map((party, index) => (
           <Box component="li" key={index} sx={{ py: 1.5, borderTop: `1px solid ${color.line}`, overflowWrap: "anywhere" }}>
             <Typography component="span" sx={{ fontWeight: type.rowTitle.weight }}>
-              <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} />
+              <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} onNavigate={onNavigate} />
             </Typography>
             {consortium && party.share !== null && (
               <Typography component="span" variant="meta">
