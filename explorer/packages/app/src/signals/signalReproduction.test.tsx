@@ -1,5 +1,5 @@
 // Seam 3: the reproducing link of a Signal opens the authority's Records tab with the Signal's filter on, and lists exactly the Signal's
-// Records (the app at the built URL over the API's recorded answers: every Signal of the recorded Overviews, all four rules).
+// Records (the app at the built URL over the API's recorded answers: every Signal of the recorded Overviews, all ten rules).
 // Acceptance (#89): "for each rule, a Signal's reproducing link lists exactly its Records".
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,9 +13,19 @@ import { decodeUrlState } from "../urlState/codec.ts";
 import { reproduceFilter, signalReproduceHref } from "./reproduceHref.ts";
 
 const FACETS = /^(Filter by facet|Filtre pe fațete)$/;
-const RULE_LABEL = { en: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" }, ro: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" } } as const;
-// the four rules the SEAP-only recordings carry; the six ONRC and financial-statement rules (#184) are recorded in their own archive (seam 1 reproduces them there)
-const RULES = ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"] as const satisfies readonly SignalRule[];
+const RULE_LABEL = {
+  en: {
+    OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN",
+    AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement",
+  },
+  ro: {
+    OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții",
+    AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare",
+  },
+} as const;
+const RULES = [
+  "OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT",
+] as const satisfies readonly SignalRule[];
 
 const signals = recordedSignals();
 /** The recorded Overview whose page lists the Signal (the first such). */
@@ -40,7 +50,7 @@ async function followReproduceLink(locale: "en" | "ro", signal: OverviewSignal) 
   return { sent, panel: within(panel), href };
 }
 
-describe("the recordings carry Signals of all four rules", () => {
+describe("the recordings carry Signals of all ten rules", () => {
   it("has at least one recorded Signal for each rule, and several of the over-cap, splitting and framework-overrun ones", () => {
     for (const rule of RULES) expect(signals.filter((s) => s.rule === rule).length, rule).toBeGreaterThan(0);
     expect(signals.length).toBeGreaterThanOrEqual(21);

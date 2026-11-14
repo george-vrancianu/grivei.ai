@@ -38,6 +38,8 @@ FEW EMPLOYEES (FE_*, contracts; statements FY2023 and FY2024)
   FE_UNDER        2023: 4,999,999.99 RON, 0 employees (no)     FE_TWO     2023: 6M, 2 employees (no)       FE_BLANK  2023: 6M, employees BLANK (no)
   FE_SUMMED       2024: 3M (A1) + 2M (A2) = 5M, FY2024 0 employees (+, two Signals); FY2023 9 employees
   FE_OTHER_YEAR   2023: 6M, a FY2022 statement with 1 employee but none for FY2023 (no)
+  (`archive-onrc-signals-revised/` holds FY2024's REVISED release alone, for the variant in which the newest year counts: FE_SUMMED then reports 5 employees for FY2024 (no
+  Signal) and NF_NEWEST_YEAR becomes a Signal.)
 NO FINANCIAL STATEMENT (NF_*, contracts; the years evaluated are 2023 only: FY2022 is the first held, FY2024 the newest without its revised release)
   NF_EXACT        SRL, 2023: exactly 1,000,000 RON, no statement (+ boundary)    NF_UNDER   SRL, 999,999.99 RON (no)
   NF_SA           SA, 2023: 2M (+)                                                NF_PRIOR_ONLY  SRL 2M, FY2022 statement (no: Y-1 is enough)
@@ -69,6 +71,7 @@ from pipeline.financials.fetch import fetch_financials  # noqa: E402
 from pipeline.onrc.fetch import fetch_onrc  # noqa: E402
 
 OUT = HERE / "archive-onrc-signals"
+OUT_REVISED = HERE / "archive-onrc-signals-revised"  # only FY2024's revised release: copied over `archive-onrc-signals` it makes the newest year evaluable
 REORGANIZARE, DIZOLVARE = 1111, 1112
 EXTRA_STATUS_NAMES = {REORGANIZARE: "reorganizare judiciară", DIZOLVARE: "dizolvare"}  # the codes are invented: the rule reads the NAME ONRC publishes
 NOW = datetime(2026, 11, 14, 9, 0, tzinfo=timezone.utc)
@@ -201,6 +204,18 @@ def financials(s: dict[str, Supplier]) -> tuple[list[dict], dict]:
     return datasets_, files
 
 
+def build_revised(out: Path = OUT_REVISED) -> None:
+    """FY2024's revised release (a separate dataset "... actualizat", as MF publishes it), fetched with the real connector into an archive of its own."""
+    if out.exists():
+        shutil.rmtree(out)
+    s = world()
+    files: dict[str, bytes] = {}
+    res = resource("s2024r", "WEB_BL_BS_SL_AN2024.txt", "2026-06-24")
+    files[res["url"]] = table(fin_row(str(s["FE_SUMMED"].cui), turnover=6_500_000, employees=5))
+    summary = fetch_financials(Archive(out), now=NOW, http=ckan_stub([dataset("situatii_financiare_2024_actualizat", "Situatii financiare 2024 actualizat iunie 2026", res)], files))
+    assert not summary.failed and not summary.invalid, summary.lines()
+
+
 def build(out: Path = OUT) -> None:
     if out.exists():
         shutil.rmtree(out)
@@ -260,4 +275,5 @@ def build(out: Path = OUT) -> None:
 
 if __name__ == "__main__":
     build()
-    print(f"wrote {OUT}")
+    build_revised()
+    print(f"wrote {OUT} and {OUT_REVISED}")

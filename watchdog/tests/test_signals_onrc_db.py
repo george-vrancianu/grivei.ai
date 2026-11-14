@@ -125,3 +125,14 @@ def test_each_rule_has_a_methodology_row_with_its_firing_rate(built):
     assert rows["INSOLVENCY"][1:4] == (2025, 2, 1)  # A2's insolvency Signal is dated 2026
     assert rows["FEW_EMPLOYEES"][1:4] == (2024, 2, 2)  # the newest year the rule can see: the newest fiscal year held
     assert rows["NO_FINANCIAL_STATEMENT"][1:4] == (2023, 1, 1)  # the only year it evaluates
+
+
+def test_once_the_newest_fiscal_years_revised_release_is_held_that_year_is_evaluated(db, tmp_path, labels):
+    root = tmp_path / "archive"
+    shutil.copytree(ARCHIVE, root)
+    shutil.copytree(ARCHIVE.parent / "archive-onrc-signals-revised", root, dirs_exist_ok=True)  # FY2024's revised release: 5 employees for FE_SUMMED
+    rebuild(Archive(root), db)
+    nf = found(db, labels, "NO_FINANCIAL_STATEMENT")
+    assert who(nf) == [(A1, date(2023, 5, 10), ["NF_EXACT"]), (A1, date(2023, 5, 12), ["NF_SA"]), (A1, date(2024, 5, 16), ["NF_NEWEST_YEAR"])]  # 2024 now counts
+    assert who(found(db, labels, "FEW_EMPLOYEES")) == [(A1, date(2023, 6, 10), ["FE_BOUNDARY"])]  # the revised FY2024 figure (5) replaces the first release's 0
+    assert q(db, "SELECT base_rate_year FROM seap.signal_rule WHERE slug = 'NO_FINANCIAL_STATEMENT'")[0][0] == 2024

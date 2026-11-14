@@ -63,6 +63,8 @@ const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placem
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
 const rolesEdgeArchive = join(watchdog, "tests/fixtures/archive-roles-edge"); // an unlinked winner, a person, a consortium framework agreement (#73)
 const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
+const onrcSignalsArchive = join(watchdog, "tests/fixtures/archive-onrc-signals"); // the six ONRC and financial-statement Signal rules: positive, boundary and negative suppliers, ONRC snapshots, MF statements, ANAF answers (#184)
+const onrcSignalsRevisedArchive = join(watchdog, "tests/fixtures/archive-onrc-signals-revised"); // FY2024's revised release alone: copied over the one above it makes the newest fiscal year evaluable (#184)
 const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
 const splittingArchive = join(watchdog, "tests/fixtures/archive-splitting"); // the splitting rule: a trigger, a 31-day near miss, merging windows, a cap change, left-out cases (#75)
 const frameworkOverrunArchive = join(watchdog, "tests/fixtures/archive-framework-overrun"); // the framework-overrun rule: a crossing, exactly 110%, 90%, a blank ceiling, a pre-2021 framework, summed ceilings (#76)
@@ -157,6 +159,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
     cpSync(signalsArchive, join(scratch, "archive-signals"), { recursive: true });
+    cpSync(onrcSignalsArchive, join(scratch, "archive-onrc-signals"), { recursive: true });
+    cpSync(onrcSignalsArchive, join(scratch, "archive-onrc-signals-revised"), { recursive: true });
+    cpSync(onrcSignalsRevisedArchive, join(scratch, "archive-onrc-signals-revised"), { recursive: true });
     cpSync(splittingArchive, join(scratch, "archive-splitting"), { recursive: true });
     cpSync(frameworkOverrunArchive, join(scratch, "archive-framework-overrun"), { recursive: true });
     execFileSync("docker", [
@@ -200,6 +205,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE roles_a");
     await admin.query("CREATE DATABASE roles_edge");
     await admin.query("CREATE DATABASE signals_a");
+    await admin.query("CREATE DATABASE onrc_signals_a");
+    await admin.query("CREATE DATABASE onrc_signals_b");
     await admin.query("CREATE DATABASE splitting_a");
     await admin.query("CREATE DATABASE framework_overrun_a");
   });
@@ -2319,6 +2326,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         { slug: "FRAMEWORK_OVERRUN", window: { from: "2023-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-02-01" },
         // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
         { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
+        // after-strike-off (#184) reads ANAF's answers, which every load has: no supplier here was struck off, so it is shown with a rate of 0 (the five other ONRC and statement rules read ONRC or MF, not loaded here: no row)
+        { slug: "AFTER_STRIKE_OFF", window: { from: "2021-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-02-01" },
       ]);
     });
 
@@ -3519,13 +3528,202 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   });
 
 
-  describe("recorded fixtures (#89): archive-signals, archive-splitting, archive-framework-overrun -> rebuild -> Signals on every screen", () => {
+  describe("ONRC and financial-statement Signals (#184): archive-onrc-signals -> rebuild -> the six rules at their positive, boundary and negative cases", () => {
+    // The world of watchdog/tests/fixtures/build_onrc_signals_archive.py (its docstring lists every case); each supplier is one case, named by its label.
+    const A1 = "3200011";
+    const A2 = "3200020";
+    const SUP = {
+      YF_FIRST_EARLY: "3201017", YF_FIRST_90: "3201025", YF_FIRST_91: "3201033", YF_LARGE_180: "3201041", YF_LARGE_181: "3201050", YF_UNDER_1M: "3201068", YF_BEFORE: "3201076", OLD_FIRM: "3201084",
+      NC_NONE_1M: "3201092", NC_UNDER: "3201106", NC_REV2: "3201114", NC_REV3: "3201122", NC_REV2_DIV45: "3201130", NC_REV1_45: "3201149", NC_SUPPLIES: "3201157", NC_UNKNOWN: "3201165",
+      SO_STRUCK: "3201173", SO_ONRC_ONLY: "3201181", SO_NO_DATE: "3201190",
+      IN_FIRST_APR: "3201203", IN_SINCE_AT_LEAST: "3201211", IN_FORMER: "3201220", IN_DISSOLVED: "3201238", IN_REORG: "3201246",
+      FE_BOUNDARY: "3201254", FE_UNDER: "3201262", FE_TWO: "3201270", FE_BLANK: "3201289", FE_SUMMED: "3201297", FE_OTHER_YEAR: "3201300",
+      NF_EXACT: "3201319", NF_UNDER: "3201327", NF_SA: "3201335", NF_PRIOR_ONLY: "3201343", NF_YEAR_ONLY: "3201351", NF_OTHER_FORM: "3201360", NF_NEWEST_YEAR: "3201378", NF_FIRST_YEAR: "3201386", NF_NOT_ONRC: "3201394",
+    } as const;
+    const LABEL = Object.fromEntries(Object.entries(SUP).map(([label, key]) => [key, label]));
+    const RULES = ["YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT"] as const;
+    type Repro = { authority: string | null; supplier: string | null; signal: string | null; cpv: string | null; from: string | null; to: string | null };
+    type Sig = { rule: string; date: string; firstDate: string; recordCount: number; authority: { key: string }; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Repro };
+    const DB = { main: "onrc_signals_a", revised: "onrc_signals_b" } as const;
+    const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+
+    beforeAll(() => {
+      const out = rebuild(DB.main, "archive-onrc-signals");
+      expect(out).toContain("YOUNG_FIRM 3, NO_CONSTRUCTION_CAEN 2, AFTER_STRIKE_OFF 2, INSOLVENCY 4, FEW_EMPLOYEES 3, NO_FINANCIAL_STATEMENT 2"); // the six rules' Signals of this load
+      rebuild(DB.revised, "archive-onrc-signals-revised");
+    });
+
+    const op = async (db: string, o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
+      const r = await ask(db, o.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(o.document), r.body.data, variables)).toEqual([]);
+      return r.body.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const rolePage = async (key: string, role: string, rule?: string, db: string = DB.main) =>
+      (await op(db, entityOverview, { key, role, filter: rule ? { signal: rule } : {}, signalOrder: "DATE_DESC", signalOffset: 0 })).entity.seap.role.signals as { count: number; rows: Sig[] };
+    /** A Signal as (authority, date, supplier labels): what each case is asserted by. */
+    const brief = (s: Sig) => [s.authority.key, s.date, s.suppliers.map((x) => LABEL[x.key] ?? x.key).sort().join("+")] as const;
+    const ofRule = async (rule: string, db: string = DB.main) => {
+      const rows = [...(await rolePage(A1, "AUTHORITY", rule, db)).rows, ...(await rolePage(A2, "AUTHORITY", rule, db)).rows];
+      return rows.sort((a, b) => a.date.localeCompare(b.date) || a.authority.key.localeCompare(b.authority.key));
+    };
+    const doc = (db: string, source: string, variableValues: Record<string, unknown> = {}) => {
+      const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${db}`)!;
+      return graphql({ schema, source, rootValue: rootValue(postgresStore(pool)), variableValues }).then((r) => {
+        expect(r.errors).toBeUndefined();
+        return r.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    };
+    const RON = (n: number) => String(Math.round(n * 100));
+
+    it("young firm: a first Record within 90 days or one of 1M RON within 180 days; the day after each, 999,999.99 RON, a Record before registering and later Records are not", async () => {
+      const found = await ofRule("YOUNG_FIRM");
+      expect(found.map(brief)).toEqual([
+        [A1, "2025-03-11", "YF_FIRST_EARLY"], // day 10: the supplier's first Record
+        [A1, "2025-05-30", "YF_FIRST_90"],    // boundary: day 90
+        [A2, "2025-08-28", "YF_LARGE_180"],   // boundary: exactly 1,000,000 RON on day 180 (its first Record, on day 100, is no Signal)
+      ]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "YoungFirmNumbers", days: 10, registered: "2025-03-01", counted: RON(50_000) },
+        { __typename: "YoungFirmNumbers", days: 90, registered: "2025-03-01", counted: RON(30_000) },
+        { __typename: "YoungFirmNumbers", days: 180, registered: "2025-03-01", counted: RON(1_000_000) },
+      ]);
+      for (const label of ["YF_FIRST_91", "YF_LARGE_181", "YF_UNDER_1M", "YF_BEFORE", "OLD_FIRM"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "YOUNG_FIRM")).count, label).toBe(0);
+    });
+
+    it("young firm: a later Record within 90 days of registering is context, never a Signal on its own (the 'any record within 90 days' item)", async () => {
+      // YF_FIRST_EARLY's second Record (day 80, 2025-05-20) is in the supplier's Records and in no Signal; its first Record (day 10) is
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 10, offset: 0, order: DATE_DESC) { rows { record { code date signals { rule } } } } } } }`;
+      const rows = (await doc(DB.main, search, { f: { supplier: SUP.YF_FIRST_EARLY } })).seap.search.records.rows as { record: { date: string; signals: { rule: string }[] } }[];
+      expect(rows.map((r) => [r.record.date, r.record.signals.map((s) => s.rule)])).toEqual([["2025-05-20", []], ["2025-03-11", ["YOUNG_FIRM"]]]);
+    });
+
+    it("works without a construction CAEN: exactly 1M RON in; 999,999.99, a Rev.2/Rev.3/Rev.1 construction code, supplies and unknown codes are not; Rev.2 division 45 is not construction", async () => {
+      const found = await ofRule("NO_CONSTRUCTION_CAEN");
+      expect(found.map(brief)).toEqual([[A1, "2025-04-10", "NC_NONE_1M"], [A1, "2025-04-14", "NC_REV2_DIV45"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "NoConstructionCaenNumbers", value: RON(1_000_000), authorisedCodes: 1 },
+        { __typename: "NoConstructionCaenNumbers", value: RON(2_000_000), authorisedCodes: 1 },
+      ]);
+      for (const label of ["NC_UNDER", "NC_REV2", "NC_REV3", "NC_REV1_45", "NC_SUPPLIES", "NC_UNKNOWN"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "NO_CONSTRUCTION_CAEN")).count, label).toBe(0);
+    });
+
+    it("record after strike-off: the day after ANAF's strike-off and later are in; the day before, the day itself, ONRC's undated status and a bare RADIERE are not", async () => {
+      const found = await ofRule("AFTER_STRIKE_OFF");
+      expect(found.map(brief)).toEqual([[A1, "2025-03-16", "SO_STRUCK"], [A2, "2025-06-01", "SO_STRUCK"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "AfterStrikeOffNumbers", struckOff: "2025-03-15", daysAfter: 1 },
+        { __typename: "AfterStrikeOffNumbers", struckOff: "2025-03-15", daysAfter: 78 },
+      ]);
+      expect((await rolePage(SUP.SO_STRUCK, "SUPPLIER", "AFTER_STRIKE_OFF")).count).toBe(2);
+      for (const label of ["SO_ONRC_ONLY", "SO_NO_DATE"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "AFTER_STRIKE_OFF")).count, label).toBe(0);
+    });
+
+    it("insolvency: the status is read by name, undated (first seen in a snapshot) and looked at over the 6 months to the newest snapshot (2026-05-06); former, dissolved and later Records are not", async () => {
+      const found = await ofRule("INSOLVENCY");
+      expect(found.map(brief)).toEqual([
+        [A1, "2025-11-06", "IN_FIRST_APR"],        // boundary: exactly 6 months before the snapshot (2025-11-05 is out)
+        [A1, "2026-01-15", "IN_SINCE_AT_LEAST"],
+        [A2, "2026-02-10", "IN_REORG"],            // "reorganizare judiciara": told by the name, not by a code
+        [A1, "2026-05-06", "IN_FIRST_APR"],        // the snapshot day itself (2026-05-07 is after it)
+      ]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2026-04-03", sinceAtLeast: false },
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2025-03-18", sinceAtLeast: true }, // shown by the earliest snapshot held: "at least since"
+        { __typename: "InsolvencyNumbers", status: "reorganizare judiciară", firstSeen: "2026-05-06", sinceAtLeast: false },
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2026-04-03", sinceAtLeast: false },
+      ]);
+      for (const label of ["IN_FORMER", "IN_DISSOLVED"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "INSOLVENCY")).count, label).toBe(0);
+    });
+
+    it("at most one employee: exactly 5M RON with the revised figure, and a sum over two authorities, are in; 4,999,999.99, two employees, a blank count and another year's statement are not", async () => {
+      const found = await ofRule("FEW_EMPLOYEES");
+      expect(found.map(brief)).toEqual([[A1, "2023-06-10", "FE_BOUNDARY"], [A1, "2024-02-01", "FE_SUMMED"], [A2, "2024-09-01", "FE_SUMMED"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2023, employees: 1, awarded: RON(5_000_000) }, // the first release said 4 employees, the revised one 1
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2024, employees: 0, awarded: RON(5_000_000) }, // 3M + 2M, a reported zero
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2024, employees: 0, awarded: RON(5_000_000) },
+      ]);
+      expect((await rolePage(SUP.FE_SUMMED, "SUPPLIER", "FEW_EMPLOYEES")).count).toBe(2);
+      for (const label of ["FE_UNDER", "FE_TWO", "FE_BLANK", "FE_OTHER_YEAR"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "FEW_EMPLOYEES")).count, label).toBe(0);
+    });
+
+    it("no financial statement: an SRL with exactly 1M RON and an SA are in; 999,999.99, a statement for Y or Y-1, another legal form, the newest fiscal year, the first year and an unlisted firm are not", async () => {
+      const found = await ofRule("NO_FINANCIAL_STATEMENT");
+      expect(found.map(brief)).toEqual([[A1, "2023-05-10", "NF_EXACT"], [A1, "2023-05-12", "NF_SA"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: RON(1_000_000), legalForm: "SRL" },
+        { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: RON(2_000_000), legalForm: "SA" },
+      ]);
+      for (const label of ["NF_UNDER", "NF_PRIOR_ONLY", "NF_YEAR_ONLY", "NF_OTHER_FORM", "NF_NEWEST_YEAR", "NF_FIRST_YEAR", "NF_NOT_ONRC"] as const)
+        expect((await rolePage(SUP[label], "SUPPLIER", "NO_FINANCIAL_STATEMENT")).count, label).toBe(0);
+    });
+
+    it("no financial statement: the newest fiscal year counts once its revised release is held (and the revised employee count replaces the first release's)", async () => {
+      expect((await ofRule("NO_FINANCIAL_STATEMENT", DB.revised)).map(brief)).toEqual([[A1, "2023-05-10", "NF_EXACT"], [A1, "2023-05-12", "NF_SA"], [A1, "2024-05-16", "NF_NEWEST_YEAR"]]);
+      expect((await ofRule("FEW_EMPLOYEES", DB.revised)).map(brief)).toEqual([[A1, "2023-06-10", "FE_BOUNDARY"]]); // FE_SUMMED's revised FY2024 figure is 5
+    });
+
+    it("each Signal is on every entity page its Records touch and on no other rule's page, counted and never scored (the authority's page and the supplier's)", async () => {
+      let checked = 0;
+      for (const rule of RULES) {
+        for (const s of await ofRule(rule)) {
+          for (const sup of s.suppliers) {
+            const page = (await rolePage(sup.key, "SUPPLIER", rule)).rows;
+            expect(page.map((x) => JSON.stringify(x.reproduce)), `${rule} ${s.date} on ${LABEL[sup.key]}`).toContain(JSON.stringify(s.reproduce));
+            checked++;
+          }
+          expect(Object.keys(s)).not.toContain("score");
+        }
+      }
+      expect(checked).toBe(16); // every Signal of the six rules (3 + 2 + 2 + 4 + 3 + 2), each with one supplier
+      expect((await rolePage(A1, "AUTHORITY")).count).toBeGreaterThan(10); // unfiltered, the authority's page carries the six rules' Signals beside the others
+    });
+
+    it("running a Signal's reproduce filter returns exactly its Records, for every Signal of the six rules", async () => {
+      const q = `query($k: ID!) { entity(key: $k) { seap { role(role: AUTHORITY) { signals(limit: 200) { rows { rule reproduce { authority supplier signal cpv from to } records(limit: 200) { code } } } } } } }`;
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
+      let checked = 0;
+      for (const k of [A1, A2]) {
+        const { entity } = await doc(DB.main, q, { k });
+        for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
+          if (!(RULES as readonly string[]).includes(s.rule)) continue;
+          const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+          const found = (await doc(DB.main, search, { f: filter })).seap.search.records;
+          expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
+          expect(found.count).toBe(s.records.length);
+          checked++;
+        }
+      }
+      expect(checked).toBe(16);
+    });
+
+    it("serves each rule's window, firing rate (recomputed in this load) and data-through; a rule whose Reference source is not loaded has no row", async () => {
+      const data = await op(DB.main, methodology, {});
+      const rows = Object.fromEntries((data.signalRules as { slug: string; window: { from: string | null; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).map((r) => [r.slug, r]));
+      // of the 2 authorities with a Record in the year, how many had a Signal of the rule dated in it; the two statement rules measure in the newest year they can see
+      expect(RULES.map((r) => [r, rows[r]!.baseRate, rows[r]!.baseRateYear])).toEqual([
+        ["YOUNG_FIRM", 1, 2025], ["NO_CONSTRUCTION_CAEN", 0.5, 2025], ["AFTER_STRIKE_OFF", 1, 2025], ["INSOLVENCY", 0.5, 2025], ["FEW_EMPLOYEES", 1, 2024], ["NO_FINANCIAL_STATEMENT", 1, 2023],
+      ]);
+      for (const r of RULES) expect(rows[r]).toMatchObject({ window: { from: "2022-01-01", to: null }, dataThrough: "2026-04-20" });
+      // archive-signals has ANAF answers (so after-strike-off has its source) and neither ONRC nor MF: the other five rules have no row there
+      expect(Object.keys(rows)).toEqual(["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", ...RULES]);
+    });
+
+    it("filters the search by each rule (signal in the URL) and counts Records, not Signals: the filter's Total is the rule's Records", async () => {
+      const total = `query($f: RecordFilter!) { seap { search(filter: $f) { total { records } } } }`;
+      const records = async (rule: string) => (await doc(DB.main, total, { f: { signal: rule } })).seap.search.total.records as number;
+      expect(await Promise.all(RULES.map(records))).toEqual([3, 2, 2, 4, 3, 2]);
+    });
+  });
+
+  describe("recorded fixtures (#89): archive-signals, archive-splitting, archive-framework-overrun, archive-onrc-signals -> rebuild -> Signals on every screen", () => {
     // The app's seam 3 renders the Signals on every screen against these answers. Same convention as #83/#86: this block fails when an answer
     // drifts from the committed JSON; `RECORD_FIXTURES=1` rewrites it. One JSON file per operation under recorded/signals/.
     const recording = process.env.RECORD_FIXTURES === "1";
     const dir = resolve(here, "../../contract/src/fixtures/recorded/signals");
-    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c" } as const;
-    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun" } as const;
+    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c", onrcSignals: "sig89_d" } as const;
+    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun", onrcSignals: "archive-onrc-signals" } as const;
     const OPS = {
       EntityOverview: entityOverview,
       EntityRecords: entityRecords,
@@ -3727,8 +3925,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("answers each rule's base rate through signalRules, per archive (the methodology page shows them)", () => {
       const rates = (name: string) => Object.fromEntries((answers.get(`MethodologyBaseRates/${name}`)!.data as { signalRules: { slug: string; baseRate: number; baseRateYear: number; window: { from: string | null } }[] }).signalRules.map((r) => [r.slug, [r.baseRate, r.baseRateYear, r.window.from]]));
-      expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"] });
+      expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"], AFTER_STRIKE_OFF: [0, 2023, "2021-01-01"] });
       expect(rates("splitting-archive")).toMatchObject({ SPLITTING: [1, 2022, "2022-01-01"], OVER_CAP: [0, 2022, "2022-01-01"] });
+      expect(rates("onrc-signals-archive")).toMatchObject({
+        YOUNG_FIRM: [1, 2025, "2022-01-01"], NO_CONSTRUCTION_CAEN: [0.5, 2025, "2022-01-01"], AFTER_STRIKE_OFF: [1, 2025, "2022-01-01"], INSOLVENCY: [0.5, 2025, "2022-01-01"],
+        FEW_EMPLOYEES: [1, 2024, "2022-01-01"], NO_FINANCIAL_STATEMENT: [1, 2023, "2022-01-01"],
+      });
       expect(rates("framework-overrun-archive")).toMatchObject({ FRAMEWORK_OVERRUN: [1, 2023, "2021-01-01"] }); // the rule's 2021 floor, although a 2020 Contracte file is loaded
     });
   });

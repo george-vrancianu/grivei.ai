@@ -3,7 +3,7 @@
  * API after a real rebuild (seam 1). The block "recorded fixtures (#89)" in `seam1.test.ts` compares each answer with the committed JSON
  * and, with `RECORD_FIXTURES=1`, rewrites it. Same convention as `recordedEntityCases.ts` (#86).
  *
- * Three archives, one per rule family: `signals` (over-cap and no-publication), `splitting` and `frameworkOverrun` (each also has a few
+ * Four archives, one per rule family (the fourth, `onrcSignals`, is the six ONRC and financial-statement rules of #184): `signals` (over-cap and no-publication), `splitting` and `frameworkOverrun` (each also has a few
  * of the others' Signals or none). The entity pages of the three share keys (the hospital 1000017, ALFA 2000007 ...), so a case in a
  * later archive asks with the Signal filter (`?signal=splitting`), which is also how a reader narrows an Overview to one rule.
  * The Records-tab answers for each Signal's own reproducing filter are not listed here: the block derives them from the Overview answers
@@ -11,7 +11,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type SignalArchive = "signals" | "splitting" | "frameworkOverrun";
+export type SignalArchive = "signals" | "splitting" | "frameworkOverrun" | "onrcSignals";
 
 export interface RecordedSignalCase {
   operation: "EntityOverview" | "EntityRecords" | "EntityRelationships" | "MainScreen" | "FullResultsAuthorities" | "FullResultsSuppliers" | "FullResultsRecords" | "RecordPage" | "MethodologyBaseRates";
@@ -26,6 +26,8 @@ export interface RecordedSignalCase {
 /** The entities of the three Signal archives (build_signals_archive.py, build_splitting_archive.py, build_framework_overrun_archive.py), all invented. */
 export const SIGNAL_KEYS = {
   hospital: "1000017", commune: "1000009", cnair: "2000031", alfa: "2000007", beta: "2000015", gamma: "2000023",
+  // archive-onrc-signals (build_onrc_signals_archive.py): its two authorities and two suppliers (a sum over two authorities; an insolvency first seen in a snapshot)
+  onrcA1: "3200011", onrcA2: "3200020", feSummed: "3201297", inFirstApr: "3201203",
 } as const;
 
 const overview = (key: string, role: "AUTHORITY" | "SUPPLIER", extra: Record<string, unknown> = {}) => ({ key, role, filter: {}, ...extra });
@@ -56,6 +58,16 @@ export const RECORDED_SIGNAL_CASES: readonly RecordedSignalCase[] = [
   entity("framework-overrun-consortium-authority", "frameworkOverrun", "an authority whose overrun framework was won by a consortium of three: one Signal naming all three suppliers", SIGNAL_KEYS.cnair, "AUTHORITY", { filter: { signal: "FRAMEWORK_OVERRUN" } }),
   entity("framework-overrun-consortium-member", "frameworkOverrun", "a supplier that is a member of two authorities' overrun frameworks", SIGNAL_KEYS.gamma, "SUPPLIER", { filter: { signal: "FRAMEWORK_OVERRUN" } }),
   entity("framework-overrun-supplier", "frameworkOverrun", "a supplier with a framework-overrun Signal in each of two authorities", SIGNAL_KEYS.beta, "SUPPLIER", { filter: { signal: "FRAMEWORK_OVERRUN" } }),
+  // ---- archive-onrc-signals (#184): each of the six rules on an authority's page (asked with the rule's filter, `?signal=young-firm`), and two supplier pages ----
+  entity("young-firm-authority", "onrcSignals", "an authority's young-firm Signals: days from registering, the registration date and the Record's counted value", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "YOUNG_FIRM" } }),
+  entity("no-construction-caen-authority", "onrcSignals", "an authority's works Signals for firms with no construction CAEN: the value and the number of authorised codes", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "NO_CONSTRUCTION_CAEN" } }),
+  entity("after-strike-off-authority", "onrcSignals", "an authority's Records dated after the supplier's ANAF strike-off: the strike-off date and the days after it", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "AFTER_STRIKE_OFF" } }),
+  entity("insolvency-authority", "onrcSignals", "an authority's Records of suppliers now in insolvency or reorganisation: the status as ONRC names it, undated, first seen in a snapshot (one only since the earliest snapshot held)", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "INSOLVENCY" } }),
+  entity("few-employees-authority", "onrcSignals", "an authority's Signals for suppliers reporting at most one average employee: the fiscal year, the count and the year's awards", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "FEW_EMPLOYEES" } }),
+  entity("no-financial-statement-authority", "onrcSignals", "an authority's Signals for an SRL or SA with no statement for the year or the year before: the year, the awards and the legal form", SIGNAL_KEYS.onrcA1, "AUTHORITY", { filter: { signal: "NO_FINANCIAL_STATEMENT" } }),
+  entity("insolvency-reorganisation-authority", "onrcSignals", "a second authority's insolvency Signal, for a supplier in judicial reorganisation (told by the status name)", SIGNAL_KEYS.onrcA2, "AUTHORITY", { filter: { signal: "INSOLVENCY" } }),
+  entity("few-employees-supplier", "onrcSignals", "a supplier whose awards of 5M RON in one year, over two authorities, make two Signals (the sum is the supplier's, not the authority's)", SIGNAL_KEYS.feSummed, "SUPPLIER", { filter: { signal: "FEW_EMPLOYEES" } }),
+  entity("insolvency-supplier", "onrcSignals", "a supplier in insolvency: its Signals on its own page, one per authority and day inside the six-month window", SIGNAL_KEYS.inFirstApr, "SUPPLIER", { filter: { signal: "INSOLVENCY" } }),
   // ---- the Record page's Signals (a code is asked in one archive only; #85 has the over-cap, splitting, no-publication and natural-person ones) ----
   record("over-cap-single-record-signal", "signals", "a Record that is the only one of its over-cap Signal: the card's Check-in-SEAP link points at this Record", "DA98000009"),
   record("framework-overrun-ceiling", "frameworkOverrun", "the ceiling Record of a framework whose subsequent contracts add up to 125%: the framework-overrun Signal with its four Records (the ceiling and the first three subsequent contracts)", "CAN9700001~1"),
@@ -71,5 +83,6 @@ export const RECORDED_SIGNAL_CASES: readonly RecordedSignalCase[] = [
   // ---- the methodology page's base rates: each archive's own answer to `signalRules` ----
   list("MethodologyBaseRates", "signals-archive", "over-cap and no-publication fire for authorities (2 of 3 and 1 of 3), splitting and framework-overrun for none", {}),
   { operation: "MethodologyBaseRates", name: "splitting-archive", archive: "splitting", kind: "typical", description: "splitting fires for 2 of 3 authorities with a direct purchase in 2023", variables: {} },
+  { operation: "MethodologyBaseRates", name: "onrc-signals-archive", archive: "onrcSignals", kind: "typical", description: "the six ONRC and financial-statement rules beside the four SEAP ones: firing rates recomputed in this load (the statements' rules measure in the newest year they can see)", variables: {} },
   { operation: "MethodologyBaseRates", name: "framework-overrun-archive", archive: "frameworkOverrun", kind: "typical", description: "framework-overrun fires for 3 authorities; its window starts at the rule's 2021 floor (a 2020 Contracte file is loaded)", variables: {} },
 ];
