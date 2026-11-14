@@ -75,3 +75,16 @@ def company_form(legal_form: str | None) -> str | None:
     if _SA.match(text):
         return "SA"
     return None
+
+
+def supplier_where(base: str, cuis) -> tuple[str, tuple]:
+    """A rule's `where`: the base condition AND the Record has a winner among `cuis` (the suppliers its context concerns). `base` carries no placeholder
+    of its own; a rule with extra params builds its own string."""
+    return (f"{base} AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))", (sorted(cuis),))
+
+
+def supplier_year_awards_sql(extra: str = "") -> str:
+    """The subquery of supplier-years whose awards reach a threshold: (supplier_key, award_year, awarded), one `%s` for the threshold after any
+    placeholders in `extra` (an additional AND condition on the search rows)."""
+    return ("SELECT supplier_key, award_year, sum(share_bani)::bigint AS awarded FROM seap.search "
+            f"WHERE supplier_key IS NOT NULL AND NOT suspect AND share_bani > 0{extra} GROUP BY supplier_key, award_year HAVING sum(share_bani) >= %s")

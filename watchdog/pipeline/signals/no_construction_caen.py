@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from ..counting import is_works
 from .common import Hit, Row, authority_day_hits
-from .reference import MILLION_RON, is_construction_caen, winner_keys
+from .reference import MILLION_RON, is_construction_caen, supplier_where, winner_keys
 
 SLUG = "NO_CONSTRUCTION_CAEN"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
@@ -61,4 +61,4 @@ def detect(rows, codes) -> list[Hit]:
 
 
 def where(codes) -> tuple[str, tuple]:
-    return (f"{WHERE} AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))", (sorted(codes),))
+    return supplier_where(WHERE, codes)

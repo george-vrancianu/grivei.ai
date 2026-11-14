@@ -12,7 +12,8 @@ Authorities: A1 PRIMARIA SEMNAL UNU, A2 SPITALUL SEMNAL DOI. A firm registered 2
 
 YOUNG FIRM (YF_*, SRL registered 2025-03-01; first Record = the supplier's earliest)
   YF_FIRST_EARLY  DA day 10 (+, A1), DA day 80 (small, not the first Record: context only, no Signal)
-  YF_FIRST_90     DA day 90 (+ boundary)            YF_FIRST_91   DA day 91 (no: boundary)
+  YF_FIRST_90     DA day 90 (+ boundary), a second DA the same day from A2 (+, also a first Record)
+  YF_FIRST_91     DA day 91 (no: boundary)
   YF_LARGE_180    DA day 100 (first, no), contract of exactly 1,000,000 RON day 180 (+ boundary, A2)
   YF_LARGE_181    contract 5,000,000 RON day 181 (first Record, no)
   YF_UNDER_1M     contract 999,999.99 RON day 150 (first Record, no)
@@ -123,7 +124,7 @@ def world() -> dict[str, Supplier]:
 
     young = {"registered": "01/03/2025"}
     add("YF_FIRST_EARLY", **young).da(day(10), "50000").da(day(80), "40000")
-    add("YF_FIRST_90", **young).da(day(90), "30000")
+    add("YF_FIRST_90", **young).da(day(90), "30000").da(day(90), "30000", "A2")
     add("YF_FIRST_91", **young).da(day(91), "30000")
     add("YF_LARGE_180", **young).da(day(100), "30000").ct(day(180), "1000000", "A2")
     add("YF_LARGE_181", **young).ct(day(181), "5000000")

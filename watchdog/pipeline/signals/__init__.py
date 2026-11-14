@@ -25,7 +25,9 @@ The base rate (story 80) is the fraction of contracting authorities, among those
 Record of the rule's kinds in the year), that have at least one Signal of the rule dated in `baseRateYear`: the latest calendar year
 before the data-through year that the rule has Records for (a complete year), else the latest year it has. The window starts on 1 January
 of the first year the rule has Records for (never before the rule's optional `WINDOW_FROM`, e.g. framework-overrun's 2021-01-01; the base rate works in whole years, so a floor should be a 1 January) and is open at the end (`dataThrough` says how far the data goes). A rule that reads a Reference source and can only evaluate some years (few-employees, no-financial-statement)
-declares `base_year(context)`, the year it measures in instead.
+declares `base_year(context)`, the year it measures in instead. A rule that sees only a slice of the time (insolvency: the 6 months to ONRC's newest
+snapshot) declares `base_window(context) -> (first day, last day)`: its base rate counts the authorities with a Record, and with a Signal, in that window, and
+`baseRateYear` is the window's last year.
 """
 from __future__ import annotations
 
@@ -53,7 +55,10 @@ def _rows(cur: psycopg.Cursor, where: str, order_by: str = "code", params: tuple
     with cur.connection.cursor(name="signal_rows", row_factory=psycopg.rows.dict_row) as stream:
         stream.itersize = 20_000
         sql = f"SELECT {ROW_COLUMNS} FROM seap.record WHERE {where} ORDER BY {order_by}"  # fixed strings from the rule module
-        stream.execute(sql, params) if params else stream.execute(sql)
+        if params:  # a rule with params writes a literal % as %%; without params the SQL goes as is, so the older rules' fixed WHERE strings may hold a bare %
+            stream.execute(sql, params)
+        else:
+            stream.execute(sql)
         yield from stream
 
 
@@ -85,6 +90,14 @@ def _base_rate(cur: psycopg.Cursor, rule: ModuleType, through: date, context: ob
     years = [y for (y,) in cur.fetchall() if y >= getattr(rule, "WINDOW_FROM", date.min).year]  # a year before the rule's window is not one it could see
     if not years:
         return None
+    window = rule.base_window(context) if hasattr(rule, "base_window") else None  # (first day, last day) of a rule that only sees a slice of the time
+    if window is not None:
+        year = window[1].year
+        cur.execute("SELECT count(DISTINCT authority_key)::int FROM seap.record WHERE kind = ANY(%s) AND authority_key IS NOT NULL "
+                    "AND award_date BETWEEN %s AND %s", (list(rule.KINDS), *window))
+        seen = cur.fetchone()[0]
+        cur.execute("SELECT count(DISTINCT authority_key)::int FROM seap.signal WHERE rule = %s AND last_date BETWEEN %s AND %s", (rule.SLUG, *window))
+        return year, cur.fetchone()[0], seen
     complete = [y for y in years if y < through.year]
     year = rule.base_year(context) if hasattr(rule, "base_year") else max(complete or years)  # a rule that can only see some years says which
     cur.execute("SELECT count(DISTINCT authority_key)::int FROM seap.record WHERE kind = ANY(%s) AND authority_key IS NOT NULL "

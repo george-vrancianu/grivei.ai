@@ -208,10 +208,10 @@ export const methodologyRo: MethodologyPageCopy = {
       heading: "Insolvență",
       paragraphs: ["Insolvență: furnizorul este acum în insolvență sau reorganizare și are înregistrări în ultimele șase luni."],
       items: [
-        "Starea: stările pe care ONRC le arată pentru furnizor în cel mai recent instantaneu, citite după denumirea pe care ONRC o publică pentru fiecare: insolvență, reorganizare judiciară sau faliment. Celelalte stări (dizolvare, lichidare, suspendare, radiere) nu fac parte din această regulă.",
+        "Starea: stările pe care ONRC le arată pentru furnizor în cel mai recent instantaneu, citite după denumirea pe care ONRC o publică pentru fiecare: insolvență, reorganizare judiciară sau faliment. O denumire care spune că procedura s-a încheiat („închiderea procedurii”, „ieșire din insolvență”) nu contează. Celelalte stări (dizolvare, lichidare, suspendare, radiere) nu fac parte din această regulă.",
         "Starea nu este datată. Datele deschise ale ONRC listează stările unei societăți în fiecare instantaneu, nu când au început, așa că explicatorul poate spune doar în ce instantaneu a fost văzută prima oară o stare (și „cel puțin din” când acela este cel mai vechi instantaneu păstrat). Procedura poate fi mai veche decât acel instantaneu sau mai nouă decât înregistrarea: un Semnal spune „acum în insolvență și a câștigat recent”, niciodată „a câștigat în timp ce era în insolvență”.",
         "„Acum” este data celui mai recent instantaneu ONRC, iar „ultimele șase luni” sunt cele șase luni calendaristice până la el, inclusiv. O înregistrare datată după acel instantaneu este în afara a ceea ce spune starea. Orice înregistrare contează, indiferent de valoare.",
-        "Fereastra și rata: rata de mai jos este măsurată pe un an calendaristic ca la celelalte reguli, nu pe fereastra de șase luni, deci este doar un reper pentru cât de des apare regula. Este recalculată la fiecare încărcare.",
+        "Rata: spre deosebire de celelalte reguli, rata de mai jos este măsurată pe cele șase luni până la cel mai recent instantaneu ONRC (intervalul de timp pe care îl vede regula), ca ponderea autorităților cu o înregistrare în acele luni care au un Semnal în ele. Este recalculată la fiecare încărcare.",
       ],
       lawful: "Explicații legale posibile: înregistrarea a fost atribuită înainte de începerea procedurii sau procedura permite continuarea activității printr-un plan de reorganizare.",
     },

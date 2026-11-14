@@ -182,8 +182,8 @@
             "from": "2022-01-01",
             "to": null
           },
-          "baseRate": 0.5,
-          "baseRateYear": 2025,
+          "baseRate": 1,
+          "baseRateYear": 2026,
           "dataThrough": "2026-04-20"
         },
         {

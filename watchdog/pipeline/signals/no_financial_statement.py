@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .common import Hit, Row, authority_day_hits
-from .reference import MILLION_RON, company_form, winner_keys
+from .reference import MILLION_RON, company_form, supplier_where, supplier_year_awards_sql, winner_keys
 
 SLUG = "NO_FINANCIAL_STATEMENT"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
@@ -59,10 +59,8 @@ def load(cur) -> Context | None:
         return None  # no award year can be evaluated: the rule is absent
     first, last = span
     cur.execute(
-        """SELECT t.supplier_key, t.award_year, t.awarded, r.legal_form
-             FROM (SELECT supplier_key, award_year, sum(share_bani)::bigint AS awarded FROM seap.search
-                    WHERE supplier_key IS NOT NULL AND NOT suspect AND share_bani > 0 AND award_year BETWEEN %s AND %s
-                    GROUP BY supplier_key, award_year HAVING sum(share_bani) >= %s) t
+        f"""SELECT t.supplier_key, t.award_year, t.awarded, r.legal_form
+             FROM ({supplier_year_awards_sql(' AND award_year BETWEEN %s AND %s')}) t
              JOIN onrc.registration r ON r.cui = t.supplier_key AND r.primary_for_cui
             WHERE NOT EXISTS (SELECT 1 FROM financials.statement f WHERE f.cui = t.supplier_key AND f.fiscal_year IN (t.award_year, t.award_year - 1))""",
         (first, last, AWARDS_BANI))
@@ -71,8 +69,7 @@ def load(cur) -> Context | None:
 
 
 def where(context: Context) -> tuple[str, tuple]:
-    return (f"{WHERE} AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))",
-            (sorted({cui for cui, _ in context.found}),))
+    return supplier_where(WHERE, {cui for cui, _ in context.found})
 
 
 def match(row: Row, context: Context) -> dict | None:

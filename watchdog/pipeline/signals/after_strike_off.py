@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import date
 
 from .common import Hit, Row, authority_day_hits
-from .reference import strike_off_date, winner_keys
+from .reference import strike_off_date, supplier_where, winner_keys
 
 SLUG = "AFTER_STRIKE_OFF"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
@@ -28,13 +28,13 @@ def load(cur) -> dict[str, date] | None:
         return None
     cur.execute(
         """SELECT cui, registration FROM core.anaf_company a
-            WHERE a.status = 'RADIERE' AND EXISTS (SELECT 1 FROM seap.search s WHERE s.supplier_key = a.cui)""")
+            WHERE a.registration ILIKE '%RADIERE%' AND EXISTS (SELECT 1 FROM seap.search s WHERE s.supplier_key = a.cui)""")
     struck = {cui: strike_off_date(registration) for cui, registration in cur.fetchall()}
     return {cui: day for cui, day in struck.items() if day is not None}
 
 
 def where(struck: dict[str, date]) -> tuple[str, tuple]:
-    return ("NOT suspect AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))", (sorted(struck),))
+    return supplier_where(WHERE, struck)
 
 
 def match(row: Row, struck: dict[str, date]) -> dict | None:

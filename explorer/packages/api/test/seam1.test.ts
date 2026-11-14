@@ -3552,7 +3552,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     beforeAll(() => {
       const out = rebuild(DB.main, "archive-onrc-signals");
-      expect(out).toContain("YOUNG_FIRM 3, NO_CONSTRUCTION_CAEN 2, AFTER_STRIKE_OFF 2, INSOLVENCY 4, FEW_EMPLOYEES 3, NO_FINANCIAL_STATEMENT 2"); // the six rules' Signals of this load
+      expect(out).toContain("YOUNG_FIRM 4, NO_CONSTRUCTION_CAEN 2, AFTER_STRIKE_OFF 2, INSOLVENCY 4, FEW_EMPLOYEES 3, NO_FINANCIAL_STATEMENT 2"); // the six rules' Signals of this load
       rebuild(DB.revised, "archive-onrc-signals-revised");
     });
 
@@ -3584,10 +3584,12 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(found.map(brief)).toEqual([
         [A1, "2025-03-11", "YF_FIRST_EARLY"], // day 10: the supplier's first Record
         [A1, "2025-05-30", "YF_FIRST_90"],    // boundary: day 90
+        [A2, "2025-05-30", "YF_FIRST_90"],    // the same supplier's other Record of its first day: also a first Record
         [A2, "2025-08-28", "YF_LARGE_180"],   // boundary: exactly 1,000,000 RON on day 180 (its first Record, on day 100, is no Signal)
       ]);
       expect(found.map((s) => s.numbers)).toEqual([
         { __typename: "YoungFirmNumbers", days: 10, registered: "2025-03-01", counted: RON(50_000) },
+        { __typename: "YoungFirmNumbers", days: 90, registered: "2025-03-01", counted: RON(30_000) },
         { __typename: "YoungFirmNumbers", days: 90, registered: "2025-03-01", counted: RON(30_000) },
         { __typename: "YoungFirmNumbers", days: 180, registered: "2025-03-01", counted: RON(1_000_000) },
       ]);
@@ -3679,7 +3681,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
           expect(Object.keys(s)).not.toContain("score");
         }
       }
-      expect(checked).toBe(16); // every Signal of the six rules (3 + 2 + 2 + 4 + 3 + 2), each with one supplier
+      expect(checked).toBe(17); // every Signal of the six rules (4 + 2 + 2 + 4 + 3 + 2), each with one supplier
       expect((await rolePage(A1, "AUTHORITY")).count).toBeGreaterThan(10); // unfiltered, the authority's page carries the six rules' Signals beside the others
     });
 
@@ -3698,15 +3700,15 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
           checked++;
         }
       }
-      expect(checked).toBe(16);
+      expect(checked).toBe(17);
     });
 
     it("serves each rule's window, firing rate (recomputed in this load) and data-through; a rule whose Reference source is not loaded has no row", async () => {
       const data = await op(DB.main, methodology, {});
       const rows = Object.fromEntries((data.signalRules as { slug: string; window: { from: string | null; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).map((r) => [r.slug, r]));
-      // of the 2 authorities with a Record in the year, how many had a Signal of the rule dated in it; the two statement rules measure in the newest year they can see
+      // of the 2 authorities with a Record in the year (insolvency: in the six months to the snapshot), how many had a Signal of the rule dated in it; the two statement rules measure in the newest year they can see
       expect(RULES.map((r) => [r, rows[r]!.baseRate, rows[r]!.baseRateYear])).toEqual([
-        ["YOUNG_FIRM", 1, 2025], ["NO_CONSTRUCTION_CAEN", 0.5, 2025], ["AFTER_STRIKE_OFF", 1, 2025], ["INSOLVENCY", 0.5, 2025], ["FEW_EMPLOYEES", 1, 2024], ["NO_FINANCIAL_STATEMENT", 1, 2023],
+        ["YOUNG_FIRM", 1, 2025], ["NO_CONSTRUCTION_CAEN", 0.5, 2025], ["AFTER_STRIKE_OFF", 1, 2025], ["INSOLVENCY", 1, 2026], ["FEW_EMPLOYEES", 1, 2024], ["NO_FINANCIAL_STATEMENT", 1, 2023],
       ]);
       for (const r of RULES) expect(rows[r]).toMatchObject({ window: { from: "2022-01-01", to: null }, dataThrough: "2026-04-20" });
       // archive-signals has ANAF answers (so after-strike-off has its source) and neither ONRC nor MF: the other five rules have no row there
@@ -3716,7 +3718,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     it("filters the search by each rule (signal in the URL) and counts Records, not Signals: the filter's Total is the rule's Records", async () => {
       const total = `query($f: RecordFilter!) { seap { search(filter: $f) { total { records } } } }`;
       const records = async (rule: string) => (await doc(DB.main, total, { f: { signal: rule } })).seap.search.total.records as number;
-      expect(await Promise.all(RULES.map(records))).toEqual([3, 2, 2, 4, 3, 2]);
+      expect(await Promise.all(RULES.map(records))).toEqual([4, 2, 2, 4, 3, 2]);
     });
   });
 
@@ -3934,7 +3936,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"], AFTER_STRIKE_OFF: [0, 2023, "2021-01-01"] });
       expect(rates("splitting-archive")).toMatchObject({ SPLITTING: [1, 2022, "2022-01-01"], OVER_CAP: [0, 2022, "2022-01-01"] });
       expect(rates("onrc-signals-archive")).toMatchObject({
-        YOUNG_FIRM: [1, 2025, "2022-01-01"], NO_CONSTRUCTION_CAEN: [0.5, 2025, "2022-01-01"], AFTER_STRIKE_OFF: [1, 2025, "2022-01-01"], INSOLVENCY: [0.5, 2025, "2022-01-01"],
+        YOUNG_FIRM: [1, 2025, "2022-01-01"], NO_CONSTRUCTION_CAEN: [0.5, 2025, "2022-01-01"], AFTER_STRIKE_OFF: [1, 2025, "2022-01-01"], INSOLVENCY: [1, 2026, "2022-01-01"],
         FEW_EMPLOYEES: [1, 2024, "2022-01-01"], NO_FINANCIAL_STATEMENT: [1, 2023, "2022-01-01"],
       });
       expect(rates("framework-overrun-archive")).toMatchObject({ FRAMEWORK_OVERRUN: [1, 2023, "2021-01-01"] }); // the rule's 2021 floor, although a 2020 Contracte file is loaded

@@ -54,13 +54,14 @@ def test_young_firm(built, labels):
     assert who(got) == [
         (A1, day(10), ["YF_FIRST_EARLY"]),   # the first Record, day 10 (the day-80 Record is context only: no Signal)
         (A1, day(90), ["YF_FIRST_90"]),      # boundary: day 90 is in
+        (A2, day(90), ["YF_FIRST_90"]),      # the same supplier's other Record of its first day: also a first Record
         (A2, day(180), ["YF_LARGE_180"]),    # boundary: exactly 1,000,000 RON on day 180
     ]
     assert got[1][3] == {"days": 90, "registered": "2025-03-01", "counted": "3000000"}
-    assert got[2][3] == {"days": 180, "registered": "2025-03-01", "counted": "100000000"}
+    assert got[3][3] == {"days": 180, "registered": "2025-03-01", "counted": "100000000"}
     # not in any Signal: day 91, a Record of 5M on day 181, 999,999.99 RON on day 150, a Record before registering, an old firm
     assert q(url, "SELECT count(*) FROM seap.signal WHERE rule = 'YOUNG_FIRM' AND last_date IN (%s, %s, %s, %s, %s, %s)", day(91), day(181), day(150), day(-5), day(30), day(80))[0][0] == 0
-    assert summary.signals["YOUNG_FIRM"] == 3
+    assert summary.signals["YOUNG_FIRM"] == 4
 
 
 def test_works_without_a_construction_caen(built, labels):
@@ -122,7 +123,7 @@ def test_each_rule_has_a_methodology_row_with_its_firing_rate(built):
     assert rows["YOUNG_FIRM"][1:4] == (2025, 2, 2)
     assert rows["NO_CONSTRUCTION_CAEN"][1:4] == (2025, 2, 1)
     assert rows["AFTER_STRIKE_OFF"][1:4] == (2025, 2, 2)
-    assert rows["INSOLVENCY"][1:4] == (2025, 2, 1)  # A2's insolvency Signal is dated 2026
+    assert rows["INSOLVENCY"][1:4] == (2026, 2, 2)  # measured over the 6 months to the snapshot (2025-11-06 to 2026-05-06), the slice the rule sees
     assert rows["FEW_EMPLOYEES"][1:4] == (2024, 2, 2)  # the newest year the rule can see: the newest fiscal year held
     assert rows["NO_FINANCIAL_STATEMENT"][1:4] == (2023, 1, 1)  # the only year it evaluates
 

@@ -4,8 +4,9 @@
   (before mid-2025) has no registration date; a supplier with none is never in this Signal, and the rule is absent (no methodology row) when no registration
   date is loaded at all. The registration date is the firm's own: a company that re-registered, or moved its seat, can look older than it is, and a
   re-registration number can make it look younger.
-- First contract: the supplier's earliest non-suspect Record in the graph (award date, then code). It is a Signal if it is on or after the registration and
-  at most 90 days after it. Every later Record of such a supplier within 90 days is context and never a Signal on its own (acceptance of #184).
+- First contract: the supplier's earliest award DAY among its non-suspect Records in the graph. Every Record dated that day is a first Record (two
+  authorities, or a contract and its award notice, on the same day are all the first contract): it is a Signal if it is on or after the registration and
+  at most 90 days after it. Every Record of such a supplier on a later day within 90 days is context and never a Signal on its own (acceptance of #184).
 - Large Record: any non-suspect Record whose counted value is at least 1M RON (exactly 1M RON counts; a blank value counts as nothing) and that is dated on
   or after the registration and at most 180 days after it, whether or not it is the first.
 - Both are counted from the day of registration to the Record's award date (ADR 0002: the publication date stands in when there is none). A Record dated
@@ -18,7 +19,7 @@ from __future__ import annotations
 from datetime import date
 
 from .common import Hit, Row, authority_day_hits
-from .reference import MILLION_RON, winner_keys
+from .reference import MILLION_RON, supplier_where, winner_keys
 
 SLUG = "YOUNG_FIRM"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
@@ -29,9 +30,9 @@ LARGE_RECORD_BANI = MILLION_RON
 
 
 class Context:
-    """`registered`: CUI -> registration date, for the suppliers with a Record inside the long window; `first`: CUI -> code of the supplier's first Record."""
+    """`registered`: CUI -> registration date, for the suppliers with a Record inside the long window; `first`: CUI -> the award date of the supplier's first Record (every Record of that day is a first one)."""
 
-    def __init__(self, registered: dict[str, date], first: dict[str, str]):
+    def __init__(self, registered: dict[str, date], first: dict[str, date]):
         self.registered, self.first = registered, first
 
 
@@ -46,13 +47,13 @@ def load(cur) -> Context | None:
             WHERE r.primary_for_cui AND r.registration_date IS NOT NULL AND NOT s.suspect AND s.award_date - r.registration_date BETWEEN 0 AND %s""", (LARGE_RECORD_DAYS,))
     registered = dict(cur.fetchall())
     cur.execute(
-        """SELECT DISTINCT ON (supplier_key) supplier_key, record_code FROM seap.search
-            WHERE supplier_key = ANY(%s) AND NOT suspect ORDER BY supplier_key, award_date, record_code""", (sorted(registered),))
+        """SELECT supplier_key, min(award_date) FROM seap.search
+            WHERE supplier_key = ANY(%s) AND NOT suspect GROUP BY supplier_key""", (sorted(registered),))
     return Context(registered, dict(cur.fetchall()))
 
 
 def where(context: Context) -> tuple[str, tuple]:
-    return ("NOT suspect AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))", (sorted(context.registered),))
+    return supplier_where(WHERE, context.registered)
 
 
 def match(row: Row, context: Context) -> dict | None:
@@ -65,7 +66,7 @@ def match(row: Row, context: Context) -> dict | None:
         if registered is None:
             continue
         days = (row["award_date"] - registered).days  # type: ignore[operator]
-        first = context.first.get(key) == row["code"] and 0 <= days <= FIRST_CONTRACT_DAYS
+        first = context.first.get(key) == row["award_date"] and 0 <= days <= FIRST_CONTRACT_DAYS
         large = counted is not None and int(counted) >= LARGE_RECORD_BANI and 0 <= days <= LARGE_RECORD_DAYS  # type: ignore[call-overload]
         if (first or large) and (best is None or (days, registered) < best):
             best = (days, registered)

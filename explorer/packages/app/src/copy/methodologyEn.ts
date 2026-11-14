@@ -208,10 +208,10 @@ export const methodologyEn: MethodologyPageCopy = {
       heading: "Insolvency",
       paragraphs: ["Insolvency: the supplier is now in insolvency or reorganisation and has Records in the last six months."],
       items: [
-        "Status: the status codes ONRC shows for the supplier in its newest snapshot, read by the name ONRC publishes for each: insolvency, judicial reorganisation or bankruptcy. Other statuses (dissolution, liquidation, suspension, struck off) are not part of this rule.",
+        "Status: the status codes ONRC shows for the supplier in its newest snapshot, read by the name ONRC publishes for each: insolvency, judicial reorganisation or bankruptcy. A name that says the procedure is closed (\"closing of proceedings\", \"exit from insolvency\") does not count. Other statuses (dissolution, liquidation, suspension, struck off) are not part of this rule.",
         "The status is undated. ONRC's open data lists the statuses a company has in each snapshot, not when they began, so the explorer can only say which snapshot a status was first seen in (and \"at least since\" when that is the earliest snapshot held). The proceedings may be older than that snapshot, or younger than the Record: a Signal says \"in insolvency now and won recently\", never \"won while in insolvency\".",
         "\"Now\" is the date of ONRC's newest snapshot, and \"the last six months\" are the six calendar months up to and including it. A Record dated after that snapshot is outside what the status says. Any Record counts, whatever its value.",
-        "Window and firing rate: the firing rate below is measured over a calendar year like the other rules, not over the six-month window, so it is only a guide to how often this rule fires. It is recomputed at every load.",
+        "Firing rate: unlike the other rules, the rate below is measured over the six months to ONRC's newest snapshot (the slice of time this rule can see), as the share of authorities with a Record in those months that have a Signal in them. It is recomputed at every load.",
       ],
       lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
     },

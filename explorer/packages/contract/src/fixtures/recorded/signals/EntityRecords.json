@@ -6672,8 +6672,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000014",
-                      "title": "Achizitie DA97000014",
+                      "code": "DA97000015",
+                      "title": "Achizitie DA97000015",
                       "date": "2025-04-14",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -6889,8 +6889,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000010",
-                      "title": "Achizitie DA97000010",
+                      "code": "DA97000011",
+                      "title": "Achizitie DA97000011",
                       "date": "2025-04-10",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -7095,8 +7095,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000020",
-                      "title": "Achizitie DA97000020",
+                      "code": "DA97000021",
+                      "title": "Achizitie DA97000021",
                       "date": "2025-03-16",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -7283,8 +7283,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000026",
-                      "title": "Achizitie DA97000026",
+                      "code": "DA97000027",
+                      "title": "Achizitie DA97000027",
                       "date": "2026-05-06",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -7472,8 +7472,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000028",
-                      "title": "Achizitie DA97000028",
+                      "code": "DA97000029",
+                      "title": "Achizitie DA97000029",
                       "date": "2026-01-15",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -7661,8 +7661,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000025",
-                      "title": "Achizitie DA97000025",
+                      "code": "DA97000026",
+                      "title": "Achizitie DA97000026",
                       "date": "2025-11-06",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -8559,7 +8559,7 @@
         "aliases": [
           {
             "name": "SPITALUL SEMNAL DOI",
-            "records": 4,
+            "records": 5,
             "first": "2024-09-01",
             "last": "2026-02-10",
             "differsFromAnaf": false
@@ -8654,8 +8654,8 @@
                 "rows": [
                   {
                     "record": {
-                      "code": "DA97000031",
-                      "title": "Achizitie DA97000031",
+                      "code": "DA97000032",
+                      "title": "Achizitie DA97000032",
                       "date": "2026-02-10",
                       "kind": "DA",
                       "channel": "DIRECT_PURCHASE",
@@ -8748,7 +8748,7 @@
         "aliases": [
           {
             "name": "SPITALUL SEMNAL DOI",
-            "records": 4,
+            "records": 5,
             "first": "2024-09-01",
             "last": "2026-02-10",
             "differsFromAnaf": false

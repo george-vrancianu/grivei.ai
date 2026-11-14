@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .common import Hit, Row, authority_day_hits
-from .reference import FIVE_MILLION_RON, winner_keys
+from .reference import FIVE_MILLION_RON, supplier_where, supplier_year_awards_sql, winner_keys
 
 SLUG = "FEW_EMPLOYEES"
 KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
@@ -46,16 +46,15 @@ def load(cur) -> Context | None:
     if last is None:
         return None
     cur.execute(
-        """SELECT t.supplier_key, t.award_year, f.employees, t.awarded
-             FROM (SELECT supplier_key, award_year, sum(share_bani)::bigint AS awarded FROM seap.search
-                    WHERE supplier_key IS NOT NULL AND NOT suspect AND share_bani > 0 GROUP BY supplier_key, award_year HAVING sum(share_bani) >= %s) t
+        f"""SELECT t.supplier_key, t.award_year, f.employees, t.awarded
+             FROM ({supplier_year_awards_sql()}) t
              JOIN financials.statement f ON f.cui = t.supplier_key AND f.fiscal_year = t.award_year
             WHERE f.employees IS NOT NULL AND f.employees <= %s""", (AWARDS_BANI, MAX_EMPLOYEES))
     return Context(last, {(cui, year): (employees, awarded) for cui, year, employees, awarded in cur.fetchall() if qualifies(awarded, employees)})
 
 
 def where(context: Context) -> tuple[str, tuple]:
-    return (f"{WHERE} AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))", (sorted({cui for cui, _ in context.found}),))
+    return supplier_where(WHERE, {cui for cui, _ in context.found})
 
 
 def match(row: Row, context: Context) -> dict | None:

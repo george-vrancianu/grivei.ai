@@ -62,7 +62,7 @@ def _young(rows, first=None):
 
 
 def test_young_firm_first_record_day_90_is_in_and_day_91_is_not():
-    first = {"1": "DA1"}
+    first = {"1": date(2025, 5, 30)}
     on = row(day=date(2025, 5, 30), winners=[winner("1")])  # 2025-03-01 + 90
     after = row(day=date(2025, 5, 31), winners=[winner("1")])
     assert young_firm.match(on, young_firm.Context({"1": REGISTERED}, first))["days"] == 90
@@ -70,13 +70,19 @@ def test_young_firm_first_record_day_90_is_in_and_day_91_is_not():
 
 
 def test_a_later_record_within_90_days_is_context_only():
-    ctx = young_firm.Context({"1": REGISTERED}, {"1": "DA1"})
+    ctx = young_firm.Context({"1": REGISTERED}, {"1": date(2025, 3, 10)})
     later = row(code="DA2", day=date(2025, 4, 20), value=50_000 * RON, winners=[winner("1")])
     assert young_firm.match(later, ctx) is None
 
 
+def test_every_record_of_the_first_day_is_a_first_record():
+    ctx = young_firm.Context({"1": REGISTERED}, {"1": date(2025, 3, 10)})
+    for code in ("DA1", "DA2"):  # two authorities (or a contract and its award notice) on the supplier's first day
+        assert young_firm.match(row(code=code, day=date(2025, 3, 10), winners=[winner("1")]), ctx)["days"] == 9
+
+
 def test_young_firm_large_record_is_exactly_1m_ron_within_180_days():
-    ctx = young_firm.Context({"1": REGISTERED}, {"1": "OTHER"})
+    ctx = young_firm.Context({"1": REGISTERED}, {"1": date(2025, 3, 2)})
     kw = dict(code="C1", kind="CONTRACT", winners=[winner("1")])
     assert young_firm.match(row(day=date(2025, 8, 28), value=1_000_000 * RON, **kw), ctx)["days"] == 180
     assert young_firm.match(row(day=date(2025, 8, 29), value=1_000_000 * RON, **kw), ctx) is None  # day 181
@@ -85,7 +91,7 @@ def test_young_firm_large_record_is_exactly_1m_ron_within_180_days():
 
 
 def test_a_record_before_the_registration_never_triggers_and_a_suspect_one_neither():
-    ctx = young_firm.Context({"1": REGISTERED}, {"1": "DA1"})
+    ctx = young_firm.Context({"1": REGISTERED}, {"1": date(2025, 3, 10)})
     assert young_firm.match(row(day=date(2025, 2, 28), winners=[winner("1")]), ctx) is None
     assert young_firm.match(row(day=date(2025, 3, 2), winners=[winner("1")], suspect=True), ctx) is None
 
@@ -122,7 +128,12 @@ def test_a_record_on_the_strike_off_day_is_not_after_it():
 # ---- insolvency ----------------------------------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("name,expected", [("insolvență", True), ("Reorganizare judiciară", True), ("faliment", True), ("INSOLVENTA", True),
+                                           ("închidere procedură insolvență", False), ("ieșire din insolvență", False),
                                            ("dizolvare", False), ("lichidare", False), ("radiată", False), ("funcțiune", False), (None, False)])
+def test_insolvency_rate_window_is_the_six_months_to_the_snapshot():
+    assert insolvency.base_window(insolvency.Context(date(2026, 5, 6), {})) == (date(2025, 11, 6), date(2026, 5, 6))
+
+
 def test_the_status_is_read_by_the_name_ONRC_publishes(name, expected):
     assert insolvency.is_insolvency_status(name) is expected
 

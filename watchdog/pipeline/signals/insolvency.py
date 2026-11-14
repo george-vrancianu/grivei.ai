@@ -2,13 +2,14 @@
 
 - Status: ONRC's status codes of the newest held snapshot (`onrc.status_span` runs that reach it), by the status NAME ONRC publishes in its nomenclature
   (`onrc.status_name`): a name that folds to something containing "insolven", "reorganizare" or "faliment" (insolvency, judicial reorganisation, bankruptcy:
-  the stages of one procedure). No code number is assumed; a status whose name is not in the nomenclature is never read. Other statuses (dissolution,
+  the stages of one procedure). No code number is assumed; a status whose name is not in the nomenclature is never read. A name that also says the procedure is closed ("inchis", "inchidere", "iesire din") is not. Other statuses (dissolution,
   liquidation, suspension, struck off) are not this rule's.
 - The status is UNDATED. ONRC's open data gives only the statuses a company shows in each snapshot, so the graph knows the snapshot it was FIRST SEEN in
   (`firstSeen`), and, when that is the earliest snapshot held, that it is "since at least" then (`sinceAtLeast`). The insolvency may have begun long before,
   or after the Record: the Signal says "now in insolvency and won recently", never "won while in insolvency".
 - "Now" is the newest ONRC snapshot's date; "the last 6 months" are the 6 calendar months up to and including it (a Record exactly 6 months before counts). A
   Record dated after the snapshot is outside what ONRC's status says. Any non-suspect Record counts, whatever its value.
+- Firing rate: the share of authorities with a Record in that 6-month window that have a Signal in it (`base_window`), not a calendar year.
 - Consortia: a Record triggers when any of its keyed winners is in such a status.
 - Numbers: the status name as ONRC publishes it, the snapshot it was `firstSeen` in and whether that is `sinceAtLeast`.
 """
@@ -26,6 +27,7 @@ KINDS = ("DA", "DAN", "CONTRACT", "AWARD_NOTICE")
 WHERE = "NOT suspect"
 WINDOW_MONTHS = 6
 STATUS_WORDS = ("insolven", "reorganizare", "faliment")  # in the folded name of the status
+CLOSED_WORDS = ("inchid", "inchis", "iesire")  # ... unless it says the procedure is over ("inchidere procedura insolventa", "iesire din insolventa")
 
 
 @dataclass(frozen=True)
@@ -42,17 +44,23 @@ class Context:
 
 
 def is_insolvency_status(name: str | None) -> bool:
-    return any(word in fold(name) for word in STATUS_WORDS)
+    folded = fold(name)
+    return any(word in folded for word in STATUS_WORDS) and not any(word in folded for word in CLOSED_WORDS)
+
+
+def base_window(context: Context) -> tuple[date, date]:
+    """The firing rate is measured over the slice of time the rule sees: the 6 months to the newest snapshot, not a calendar year."""
+    return months_before(context.snapshot, WINDOW_MONTHS), context.snapshot
 
 
 def load(cur) -> Context | None:
-    cur.execute("SELECT code, name FROM onrc.status_name")
-    codes = [code for code, name in cur.fetchall() if is_insolvency_status(name)]
     cur.execute("SELECT max(snapshot_date) FROM onrc.registration")
     snapshot = cur.fetchone()[0]
-    cur.execute("SELECT EXISTS (SELECT 1 FROM onrc.status_name)")
-    if snapshot is None or not cur.fetchone()[0]:
+    cur.execute("SELECT code, name FROM onrc.status_name")
+    names = cur.fetchall()
+    if snapshot is None or not names:
         return None
+    codes = [code for code, name in names if is_insolvency_status(name)]
     cur.execute(
         """SELECT r.cui, n.name, s.first_seen, s.since_at_least
              FROM onrc.registration r JOIN onrc.status_span s ON s.reg_no = r.reg_no AND s.last_seen = r.snapshot_date
