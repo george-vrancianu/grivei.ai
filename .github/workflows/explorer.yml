@@ -60,7 +60,7 @@ jobs:
         working-directory: watchdog
       - run: npm ci
         working-directory: explorer
-      - run: npx vitest run test/seam1.test.ts --pool=forks --maxWorkers=1
+      - run: npx vitest run test/seam1.test.ts test/noWithheld.test.ts test/restricted.test.ts test/restrictedSignals.test.ts --pool=forks --maxWorkers=1
         working-directory: explorer/packages/api
         env:
           PIPELINE_PYTHON: ${{ env.pythonLocation }}/bin/python

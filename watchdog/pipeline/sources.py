@@ -5,7 +5,7 @@ that table), `pipeline status` calls each entry's `status` hook, and the landing
 (`tests/test_sources_registry.py`; `site/` is static HTML and cannot read the registry).
 
 Adding a Source means adding an entry here and its own schema file (`sql/<schema>_schema.sql`, applied by the rebuild's schema step), and
-its API adapter (`explorer/packages/api/src/sources.ts`). No SEAP code path changes. Reference sources (ANAF, the MF list, AMEPIP's public enterprises, MF's financial statements) are not entries:
+its API adapter (`explorer/packages/api/src/sources.ts`). No SEAP code path changes. Reference sources (ANAF, the MF list, AMEPIP's public enterprises, MF's financial statements, AEP's subordinate bodies, BaniPartide's donations) are not entries:
 they are never explorable on their own.
 """
 from __future__ import annotations
@@ -64,17 +64,20 @@ SEAP = Source(
     status=seap_status.describe_status,
 )
 
-# ONRC's data-through date per Record kind: the newest snapshot read (the whole register is as of that date). Its roles join with ticket #177.
-ONRC_DATA_THROUGH_SQL = "SELECT 'REGISTRATION', max(snapshot_date)::text FROM onrc.snapshot HAVING count(*) > 0"
+# ONRC's data-through date per Record kind: the newest snapshot read (the whole register is as of that date). ROLE is the newest snapshot that carries the people files.
+ONRC_DATA_THROUGH_SQL = """
+    SELECT 'REGISTRATION', max(snapshot_date)::text FROM onrc.snapshot HAVING count(*) > 0
+    UNION ALL
+    SELECT 'ROLE', max(snapshot_date)::text FROM onrc.role HAVING count(*) > 0"""
 
 ONRC = Source(
     id="ONRC",
     name="ONRC",
     schema="onrc",
-    record_kinds=("REGISTRATION",),
+    record_kinds=("REGISTRATION", "ROLE"),
     lenses=("COUNT",),
     placement_rule="the registered seat's county (the UAT from ANAF's placement when the CUI has one); a registration with no county goes to the Unplaced tile",
-    methodology_anchor="supplier-identity",  # until the methodology page has an ONRC section (a follow-up of #175: statuses and dates)
+    methodology_anchor="onrc-register",
     landing_row=LandingRow("wip", "ONRC", {"en": "Company directors, status and activity codes", "ro": "Administratori, stare și coduri CAEN ale firmelor"}),
     data_through_sql=ONRC_DATA_THROUGH_SQL,
     status=onrc_status.describe_status,

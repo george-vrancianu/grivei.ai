@@ -512,7 +512,8 @@ def _status(archive: Archive, args) -> int:
         print(line)
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
-    dummy = SimpleNamespace(crawl=None, datagov=None, onrc=None, anaf=None, load=None, backup=None, pgdump=None)
+    dummy = SimpleNamespace(crawl=None, datagov=None, onrc=None, anaf=None, load=None, backup=None, pgdump=None,
+                             amepip=None, financials=None, banipartide=None, aep=None, check_aep=object())  # stand-ins so every step is listed (`refresh_steps` adds the isolated ones by what the impl has)
     for line in describe_refresh(archive, ledger, refresh_steps(archive, dummy)):
         print(line)
     if ledger.runs and ledger.runs[-1]["status"] == "failed":

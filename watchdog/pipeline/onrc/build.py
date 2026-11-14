@@ -190,6 +190,10 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
         summary.status_spans = cur.fetchone()[0]
         # the roles of the newest snapshot that carries the people files (#177; older snapshots have none): needs the person-id secret when there are any
         summary.people = build_people(cur, next((u for u in reversed(held) if has_people(u)), None), person_overrides)
+        if summary.people.snapshot:  # the ROLE Coverage cell: roles are loaded from this one snapshot only (older ones have no people files), so there is one cell and no gap months
+            cur.execute("INSERT INTO onrc.coverage_cell (period, period_start, period_end, kind, state, records, data_through) "
+                        "SELECT snapshot_date::text, snapshot_date, snapshot_date, 'ROLE', 'LOADED', count(*), snapshot_date FROM onrc.role GROUP BY snapshot_date")
+            summary.coverage_cells += cur.rowcount
     cur.execute("DROP TABLE IF EXISTS onrc_obs")
     cur.execute("ANALYZE onrc.registration")
     return summary

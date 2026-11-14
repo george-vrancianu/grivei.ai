@@ -503,7 +503,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 anaf_names = load_anaf(cur, archive, summary)
             with step("onrc"):
                 summary.onrc = build_onrc(cur, archive, placement_dir, person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
-                resolver = Resolver(OnrcNames(conn.cursor(), anaf_names), overrides)
+                names_cur = conn.cursor()
+                resolver = Resolver(OnrcNames(names_cur, anaf_names), overrides)
             with step("estimates"):
                 estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
                 summary.estimates = len(estimates)
@@ -550,6 +551,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 summary.estimates_missing = cur.fetchone()[0]
             with step("entities"):
                 build_entities(cur, overrides, summary)
+                names_cur.close()  # the resolver's cursor: the units are loaded
             with step("placement"):
                 summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             with step("mf"):
@@ -571,11 +573,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("signals"):
                 cur.execute("SELECT count(*) FROM seap.record")
                 summary.records = cur.fetchone()[0]
-                through: dict[str, dict[str, str]] = {}  # per Source, per Record kind (the Source's own query, sources.py)
-                for source in SOURCES:
-                    cur.execute(source.data_through_sql)
-                    through[source.id] = dict(cur.fetchall())
-                data_through = through[SEAP.id]  # the signals and the status file are SEAP's today
+                cur.execute(SEAP.data_through_sql)
+                data_through = dict(cur.fetchall())  # the signals and the status file are SEAP's today (ONRC's dates are read by `pipeline status` and the API)
                 summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
             with step("record-indexes"):
                 # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it

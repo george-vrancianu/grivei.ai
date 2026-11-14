@@ -569,3 +569,10 @@ def test_the_real_onrc_step_hands_the_limit_to_the_fetch(archive):
     impl.onrc(limit=2)
     impl.onrc()
     assert seen == [2, None]
+
+
+def test_status_on_an_archive_with_no_runs_names_every_step_that_is_due_now(archive, capsys):
+    cli.main(["--archive", str(archive.root), "status"])
+    due = next(line for line in capsys.readouterr().out.splitlines() if line.startswith("refresh: due now:"))
+    for step in ("crawl", "datagov", "onrc", "amepip", "aep", "financials", "banipartide", "anaf", "load"):
+        assert step in due, (step, due)

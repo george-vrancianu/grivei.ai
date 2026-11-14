@@ -401,7 +401,7 @@ export interface Store extends RoleStore, SignalStore, OnrcStore {
   people(cui: string, options: { personIds: boolean }): Promise<OrganisationPeopleRow | null>;
   /** RESTRICTED: a confirmed person by id with their roles across organisations, or null. Callers must have checked the switch. */
   person(id: string): Promise<PersonRow | null>;
-  /** The date of the newest ONRC snapshot read: ONRC's data-through date per record kind (REGISTRATION). */
+  /** The date of the newest ONRC snapshot read: ONRC's data-through date per record kind (REGISTRATION; ROLE: the newest snapshot carrying the people files, the same as `ONRC_DATA_THROUGH_SQL`). */
   onrcDataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
@@ -1158,7 +1158,8 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
     },
     async onrcDataThrough() {
-      const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0`);
+      const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0
+         UNION ALL SELECT 'ROLE', max(snapshot_date)::text FROM onrc.role HAVING count(*) > 0`);
       return rows;
     },
     async onrc(cui) {

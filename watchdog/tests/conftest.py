@@ -40,7 +40,7 @@ def pytest_configure(config):
 
 # the operator's environment that reaches the outside from a subprocess or a client library (restic, pg_dump, libpq, a healthcheck ping, the pipeline's own
 # settings): a test sets what it needs itself with monkeypatch
-SCRUBBED_PREFIXES = ("RESTIC_", "AWS_", "B2_", "AZURE_", "GOOGLE_", "PIPELINE_", "PG")
+SCRUBBED_PREFIXES = ("RESTIC_", "AWS_", "B2_", "AZURE_", "GOOGLE_", "PIPELINE_", "GRIVEI_", "PG")
 SCRUBBED_NAMES = ("DATABASE_URL", "GRIVEI_HEALTHCHECK_URL")
 # PIPELINE_RESTIC_BIN points at a local binary for the backup tests, not at a remote
 KEPT = ("PIPELINE_TEST_TIMEOUT", "PIPELINE_RESTIC_BIN")
@@ -96,7 +96,8 @@ def _no_outbound_network(request, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _test_deadline():
-    """A test still running after TEST_TIMEOUT seconds dumps every thread's traceback and kills the process (no pytest-timeout dependency)."""
+    """A test still running after TEST_TIMEOUT seconds dumps every thread's traceback and kills the process (no pytest-timeout dependency). `exit=True` is `_exit`:
+    module fixtures never tear down, so a `pp37-pytest-<pid>` DB container is left running; remove it by hand (`docker rm -f`)."""
     if TEST_TIMEOUT > 0:
         faulthandler.dump_traceback_later(TEST_TIMEOUT, exit=True)
     yield

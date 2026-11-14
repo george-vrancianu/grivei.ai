@@ -14,6 +14,7 @@ from build_onrc_people_archive import ALFA, BETA, DELTA, DUBLA, FAM, GAMMA, OMEG
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.onrc.people import SECRET_ENV, PersonSecretError, person_id, person_key, split_id  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
+from pipeline.sources import ONRC  # noqa: E402
 from datetime import date  # noqa: E402
 from test_bulk_loader_db import db, server  # noqa: E402,F401  (the throwaway ParadeDB container and a database per test)
 
@@ -110,6 +111,14 @@ def test_if_members_link_like_administrators(built):
         ("TOMA ELENA", "IF", "LINKED", pid("Toma Elena", "1967-03-03"), 1967), ("TOMA GHEORGHE", "IF", "LINKED", TOMA, 1965)]
     assert q(url, "SELECT link, person_id FROM onrc.role WHERE reg_no = %s AND holder_name = 'TOMA GHEORGHE'", BETA[2]) == [("LINKED", TOMA)]  # the IF member is BETA's administrator too
     assert q(url, "SELECT role FROM onrc.role WHERE reg_no = %s AND kind = 'IF' ORDER BY holder_name", FAM[2])[0][0] == "membru întreprindere familiala"  # the role as ONRC publishes it
+
+
+def test_the_roles_have_one_loaded_coverage_cell_for_the_people_snapshot_and_a_data_through_date(built):
+    url, _ = built
+    n = q(url, "SELECT count(*) FROM onrc.role")[0][0]
+    assert q(url, "SELECT period, kind, state, records, data_through::text FROM onrc.coverage_cell WHERE kind = 'ROLE'") == [("2026-05-06", "ROLE", "LOADED", n, "2026-05-06")]
+    assert q(url, ONRC.data_through_sql) == [("REGISTRATION", "2026-05-06"), ("ROLE", "2026-05-06")]
+    assert q(url, "SELECT record_kinds FROM core.source WHERE id = 'ONRC'") == [(["REGISTRATION", "ROLE"],)]
 
 
 def test_no_birthplace_birth_date_or_cnp_column_in_the_served_tables(built):

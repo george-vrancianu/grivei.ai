@@ -126,7 +126,7 @@ def attributed_authorities(cur: psycopg.Cursor, overrides: dict[str, tuple[str, 
     uats = {r[0]: (_loose(r[1]), r[2]) for r in cur.fetchall()}
     cur.execute("SELECT iso, name FROM core.county")
     counties = {r[0]: _loose(r[1]) for r in cur.fetchall()}
-    cur.execute("SELECT e.key, e.display_name, p.county_iso, p.uat_siruta FROM core.entity e JOIN core.placement p ON p.entity_key = e.key WHERE NOT p.national")
+    cur.execute("SELECT e.key, e.display_name, p.county_iso, p.uat_siruta FROM core.entity e JOIN core.placement p ON p.entity_key = e.key WHERE NOT p.national AND p.placed_by <> 'ONRC'")  # not the register's millions: town halls and councils are placed by ANAF or SEAP
     out: dict[str, tuple[str, str]] = {}
     for entity, display, county, siruta in cur.fetchall():
         name = fold(display)
@@ -217,7 +217,7 @@ def _subordinates(cur: psycopg.Cursor) -> int:
             sets[cui][when].add(principal)
     cur.execute("SELECT entity_key FROM aep.authority")
     authorities = {r[0] for r in cur.fetchall()}
-    cur.execute("SELECT key, display_name FROM core.entity")
+    cur.execute("SELECT key, display_name FROM core.entity WHERE key IN (SELECT DISTINCT cui FROM core.mf_principal)")  # only the MF-listed, not the whole register
     names = dict(cur.fetchall())
     rows = []
     for cui, snapshots in sets.items():

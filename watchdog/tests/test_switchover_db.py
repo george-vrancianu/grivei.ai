@@ -291,3 +291,29 @@ def test_a_rollback_killed_before_its_last_rename_is_finished_by_the_next_run_an
     with psycopg.connect(names.admin_url, autocommit=True) as admin:  # an orphan beside a fallback that is already there
         admin.execute(f'CREATE DATABASE "{swap}"')
     assert set(switchover.cleanup(live, lambda _: None)) == {names.prev, swap}
+
+
+ONRC_ARCHIVE = Path(__file__).parent / "fixtures" / "archive-onrc-search"
+
+
+def test_the_check_is_onrc_aware_a_missing_index_or_a_lost_register_is_not_switched_in(server, tmp_path):
+    def build(name: str, drop: tuple[str, ...] = ()) -> str:
+        root = tmp_path / name
+        shutil.copytree(ONRC_ARCHIVE, root)
+        for d in drop:
+            shutil.rmtree(root / d)
+        url = f"{server}/{name}{time.time_ns()}"
+        with psycopg.connect(f"{server}/postgres", autocommit=True) as c:
+            c.execute(f'CREATE DATABASE "{url.rsplit("/", 1)[1]}"')
+        rebuild(Archive(root), url)
+        return url
+
+    full = build("full")
+    assert switchover.check_graph(full) == []
+    lost = build("lost", drop=("onrc",))  # the archive mount lost onrc/: the rebuild still commits, with an empty register
+    assert switchover.check_graph(lost) == []  # on its own it is a graph without ONRC, as before Release 2
+    failures = switchover.check_graph(lost, against=full)
+    assert any("ONRC registrations" in f for f in failures), failures
+    with psycopg.connect(full, autocommit=True) as c:
+        c.execute("DROP INDEX onrc.search_bm25")
+    assert any("onrc.search_bm25" in f for f in switchover.check_graph(full))

@@ -92,9 +92,10 @@ def test_the_fixture_archive_loads_da_and_dan_and_the_same_file_twice_changes_no
         assert kinds == {"DA": 6, "DAN": 7}
         assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DA91000099'").fetchone() == (0,)
         assert c.execute("SELECT count(*) FROM seap.search").fetchone() == (13,)
-        # the sources registry is stored with the graph (core.source), SEAP only today
-        assert c.execute("SELECT id, name, schema_name, record_kinds, methodology_anchor, landing_status FROM core.source").fetchall() == [
-            ("SEAP", "SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "awarded-value", "live")]
+        # the sources registry is stored with the graph (core.source), in registry order
+        assert c.execute("SELECT id, name, schema_name, record_kinds, methodology_anchor, landing_status FROM core.source ORDER BY position").fetchall() == [
+            ("SEAP", "SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "awarded-value", "live"),
+            ("ONRC", "ONRC", "onrc", ["REGISTRATION", "ROLE"], "onrc-register", "wip")]
         assert c.execute("SELECT load_notes FROM seap.record WHERE code = 'DAN9100022'").fetchone() == (["value:scientific_notation", "supplier_cui:scientific_notation"],)
         # DAN9100002 is in two quarters' files: it is there once, from the first
         assert c.execute("SELECT count(*), min(source_file_id) FROM seap.record WHERE code = 'DAN9100002'").fetchone() == (1, 3)
@@ -287,8 +288,8 @@ def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db,
     assert unit_seen == [0, 0, 1, 2, 3, 4, 5, 6, 7]
     # every stage outside the unit loop is timed, in order, with a start line and a done line
     steps = [m.group(1, 2) for m in (re.search(r" rebuild step (\S+?)(: start| done in \d+:\d\d:\d\d)$", x) for x in lines) if m]
-    names = ["schema", "anaf-identities", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf",
-             "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "commit", "vacuum", "outlines"]
+    names = ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf", "amepip", "aep", "financials",
+             "donations", "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "onrc-search", "commit", "vacuum", "outlines"]
     assert [n for n, _ in steps] == [n for n in names for _ in (0, 1)]
     assert [k == ": start" for _, k in steps] == [True, False] * len(names)
     assert lines.index(next(x for x in lines if " rebuild done " in x)) > lines.index(next(x for x in lines if "step commit done" in x))

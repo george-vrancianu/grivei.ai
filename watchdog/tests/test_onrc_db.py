@@ -121,7 +121,7 @@ def test_a_registration_with_no_valid_cui_is_not_an_entity(built):
 
 def test_onrc_is_in_the_registry_and_its_data_through_date_is_the_newest_snapshot(built):
     url, _ = built
-    assert q(url, "SELECT id, schema_name, record_kinds, landing_status FROM core.source ORDER BY position") == [("SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "live"), ("ONRC", "onrc", ["REGISTRATION"], "wip")]
+    assert q(url, "SELECT id, schema_name, record_kinds, landing_status FROM core.source ORDER BY position") == [("SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "live"), ("ONRC", "onrc", ["REGISTRATION", "ROLE"], "wip")]
     assert q(url, ONRC.data_through_sql) == [("REGISTRATION", S4)]
 
 
