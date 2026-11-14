@@ -198,6 +198,8 @@ CREATE TABLE seap.rollup_entity (
     framework_ceilings bigint NOT NULL
 );
 CREATE INDEX rollup_entity_side_idx ON seap.rollup_entity (side, award_year, channel);
+-- One entity's rows (the entity page's awards per year, #179).
+CREATE INDEX rollup_entity_key_idx ON seap.rollup_entity (entity_key, side);
 -- The load generation: one row, a fresh value for every load. The API's result cache is valid for one generation only.
 CREATE TABLE seap.rollup_meta (generation text NOT NULL);
 -- The 2-character prefixes the tokens of this load start with (the API's cache warms these).

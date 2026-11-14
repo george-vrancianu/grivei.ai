@@ -46,6 +46,7 @@ ANAF_EVERY_DAYS = 7
 ONRC_EVERY_DAYS = 28
 ONRC_RETRY_DAYS = 7
 ONRC_REFRESH_LIMIT = 2  # snapshots a nightly refresh downloads per ONRC step (each is over 1 GB): the backlog is the seed's (or `fetch-onrc --limit`), never the refresh lock's
+FINANCIALS_EVERY_DAYS = 7  # MF publishes each year's files in June and re-publishes them a year later; a weekly look is cheap (an unchanged resource is not downloaded)
 AMEPIP_EVERY_DAYS = 7  # AMEPIP publishes a list once or twice a year; a weekly look is cheap (an unchanged resource is not downloaded)
 PGDUMP_EVERY_DAYS = 7
 ALERT_AFTER_FAILED_RUNS = 2  # alert when MORE than this many runs in a row failed
@@ -132,6 +133,11 @@ def _has_amepip(impl) -> bool:
     return hasattr(impl, "amepip") and getattr(impl, "fetch_amepip", True) is not None
 
 
+def _has_financials(impl) -> bool:
+    """The financial-statements step runs when the impl has one and it is wired (`Impl.fetch_financials`); a test double without it keeps the old steps."""
+    return hasattr(impl, "financials") and getattr(impl, "fetch_financials", True) is not None
+
+
 def refresh_steps(archive: Archive, impl) -> list[Step]:
     """The steps of a refresh. `impl` has `crawl()`, `datagov()`, `anaf()`, `load()`, each returning a `StepResult`."""
     fingerprint_no_anaf, fingerprint_all = _markers(archive)
@@ -192,11 +198,14 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     # AMEPIP's public-enterprise list (#183) has its own isolated step: its failure never blocks data.gov.ro, ANAF or the load
     amepip = [Step("amepip", impl.amepip, weekly("amepip", AMEPIP_EVERY_DAYS))] if _has_amepip(impl) else []
+    # MF's annual financial statements (#179) likewise: isolated, due from its last success
+    financials = [Step("financials", impl.financials, weekly("financials", FINANCIALS_EVERY_DAYS))] if _has_financials(impl) else []
     return [
         Step("crawl", impl.crawl, daily),
         Step("datagov", impl.datagov, weekly("datagov", DATAGOV_EVERY_DAYS)),
         Step("onrc", lambda: impl.onrc(limit=ONRC_REFRESH_LIMIT), onrc_due),  # its own step (#175): ONRC failing never blocks SEAP's; its snapshots change the archive, so the load follows
         *amepip,
+        *financials,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),
         Step("load", impl.load, load_due, fingerprint_all),
         *backups,  # step 5 (#82): the raw archive to restic nightly, a pg_dump of the graph weekly, same repository
@@ -212,6 +221,7 @@ def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
     marker_anaf, marker_load = _markers(archive)
     steps = [Step("datagov", impl.datagov, not_done("datagov")),
              *([Step("amepip", impl.amepip, not_done("amepip"))] if _has_amepip(impl) else []),
+             *([Step("financials", impl.financials, not_done("financials"))] if _has_financials(impl) else []),
              Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
              Step("load", impl.load, not_done("load"), marker_load)]
     if backfill:

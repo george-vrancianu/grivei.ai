@@ -3,7 +3,7 @@ query MethodologyBaseRates {
   signalRules { slug window { from to } baseRate baseRateYear dataThrough }
 }
 
-# The same page's line on the Reference sources it describes (AMEPIP's public enterprises): when the held list was published. Separate from the base rates, so the prose and each figure fail on their own.
+# The same page's line on the Reference sources it describes (AMEPIP's public enterprises, MF's financial statements): when the held list was published, or the newest fiscal year held. Separate from the base rates, so the prose and each figure fail on their own.
 query MethodologyReferenceSources {
-  referenceSources { id name dataThrough url }
+  referenceSources { id name dataThrough fiscalYear url }
 }

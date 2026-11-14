@@ -27,7 +27,7 @@ type Query {
   "Signal rules with their methodology numbers (base rate recomputed per load)."
   signalRules: [SignalRule!]!
 
-  "The Reference sources held beside the explorable ones (today AMEPIP's public enterprises), each with its data-through date; for the methodology page."
+  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, MF's financial statements), each with its data-through date; for the methodology page."
   referenceSources: [ReferenceSource!]!
 
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
@@ -152,6 +152,12 @@ type RecordFilterEcho {
 
 "Integer bani (1/100 RON), serialised as a decimal string so no sum loses precision in JSON."
 scalar Bani
+
+"""
+Integer bani that may be negative (a loss, negative equity), serialised as a decimal string. Only a company's own statements (`FinancialYear`) can be negative;
+every awarded value is a plain `Bani`.
+"""
+scalar SignedBani
 
 """
 Every money number the explorer shows is a Total, counted by the one rule
@@ -325,6 +331,11 @@ type Entity {
   "ANAF status (ACTIV, RADIERE, FUZIUNE ...), badged when not active."
   anafStatus: String
   identityCurated: Boolean!
+  """
+  MF's annual financial statements for this entity's CUI, one row per fiscal year (a Reference source; ticket #179). Null when MF holds none for the CUI, and for an entity
+  with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
+  """
+  financials: FinancialStatements
   "Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages."
   publicEnterprise: PublicEnterprise
   placement: Placement
@@ -431,13 +442,75 @@ type PublicEnterprise {
   fetchedAt: DateTime!
 }
 
+"""
+A company's annual financial statements as the Ministry of Finance publishes them (bulk files on data.gov.ro, from fiscal year 2021): turnover, profit or loss, debts,
+equity and the average number of employees, newest year first. A Reference source, shown as context beside the awards; its figures are never added to awarded value (ADR 0014).
+"""
+type FinancialStatements {
+  years: [FinancialYear!]!
+}
+
+"Which release of MF's file a year's figures come from."
+enum FinancialRevision {
+  "The year's first release: MF may still revise it."
+  FIRST_RELEASE
+  "MF's re-published (`actualizat`) file for the year, a year after the first."
+  REVISED
+}
+
+"One fiscal year of one company's statements. Every figure may be null (a blank cell in MF's file); a blank is never read as zero."
+type FinancialYear {
+  fiscalYear: Int!
+  revision: FinancialRevision!
+  "True for the newest fiscal year MF's files hold (for any company) while it is a first release: the page notes it may be revised."
+  mayBeRevised: Boolean!
+  "Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is."
+  turnover: SignedBani
+  "Net profit minus net loss: negative is a loss. Null when MF's file has both blank."
+  profitOrLoss: SignedBani
+  "Debts (datorii). Signed, like the turnover."
+  debts: SignedBani
+  "Equity (capitaluri - total); negative when the company owes more than it owns."
+  equity: SignedBani
+  "The average number of employees. Null when the cell is blank: reads \"not reported\", never zero. A cell that says 0 is 0."
+  averageEmployees: Int
+  """
+  Context, never a Signal and never added to awarded value (ADR 0014): what this entity was awarded as a supplier in the calendar year (the awarded value of the Records
+  awarded that year, the same counting rule as every Total) as bani, and that as a share of the year's turnover. A contract's whole value counts in its award year, so the
+  share can exceed 1 and is no revenue share. Null share when the turnover is blank or zero.
+  """
+  awardedInYear: Bani!
+  awardShareOfTurnover: Float
+  "The file the figures come from: each figure cites MF and it."
+  source: FinancialSource!
+}
+
+"The MF file a year's figures were read from, as the portal publishes it."
+type FinancialSource {
+  "The file's name as MF gives it, e.g. WEB_BL_BS_SL_AN2024.txt."
+  file: String!
+  "MF's dataset page on data.gov.ro."
+  datasetUrl: String
+  "The file's own download link."
+  fileUrl: String
+  "The dataset as the portal titles it (source data, verbatim)."
+  via: String
+  license: String
+  "The day MF published this file."
+  published: Date
+  "When we fetched it (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
 "A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is."
 type ReferenceSource {
   "The source's short name, e.g. AMEPIP."
   id: String!
   name: String!
-  "The day the held list was published; null when none is held yet."
+  "The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet."
   dataThrough: Date
+  "For a source published by fiscal year (MF's financial statements): the newest fiscal year held. Null for the others, and when none is held."
+  fiscalYear: Int
   "Where the list comes from; null when none is held yet."
   url: String
 }

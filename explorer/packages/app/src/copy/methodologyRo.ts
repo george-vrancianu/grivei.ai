@@ -92,6 +92,14 @@ export const methodologyRo: MethodologyPageCopy = {
         "AMEPIP nu are o listă proprie de CUI-uri: exploratorul citește CUI-urile din cea mai nouă ediție a indicatorilor financiari și de guvernanță pe care AMEPIP o publică pe data.gov.ro, sub licența CC-BY-4.0. O ediție cuprinde mai mulți ani financiari, iar o societate este marcată dacă apare în oricare dintre ei. Așadar o societate privatizată, fuzionată sau scoasă din monitorizare într-un an anterior al ediției rămâne marcată, motiv pentru care pagina arată anii pentru care apare. AMEPIP publică o ediție o dată sau de două ori pe an, așa că o societate devenită între timp întreprindere publică poate să nu fie încă marcată. Lipsa marcajului spune doar că CUI-ul nu se află în ediția pe care o avem, nu că societatea este privată. Denumirea, numărul de înregistrare și starea ONRC apar așa cum le scrie AMEPIP.",
       ],
     },
+    financialStatements: {
+      heading: "Situații financiare (MF)",
+      paragraphs: [
+        "Pagina unui furnizor arată situațiile lui financiare anuale pe ani: cifra de afaceri, profitul sau pierderea, datoriile, capitalurile și numărul mediu de salariați. Provin din fișierele de date în masă pe care Ministerul Finanțelor (MF) le publică pe data.gov.ro, sub licența CC-BY-4.0, câte un set pe an fiscal, începând cu anul fiscal 2021. Exploratorul citește fișierele societăților: bilanț lung și scurt, formatul prescurtat și raportorii IFRS. Băncile, asigurătorii, fondurile și organizațiile non-profit depun alte formulare și nu sunt afișate. Fiecare rând numește MF și fișierul din care au fost citite cifrele. Sumele sunt în RON, așa cum au fost depuse, iar profitul sau pierderea este profitul net minus pierderea netă.",
+        "MF publică fișierele unui an în iunie anul următor și le republică după un an, cu corecturi. Fiecare rând spune din ce publicare provine: un an republicat de MF arată cifrele revizuite, iar cel mai recent an este prima publicare și poate fi încă revizuit. O celulă lăsată goală de MF se afișează „nedeclarat”, niciodată zero: un număr mediu de salariați necompletat nu înseamnă o firmă fără salariați. O societate care nu a depus pentru un an nu are rând pentru acel an.",
+        "Lângă cifre, pagina arată atribuirile aceluiași an calendaristic și ponderea lor în cifra de afaceri a anului. Este context, niciodată un Semnal, și nu se adună niciodată la valoarea atribuită: situațiile unei societăți și atribuirile ei sunt măsuri diferite și rămân separate. Atribuirile sunt valoarea atribuită a furnizorului, numărată după aceeași regulă ca orice alt total, după anul datei atribuirii. Valoarea întreagă a unui contract se numără în anul atribuirii, oricâți ani ar dura, așa că ponderea poate depăși 100% și nu este o pondere din veniturile societății. O cifră de afaceri necompletată sau zero nu dă nicio pondere.",
+      ],
+    },
   },
   signals: {
     heading: "Regulile Semnalelor",
@@ -147,6 +155,7 @@ export const methodologyRo: MethodologyPageCopy = {
     },
   },
   referenceDataThrough: (date) => `Date până la ${date}`,
+  referenceFiscalYearThrough: (year) => `Date până la anul fiscal ${year}`,
   baseRate: {
     windowLabel: "Fereastra de timp",
     range: (from, to) => `${from} – ${to}`,

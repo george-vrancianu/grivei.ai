@@ -132,6 +132,17 @@ A Reference source: the companies under OUG 109/2011, flagged on the entities wh
 - `pipeline refresh` has an isolated `amepip` step (weekly); `pipeline status` shows the snapshot, its data-through date and the counts.
 - `rebuild` step `amepip` fills `amepip.snapshot` and `amepip.enterprise` (`sql/amepip_schema.sql`); an entity is flagged when its key equals a listed CUI. No list archived: nobody is flagged.
 
+## MF's annual financial statements (#179)
+
+A Reference source: a company's turnover, profit or loss, debts, equity and average employees by fiscal year, on a supplier's page beside its awards (context only: never a Signal, never added to awarded value, ADR 0014).
+
+- **Source:** the Ministry of Finance's yearly bulk files on data.gov.ro (organisation `mfp`, datasets "Situatii financiare <year>", licence CC-BY-4.0), open and anonymous through the CKAN API. Three file kinds share one layout (comma-separated, CRLF, header `CUI,CAEN,I1..I20`; I7 debts, I10 equity, I13 turnover, I18/I19 net profit/loss, I20 average employees) and are read: `WEB_BL_BS_SL_AN<year>.txt` (long and short balance sheets, ~9 MB), `WEB_UU_AN<year>.txt` (the abbreviated format, the many small firms, ~80 MB) and `WEB_IR_AN<year>.txt` (IFRS, a few KB). Banks, insurers, funds, NGOs and brokers have other columns and are skipped.
+- **Releases:** MF publishes a year in June of the next one and re-publishes it a year later with corrections: FY2023's as a resource "... - actualizat" in the same dataset, FY2024's as the separate dataset "Situatii financiare 2024 actualizat iunie 2026". Both are fetched, each as its own unit.
+- `python -m pipeline fetch-financials`: every such file from fiscal year 2021 (`FIRST_YEAR`) into `<archive>/financials/statements/<kind>/<year>-<first|revised>/<fetched on>/` with a manifest (resource id, URL, last_modified, size, hash, licence). A resource already held with the same marker is not downloaded; a changed one is a new dated unit. A download that is not the statements layout is `invalid` (exit 1, a deterministic failure), a portal or network error is `failed` (transient). About 100 MB per fiscal year with the UU file.
+- `pipeline refresh` has an isolated `financials` step (weekly); `pipeline status` shows the held files per fiscal year and the data through fiscal year (and the methodology page and `referenceSources` serve the same year).
+- `rebuild` step `financials` fills `financials.source_file` and `financials.statement` (`sql/financials_schema.sql`): one row per CUI per fiscal year. A CUI the revised file holds takes the revised row, the others keep their first release (`revision` FIRST or REVISED); a blank cell is NULL, never 0 (a cell that says 0 is 0); profit or loss is net profit minus net loss; money is bani. The newest fiscal year held is a first release that the page says may be revised. No file archived: no entity shows statements.
+- **Awards as a share of turnover** is computed when the page asks (`store.financials`): `seap.rollup_entity` (the supplier side, the stored counting rule) summed by the calendar year of the award date, over the year's turnover; null when the turnover is blank or zero. A contract's whole value counts in its award year, so a share can exceed 100%.
+
 ## Contracts and award notices: identity, precedence, value
 
 Archived kinds `contracte` (Record kind `CONTRACT`) and `fara-anunt` (`AWARD_NOTICE`), loaded like DA and DAN (header eras in `headers.py`, all or nothing per unit, a failing unit is quarantined, exact duplicate rows dropped). ADR 0002 as amended:
@@ -484,6 +495,7 @@ Tests: `pytest tests/test_placement.py` (rules, generator, TopoJSON, fetch and l
 | `datagov` | data.gov.ro bulk files (`fetch-datagov`) and the MF list (`fetch-mf`) | 7 days since its last success |
 | `onrc` | ONRC's company-register snapshots from data.gov.ro (`fetch-onrc`, #175): every monthly one since March 2026 and the last of each quarter back to 2021 | 28 days since its last success, or 7 when no snapshot of the current month is held yet |
 | `amepip` | AMEPIP's public-enterprise list (`fetch-amepip`) | 7 days since its last success |
+| `financials` | MF's annual financial statements (`fetch-financials`) | 7 days since its last success |
 | `anaf` | ANAF for new CUIs, plus the 365-day re-check (`anaf-lookup --recheck-after-days 365`) | the archive gained units (other than ANAF answers) since its last success, or 7 days passed |
 | `load` | `rebuild` beside the live database, checked, then switched over (new or re-uploaded files, requeued units; evaluates the possibly-incomplete rule into the Coverage grid) | the archive's units changed since its last load, or it never ran |
 | `backup` | `restic backup` of the raw archive to the encrypted repository (#82) | no success today |

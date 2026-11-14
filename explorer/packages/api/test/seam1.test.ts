@@ -46,6 +46,7 @@ const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // ba
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
 const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
+const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
 const amepipArchive = join(watchdog, "tests/fixtures/archive-amepip"); // AMEPIP's list of public enterprises (CUIs of two roles-world entities, two that no Record names), copied onto archive-overview (#183)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
@@ -2489,6 +2490,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
       cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true });
       cpSync(amepipArchive, join(scratch, "archive-overview"), { recursive: true }); // AMEPIP's list: a Reference source beside the roles world's SEAP units (#183)
+      cpSync(financialsArchive, join(scratch, "archive-overview"), { recursive: true }); // MF's annual financial statements: another Reference source (#179)
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
@@ -2641,14 +2643,102 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect((unlisted.body.data as EntityOverviewQuery).entity).toBeNull();
     });
 
-    it("serves AMEPIP's data-through date through the persisted MethodologyReferenceSources, and none for a graph built without a list (#183)", async () => {
+    it("serves each Reference source's data-through date through the persisted MethodologyReferenceSources, and none for a graph built without them (#183, #179)", async () => {
       const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
       const held = await ask(DBS.overview, op.sha256, {});
       expect(held.body.errors).toBeUndefined();
-      expect(held.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" }] });
+      expect(held.body.data).toEqual({ referenceSources: [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" }, // the latest fiscal year held
+      ] });
       expect(validateResponse(schema, parse(op.document), held.body.data, {})).toEqual([]);
-      const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds no AMEPIP list
-      expect(none.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }] });
+      const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds neither
+      expect(none.body.data).toEqual({ referenceSources: [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
+      ] });
+    });
+
+    describe("MF's financial statements on the entity page (#179)", () => {
+      const RON = (n: number) => String(n * 100);
+      const awardedIn = async (key: string, year: number) => {
+        const r = await ask(DBS.overview, entityOverview.sha256, { key, role: "SUPPLIER", filter: { from: `${year}-01-01`, to: `${year}-12-31` } });
+        expect(r.body.errors).toBeUndefined();
+        return ((r.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded;
+      };
+      const yearsOf = (name: string) => entityOf(name)!.financials!.years;
+
+      it("returns one row per fiscal year, newest first, with the revision, a blank count as null and a reported zero as 0", () => {
+        const years = yearsOf("supplier"); // ALFA DEMO SRL
+        expect(years.map((y) => [y.fiscalYear, y.revision, y.mayBeRevised, y.averageEmployees])).toEqual([
+          [2025, "FIRST_RELEASE", true, null], // the newest year MF holds: a first release that may be revised; blank employees
+          [2024, "FIRST_RELEASE", false, 0], // a revised file exists for 2024 but does not hold ALFA: still a first release, and not "may be revised"; a reported zero
+          [2023, "REVISED", false, 41], // the `actualizat` file's row, not the first release's (11M turnover, 40 employees)
+          [2022, "FIRST_RELEASE", false, null], // blank employees: "not reported", never zero
+        ]);
+        expect(years.map((y) => [y.turnover, y.profitOrLoss, y.debts, y.equity])).toEqual([
+          ["3000000000", "90000000", null, "300000000"], // blank debts stay null
+          ["2000000000", "100000000", "300000000", "250000000"],
+          ["1200000000", "-15000000", "210000000", "135000000"], // a loss is negative bani
+          ["400000000", "20000000", "100000000", "90000000"],
+        ]);
+      });
+
+      it("cites MF and the file each year's figures come from", () => {
+        const [y2025, , y2023] = yearsOf("supplier");
+        expect(y2023!.source).toEqual({
+          file: "web_bl_bs_sl_an2023.txt", datasetUrl: "https://data.gov.ro/dataset/situatii_financiare2023", via: "Situații financiare 2023", license: "CC-BY-4.0",
+          fileUrl: "https://data.gov.ro/dataset/ds/resource/r2023bl-rev/download/web_bl_bs_sl_an2023.txt", published: "2025-07-27", fetchedAt: "2026-11-14T09:00:00Z",
+        });
+        expect(y2025!.source).toMatchObject({ file: "web_bl_bs_sl_an2025.txt", published: "2026-06-11", datasetUrl: "https://data.gov.ro/dataset/situatii_financiare_2025" });
+      });
+
+      it("serves awards as a share of turnover per year as context: the year's awarded value (the page's own counting rule) over the year's turnover", async () => {
+        const years = yearsOf("supplier");
+        for (const y of years) expect(y.awardedInYear, String(y.fiscalYear)).toBe(await awardedIn("2000007", y.fiscalYear)); // the same number every Total shows for that calendar year
+        expect(years.map((y) => y.awardedInYear)).toEqual(["0", RON(25_000), RON(5_890_000), "0"]); // 2023's 5,890,000 RON counted, 2024's one 25,000 RON direct award
+        expect(years.map((y) => y.awardShareOfTurnover)).toEqual([0, 25_000 / 20_000_000, 5_890_000 / 12_000_000, 0]);
+        // the awarded value of the whole page is untouched by the financials (ADR 0014): the Total still sums awards only
+        const all = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        expect(((all.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded).toBe(RON(5_915_000));
+        // both roles: CNAIR's statement is the same on each page; its awards are the supplier role's
+        expect(entityOf("both-roles-supplier-page")!.financials).toEqual(entityOf("both-roles-authority-page")!.financials);
+        const [cnair] = yearsOf("both-roles-supplier-page");
+        expect([cnair!.fiscalYear, cnair!.revision, cnair!.averageEmployees, cnair!.awardedInYear]).toEqual([2023, "FIRST_RELEASE", 3000, RON(2_020_000)]);
+        expect(cnair!.mayBeRevised).toBe(false); // not the newest year MF holds
+        expect(cnair!.awardShareOfTurnover).toBeCloseTo(2_020_000 / 100_000_000, 12);
+      });
+
+      it("has no share when the turnover is blank or zero, and no statements for an entity MF does not list", async () => {
+        const beta = await ask(DBS.overview, entityOverview.sha256, { key: "2000015", role: "SUPPLIER", filter: {} });
+        const years = (beta.body.data as EntityOverviewQuery).entity!.financials!.years;
+        expect(years.map((y) => [y.fiscalYear, y.revision, y.turnover, y.awardShareOfTurnover])).toEqual([[2025, "FIRST_RELEASE", null, null], [2024, "REVISED", "800000000", expect.any(Number)]]); // 2025 is a UU-file row with a blank turnover
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect((gamma.body.data as EntityOverviewQuery).entity!.financials!.years[0]).toMatchObject({ fiscalYear: 2023, turnover: "0", awardShareOfTurnover: null, averageEmployees: 1 });
+        for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.financials, name).toBeNull();
+      });
+
+      it("serves a negative turnover or debts cell as it is (MF's files are not validated), with no share, and the Overview still answers", async () => {
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect(gamma.body.errors).toBeUndefined();
+        const years = (gamma.body.data as EntityOverviewQuery).entity!.financials!.years;
+        expect(years.map((y) => [y.fiscalYear, y.turnover, y.debts, y.awardShareOfTurnover])).toEqual([[2023, "0", "1000000", null], [2022, "-25000000", "-100000", null]]);
+      });
+
+      it("reads one entity's awards per year through an index of seap.rollup_entity, not a scan of every supplier row", async () => {
+        const db = new pg.Pool({ connectionString: `${baseUrl}/${DBS.overview}`, max: 1 });
+        pools.push(db);
+        const client = await db.connect();
+        try {
+          await client.query("SET enable_seqscan = off"); // the fixture's tables are tiny: ask whether the index CAN serve the query shape the page uses
+          const plan = (await client.query<{ "QUERY PLAN": string }>(
+            "EXPLAIN SELECT award_year, sum(awarded) FROM seap.rollup_entity WHERE side = 'SUPPLIER' AND entity_key = $1 GROUP BY award_year".replace("$1", "'2000007'"),
+          )).rows.map((r) => r["QUERY PLAN"]).join("\n");
+          expect(plan).toContain("rollup_entity_key_idx");
+        } finally {
+          client.release();
+        }
+      });
     });
   });
 
