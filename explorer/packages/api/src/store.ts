@@ -1033,10 +1033,11 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     async people(cui, { personIds }) {
       const snapshot = await pool.query(
         `SELECT s.snapshot_date::text AS snapshot, s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
-           FROM onrc.snapshot s WHERE s.snapshot_date = (SELECT max(snapshot_date) FROM onrc.role)`,
+           FROM onrc.snapshot s WHERE s.snapshot_date = (SELECT snapshot_date FROM onrc.role LIMIT 1)`,
       );
       const s = snapshot.rows[0];
       if (!s) return null;
+      // every role row carries the one snapshot the roles were built from, so one row names it (no scan of the national table)
       // Public tier: ONRC's legal-representative file only (never an IF member or a sole trader's row), holders with a person key or no birth date (never a possible match)
       const { rows } = await pool.query(
         `SELECT r.holder_name AS name, r.role, r.birth_year AS "birthYear", CASE WHEN $2 THEN r.person_id END AS "personId"
@@ -1067,8 +1068,10 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         `SELECT url, title, to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at FROM onrc.snapshot WHERE snapshot_date = $1::date`,
         [p.snapshot],
       );
-      const s = snapshot.rows[0] ?? {};
-      return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url ?? null, via: s.title ?? null, fetchedAt: s.fetched_at ?? "1970-01-01T00:00:00Z" } };
+      const s = snapshot.rows[0];
+      // a role's snapshot always has its onrc.snapshot row (foreign key): a missing one is a broken build, not a date to invent
+      if (!s) throw new Error(`onrc.snapshot has no row for the snapshot ${p.snapshot} of person ${id}`);
+      return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
     },
     async onrcDataThrough() {
       const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0`);

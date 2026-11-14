@@ -4,7 +4,7 @@
 // Whatever the mode, a possible match, a birthplace, a full birth date and a sole trader's or an IF's holders are never served.
 // Needs Docker and the pipeline's Python (as seam1.test.ts); SEAM1_REQUIRED=1 turns a skip into a failure.
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -43,6 +43,7 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
   let scratch = "";
   let admin: pg.Pool;
   let pool: pg.Pool;
+  let overridden: pg.Pool; // the same archive rebuilt with an identity override file (a merge and a split)
   const keys = new Map<string, string>(); // display name -> entity key
   const persons = new Map<string, string>(); // holder name -> person id
   interface RoleJson { organisationName: string; entityKey: string | null; entityRole: string | null; role: string }
@@ -71,11 +72,23 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
     pool = new pg.Pool({ connectionString: `${base}/people_a`, max: 2 });
     for (const { key, display_name } of (await pool.query("SELECT key, display_name FROM core.entity")).rows) keys.set(display_name, key);
     for (const { id, name } of (await pool.query("SELECT id, name FROM onrc.person")).rows) persons.set(name, id);
-    for (const mode of MODES) {
+    // the override file: the possible match of RADU GHEORGHE is settled as one person (a merge), and ION POPESCU's role at BETA is carved out of his id (a split)
+    const radu = (await pool.query("SELECT id FROM onrc.possible_match WHERE holder_name = 'RADU GHEORGHE'")).rows[0].id as string;
+    const beta = (await pool.query("SELECT DISTINCT reg_no FROM onrc.role WHERE holder_name = 'ION POPESCU'")).rows[0].reg_no as string; // BETA's registration
+    const overrides = join(scratch, "overrides.toml");
+    writeFileSync(overrides, `[[person_merge]]\nids = ["${radu}"]\nreason = "Same person: the register lists both counties for one birth."\nreviewer = "Maria Ionescu"\ndocument = "Court decision 1/2026"\n\n`
+      + `[[person_split]]\nperson = "${persons.get("ION POPESCU")}"\nreg_nos = ["${beta}"]\nreason = "A credible request: two people share the name and date."\nreviewer = "Maria Ionescu"\n`);
+    await admin.query("CREATE DATABASE people_b");
+    const again = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, "archive"), "rebuild", "--db", `${base}/people_b`, "--in-place", "--identity-overrides", overrides], {
+      cwd: watchdog, encoding: "utf8", env: { ...process.env, GRIVEI_PERSON_ID_SECRET: SECRET },
+    });
+    if (again.status !== 0) throw new Error(`pipeline rebuild with overrides failed:\n${again.stdout}\n${again.stderr}`);
+    overridden = new pg.Pool({ connectionString: `${base}/people_b`, max: 2 });
+    for (const mode of [...MODES, { name: "overrides, unset", value: undefined }, { name: "overrides, show", value: "show" }]) {
       const previous = process.env.GRIVEI_RESTRICTED;
       if (mode.value === undefined) delete process.env.GRIVEI_RESTRICTED;
       else process.env.GRIVEI_RESTRICTED = mode.value;
-      apis.set(mode.name, createApi(postgresStore(pool), schema)); // read once, here
+      apis.set(mode.name, createApi(postgresStore(mode.name.startsWith("overrides") ? overridden : pool), schema)); // read once, here
       if (previous === undefined) delete process.env.GRIVEI_RESTRICTED;
       else process.env.GRIVEI_RESTRICTED = previous;
     }
@@ -83,18 +96,19 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
 
   afterAll(async () => {
     await pool?.end().catch(() => undefined);
+    await overridden?.end().catch(() => undefined);
     await admin?.end().catch(() => undefined);
     cleanup();
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   });
 
-  const ask = async (mode: string, operation: string, variables: unknown) => {
+  const ask = async (mode: string, operation: string, variables: unknown, record = true) => {
     const o = op(operation);
     const r = await apis.get(mode)!.respond({ id: o.sha256, variables });
     expect(r.status, `${operation} ${JSON.stringify(variables)}`).toBe(200);
     expect(r.body.errors, `${operation} ${JSON.stringify(variables)}`).toBeUndefined();
     expect(validateResponse(schema, parse(o.document), r.body.data, variables as Record<string, unknown>)).toEqual([]);
-    everything.push(JSON.stringify(r.body));
+    if (record) everything.push(JSON.stringify(r.body));
     return r.body.data as Answer;
   };
   const overview = (mode: string, name: string, role: "SUPPLIER" | "AUTHORITY" = "SUPPLIER") => ask(mode, "EntityOverview", { key: keys.get(name)!, role, filter: {} });
@@ -154,6 +168,39 @@ describe.skipIf(reason !== null)("Restricted content is served only when GRIVEI_
     expect(dumitrescu.roles.map((r: RoleJson) => r.organisationName).sort()).toEqual(["DUBLA ONRC SA", "OMEGA ONLY SRL"]); // the ONRC-only company's role is on the Private view only
     expect(dumitrescu.roles.every((r: RoleJson) => typeof r.entityKey === "string")).toBe(true);
     expect([...persons.keys()].some((n) => n.includes("RADU") || n.includes("NEGRU") || n.includes("DEMO"))).toBe(false); // no page for a possible match, an unlinked holder or a sole trader
+  });
+
+  describe("an identity override file changes what is served after a rebuild", () => {
+    // kept out of `everything`: after the merge RADU GHEORGHE is a settled person and is rightly named
+    const holders = async (mode: string, name: string) => ((await ask(mode, "EntityOverview", { key: keys.get(name)!, role: "SUPPLIER", filter: {} }, false)).entity.people?.holders ?? []).map((h) => h.name);
+
+    for (const mode of ["overrides, unset", "overrides, show"]) {
+      it(`a merge lists the settled holder on both organisations (${mode})`, async () => {
+        expect(await holders(mode, "ALFA ONRC SRL")).toContain("RADU GHEORGHE");
+        expect(await holders(mode, "DELTA ONRC SRL")).toContain("RADU GHEORGHE");
+      });
+    }
+
+    it("without the switch the overridden ids still lead to no page", async () => {
+      const split = (await overridden.query("SELECT id FROM onrc.person WHERE name IN ('ION POPESCU', 'POPESCU ION') AND birth_year = 1975")).rows.map((r) => r.id as string);
+      expect(split).toHaveLength(2);
+      for (const id of [...split, ...persons.values()]) expect((await ask("overrides, unset", "PersonPage", { id }, false)).person).toBeNull();
+    });
+
+    it("with the switch on, the merge gives one page across both organisations and the split gives two pages of one role each", async () => {
+      const radu = (await ask("overrides, show", "EntityOverview", { key: keys.get("ALFA ONRC SRL")!, role: "SUPPLIER", filter: {} }, false)).entity.people!.holders.find((h) => h.name === "RADU GHEORGHE")!.person!.id;
+      const merged = (await ask("overrides, show", "PersonPage", { id: radu }, false)).person!;
+      expect(merged.roleCount).toBe(2);
+      expect(merged.roles.map((r: RoleJson) => r.organisationName).sort()).toEqual(["ALFA ONRC SRL", "DELTA ONRC SRL"]);
+      const old = persons.get("ION POPESCU")!;
+      const kept = (await ask("overrides, show", "PersonPage", { id: old }, false)).person!;
+      expect(kept.roleCount).toBe(1); // the old id loses the carved-out role
+      expect(kept.roles.map((r: RoleJson) => r.organisationName)).toEqual(["ALFA ONRC SRL"]);
+      const carvedId = (await overridden.query("SELECT id FROM onrc.person WHERE id <> $1 AND name IN ('ION POPESCU', 'POPESCU ION') AND birth_year = 1975", [old])).rows[0].id as string;
+      const carved = (await ask("overrides, show", "PersonPage", { id: carvedId }, false)).person!;
+      expect(carved.roleCount).toBe(1);
+      expect(carved.roles.map((r: RoleJson) => r.organisationName)).toEqual(["BETA ONRC SRL"]);
+    });
   });
 
   it("the API's source never reads the review queue or the birthplace", () => {

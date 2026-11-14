@@ -95,15 +95,21 @@ def test_a_pfa_holder_is_never_linked_and_carries_no_year(built):
     for company in (PFA, PFA2):
         assert q(url, "SELECT link, person_id, birth_year FROM onrc.role WHERE reg_no = %s", company[2]) == [("SOLE_TRADER", None, None)]
     assert q(url, "SELECT count(*) FROM onrc.person WHERE name LIKE '%%DEMO%%'") == [(0,)]
-    assert summary.onrc.people.sole_trader_roles == 2
+    assert summary.onrc.people.sole_trader_roles == 3
+
+
+def test_a_legal_file_row_of_an_if_registration_is_never_linked_or_served(built):
+    url, _ = built
+    assert q(url, "SELECT link, person_id, birth_year FROM onrc.role WHERE reg_no = %s AND kind = 'LEGAL'", FAM[2]) == [("SOLE_TRADER", None, None)]
+    assert q(url, "SELECT count(*) FROM onrc.person WHERE name LIKE 'VOICU%%'") == [(0,)]
 
 
 def test_if_members_link_like_administrators(built):
     url, _ = built
-    assert q(url, "SELECT holder_name, kind, link, person_id, birth_year FROM onrc.role WHERE reg_no = %s ORDER BY holder_name", FAM[2]) == [
+    assert q(url, "SELECT holder_name, kind, link, person_id, birth_year FROM onrc.role WHERE reg_no = %s AND kind = 'IF' ORDER BY holder_name", FAM[2]) == [
         ("TOMA ELENA", "IF", "LINKED", pid("Toma Elena", "1967-03-03"), 1967), ("TOMA GHEORGHE", "IF", "LINKED", TOMA, 1965)]
     assert q(url, "SELECT link, person_id FROM onrc.role WHERE reg_no = %s AND holder_name = 'TOMA GHEORGHE'", BETA[2]) == [("LINKED", TOMA)]  # the IF member is BETA's administrator too
-    assert roles_of(url, FAM[2])[0][1] == "membru întreprindere familiala"  # the role as ONRC publishes it
+    assert q(url, "SELECT role FROM onrc.role WHERE reg_no = %s AND kind = 'IF' ORDER BY holder_name", FAM[2])[0][0] == "membru întreprindere familiala"  # the role as ONRC publishes it
 
 
 def test_no_birthplace_birth_date_or_cnp_column_in_the_served_tables(built):

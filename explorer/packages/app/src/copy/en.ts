@@ -315,7 +315,7 @@ export const en: Copy = {
     rolesHeading: "Roles",
     roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
     noPage: "no organisation page",
-    basis: "Each role is the same name and full birth date in ONRC's register. The birth year is shown; the full date and the birthplace never are.",
+    basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
     source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
     notFound: { title: "Person page not available", body: "This page is not available on this host, or no person has this id. Person pages are shown only in a Private view." },
   },

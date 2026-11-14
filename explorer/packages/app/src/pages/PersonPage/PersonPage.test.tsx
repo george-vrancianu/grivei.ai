@@ -45,7 +45,7 @@ describe("the person page", () => {
   it("is in Romanian under /ro/", async () => {
     open(`/ro/explore/person/${PERSON}`);
     expect(await screen.findByRole("heading", { level: 1, name: "POPESCU ION" })).toBeVisible();
-    expect(screen.getByText("născut în 1975")).toBeVisible();
+    expect(screen.getByText("anul nașterii 1975")).toBeVisible();
     expect(screen.getByText("Roluri · 3 roluri")).toBeVisible();
   });
 

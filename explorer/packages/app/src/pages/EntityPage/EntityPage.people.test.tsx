@@ -43,7 +43,7 @@ describe("the administrators of a SEAP counterparty (public tier)", () => {
 
   it("is in Romanian under /ro/", async () => {
     await opened("/ro/explore/supplier/3100020?signalOrder=value-desc");
-    expect((await people()).getByText("administrator · născut în 1975")).toBeVisible();
+    expect((await people()).getByText("administrator · anul nașterii 1975")).toBeVisible();
   });
 });
 

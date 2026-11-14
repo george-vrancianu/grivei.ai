@@ -30,8 +30,8 @@
     },
     {
       "name": "od_reprezentanti_legali.csv",
-      "sha256": "bfebedcc4f149314d8102d07c4bcd91fb4c235d4ab4ebd8bc1eda5d9fcde45be",
-      "bytes": 1509
+      "sha256": "3c9b5c17b047ca60172eb7ba069cfd1b50b1086ff344b050a15f5a8614d56b97",
+      "bytes": 1616
     },
     {
       "name": "od_stare_firma.csv",
@@ -86,7 +86,7 @@
         "name": "OD_REPREZENTANTI_LEGALI.CSV",
         "url": "https://data.gov.ro/dataset/firme-06-05-2026/resource/a85adb62-0000-4000-8000-000000000003/download/od_reprezentanti_legali.csv",
         "lastModified": "2026-11-06T05:15:47",
-        "size": 1476,
+        "size": 1581,
         "hash": "",
         "format": "CSV",
         "rows": null

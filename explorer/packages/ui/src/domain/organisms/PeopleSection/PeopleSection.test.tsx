@@ -45,7 +45,7 @@ describe("PeopleSection", () => {
   it("speaks Romanian and keeps ONRC's words as published", () => {
     show(peoplePublic, "ro");
     expect(screen.getByRole("region", { name: "Administratori și reprezentanți legali" })).toBeVisible();
-    expect(screen.getByText("administrator · născut în 1975")).toBeVisible();
+    expect(screen.getByText("administrator · anul nașterii 1975")).toBeVisible();
     expect(screen.getByText(/reprezentant al persoanei juridice · fără dată a nașterii/)).toBeVisible();
   });
 });

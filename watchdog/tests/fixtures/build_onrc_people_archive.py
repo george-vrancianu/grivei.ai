@@ -60,6 +60,7 @@ LEGAL_ROWS = [
     (OMEGA[2], "STEFAN VLAD DUMITRESCU", "administrator", "01/02/1970", "Loc. Iaşi", "Iaşi"),  # an organisation only in ONRC: never named
     (PFA[2], "POPESCU DEMO", "administrator", "04/04/1960", "Loc. Cluj-Napoca", "Cluj"),
     (PFA2[2], "VASILESCU DEMO", "administrator", "06/06/1961", "Loc. Cluj-Napoca", "Cluj"),
+    (FAM[2], "VOICU DEMO", "administrator", "07/07/1962", "Loc. Cluj-Napoca", "Cluj"),  # an IF registration listed in the legal-representative file: never named on the public tier
 ]
 IF_ROWS = [
     (FAM[2], "TOMA GHEORGHE", "02/02/1965", "BISTRA, ALBA", "reprezentant întreprindere familiala"),
@@ -83,7 +84,7 @@ def build() -> None:
     original = dict(COMPANIES)
     current_files = base._current_files
     COMPANIES.update(extra)
-    base._current_files = lambda key: {**current_files(key), **people_files()}
+    base._current_files = lambda key, *args, **kwargs: {**current_files(key, *args, **kwargs), **people_files()}
     try:
         packages, bodies = datasets()
     finally:  # the base module is shared by the other tests of one process: leave it as found

@@ -43,7 +43,7 @@ describe("PersonDetail", () => {
   it("speaks Romanian and keeps the name as ONRC writes it", () => {
     show(personSingleRole, "ro");
     expect(screen.getByRole("heading", { level: 1, name: "DUMITRESCU ȘTEFAN-VLAD CONSTANTIN-ALEXANDRU" })).toBeVisible();
-    expect(screen.getByText("născut în 1970")).toBeVisible();
+    expect(screen.getByText("anul nașterii 1970")).toBeVisible();
     expect(screen.getByText("Roluri · 1 rol")).toBeVisible();
   });
 });

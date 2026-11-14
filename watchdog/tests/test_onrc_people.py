@@ -146,7 +146,7 @@ def test_the_people_fixture_archives_both_people_files_with_the_real_file_names_
     unit = next(u for u in archive.units(SOURCE) if (u.stream, u.kind, u.unit) == (STREAM, KIND, "2026-05-06"))
     assert {r["role"] for r in unit.origin["resources"]} >= {"legali", "if"} and people.has_people(unit)
     roles = list(people.read_roles(unit))
-    assert len(roles) == 15 and {r.kind for r in roles} == {"LEGAL", "IF"}
+    assert len(roles) == 16 and {r.kind for r in roles} == {"LEGAL", "IF"}
     alfa = [r for r in roles if r.name == "IONESCU MARIA"][0]
     assert alfa.birth_date == date(1980, 5, 5) and alfa.area == "iasi"  # a time of day after the date is dropped
     assert [r.area for r in roles if r.name == "TOMA ELENA"] == ["cluj"]  # the IF file: the county after the comma

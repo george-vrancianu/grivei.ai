@@ -35,6 +35,7 @@ import psycopg
 
 from ..archive import Unit
 from ..identity import comma_below
+from ..sole_trader import is_sole_trader
 from . import read
 
 log = logging.getLogger("pipeline.onrc")
@@ -44,7 +45,8 @@ MIN_SECRET = 16
 EARLIEST_BIRTH_YEAR = 1900
 
 # Registrations whose holder is the registration itself (PFA, II): an `F` registration number that is no family enterprise, or a legal form that says so.
-# Used in SQL, so accented letters are matched by `.`.
+# Used in SQL, so accented letters are matched by `.`. The legal file's rows are also classified by the shared rule (`pipeline/sole_trader.py`: name and legal form,
+# IF included), so the public tier never names a sole trader's or an IF's holder whichever file the row came from.
 SOLE_TRADER_FORM = r"persoan. fizic. autorizat|intreprindere individual|^pfa$|^ii$"
 FAMILY_FORM = r"familial|^if$"
 
@@ -263,6 +265,11 @@ def build_people(cur: psycopg.Cursor, unit: Unit | None, overrides: PersonOverri
                     FROM onrc.registration g
                    WHERE g.reg_no = r.reg_no
                      AND (lower(coalesce(g.legal_form, '')) ~ %s OR (g.reg_no LIKE 'F%%' AND lower(coalesce(g.legal_form, '')) !~ %s))""", (SOLE_TRADER_FORM, FAMILY_FORM))
+    cur.execute("""SELECT DISTINCT g.reg_no, g.name, g.legal_form FROM onrc_role_raw r JOIN onrc.registration g ON g.reg_no = r.reg_no
+                    WHERE r.kind = 'LEGAL' AND r.link IS NULL""")
+    sole = [reg_no for reg_no, name, form in cur.fetchall() if is_sole_trader(name, form)]
+    if sole:  # the legal-representative file is the public tier: an IF's or a sole trader's row in it is never linked or served
+        cur.execute("UPDATE onrc_role_raw SET link = 'SOLE_TRADER', person_id = NULL WHERE kind = 'LEGAL' AND link IS NULL AND reg_no = ANY(%s)", (sole,))
     for split in overrides.splits:
         cur.execute("SELECT DISTINCT pkey FROM onrc_role_raw WHERE person_id = %s", (split.person,))
         keys = [k for (k,) in cur.fetchall()]

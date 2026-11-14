@@ -7,6 +7,7 @@ import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 import type { PersonPageData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { pageSx } from "../../utils/pageSx.ts";
+import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
 import { followLink } from "../../utils/followLink.ts";
 
 export interface PersonDetailCopy {
@@ -75,15 +76,7 @@ export function PersonDetail({ person, entityHref, onNavigate, locale, copy }: P
             </Typography>
           ))}
         </Stack>
-        <Typography variant="caption" color="text.secondary">
-          {person.provenance.url ? (
-            <Link href={person.provenance.url} target="_blank">
-              {copy.source(snapshot)}
-            </Link>
-          ) : (
-            copy.source(snapshot)
-          )}
-        </Typography>
+        <SourceCaption label={copy.source(snapshot)} url={person.provenance.url} />
       </Stack>
     </Stack>
   );

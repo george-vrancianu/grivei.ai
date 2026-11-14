@@ -6,6 +6,7 @@ import { color, radius } from "../../../theme/tokens.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 import type { OrganisationPeopleData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
+import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
 import { followLink } from "../../utils/followLink.ts";
 
 export interface PeopleSectionCopy {
@@ -68,15 +69,7 @@ export function PeopleSection({ people, personHref, onNavigate, locale, copy }: 
           ))}
         </Stack>
       )}
-      <Typography variant="caption" color="text.secondary">
-        {people.provenance.url ? (
-          <Link href={people.provenance.url} target="_blank">
-            {copy.source(snapshot)}
-          </Link>
-        ) : (
-          copy.source(snapshot)
-        )}
-      </Typography>
+      <SourceCaption label={copy.source(snapshot)} url={people.provenance.url} />
     </Stack>
   );
 }
