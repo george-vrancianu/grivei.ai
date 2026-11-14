@@ -20,6 +20,7 @@ check() { # description, command...
 }
 children_of() { pgrep -P "$1" 2>/dev/null; }
 
+echo "2020-01-01 00:00:00 999999" > "$MEM_WATCH_LOG"
 out1="$(bash "$HERE/mem-watch.sh" start)"
 check "pid file exists" test -s "$MEM_WATCH_PID"
 STARTED="$(cat "$MEM_WATCH_PID" 2>/dev/null)"
@@ -28,6 +29,7 @@ check "watcher is alive" kill -0 "$STARTED"
 out2="$(bash "$HERE/mem-watch.sh" start)"
 check "second start reuses watcher" bash -c "[[ '$out2' == *reusing* ]] && [ \"\$(cat '$MEM_WATCH_PID')\" = '$STARTED' ]"
 
+check "fresh start resets old log" bash -c "! grep -q 999999 '$MEM_WATCH_LOG'"
 sleep 3
 check "log has samples" bash -c "[ \$(wc -l < '$MEM_WATCH_LOG') -ge 2 ]"
 peak="$(bash "$HERE/mem-watch.sh" peak)"
@@ -37,6 +39,7 @@ echo "peak: $peak"
 kids="$(children_of "$STARTED")"
 bash "$HERE/mem-watch.sh" stop >/dev/null
 check "pid file removed" test ! -e "$MEM_WATCH_PID"
+check "log removed" test ! -e "$MEM_WATCH_LOG"
 check "watcher gone" bash -c "! kill -0 $STARTED 2>/dev/null"
 check "children gone" bash -c "for p in $kids; do ! kill -0 \$p 2>/dev/null || exit 1; done"
 STARTED=""
