@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "source": "onrc",
+  "stream": "snapshot",
+  "kind": "firme",
+  "unit": "2026-04-03",
+  "fetchedAt": "2026-11-13T04:00:00Z",
+  "url": "https://data.gov.ro/dataset/firme-03-04-2026",
+  "via": "Firme înregistrate la Registrul Comerțului până la data de 03.04.2026",
+  "files": [
+    {
+      "name": "n_stare_firma.csv",
+      "sha256": "c5517876304e18ec808acf044e7f9c8cceab47be88de1ecd56078bdfba9243e7",
+      "bytes": 161
+    },
+    {
+      "name": "od_caen_autorizat.csv",
+      "sha256": "68eb89d147967249b504de41064bea8d2ae58151a1bf80897e0721d7a24a84d9",
+      "bytes": 248
+    },
+    {
+      "name": "od_firme.csv",
+      "sha256": "9c28148897d2f22967bb3868b7eae0d76af53ab71d9bb698acf3572a072a2e04",
+      "bytes": 1497
+    },
+    {
+      "name": "od_stare_firma.csv",
+      "sha256": "b8c040fd84ae99b1f8617879d18a06137d96da7e71748420c38065c2fb2fe0c1",
+      "bytes": 253
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "firme-03-04-2026",
+    "datasetId": "id-firme-03-04-2026",
+    "datasetTitle": "Firme înregistrate la Registrul Comerțului până la data de 03.04.2026",
+    "layout": "current",
+    "snapshot": "2026-04-03",
+    "resources": [
+      {
+        "role": "firme",
+        "resourceId": "7568099a-0000-4000-8000-000000000000",
+        "name": "OD_FIRME.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/7568099a-0000-4000-8000-000000000000/download/od_firme.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 1474,
+        "hash": "",
+        "format": "CSV",
+        "rows": 10
+      },
+      {
+        "role": "stare",
+        "resourceId": "21350fcf-0000-4000-8000-000000000001",
+        "name": "OD_STARE_FIRMA.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/21350fcf-0000-4000-8000-000000000001/download/od_stare_firma.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 251,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "caen",
+        "resourceId": "ece0c652-0000-4000-8000-000000000002",
+        "name": "OD_CAEN_AUTORIZAT.CSV",
+        "url": "https://data.gov.ro/dataset/firme-03-04-2026/resource/ece0c652-0000-4000-8000-000000000002/download/od_caen_autorizat.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 246,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      },
+      {
+        "role": "nomenclature",
+        "resourceId": "a579aca7-0000-4000-8000-000000000000",
+        "name": "N_STARE_FIRMA.CSV",
+        "url": "https://data.gov.ro/dataset/nomenclatoare-03-04-2026/resource/a579aca7-0000-4000-8000-000000000000/download/n_stare_firma.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 151,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      }
+    ]
+  }
+}

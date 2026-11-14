@@ -47,7 +47,7 @@ Current status and why:
 | --- | --- | --- |
 | SEAP | live | Harvester, loader, views and reports exist. |
 | ANI | skipped | Decided by the user 2026-11-12: CCR Decision 297/2025 (29 May 2025) struck down online publication of declarations; Law 180/2026 (in force 31 Aug 2026) keeps full declarations confidential. Research: [ANI declarations](https://github.com/george-vrancianu/grivei.ai/issues/114). |
-| ONRC | next | README "Ce urmează". |
+| ONRC | wip | Release 2 (#173): the Connector, the `onrc` schema and the entity page's ONRC section exist (#175); not yet publicly explorable. |
 | Ministry of Finance (Ministerul Finanțelor) | next | README "Ce urmează". |
 | portal.just.ro | next | README "Ce urmează". |
 

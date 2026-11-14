@@ -137,3 +137,16 @@ fragment RecordResultFields on RecordResultPage {
     areaShare
   }
 }
+
+# The ONRC section of an entity page: the registration and the history derived from the held snapshots.
+fragment OnrcRegistrationFields on OnrcRegistration {
+  registrationNumber
+  registrationDate
+  legalForm
+  statuses { code name firstSeen sinceAtLeast }
+  caen { code version }
+  seat { county locality address postalCode }
+  aliases { name firstSeen lastSeen sinceAtLeast current }
+  snapshot
+  provenance { ...ProvenanceFields }
+}

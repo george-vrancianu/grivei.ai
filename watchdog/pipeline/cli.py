@@ -26,6 +26,7 @@ from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
+from .onrc.fetch import fetch_onrc
 from . import acceptance_cli, placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
@@ -129,6 +130,9 @@ def main(argv: list[str] | None = None) -> int:
     g = sub.add_parser("fetch-datagov", help="fetch ADR's quarterly SEAP exports from data.gov.ro into the raw archive (no loading)")
     g.add_argument("--since-year", type=int, default=2021, help="first dataset year (achizitii-publice-YYYY), default 2021")
     g.add_argument("--delay", type=float, default=1.0, help="seconds between requests to data.gov.ro, default 1")
+
+    on = sub.add_parser("fetch-onrc", help="fetch ONRC's open company-register snapshots from data.gov.ro into the raw archive: every monthly one since March 2026 and the last of each quarter back to 2021, whatever is not held yet (no loading; resumable)")
+    on.add_argument("--limit", type=int, default=None, help="download at most this many snapshots in this run (each is over a gigabyte); rerun to continue")
 
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
 
@@ -265,6 +269,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in summary.lines():
             print(line)
         return 1 if summary.failed else 0
+    if args.verb == "fetch-onrc":
+        _logging_to_stderr()
+        summary = fetch_onrc(archive, limit=args.limit)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed or summary.invalid else 0
     if args.verb == "fetch-mf":
         handler = logging.StreamHandler(sys.stderr)  # flushes every record: a nohup log is current line by line
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
@@ -369,7 +379,7 @@ def _loader(archive: Archive, args):
 
 
 def _impl(archive: Archive, args) -> Impl:
-    # every dependency is looked up in this module when called, so tests can replace `make_client`, `fetch_datagov`, `fetch_mf`
+    # every dependency is looked up in this module when called, so tests can replace `make_client`, `fetch_datagov`, `fetch_mf`, `fetch_onrc`
     def backfill() -> int:
         ns = argparse.Namespace(passes="all", delay=args.delay, status=False, progress_file=None)
         return _backfill(archive, ns)
@@ -378,7 +388,8 @@ def _impl(archive: Archive, args) -> Impl:
                 lambda: AnafClient(endpoint=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT)), _loader(archive, args), backfill, crawl_delay=args.delay,
                 backup_fn=lambda: backup_module.backup_archive(archive, backup_module.Restic(), _log_line),
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
-                crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None)
+                crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
+                fetch_onrc=lambda a, limit=None: fetch_onrc(a, limit=limit))
 
 
 def _logging_to_stderr() -> None:
@@ -407,7 +418,7 @@ def _load_quarter(archive: Archive, args) -> int:
         if not got:
             print("load-quarter: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
             return 1
-        held = [u for u in archive.units() if u.unit == quarter and u.kind in KINDS]
+        held = [u for u in archive.units("seap") if u.unit == quarter and u.kind in KINDS]
         restored = archive.requeue(f"/{quarter}/")
         for path in restored:
             _log_line(f"requeued {path}")
@@ -451,7 +462,7 @@ def _status(archive: Archive, args) -> int:
         code = source.status(archive, args, status, anaf, code)
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
-    dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None, backup=None, pgdump=None)
+    dummy = SimpleNamespace(crawl=None, datagov=None, onrc=None, anaf=None, load=None, backup=None, pgdump=None)
     for line in describe_refresh(archive, ledger, refresh_steps(archive, dummy)):
         print(line)
     if ledger.runs and ledger.runs[-1]["status"] == "failed":

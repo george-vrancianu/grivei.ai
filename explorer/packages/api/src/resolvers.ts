@@ -102,6 +102,11 @@ export function rootValue(store: Store) {
       },
     ],
     aliases: () => store.aliases(e.key),
+    // the ONRC section (#175): the same on both role pages; null for an entity with no CUI or no registration
+    onrc: async () => {
+      const found = e.cui ? await store.onrc(e.cui) : null;
+      return found && { ...found, provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance } };
+    },
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
@@ -252,12 +257,11 @@ export function rootValue(store: Store) {
   }
 
   /** A registry entry as the `Source` type: its data-through dates come from its adapter. */
-  const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => ({
-    id: row.id as SourceId,
-    name: row.name,
-    harvested: true,
-    dataThrough: await adapterOf(row.id).dataThrough(store),
-  });
+  const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => {
+    const dataThrough = await adapterOf(row.id).dataThrough(store);
+    // a Source in the registry whose tables are empty (an ONRC with no snapshot archived yet) is not harvested; SEAP always is (its Coverage grid says what is missing)
+    return { id: row.id as SourceId, name: row.name, harvested: row.id === "SEAP" || dataThrough.length > 0, dataThrough };
+  };
 
   return {
     // the registry (`core.source`, stored by every rebuild) first, then the planned Sources it does not hold yet

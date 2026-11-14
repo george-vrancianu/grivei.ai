@@ -6,11 +6,13 @@
  *
  * Three archives: `overview` is `archive-roles` with the name-only suppliers of `archive-roles-names` merged on (an authority,
  * suppliers, an entity with both roles, name-only suppliers); `signals` is `archive-signals` (an authority and a supplier whose
- * Records are in Signals); `moneymap` is the placement world (authorities placed in a county and UAT, a national one, an unplaced one).
+ * Records are in Signals); `moneymap` is the placement world (authorities placed in a county and UAT, a national one, an unplaced one);
+ * `onrc` is `archive-onrc` (ONRC snapshots in both layouts beside a SEAP slice: a supplier with a status change, a rename, a strike-off, a CUI ANAF
+ * does not know, an entity with both roles, organisations that exist only in ONRC; #175).
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedEntityArchive = "overview" | "signals" | "moneymap";
+export type RecordedEntityArchive = "overview" | "signals" | "moneymap" | "onrc";
 
 export interface RecordedEntityCase {
   operation: "EntityOverview";
@@ -34,6 +36,14 @@ export const ENTITY_KEYS = {
   sanpetru: "51000005", // a commune placed in a county and UAT (archive-moneymap)
   ministry: "51001000", // a national authority
   unplaced: "51000900", // an authority neither ANAF nor SEAP places
+  onrcAuthority: "3100012", // PRIMARIA EXEMPLU ONRC: an authority ANAF and ONRC know (archive-onrc)
+  onrcAlfa: "3100020", // ALFA ONRC SRL: insolvency first seen after the earliest snapshot, CAEN codes
+  onrcBeta: "3100039", // BETA ONRC SRL: ONRC renamed it (BETA VECHI SRL -> BETA NOU SRL); ANAF's name stays the display name
+  onrcGamma: "3100047", // GAMMA ONRC SRL: struck off in the newest snapshot
+  onrcDelta: "3100055", // DELTA ONRC SRL: a CUI ANAF does not know, ONRC lists
+  onrcDubla: "3100063", // DUBLA ONRC SA: both roles
+  onrcOnly: "3100071", // OMEGA ONLY SRL: in ONRC only, seat in Cluj
+  onrcUnplaced: "3100080", // ZETA FARA JUDET SRL: in ONRC only, no county
 } as const;
 
 // The page always sends the filter (empty here) and omits the Signals' order and offset unless the URL says so.
@@ -129,5 +139,50 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "supplier-with-signals", archive: "signals", kind: "typical",
     description: "a supplier whose Records are in Signals: the Signals count on the supplier's page (?signalOrder=date-desc)",
     variables: page(ENTITY_KEYS.alfa, "SUPPLIER", { signalOrder: "DATE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-supplier", archive: "onrc", kind: "typical",
+    description: "a SEAP supplier with an ONRC section: registration date, a status already in the earliest snapshot (since at least) and an insolvency first seen later, authorised CAEN codes, the registered seat",
+    variables: page(ENTITY_KEYS.onrcAlfa, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-authority", archive: "onrc", kind: "typical",
+    description: "a contracting authority with an ONRC section on its authority page",
+    variables: page(ENTITY_KEYS.onrcAuthority, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-renamed-supplier", archive: "onrc", kind: "typical",
+    description: "ONRC renamed the company: both names are dated ONRC aliases, the display name stays ANAF's",
+    variables: page(ENTITY_KEYS.onrcBeta, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-struck-off-supplier", archive: "onrc", kind: "typical",
+    description: "a supplier struck off in the newest snapshot: the strike-off is first seen there, the earlier status is gone",
+    variables: page(ENTITY_KEYS.onrcGamma, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-cui-unknown-to-anaf", archive: "onrc", kind: "typical",
+    description: "a supplier whose CUI ANAF does not know but ONRC lists: provenance ONRC (the page badges it), ONRC's name as the display name, its SEAP Records attached",
+    variables: page(ENTITY_KEYS.onrcDelta, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-both-roles-authority-page", archive: "onrc", kind: "typical",
+    description: "an entity that is an authority and a supplier, on its authority page: the same ONRC section",
+    variables: page(ENTITY_KEYS.onrcDubla, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-both-roles-supplier-page", archive: "onrc", kind: "typical",
+    description: "the same entity on its supplier page: the ONRC section is the same on both role pages",
+    variables: page(ENTITY_KEYS.onrcDubla, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-only-organisation", archive: "onrc", kind: "empty",
+    description: "an organisation that exists only in ONRC (never a SEAP counterparty): an entity page with its ONRC section, no SEAP role, placed by its seat's county",
+    variables: page(ENTITY_KEYS.onrcOnly, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-only-unplaced", archive: "onrc", kind: "empty",
+    description: "an organisation only in ONRC whose registration names no county: no placement (the Unplaced tile)",
+    variables: page(ENTITY_KEYS.onrcUnplaced, "AUTHORITY"),
   },
 ];

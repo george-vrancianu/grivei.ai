@@ -29,7 +29,22 @@ export interface PlacementRow {
   /** The village's SIRUTA when ANAF or SEAP named one: stored, not plotted. */
   villageSiruta: string | null;
   national: boolean;
-  placedBy: "ANAF" | "SEAP";
+  placedBy: "ANAF" | "SEAP" | "ONRC";
+}
+
+/** The ONRC registration under an entity's CUI (`onrc.registration`) with the history derived from the held snapshots (ADR 0018). */
+export interface OnrcRegistrationRow {
+  registrationNumber: string;
+  registrationDate: string | null;
+  legalForm: string | null;
+  statuses: { code: number; name: string | null; firstSeen: string; sinceAtLeast: boolean }[];
+  caen: { code: string; version: number | null }[];
+  seat: { county: string | null; locality: string | null; address: string | null; postalCode: string | null };
+  aliases: { name: string; firstSeen: string; lastSeen: string; sinceAtLeast: boolean; current: boolean }[];
+  /** The snapshot the registration comes from. */
+  snapshot: string;
+  /** The snapshot dataset's public page, its title as ONRC gives it, and when we fetched it. */
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
 }
 
 /** A county of core.county: ISO 3166-2:RO without `RO-` (Bucharest is `B`) and its Romanian name. */
@@ -219,6 +234,10 @@ export interface Store extends RoleStore, SignalStore {
   unplacedAuthorities(window: { from: string | null; to: string | null }): Promise<{ authorities: number; total: TotalRow }>;
   /** The date of the MF list the last rebuild loaded, or null when none was. */
   referenceSnapshot(): Promise<string | null>;
+  /** The ONRC registration under a CUI (the entity page's ONRC section), or null when ONRC lists none. */
+  onrc(cui: string): Promise<OnrcRegistrationRow | null>;
+  /** The date of the newest ONRC snapshot read: ONRC's data-through date per record kind (REGISTRATION). */
+  onrcDataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
   /** The Money lens of the matching set, on the side the filter's `countySide` names (the filter is not narrowed by the lens). */
@@ -303,7 +322,7 @@ interface RawPlacement {
   uat_name: string | null;
   village_siruta: string | null;
   national: boolean;
-  placed_by: "ANAF" | "SEAP";
+  placed_by: "ANAF" | "SEAP" | "ONRC";
 }
 
 const ENTITY_COLUMNS = `key, identity, cui, foreign_vat_id, display_name, anaf_status, identity_curated, provenance_source, provenance_via,
@@ -834,6 +853,42 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     async referenceSnapshot() {
       const { rows } = await pool.query(`SELECT max(snapshot_date)::text AS d FROM core.mf_snapshot`);
       return (rows[0]?.d as string | null) ?? null;
+    },
+    async onrcDataThrough() {
+      const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0`);
+      return rows;
+    },
+    async onrc(cui) {
+      const { rows } = await pool.query(
+        `SELECT r.reg_no, r.registration_date::text AS registration_date, r.legal_form, r.county_name, r.locality, r.address, r.postal_code, r.snapshot_date::text AS snapshot,
+                s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+           FROM onrc.registration r JOIN onrc.snapshot s ON s.snapshot_date = r.snapshot_date WHERE r.cui = $1 AND r.primary_for_cui`,
+        [cui],
+      );
+      const r = rows[0];
+      if (!r) return null;
+      const statuses = await pool.query(
+        `SELECT sp.code, n.name, sp.first_seen::text AS "firstSeen", sp.since_at_least AS "sinceAtLeast"
+           FROM onrc.status_span sp LEFT JOIN onrc.status_name n ON n.code = sp.code WHERE sp.reg_no = $1 AND sp.last_seen = $2::date ORDER BY sp.code`,
+        [r.reg_no, r.snapshot],
+      );
+      const caen = await pool.query(`SELECT code, version FROM onrc.caen WHERE reg_no = $1 ORDER BY code`, [r.reg_no]);
+      const aliases = await pool.query(
+        `SELECT name, first_seen::text AS "firstSeen", last_seen::text AS "lastSeen", since_at_least AS "sinceAtLeast", last_seen = $2::date AS current
+           FROM onrc.name_span WHERE reg_no = $1 ORDER BY last_seen DESC, first_seen DESC, name`,
+        [r.reg_no, r.snapshot],
+      );
+      return {
+        registrationNumber: r.reg_no,
+        registrationDate: r.registration_date,
+        legalForm: r.legal_form,
+        statuses: statuses.rows,
+        caen: caen.rows,
+        seat: { county: r.county_name, locality: r.locality, address: r.address, postalCode: r.postal_code },
+        aliases: aliases.rows,
+        snapshot: r.snapshot,
+        provenance: { url: r.url, via: r.title, fetchedAt: r.fetched_at },
+      };
     },
     async entity(key) {
       return (await entitiesOf([key])).get(key) ?? null;

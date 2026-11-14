@@ -148,10 +148,12 @@ export type Entity = {
   identity: EntityIdentity;
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
+  /** The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier. */
+  onrc: Maybe<OnrcRegistration>;
   placement: Maybe<Placement>;
   /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP. */
   provenance: Array<Provenance>;
-  /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
+  /** Source-specific facets, one sibling per explorable Source (ADR 0005): SEAP, and ONRC below. */
   seap: SeapEntity;
 };
 
@@ -292,6 +294,74 @@ export type MonthTotal = {
 export type NoPublicationNumbers = {
   __typename?: 'NoPublicationNumbers';
   procedure: Scalars['String']['output'];
+};
+
+export type OnrcAlias = {
+  __typename?: 'OnrcAlias';
+  /** True when the newest snapshot lists it: ONRC's legal name today. */
+  current: Scalars['Boolean']['output'];
+  /** The first and the last held snapshot that listed this name. */
+  firstSeen: Scalars['Date']['output'];
+  lastSeen: Scalars['Date']['output'];
+  name: Scalars['String']['output'];
+  /** True when the earliest held snapshot already listed it: it is at least that old. */
+  sinceAtLeast: Scalars['Boolean']['output'];
+};
+
+export type OnrcCaen = {
+  __typename?: 'OnrcCaen';
+  code: Scalars['String']['output'];
+  /** The CAEN revision ONRC records (0 = 1998, 1 = 2003, 2 = 2008, 3 = 2025); null when unknown. */
+  version: Maybe<Scalars['Int']['output']>;
+};
+
+/**
+ * One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
+ * undated). No person of the registration is served here: its administrators and legal representatives are ticket #177's, and an organisation
+ * that exists only in ONRC never names anyone (ADR 0018).
+ */
+export type OnrcRegistration = {
+  __typename?: 'OnrcRegistration';
+  /** ONRC's legal name and earlier names, newest first, each with the snapshots it was seen in. Aliases only: they never rename the entity (ADR 0018). */
+  aliases: Array<OnrcAlias>;
+  /** The authorised CAEN codes of the newest snapshot, by code. */
+  caen: Array<OnrcCaen>;
+  /** FORMA_JURIDICA as published, e.g. SRL; null when the snapshot has none. */
+  legalForm: Maybe<Scalars['String']['output']>;
+  /** Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it. */
+  provenance: Provenance;
+  /** Null when the newest snapshot is in the legacy layout, which carries no registration date. */
+  registrationDate: Maybe<Scalars['Date']['output']>;
+  /** ONRC's registration number (COD_INMATRICULARE), e.g. J40/1234/2010. Source data, shown as published. */
+  registrationNumber: Scalars['String']['output'];
+  /** The registered seat, as published. */
+  seat: OnrcSeat;
+  /** The snapshot the registration, CAEN codes and seat come from. */
+  snapshot: Scalars['Date']['output'];
+  /** The statuses the newest snapshot shows (a company can carry several, e.g. in operation and in insolvency), by code. */
+  statuses: Array<OnrcStatus>;
+};
+
+export type OnrcSeat = {
+  __typename?: 'OnrcSeat';
+  /** The seat as one line, as published. */
+  address: Maybe<Scalars['String']['output']>;
+  /** The county as ONRC writes it. */
+  county: Maybe<Scalars['String']['output']>;
+  locality: Maybe<Scalars['String']['output']>;
+  postalCode: Maybe<Scalars['String']['output']>;
+};
+
+export type OnrcStatus = {
+  __typename?: 'OnrcStatus';
+  /** ONRC's status code, e.g. 1048. */
+  code: Scalars['Int']['output'];
+  /** The first held snapshot that showed this status (the one it was first seen in; ONRC dates no status itself). */
+  firstSeen: Scalars['Date']['output'];
+  /** The status as ONRC's nomenclature names it (Romanian, source data); null when the held nomenclature does not list the code. */
+  name: Maybe<Scalars['String']['output']>;
+  /** True when the earliest held snapshot already showed it: the status is at least that old, and firstSeen is a lower bound. */
+  sinceAtLeast: Scalars['Boolean']['output'];
 };
 
 export type OverCapNumbers = {
@@ -993,6 +1063,11 @@ export type ResolversTypes = {
   MoneyMap: ResolverTypeWrapper<MoneyMap>;
   MonthTotal: ResolverTypeWrapper<MonthTotal>;
   NoPublicationNumbers: ResolverTypeWrapper<NoPublicationNumbers>;
+  OnrcAlias: ResolverTypeWrapper<OnrcAlias>;
+  OnrcCaen: ResolverTypeWrapper<OnrcCaen>;
+  OnrcRegistration: ResolverTypeWrapper<OnrcRegistration>;
+  OnrcSeat: ResolverTypeWrapper<OnrcSeat>;
+  OnrcStatus: ResolverTypeWrapper<OnrcStatus>;
   OverCapNumbers: ResolverTypeWrapper<OverCapNumbers>;
   Party: ResolverTypeWrapper<Omit<Party, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
   Period: ResolverTypeWrapper<Period>;
@@ -1071,6 +1146,11 @@ export type ResolversParentTypes = {
   MoneyMap: MoneyMap;
   MonthTotal: MonthTotal;
   NoPublicationNumbers: NoPublicationNumbers;
+  OnrcAlias: OnrcAlias;
+  OnrcCaen: OnrcCaen;
+  OnrcRegistration: OnrcRegistration;
+  OnrcSeat: OnrcSeat;
+  OnrcStatus: OnrcStatus;
   OverCapNumbers: OverCapNumbers;
   Party: Omit<Party, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
   Period: Period;
@@ -1201,6 +1281,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   identity?: Resolver<ResolversTypes['EntityIdentity'], ParentType, ContextType>;
   identityCurated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  onrc?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
   provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapEntity'], ParentType, ContextType>;
@@ -1281,6 +1362,45 @@ export type MonthTotalResolvers<ContextType = any, ParentType extends ResolversP
 export type NoPublicationNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoPublicationNumbers'] = ResolversParentTypes['NoPublicationNumbers']> = {
   procedure?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type OnrcAliasResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcAlias'] = ResolversParentTypes['OnrcAlias']> = {
+  current?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  lastSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+};
+
+export type OnrcCaenResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCaen'] = ResolversParentTypes['OnrcCaen']> = {
+  code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  version?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+};
+
+export type OnrcRegistrationResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcRegistration'] = ResolversParentTypes['OnrcRegistration']> = {
+  aliases?: Resolver<Array<ResolversTypes['OnrcAlias']>, ParentType, ContextType>;
+  caen?: Resolver<Array<ResolversTypes['OnrcCaen']>, ParentType, ContextType>;
+  legalForm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  registrationDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  registrationNumber?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  seat?: Resolver<ResolversTypes['OnrcSeat'], ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  statuses?: Resolver<Array<ResolversTypes['OnrcStatus']>, ParentType, ContextType>;
+};
+
+export type OnrcSeatResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcSeat'] = ResolversParentTypes['OnrcSeat']> = {
+  address?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  county?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  locality?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  postalCode?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcStatusResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcStatus'] = ResolversParentTypes['OnrcStatus']> = {
+  code?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
 };
 
 export type OverCapNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['OverCapNumbers'] = ResolversParentTypes['OverCapNumbers']> = {
@@ -1535,6 +1655,11 @@ export type Resolvers<ContextType = any> = {
   MoneyMap?: MoneyMapResolvers<ContextType>;
   MonthTotal?: MonthTotalResolvers<ContextType>;
   NoPublicationNumbers?: NoPublicationNumbersResolvers<ContextType>;
+  OnrcAlias?: OnrcAliasResolvers<ContextType>;
+  OnrcCaen?: OnrcCaenResolvers<ContextType>;
+  OnrcRegistration?: OnrcRegistrationResolvers<ContextType>;
+  OnrcSeat?: OnrcSeatResolvers<ContextType>;
+  OnrcStatus?: OnrcStatusResolvers<ContextType>;
   OverCapNumbers?: OverCapNumbersResolvers<ContextType>;
   Party?: PartyResolvers<ContextType>;
   Period?: PeriodResolvers<ContextType>;

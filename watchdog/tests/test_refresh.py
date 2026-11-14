@@ -13,6 +13,7 @@ from pipeline.archive import Archive
 from pipeline.crawl import EliClient
 from pipeline.datagov import FetchSummary
 from pipeline.mf.fetch import MfFetchSummary
+from pipeline.onrc.fetch import OnrcFetchSummary
 from pipeline.rebuild import RebuildSummary
 from pipeline.refresh import DeterministicError, Ledger, Pinger, StepResult, TransientError, classify, run_refresh, run_seed
 from pipeline.refresh.engine import BACKOFF, LOCK_NAME
@@ -69,6 +70,10 @@ class FakeImpl:
 
     def crawl(self): return self._step("crawl")
     def datagov(self): return self._step("datagov")
+    def onrc(self, limit=None):  # not recorded in `ran` either: ONRC's own steps are tested in test_onrc_fetch.py; it only fails when a test says so
+        if self.fail.get("onrc"):
+            raise self.fail["onrc"].pop(0)
+        return StepResult({"n": 1})
     def anaf(self): return self._step("anaf")
     def load(self): return self._step("load")
     def backup(self): return StepResult({"n": 1})  # not recorded in `ran`: the tests of the other steps list those
@@ -114,7 +119,7 @@ def test_a_first_run_runs_every_step_in_order_crawl_datagov_anaf_load_and_pings_
     assert (result.status, result.exit_code) == ("ok", 0)
     assert impl.ran == ["crawl", "datagov", "anaf", "load"]  # ANAF before the load: the load reads the archived answers
     assert pings.urls == ["https://hc.example/ping/abc"]  # a success ping, not /fail
-    assert "6 step(s) ran" in pings.calls[0][1]
+    assert "7 step(s) ran" in pings.calls[0][1]
 
 
 def test_a_duplicate_trigger_finds_nothing_due_and_still_pings_success(go, impl, clock, pings):
@@ -158,7 +163,7 @@ def test_the_ledger_records_each_step_with_times_counts_and_the_archive_paths_it
     go()
     run = Ledger(archive.root / "refresh-ledger.json").runs[-1]
     crawl = run["steps"][0]
-    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "anaf", "load", "backup", "pgdump"])
+    assert (run["status"], run["started"], [s["name"] for s in run["steps"]]) == ("ok", "2026-11-12T03:00:00Z", ["crawl", "datagov", "onrc", "anaf", "load", "backup", "pgdump"])
     assert crawl["status"] == "ok" and crawl["counts"] == {"n": 1} and crawl["ended"] and crawl["touched"] == ["crawl/s/k/u1/2026-11-12"]
 
 
@@ -332,6 +337,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "make_client", lambda delay, log: EliClient(post=eli.post, sleep=clock.sleep, clock=lambda: clock.moment.timestamp(), log=log, delay=0))
     monkeypatch.setattr(cli, "fetch_datagov", lambda a: FetchSummary())
     monkeypatch.setattr(cli, "fetch_mf", lambda a: MfFetchSummary())
+    monkeypatch.setattr(cli, "fetch_onrc", lambda a, limit=None: OnrcFetchSummary())
     monkeypatch.setattr(cli, "AnafClient", lambda endpoint=None: AnafClient(post=lambda *a, **k: pytest.fail("ANAF has no CUI to ask about"), endpoint=endpoint or "x"))
     loads = []
 
@@ -363,7 +369,7 @@ def test_refresh_at_the_cli_crawls_loads_and_status_shows_runs_cursor_data_throu
     cli.main(["--archive", str(archive.root), "status"])
     status = capsys.readouterr().out
     assert "#2 refresh" in status and "#1 refresh" in status
-    assert "crawl ok, datagov ok, anaf ok, load ok" in status
+    assert "crawl ok, datagov ok, onrc ok, anaf ok, load ok" in status
     assert "load warning: quarantined (not loaded, shown as not yet loaded)" in status
     yesterday = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
     assert f"crawl cursor: {yesterday}" in status
@@ -518,3 +524,41 @@ def test_rollback_and_cleanup_refuse_to_run_while_a_refresh_holds_the_lock(cli_w
             assert cli.main(["--archive", str(archive.root), verb, "--db", "postgresql://x/y"]) == 1
     assert touched == [] and "holds the archive's lock" in capsys.readouterr().err
     assert cli.main(["--archive", str(archive.root), "cleanup", "--db", "postgresql://x/y"]) == 0 and touched == ["cleanup"]
+
+
+def test_a_failing_onrc_step_in_the_seed_does_not_stop_seaps_steps(archive, impl, clock):
+    kw = dict(now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    impl.fail["onrc"] = [DeterministicError("ONRC fetch is not configured")]
+    assert run_seed(archive, impl, **kw).exit_code == 1  # the seed still reports the failure
+    assert impl.ran == ["datagov", "anaf", "load"]  # but SEAP's steps ran: ONRC comes last
+
+
+def test_a_failing_onrc_step_in_a_refresh_does_not_stop_seaps_steps(go, impl):
+    impl.fail["onrc"] = [DeterministicError("down")]
+    go()
+    assert impl.ran == ["crawl", "datagov", "anaf", "load"]
+
+
+def test_the_refresh_caps_the_onrc_snapshots_it_downloads_and_the_seed_does_not(archive, clock):
+    """A first refresh must not become a ~70 GB seed inside the refresh lock: it asks for a couple of snapshots, the seed for all."""
+    from pipeline.refresh.engine import ONRC_REFRESH_LIMIT, refresh_steps, seed_steps
+    asked = []
+
+    class Spy(FakeImpl):
+        def onrc(self, limit=None):
+            asked.append(limit)
+            return StepResult()
+
+    spy = Spy(archive)
+    next(s for s in refresh_steps(archive, spy) if s.name == "onrc").run()
+    next(s for s in seed_steps(archive, spy, backfill=False) if s.name == "onrc").run()
+    assert asked == [ONRC_REFRESH_LIMIT, None] and 0 < ONRC_REFRESH_LIMIT <= 2
+
+
+def test_the_real_onrc_step_hands_the_limit_to_the_fetch(archive):
+    from pipeline.refresh.steps import Impl
+    seen = []
+    impl = Impl(archive, print, None, None, None, None, lambda: None, fetch_onrc=lambda a, limit=None: seen.append(limit) or OnrcFetchSummary())
+    impl.onrc(limit=2)
+    impl.onrc()
+    assert seen == [2, None]

@@ -11,7 +11,7 @@ export interface RecordedRecordsCase {
   operation: "EntityRecords";
   /** Unique within its operation. */
   name: string;
-  archive: RecordedEntityArchive;
+  archive: Exclude<RecordedEntityArchive, "onrc">; // the ONRC archive is recorded for the EntityOverview only
   kind: FixtureKind;
   description: string;
   variables: Record<string, unknown>;

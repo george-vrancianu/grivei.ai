@@ -52,7 +52,7 @@ class TableSummary:
 
 
 def latest_unit(archive: Archive, stream: str, kind: str) -> Unit:
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == ("geo", stream, kind)]
+    units = [u for u in archive.units("geo") if (u.source, u.stream, u.kind) == ("geo", stream, kind)]
     if not units:
         raise TableError(f"no archived geo/{stream}/{kind} snapshot: run `pipeline geo-fetch` first")
     return max(units, key=lambda u: (u.fetched_at, str(u.path)))

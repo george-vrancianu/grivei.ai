@@ -10,6 +10,8 @@ import * as w from "./world.ts";
 type Role = "AUTHORITY" | "SUPPLIER";
 type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
+/** The EntityOverview's entity: the header, the SEAP role and the ONRC section (`onrc`, null when ONRC lists no registration). */
+const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null });
 
 /** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
 const overviewSignal = (s: SignalFieldsFragment) => ({ ...s, records: [{ code: "DA12345678", provenance: { url: "/source/seap/DA12345678" } }] });
@@ -32,7 +34,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "supplier-typical", kind: "typical",
     description: "a supplier with Signals, a consortium, a framework line, aliases (one differing from ANAF) and a natural-person-free counterparty list",
     variables: { key: "30000001", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.hachiHeader, {
+    data: { entity: withOverview(w.hachiHeader, {
       role: "SUPPLIER" as Role,
       total: total({ awarded: ron(3_400_000), records: 49, suspectLeftOut: 1, noValue: 2 }),
       counterparties: { count: 3, topShare: 0.82, rows: [
@@ -54,7 +56,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "authority-both-roles", kind: "typical",
     description: "an entity that buys and sells (roles has both), identity curated, with a framework and a framework-overrun Signal",
     variables: { key: "4000002", role: "AUTHORITY", filter: { from: "2021-01-01" } },
-    data: { entity: withSeap(w.cnairHeader, {
+    data: { entity: withOverview(w.cnairHeader, {
       role: "AUTHORITY" as Role,
       total: total({ awarded: ron(9_000_000_000), records: 1_200, noValue: 14, frameworkCeilings: ron(100_000_000) }),
       counterparties: { count: 220, topShare: 0.12, rows: [
@@ -73,7 +75,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "deregistered-supplier-extreme-concentration", kind: "extreme",
     description: "ANAF status RADIERE, a single counterparty with the whole total (topShare 1)",
     variables: { key: "30000003", role: "SUPPLIER" },
-    data: { entity: withSeap(w.drumariiHeader, {
+    data: { entity: withOverview(w.drumariiHeader, {
       role: "SUPPLIER" as Role,
       total: total({ awarded: ron(112_400_000), records: 13 }),
       counterparties: { count: 1, topShare: 1, rows: [{ entity: w.drumuriNationale, naturalPerson: false, total: total({ awarded: ron(112_400_000), records: 13 }) }] },
@@ -89,7 +91,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "supplier-many-aliases", kind: "extreme",
     description: "a supplier SEAP spells eight ways (five differ from ANAF's name), no Signals",
     variables: { key: "30000002", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.constructiiHeader, {
+    data: { entity: withOverview(w.constructiiHeader, {
       ...emptyOverview("SUPPLIER"),
       total: total({ awarded: ron(14_200_000), records: 98 }),
       counterparties: { count: 2, topShare: 0.9, rows: [
@@ -108,7 +110,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "authority-many-counterparties", kind: "extreme",
     description: "an authority with 220 counterparties (the first rows sent, a natural person among them), a consortium, a framework line and suspect and ceiling Records left out of the largest list",
     variables: { key: "4000002", role: "AUTHORITY", filter: {} },
-    data: { entity: withSeap(w.cnairHeader, {
+    data: { entity: withOverview(w.cnairHeader, {
       role: "AUTHORITY" as Role,
       total: total({ awarded: ron(9_000_000_000), records: 1_200, suspectLeftOut: 2, noValue: 14, frameworkCeilings: ron(100_000_000) }),
       counterparties: { count: 220, topShare: 0.12, rows: [

@@ -45,6 +45,7 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
@@ -2479,15 +2480,17 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
     const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
-    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c" } as const;
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d" } as const;
 
     beforeAll(async () => {
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
       cpSync(rolesArchive, join(scratch, "archive-overview"), { recursive: true });
       cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
+      cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true });
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
+      rebuild(DBS.onrc, "archive-onrc");
       rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-entity-recorded")]);
     });
 
@@ -2513,6 +2516,58 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
       expectDistinctVariables(RECORDED_ENTITY_CASES);
+    });
+
+    it("lists ONRC as a harvested Source with its data-through date once a snapshot is held (#175)", async () => {
+      const r = await ask(DBS.onrc, mainScreen.sha256);
+      expect(r.body.errors).toBeUndefined();
+      const sources = (r.body.data as MainScreenQuery).sources;
+      expect(sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
+      expect(sources.map((x) => x.id)).toEqual(["SEAP", "ONRC", "ANI", "MFINANTE", "JUST"]); // held first, then the planned ones: ONRC once
+    });
+
+    it("returns the ONRC section for a SEAP supplier, an authority and an organisation that exists only in ONRC (#175)", () => {
+      const onrc = (name: string) => entityOf(name)!.onrc!;
+      const status = (code: number, name: string, firstSeen: string, sinceAtLeast: boolean) => ({ code, name, firstSeen, sinceAtLeast });
+      // a supplier: the status already in the earliest snapshot is "since at least"; the insolvency is first seen in the snapshot that shows it
+      expect(onrc("onrc-supplier")).toMatchObject({
+        registrationNumber: "J40/1001/2015", registrationDate: "2015-03-10", legalForm: "SRL", snapshot: "2026-05-06",
+        statuses: [status(1048, "funcțiune", "2025-03-18", true), status(1107, "insolvență", "2026-04-03", false)],
+        caen: [{ code: "4120", version: 2 }, { code: "4211", version: 2 }],
+        seat: { county: "Cluj", locality: "Cluj-Napoca" },
+        provenance: { source: "ONRC", kind: "BULK", url: "https://data.gov.ro/dataset/firme-06-05-2026", via: "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026" },
+      });
+      expect(entityOf("onrc-supplier")).toMatchObject({ displayName: "ALFA ONRC SRL", provenance: [{ source: "ANAF" }], seap: { roles: ["SUPPLIER"] } });
+      // an authority
+      expect(onrc("onrc-authority")).toMatchObject({ registrationNumber: "J03/1006/1995", registrationDate: "1995-02-02", caen: [{ code: "8411", version: 2 }] });
+      expect(entityOf("onrc-authority")!.seap.role).toMatchObject({ role: "AUTHORITY", total: { records: 5 } });
+      // an entity that is both: the same section on each role page
+      expect(entityOf("onrc-both-roles-authority-page")!.seap.roles).toEqual(["AUTHORITY", "SUPPLIER"]);
+      expect(onrc("onrc-both-roles-supplier-page")).toEqual(onrc("onrc-both-roles-authority-page"));
+      expect(onrc("onrc-both-roles-supplier-page").registrationNumber).toBe("J40/1005/2008");
+      // a rename is two dated aliases, newest first; ONRC's names never change the display name (ANAF's)
+      expect(entityOf("onrc-renamed-supplier")).toMatchObject({ displayName: "BETA ONRC SRL", provenance: [{ source: "ANAF" }] });
+      expect(onrc("onrc-renamed-supplier").aliases).toEqual([
+        { name: "BETA NOU SRL", firstSeen: "2026-04-03", lastSeen: "2026-05-06", sinceAtLeast: false, current: true },
+        { name: "BETA VECHI SRL", firstSeen: "2025-03-18", lastSeen: "2026-03-02", sinceAtLeast: true, current: false },
+      ]);
+      // a strike-off: first seen in the newest snapshot, the earlier status is no longer current
+      expect(onrc("onrc-struck-off-supplier").statuses).toEqual([status(1084, "radiată", "2026-05-06", false)]);
+      // a CUI ANAF does not know but ONRC lists: provenance ONRC (the badge), ONRC's name as the display name, placed by ONRC's seat county; its SEAP Record attached
+      expect(entityOf("onrc-cui-unknown-to-anaf")).toMatchObject({
+        key: "3100055", identity: "CUI", cui: "3100055", displayName: "DELTA ONRC SRL", anafStatus: null,
+        provenance: [{ source: "ONRC", via: "2026-05-06", kind: "BULK" }], placement: { county: { code: "RO-BV" }, uat: null, placedBy: "ONRC" },
+        seap: { roles: ["SUPPLIER"], role: { total: { records: 1 } } },
+      });
+      expect(onrc("onrc-cui-unknown-to-anaf").statuses).toEqual([status(1048, "funcțiune", "2026-03-02", false)]); // registered after the earliest snapshot: first seen where it appears
+      // an organisation that exists only in ONRC: an entity page with its ONRC section, no SEAP role, placed by its seat county, no person anywhere
+      expect(entityOf("onrc-only-organisation")).toMatchObject({
+        key: "3100071", displayName: "OMEGA ONLY SRL", provenance: [{ source: "ONRC" }], placement: { county: { code: "RO-CJ" }, uat: null, placedBy: "ONRC" },
+        seap: { roles: [], role: null }, onrc: { registrationNumber: "J12/1007/2020", statuses: [status(1048, "funcțiune", "2025-03-18", true)] },
+      });
+      expect(Object.keys(onrc("onrc-only-organisation")).sort()).toEqual(["aliases", "caen", "legalForm", "provenance", "registrationDate", "registrationNumber", "seat", "snapshot", "statuses"]);
+      // no county in the registration: no placement, the Unplaced tile
+      expect(entityOf("onrc-only-unplaced")).toMatchObject({ key: "3100080", placement: null, onrc: { seat: { county: null } } });
     });
 
     it("gives the cases the numbers they are named for", () => {

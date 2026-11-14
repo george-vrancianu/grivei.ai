@@ -28,6 +28,7 @@ import type { CoveragePageLayoutCopy } from "../templates/CoveragePageLayout/ind
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
+import type { OnrcSectionCopy } from "../organisms/OnrcSection/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
@@ -213,6 +214,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Foreign VAT ID",
       nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
       identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+      onrcOnly: { label: "CUI in ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
     },
     anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
     placement: {
@@ -241,6 +243,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Cod TVA străin",
       nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
       identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
+      onrcOnly: { label: "CUI doar în ONRC", explanation: "ANAF nu cunoaște acest CUI. ONRC, registrul comerțului, îl listează, deci această pagină arată numele și datele din ONRC." },
     },
     anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
     placement: {
@@ -588,6 +591,68 @@ const searchBar: Record<Locale, SearchBarCopy> = {
   ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
 };
 
+/** ONRC's N_VERSIUNE_CAEN: version 0 is the 1998 classification, 1 is 2003, 2 is 2008, 3 is 2025. */
+const CAEN_YEARS = [1998, 2003, 2008, 2025];
+
+const onrcSection: Record<Locale, OnrcSectionCopy> = {
+  en: {
+    heading: "ONRC registration",
+    registrationNumber: "Registration number",
+    registrationDate: "Registered",
+    registrationDateUnknown: "not in the snapshot we read",
+    legalForm: "Legal form",
+    seat: "Registered seat",
+    seatUnknown: "no seat published",
+    statuses: {
+      heading: "Status",
+      none: "ONRC lists no status.",
+      unnamed: (code) => `status code ${code}`,
+      firstSeen: (snapshot) => `first seen in the snapshot of ${snapshot}`,
+      sinceAtLeast: (snapshot) => `since at least the snapshot of ${snapshot}`,
+      caveat: "ONRC publishes statuses without dates. A date here is the first snapshot we hold that shows the status, found by comparing snapshots; the change itself may be older.",
+    },
+    caen: { heading: "Authorised CAEN codes", none: "ONRC lists no authorised CAEN code.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
+    aliases: {
+      heading: "ONRC names",
+      none: "ONRC lists no name.",
+      current: "legal name today",
+      range: (first, last) => (first === last ? `seen in the snapshot of ${first}` : `seen in the snapshots of ${first} to ${last}`),
+      rangeSinceAtLeast: (first, last) => (first === last ? `seen in the snapshot of ${first}, at least` : `seen since at least ${first}, last on ${last}`),
+      note: "These are ONRC's spellings, kept as aliases. They never change the name at the top of the page.",
+    },
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+    onrcOnly: "This organisation is in ONRC only: no purchase in SEAP names it. No person of it is shown.",
+  },
+  ro: {
+    heading: "Înmatriculare ONRC",
+    registrationNumber: "Număr de înmatriculare",
+    registrationDate: "Înmatriculată",
+    registrationDateUnknown: "nu apare în instantaneul citit",
+    legalForm: "Formă juridică",
+    seat: "Sediu social",
+    seatUnknown: "niciun sediu publicat",
+    statuses: {
+      heading: "Stare",
+      none: "ONRC nu listează nicio stare.",
+      unnamed: (code) => `cod de stare ${code}`,
+      firstSeen: (snapshot) => `văzută prima oară în instantaneul din ${snapshot}`,
+      sinceAtLeast: (snapshot) => `cel puțin din instantaneul din ${snapshot}`,
+      caveat: "ONRC publică stările fără date. O dată de aici este primul instantaneu pe care îl deținem și care arată starea, aflat prin compararea instantaneelor; schimbarea în sine poate fi mai veche.",
+    },
+    caen: { heading: "Coduri CAEN autorizate", none: "ONRC nu listează niciun cod CAEN autorizat.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
+    aliases: {
+      heading: "Denumiri ONRC",
+      none: "ONRC nu listează nicio denumire.",
+      current: "denumirea legală azi",
+      range: (first, last) => (first === last ? `văzută în instantaneul din ${first}` : `văzută în instantaneele din ${first} până în ${last}`),
+      rangeSinceAtLeast: (first, last) => (first === last ? `văzută în instantaneul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
+      note: "Acestea sunt grafiile ONRC, păstrate ca alias-uri. Nu schimbă niciodată numele din capul paginii.",
+    },
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    onrcOnly: "Această organizație există doar în ONRC: nicio achiziție din SEAP nu o numește. Nicio persoană a ei nu este afișată.",
+  },
+};
+
 const entityOverview = (locale: Locale): EntityOverviewCopy => {
   const party: PartyNameCopy = { naturalPerson: "Persoană fizică", entityLink: entityLink[locale] };
   return locale === "ro"
@@ -740,6 +805,7 @@ export const sampleCopy = {
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,
+  onrcSection: (locale: Locale): OnrcSectionCopy => onrcSection[locale],
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,

@@ -79,6 +79,8 @@ export type OverviewCounterparties = EntityOverviewData["counterparties"];
 export type OverviewConsortium = EntityOverviewData["consortia"][number];
 export type OverviewProcedure = EntityOverviewData["procedures"][number];
 export type OverviewFrameworks = EntityOverviewData["frameworks"];
+/** The ONRC registration of an entity (`EntityOverview`'s `onrc`): facts from the newest snapshot, history derived by comparing snapshots. */
+export type OnrcRegistrationData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["onrc"]>;
 /** Every spelling of an Entity's name in SEAP ("Appears in SEAP as"). */
 export type EntityAliases = EntityHeaderData["aliases"];
 

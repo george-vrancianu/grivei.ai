@@ -1,5 +1,5 @@
 import type {
-  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -67,6 +67,8 @@ export interface Copy {
   entityPage: {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
+    /** The ONRC section of the Overview. */
+    onrc: OnrcSectionCopy;
     notFound: { title: string; body: string };
     /**
      * The Relationships tab: the graph, timeline and side panel's strings (the entity-link, Record row and page-link copy come from the catalogue's own `entityLink`, `results` and `fullResults`),

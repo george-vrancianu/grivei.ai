@@ -4,6 +4,9 @@ import { methodologyEn } from "./methodologyEn.ts";
 
 const plural = (n: number, one: string, other: string) => (n === 1 ? one : other);
 
+/** ONRC's N_VERSIUNE_CAEN: version 0 is the 1998 classification, 1 is 2003, 2 is 2008, 3 is 2025. */
+const CAEN_YEARS = [1998, 2003, 2008, 2025];
+
 const entityLink: Copy["entityLink"] = {
   nameOnly: { label: "name only", explanation: "Identified by its published name alone (no CUI). Figures may mix up namesakes." },
   identityCurated: { label: "curated", explanation: "A person reviewed and fixed this entity's identity." },
@@ -298,6 +301,7 @@ export const en: Copy = {
         foreignVatId: "Foreign VAT ID",
         nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
         identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+        onrcOnly: { label: "CUI in ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
       },
       anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
       placement: {
@@ -319,6 +323,34 @@ export const en: Copy = {
         range: (first, last) => `${first} to ${last}`,
         more: (_n, f) => `and ${f} more`,
       },
+    },
+    onrc: {
+      heading: "ONRC registration",
+      registrationNumber: "Registration number",
+      registrationDate: "Registered",
+      registrationDateUnknown: "not in the snapshot we read",
+      legalForm: "Legal form",
+      seat: "Registered seat",
+      seatUnknown: "no seat published",
+      statuses: {
+        heading: "Status",
+        none: "ONRC lists no status.",
+        unnamed: (code) => `status code ${code}`,
+        firstSeen: (snapshot) => `first seen in the snapshot of ${snapshot}`,
+        sinceAtLeast: (snapshot) => `since at least the snapshot of ${snapshot}`,
+        caveat: "ONRC publishes statuses without dates. A date here is the first snapshot we hold that shows the status, found by comparing snapshots; the change itself may be older.",
+      },
+      caen: { heading: "Authorised CAEN codes", none: "ONRC lists no authorised CAEN code.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
+      aliases: {
+        heading: "ONRC names",
+        none: "ONRC lists no name.",
+        current: "legal name today",
+        range: (first, last) => (first === last ? `seen in the snapshot of ${first}` : `seen in the snapshots of ${first} to ${last}`),
+        rangeSinceAtLeast: (first, last) => (first === last ? `seen in the snapshot of ${first}, at least` : `seen since at least ${first}, last on ${last}`),
+        note: "These are ONRC's spellings, kept as aliases. They never change the name at the top of the page.",
+      },
+      source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+      onrcOnly: "This organisation is in ONRC only: no purchase in SEAP names it. No person of it is shown.",
     },
     notFound: { title: "Entity not found", body: "No authority or supplier is published under this key." },
     relationships: {

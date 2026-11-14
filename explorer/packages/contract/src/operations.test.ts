@@ -51,6 +51,8 @@ describe("operations", () => {
       "Party.publishedName", "Cpv.code", "Cpv.description",
       "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
       "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
+      // ONRC's registration as published (#175): identifiers, ONRC's own nomenclature words and the seat; none is prose of ours
+      "OnrcRegistration.registrationNumber", "OnrcRegistration.legalForm", "OnrcStatus.name", "OnrcCaen.code", "OnrcSeat.county", "OnrcSeat.locality", "OnrcSeat.address", "OnrcSeat.postalCode", "OnrcAlias.name",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
     ]);
     const found: string[] = [];

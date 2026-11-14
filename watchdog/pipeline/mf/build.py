@@ -115,7 +115,7 @@ def snapshot_of(unit: Unit) -> date | None:
 
 def latest_units(archive: Archive) -> list[Unit]:
     """The MF units, newest snapshot first, then newest fetch first."""
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND) and snapshot_of(u) is not None]  # a stray directory is no snapshot
+    units = [u for u in archive.units(SOURCE) if (u.source, u.stream, u.kind) == (SOURCE, STREAM, KIND) and snapshot_of(u) is not None]  # a stray directory is no snapshot
     return sorted(units, key=lambda u: (u.unit, u.fetched_at, str(u.path)), reverse=True)
 
 
