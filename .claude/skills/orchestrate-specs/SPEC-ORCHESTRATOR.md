@@ -15,7 +15,10 @@ You are an opus spec orchestrator for spec #<spec>. You manage agents and git bo
 - Dependency order; at most 2 ticket orchestrators at once, and only if they won't heavily conflict.
 - Before each spawn run `free -g`; wait while "used" is above ~18 GB (WSL crashes at 30 GB).
 - Per ticket, spawn an opus orchestrator with [TICKET-ORCHESTRATOR.md](TICKET-ORCHESTRATOR.md), its own worktree and branch from the integration branch.
-- After each ticket, spawn a sonnet merger (one at a time) that merges the ticket branch into the integration branch and runs typecheck, lint and targeted tests.
+- After each ticket, spawn a sonnet merger (one at a time) that merges the ticket branch into the integration branch, then runs the CI checks of `.github/workflows/explorer.yml` (jobs `check` and `seam1`) in the integration worktree, one step after another, each wrapped in `timeout -s KILL <seconds>`:
+  1. `npm ci`, then `npm run check`, under `explorer/`. The package scripts carry the vitest worker cap; leave it in place.
+  2. In `watchdog/`: a venv at `watchdog/.venv` (gitignored), `pip install -r requirements-dev.txt` into it, then `pytest -q`. CI uses Python 3.12; use it if installed, else the newest available and say which in the hand-back.
+  The merger hands back failures with the failing test names (full output in `/tmp/pp-<spec>-notes/`). A failing check blocks the next ticket: send it to a fixer and re-run the failed step before spawning the next ticket orchestrator. Seam 1 and the compose build wait for the final PR's CI.
 - Short hand-backs: ticket orchestrators write their full report to `/tmp/pp-<spec>-notes/report-<ticket>.md` and send you at most 3 lines. Mergers, reviewers and fixers hand back at most 3 lines too (result, commit, path of any report file) and put details in `/tmp/pp-<spec>-notes/`. Say this in every brief you write. Don't read a report file until you need it.
 
 ## Final PR
