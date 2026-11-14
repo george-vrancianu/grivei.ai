@@ -449,6 +449,20 @@ export const en: Copy = {
       fetched: (fetched, license) => `Fetched ${fetched} from data.gov.ro${license ? `, licence ${license}` : ""}`,
       link: "AMEPIP's indicator tables on data.gov.ro",
     },
+    financials: {
+      heading: "Financial statements",
+      intro: "Annual statements the company filed, as the Ministry of Finance (MF) publishes them on data.gov.ro, in RON. A blank cell in MF's file reads \"not reported\", never zero.",
+      caption: "Annual financial statements by fiscal year, with the awards of the same year",
+      columns: { year: "Fiscal year", turnover: "Turnover", profitOrLoss: "Profit or loss", debts: "Debts", equity: "Equity", employees: "Average employees", awarded: "Awarded that year", share: "Awards as a share of turnover", source: "Source" },
+      row: {
+        notReported: "not reported",
+        revision: { firstRelease: "first release", revised: "revised", firstReleaseMayBeRevised: "first release, may be revised" },
+        source: (file) => `MF, ${file}`,
+        published: (published) => `Published ${published}`,
+      },
+      mayBeRevisedNote: "The newest year is a first release: MF re-publishes each year's statements a year later, with corrections, so read it with care.",
+      contextNote: "Awards as a share of turnover is context, not a Signal, and is never added to awarded value. A contract's whole value counts in the year it was awarded, so a share can exceed 100% and is no share of revenue.",
+    },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",

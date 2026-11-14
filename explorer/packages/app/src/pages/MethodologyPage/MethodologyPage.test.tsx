@@ -73,7 +73,7 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
 
   it("covers every section the ticket names", () => {
     expect(Object.keys(METHODOLOGY_ANCHORS).sort()).toEqual(
-      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
+      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "financialStatements", "frameworkCeilings", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
     );
   });
 
@@ -119,6 +119,17 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     open(PATH[locale], "typical-after-backfill", "amepip-not-held");
     await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
     expect(region(t.sections.publicEnterprises.heading).queryByText(/2026/)).toBeNull();
+  });
+
+  it("states the newest fiscal year of MF's financial statements in its section, and only when statements are held (#179)", async () => {
+    open(PATH[locale]);
+    const section = region(t.sections.financialStatements.heading);
+    expect(await section.findByText(t.referenceFiscalYearThrough(2025))).toBeVisible();
+    expect(section.getByText(t.sections.financialStatements.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.financialStatements.heading).queryByText(t.referenceFiscalYearThrough(2025))).toBeNull();
   });
 
   it("keeps every section's prose when the figures are loading", async () => {
