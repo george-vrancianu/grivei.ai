@@ -1,4 +1,4 @@
-import type { RecordFilter } from "./generated/operations.ts";
+import type { OnrcFilter, RecordFilter } from "./generated/operations.ts";
 
 export type UrlEncoding =
   | "text"       // free text, as typed
@@ -8,7 +8,8 @@ export type UrlEncoding =
   | "key"        // an entity key (CUI, vat-<id>, name-<slug>)
   | "prefix"     // a CPV prefix
   | "map-area"   // RO-BV, NATIONAL, UNPLACED, UNKNOWN_SUPPLIER_COUNTY, as the API names them
-  | "siruta";    // a UAT's SIRUTA code
+  | "siruta"     // a UAT's SIRUTA code
+  | "int";       // a whole number (an ONRC status code)
 
 export interface UrlKeySpec {
   /** The query-string key. */
@@ -44,6 +45,22 @@ export const RECORD_FILTER_URL = {
   cpv: { key: "cpv", encoding: "prefix", repeatable: false },
   signal: { key: "signal", encoding: "enum", repeatable: false },
 } as const satisfies Record<keyof RecordFilter, UrlKeySpec>;
+
+/**
+ * ONRC's URL search state, one entry per `OnrcFilter` field (#176): the chips of the ONRC search, kept in the URL so a filtered list can be cited.
+ * Same conventions as `RECORD_FILTER_URL` (keys equal the field names; unset fields are omitted; `seapCounterparty=false` is a distinct, citable value).
+ * `caen` is a code or a prefix of one (digits); `county` is `RO-CJ` or `UNPLACED`; `status` is one ONRC status code per repetition. The tab and page keys of
+ * `URL_ONLY_KEYS` apply to ONRC's results too.
+ */
+export const ONRC_FILTER_URL = {
+  q: { key: "q", encoding: "text", repeatable: false },
+  status: { key: "status", encoding: "int", repeatable: true },
+  caen: { key: "caen", encoding: "prefix", repeatable: false },
+  county: { key: "county", encoding: "map-area", repeatable: false },
+  registeredFrom: { key: "registeredFrom", encoding: "date", repeatable: false },
+  registeredTo: { key: "registeredTo", encoding: "date", repeatable: false },
+  seapCounterparty: { key: "seapCounterparty", encoding: "boolean", repeatable: false },
+} as const satisfies Record<keyof OnrcFilter, UrlKeySpec>;
 
 /**
  * URL state that is not part of `RecordFilter`: which result tab / entity tab is open,

@@ -10,6 +10,10 @@ export type CountySide =
   | 'AUTHORITY'
   | 'SUPPLIER';
 
+export type CoverageDenominator =
+  | 'NONE'
+  | 'PUBLIC_ENTITIES';
+
 export type CoverageStatus =
   | 'HARVESTED'
   | 'HARVESTED_WITH_KNOWN_GAPS'
@@ -62,6 +66,27 @@ export type MatchableField =
   | 'PUBLIC_CODE'
   | 'SUPPLIER'
   | 'TITLE';
+
+/** ONRC's search state, 1:1 with the URL like RecordFilter (the codec is `ONRC_FILTER_URL`). Every chip is a field; an unset field narrows nothing. */
+export type OnrcFilter = {
+  caen?: string | null | undefined;
+  county?: string | null | undefined;
+  q?: string | null | undefined;
+  registeredFrom?: string | null | undefined;
+  registeredTo?: string | null | undefined;
+  seapCounterparty?: boolean | null | undefined;
+  status?: Array<number> | null | undefined;
+};
+
+export type OnrcMatchableField =
+  | 'ALIAS'
+  | 'CAEN'
+  | 'CUI'
+  | 'NAME'
+  | 'REGISTRATION_NUMBER';
+
+export type OnrcResultTab =
+  | 'ORGANISATIONS';
 
 /** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint). */
 export type ProvenanceKind =
@@ -366,6 +391,31 @@ export type MethodologyReferenceSourcesQueryVariables = Exact<{ [key: string]: n
 
 
 export type MethodologyReferenceSourcesQuery = { referenceSources: Array<{ id: string, name: string, dataThrough: string | null, fiscalYear: number | null, url: string | null }> };
+
+export type OnrcResultFieldsFragment = { registrationNumber: string, name: string, cui: string | null, legalForm: string | null, registrationDate: string | null, seapCounterparty: boolean, seat: { county: string | null, locality: string | null }, statuses: Array<{ code: number, name: string | null }>, caen: Array<{ code: string, version: number | null }>, entity: { key: string, displayName: string, identity: EntityIdentity } | null, matched: Array<{ field: OnrcMatchableField, text: string, highlights: Array<Array<number>> }> };
+
+export type OnrcSearchQueryVariables = Exact<{
+  filter: OnrcFilter;
+  limit: number;
+  offset: number;
+}>;
+
+
+export type OnrcSearchQuery = { onrc: { search: { count: number, defaultTab: OnrcResultTab, filter: { qFolded: string | null }, organisations: { count: number, rows: Array<{ registrationNumber: string, name: string, cui: string | null, legalForm: string | null, registrationDate: string | null, seapCounterparty: boolean, seat: { county: string | null, locality: string | null }, statuses: Array<{ code: number, name: string | null }>, caen: Array<{ code: string, version: number | null }>, entity: { key: string, displayName: string, identity: EntityIdentity } | null, matched: Array<{ field: OnrcMatchableField, text: string, highlights: Array<Array<number>> }> }> }, map: { unplacedRegistrations: number, counties: Array<{ area: string, name: string, registrations: number }> } } } };
+
+export type OnrcRecordQueryVariables = Exact<{
+  registrationNumber: string | number;
+}>;
+
+
+export type OnrcRecordQuery = { onrc: { record: { name: string, cui: string | null, registrationNumber: string, registrationDate: string | null, legalForm: string | null, snapshot: string, entity: { key: string, displayName: string, identity: EntityIdentity } | null, statuses: Array<{ code: number, name: string | null, firstSeen: string, sinceAtLeast: boolean }>, caen: Array<{ code: string, version: number | null }>, seat: { county: string | null, locality: string | null, address: string | null, postalCode: string | null }, aliases: Array<{ name: string, firstSeen: string, lastSeen: string, sinceAtLeast: boolean, current: boolean }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null } };
+
+export type OnrcCoverageQueryVariables = Exact<{
+  window?: DateRange | null | undefined;
+}>;
+
+
+export type OnrcCoverageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { denominator: CoverageDenominator, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, rule: GapRule | null, note: string | null, records: number, crawlOnly: number, dataThrough: string | null }> } };
 
 export type RecordPageQueryVariables = Exact<{
   code: string | number;
