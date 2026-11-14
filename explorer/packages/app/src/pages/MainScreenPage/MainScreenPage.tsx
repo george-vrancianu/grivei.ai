@@ -35,6 +35,8 @@ const SEARCHED_SOURCE = "SEAP";
  */
 type MainScreenSources = MainScreenQuery["sources"];
 
+const sameLists = (latest: MainScreenQuery["seap"]["partyOptions"], kept: readonly string[]) => latest.length === kept.length && latest.every((o, i) => o.party === kept[i]);
+
 export function MainScreenPage({ locale }: { locale: Locale }) {
   const t = useCopy();
   const { filter, tab, lens, search: currentSearch, update, setFilter } = useUrlState();
@@ -55,6 +57,9 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   // The eyebrow and the data-through note keep the last Sources they received while a new query loads, so neither drops back to the id or leaves the map panel's foot.
   const [lastSources, setLastSources] = useState<MainScreenSources>([]);
   if (state.status === "ready" && state.data.sources !== lastSources) setLastSources(state.data.sources);
+  // The Party chip offers the lists the API sent with the latest answer (they do not depend on the filter), kept while the next one loads so the chip does not blink out.
+  const [partyOptions, setPartyOptions] = useState<string[]>([]);
+  if (state.status === "ready" && !sameLists(state.data.seap.partyOptions, partyOptions)) setPartyOptions(state.data.seap.partyOptions.map((o) => o.party));
   const eyebrowId = useId();
 
   return (
@@ -73,6 +78,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           filter={filter}
           onChange={(next) => setFilter(chipFieldsOf(next))}
           procedureOptions={procedureOptions}
+          partyOptions={partyOptions}
           lastYear={new Date().getFullYear()}
           locale={locale}
           copy={t.filterChips}
@@ -134,9 +140,10 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
         search && state.status === "ready" && (
           <MainTotal
             total={search.total}
-            copy={{ heading: t.main.total, total: t.total }}
+            copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
             locale={locale}
             methodologyHref={methodologyHref(locale, "awardedValue")}
+            partyHref={methodologyHref(locale, "partyAndLeadership")}
             suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
           />
         )

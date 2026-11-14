@@ -104,4 +104,3 @@ def test_the_spital_that_is_named_after_a_commune_is_no_town_hall(built):
     url, _ = built
     keys = {r[0] for r in q(url, "SELECT e.display_name FROM aep.authority a JOIN core.entity e ON e.key = a.entity_key")}
     assert "COMUNA UCEA SPITAL ASIMILAT" not in keys and "MUNICIPIUL BRASOV" in keys and "CONSILIUL JUDETEAN CLUJ" in keys and "PRIMARIA SECTORULUI 3" in keys
-

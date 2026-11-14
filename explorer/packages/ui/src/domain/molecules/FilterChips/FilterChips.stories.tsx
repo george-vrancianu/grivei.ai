@@ -11,13 +11,15 @@ type Story = StoryObj;
 
 // Procedure names are source data: Romanian in both languages.
 const PROCEDURES = ["Achiziție directă", "Licitație deschisă", "Negociere fără publicare prealabilă"];
+// Party lists are source data as registered: Romanian in both languages.
+const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "PARTIDUL NAȚIONAL LIBERAL", "ALIANȚA USR PLUS"];
 
 /** The chips are controlled; in the workbench a little state stands in for the URL. */
 function Demo({ initial, locale }: { initial: RecordFilter; locale: "en" | "ro" }) {
   const [filter, setFilter] = useState<RecordFilter>(initial);
   return (
     <>
-      <FilterChips filter={filter} onChange={setFilter} procedureOptions={PROCEDURES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
+      <FilterChips filter={filter} onChange={setFilter} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
       <Typography variant="caption" component="pre" sx={{ mt: 2 }}>
         {JSON.stringify(filter)}
       </Typography>
@@ -34,6 +36,8 @@ export const SeveralActive: Story = {
     procedure: ["Achiziție directă"], badges: ["SUSPECT_VALUE", "NO_VALUE"], q: "deszăpezire", county: "RO-BV",
   }),
 };
+/** The Party filter on one list, with its active chip (#181). */
+export const PartyChosen: Story = { render: demo({ party: "ALIANȚA USR PLUS", from: "2024-01-01" }) };
 /** Every badge chip on at once. */
 export const EveryBadge: Story = {
   render: demo({

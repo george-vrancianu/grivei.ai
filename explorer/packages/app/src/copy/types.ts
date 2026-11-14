@@ -1,5 +1,5 @@
 import type {
-  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
@@ -61,6 +61,8 @@ export interface Copy {
   party: PartyNameCopy;
   dataThrough: DataThroughDateCopy;
   total: TotalFigureCopy;
+  /** What a Party-filtered Total covers (#181): shown under the main screen's Total. */
+  partyCoverage: PartyCoverageCopy;
   /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */
   recordPage: Omit<RecordDetailCopy, "recordRow"> & { notFound: { title: string; body: (code: string) => string } };
   /** The person page (Restricted, a Private view only): its display and the answer a host that hides Restricted content gives. */

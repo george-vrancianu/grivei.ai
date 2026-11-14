@@ -374,3 +374,25 @@ describe("cache warming", () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe("Party coverage (#181)", () => {
+  it("scans once for every party picked under the same other filters, and tells each its own slices", async () => {
+    const scans: (string | null | undefined)[] = [];
+    const groups = [
+      { party: "PSD", basis: "DIRECT", awarded: "100", records: 1 },
+      { party: "PNL", basis: "DIRECT", awarded: "200", records: 2 },
+      { party: "PNL", basis: "SUBORDINATE", awarded: "50", records: 1 },
+      { party: null, basis: "DIRECT", awarded: "7", records: 1 },
+      { party: null, basis: null, awarded: "9", records: 3 },
+    ];
+    const inner = { searchPartyGroups: async (f: { party?: string | null }) => (scans.push(f.party), groups) } as unknown as Store;
+    const cache = cachedStore(inner, fakePool({ generation: "g1" }), { autoWarm: false });
+    const psd = await cache.searchPartyCoverage({ party: "PSD", q: "pod" });
+    const pnl = await cache.searchPartyCoverage({ party: "PNL", q: "pod" });
+    expect(scans).toHaveLength(1);
+    expect(psd).toMatchObject({ party: "PSD", direct: { records: 1, awarded: "100" }, subordinate: { records: 0 }, otherParties: { records: 3, awarded: "250" }, independent: { records: 1, awarded: "7" }, unattributed: { records: 3, awarded: "9" } });
+    expect(pnl).toMatchObject({ party: "PNL", direct: { records: 2, awarded: "200" }, subordinate: { records: 1, awarded: "50" }, otherParties: { records: 1, awarded: "100" } });
+    await cache.searchPartyCoverage({ party: "PSD", q: "other" }); // another filter: another scan
+    expect(scans).toHaveLength(2);
+  });
+});

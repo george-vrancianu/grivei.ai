@@ -23,7 +23,7 @@ const DEC_31 = /^(\d{4})-12-31$/;
 export function rollupPlan(filter: SearchFilter): RollupPlan | null {
   if (foldTokens(filter.q ?? "").length) return null;
   if (filter.badges?.length || filter.procedure?.length) return null;
-  if (filter.cpv || filter.authority || filter.supplier || filter.county || filter.uat || filter.signal) return null;
+  if (filter.cpv || filter.authority || filter.supplier || filter.county || filter.uat || filter.signal || filter.party) return null;
   let yearFrom: number | null = null;
   let yearTo: number | null = null;
   if (filter.from) {

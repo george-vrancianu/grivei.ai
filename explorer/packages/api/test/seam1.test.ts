@@ -33,6 +33,7 @@ import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecord
 import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_SIGNAL_CASES, type RecordedSignalCase } from "./recordedSignalCases.ts";
+import { RECORDED_PARTY_CASES } from "./recordedPartyCases.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 import { RECORDED_COVERAGE_CASES } from "./recordedCoverageCases.ts";
 
@@ -263,6 +264,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       noValue: 1,
       frameworkCeilings: "0",
       estimated: false,
+      partyCoverage: null, // no Party filter, no coverage (#181)
     });
     const { count, rows } = data.seap.search.records;
     expect(count).toBe(4);
@@ -838,7 +840,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // counted: DA 1,350,599 + 2,000,000 + 5,000,000 + 50,000,000; contracts 5,000,000 + 2,500,000 + 700,000 + 300,000 + 500,000 + 1,000 + 2,000;
     // mega 2 bn + 3 bn + 4 bn + 70 bn. Left out: 4 suspect DA + 3 suspect mega contracts; no value: 2 DA + the blank ceiling; ceilings 10M + 6M + 4M.
     expect((r.body.data as MainScreenQuery).seap.search.total).toEqual({
-      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false,
+      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false, partyCoverage: null,
     });
   });
 
@@ -1421,6 +1423,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const b = canonicalFilter({ q: "santier", badges: ["CUI_MISMATCH", "NO_VALUE"], procedure: ["a", "b"], countySide: "AUTHORITY", channel: null });
       expect(a).toBe(b);
       expect(canonicalFilter({ hasSignals: false })).not.toBe(canonicalFilter({}));
+      expect(canonicalFilter({ party: "PARTIDUL SOCIAL DEMOCRAT" })).not.toBe(canonicalFilter({})); // a Party-filtered answer is never served for the unfiltered key (#181)
       expect(canonicalFilter({ q: "srl" })).toBe(canonicalFilter({}));
     });
 
@@ -1434,14 +1437,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
       const misses = cache.stats().misses;
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
-      expect(cache.stats()).toMatchObject({ misses, hits: 8 }); // total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
+      expect(cache.stats()).toMatchObject({ misses, hits: 9 }); // the lists of the Party chip are one more cached read per answer (#181); total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
 
       const report = await cache.warm();
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
       const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
-      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 8 });
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 9 });
       expect(de.total.records).toBeGreaterThan(0);
       const empty = await answer(api, {});
       expect(empty.total.records).toBe(13);
@@ -4183,6 +4186,121 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(r.body.errors).toBeUndefined();
       const c = (r.body.data as CoveragePageQuery).coverage;
       expect(c.grid.every((cell) => ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].includes(cell.kind))).toBe(true); // no ONRC cell in SEAP's grid
+    });
+  });
+
+  describe("Party filter (#181): archive-party -> rebuild -> RecordFilter.party and the coverage of its Total", () => {
+    // The party world of watchdog/tests/fixtures/build_aep_archive.py: Records DA95000001..14 (Brasov's town hall and its hospital, a school, a roads directorate, an independent
+    // mayor, an alliance, Rasnov's partial election, a county council, Bucharest's general mayor, a handover-window Record).
+    const DB = "party_filter";
+    const PSD = "PARTIDUL SOCIAL DEMOCRAT";
+    const PNL = "PARTIDUL NAȚIONAL LIBERAL";
+    beforeAll(async () => {
+      await admin.query(`CREATE DATABASE ${DB}`);
+      partyRebuild(DB);
+    });
+    const searched = async (filter: Record<string, unknown>) => {
+      const r = await ask(DB, mainScreen.sha256, { filter });
+      expect(r.status).toBe(200);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, { filter }), JSON.stringify(filter)).toEqual([]);
+      const search = (r.body.data as MainScreenQuery).seap.search;
+      return { total: search.total, coverage: search.total.partyCoverage, codes: search.records.rows.map((x) => x.record.code).sort() };
+    };
+
+    it("records the main screen answers the app's Party tests run on (recorded/party/MainScreen.json)", async () => {
+      const file = resolve(here, "../../contract/src/fixtures/recorded/party/MainScreen.json");
+      const recorded = [];
+      for (const c of RECORDED_PARTY_CASES) {
+        const r = await ask(DB, mainScreen.sha256, c.variables);
+        expect(r.status, c.name).toBe(200);
+        expect(r.body.errors, c.name).toBeUndefined();
+        expect(validateResponse(schema, parse(mainScreen.document), r.body.data, c.variables), c.name).toEqual([]);
+        recorded.push({ name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data });
+      }
+      if (process.env.RECORD_FIXTURES === "1") {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      }
+      // through JSON, so undefined and key order do not matter
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      expect(new Set(RECORDED_PARTY_CASES.map((c) => JSON.stringify(c.variables))).size).toBe(RECORDED_PARTY_CASES.length);
+    });
+
+    it("returns only the Records whose Mandate matches, direct and derived, and states the coverage of its Total", async () => {
+      const pnl = await searched({ party: PNL });
+      // Brasov's town hall (direct), its hospital (derived through the principal credit holder), the county council, Bucharest's general mayor, Rasnov's partial-election winner and two more
+      expect(pnl.codes).toEqual(["DA94000005", "DA94000009", "DA95000002", "DA95000003", "DA95000006", "DA95000007", "DA95000014"]);
+      expect(pnl.coverage).toEqual({
+        party: PNL, direct: { records: 6, awarded: "600000" }, subordinate: { records: 1, awarded: "100000" },
+        otherParties: { records: 6, awarded: "600000" }, independent: { records: 2, awarded: "200000" }, unattributed: { records: 13, awarded: "1300000" },
+      });
+      // the matched Total is the two matched slices, to the bani and to the Record
+      expect(pnl.total).toMatchObject({ records: 7, awarded: "700000", estimated: false });
+      const psd = await searched({ party: PSD });
+      expect(psd.codes).toEqual(["DA94000003", "DA94000004", "DA94000012", "DA95000009", "DA95000012"]);
+      expect(psd.coverage).toMatchObject({ direct: { records: 5, awarded: "500000" }, subordinate: { records: 0, awarded: "0" } });
+      expect(psd.total).toMatchObject({ records: 5, awarded: "500000" });
+    });
+
+    it("splits the whole set into five slices that add up to the unfiltered Total, whatever the party", async () => {
+      const all = await searched({});
+      expect(all.total.partyCoverage).toBeNull(); // no Party filter, no coverage
+      for (const party of [PNL, PSD, "ALIANȚA USR PLUS", "Independent", "NO SUCH LIST"]) {
+        const { total, coverage } = await searched({ party });
+        const c = coverage!;
+        const slices = [c.direct, c.subordinate, c.otherParties, c.independent, c.unattributed];
+        expect(slices.reduce((n, x) => n + x.records, 0), party).toBe(all.total.records);
+        expect(slices.reduce((n, x) => n + BigInt(x.awarded), 0n).toString(), party).toBe(all.total.awarded);
+        expect(c.direct.records + c.subordinate.records, party).toBe(total.records);
+        expect(BigInt(c.direct.awarded) + BigInt(c.subordinate.awarded), party).toBe(BigInt(total.awarded));
+        expect(c.unattributed.records).toBe(13); // the school, the roads directorate, the handover window, central government...: never a party, whoever is asked
+      }
+    });
+
+    it("leaves out the unattributed, the independent and the other lists: a school, a gap, an independent mayor and a contradicted tie never match", async () => {
+      const everyParty = new Set<string>();
+      for (const party of [PNL, PSD, "ALIANȚA USR PLUS"]) for (const code of (await searched({ party })).codes) everyParty.add(code);
+      for (const code of ["DA95000001", "DA95000004", "DA95000005", "DA95000008", "DA95000013"]) expect(everyParty.has(code), code).toBe(false); // handover window, school, roads directorate, independent mayor, interim leader
+      expect((await searched({ party: "Independent" })).codes).toEqual([]); // "Independent" is never a party
+      expect((await searched({ party: "independent" })).codes).toEqual([]);
+    });
+
+    it("matches an alliance under its registered name only: its member parties do not match it, and it does not match them", async () => {
+      expect((await searched({ party: "ALIANȚA USR PLUS" })).codes).toEqual(["DA94000010"]);
+      expect((await searched({ party: "PARTIDUL USR" })).codes).toEqual([]); // a member party of the alliance: no party family
+      expect((await searched({ party: "PARTIDUL USR" })).coverage!.direct).toEqual({ records: 0, awarded: "0" });
+    });
+
+    it("combines with the other chips and the text query, and the coverage follows the same set", async () => {
+      const dated = await searched({ party: PNL, from: "2024-01-01", to: "2024-12-31" });
+      const undated = await searched({ party: PNL });
+      expect(dated.total.records).toBeLessThan(undated.total.records);
+      expect(dated.coverage!.direct.records + dated.coverage!.subordinate.records).toBe(dated.total.records);
+      const sliced = await searched({ party: PNL, q: "zzzznothingmatches" });
+      expect(sliced.total).toMatchObject({ records: 0, awarded: "0" });
+      expect(sliced.coverage).toMatchObject({ direct: { records: 0 }, subordinate: { records: 0 }, otherParties: { records: 0 }, unattributed: { records: 0 } });
+      // a supplier-side filter (a Record can match on several rows): each Record still counts once
+      const withSupplier = await searched({ party: PNL, supplier: "2000007" });
+      expect(withSupplier.coverage!.direct.records + withSupplier.coverage!.subordinate.records).toBe(withSupplier.total.records);
+      // an authority's own page: Party filters it like any chip
+      expect((await searched({ party: PNL, authority: P.brasov })).codes).toEqual(["DA95000002"]); // the hospital is another authority
+    });
+
+    it("lists the Records the Total counts: the Records tab count is the Total's", async () => {
+      const r = await ask(DB, mainScreen.sha256, { filter: { party: PNL } });
+      const search = (r.body.data as MainScreenQuery).seap.search;
+      expect(search.records.count).toBe(search.total.records);
+      expect(search.authorities.count).toBeGreaterThan(0);
+    });
+
+    it("offers the lists present in the graph with every MainScreen answer, largest first, never Independent and never a member party", async () => {
+      const r = await ask(DB, mainScreen.sha256, EMPTY_FILTER); // MainScreen asks for them beside every search, so the chip never needs a request of its own
+      expect(r.body.errors).toBeUndefined();
+      const options = (r.body.data as MainScreenQuery).seap.partyOptions;
+      expect(options.map((o) => o.party).sort()).toEqual([PNL, PSD, "ALIANȚA USR PLUS"].sort());
+      expect(options.map((o) => o.records)).toEqual([...options.map((o) => o.records)].sort((a, b) => b - a));
+      expect(options.find((o) => o.party === PNL)!.records).toBe(7); // the Records the filter returns: the two agree
     });
   });
 

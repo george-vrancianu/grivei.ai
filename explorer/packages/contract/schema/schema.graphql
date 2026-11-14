@@ -54,6 +54,9 @@ type SeapQuery {
 
   "A Record by its public code (e.g. CAN1166685, DA12345678), the Record page's URL key."
   record(code: ID!): SeapRecord
+
+  "The lists the Party filter offers (largest first, at most 1000, never Independent); empty for a graph built without AEP's mandates."
+  partyOptions: [PartyOption!]!
 }
 
 type OnrcQuery {
@@ -97,6 +100,16 @@ input RecordFilter {
   supplier: ID
   cpv: String                     # prefix, e.g. "301"
   signal: SignalRuleSlug
+
+  # Party (#181; ADR 0012)
+  """
+  A list as registered at the election, as `partyOptions` offers it (`PARTIDUL SOCIAL DEMOCRAT`, or an alliance under its own registered name). One value, like the
+  other entity-scoped fields (a second one would be a different question). Matches the Records whose Mandate (direct, or derived through a subordinate body's principal
+  credit holder) ran on that list; there is no "direct only" switch. "Independent" is never a party and matches nothing, an alliance is not matched by its member
+  parties and no party family exists. Never a supplier's: a Party belongs to an authority for a mandate's dates. Narrows only the SEAP search: a Total with this filter
+  states its coverage (`Total.partyCoverage`).
+  """
+  party: String
 }
 
 """
@@ -207,6 +220,39 @@ type Total {
   frameworkCeilings: Bani!
   "True only when `records` is approximated, which exact counts and the rollup never do today: the flag is reserved for a future approximate path. Distinct entity counts (the HyperLogLog ones) carry their own flag: EntityResultPage.countEstimated."
   estimated: Boolean!
+  "Only on a SEAP search whose filter has `party`: what the filter covers. Null on every other Total."
+  partyCoverage: PartyCoverage
+}
+
+"""
+What a Party filter covers (#181), measured over the set the rest of the filter selects. `direct` + `subordinate` are the Total's own Records; the other three are
+what the filter leaves out. The share left unattributed is `unattributed` against the sum of the five (central government, schools, municipal companies, ADIs,
+authorities outside the Leadership list, and gaps in the mandates all sit there). Bani are summed like a Total's: counted value, framework ceilings out, suspect values out.
+"""
+type PartyCoverage {
+  "The list as registered, echoed from the filter."
+  party: String!
+  "Records whose authority itself had the Mandate."
+  direct: PartyShare!
+  "Records of a subordinate body (principal credit holder in MF's list) that inherits the Mandate's Party."
+  subordinate: PartyShare!
+  "Records of authorities led on another list."
+  otherParties: PartyShare!
+  "Records of an Independent leader's authority: attributed to a leader, never to a party."
+  independent: PartyShare!
+  "Records with no Mandate in force on the award date, or no attributed authority."
+  unattributed: PartyShare!
+}
+
+type PartyShare {
+  records: Int!
+  awarded: Bani!
+}
+
+"A list the Party filter offers: as registered, with the Records it led (direct and subordinate)."
+type PartyOption {
+  party: String!
+  records: Int!
 }
 
 type MoneyMap {

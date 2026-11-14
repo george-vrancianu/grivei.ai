@@ -198,6 +198,12 @@ def build_aep(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None
                      JOIN aep.authority a ON a.entity_key = coalesce(s.authority_key, r.authority_key)
                      JOIN aep.mandate m ON m.area = a.area AND m.start_date <= r.award_date AND (m.end_date IS NULL OR r.award_date < m.end_date)""")
     summary.record_parties = cur.rowcount
+    # Party per Record onto the search rows (#181): one indexed column each, so the filter and its coverage never join at query time. An Independent leader has a
+    # Mandate (so the Record is attributed) but no party: `party` stays null and `party_basis` says whose Mandate it was.
+    cur.execute("""UPDATE seap.search s SET party = CASE WHEN m.independent THEN NULL ELSE m.list_name END,
+                                             party_basis = CASE WHEN p.via_key IS NULL THEN 'DIRECT' ELSE 'SUBORDINATE' END
+                     FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
+                    WHERE p.record_code = s.record_code""")
     return summary
 
 

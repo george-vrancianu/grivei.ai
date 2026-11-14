@@ -10,6 +10,7 @@ import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
+import type { PartyCoverageCopy } from "../molecules/PartyCoverage/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
@@ -449,12 +450,14 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
       procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
+      party: { group: "Partid", select: "Lista, așa cum a fost înregistrată", any: "Orice partid" },
       badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
       active: {
         group: "Filtre active",
         none: "Niciun filtru activ.",
         from: (when) => `Din ${when}`,
         to: (when) => `Până în ${when}`,
+        party: (list) => `Partid: ${list}`,
         remove: (chip) => `Elimină ${chip}`,
         clearAll: "Șterge tot",
       },
@@ -477,12 +480,14 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
       procedure: { group: "Procedure", empty: "No procedures to choose from." },
+      party: { group: "Party", select: "List as registered", any: "Any party" },
       badges: { group: "Record badges", badges: BADGES },
       active: {
         group: "Active filters",
         none: "No filters on.",
         from: (when) => `From ${when}`,
         to: (when) => `Until ${when}`,
+        party: (list) => `Party: ${list}`,
         remove: (chip) => `Remove ${chip}`,
         clearAll: "Clear all",
       },
@@ -1309,6 +1314,30 @@ export const sampleCopy = {
         error: "Coverage could not be loaded. Try again in a moment.",
       },
   coverageGrid: (locale: Locale): CoverageGridCopy => sampleCopy.coveragePageLayout(locale).grid,
+  partyCoverage: (locale: Locale): PartyCoverageCopy =>
+    locale === "ro"
+      ? {
+          heading: (list) => `Acoperire pe partide: ${list}`,
+          direct: (n, f, amount) => `Conduse direct de această listă: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          subordinate: (n, f, amount) => `Prin organisme subordonate: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          otherParties: (n, f, amount) => `Conduse de alte liste: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          independent: (n, f, amount) => `Conduse de lideri independenți (nu sunt partid): ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          unattributed: (n, f, amount) => `Neatribuite vreunui partid: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          unattributedShare: (percent) => `${percent} din valoarea acestui set nu este atribuită niciunui partid.`,
+          unattributedNote: "Administrația centrală, școlile, companiile municipale, ADI-urile și golurile din mandate nu au Partid.",
+          methodology: "Cum se atribuie un Partid",
+        }
+      : {
+          heading: (list) => `Party coverage: ${list}`,
+          direct: (n, f, amount) => `Led by this list directly: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          subordinate: (n, f, amount) => `Through subordinate bodies: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          otherParties: (n, f, amount) => `Led by other lists: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          independent: (n, f, amount) => `Led by independent leaders (not a party): ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          unattributed: (n, f, amount) => `Not attributed to a party: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          unattributedShare: (percent) => `${percent} of the value in this set is not attributed to any party.`,
+          unattributedNote: "Central government, schools, municipal companies, ADIs and gaps in the mandates carry no Party.",
+          methodology: "How a Party is attributed",
+        },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {

@@ -1,0 +1,3123 @@
+[
+  {
+    "name": "party-options",
+    "kind": "typical",
+    "description": "no Party chosen: the lists the chip offers, no coverage",
+    "variables": {
+      "filter": {
+        "channel": "DIRECT_PURCHASE"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "DA",
+              "date": "2026-02-10"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "seap": {
+        "partyOptions": [
+          {
+            "party": "PARTIDUL NAȚIONAL LIBERAL",
+            "records": 7
+          },
+          {
+            "party": "PARTIDUL SOCIAL DEMOCRAT",
+            "records": 5
+          },
+          {
+            "party": "ALIANȚA USR PLUS",
+            "records": 1
+          }
+        ],
+        "search": {
+          "filter": {
+            "qFolded": null,
+            "authority": null,
+            "supplier": null
+          },
+          "total": {
+            "awarded": "2800000",
+            "records": 28,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false,
+            "partyCoverage": null
+          },
+          "map": {
+            "side": "AUTHORITY",
+            "counties": [
+              {
+                "area": "RO-B",
+                "name": "București",
+                "entities": 2,
+                "total": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-BV",
+                "name": "Brașov",
+                "entities": 7,
+                "total": {
+                  "awarded": "1400000",
+                  "records": 14,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-CJ",
+                "name": "Cluj",
+                "entities": 4,
+                "total": {
+                  "awarded": "600000",
+                  "records": 6,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "national": {
+              "awarded": "200000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "unplaced": {
+              "authorities": 4,
+              "total": {
+                "awarded": "400000",
+                "records": 4,
+                "suspectLeftOut": 0,
+                "noValue": 0,
+                "frameworkCeilings": "0",
+                "estimated": false
+              }
+            },
+            "unknownSupplierCounty": null
+          },
+          "goTo": null,
+          "facets": {
+            "procedure": []
+          },
+          "authorities": {
+            "count": 19,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880030",
+                      "name": "Râșnov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "400000",
+                  "records": 4,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "300000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880010",
+                      "name": "Sânpetru"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000102",
+                  "displayName": "COMUNA I.L. CARAGIALE",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990010",
+                      "name": "I. L. Caragiale"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000200",
+                  "displayName": "COMUNA APAHIDA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990020",
+                      "name": "Apahida"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880060",
+                      "name": "Șinca Nouă"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000609",
+                  "displayName": "PRIMARIA SECTORULUI 3",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-B",
+                      "name": "București"
+                    },
+                    "uat": {
+                      "siruta": "179169",
+                      "name": "Sector 3"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000706",
+                  "displayName": "COMUNA FARA NUME",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": null,
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000803",
+                  "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880050",
+                      "name": "Ucea"
+                    },
+                    "national": false,
+                    "placedBy": "SEAP"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000900",
+                  "displayName": "ASOCIATIA FARA ADRESA",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51001000",
+                  "displayName": "MINISTERUL EXEMPLULUI",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": null,
+                    "uat": null,
+                    "national": true,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51001108",
+                  "displayName": "AGENTIA NATIONALA DEMO",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": null,
+                    "uat": null,
+                    "national": true,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51001205",
+                  "displayName": "DIRECTIA DE SANATATE PUBLICA DEMO",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51001302",
+                  "displayName": "ORAS HUEDIN",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990030",
+                      "name": "Huedin"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51001507",
+                  "displayName": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003001",
+                  "displayName": "CONSILIUL JUDETEAN CLUJ",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990001",
+                      "name": "Cluj-Napoca"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003109",
+                  "displayName": "MUNICIPIUL BUCURESTI",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-B",
+                      "name": "București"
+                    },
+                    "uat": {
+                      "siruta": "179187",
+                      "name": "Sector 5"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003206",
+                  "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003303",
+                  "displayName": "DIRECTIA DRUMURILOR DEMO BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "suppliers": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "2800000",
+                  "records": 28,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "records": {
+            "count": 28,
+            "rows": [
+              {
+                "record": {
+                  "code": "DA94000001",
+                  "title": "Achizitie DA94000001",
+                  "date": "2023-03-11",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001108",
+                    "displayName": "AGENTIA NATIONALA DEMO",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000002",
+                  "title": "Achizitie DA94000002",
+                  "date": "2023-03-12",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000200",
+                    "displayName": "COMUNA APAHIDA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000003",
+                  "title": "Achizitie DA94000003",
+                  "date": "2023-03-13",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000004",
+                  "title": "Achizitie DA94000004",
+                  "date": "2023-03-14",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000609",
+                    "displayName": "PRIMARIA SECTORULUI 3",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000005",
+                  "title": "Achizitie DA94000005",
+                  "date": "2023-03-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000006",
+                  "title": "Achizitie DA94000006",
+                  "date": "2023-03-16",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001205",
+                    "displayName": "DIRECTIA DE SANATATE PUBLICA DEMO",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000007",
+                  "title": "Achizitie DA94000007",
+                  "date": "2023-03-17",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001302",
+                    "displayName": "ORAS HUEDIN",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000008",
+                  "title": "Achizitie DA94000008",
+                  "date": "2023-03-18",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001000",
+                    "displayName": "MINISTERUL EXEMPLULUI",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000009",
+                  "title": "Achizitie DA94000009",
+                  "date": "2023-03-19",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000010",
+                  "title": "Achizitie DA94000010",
+                  "date": "2023-03-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000011",
+                  "title": "Achizitie DA94000011",
+                  "date": "2023-03-21",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000803",
+                    "displayName": "COMUNA UCEA SPITAL ASIMILAT",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000012",
+                  "title": "Achizitie DA94000012",
+                  "date": "2023-03-22",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000013",
+                  "title": "Achizitie DA94000013",
+                  "date": "2023-03-23",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000706",
+                    "displayName": "COMUNA FARA NUME",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000014",
+                  "title": "Achizitie DA94000014",
+                  "date": "2023-03-24",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000900",
+                    "displayName": "ASOCIATIA FARA ADRESA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000001",
+                  "title": "Achizitie DA95000001",
+                  "date": "2024-10-10",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000002",
+                  "title": "Achizitie DA95000002",
+                  "date": "2024-11-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000003",
+                  "title": "Achizitie DA95000003",
+                  "date": "2024-11-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003206",
+                    "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000004",
+                  "title": "Achizitie DA95000004",
+                  "date": "2024-11-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51001507",
+                    "displayName": "SCOALA GIMNAZIALA FICTIVA BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000005",
+                  "title": "Achizitie DA95000005",
+                  "date": "2024-11-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003303",
+                    "displayName": "DIRECTIA DRUMURILOR DEMO BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000006",
+                  "title": "Achizitie DA95000006",
+                  "date": "2024-12-01",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003001",
+                    "displayName": "CONSILIUL JUDETEAN CLUJ",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000007",
+                  "title": "Achizitie DA95000007",
+                  "date": "2024-12-02",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003109",
+                    "displayName": "MUNICIPIUL BUCURESTI",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000008",
+                  "title": "Achizitie DA95000008",
+                  "date": "2024-11-25",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000009",
+                  "title": "Achizitie DA95000009",
+                  "date": "2024-11-26",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000200",
+                    "displayName": "COMUNA APAHIDA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000010",
+                  "title": "Achizitie DA95000010",
+                  "date": "2024-11-27",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000011",
+                  "title": "Achizitie DA95000011",
+                  "date": "2024-11-28",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000012",
+                  "title": "Achizitie DA95000012",
+                  "date": "2025-06-10",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000013",
+                  "title": "Achizitie DA95000013",
+                  "date": "2025-10-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000014",
+                  "title": "Achizitie DA95000014",
+                  "date": "2026-02-10",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "party-direct-and-subordinate",
+    "kind": "typical",
+    "description": "a list that leads town halls directly and a hospital through its principal: the Total is direct + subordinate, the coverage names the rest",
+    "variables": {
+      "filter": {
+        "channel": "DIRECT_PURCHASE",
+        "party": "PARTIDUL NAȚIONAL LIBERAL"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "DA",
+              "date": "2026-02-10"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "seap": {
+        "partyOptions": [
+          {
+            "party": "PARTIDUL NAȚIONAL LIBERAL",
+            "records": 7
+          },
+          {
+            "party": "PARTIDUL SOCIAL DEMOCRAT",
+            "records": 5
+          },
+          {
+            "party": "ALIANȚA USR PLUS",
+            "records": 1
+          }
+        ],
+        "search": {
+          "filter": {
+            "qFolded": null,
+            "authority": null,
+            "supplier": null
+          },
+          "total": {
+            "awarded": "700000",
+            "records": 7,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false,
+            "partyCoverage": {
+              "party": "PARTIDUL NAȚIONAL LIBERAL",
+              "direct": {
+                "records": 6,
+                "awarded": "600000"
+              },
+              "subordinate": {
+                "records": 1,
+                "awarded": "100000"
+              },
+              "otherParties": {
+                "records": 6,
+                "awarded": "600000"
+              },
+              "independent": {
+                "records": 2,
+                "awarded": "200000"
+              },
+              "unattributed": {
+                "records": 13,
+                "awarded": "1300000"
+              }
+            }
+          },
+          "map": {
+            "side": "AUTHORITY",
+            "counties": [
+              {
+                "area": "RO-B",
+                "name": "București",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-BV",
+                "name": "Brașov",
+                "entities": 2,
+                "total": {
+                  "awarded": "300000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-CJ",
+                "name": "Cluj",
+                "entities": 2,
+                "total": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "national": {
+              "awarded": "0",
+              "records": 0,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "unplaced": {
+              "authorities": 1,
+              "total": {
+                "awarded": "100000",
+                "records": 1,
+                "suspectLeftOut": 0,
+                "noValue": 0,
+                "frameworkCeilings": "0",
+                "estimated": false
+              }
+            },
+            "unknownSupplierCounty": null
+          },
+          "goTo": null,
+          "facets": {
+            "procedure": []
+          },
+          "authorities": {
+            "count": 6,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880030",
+                      "name": "Râșnov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "200000",
+                  "records": 2,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000102",
+                  "displayName": "COMUNA I.L. CARAGIALE",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990010",
+                      "name": "I. L. Caragiale"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003001",
+                  "displayName": "CONSILIUL JUDETEAN CLUJ",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990001",
+                      "name": "Cluj-Napoca"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003109",
+                  "displayName": "MUNICIPIUL BUCURESTI",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-B",
+                      "name": "București"
+                    },
+                    "uat": {
+                      "siruta": "179187",
+                      "name": "Sector 5"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51003206",
+                  "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": null,
+                  "placement": null
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "suppliers": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "700000",
+                  "records": 7,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "records": {
+            "count": 7,
+            "rows": [
+              {
+                "record": {
+                  "code": "DA94000005",
+                  "title": "Achizitie DA94000005",
+                  "date": "2023-03-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000102",
+                    "displayName": "COMUNA I.L. CARAGIALE",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000009",
+                  "title": "Achizitie DA94000009",
+                  "date": "2023-03-19",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000002",
+                  "title": "Achizitie DA95000002",
+                  "date": "2024-11-15",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000003",
+                  "title": "Achizitie DA95000003",
+                  "date": "2024-11-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003206",
+                    "displayName": "SPITALUL CLINIC JUDETEAN DEMO BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000006",
+                  "title": "Achizitie DA95000006",
+                  "date": "2024-12-01",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003001",
+                    "displayName": "CONSILIUL JUDETEAN CLUJ",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000007",
+                  "title": "Achizitie DA95000007",
+                  "date": "2024-12-02",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51003109",
+                    "displayName": "MUNICIPIUL BUCURESTI",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000014",
+                  "title": "Achizitie DA95000014",
+                  "date": "2026-02-10",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "party-direct-only",
+    "kind": "typical",
+    "description": "a list with no subordinate bodies in the set",
+    "variables": {
+      "filter": {
+        "channel": "DIRECT_PURCHASE",
+        "party": "PARTIDUL SOCIAL DEMOCRAT"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "DA",
+              "date": "2026-02-10"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "seap": {
+        "partyOptions": [
+          {
+            "party": "PARTIDUL NAȚIONAL LIBERAL",
+            "records": 7
+          },
+          {
+            "party": "PARTIDUL SOCIAL DEMOCRAT",
+            "records": 5
+          },
+          {
+            "party": "ALIANȚA USR PLUS",
+            "records": 1
+          }
+        ],
+        "search": {
+          "filter": {
+            "qFolded": null,
+            "authority": null,
+            "supplier": null
+          },
+          "total": {
+            "awarded": "500000",
+            "records": 5,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false,
+            "partyCoverage": {
+              "party": "PARTIDUL SOCIAL DEMOCRAT",
+              "direct": {
+                "records": 5,
+                "awarded": "500000"
+              },
+              "subordinate": {
+                "records": 0,
+                "awarded": "0"
+              },
+              "otherParties": {
+                "records": 8,
+                "awarded": "800000"
+              },
+              "independent": {
+                "records": 2,
+                "awarded": "200000"
+              },
+              "unattributed": {
+                "records": 13,
+                "awarded": "1300000"
+              }
+            }
+          },
+          "map": {
+            "side": "AUTHORITY",
+            "counties": [
+              {
+                "area": "RO-B",
+                "name": "București",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-BV",
+                "name": "Brașov",
+                "entities": 3,
+                "total": {
+                  "awarded": "300000",
+                  "records": 3,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              },
+              {
+                "area": "RO-CJ",
+                "name": "Cluj",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "national": {
+              "awarded": "0",
+              "records": 0,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "unplaced": null,
+            "unknownSupplierCounty": null
+          },
+          "goTo": null,
+          "facets": {
+            "procedure": []
+          },
+          "authorities": {
+            "count": 5,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51000200",
+                  "displayName": "COMUNA APAHIDA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-CJ",
+                      "name": "Cluj"
+                    },
+                    "uat": {
+                      "siruta": "990020",
+                      "name": "Apahida"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000307",
+                  "displayName": "ORAS RASNOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880030",
+                      "name": "Râșnov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000404",
+                  "displayName": "COMUNA SINCA NOUA",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880060",
+                      "name": "Șinca Nouă"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000501",
+                  "displayName": "MUNICIPIUL BRASOV",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              },
+              {
+                "entity": {
+                  "key": "51000609",
+                  "displayName": "PRIMARIA SECTORULUI 3",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-B",
+                      "name": "București"
+                    },
+                    "uat": {
+                      "siruta": "179169",
+                      "name": "Sector 3"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "suppliers": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "500000",
+                  "records": 5,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "records": {
+            "count": 5,
+            "rows": [
+              {
+                "record": {
+                  "code": "DA94000003",
+                  "title": "Achizitie DA94000003",
+                  "date": "2023-03-13",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000501",
+                    "displayName": "MUNICIPIUL BRASOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000004",
+                  "title": "Achizitie DA94000004",
+                  "date": "2023-03-14",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000609",
+                    "displayName": "PRIMARIA SECTORULUI 3",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA94000012",
+                  "title": "Achizitie DA94000012",
+                  "date": "2023-03-22",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000404",
+                    "displayName": "COMUNA SINCA NOUA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000009",
+                  "title": "Achizitie DA95000009",
+                  "date": "2024-11-26",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000200",
+                    "displayName": "COMUNA APAHIDA",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              },
+              {
+                "record": {
+                  "code": "DA95000012",
+                  "title": "Achizitie DA95000012",
+                  "date": "2025-06-10",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000307",
+                    "displayName": "ORAS RASNOV",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "party-alliance",
+    "kind": "typical",
+    "description": "an alliance matches under its own registered name only",
+    "variables": {
+      "filter": {
+        "channel": "DIRECT_PURCHASE",
+        "party": "ALIANȚA USR PLUS"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "DA",
+              "date": "2026-02-10"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "seap": {
+        "partyOptions": [
+          {
+            "party": "PARTIDUL NAȚIONAL LIBERAL",
+            "records": 7
+          },
+          {
+            "party": "PARTIDUL SOCIAL DEMOCRAT",
+            "records": 5
+          },
+          {
+            "party": "ALIANȚA USR PLUS",
+            "records": 1
+          }
+        ],
+        "search": {
+          "filter": {
+            "qFolded": null,
+            "authority": null,
+            "supplier": null
+          },
+          "total": {
+            "awarded": "100000",
+            "records": 1,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false,
+            "partyCoverage": {
+              "party": "ALIANȚA USR PLUS",
+              "direct": {
+                "records": 1,
+                "awarded": "100000"
+              },
+              "subordinate": {
+                "records": 0,
+                "awarded": "0"
+              },
+              "otherParties": {
+                "records": 12,
+                "awarded": "1200000"
+              },
+              "independent": {
+                "records": 2,
+                "awarded": "200000"
+              },
+              "unattributed": {
+                "records": 13,
+                "awarded": "1300000"
+              }
+            }
+          },
+          "map": {
+            "side": "AUTHORITY",
+            "counties": [
+              {
+                "area": "RO-BV",
+                "name": "Brașov",
+                "entities": 1,
+                "total": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                }
+              }
+            ],
+            "national": {
+              "awarded": "0",
+              "records": 0,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "unplaced": null,
+            "unknownSupplierCounty": null
+          },
+          "goTo": null,
+          "facets": {
+            "procedure": []
+          },
+          "authorities": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "51000005",
+                  "displayName": "COMUNA SANPETRU",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880010",
+                      "name": "Sânpetru"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "suppliers": {
+            "count": 1,
+            "countEstimated": false,
+            "rows": [
+              {
+                "entity": {
+                  "key": "2000007",
+                  "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                  "identity": "CUI",
+                  "anafStatus": "ACTIV",
+                  "placement": {
+                    "county": {
+                      "code": "RO-BV",
+                      "name": "Brașov"
+                    },
+                    "uat": {
+                      "siruta": "880001",
+                      "name": "Brașov"
+                    },
+                    "national": false,
+                    "placedBy": "ANAF"
+                  }
+                },
+                "matched": {
+                  "awarded": "100000",
+                  "records": 1,
+                  "suspectLeftOut": 0,
+                  "noValue": 0,
+                  "frameworkCeilings": "0",
+                  "estimated": false
+                },
+                "signalCount": 0
+              }
+            ]
+          },
+          "records": {
+            "count": 1,
+            "rows": [
+              {
+                "record": {
+                  "code": "DA94000010",
+                  "title": "Achizitie DA94000010",
+                  "date": "2023-03-20",
+                  "kind": "DA",
+                  "channel": "DIRECT_PURCHASE",
+                  "procedure": null,
+                  "value": "100000",
+                  "counted": "100000",
+                  "badges": [],
+                  "authority": {
+                    "key": "51000005",
+                    "displayName": "COMUNA SANPETRU",
+                    "identity": "CUI"
+                  },
+                  "winners": [
+                    {
+                      "naturalPerson": false,
+                      "publishedName": "SANTIERUL TARA DEMO SRL",
+                      "share": null,
+                      "entity": {
+                        "key": "2000007",
+                        "displayName": "ȘANTIERUL ȚARA DEMO SRL",
+                        "identity": "CUI"
+                      }
+                    }
+                  ],
+                  "signals": []
+                },
+                "matchedField": null,
+                "areaShare": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "party-independent",
+    "kind": "empty",
+    "description": "\"Independent\" is not a list: nothing matches, and the coverage says so",
+    "variables": {
+      "filter": {
+        "channel": "DIRECT_PURCHASE",
+        "party": "Independent"
+      }
+    },
+    "data": {
+      "sources": [
+        {
+          "id": "SEAP",
+          "name": "SEAP",
+          "harvested": true,
+          "dataThrough": [
+            {
+              "kind": "DA",
+              "date": "2026-02-10"
+            }
+          ]
+        },
+        {
+          "id": "ONRC",
+          "name": "ONRC",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "ANI",
+          "name": "ANI",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "MFINANTE",
+          "name": "Ministerul Finanțelor",
+          "harvested": false,
+          "dataThrough": []
+        },
+        {
+          "id": "JUST",
+          "name": "portal.just.ro",
+          "harvested": false,
+          "dataThrough": []
+        }
+      ],
+      "seap": {
+        "partyOptions": [
+          {
+            "party": "PARTIDUL NAȚIONAL LIBERAL",
+            "records": 7
+          },
+          {
+            "party": "PARTIDUL SOCIAL DEMOCRAT",
+            "records": 5
+          },
+          {
+            "party": "ALIANȚA USR PLUS",
+            "records": 1
+          }
+        ],
+        "search": {
+          "filter": {
+            "qFolded": null,
+            "authority": null,
+            "supplier": null
+          },
+          "total": {
+            "awarded": "0",
+            "records": 0,
+            "suspectLeftOut": 0,
+            "noValue": 0,
+            "frameworkCeilings": "0",
+            "estimated": false,
+            "partyCoverage": {
+              "party": "Independent",
+              "direct": {
+                "records": 0,
+                "awarded": "0"
+              },
+              "subordinate": {
+                "records": 0,
+                "awarded": "0"
+              },
+              "otherParties": {
+                "records": 13,
+                "awarded": "1300000"
+              },
+              "independent": {
+                "records": 2,
+                "awarded": "200000"
+              },
+              "unattributed": {
+                "records": 13,
+                "awarded": "1300000"
+              }
+            }
+          },
+          "map": {
+            "side": "AUTHORITY",
+            "counties": [],
+            "national": {
+              "awarded": "0",
+              "records": 0,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "unplaced": null,
+            "unknownSupplierCounty": null
+          },
+          "goTo": null,
+          "facets": {
+            "procedure": []
+          },
+          "authorities": {
+            "count": 0,
+            "countEstimated": false,
+            "rows": []
+          },
+          "suppliers": {
+            "count": 0,
+            "countEstimated": false,
+            "rows": []
+          },
+          "records": {
+            "count": 0,
+            "rows": []
+          }
+        }
+      }
+    }
+  }
+]

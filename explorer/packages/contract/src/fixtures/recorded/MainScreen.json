@@ -49,6 +49,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -61,7 +62,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -1286,6 +1288,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "comuna",
@@ -1298,7 +1301,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2025,6 +2029,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "sistem",
@@ -2037,7 +2042,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2225,6 +2231,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "comuna",
@@ -2237,7 +2244,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -2809,6 +2817,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -2821,7 +2830,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -3463,6 +3473,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -3475,7 +3486,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "SUPPLIER",
@@ -4531,6 +4543,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -4543,7 +4556,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -4796,6 +4810,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -4808,7 +4823,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "SUPPLIER",
@@ -6018,6 +6034,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "comuna",
@@ -6030,7 +6047,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -6530,6 +6548,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "santierul tara demo",
@@ -6542,7 +6561,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -7944,6 +7964,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "zzzzzz",
@@ -7956,7 +7977,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8046,6 +8068,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -8058,7 +8081,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8472,6 +8496,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -8484,7 +8509,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8683,6 +8709,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -8695,7 +8722,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -8968,6 +8996,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -8980,7 +9009,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -9179,6 +9209,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": "zzzzzz",
@@ -9191,7 +9222,8 @@
             "suspectLeftOut": 0,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",

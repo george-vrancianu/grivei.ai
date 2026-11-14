@@ -44,6 +44,7 @@ export const RECORD_FILTER_URL = {
   supplier: { key: "supplier", encoding: "key", repeatable: false },
   cpv: { key: "cpv", encoding: "prefix", repeatable: false },
   signal: { key: "signal", encoding: "enum", repeatable: false },
+  party: { key: "party", encoding: "text", repeatable: false },
 } as const satisfies Record<keyof RecordFilter, UrlKeySpec>;
 
 /**
