@@ -57,7 +57,6 @@ from .search import create_index, value_bucket, vacuum
 log = logging.getLogger("pipeline.rebuild")
 
 SQL_DIR = Path(__file__).parent / "sql"
-SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 

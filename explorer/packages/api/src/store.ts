@@ -768,7 +768,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async dataThrough() {
       const { rows } = await pool.query(
-        // the same definition as pipeline/rebuild.py DATA_THROUGH_SQL (`pipeline status`): the crawled kinds are at least as far as the crawl cursor
+        // a copy of SEAP_DATA_THROUGH_SQL in watchdog/pipeline/sources.py (`pipeline status`); the two must agree: the crawled kinds are at least as far as the crawl cursor
         `SELECT kind, max(d)::text AS date FROM (
            SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
            UNION ALL

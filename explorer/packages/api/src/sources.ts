@@ -2,6 +2,7 @@
 // rebuild stores it as `core.source`, and `store.sources()` reads it. Each Source in it needs an adapter here, keyed by its id: how to read
 // its data-through dates and its Coverage. The `sources` query and `coverage(source)` go through the registry and these adapters, so adding
 // a Source adds an entry and an adapter, and no SEAP code path changes.
+import { GraphQLError } from "graphql";
 import { coverageStatus } from "./coverage.ts";
 import type { Store } from "./store.ts";
 
@@ -70,10 +71,20 @@ const seap: SourceAdapter = {
 /** Adapters by Source id: one per entry of the registry. */
 export const SOURCE_ADAPTERS: Readonly<Record<string, SourceAdapter>> = { SEAP: seap };
 
-/** The later Sources (spec story 37): listed so the Coverage lens can grey them as "not harvested"; nothing is loaded from them yet. A Source leaves this list when it joins the registry. */
-export const PLANNED_SOURCES = [
+/** The adapter of a registry Source. A row without one means the database was built by a newer pipeline than this API: say which Source. */
+export function adapterOf(id: string): SourceAdapter {
+  const adapter = SOURCE_ADAPTERS[id];
+  if (!adapter) throw new GraphQLError(`the registry holds Source ${id} but this API has no adapter for it`, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+  return adapter;
+}
+
+const PLANNED = [
   { id: "ONRC" as const, name: "ONRC" },
   { id: "ANI" as const, name: "ANI" },
   { id: "MFINANTE" as const, name: "Ministerul Finanțelor" },
   { id: "JUST" as const, name: "portal.just.ro" },
-].map((source) => ({ ...source, harvested: false, dataThrough: [] }));
+];
+
+/** The later Sources (spec story 37): listed so the Coverage lens can grey them as "not harvested"; nothing is loaded from them yet. A Source drops out as soon as the registry holds it (`held` is the registry's ids), so adding one needs no edit here. */
+export const plannedSources = (held: readonly string[]) =>
+  PLANNED.filter((source) => !held.includes(source.id)).map((source) => ({ ...source, harvested: false, dataThrough: [] }));

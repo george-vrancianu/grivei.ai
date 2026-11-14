@@ -2,7 +2,8 @@ import { GraphQLError } from "graphql";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { matchedFieldOf } from "./matched.ts";
 import { foldTokens } from "./fold.ts";
-import { PLANNED_SOURCES, SOURCE_ADAPTERS, type SourceRow } from "./sources.ts";
+import { adapterOf, plannedSources, SOURCE_ADAPTERS, type SourceRow } from "./sources.ts";
+import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
@@ -252,15 +253,18 @@ export function rootValue(store: Store) {
 
   /** A registry entry as the `Source` type: its data-through dates come from its adapter. */
   const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => ({
-    id: row.id as "SEAP",
+    id: row.id as SourceId,
     name: row.name,
     harvested: true,
-    dataThrough: await SOURCE_ADAPTERS[row.id]!.dataThrough(store),
+    dataThrough: await adapterOf(row.id).dataThrough(store),
   });
 
   return {
     // the registry (`core.source`, stored by every rebuild) first, then the planned Sources it does not hold yet
-    sources: async () => [...(await Promise.all((await store.sources()).map(sourceObject))), ...PLANNED_SOURCES],
+    sources: async () => {
+      const held = await store.sources();
+      return [...(await Promise.all(held.map(sourceObject))), ...plannedSources(held.map((row) => row.id))];
+    },
     entity: async ({ key }: { key: string }) => {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;

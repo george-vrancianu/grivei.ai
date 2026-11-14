@@ -15,7 +15,7 @@ from .anaf import ENDPOINT as ANAF_ENDPOINT
 from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
 from .archive import Archive, ArchiveError
 from .bulk.records import KINDS
-from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, complete_days, plan_run, run_crawl
+from .crawl import CrawlError, CrawlProgress, Crawler, EliClient, plan_run, run_crawl
 from .crawl.client import DELAY as CRAWL_DELAY
 from .crawl.unitdir import BACKFILL_KIND
 from .crawl.progress import DEFAULT_CRAWL_STATUS_NAME
@@ -429,7 +429,6 @@ def _load_quarter(archive: Archive, args) -> int:
 def _status(archive: Archive, args) -> int:
     """The rebuild's status (as before), the ANAF lookup's and the crawl's: cursor and data-through dates from the archive, the last run from its status file."""
     status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
-    crawl_file = Path(args.crawl_progress_file) if args.crawl_progress_file else archive.root / DEFAULT_CRAWL_STATUS_NAME
     anaf_file = Path(args.anaf_progress_file) if args.anaf_progress_file else archive.root / ANAF_STATUS_NAME
     status, anaf = read_status(status_file), read_status(anaf_file)
     code = 0
@@ -446,8 +445,8 @@ def _status(archive: Archive, args) -> int:
             print(line)
         if effective_state(anaf) in ("failed", "interrupted"):
             code = 1
-        elif status is None and not (complete_days(archive) or read_status(crawl_file) is not None):
-            code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record
+        elif status is None:
+            code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record (a Source's hook below may still set 1)
     for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
         code = source.status(archive, args, status, anaf, code)
     ledger = Ledger(archive.root / LEDGER_NAME)
