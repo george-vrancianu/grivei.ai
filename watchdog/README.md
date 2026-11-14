@@ -63,6 +63,8 @@ python -m venv .venv              # or: uv venv .venv
 .venv/bin/pytest
 ```
 
+Every test runs behind two guards in `tests/conftest.py`: outbound network is blocked at the socket level (only loopback and unix sockets pass; a test that must go out takes `@pytest.mark.network`; `tests/test_network_guard.py` proves it), and a test still running after `PIPELINE_TEST_TIMEOUT` seconds (default 600, 0 = off) dumps its traceback and kills the process. For an outer cap run `timeout -s KILL 600 .venv/bin/pytest tests/<file>.py`.
+
 Backups (`tests/test_backup.py`, #82) need restic: `restic` on the PATH, or `PIPELINE_RESTIC_BIN`, or the official image pulled once (`docker pull restic/restic:0.18.1`; `tests/tools/restic-docker.sh` runs it capped and removed); skipped without any. The switchover tests (`tests/test_switchover_db.py`) use the same one capped ParadeDB container as the other `*_db` tests.
 
 ## The pipeline (explorer)
