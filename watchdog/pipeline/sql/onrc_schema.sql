@@ -89,6 +89,7 @@ CREATE TABLE onrc.search (
     statuses          text[] NOT NULL DEFAULT '{}', -- ONRC status codes the newest snapshot shows (the `status` filter reads this)
     caen              text[] NOT NULL DEFAULT '{}', -- authorised CAEN codes (the `caen` filter: a code or a prefix)
     seap_counterparty boolean NOT NULL,             -- the CUI is an authority or a winner of a loaded SEAP Record
+    aliases           text[] NOT NULL DEFAULT '{}', -- the earlier names the document holds (never one that looks like a sole trader's): the only ones a highlight may show
     doc               text NOT NULL                 -- folded text, see above
 );
 

@@ -3843,10 +3843,15 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       }
       expect((await search({ caen: "56" })).count).toBe(0);
       // the whole register as the search lists it, and every other answer, hold no person's name or their registrations
-      const everything = [await search({}, { limit: 200 }), await search({ q: "alfa" }), await search({ q: "onrc" }), await search({ county: "RO-CJ" }), await search({ county: "RO-B" }), await search({ seapCounterparty: false })];
+      const everything = [await search({}, { limit: 200 }), await search({ q: "alfa" }), await search({ q: "onrc" }), await search({ county: "RO-CJ" }), await search({ county: "RO-B" }), await search({ seapCounterparty: false }),
+        await search({ q: "omega" }), await search({ q: "omega only" })]; // OMEGA ONLY SRL was once OMEGA IONESCU PFA: that earlier name is no alias, neither a highlight nor a match
       const text = JSON.stringify(everything);
       for (const p of [...PEOPLE, ...SOLE_TRADER_REGISTRATIONS]) expect(text, p).not.toMatch(new RegExp(`(?<![\\p{L}\\p{N}])${p.replace(/[/]/g, "\\/")}(?![\\p{L}\\p{N}])`, "iu")); // as whole words: PRIMARIA is no MARIA
       for (const s of everything) for (const row of s.organisations.rows) expect(Object.keys(row).sort()).toEqual(["caen", "cui", "entity", "legalForm", "matched", "name", "registrationDate", "registrationNumber", "seapCounterparty", "seat", "statuses"]);
+      const omega = await search({ q: "omega" });
+      expect(omega.organisations.rows.map((r) => r.registrationNumber)).toEqual([REGS.omega]);
+      expect(omega.organisations.rows[0]!.matched.every((m) => m.field !== "ALIAS")).toBe(true);
+      expect((await search({ q: "omega ionescu" })).count).toBe(0);
       // the count lens leaves them out too
       const lens = (await search({})).map;
       expect(lens.counties.reduce((n, c) => n + c.registrations, 0) + lens.unplacedRegistrations).toBe(9);

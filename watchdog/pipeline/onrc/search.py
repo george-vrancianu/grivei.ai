@@ -64,9 +64,10 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
                 if is_sole_trader(name, legal_form):
                     summary.sole_traders_left_out += 1
                     continue
-                doc = fold(" ".join([name, *(a for a in aliases if not is_sole_trader(a, None)), cui or "", reg_no, *caen]))
-                rows.append((reg_no, cui, registered, f"RO-{county_iso}" if county_iso else "UNPLACED", statuses, caen, counterparty, doc))
-            with cur.copy("COPY onrc.search (reg_no, cui, registration_date, area, statuses, caen, seap_counterparty, doc) FROM STDIN") as copy:
+                kept = [a for a in aliases if not is_sole_trader(a, None)]  # the same list feeds the document and the API's highlights
+                doc = fold(" ".join([name, *kept, cui or "", reg_no, *caen]))
+                rows.append((reg_no, cui, registered, f"RO-{county_iso}" if county_iso else "UNPLACED", statuses, caen, counterparty, kept, doc))
+            with cur.copy("COPY onrc.search (reg_no, cui, registration_date, area, statuses, caen, seap_counterparty, aliases, doc) FROM STDIN") as copy:
                 for row in rows:
                     copy.write_row(row)
             summary.indexed += len(rows)

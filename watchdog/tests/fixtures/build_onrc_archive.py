@@ -226,8 +226,11 @@ def build(out: Path = OUT, companies: dict | None = None, caen: dict | None = No
 SOLO_PFA = ("IONESCU ALFA PFA", cui_with_check_digit(310011), "F12/2001/2019")
 SOLO_II = ("VASILESCU MARIA ALFA II", cui_with_check_digit(310012), "F40/2002/2020")
 SOLO_FORM = ("DEMETER PERSOANA FIZICA AUTORIZATA", cui_with_check_digit(310013), "F03/2003/2021")
+# OMEGA ONLY SRL was once named after a person: that earlier name looks like a sole trader's, so the document and the highlights must leave it out.
+OMEGA_EARLIER = "OMEGA IONESCU PFA"
 SEARCH_COMPANIES = {
     **COMPANIES,
+    OMEGA[2]: {**COMPANIES[OMEGA[2]], S1: row(OMEGA_EARLIER, OMEGA[1], [FUNCTIUNE, INTRERUPERE], "Cluj", "Floreşti", "03/06/2020"), S2: row(OMEGA_EARLIER, OMEGA[1], [FUNCTIUNE], "Cluj", "Floreşti", "03/06/2020")},
     SOLO_PFA[2]: {d: row(SOLO_PFA[0], SOLO_PFA[1], [FUNCTIUNE], "Cluj", "Cluj-Napoca", "05/05/2019", "PFA") for d in (S2, S3, S4)},
     SOLO_II[2]: {d: row(SOLO_II[0], SOLO_II[1], [FUNCTIUNE], "Bucureşti", "Bucureşti Sectorul 1", "01/09/2020", "II") for d in (S2, S3, S4)},
     SOLO_FORM[2]: {d: row(SOLO_FORM[0], SOLO_FORM[1], [FUNCTIUNE], "Iaşi", "Iaşi", "02/02/2021", "PERSOANA FIZICA AUTORIZATA") for d in (S2, S3, S4)},

@@ -20,8 +20,8 @@
     },
     {
       "name": "od_firme.csv",
-      "sha256": "252a8e0e1836dd7d7fadf2d0abe8aa90398e0586830588640d1ed8f3bd6f4430",
-      "bytes": 1935
+      "sha256": "2be882e3f2ad8e0c9c0e2df7fbbd4ea71ce6b8bee2df1530f85e5d9cc9cd380c",
+      "bytes": 1938
     },
     {
       "name": "od_stare_firma.csv",
@@ -43,7 +43,7 @@
         "name": "OD_FIRME.CSV",
         "url": "https://data.gov.ro/dataset/firme-02-03-2026/resource/9a9f7c36-0000-4000-8000-000000000000/download/od_firme.csv",
         "lastModified": "2026-11-06T05:15:47",
-        "size": 1905,
+        "size": 1908,
         "hash": "",
         "format": "CSV",
         "rows": 13

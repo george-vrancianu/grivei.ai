@@ -53,6 +53,9 @@ def test_the_document_holds_the_name_the_aliases_the_cui_the_registration_number
     url, _, _ = built
     assert q(url, "SELECT doc FROM onrc.search WHERE reg_no = %s", ALFA[2]) == [(f"alfa onrc {ALFA[1]} j40 1001 2015 4120 4211",)]
     assert q(url, "SELECT doc FROM onrc.search WHERE reg_no = %s", BETA[2]) == [(f"beta nou beta vechi {BETA[1]} j40 1002 2012 4321",)]  # the current name, then an earlier one
+    # an earlier name that looks like a sole trader's is in neither the document nor the aliases the API highlights from
+    assert q(url, "SELECT doc, aliases FROM onrc.search WHERE reg_no = %s", OMEGA[2]) == [(f"omega only {OMEGA[1]} j12 1007 2020 6201", [])]
+    assert q(url, "SELECT aliases FROM onrc.search WHERE reg_no = %s", BETA[2]) == [(["BETA VECHI SRL"],)]
     assert q(url, "SELECT doc FROM onrc.search WHERE reg_no = %s", INVALID[2]) == [("firma cui gresit j40 1010 2017",)]  # no valid CUI, still an organisation
 
 

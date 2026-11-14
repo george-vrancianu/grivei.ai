@@ -50,7 +50,7 @@ def build_where(f: dict) -> Where:
         preds.append(f"(doc @@@ pdb.regex({bind(_regex_escape(toks[-1]) + '.*', '::text')}) OR doc ||| {bind(toks[-1], '::text')})")
     if f.get("status"):
         preds.append(f"statuses @@@ pdb.term_set({bind([str(s) for s in f['status']], '::text[]')})")
-    if f.get("caen"):
+    if (f.get("caen") or "").strip():  # spaces alone are no code
         preds.append(f"caen @@@ pdb.regex({bind(_regex_escape(f['caen'].strip()) + '.*', '::text')})")
     if f.get("county"):
         preds.append(f"area = {bind(f['county'])}")

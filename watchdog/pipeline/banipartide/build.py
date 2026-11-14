@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 import psycopg
 
 from ..archive import Archive, Unit
-from ..sole_trader import is_sole_trader  # noqa: F401  (the shared rule; also imported from here by this Source's tests)
+from ..sole_trader import is_sole_trader  # the shared rule (also imported from here by this Source's tests)
 from .fetch import FILE_NAME, KIND, SOURCE, STREAM
 from .read import BaniPartideError, Donation, ReadStats, read_donations
 

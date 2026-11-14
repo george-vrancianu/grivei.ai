@@ -46,7 +46,8 @@ export function buildOnrcWhere(filter: OnrcSearchFilter): OnrcWhere {
     preds.push(`(doc @@@ pdb.regex(${bind(`${escapeRegex(last)}.*`, "::text")}) OR doc ||| ${bind(last, "::text")})`);
   }
   if (filter.status?.length) preds.push(`statuses @@@ pdb.term_set(${bind(filter.status.map(String), "::text[]")})`);
-  if (filter.caen) preds.push(`caen @@@ pdb.regex(${bind(`${escapeRegex(filter.caen.trim())}.*`, "::text")})`);
+  const caen = filter.caen?.trim(); // spaces alone are no code: not "has any CAEN"
+  if (caen) preds.push(`caen @@@ pdb.regex(${bind(`${escapeRegex(caen)}.*`, "::text")})`);
   // a county (`RO-CJ`) or UNPLACED; any other value matches nothing (a stale URL is an empty set, not an error)
   if (filter.county) preds.push(`area = ${bind(filter.county)}`);
   if (filter.registeredFrom) preds.push(`registration_date >= ${bind(filter.registeredFrom, "::date")}`);
@@ -121,7 +122,8 @@ export function onrcStore({ pool, entitiesOf }: { pool: pg.Pool; entitiesOf: (ke
         ),
         pool.query(`SELECT reg_no, code, version FROM onrc.caen WHERE reg_no = ANY($1) ORDER BY reg_no, code`, [regs]),
         pool.query(
-          `SELECT n.reg_no, n.name FROM onrc.name_span n JOIN onrc.registration r ON r.reg_no = n.reg_no AND n.name <> r.name WHERE n.reg_no = ANY($1)
+          `SELECT n.reg_no, n.name FROM onrc.name_span n JOIN onrc.registration r ON r.reg_no = n.reg_no AND n.name <> r.name
+             JOIN onrc.search s ON s.reg_no = n.reg_no AND n.name = ANY(s.aliases) WHERE n.reg_no = ANY($1)
             GROUP BY n.reg_no, n.name ORDER BY n.reg_no, max(n.last_seen) DESC, n.name`,
           [regs],
         ),
