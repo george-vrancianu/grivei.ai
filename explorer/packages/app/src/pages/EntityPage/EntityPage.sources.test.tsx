@@ -150,6 +150,13 @@ describe.each([
     expect(screen.queryByText("J40/777/2015")).toBeNull();
   });
 
+  it("drops the switch when ONRC's search lists none of the entity's registrations, though the entity says ONRC has it", async () => {
+    open(`${URL}?source=onrc`, [{ ...ask({}), data: answer([]) }]);
+    expect(await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
+    await settled();
+    expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
+  });
+
   it("asks ONRC for nothing on the other tabs", async () => {
     const { sent } = open(`${base}/supplier/${CUI}/relationships`);
     await screen.findByRole("heading", { level: 1 });

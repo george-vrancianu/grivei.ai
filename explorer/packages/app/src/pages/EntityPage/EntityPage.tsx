@@ -107,7 +107,9 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const showOnrcRecords = onrcHasRegistrations && (onrcMode || seapEmpty);
   // the ONRC side waits for the Records tab's answer on whether ONRC lists the CUI, then for the rows
   const onrcPending = onrcMode && ((state.status === "loading" && !onrcListed) || registrations.status === "loading");
-  const sourceSwitch = seapHasRecords && onrcListed && (
+  // `entity.onrc` does not say the registration is one ONRC's search lists: once the rows are in and there are none, ONRC has nothing to offer and the switch goes
+  const onrcEmpty = registrations.status === "ready" && registrations.all.length === 0;
+  const sourceSwitch = seapHasRecords && onrcListed && !onrcEmpty && (
     <SourcePicker
       options={[{ id: "SEAP", label: switches.options.SEAP }, { id: "ONRC", label: switches.options.ONRC }]}
       selected={showOnrcRecords ? "ONRC" : "SEAP"}
