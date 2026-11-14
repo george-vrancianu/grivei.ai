@@ -27,5 +27,20 @@ export function signalSentenceNodes(signal: Pick<SignalData, "numbers">, locale:
       return withNodes((ceiling, subsequent) => rules.FRAMEWORK_OVERRUN.sentence({ ...filled.texts, ceiling, subsequent }), [money(numbers.ceiling), money(numbers.subsequent)]);
     case "NO_PUBLICATION":
       return rules.NO_PUBLICATION.sentence(filled.texts);
+    case "YOUNG_FIRM":
+      return rules.YOUNG_FIRM.sentence(filled.texts);
+    case "NO_CONSTRUCTION_CAEN":
+      if (numbers.__typename !== "NoConstructionCaenNumbers") return null;
+      return withNodes((value) => rules.NO_CONSTRUCTION_CAEN.sentence({ ...filled.texts, value }), [money(numbers.value)]);
+    case "AFTER_STRIKE_OFF":
+      return rules.AFTER_STRIKE_OFF.sentence(filled.texts);
+    case "INSOLVENCY":
+      return rules.INSOLVENCY.sentence(filled.texts);
+    case "FEW_EMPLOYEES":
+      if (numbers.__typename !== "FewEmployeesNumbers") return null;
+      return withNodes((awarded) => rules.FEW_EMPLOYEES.sentence({ ...filled.texts, awarded }), [money(numbers.awarded)]);
+    case "NO_FINANCIAL_STATEMENT":
+      if (numbers.__typename !== "NoFinancialStatementNumbers") return null;
+      return withNodes((awarded) => rules.NO_FINANCIAL_STATEMENT.sentence({ ...filled.texts, awarded }), [money(numbers.awarded)]);
   }
 }

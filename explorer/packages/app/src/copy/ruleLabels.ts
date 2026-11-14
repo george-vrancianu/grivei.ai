@@ -10,4 +10,10 @@ export const ruleLabels = (rules: SignalRulesCopy): Record<SignalRuleSlug, strin
   SPLITTING: rules.SPLITTING.label,
   FRAMEWORK_OVERRUN: rules.FRAMEWORK_OVERRUN.label,
   NO_PUBLICATION: rules.NO_PUBLICATION.label,
+  YOUNG_FIRM: rules.YOUNG_FIRM.label,
+  NO_CONSTRUCTION_CAEN: rules.NO_CONSTRUCTION_CAEN.label,
+  AFTER_STRIKE_OFF: rules.AFTER_STRIKE_OFF.label,
+  INSOLVENCY: rules.INSOLVENCY.label,
+  FEW_EMPLOYEES: rules.FEW_EMPLOYEES.label,
+  NO_FINANCIAL_STATEMENT: rules.NO_FINANCIAL_STATEMENT.label,
 });

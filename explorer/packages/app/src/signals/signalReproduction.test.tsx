@@ -14,7 +14,8 @@ import { reproduceFilter, signalReproduceHref } from "./reproduceHref.ts";
 
 const FACETS = /^(Filter by facet|Filtre pe fațete)$/;
 const RULE_LABEL = { en: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" }, ro: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" } } as const;
-const RULES: SignalRule[] = ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"];
+// the four rules the SEAP-only recordings carry; the six ONRC and financial-statement rules (#184) are recorded in their own archive (seam 1 reproduces them there)
+const RULES = ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"] as const satisfies readonly SignalRule[];
 
 const signals = recordedSignals();
 /** The recorded Overview whose page lists the Signal (the first such). */

@@ -48,6 +48,36 @@ const signalCard: Copy["signalCard"] = {
       sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
       lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
     },
+    YOUNG_FIRM: {
+      label: "Young firm",
+      sentence: (n) => `A Record is dated ${n.days} ${n.daysCount === 1 ? "day" : "days"} after the supplier registered, on ${n.registered}.`,
+      lawful: "Possible lawful explanations: a company set up for one contract, or an established business that took a new registration after a restructuring or a change of legal form.",
+    },
+    NO_CONSTRUCTION_CAEN: {
+      label: "Works without a construction CAEN",
+      sentence: (n) => `A works Record of ${n.value} went to a firm with no construction CAEN among its ${n.codes} authorised ${n.codesCount === 1 ? "code" : "codes"}.`,
+      lawful: "Possible lawful explanations: a subcontractor or consortium partner does the building, the register is out of date, or the firm works under a code it did not list.",
+    },
+    AFTER_STRIKE_OFF: {
+      label: "After strike-off",
+      sentence: (n) => `A Record is dated ${n.daysAfter} ${n.daysAfterCount === 1 ? "day" : "days"} after ANAF shows the supplier struck off, on ${n.struckOff}.`,
+      lawful: "Possible lawful explanations: a delay between the award and its publication, a successor company that took over under another number, or a strike-off ANAF later reversed.",
+    },
+    INSOLVENCY: {
+      label: "Insolvency",
+      sentence: (n) => `ONRC lists the supplier with the status "${n.status}", first seen in its ${n.firstSeen} snapshot${n.sinceAtLeast ? " (the earliest held, so possibly older)" : ""}. The status is undated; the supplier has Records in the six months up to ONRC's latest snapshot.`,
+      lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
+    },
+    FEW_EMPLOYEES: {
+      label: "At most one employee",
+      sentence: (n) => `The supplier was awarded ${n.awarded} in ${n.fiscalYear} and reported ${n.employees} average ${n.employeesCount === 1 ? "employee" : "employees"} for that fiscal year.`,
+      lawful: "Possible lawful explanations: the work is subcontracted or done by staff employed through another company, or a yearly average understates a seasonal workforce.",
+    },
+    NO_FINANCIAL_STATEMENT: {
+      label: "No financial statement",
+      sentence: (n) => `An ${n.legalForm} was awarded ${n.awarded} in ${n.fiscalYear}; no financial statement is held for ${n.fiscalYear} or ${n.previousYear}.`,
+      lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
+    },
   },
   compact: { text: (label, when) => `${label}, ${when}` },
   date: (when) => `Latest Record: ${when}`,

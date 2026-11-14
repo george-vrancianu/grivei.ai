@@ -32,7 +32,10 @@ describe("the methodology page's anchors", () => {
   });
 
   it("names the Signal rules' anchors after their slugs", () => {
-    expect(SIGNAL_RULES.map(signalAnchor)).toEqual(["signal-over-cap", "signal-splitting", "signal-framework-overrun", "signal-no-publication"]);
+    expect(SIGNAL_RULES.map(signalAnchor)).toEqual([
+      "signal-over-cap", "signal-splitting", "signal-framework-overrun", "signal-no-publication",
+      "signal-young-firm", "signal-no-construction-caen", "signal-after-strike-off", "signal-insolvency", "signal-few-employees", "signal-no-financial-statement",
+    ]);
     expect(METHODOLOGY_ANCHORS.awardedValue).toBe("awarded-value");
   });
 

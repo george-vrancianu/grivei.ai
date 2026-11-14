@@ -121,7 +121,7 @@ export const methodologyRo: MethodologyPageCopy = {
     heading: "Regulile Semnalelor",
     paragraphs: [
       "Un Semnal este un set de înregistrări potrivite de o regulă publicată, care merită verificate în documentele-sursă. Nu este niciodată o concluzie sau o acuzație: fiecare regulă descrie un tipar, iar un tipar poate avea o explicație obișnuită. Semnalele se numără, nu se notează și nu se clasifică.",
-      "Un Semnal este datat după cea mai recentă înregistrare a sa. Fiecare Semnal trimite la un filtru al tabului Înregistrări care îl reproduce și la înregistrarea din SEAP. O valoare pe care regula de calcul o lasă în afara sumelor nu declanșează niciodată un Semnal și nu se numără în el. Sunt patru reguli; pentru fiecare, fereastra este perioada înregistrărilor la care se uită regula, iar rata națională de bază este ponderea autorităților contractante care au avut cel puțin un Semnal din acea regulă în anul de bază, dintre cele care au avut în acel an înregistrări la care se uită regula. Ambele sunt recalculate la fiecare încărcare a datelor.",
+      "Un Semnal este datat după cea mai recentă înregistrare a sa. Fiecare Semnal trimite la un filtru al tabului Înregistrări care îl reproduce și la înregistrarea din SEAP. O valoare pe care regula de calcul o lasă în afara sumelor nu declanșează niciodată un Semnal și nu se numără în el. Sunt zece reguli; pentru fiecare, fereastra este perioada înregistrărilor la care se uită regula, iar rata națională de bază este ponderea autorităților contractante care au avut cel puțin un Semnal din acea regulă în anul de bază, dintre cele care au avut în acel an înregistrări la care se uită regula. Ambele sunt recalculate la fiecare încărcare a datelor.",
     ],
   },
   rules: {
@@ -168,6 +168,74 @@ export const methodologyRo: MethodologyPageCopy = {
         "Un Semnal pentru fiecare autoritate și zi de atribuire.",
       ],
       lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
+    },
+    YOUNG_FIRM: {
+      heading: "Firmă tânără",
+      paragraphs: ["Firmă tânără: un furnizor a cărui primă înregistrare apare în cel mult 90 de zile de la înmatriculare sau care câștigă o înregistrare mare în cel mult 180 de zile de la ea."],
+      items: [
+        "Data înmatriculării: data pe care ONRC o înscrie pentru înmatricularea furnizorului, din cel mai recent instantaneu ONRC. Un furnizor listat de ONRC fără dată de înmatriculare (formatul mai vechi al instantaneelor nu are) nu intră niciodată în regulă, iar regula nu se afișează deloc cât timp nu este încărcată nicio dată de înmatriculare. Data este a societății: una reînmatriculată poate părea mai tânără decât afacerea ei.",
+        "Primul contract: cea mai veche înregistrare a furnizorului din explorator. Contează când este datată în ziua înmatriculării sau după ea și cel mult 90 de zile după. Înregistrările ulterioare din acele 90 de zile sunt doar context și nu sunt niciodată un Semnal de sine stătător.",
+        withAmounts((a) => `Înregistrare mare: orice înregistrare cu valoare numărată de cel puțin ${a} (exact atât contează), datată la cel mult 180 de zile după înmatriculare, fie că este prima a furnizorului, fie nu. O valoare lipsă, lăsată deoparte sau de plafon contează ca zero.`, ["100000000"]),
+        "Zilele sunt zile calendaristice de la ziua înmatriculării până la data atribuirii înregistrării; ziua 90 și ziua 180 intră. O înregistrare datată înainte de înmatriculare nu contează niciodată. O înregistrare cu asociere contează când oricare dintre membri respectă regula.",
+        "Fereastra și rata: fereastra începe cu prima înregistrare încărcată, iar rata de mai jos este recalculată la fiecare încărcare, pe un an calendaristic ca la celelalte reguli.",
+      ],
+      lawful: "Explicații legale posibile: o societate înființată pentru un singur contract sau o afacere existentă care a primit o înmatriculare nouă după o restructurare ori o schimbare a formei juridice.",
+    },
+    NO_CONSTRUCTION_CAEN: {
+      heading: "Lucrări fără CAEN de construcții",
+      paragraphs: ["Lucrări fără CAEN de construcții: o înregistrare de lucrări de valoare mare câștigată de o firmă fără niciun cod CAEN de construcții printre codurile sale autorizate."],
+      items: [
+        withAmounts((a) => `Lucrările se stabilesc ca în regula de numărare: tipul de contract Lucrări sau diviziunea CPV 45. Valoarea numărată a înregistrării este de cel puțin ${a} (exact atât contează); o valoare lipsă, lăsată deoparte sau de plafon nu declanșează niciodată regula.`, ["100000000"]),
+        "Codurile autorizate sunt cele din cel mai recent instantaneu ONRC. Construcțiile sunt diviziunile 41, 42 și 43 din CAEN Rev.2 (2008) și Rev.3 (2025), după revizuirea fiecărui cod; pentru codurile mai vechi CAEN 1998 și 2003 este diviziunea 45.",
+        "Necunoscutul nu este niciodată Semnal: un câștigător fără entitate, fără înmatriculare ONRC sau fără coduri înscrise (formatul mai vechi al instantaneelor nu are) nu declanșează regula. O asociere o declanșează doar când niciunul dintre membri nu are un cod de construcții.",
+        "Un registru permite unei firme să aibă coduri pe care nu le folosește și să lucreze sub coduri pe care nu le are. Fereastra și rata: fereastra începe cu prima înregistrare încărcată, iar rata de mai jos este recalculată la fiecare încărcare.",
+      ],
+      lawful: "Explicații legale posibile: construcția este făcută de un subcontractant sau de un asociat, registrul este depășit ori firma lucrează sub un cod pe care nu l-a înscris.",
+    },
+    AFTER_STRIKE_OFF: {
+      heading: "După radiere",
+      paragraphs: ["După radiere: o înregistrare datată după ziua în care ANAF arată furnizorul radiat."],
+      items: [
+        "Radierea este data din răspunsul ANAF pentru CUI-ul furnizorului („RADIERE din data ...”), la ziua la care a fost obținut ultima oară acel răspuns. Starea de radiată din ONRC nu are dată și nu este folosită aici. Un răspuns care spune radiat fără dată nu declanșează niciodată regula.",
+        "Data atribuirii înregistrării trebuie să fie după ziua radierii: o înregistrare din chiar ziua aceea nu contează. Orice înregistrare contează, indiferent de valoare, inclusiv una fără valoare.",
+        "O societate radiată și reînmatriculată apoi, sau a cărei radiere a fost anulată, arată starea pe care ANAF a dat-o ultima oară. O fuziune sau un succesor este o altă entitate și nu este legat.",
+        "Fereastra și rata: fereastra începe cu prima înregistrare încărcată, iar rata de mai jos este recalculată la fiecare încărcare.",
+      ],
+      lawful: "Explicații legale posibile: o întârziere între atribuire și publicare, o societate succesoare care a preluat activitatea sub alt număr sau o radiere pe care ANAF a anulat-o ulterior.",
+    },
+    INSOLVENCY: {
+      heading: "Insolvență",
+      paragraphs: ["Insolvență: furnizorul este acum în insolvență sau reorganizare și are înregistrări în ultimele șase luni."],
+      items: [
+        "Starea: stările pe care ONRC le arată pentru furnizor în cel mai recent instantaneu, citite după denumirea pe care ONRC o publică pentru fiecare: insolvență, reorganizare judiciară sau faliment. Celelalte stări (dizolvare, lichidare, suspendare, radiere) nu fac parte din această regulă.",
+        "Starea nu este datată. Datele deschise ale ONRC listează stările unei societăți în fiecare instantaneu, nu când au început, așa că explicatorul poate spune doar în ce instantaneu a fost văzută prima oară o stare (și „cel puțin din” când acela este cel mai vechi instantaneu păstrat). Procedura poate fi mai veche decât acel instantaneu sau mai nouă decât înregistrarea: un Semnal spune „acum în insolvență și a câștigat recent”, niciodată „a câștigat în timp ce era în insolvență”.",
+        "„Acum” este data celui mai recent instantaneu ONRC, iar „ultimele șase luni” sunt cele șase luni calendaristice până la el, inclusiv. O înregistrare datată după acel instantaneu este în afara a ceea ce spune starea. Orice înregistrare contează, indiferent de valoare.",
+        "Fereastra și rata: rata de mai jos este măsurată pe un an calendaristic ca la celelalte reguli, nu pe fereastra de șase luni, deci este doar un reper pentru cât de des apare regula. Este recalculată la fiecare încărcare.",
+      ],
+      lawful: "Explicații legale posibile: înregistrarea a fost atribuită înainte de începerea procedurii sau procedura permite continuarea activității printr-un plan de reorganizare.",
+    },
+    FEW_EMPLOYEES: {
+      heading: "Cel mult un angajat",
+      paragraphs: ["Cel mult un angajat: un furnizor căruia i s-a atribuit o sumă mare într-un an și care a raportat cel mult un angajat în medie pentru acel an fiscal."],
+      items: [
+        withAmounts((a) => `Atribuiri: valoarea atribuită furnizorului în anul calendaristic al datelor de atribuire ale înregistrărilor, numărată după aceeași regulă ca orice alt total (un membru al unei asocieri are o parte egală; o valoare lipsă, lăsată deoparte sau de plafon nu adaugă nimic), de cel puțin ${a} (exact atât contează). Semnalul listează înregistrările numărate ale furnizorului din acel an.`, ["500000000"]),
+        "Angajați: numărul mediu de angajați pe care furnizorul l-a raportat Ministerului Finanțelor pentru același an fiscal, din situația pe care o avem (versiunea revizuită, când există). Un 0 sau un 1 raportat contează. Un câmp gol este „neraportat” și nu declanșează niciodată regula; fără situație pentru an nu există Semnal, deci un an de atribuire mai nou decât cel mai nou an fiscal păstrat nu poate declanșa regula.",
+        "Numărul este o medie anuală: o firmă îl poate menține mic prin subcontractare sau angajând prin altă societate, iar o situație poate conține o cifră greșită.",
+        "Fereastra și rata: rata de mai jos este măsurată în cel mai nou an fiscal păstrat, cel mai nou an pe care îl vede regula, și recalculată la fiecare încărcare.",
+      ],
+      lawful: "Explicații legale posibile: lucrarea este subcontractată sau făcută de personal angajat printr-o altă societate ori media anuală subestimează o forță de muncă sezonieră.",
+    },
+    NO_FINANCIAL_STATEMENT: {
+      heading: "Fără situații financiare",
+      paragraphs: ["Fără situații financiare: un SRL sau un SA căruia i s-a atribuit o sumă mare într-un an, fără situație financiară pentru acel an fiscal sau pentru anul dinainte."],
+      items: [
+        "Forma juridică: forma juridică a furnizorului așa cum o listează ONRC, SRL sau SA. Persoanele fizice autorizate, instituțiile publice și celelalte forme nu declanșează niciodată regula, nici un furnizor pe care ONRC nu îl listează (forma lui juridică este necunoscută).",
+        withAmounts((a) => `Atribuiri: numărate ca la regula angajaților, de cel puțin ${a} (exact atât contează) în anul calendaristic al datelor de atribuire ale înregistrărilor.`, ["100000000"]),
+        "Fără situație: explicatorul nu are nicio situație pentru acel CUI nici pentru anul de atribuire, nici pentru anul dinainte, în nicio versiune; oricare dintre ele scoate furnizorul din regulă.",
+        "Cel mai nou an fiscal este lăsat deoparte până la versiunea lui revizuită. Ministerul Finanțelor publică situațiile unui an în iunie anul următor și le corectează și completează un an mai târziu, deci o situație care lipsește din prima versiune poate lipsi doar din ea. Un an de atribuire nu este evaluat cât timp cel mai nou an fiscal păstrat nu are versiune revizuită, iar anul de atribuire este acela sau unul ulterior; nici nu este evaluat dacă anul dinainte nu este unul pentru care păstrăm situații (primul an fiscal păstrat este 2021, deci primul an de atribuire este 2022).",
+        "O societate înmatriculată cu puțin timp înainte de anul atribuirii poate să nu aibă încă situație, iar o situație poate fi depusă sub alt CUI după o fuziune. Fereastra și rata: rata de mai jos este măsurată în cel mai nou an de atribuire pe care îl evaluează regula și recalculată la fiecare încărcare.",
+      ],
+      lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
     },
   },
   referenceDataThrough: (date) => `Date până la ${date}`,

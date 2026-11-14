@@ -58,6 +58,8 @@ describe("operations", () => {
       // ONRC's search (#176): the registration's name and number as published, the folded query the server understood, a status's nomenclature name, a county's name
       "OnrcRegistration.name", "OnrcRegistration.cui", "OnrcResult.registrationNumber", "OnrcResult.name", "OnrcResult.cui", "OnrcResult.legalForm", "OnrcCurrentStatus.name", "OnrcMatchedField.text", "OnrcFilterEcho.qFolded", "OnrcAreaCount.name",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
+      // the ONRC and financial-statement Signals (#184): ONRC's status name as published and the legal form as an abbreviation (SRL, SA); no prose of ours
+      "InsolvencyNumbers.status", "NoFinancialStatementNumbers.legalForm",
       // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
       "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",

@@ -56,8 +56,8 @@ def test_young_firm(built, labels):
         (A1, day(90), ["YF_FIRST_90"]),      # boundary: day 90 is in
         (A2, day(180), ["YF_LARGE_180"]),    # boundary: exactly 1,000,000 RON on day 180
     ]
-    assert got[1][3] == {"days": 90, "registered": "2025-03-01", "value": "3000000"}
-    assert got[2][3] == {"days": 180, "registered": "2025-03-01", "value": "100000000"}
+    assert got[1][3] == {"days": 90, "registered": "2025-03-01", "counted": "3000000"}
+    assert got[2][3] == {"days": 180, "registered": "2025-03-01", "counted": "100000000"}
     # not in any Signal: day 91, a Record of 5M on day 181, 999,999.99 RON on day 150, a Record before registering, an old firm
     assert q(url, "SELECT count(*) FROM seap.signal WHERE rule = 'YOUNG_FIRM' AND last_date IN (%s, %s, %s, %s, %s, %s)", day(91), day(181), day(150), day(-5), day(30), day(80))[0][0] == 0
     assert summary.signals["YOUNG_FIRM"] == 3

@@ -15,6 +15,12 @@ export const NUMBERS_TYPE: Record<string, string> = {
   SPLITTING: "SplittingNumbers",
   FRAMEWORK_OVERRUN: "FrameworkOverrunNumbers",
   NO_PUBLICATION: "NoPublicationNumbers",
+  YOUNG_FIRM: "YoungFirmNumbers",
+  NO_CONSTRUCTION_CAEN: "NoConstructionCaenNumbers",
+  AFTER_STRIKE_OFF: "AfterStrikeOffNumbers",
+  INSOLVENCY: "InsolvencyNumbers",
+  FEW_EMPLOYEES: "FewEmployeesNumbers",
+  NO_FINANCIAL_STATEMENT: "NoFinancialStatementNumbers",
 };
 
 /** The RecordFilterValue a Signal is reproduced by (the fields of the contract's output twin of RecordFilter). */
@@ -162,7 +168,7 @@ export function signalStore({ pool, entitiesOf, rowsOf, recordColumns }: SignalD
       const { rows } = await pool.query(
         `SELECT slug, window_from::text AS window_from, window_to::text AS window_to, base_rate, base_rate_year, data_through::text AS data_through
            FROM seap.signal_rule
-          ORDER BY array_position(ARRAY['OVER_CAP', 'SPLITTING', 'FRAMEWORK_OVERRUN', 'NO_PUBLICATION'], slug), slug`,
+          ORDER BY array_position(ARRAY['OVER_CAP', 'SPLITTING', 'FRAMEWORK_OVERRUN', 'NO_PUBLICATION', 'YOUNG_FIRM', 'NO_CONSTRUCTION_CAEN', 'AFTER_STRIKE_OFF', 'INSOLVENCY', 'FEW_EMPLOYEES', 'NO_FINANCIAL_STATEMENT'], slug), slug`,
       );
       return rows.map((r) => ({ slug: r.slug, window: { from: r.window_from, to: r.window_to }, baseRate: r.base_rate, baseRateYear: r.base_rate_year, dataThrough: r.data_through }));
     },

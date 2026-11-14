@@ -121,7 +121,7 @@ export const methodologyEn: MethodologyPageCopy = {
     heading: "Signal rules",
     paragraphs: [
       "A Signal is a set of Records matched by a published rule, worth verifying in the source documents. It is never a conclusion or an accusation: each rule describes a pattern, and a pattern can have an ordinary explanation. Signals are counted, never scored or ranked.",
-      "A Signal is dated by its latest Record. Each Signal links to a filter of the Records tab that reproduces it, and to the Record in SEAP. A value the counting rule leaves out of sums never triggers a Signal and never counts inside one. There are four rules; for each, the window is the period of Records the rule looks at, and the national base rate is the share of contracting authorities that had at least one Signal of that rule in the base-rate year, out of those that had Records the rule looks at that year. Both are recomputed every time the data is loaded.",
+      "A Signal is dated by its latest Record. Each Signal links to a filter of the Records tab that reproduces it, and to the Record in SEAP. A value the counting rule leaves out of sums never triggers a Signal and never counts inside one. There are ten rules; for each, the window is the period of Records the rule looks at, and the national base rate is the share of contracting authorities that had at least one Signal of that rule in the base-rate year, out of those that had Records the rule looks at that year. Both are recomputed every time the data is loaded.",
     ],
   },
   rules: {
@@ -168,6 +168,74 @@ export const methodologyEn: MethodologyPageCopy = {
         "One Signal for each authority and award day.",
       ],
       lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
+    },
+    YOUNG_FIRM: {
+      heading: "Young firm",
+      paragraphs: ["Young firm: a supplier whose first Record comes within 90 days of its registration, or that wins a large Record within 180 days of it."],
+      items: [
+        "Registration date: the date ONRC records for the supplier's registration, from ONRC's newest snapshot. A supplier ONRC lists without a registration date (the older snapshot layout has none) is never in this rule, and the rule is not shown at all while no registration date is loaded. The date is the company's own: one that re-registered can look younger than its business is.",
+        "First contract: the supplier's earliest Record in the explorer. It counts when it is dated on or after the registration and at most 90 days after it. Later Records within those 90 days are context only and are never a Signal on their own.",
+        withAmounts((a) => `Large Record: any Record with a counted value of at least ${a} (exactly that counts), dated at most 180 days after the registration, whether or not it is the supplier's first. A blank, left-out or ceiling value counts as nothing.`, ["100000000"]),
+        "Days are calendar days from the registration day to the Record's award date; day 90 and day 180 are in. A Record dated before the registration never counts. A consortium Record counts when any of its members meets the rule.",
+        "Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load, over a calendar year like the other rules.",
+      ],
+      lawful: "Possible lawful explanations: a company set up for one contract, or an established business that took a new registration after a restructuring or a change of legal form.",
+    },
+    NO_CONSTRUCTION_CAEN: {
+      heading: "Works without a construction CAEN",
+      paragraphs: ["Works without a construction CAEN: a works Record of a large value won by a firm with no construction CAEN code among its authorised codes."],
+      items: [
+        withAmounts((a) => `Works are told as in the counting rule: the contract type Lucrări, or CPV division 45. The Record's counted value is at least ${a} (exactly that counts); a blank, left-out or ceiling value never triggers.`, ["100000000"]),
+        "The authorised codes are the ones in ONRC's newest snapshot. Construction is divisions 41, 42 and 43 of CAEN Rev.2 (2008) and of Rev.3 (2025), told by each code's own revision; for the older CAEN 1998 and 2003 codes it is division 45.",
+        "Unknown is never a Signal: a winner without an entity, without an ONRC registration or without codes on record (the older snapshot layout has none) does not trigger. A consortium triggers only when none of its members has a construction code.",
+        "A register lets a firm hold codes it does not use and work under codes it does not hold. Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: a subcontractor or consortium partner does the building, the register is out of date, or the firm works under a code it did not list.",
+    },
+    AFTER_STRIKE_OFF: {
+      heading: "After strike-off",
+      paragraphs: ["After strike-off: a Record dated after the day ANAF shows the supplier struck off."],
+      items: [
+        "The strike-off is the date in ANAF's answer for the supplier's CUI (\"RADIERE din data ...\"), as of the day that answer was last fetched. ONRC's own struck-off status is undated and is not used here. An answer that says struck off without a date never triggers.",
+        "The Record's award date must be after the strike-off day: a Record on the day itself is not. Any Record counts, whatever its value, a blank one included.",
+        "A company struck off and later re-registered, or whose strike-off was reversed, shows the state ANAF last gave. A merger or a successor is another entity and is not linked.",
+        "Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: a delay between the award and its publication, a successor company that took over under another number, or a strike-off ANAF later reversed.",
+    },
+    INSOLVENCY: {
+      heading: "Insolvency",
+      paragraphs: ["Insolvency: the supplier is now in insolvency or reorganisation and has Records in the last six months."],
+      items: [
+        "Status: the status codes ONRC shows for the supplier in its newest snapshot, read by the name ONRC publishes for each: insolvency, judicial reorganisation or bankruptcy. Other statuses (dissolution, liquidation, suspension, struck off) are not part of this rule.",
+        "The status is undated. ONRC's open data lists the statuses a company has in each snapshot, not when they began, so the explorer can only say which snapshot a status was first seen in (and \"at least since\" when that is the earliest snapshot held). The proceedings may be older than that snapshot, or younger than the Record: a Signal says \"in insolvency now and won recently\", never \"won while in insolvency\".",
+        "\"Now\" is the date of ONRC's newest snapshot, and \"the last six months\" are the six calendar months up to and including it. A Record dated after that snapshot is outside what the status says. Any Record counts, whatever its value.",
+        "Window and firing rate: the firing rate below is measured over a calendar year like the other rules, not over the six-month window, so it is only a guide to how often this rule fires. It is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
+    },
+    FEW_EMPLOYEES: {
+      heading: "At most one employee",
+      paragraphs: ["At most one employee: a supplier awarded a large sum in one year that reported at most one average employee for that fiscal year."],
+      items: [
+        withAmounts((a) => `Awards: the supplier's awarded value for the calendar year of the Records' award dates, counted by the same rule as every other total (a consortium member has an equal share; a blank, left-out or ceiling value adds nothing), at least ${a} (exactly that counts). The Signal lists that supplier's counted Records of the year.`, ["500000000"]),
+        "Employees: the average number of employees the supplier reported to the Ministry of Finance for the same fiscal year, from the statement the explorer holds (the revised release where there is one). A reported 0 or 1 counts. A blank is \"not reported\" and never triggers; with no statement for the year there is no Signal, so an award year newer than the newest fiscal year held cannot trigger.",
+        "The count is a yearly average: a firm can keep it low by subcontracting or by employing through another company, and a statement can carry a mistaken figure.",
+        "Window and firing rate: the firing rate below is measured in the newest fiscal year held, the newest year this rule can see, and recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the work is subcontracted or done by staff employed through another company, or a yearly average understates a seasonal workforce.",
+    },
+    NO_FINANCIAL_STATEMENT: {
+      heading: "No financial statement",
+      paragraphs: ["No financial statement: an SRL or an SA awarded a large sum in one year with no financial statement for that fiscal year or the year before."],
+      items: [
+        "Legal form: the supplier's legal form as ONRC lists it, an SRL or an SA. Sole traders, public institutions and other forms never trigger, and neither does a supplier ONRC does not list (its legal form is unknown).",
+        withAmounts((a) => `Awards: counted as for the employees rule, at least ${a} (exactly that counts) in the calendar year of the Records' award dates.`, ["100000000"]),
+        "No statement: the explorer holds no statement of that CUI for the award year nor for the year before, in any release; either one keeps the supplier out.",
+        "The newest fiscal year is left out until its revised release. The Ministry of Finance publishes a year's statements the following June and corrects and completes them a year later, so a statement missing from a first release may only be missing from it. An award year is not evaluated while the newest fiscal year held has no revised release and the award year is that one or later; nor is it evaluated unless the year before it is one the explorer holds statements for (the first fiscal year held is 2021, so the first award year is 2022).",
+        "A company registered shortly before the award year may have no statement yet, and a statement can be filed under another CUI after a merger. Window and firing rate: the firing rate below is measured in the newest award year the rule evaluates, and recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
     },
   },
   referenceDataThrough: (date) => `Data through ${date}`,

@@ -11,7 +11,7 @@
 - Both are counted from the day of registration to the Record's award date (ADR 0002: the publication date stands in when there is none). A Record dated
   before the registration (a data error, or a registration number that was reissued) never triggers. Days are calendar days; day 90 and day 180 are in.
 - Consortia: a Record triggers when any of its keyed winners meets the rule; every winner of the Record is named in the Signal.
-- Numbers: the earliest `days` among the Records of the Signal, that supplier's `registered` date and the Record's counted `value` (null for a blank one).
+- Numbers: the earliest `days` among the Records of the Signal, that supplier's `registered` date and the Record's `counted` value (null for a blank one).
 """
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def match(row: Row, context: Context) -> dict | None:
             best = (days, registered)
     if best is None:
         return None
-    return {"days": best[0], "registered": best[1].isoformat(), "value": None if counted is None else str(counted)}
+    return {"days": best[0], "registered": best[1].isoformat(), "counted": None if counted is None else str(counted)}
 
 
 def _combine(members: list[tuple[Row, dict]]) -> dict:

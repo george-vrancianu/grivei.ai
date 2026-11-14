@@ -28,6 +28,13 @@ export type Scalars = {
   Siruta: { input: string; output: string; }
 };
 
+/** ANAF's strike-off date and how many days after it the Signal's latest Record is. */
+export type AfterStrikeOffNumbers = {
+  __typename?: 'AfterStrikeOffNumbers';
+  daysAfter: Scalars['Int']['output'];
+  struckOff: Scalars['Date']['output'];
+};
+
 export type Alias = {
   __typename?: 'Alias';
   /** Badge: SEAP name differs from ANAF under the same CUI. */
@@ -244,6 +251,14 @@ export type FacetCount = {
   value: Scalars['String']['output'];
 };
 
+/** The supplier's awards for the fiscal year and the average employee count it reported for it (0 or 1). */
+export type FewEmployeesNumbers = {
+  __typename?: 'FewEmployeesNumbers';
+  awarded: Scalars['Bani']['output'];
+  employees: Scalars['Int']['output'];
+  fiscalYear: Scalars['Int']['output'];
+};
+
 /** Which release of MF's file a year's figures come from. */
 export type FinancialRevision =
   /** The year's first release: MF may still revise it. */
@@ -402,6 +417,14 @@ export type GapState =
   | 'NOT_YET_LOADED'
   | 'POSSIBLY_INCOMPLETE';
 
+/** The status as ONRC names it and the snapshot it was first seen in; the status itself is undated. `sinceAtLeast`: first seen in the earliest snapshot held. */
+export type InsolvencyNumbers = {
+  __typename?: 'InsolvencyNumbers';
+  firstSeen: Scalars['Date']['output'];
+  sinceAtLeast: Scalars['Boolean']['output'];
+  status: Scalars['String']['output'];
+};
+
 /**
  * An authority's Mandates, newest last, with the gaps between them. A Mandate runs from the oath to the successor's oath; the handover window, an interim leader
  * and a mandate without results get no Mandate and are listed as gaps, never guessed. The party is as registered at the election: the leader may have
@@ -494,6 +517,21 @@ export type MonthTotal = {
   __typename?: 'MonthTotal';
   month: Scalars['String']['output'];
   total: Total;
+};
+
+/** The largest counted value of the Signal's works Records and the fewest authorised CAEN codes among its winners. */
+export type NoConstructionCaenNumbers = {
+  __typename?: 'NoConstructionCaenNumbers';
+  authorisedCodes: Scalars['Int']['output'];
+  value: Scalars['Bani']['output'];
+};
+
+/** The supplier's awards for the year and its legal form as ONRC lists it (SRL or SA); no statement is held for the year or the one before. */
+export type NoFinancialStatementNumbers = {
+  __typename?: 'NoFinancialStatementNumbers';
+  awarded: Scalars['Bani']['output'];
+  fiscalYear: Scalars['Int']['output'];
+  legalForm: Scalars['String']['output'];
 };
 
 export type NoPublicationNumbers = {
@@ -1249,7 +1287,7 @@ export type SignalRecordsArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type SignalNumbers = FrameworkOverrunNumbers | NoPublicationNumbers | OverCapNumbers | SplittingNumbers;
+export type SignalNumbers = AfterStrikeOffNumbers | FewEmployeesNumbers | FrameworkOverrunNumbers | InsolvencyNumbers | NoConstructionCaenNumbers | NoFinancialStatementNumbers | NoPublicationNumbers | OverCapNumbers | SplittingNumbers | YoungFirmNumbers;
 
 export type SignalOrder =
   | 'DATE_DESC'
@@ -1273,10 +1311,17 @@ export type SignalRule = {
 };
 
 export type SignalRuleSlug =
+  | 'AFTER_STRIKE_OFF'
+  | 'FEW_EMPLOYEES'
   | 'FRAMEWORK_OVERRUN'
+  | 'INSOLVENCY'
+  | 'NO_CONSTRUCTION_CAEN'
+  | 'NO_FINANCIAL_STATEMENT'
   | 'NO_PUBLICATION'
   | 'OVER_CAP'
-  | 'SPLITTING';
+  | 'SPLITTING'
+  /** ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds. */
+  | 'YOUNG_FIRM';
 
 export type Source = {
   __typename?: 'Source';
@@ -1408,6 +1453,14 @@ export type ValueBucket =
   | 'UP_TO_270K'
   | 'UP_TO_900K';
 
+/** The fewest days between registering and a Record of the Signal; `counted` is that Record's counted value (null when it has none). */
+export type YoungFirmNumbers = {
+  __typename?: 'YoungFirmNumbers';
+  counted: Maybe<Scalars['Bani']['output']>;
+  days: Scalars['Int']['output'];
+  registered: Scalars['Date']['output'];
+};
+
 
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
@@ -1480,10 +1533,16 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 /** Mapping of union types */
 export type ResolversUnionTypes<_RefType extends Record<string, unknown>> = {
   SignalNumbers:
+    | ( AfterStrikeOffNumbers )
+    | ( FewEmployeesNumbers )
     | ( FrameworkOverrunNumbers )
+    | ( InsolvencyNumbers )
+    | ( NoConstructionCaenNumbers )
+    | ( NoFinancialStatementNumbers )
     | ( NoPublicationNumbers )
     | ( OverCapNumbers )
     | ( SplittingNumbers )
+    | ( YoungFirmNumbers )
   ;
 };
 
@@ -1494,6 +1553,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AfterStrikeOffNumbers: ResolverTypeWrapper<AfterStrikeOffNumbers>;
   Alias: ResolverTypeWrapper<Alias>;
   AreaKey: ResolverTypeWrapper<Scalars['AreaKey']['output']>;
   AreaTotal: ResolverTypeWrapper<AreaTotal>;
@@ -1522,6 +1582,7 @@ export type ResolversTypes = {
   EntityResult: ResolverTypeWrapper<Omit<EntityResult, 'entity'> & { entity: ResolversTypes['Entity'] }>;
   EntityResultPage: ResolverTypeWrapper<EntityResultPage>;
   FacetCount: ResolverTypeWrapper<FacetCount>;
+  FewEmployeesNumbers: ResolverTypeWrapper<FewEmployeesNumbers>;
   FinancialRevision: FinancialRevision;
   FinancialSource: ResolverTypeWrapper<FinancialSource>;
   FinancialStatements: ResolverTypeWrapper<FinancialStatements>;
@@ -1536,6 +1597,7 @@ export type ResolversTypes = {
   GapRule: GapRule;
   GapState: GapState;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  InsolvencyNumbers: ResolverTypeWrapper<InsolvencyNumbers>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Leadership: ResolverTypeWrapper<Leadership>;
   LeadershipGap: ResolverTypeWrapper<LeadershipGap>;
@@ -1548,6 +1610,8 @@ export type ResolversTypes = {
   MatchedField: ResolverTypeWrapper<MatchedField>;
   MoneyMap: ResolverTypeWrapper<MoneyMap>;
   MonthTotal: ResolverTypeWrapper<MonthTotal>;
+  NoConstructionCaenNumbers: ResolverTypeWrapper<NoConstructionCaenNumbers>;
+  NoFinancialStatementNumbers: ResolverTypeWrapper<NoFinancialStatementNumbers>;
   NoPublicationNumbers: ResolverTypeWrapper<NoPublicationNumbers>;
   OnrcAlias: ResolverTypeWrapper<OnrcAlias>;
   OnrcAreaCount: ResolverTypeWrapper<OnrcAreaCount>;
@@ -1616,10 +1680,12 @@ export type ResolversTypes = {
   UatMap: ResolverTypeWrapper<UatMap>;
   UnplacedTile: ResolverTypeWrapper<UnplacedTile>;
   ValueBucket: ValueBucket;
+  YoungFirmNumbers: ResolverTypeWrapper<YoungFirmNumbers>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AfterStrikeOffNumbers: AfterStrikeOffNumbers;
   Alias: Alias;
   AreaKey: Scalars['AreaKey']['output'];
   AreaTotal: AreaTotal;
@@ -1642,6 +1708,7 @@ export type ResolversParentTypes = {
   EntityResult: Omit<EntityResult, 'entity'> & { entity: ResolversParentTypes['Entity'] };
   EntityResultPage: EntityResultPage;
   FacetCount: FacetCount;
+  FewEmployeesNumbers: FewEmployeesNumbers;
   FinancialSource: FinancialSource;
   FinancialStatements: FinancialStatements;
   FinancialYear: FinancialYear;
@@ -1653,6 +1720,7 @@ export type ResolversParentTypes = {
   FrameworkSummary: FrameworkSummary;
   GapCell: GapCell;
   ID: Scalars['ID']['output'];
+  InsolvencyNumbers: InsolvencyNumbers;
   Int: Scalars['Int']['output'];
   Leadership: Leadership;
   LeadershipGap: LeadershipGap;
@@ -1662,6 +1730,8 @@ export type ResolversParentTypes = {
   MatchedField: MatchedField;
   MoneyMap: MoneyMap;
   MonthTotal: MonthTotal;
+  NoConstructionCaenNumbers: NoConstructionCaenNumbers;
+  NoFinancialStatementNumbers: NoFinancialStatementNumbers;
   NoPublicationNumbers: NoPublicationNumbers;
   OnrcAlias: OnrcAlias;
   OnrcAreaCount: OnrcAreaCount;
@@ -1718,6 +1788,13 @@ export type ResolversParentTypes = {
   Uat: Uat;
   UatMap: UatMap;
   UnplacedTile: UnplacedTile;
+  YoungFirmNumbers: YoungFirmNumbers;
+};
+
+export type AfterStrikeOffNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['AfterStrikeOffNumbers'] = ResolversParentTypes['AfterStrikeOffNumbers']> = {
+  daysAfter?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  struckOff?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type AliasResolvers<ContextType = any, ParentType extends ResolversParentTypes['Alias'] = ResolversParentTypes['Alias']> = {
@@ -1856,6 +1933,13 @@ export type FacetCountResolvers<ContextType = any, ParentType extends ResolversP
   value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };
 
+export type FewEmployeesNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['FewEmployeesNumbers'] = ResolversParentTypes['FewEmployeesNumbers']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  employees?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type FinancialSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialSource'] = ResolversParentTypes['FinancialSource']> = {
   datasetUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -1934,6 +2018,13 @@ export type GapCellResolvers<ContextType = any, ParentType extends ResolversPare
   state?: Resolver<ResolversTypes['GapState'], ParentType, ContextType>;
 };
 
+export type InsolvencyNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['InsolvencyNumbers'] = ResolversParentTypes['InsolvencyNumbers']> = {
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type LeadershipResolvers<ContextType = any, ParentType extends ResolversParentTypes['Leadership'] = ResolversParentTypes['Leadership']> = {
   gaps?: Resolver<Array<ResolversTypes['LeadershipGap']>, ParentType, ContextType>;
   mandates?: Resolver<Array<ResolversTypes['Mandate']>, ParentType, ContextType>;
@@ -1986,6 +2077,19 @@ export type MoneyMapResolvers<ContextType = any, ParentType extends ResolversPar
 export type MonthTotalResolvers<ContextType = any, ParentType extends ResolversParentTypes['MonthTotal'] = ResolversParentTypes['MonthTotal']> = {
   month?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
+};
+
+export type NoConstructionCaenNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoConstructionCaenNumbers'] = ResolversParentTypes['NoConstructionCaenNumbers']> = {
+  authorisedCodes?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type NoFinancialStatementNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoFinancialStatementNumbers'] = ResolversParentTypes['NoFinancialStatementNumbers']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  legalForm?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type NoPublicationNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoPublicationNumbers'] = ResolversParentTypes['NoPublicationNumbers']> = {
@@ -2314,7 +2418,7 @@ export type SignalResolvers<ContextType = any, ParentType extends ResolversParen
 };
 
 export type SignalNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalNumbers'] = ResolversParentTypes['SignalNumbers']> = {
-  __resolveType: TypeResolveFn<'FrameworkOverrunNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SplittingNumbers', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'AfterStrikeOffNumbers' | 'FewEmployeesNumbers' | 'FrameworkOverrunNumbers' | 'InsolvencyNumbers' | 'NoConstructionCaenNumbers' | 'NoFinancialStatementNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SplittingNumbers' | 'YoungFirmNumbers', ParentType, ContextType>;
 };
 
 export type SignalPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalPage'] = ResolversParentTypes['SignalPage']> = {
@@ -2389,7 +2493,15 @@ export type UnplacedTileResolvers<ContextType = any, ParentType extends Resolver
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
 };
 
+export type YoungFirmNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['YoungFirmNumbers'] = ResolversParentTypes['YoungFirmNumbers']> = {
+  counted?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
+  days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  registered?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type Resolvers<ContextType = any> = {
+  AfterStrikeOffNumbers?: AfterStrikeOffNumbersResolvers<ContextType>;
   Alias?: AliasResolvers<ContextType>;
   AreaKey?: GraphQLScalarType;
   AreaTotal?: AreaTotalResolvers<ContextType>;
@@ -2410,6 +2522,7 @@ export type Resolvers<ContextType = any> = {
   EntityResult?: EntityResultResolvers<ContextType>;
   EntityResultPage?: EntityResultPageResolvers<ContextType>;
   FacetCount?: FacetCountResolvers<ContextType>;
+  FewEmployeesNumbers?: FewEmployeesNumbersResolvers<ContextType>;
   FinancialSource?: FinancialSourceResolvers<ContextType>;
   FinancialStatements?: FinancialStatementsResolvers<ContextType>;
   FinancialYear?: FinancialYearResolvers<ContextType>;
@@ -2419,6 +2532,7 @@ export type Resolvers<ContextType = any> = {
   FrameworkOverrunNumbers?: FrameworkOverrunNumbersResolvers<ContextType>;
   FrameworkSummary?: FrameworkSummaryResolvers<ContextType>;
   GapCell?: GapCellResolvers<ContextType>;
+  InsolvencyNumbers?: InsolvencyNumbersResolvers<ContextType>;
   Leadership?: LeadershipResolvers<ContextType>;
   LeadershipGap?: LeadershipGapResolvers<ContextType>;
   LeadershipVia?: LeadershipViaResolvers<ContextType>;
@@ -2427,6 +2541,8 @@ export type Resolvers<ContextType = any> = {
   MatchedField?: MatchedFieldResolvers<ContextType>;
   MoneyMap?: MoneyMapResolvers<ContextType>;
   MonthTotal?: MonthTotalResolvers<ContextType>;
+  NoConstructionCaenNumbers?: NoConstructionCaenNumbersResolvers<ContextType>;
+  NoFinancialStatementNumbers?: NoFinancialStatementNumbersResolvers<ContextType>;
   NoPublicationNumbers?: NoPublicationNumbersResolvers<ContextType>;
   OnrcAlias?: OnrcAliasResolvers<ContextType>;
   OnrcAreaCount?: OnrcAreaCountResolvers<ContextType>;
@@ -2480,5 +2596,6 @@ export type Resolvers<ContextType = any> = {
   Uat?: UatResolvers<ContextType>;
   UatMap?: UatMapResolvers<ContextType>;
   UnplacedTile?: UnplacedTileResolvers<ContextType>;
+  YoungFirmNumbers?: YoungFirmNumbersResolvers<ContextType>;
 };
 

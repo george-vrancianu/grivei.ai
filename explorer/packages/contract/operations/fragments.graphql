@@ -65,6 +65,12 @@ fragment SignalNumbersFields on SignalNumbers {
   ... on SplittingNumbers { purchases sum cap cpvGroup from to }
   ... on FrameworkOverrunNumbers { ceiling subsequent ratio }
   ... on NoPublicationNumbers { procedure }
+  ... on YoungFirmNumbers { days registered counted }
+  ... on NoConstructionCaenNumbers { value authorisedCodes }
+  ... on AfterStrikeOffNumbers { struckOff daysAfter }
+  ... on InsolvencyNumbers { status firstSeen sinceAtLeast }
+  ... on FewEmployeesNumbers { fiscalYear employees awarded }
+  ... on NoFinancialStatementNumbers { fiscalYear awarded legalForm }
 }
 
 # What a Record's row needs of each Signal it is in: enough for the compact badge and its reproducing link.

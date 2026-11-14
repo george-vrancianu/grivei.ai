@@ -8,6 +8,7 @@ export const REQUIRED_STATES = [
   "suspect-value", "no-value", "estimated-count",
   "both-roles", "entity-provenance:SEAP", "entity-provenance:ONRC", "onrc-section", "onrc-status-since-at-least", "onrc-status-first-seen", "onrc-alias", "people-holders", "people-unlinked-holder", "people-person-link", "person-page", "not-found", "identity-curated", "crawled-provisional",
   "signal:over-cap", "signal:splitting", "signal:framework-overrun", "signal:no-publication",
+  "signal:young-firm", "signal:no-construction-caen", "signal:after-strike-off", "signal:insolvency", "signal:few-employees", "signal:no-financial-statement",
   "suspect:DIRECT_PURCHASE_10X_CAP", "suspect:CONTRACT_100X_ESTIMATE", "suspect:CONTRACT_OVER_50BN",
   "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL", "gap:NOT_YET_LOADED",
   "coverage:HARVESTED", "coverage:HARVESTED_WITH_KNOWN_GAPS", "coverage:PARTIAL", "coverage:NOT_HARVESTED",
@@ -20,6 +21,12 @@ const SIGNAL_OF_NUMBERS: Record<string, string> = {
   SplittingNumbers: "splitting",
   FrameworkOverrunNumbers: "framework-overrun",
   NoPublicationNumbers: "no-publication",
+  YoungFirmNumbers: "young-firm",
+  NoConstructionCaenNumbers: "no-construction-caen",
+  AfterStrikeOffNumbers: "after-strike-off",
+  InsolvencyNumbers: "insolvency",
+  FewEmployeesNumbers: "few-employees",
+  NoFinancialStatementNumbers: "no-financial-statement",
 };
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };

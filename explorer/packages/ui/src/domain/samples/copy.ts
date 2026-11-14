@@ -96,7 +96,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
-      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement" },
       date: (when) => `dated ${when}`,
       records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
     },
@@ -156,7 +156,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",
-      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare" },
       date: (when) => `din ${when}`,
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
     },
@@ -499,7 +499,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Contraparte ${key}`,
-        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare" },
         channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         badges: badges.ro,
       }
@@ -511,7 +511,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Counterparty ${key}`,
-        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement" },
         channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         badges: badges.en,
       };
@@ -786,6 +786,36 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
         lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
       },
+      YOUNG_FIRM: {
+        label: "Young firm",
+        sentence: (n) => `A Record is dated ${n.days} ${n.daysCount === 1 ? "day" : "days"} after the supplier registered, on ${n.registered}.`,
+        lawful: "Possible lawful explanations: a company set up for one contract, or an established business that took a new registration after a restructuring or a change of legal form.",
+      },
+      NO_CONSTRUCTION_CAEN: {
+        label: "Works without a construction CAEN",
+        sentence: (n) => `A works Record of ${n.value} went to a firm with no construction CAEN among its ${n.codes} authorised ${n.codesCount === 1 ? "code" : "codes"}.`,
+        lawful: "Possible lawful explanations: a subcontractor or consortium partner does the building, the register is out of date, or the firm works under a code it did not list.",
+      },
+      AFTER_STRIKE_OFF: {
+        label: "After strike-off",
+        sentence: (n) => `A Record is dated ${n.daysAfter} ${n.daysAfterCount === 1 ? "day" : "days"} after ANAF shows the supplier struck off, on ${n.struckOff}.`,
+        lawful: "Possible lawful explanations: a delay between the award and its publication, a successor company that took over under another number, or a strike-off ANAF later reversed.",
+      },
+      INSOLVENCY: {
+        label: "Insolvency",
+        sentence: (n) => `ONRC lists the supplier with the status "${n.status}", first seen in its ${n.firstSeen} snapshot${n.sinceAtLeast ? " (the earliest held, so possibly older)" : ""}. The status is undated; the supplier has Records in the six months up to ONRC's latest snapshot.`,
+        lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
+      },
+      FEW_EMPLOYEES: {
+        label: "At most one employee",
+        sentence: (n) => `The supplier was awarded ${n.awarded} in ${n.fiscalYear} and reported ${n.employees} average ${n.employeesCount === 1 ? "employee" : "employees"} for that fiscal year.`,
+        lawful: "Possible lawful explanations: the work is subcontracted or done by staff employed through another company, or a yearly average understates a seasonal workforce.",
+      },
+      NO_FINANCIAL_STATEMENT: {
+        label: "No financial statement",
+        sentence: (n) => `An ${n.legalForm} was awarded ${n.awarded} in ${n.fiscalYear}; no financial statement is held for ${n.fiscalYear} or ${n.previousYear}.`,
+        lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
+      },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
     date: (when) => `Latest Record: ${when}`,
@@ -823,6 +853,36 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         label: "Fără publicare",
         sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
         lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
+      },
+      YOUNG_FIRM: {
+        label: "Firmă tânără",
+        sentence: (n) => `O înregistrare este datată la ${roCount(n.daysCount, n.days, "zi", "zile")} după ce furnizorul s-a înregistrat, la ${n.registered}.`,
+        lawful: "Explicații legale posibile: o societate înființată pentru un singur contract sau o afacere existentă care a primit o înmatriculare nouă după o restructurare ori o schimbare a formei juridice.",
+      },
+      NO_CONSTRUCTION_CAEN: {
+        label: "Lucrări fără CAEN de construcții",
+        sentence: (n) => `O înregistrare de lucrări în valoare de ${n.value} a revenit unei firme fără niciun cod CAEN de construcții printre codurile sale autorizate (${n.codes}).`,
+        lawful: "Explicații legale posibile: construcția este făcută de un subcontractant sau de un asociat, registrul este depășit ori firma lucrează sub un cod pe care nu l-a înscris.",
+      },
+      AFTER_STRIKE_OFF: {
+        label: "După radiere",
+        sentence: (n) => `O înregistrare este datată la ${roCount(n.daysAfterCount, n.daysAfter, "zi", "zile")} după radierea furnizorului din evidența ANAF, la ${n.struckOff}.`,
+        lawful: "Explicații legale posibile: o întârziere între atribuire și publicare, o societate succesoare care a preluat activitatea sub alt număr sau o radiere pe care ANAF a anulat-o ulterior.",
+      },
+      INSOLVENCY: {
+        label: "Insolvență",
+        sentence: (n) => `ONRC înscrie furnizorul cu starea „${n.status}”, văzută prima oară în instantaneul din ${n.firstSeen}${n.sinceAtLeast ? " (cel mai vechi păstrat, deci poate mai veche)" : ""}. Starea nu este datată; furnizorul are înregistrări în ultimele șase luni până la cel mai recent instantaneu ONRC.`,
+        lawful: "Explicații legale posibile: înregistrarea a fost atribuită înainte de începerea procedurii sau procedura permite continuarea activității printr-un plan de reorganizare.",
+      },
+      FEW_EMPLOYEES: {
+        label: "Cel mult un angajat",
+        sentence: (n) => `Furnizorului i s-au atribuit ${n.awarded} în ${n.fiscalYear}, iar pentru acel an fiscal a raportat în medie ${roCount(n.employeesCount, n.employees, "angajat", "angajați")}.`,
+        lawful: "Explicații legale posibile: lucrarea este subcontractată sau făcută de personal angajat printr-o altă societate ori media anuală subestimează o forță de muncă sezonieră.",
+      },
+      NO_FINANCIAL_STATEMENT: {
+        label: "Fără situații financiare",
+        sentence: (n) => `Unei ${n.legalForm} i s-au atribuit ${n.awarded} în ${n.fiscalYear}; nu avem nicio situație financiară pentru ${n.fiscalYear} sau ${n.previousYear}.`,
+        lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
       },
     },
     compact: { text: (label, when) => `${label}, ${when}` },

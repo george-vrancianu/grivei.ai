@@ -9,6 +9,13 @@ export interface SignalNumberTexts {
   SPLITTING: { purchasesCount: number; purchases: string; sum: string; cap: string; cpvGroup: string; from: string; to: string };
   FRAMEWORK_OVERRUN: { ceiling: string; subsequent: string; ratio: string };
   NO_PUBLICATION: { procedure: string };
+  YOUNG_FIRM: { days: string; daysCount: number; registered: string };
+  NO_CONSTRUCTION_CAEN: { value: string; codes: string; codesCount: number };
+  AFTER_STRIKE_OFF: { struckOff: string; daysAfter: string; daysAfterCount: number };
+  /** `status` as ONRC names it (source data); the status is undated, `firstSeen` is the snapshot it first showed in, `sinceAtLeast` when that is the earliest snapshot held. */
+  INSOLVENCY: { status: string; firstSeen: string; sinceAtLeast: boolean };
+  FEW_EMPLOYEES: { fiscalYear: string; employees: string; employeesCount: number; awarded: string };
+  NO_FINANCIAL_STATEMENT: { fiscalYear: string; previousYear: string; awarded: string; legalForm: string };
 }
 
 /** One rule's wording: a neutral label, one sentence with the numbers filled in, and one line on the lawful explanations. */
@@ -20,11 +27,15 @@ export interface SignalRuleCopy<R extends SignalRule> {
 
 export type SignalRulesCopy = { [R in SignalRule]: SignalRuleCopy<R> };
 
-export const SIGNAL_RULES: readonly SignalRule[] = ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"];
+export const SIGNAL_RULES: readonly SignalRule[] = [
+  "OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT",
+];
 
 /** A ratio as a percentage, cut (not rounded) at two decimals: 1.1004 reads "110.04%", never a rounded "110%" on a rule that fires above 110%. */
 const ratioPercent = (ratio: number, locale: Locale) =>
   new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2, roundingMode: "trunc" }).format(ratio);
+
+const count = (value: number, locale: Locale) => new Intl.NumberFormat(locale).format(value);
 
 const decimals = (value: number, locale: Locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value);
 
@@ -46,6 +57,18 @@ export function signalNumberTexts(numbers: SignalData["numbers"], locale: Locale
       return { rule: "FRAMEWORK_OVERRUN", texts: { ceiling: money(numbers.ceiling), subsequent: money(numbers.subsequent), ratio: ratioPercent(numbers.ratio, locale) } };
     case "NoPublicationNumbers":
       return { rule: "NO_PUBLICATION", texts: { procedure: numbers.procedure } };
+    case "YoungFirmNumbers":
+      return { rule: "YOUNG_FIRM", texts: { days: count(numbers.days, locale), daysCount: numbers.days, registered: formatDate(numbers.registered, locale, "long") } };
+    case "NoConstructionCaenNumbers":
+      return { rule: "NO_CONSTRUCTION_CAEN", texts: { value: money(numbers.value), codes: count(numbers.authorisedCodes, locale), codesCount: numbers.authorisedCodes } };
+    case "AfterStrikeOffNumbers":
+      return { rule: "AFTER_STRIKE_OFF", texts: { struckOff: formatDate(numbers.struckOff, locale, "long"), daysAfter: count(numbers.daysAfter, locale), daysAfterCount: numbers.daysAfter } };
+    case "InsolvencyNumbers":
+      return { rule: "INSOLVENCY", texts: { status: numbers.status, firstSeen: formatDate(numbers.firstSeen, locale, "long"), sinceAtLeast: numbers.sinceAtLeast } };
+    case "FewEmployeesNumbers":
+      return { rule: "FEW_EMPLOYEES", texts: { fiscalYear: String(numbers.fiscalYear), employees: count(numbers.employees, locale), employeesCount: numbers.employees, awarded: money(numbers.awarded) } };
+    case "NoFinancialStatementNumbers":
+      return { rule: "NO_FINANCIAL_STATEMENT", texts: { fiscalYear: String(numbers.fiscalYear), previousYear: String(numbers.fiscalYear - 1), awarded: money(numbers.awarded), legalForm: numbers.legalForm } };
   }
 }
 
@@ -61,6 +84,18 @@ export function signalSentence(signal: Pick<SignalData, "numbers">, locale: Loca
       return rules.FRAMEWORK_OVERRUN.sentence(filled.texts);
     case "NO_PUBLICATION":
       return rules.NO_PUBLICATION.sentence(filled.texts);
+    case "YOUNG_FIRM":
+      return rules.YOUNG_FIRM.sentence(filled.texts);
+    case "NO_CONSTRUCTION_CAEN":
+      return rules.NO_CONSTRUCTION_CAEN.sentence(filled.texts);
+    case "AFTER_STRIKE_OFF":
+      return rules.AFTER_STRIKE_OFF.sentence(filled.texts);
+    case "INSOLVENCY":
+      return rules.INSOLVENCY.sentence(filled.texts);
+    case "FEW_EMPLOYEES":
+      return rules.FEW_EMPLOYEES.sentence(filled.texts);
+    case "NO_FINANCIAL_STATEMENT":
+      return rules.NO_FINANCIAL_STATEMENT.sentence(filled.texts);
   }
 }
 
