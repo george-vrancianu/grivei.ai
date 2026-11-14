@@ -44,7 +44,7 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
 ];
 
 const textQuery = recordedMainScreen.find((f) => f.name === "text-query")!.data.seap.search;
-const { partyCoverage: _notSelected, ...textQueryTotal } = textQuery.total; // MainScreen selects the coverage, the full-results operations do not
+const textQueryTotal = Object.fromEntries(Object.entries(textQuery.total).filter(([field]) => field !== "partyCoverage")) as Omit<typeof textQuery.total, "partyCoverage">; // MainScreen selects the coverage, the full-results operations do not
 
 export const fullResultsSuppliersHand: FixtureSet<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables> = [
   {

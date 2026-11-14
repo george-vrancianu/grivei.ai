@@ -3,6 +3,8 @@
 query MainScreen($filter: RecordFilter!) {
   sources { ...DataThroughFields }
   seap {
+    # the lists the Party chip offers (#181): independent of the filter, cached for the load, so asking beside the search costs nothing
+    partyOptions { party records }
     search(filter: $filter) {
       filter { qFolded authority { ...EntityRef } supplier { ...EntityRef } }
       total { ...TotalFields partyCoverage { ...PartyCoverageFields } }
@@ -28,9 +30,4 @@ query ZoomedCounty($filter: RecordFilter!, $county: CountyCode!) {
       }
     }
   }
-}
-
-# The lists the Party chip offers (#181): independent of the filter, asked once per visit to the main screen.
-query PartyOptions {
-  seap { partyOptions { party records } }
 }

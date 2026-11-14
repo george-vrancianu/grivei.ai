@@ -19,6 +19,7 @@ const QUERY_OF_FIELD: Record<keyof RecordFilter, string> = {
   supplier: "supplier=name-popescu-srl",
   cpv: "cpv=301",
   signal: "signal=no-publication",
+  party: "party=PARTIDUL+NA%C8%9AIONAL+LIBERAL", // the list as registered (source data, diacritics kept)
 };
 
 const roundTrip = (query: string) => encodeUrlState(decodeUrlState(`?${query}`));
@@ -53,6 +54,7 @@ describe("the URL <-> RecordFilter codec", () => {
       supplier: "name-popescu-srl",
       cpv: "301",
       signal: "NO_PUBLICATION",
+      party: "PARTIDUL NAȚIONAL LIBERAL",
     });
   });
 
@@ -102,6 +104,11 @@ describe("the URL <-> RecordFilter codec", () => {
     expect(roundTrip("q=comuna&county=RO-BV&countySide=supplier")).toBe("?q=comuna&county=RO-BV&countySide=supplier");
     expect(roundTrip("county=UNPLACED")).toBe("?county=UNPLACED");
     expect(roundTrip("countySide=authority")).toBe(""); // the default is left out
+  });
+
+  it("carries the Party filter as the list as registered, after the Signal, and never decodes an empty one (#181)", () => {
+    expect(roundTrip("party=ALIAN%C8%9AA+USR+PLUS&signal=splitting")).toBe("?signal=splitting&party=ALIAN%C8%9AA+USR+PLUS");
+    expect(decodeUrlState("?party=").filter).toEqual({});
   });
 
   it("keeps hasSignals=false distinct from unset", () => {

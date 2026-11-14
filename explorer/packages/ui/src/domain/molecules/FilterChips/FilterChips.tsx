@@ -5,13 +5,14 @@ import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
 import { ActiveChips } from "./components/ActiveChips/index.ts";
 import { BadgeChips } from "./components/BadgeChips/index.ts";
 import { ChoiceChips } from "./components/ChoiceChips/index.ts";
+import { PartyChips } from "./components/PartyChips/index.ts";
 import { ProcedureChips } from "./components/ProcedureChips/index.ts";
 import { HasSignalsChip } from "./components/HasSignalsChip/index.ts";
 import { YearRange } from "./components/YearRange/index.ts";
 import type { FilterChipsCopy } from "./filterChips.types.ts";
 import {
   activeChips, clearChips, FIRST_YEAR, procedureChoices, setFromYear, setToYear, toggleBadge, toggleChannel, toggleHasSignals,
-  toggleProcedure, toggleValueBucket,
+  setParty, toggleProcedure, toggleValueBucket,
 } from "./filterChips.utils.ts";
 
 export type { FilterChipsCopy } from "./filterChips.types.ts";
@@ -23,6 +24,11 @@ export interface FilterChipsProps {
   onChange: (next: RecordFilter) => void;
   /** Procedure names to offer, as SEAP publishes them (the facet values); any the filter holds are added. */
   procedureOptions: readonly string[];
+  /**
+   * The lists the Party filter offers, as registered at the election (#181). The control is shown when there are any or the filter holds one;
+   * a graph built without AEP's mandates offers none, and the chip is simply absent.
+   */
+  partyOptions?: readonly string[];
   /** First year of the year selects; 2021 by default (the bulk data starts there). */
   firstYear?: number;
   /** Last year of the year selects (the current year, or the year the data runs through). */
@@ -41,7 +47,7 @@ const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[]
  * The chips that narrow the matching set: award-date years, channel, value bucket, has Signals, procedure and the Record
  * badges, with the active ones listed below, each removable. Controlled: it reflects `filter` and reports the next one.
  */
-export function FilterChips({ filter, onChange, procedureOptions, firstYear = FIRST_YEAR, lastYear, locale, copy }: FilterChipsProps) {
+export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, locale, copy }: FilterChipsProps) {
   const active = activeChips(
     filter,
     {
@@ -52,6 +58,7 @@ export function FilterChips({ filter, onChange, procedureOptions, firstYear = FI
       hasSignals: copy.signals.has,
       withoutSignals: copy.signals.without,
       badges: badgeLabels(copy.badges.badges),
+      party: copy.active.party,
     },
     locale,
   );
@@ -86,6 +93,9 @@ export function FilterChips({ filter, onChange, procedureOptions, firstYear = FI
         onToggle={(procedure) => onChange(toggleProcedure(filter, procedure))}
         copy={copy.procedure}
       />
+      {(partyOptions.length > 0 || filter.party) && (
+        <PartyChips parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} />
+      )}
       <BadgeChips label={copy.badges.group} selected={filter.badges} onToggle={(badge) => onChange(toggleBadge(filter, badge))} copy={copy.badges.badges} />
       <ActiveChips chips={active} onRemove={(chip) => onChange(chip.remove(filter))} onClearAll={() => onChange(clearChips(filter))} copy={copy.active} />
     </Stack>

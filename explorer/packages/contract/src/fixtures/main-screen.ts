@@ -7,6 +7,14 @@ import * as w from "./world.ts";
 const { sources } = w;
 
 /** Procedure names as SEAP publishes them (the chips offer these). */
+/** The lists the Party chip offers (#181), as AEP registers them (source data): a recorded run has no AEP archive, so its answers offer none. */
+const partyOptions = [
+  { party: "PARTIDUL SOCIAL DEMOCRAT", records: 4200 },
+  { party: "PARTIDUL NAȚIONAL LIBERAL", records: 3900 },
+  { party: "ALIANȚA USR PLUS", records: 800 },
+  { party: "UNIUNEA DEMOCRATĂ MAGHIARĂ DIN ROMÂNIA", records: 640 },
+];
+
 const procedureFacet = [{ value: "Achiziție directă" }, { value: "Licitație deschisă" }, { value: "Negociere fără publicare prealabilă" }];
 
 /** What a recorded run cannot produce (a record state of every kind, counts a fixture archive cannot reach). The rest is `recorded/`. */
@@ -26,6 +34,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: "contract", authority: null, supplier: null },
           total: searchTotal({ awarded: ron(60_000_000), records: 11, suspectLeftOut: 1, noValue: 1, frameworkCeilings: ron(100_000_000) }),
@@ -55,6 +64,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: null, authority: null, supplier: null },
           total: searchTotal({ awarded: ron(30_000_000), records: 5 }, {
@@ -86,6 +96,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: null, authority: null, supplier: null },
           total: searchTotal({ awarded: ron(27_800_000), records: 2 }),
@@ -113,6 +124,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: "zzzzzz", authority: null, supplier: null },
           total: searchTotal(),
@@ -134,6 +146,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: null, authority: null, supplier: null },
           total: searchTotal({ awarded: ron(15_000_000), records: 1 }),
@@ -155,6 +168,7 @@ export const mainScreenHand: FixtureSet<MainScreenQuery, MainScreenQueryVariable
     data: {
       sources,
       seap: {
+        partyOptions,
         search: {
           filter: { qFolded: "ro", authority: null, supplier: null },
           total: searchTotal({ awarded: "9007199254740993000", records: 2_400_000, suspectLeftOut: 4_100, noValue: 88_000, estimated: true, frameworkCeilings: ron(900_000_000_000) }),

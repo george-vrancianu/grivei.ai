@@ -7,7 +7,6 @@ import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSupplier
 import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
 import { methodologyBaseRates, methodologyReferenceSources } from "./methodology.ts";
 import { onrcCoverageHand, onrcRecordHand, onrcSearchHand } from "./onrc.ts";
-import { partyOptionsHand } from "./party.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedEntityRecords } from "./recorded/records.ts";
@@ -49,7 +48,6 @@ export const fixtures = {
   OnrcSearch: onrcSearchHand,
   OnrcRecord: onrcRecordHand,
   OnrcCoverage: onrcCoverageHand,
-  PartyOptions: partyOptionsHand,
 } as const;
 
 export type OperationName = keyof typeof fixtures;

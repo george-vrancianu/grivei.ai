@@ -255,6 +255,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       noValue: 1,
       frameworkCeilings: "0",
       estimated: false,
+      partyCoverage: null, // no Party filter, no coverage (#181)
     });
     const { count, rows } = data.seap.search.records;
     expect(count).toBe(4);
@@ -830,7 +831,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // counted: DA 1,350,599 + 2,000,000 + 5,000,000 + 50,000,000; contracts 5,000,000 + 2,500,000 + 700,000 + 300,000 + 500,000 + 1,000 + 2,000;
     // mega 2 bn + 3 bn + 4 bn + 70 bn. Left out: 4 suspect DA + 3 suspect mega contracts; no value: 2 DA + the blank ceiling; ceilings 10M + 6M + 4M.
     expect((r.body.data as MainScreenQuery).seap.search.total).toEqual({
-      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false,
+      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false, partyCoverage: null,
     });
   });
 
@@ -1427,14 +1428,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
       const misses = cache.stats().misses;
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
-      expect(cache.stats()).toMatchObject({ misses, hits: 8 }); // total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
+      expect(cache.stats()).toMatchObject({ misses, hits: 9 }); // the lists of the Party chip are one more cached read per answer (#181); total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
 
       const report = await cache.warm();
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
       const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
-      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 8 });
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 9 });
       expect(de.total.records).toBeGreaterThan(0);
       const empty = await answer(api, {});
       expect(empty.total.records).toBe(13);
@@ -4045,13 +4046,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(search.authorities.count).toBeGreaterThan(0);
     });
 
-    it("offers the lists present in the graph, largest first, never Independent and never a member party", async () => {
-      const op = allowlist.operations.find((o) => o.name === "PartyOptions")!;
-      const r = await ask(DB, op.sha256, {});
-      expect(r.status).toBe(200);
+    it("offers the lists present in the graph with every MainScreen answer, largest first, never Independent and never a member party", async () => {
+      const r = await ask(DB, mainScreen.sha256, EMPTY_FILTER); // MainScreen asks for them beside every search, so the chip never needs a request of its own
       expect(r.body.errors).toBeUndefined();
-      expect(validateResponse(schema, parse(op.document), r.body.data, {})).toEqual([]);
-      const options = (r.body.data as { seap: { partyOptions: { party: string; records: number }[] } }).seap.partyOptions;
+      const options = (r.body.data as MainScreenQuery).seap.partyOptions;
       expect(options.map((o) => o.party).sort()).toEqual([PNL, PSD, "ALIANȚA USR PLUS"].sort());
       expect(options.map((o) => o.records)).toEqual([...options.map((o) => o.records)].sort((a, b) => b - a));
       expect(options.find((o) => o.party === PNL)!.records).toBe(7); // the Records the filter returns: the two agree
