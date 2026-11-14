@@ -33,7 +33,7 @@ def test_one_row_per_cui_and_year_with_the_revision_kept_and_blanks_left_null(db
     summary = rebuild(archive, db, overrides_path=FIXTURES / "identity-overrides.toml")
     assert summary.financials is not None and summary.financials.fiscal_years == [2022, 2023, 2024, 2025] and summary.financials.files == 7
     assert summary.incomplete == [] and summary.financials.skipped == [] and summary.financials.incomplete == []
-    assert "financials: fiscal years 2022-2025, 7 files, 9 statements" in summary.lines()
+    assert "financials: fiscal years 2022-2025, 7 files, 10 statements" in summary.lines()
     rows = q(db, "SELECT cui, fiscal_year, revision, turnover_bani, profit_loss_bani, debts_bani, equity_bani, employees FROM financials.statement ORDER BY cui, fiscal_year")
     assert rows == [
         ("2000007", 2022, "FIRST", 400_000_000, 20_000_000, 100_000_000, 90_000_000, None),  # blank employees: NULL
@@ -42,6 +42,7 @@ def test_one_row_per_cui_and_year_with_the_revision_kept_and_blanks_left_null(db
         ("2000007", 2025, "FIRST", 3_000_000_000, 90_000_000, None, 300_000_000, None),  # blank debts and employees
         ("2000015", 2024, "REVISED", 800_000_000, 35_000_000, 110_000_000, 85_000_000, 26),
         ("2000015", 2025, "FIRST", None, 10_000_000, 50_000_000, 40_000_000, 12),  # the UU file; blank turnover
+        ("2000023", 2022, "FIRST", -25_000_000, 0, -100_000, 500_000, 1),  # a negative turnover and debts are kept as they are
         ("2000023", 2023, "FIRST", 0, 0, 1_000_000, 500_000, 1),
         ("2000031", 2023, "FIRST", 10_000_000_000, 500_000_000, 3_000_000_000, 6_000_000_000, 3000),
         ("4300011", 2023, "REVISED", 100_000_000, 100_000, 10_000, 90_000, 5),

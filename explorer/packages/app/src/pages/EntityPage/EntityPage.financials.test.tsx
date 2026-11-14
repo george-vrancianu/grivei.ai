@@ -45,7 +45,8 @@ describe("the financial statements section", () => {
   it("cites MF and the file of each year", async () => {
     await opened("/explore/supplier/2000007");
     const section = within(await screen.findByRole("region", { name: "Financial statements" }));
-    expect(row(section, 2023).getByRole("link", { name: "MF, web_bl_bs_sl_an2023.txt" })).toHaveAttribute("href", "https://data.gov.ro/dataset/situatii_financiare2023");
+    expect(row(section, 2023).getByRole("link", { name: "MF, web_bl_bs_sl_an2023.txt" })).toHaveAttribute("href", "https://data.gov.ro/dataset/ds/resource/r2023bl-rev/download/web_bl_bs_sl_an2023.txt");
+    expect(row(section, 2023).getByRole("link", { name: "Situații financiare 2023" })).toHaveAttribute("href", "https://data.gov.ro/dataset/situatii_financiare2023");
     expect(row(section, 2023).getByText("Published 27 July 2025")).toBeVisible();
   });
 

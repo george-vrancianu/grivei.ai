@@ -54,6 +54,8 @@ def test_classify_takes_the_three_company_kinds_from_2021_and_sees_revisions():
     r = lambda name, url=None: {"id": "r", "name": name, "url": url or f"https://x/{name.lower().replace(' ', '')}.txt"}  # noqa: E731
     assert classify(plain, r("WEB_BL_BS_SL_AN2023.txt")) == ("bl-bs-sl", 2023, "first")
     assert classify(plain, r("WEB_BL_BS_SL_AN2023 - actualizat")) == ("bl-bs-sl", 2023, "revised")  # the 2023 dataset names its re-publication so
+    assert classify(plain, r("WEB_BL_BS_SL_AN2023 - ACTUALIZAT")) == ("bl-bs-sl", 2023, "revised")  # the whole word, not any name that merely contains "actu"
+    assert classify(plain, r("WEB_BL_BS_SL_AN2023 - factual")) == ("bl-bs-sl", 2023, "first")
     assert classify(actualizat, r("WEB_UU_AN2024.txt")) == ("uu", 2024, "revised")  # 2024's is a dataset of its own
     assert classify(plain, r("WEB_IR_2023.txt")) == ("ir", 2023, "first") and classify(plain, r("WEB_IR_AN2025.txt")) == ("ir", 2025, "first")
     assert classify(plain, r("WEB_BL_BS_SL_AN2020.txt")) is None  # before FY2021

@@ -16,7 +16,7 @@ UU file too), and files the connector must not take (a column-list `.csv`, a ban
       FY2025 first      the newest year: may still be revised; employees BLANK and debts BLANK
   CNAIR DEMO SA 2000031 (both roles)   FY2023 first only: turnover 100,000,000, 3,000 employees
   BETA DEMO SRL 2000015                FY2024 revised only (turnover 8,000,000), FY2025 in the UU file with a BLANK turnover
-  GAMMA DEMO SRL 2000023               FY2023 first with turnover 0 (no share can be computed)
+  GAMMA DEMO SRL 2000023               FY2023 first with turnover 0 (no share can be computed); FY2022 first with a NEGATIVE turnover and debts (a stray cell)
   4300011                              in FY2023 and no Record names it (no entity: nothing to show)
 
 The rows are invented; the file and column names are the real ones.
@@ -75,7 +75,8 @@ def add(res: dict, body: bytes) -> dict:
 
 DATASETS = [
     dataset("situatii_financiare_2022", "Situații financiare 2022",
-            add(resource("r2022bl", "WEB_BL_BS_SL_AN2022.txt", "2023-08-28"), table(row("2000007", turnover=4_000_000, profit=200_000, loss=0, debts=1_000_000, equity=900_000, employees=""))),
+            add(resource("r2022bl", "WEB_BL_BS_SL_AN2022.txt", "2023-08-28"), table(row("2000007", turnover=4_000_000, profit=200_000, loss=0, debts=1_000_000, equity=900_000, employees=""),
+                                                                                       row("2000023", turnover=-250_000, profit=0, loss=0, debts=-1_000, equity=5_000, employees=1))),  # a stray negative cell: MF's files are not validated
             resource("r2022spec", "WEB_BL_BS_SL_AN2022.csv", "2023-08-28", "CSV")),  # the column list: not a statements file
     dataset("situatii_financiare2023", "Situații financiare 2023",
             add(resource("r2023bl", "WEB_BL_BS_SL_AN2023.txt", "2024-07-12"),

@@ -464,12 +464,12 @@ type FinancialYear {
   revision: FinancialRevision!
   "True for the newest fiscal year MF's files hold (for any company) while it is a first release: the page notes it may be revised."
   mayBeRevised: Boolean!
-  "Net turnover (cifra de afaceri neta)."
-  turnover: Bani
+  "Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is."
+  turnover: SignedBani
   "Net profit minus net loss: negative is a loss. Null when MF's file has both blank."
   profitOrLoss: SignedBani
-  "Debts (datorii)."
-  debts: Bani
+  "Debts (datorii). Signed, like the turnover."
+  debts: SignedBani
   "Equity (capitaluri - total); negative when the company owes more than it owns."
   equity: SignedBani
   "The average number of employees. Null when the cell is blank: reads \"not reported\", never zero. A cell that says 0 is 0."

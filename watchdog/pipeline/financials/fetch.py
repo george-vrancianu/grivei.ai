@@ -75,7 +75,7 @@ def classify(dataset: dict, resource: dict) -> tuple[str, int, str] | None:
     path = unquote(urlparse(resource.get("url") or "").path).lower()
     if not m or not path.endswith(".txt") or int(m[2]) < FIRST_YEAR:
         return None
-    revised = "ACTU" in name or "ACTU" in re.sub(r"[^A-Z0-9]+", " ", fold(dataset.get("title") or "")) or "ACTUALIZAT" in str(dataset.get("name") or "").upper()
+    revised = "ACTUALIZAT" in name or "ACTUALIZAT" in re.sub(r"[^A-Z0-9]+", " ", fold(dataset.get("title") or "")) or "ACTUALIZAT" in str(dataset.get("name") or "").upper()
     return KINDS[m[1]], int(m[2]), "revised" if revised else "first"
 
 

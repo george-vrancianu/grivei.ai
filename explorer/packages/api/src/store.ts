@@ -439,6 +439,12 @@ const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as con
 /** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
 const AGG_BUCKET_CAP = 65_000;
 
+/** A missing table (42P01, undefined_table) means "nothing loaded yet": an empty result. Any other failure is thrown on (cf. cache.ts). */
+function noTable(e: unknown): { rows: never[] } {
+  if ((e as { code?: string }).code === "42P01") return { rows: [] };
+  throw e;
+}
+
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
@@ -958,6 +964,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return (rows[0] as PublicEnterpriseRow | undefined) ?? null;
     },
     async financials(cui, key) {
+      // A graph built before the financials schema existed (deployed ahead of a rebuild) has no statements: the Overview still works.
       const { rows } = await pool.query(
         `SELECT s.fiscal_year AS "fiscalYear", s.revision, s.fiscal_year = (SELECT max(fiscal_year) FROM financials.source_file) AS newest,
                 s.turnover_bani::text AS turnover, s.profit_loss_bani::text AS "profitOrLoss", s.debts_bani::text AS debts, s.equity_bani::text AS equity,
@@ -971,12 +978,12 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
           WHERE s.cui = $1
           ORDER BY s.fiscal_year DESC`,
         [cui, key],
-      );
+      ).catch(noTable);
       return rows.map(({ file, datasetUrl, fileUrl, via, license, published, fetchedAt, ...year }) => ({ ...year, source: { file, datasetUrl, fileUrl, via, license, published, fetchedAt } })) as FinancialYearRow[];
     },
     async referenceSources() {
       const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
-      const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`);
+      const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
       const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
       return [
         { id: "AMEPIP", name: "AMEPIP", dataThrough: (amepip.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: (amepip.rows[0]?.url as string | null | undefined) ?? null },

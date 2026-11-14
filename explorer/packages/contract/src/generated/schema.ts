@@ -250,8 +250,8 @@ export type FinancialYear = {
    * share can exceed 1 and is no revenue share. Null share when the turnover is blank or zero.
    */
   awardedInYear: Scalars['Bani']['output'];
-  /** Debts (datorii). */
-  debts: Maybe<Scalars['Bani']['output']>;
+  /** Debts (datorii). Signed, like the turnover. */
+  debts: Maybe<Scalars['SignedBani']['output']>;
   /** Equity (capitaluri - total); negative when the company owes more than it owns. */
   equity: Maybe<Scalars['SignedBani']['output']>;
   fiscalYear: Scalars['Int']['output'];
@@ -262,8 +262,8 @@ export type FinancialYear = {
   revision: FinancialRevision;
   /** The file the figures come from: each figure cites MF and it. */
   source: FinancialSource;
-  /** Net turnover (cifra de afaceri neta). */
-  turnover: Maybe<Scalars['Bani']['output']>;
+  /** Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is. */
+  turnover: Maybe<Scalars['SignedBani']['output']>;
 };
 
 export type FrameworkLink = {
@@ -1455,14 +1455,14 @@ export type FinancialYearResolvers<ContextType = any, ParentType extends Resolve
   averageEmployees?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   awardShareOfTurnover?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   awardedInYear?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
-  debts?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
+  debts?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
   equity?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
   fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   mayBeRevised?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   profitOrLoss?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
   revision?: Resolver<ResolversTypes['FinancialRevision'], ParentType, ContextType>;
   source?: Resolver<ResolversTypes['FinancialSource'], ParentType, ContextType>;
-  turnover?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
+  turnover?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
 };
 
 export type FrameworkLinkResolvers<ContextType = any, ParentType extends ResolversParentTypes['FrameworkLink'] = ResolversParentTypes['FrameworkLink']> = {

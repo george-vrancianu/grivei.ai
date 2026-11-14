@@ -29,6 +29,8 @@ export interface FinancialYearRowProps {
 export function FinancialYearRow({ year, locale, copy }: FinancialYearRowProps) {
   const release = year.revision === "REVISED" ? copy.revision.revised : year.mayBeRevised ? copy.revision.firstReleaseMayBeRevised : copy.revision.firstRelease;
   const blank = <Typography component="span" variant="meta" color="text.secondary">{copy.notReported}</Typography>;
+  // A reported zero turnover (MF's cell says 0) has no share to compute: a dash, so "not reported" stays for blank cells only.
+  const share = year.awardShareOfTurnover !== null ? formatShare(year.awardShareOfTurnover, locale) : year.turnover === null ? blank : "\u2014";
   const money = (bani: string | null) => (bani === null ? blank : <MoneyAmount bani={bani} locale={locale} />);
   return (
     <TableRow data-fiscal-year={year.fiscalYear} data-revision={year.revision}>
@@ -42,9 +44,11 @@ export function FinancialYearRow({ year, locale, copy }: FinancialYearRowProps) 
       <TableCell align="right">{money(year.equity)}</TableCell>
       <TableCell align="right">{year.averageEmployees === null ? blank : new Intl.NumberFormat(locale).format(year.averageEmployees)}</TableCell>
       <TableCell align="right">{<MoneyAmount bani={year.awardedInYear} locale={locale} />}</TableCell>
-      <TableCell align="right">{year.awardShareOfTurnover === null ? blank : formatShare(year.awardShareOfTurnover, locale)}</TableCell>
+      <TableCell align="right">{share}</TableCell>
       <TableCell>
-        {year.source.datasetUrl ? <Link href={year.source.datasetUrl} target="_blank">{copy.source(year.source.file)}</Link> : copy.source(year.source.file)}
+        {/* The file is the exact citation; its dataset on data.gov.ro stays one click away. */}
+        {year.source.fileUrl ? <Link href={year.source.fileUrl} target="_blank">{copy.source(year.source.file)}</Link> : copy.source(year.source.file)}
+        {year.source.datasetUrl && <Typography component="div" variant="meta"><Link href={year.source.datasetUrl} target="_blank">{year.source.via}</Link></Typography>}
         {year.source.published && <Typography component="div" variant="meta" color="text.secondary">{copy.published(formatDate(year.source.published, locale, "long"))}</Typography>}
       </TableCell>
     </TableRow>

@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import type { Locale } from "../../../theme/index.ts";
-import { financials, financialsBlankTurnover, financialsCopy } from "../../samples/financials.ts";
+import { financials, financialsBlankTurnover, financialsCopy, financialYears } from "../../samples/financials.ts";
 import type { FinancialStatementsData } from "../../types.ts";
 import { FinancialStatementsSection } from "./index.ts";
 
@@ -56,12 +56,19 @@ describe("FinancialStatementsSection", () => {
     expect(screen.getAllByText(/The newest year is a first release/)).toHaveLength(1); // only the first render's
   });
 
-  it("cites MF and the file of each year, linked to MF's dataset on data.gov.ro", () => {
+  it("shows a dash, not \"not reported\", for the share of a reported zero turnover", () => {
+    show({ years: [{ ...financialYears[1]!, turnover: "0", awardShareOfTurnover: null }] });
+    expect(row(2024).getByText("\u2014")).toBeVisible();
+    expect(row(2024).queryByText("not reported")).toBeNull();
+  });
+
+  it("cites MF and the file of each year, linked to the file, with its dataset on data.gov.ro one click away", () => {
     show();
     const link = row(2023).getByRole("link", { name: "MF, web_bl_bs_sl_an2023.txt" });
-    expect(link).toHaveAttribute("href", "https://data.gov.ro/dataset/situatii_financiare2023");
+    expect(link).toHaveAttribute("href", "https://data.gov.ro/dataset/situatii_financiare2023/resource/x/download/web_bl_bs_sl_an2023.txt");
+    expect(row(2023).getByRole("link", { name: "Situații financiare 2023" })).toHaveAttribute("href", "https://data.gov.ro/dataset/situatii_financiare2023");
     expect(row(2023).getByText("Published 27 July 2025")).toBeVisible();
-    expect(screen.getAllByRole("link")).toHaveLength(4);
+    expect(screen.getAllByRole("link")).toHaveLength(8);
   });
 
   it("is the same in Romanian", () => {

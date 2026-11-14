@@ -2717,6 +2717,28 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         expect((gamma.body.data as EntityOverviewQuery).entity!.financials!.years[0]).toMatchObject({ fiscalYear: 2023, turnover: "0", awardShareOfTurnover: null, averageEmployees: 1 });
         for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.financials, name).toBeNull();
       });
+
+      it("serves a negative turnover or debts cell as it is (MF's files are not validated), with no share, and the Overview still answers", async () => {
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect(gamma.body.errors).toBeUndefined();
+        const years = (gamma.body.data as EntityOverviewQuery).entity!.financials!.years;
+        expect(years.map((y) => [y.fiscalYear, y.turnover, y.debts, y.awardShareOfTurnover])).toEqual([[2023, "0", "1000000", null], [2022, "-25000000", "-100000", null]]);
+      });
+
+      it("reads one entity's awards per year through an index of seap.rollup_entity, not a scan of every supplier row", async () => {
+        const db = new pg.Pool({ connectionString: `${baseUrl}/${DBS.overview}`, max: 1 });
+        pools.push(db);
+        const client = await db.connect();
+        try {
+          await client.query("SET enable_seqscan = off"); // the fixture's tables are tiny: ask whether the index CAN serve the query shape the page uses
+          const plan = (await client.query<{ "QUERY PLAN": string }>(
+            "EXPLAIN SELECT award_year, sum(awarded) FROM seap.rollup_entity WHERE side = 'SUPPLIER' AND entity_key = $1 GROUP BY award_year".replace("$1", "'2000007'"),
+          )).rows.map((r) => r["QUERY PLAN"]).join("\n");
+          expect(plan).toContain("rollup_entity_key_idx");
+        } finally {
+          client.release();
+        }
+      });
     });
   });
 
