@@ -50,14 +50,14 @@ describe("the ONRC section on an entity page", () => {
   it("badges a CUI that ANAF does not know and ONRC lists", async () => {
     await opened("/explore/supplier/3100055");
     expect(screen.getByRole("heading", { level: 1, name: "DELTA ONRC SRL" })).toBeVisible();
-    expect(screen.getByText("ONRC only")).toBeVisible();
-    expect(screen.queryByText("ONRC only", { selector: "section *" })).toBeNull();
+    expect(screen.getByText("CUI in ONRC only")).toBeVisible();
+    expect(screen.queryByText("CUI in ONRC only", { selector: "section *" })).toBeNull();
   });
 
   it("gives an organisation that exists only in ONRC a page with its section, a note that no person is shown and no SEAP figures", async () => {
     const section = await opened("/explore/supplier/3100071");
     expect(screen.getByRole("heading", { level: 1, name: "OMEGA ONLY SRL" })).toBeVisible();
-    expect(screen.getByText("ONRC only")).toBeVisible();
+    expect(screen.getByText("CUI in ONRC only")).toBeVisible();
     expect(section.getByText(/No person of it is shown/)).toBeVisible();
     expect(screen.getByText("This entity has no Records as a supplier.")).toBeVisible();
     expect(screen.queryByRole("list", { name: /Headline numbers/ })).toBeNull();

@@ -194,18 +194,19 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
 
 def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
-    """The first-time sequence: data.gov.ro + MF list, ANAF, load, optionally the 2021-22 backfill. Done = succeeded once in a seed run."""
+    """The first-time sequence: data.gov.ro + MF list, ANAF, load, optionally the 2021-22 backfill, then ONRC. Done = succeeded once in a seed run."""
     def not_done(name):
         return lambda ledger, now: None if ledger.last_success(name, "seed") else "not done yet"
 
     # the markers are the refresh's: after a seed, the first refresh finds ANAF and the load up to date
     marker_anaf, marker_load = _markers(archive)
     steps = [Step("datagov", impl.datagov, not_done("datagov")),
-             Step("onrc", impl.onrc, not_done("onrc")),
              Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
              Step("load", impl.load, not_done("load"), marker_load)]
     if backfill:
         steps.append(Step("backfill", impl.backfill, not_done("backfill")))
+    # ONRC last: a failing ONRC step (or ~60 snapshots to download) never holds up SEAP's ANAF and load; the next refresh's load picks the snapshots up
+    steps.append(Step("onrc", impl.onrc, not_done("onrc")))
     return steps
 
 

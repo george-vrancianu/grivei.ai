@@ -70,7 +70,10 @@ class FakeImpl:
 
     def crawl(self): return self._step("crawl")
     def datagov(self): return self._step("datagov")
-    def onrc(self): return StepResult({"n": 1})  # not recorded in `ran` either: ONRC has its own tests (test_onrc_refresh.py)
+    def onrc(self):  # not recorded in `ran` either: ONRC's own steps are tested in test_onrc_fetch.py; it only fails when a test says so
+        if self.fail.get("onrc"):
+            raise self.fail["onrc"].pop(0)
+        return StepResult({"n": 1})
     def anaf(self): return self._step("anaf")
     def load(self): return self._step("load")
     def backup(self): return StepResult({"n": 1})  # not recorded in `ran`: the tests of the other steps list those
@@ -521,3 +524,16 @@ def test_rollback_and_cleanup_refuse_to_run_while_a_refresh_holds_the_lock(cli_w
             assert cli.main(["--archive", str(archive.root), verb, "--db", "postgresql://x/y"]) == 1
     assert touched == [] and "holds the archive's lock" in capsys.readouterr().err
     assert cli.main(["--archive", str(archive.root), "cleanup", "--db", "postgresql://x/y"]) == 0 and touched == ["cleanup"]
+
+
+def test_a_failing_onrc_step_in_the_seed_does_not_stop_seaps_steps(archive, impl, clock):
+    kw = dict(now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    impl.fail["onrc"] = [DeterministicError("ONRC fetch is not configured")]
+    assert run_seed(archive, impl, **kw).exit_code == 1  # the seed still reports the failure
+    assert impl.ran == ["datagov", "anaf", "load"]  # but SEAP's steps ran: ONRC comes last
+
+
+def test_a_failing_onrc_step_in_a_refresh_does_not_stop_seaps_steps(go, impl):
+    impl.fail["onrc"] = [DeterministicError("down")]
+    go()
+    assert impl.ran == ["crawl", "datagov", "anaf", "load"]

@@ -214,7 +214,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Foreign VAT ID",
       nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
       identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
-      onrcOnly: { label: "ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
+      onrcOnly: { label: "CUI in ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
     },
     anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
     placement: {
@@ -243,7 +243,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Cod TVA străin",
       nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
       identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
-      onrcOnly: { label: "Doar ONRC", explanation: "ANAF nu cunoaște acest CUI. ONRC, registrul comerțului, îl listează, deci această pagină arată numele și datele din ONRC." },
+      onrcOnly: { label: "CUI doar în ONRC", explanation: "ANAF nu cunoaște acest CUI. ONRC, registrul comerțului, îl listează, deci această pagină arată numele și datele din ONRC." },
     },
     anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
     placement: {

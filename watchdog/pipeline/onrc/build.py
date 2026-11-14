@@ -11,6 +11,7 @@
 `OnrcNames` lets the identity resolver ask "does ONRC list this CUI, and under what name" without holding the national register in memory.
 `build_onrc_entities` and `build_onrc_placement` run inside the rebuild's entity and placement steps (ADR 0018): every registration whose CUI
 is no SEAP counterparty becomes an entity with its own page, placed by the seat's county when no ANAF seat places it.
+Provenance follows ADR 0018, not the ticket's wording: an ONRC-only registration whose CUI ANAF happens to know gets provenance ANAF; ONRC provenance is for CUIs ANAF does not know.
 """
 from __future__ import annotations
 
@@ -51,10 +52,10 @@ class OnrcSummary:
                 f"{self.status_spans} status spans, {self.entities_only} ONRC-only entities" + "".join(f"; skipped {s}" for s in self.skipped))
 
 
-def snapshot_units(archive: Archive) -> list[Unit]:
-    """The ONRC units, one per snapshot date (the newest fetch of a re-upload), oldest snapshot first."""
+def snapshot_units(units: list[Unit]) -> list[Unit]:
+    """One unit per snapshot date (the newest fetch of a re-upload), oldest snapshot first. Takes the already-read ONRC units: reading hashes every file."""
     newest: dict[str, Unit] = {}
-    for unit in archive.units(SOURCE):
+    for unit in units:
         if (unit.source, unit.stream, unit.kind) != (SOURCE, STREAM, KIND):
             continue
         try:
@@ -140,12 +141,13 @@ def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | 
 
 def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None) -> OnrcSummary:
     summary = OnrcSummary()
-    summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for p in archive.incomplete(SOURCE)]
+    surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
+    summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
     cur.execute("CREATE INDEX name_span_open ON onrc.name_span (last_seen)")
     cur.execute("CREATE INDEX status_span_open ON onrc.status_span (last_seen)")
     held: list[Unit] = []
     previous: date | None = None
-    for unit in snapshot_units(archive):
+    for unit in snapshot_units([u for u, _ in surveyed if u is not None]):
         try:
             with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the rebuild's transaction
                 companies = _stage_snapshot(cur, unit)

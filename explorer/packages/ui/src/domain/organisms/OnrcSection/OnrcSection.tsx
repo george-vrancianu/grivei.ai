@@ -8,6 +8,7 @@ import type { OnrcRegistrationData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { AliasList, type AliasListCopy } from "./components/AliasList/index.ts";
 import { CaenList, type CaenListCopy } from "./components/CaenList/index.ts";
+import { Fact } from "./components/Fact/index.ts";
 import { StatusList, type StatusListCopy } from "./components/StatusList/index.ts";
 
 export interface OnrcSectionCopy {
@@ -35,17 +36,6 @@ export interface OnrcSectionProps {
   onrcOnly: boolean;
   locale: Locale;
   copy: OnrcSectionCopy;
-}
-
-function Fact({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Stack spacing={0.25}>
-      <Typography variant="meta" component="span" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography component="span">{children}</Typography>
-    </Stack>
-  );
 }
 
 /**

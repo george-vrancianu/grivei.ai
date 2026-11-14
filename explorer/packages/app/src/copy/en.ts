@@ -301,7 +301,7 @@ export const en: Copy = {
         foreignVatId: "Foreign VAT ID",
         nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
         identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
-        onrcOnly: { label: "ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
+        onrcOnly: { label: "CUI in ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
       },
       anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
       placement: {
