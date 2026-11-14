@@ -12,7 +12,7 @@ Orchestrate the specs the user names. The top level (this session) and every orc
 
 ## Roles
 
-Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> haiku explorers (in parallel, before the first implementer; see the loop in TICKET-ORCHESTRATOR.md) -> sonnet implementer (uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
+Top level (this session) -> one opus spec orchestrator per spec, in the background -> one opus ticket orchestrator per ticket -> haiku explorers (in parallel, before the first implementer; see the loop in TICKET-ORCHESTRATOR.md), sonnet implementer (uses `tdd`, or skips it for docs-only work), opus reviewer (uses `code-review`), sonnet fixer, sonnet merger.
 
 The spec orchestrator follows `implement-spec`'s task-graph/frontier approach, and ticket orchestrators run each ticket per its loop.
 
@@ -20,7 +20,7 @@ Launch agents with the Agent tool, `general-purpose`, setting `model` explicitly
 
 ## Hard rules
 
-[HARD-RULES.md](HARD-RULES.md) holds the hard-rules block. Copy it verbatim into every brief at every level (spec orchestrator, ticket orchestrator, implementer, reviewer, fixer, merger), and point each brief at the notes directory. A brief is done when the block is in it character for character. Replace the `<<HARD-RULES.md block, verbatim>>` placeholder with the block.
+[HARD-RULES.md](HARD-RULES.md) holds the hard-rules block. Copy it verbatim into every brief at every level (spec orchestrator, ticket orchestrator, explorer, implementer, reviewer, fixer, merger), and point each brief at the notes directory. A brief is done when the block is in it character for character. Replace the `<<HARD-RULES.md block, verbatim>>` placeholder with the block.
 
 ## Steps
 
