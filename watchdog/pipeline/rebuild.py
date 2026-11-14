@@ -51,12 +51,12 @@ from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
 from .signals import build_signals
+from .sources import SEAP, SOURCES
 from .search import create_index, value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
 
 SQL_DIR = Path(__file__).parent / "sql"
-SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 
@@ -105,15 +105,16 @@ class RebuildSummary:
         return out
 
 
-# The data-through date per Record kind, the one definition `sources` (API) and `pipeline status` share: the latest publication date
-# of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days after the kind's last bulk quarter (crawled Records' own dates do not count:
-# one past a hole would hide the hole; a crawled day with nothing new still means "looked through that day").
-DATA_THROUGH_SQL = """
-SELECT kind, max(d)::text FROM (
-    SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
-    UNION ALL
-    SELECT kind, through FROM seap.crawl_state
-) x GROUP BY kind ORDER BY kind"""
+DATA_THROUGH_SQL = SEAP.data_through_sql  # SEAP's data-through date per Record kind (defined in sources.py, where `pipeline status` and the API's `sources` share it)
+
+
+def store_sources(cur: psycopg.Cursor) -> None:
+    """`core.source`: the registry (sources.py) as the API reads it. Rebuilt with every graph, so the table never disagrees with the code that built it."""
+    for position, s in enumerate(SOURCES):
+        cur.execute(
+            "INSERT INTO core.source (id, position, name, schema_name, record_kinds, lenses, placement_rule, methodology_anchor, landing_status) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (s.id, position, s.name, s.schema, list(s.record_kinds), list(s.lenses), s.placement_rule, s.methodology_anchor, s.landing_row.status))
 
 
 def _quarter_label(unit: str) -> str:
@@ -455,7 +456,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
             with step("schema"):
                 cur.execute(CORE_SQL.read_text(encoding="utf-8"))
-                cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
+                for source in SOURCES:  # each Source's own schema (sql/<schema>_schema.sql), in registry order
+                    cur.execute((SQL_DIR / f"{source.schema}_schema.sql").read_text(encoding="utf-8"))
+                store_sources(cur)
                 cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
             with step("anaf-identities"):
                 resolver = Resolver(load_anaf(cur, archive, summary), overrides)
@@ -518,8 +521,11 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("signals"):
                 cur.execute("SELECT count(*) FROM seap.record")
                 summary.records = cur.fetchone()[0]
-                cur.execute(DATA_THROUGH_SQL)
-                data_through = dict(cur.fetchall())
+                through: dict[str, dict[str, str]] = {}  # per Source, per Record kind (the Source's own query, sources.py)
+                for source in SOURCES:
+                    cur.execute(source.data_through_sql)
+                    through[source.id] = dict(cur.fetchall())
+                data_through = through[SEAP.id]  # the signals and the status file are SEAP's today
                 summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
             with step("record-indexes"):
                 # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it

@@ -1,22 +1,15 @@
 import { GraphQLError } from "graphql";
-import { coverageStatus } from "./coverage.ts";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { matchedFieldOf } from "./matched.ts";
 import { foldTokens } from "./fold.ts";
+import { adapterOf, plannedSources, SOURCE_ADAPTERS, type SourceRow } from "./sources.ts";
+import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
 import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
-/** The later Sources (spec story 37): listed so the Coverage lens can grey them as "not harvested"; nothing is loaded from them yet. */
-const PLANNED_SOURCES = [
-  { id: "ONRC" as const, name: "ONRC" },
-  { id: "ANI" as const, name: "ANI" },
-  { id: "MFINANTE" as const, name: "Ministerul Finanțelor" },
-  { id: "JUST" as const, name: "portal.just.ro" },
-].map((source) => ({ ...source, harvested: false, dataThrough: [] }));
-
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
 // The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
 // the rest of what the main screen selects (maps, tabs, goTo), until the tickets that own them land.
@@ -46,14 +39,6 @@ const placementObject = (p: PlacementRow | null | undefined) => {
     placedBy: p.placedBy,
   };
 };
-
-/** Does the quarter (`2024-Q4`) overlap the window (open ends allowed; `Date`s are `YYYY-MM-DD`, which sort as text)? */
-function overlaps(quarter: string, from: string | null, to: string | null): boolean {
-  const [year, q] = quarter.split("-Q") as [string, string];
-  const first = `${year}-${String(3 * Number(q) - 2).padStart(2, "0")}-01`;
-  const last = `${year}-${String(3 * Number(q)).padStart(2, "0")}-${Number(q) === 1 || Number(q) === 4 ? "31" : "30"}`;
-  return (from === null || last >= from) && (to === null || first <= to);
-}
 
 const zeroTotal = () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false });
 
@@ -266,35 +251,33 @@ export function rootValue(store: Store) {
     };
   }
 
-  const seapSource = async () => ({ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrough: await store.dataThrough() });
+  /** A registry entry as the `Source` type: its data-through dates come from its adapter. */
+  const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => ({
+    id: row.id as SourceId,
+    name: row.name,
+    harvested: true,
+    dataThrough: await adapterOf(row.id).dataThrough(store),
+  });
 
   return {
-    sources: async () => [await seapSource(), ...PLANNED_SOURCES],
+    // the registry (`core.source`, stored by every rebuild) first, then the planned Sources it does not hold yet
+    sources: async () => {
+      const held = await store.sources();
+      return [...(await Promise.all(held.map(sourceObject))), ...plannedSources(held.map((row) => row.id))];
+    },
     entity: async ({ key }: { key: string }) => {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;
     },
     // The grid (#79) and the per-county figures (#80) follow the date window: quarters overlapping it, Records dated in it.
     coverage: ({ source, window }: { source: string; window?: { from?: string | null; to?: string | null } | null }) => {
-      if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
-      const from = window?.from || null;
-      const to = window?.to || null;
-      let cached: Promise<Awaited<ReturnType<typeof store.coverageGrid>>> | undefined; // one read per request even when grid and counties are both selected
-      const grid = () => (cached ??= store.coverageGrid().then((cells) => cells.filter((cell) => overlaps(cell.quarter, from, to))));
-      return {
-        source: seapSource,
-        window: { from, to },
-        grid,
-        counties: async () => {
-          const status = coverageStatus(await grid()); // the same for every area: SEAP is harvested nationally (see coverage.ts)
-          return (await store.coverageAreas({ from, to })).map((a) => ({ county: a.area, status, withRecords: a.withRecords, publicEntities: a.publicEntities, otherAuthorities: a.otherAuthorities }));
-        },
-        unplacedAuthorities: async () => {
-          const unplaced = await store.unplacedAuthorities({ from, to });
-          return { authorities: unplaced.authorities, total: { ...zeroTotal(), ...unplaced.total } };
-        },
-        referenceSnapshot: () => store.referenceSnapshot(),
+      const adapter = SOURCE_ADAPTERS[source];
+      if (!adapter) throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
+      const named = async () => {
+        const row = (await store.sources()).find((r) => r.id === source);
+        return sourceObject(row ?? { id: source, name: source });
       };
+      return { source: named, ...adapter.coverage(store, { from: window?.from || null, to: window?.to || null }, zeroTotal) };
     },
     signalRules: async () =>
       (await store.signalRules()).map((r) => ({ slug: r.slug, window: r.window, baseRate: r.baseRate, baseRateYear: r.baseRateYear, dataThrough: r.dataThrough })),

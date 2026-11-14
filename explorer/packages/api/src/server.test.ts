@@ -24,6 +24,7 @@ const store: Store = {
   record: async () => null,
   framework: async () => null,
   subsequent: async () => [],
+  sources: async () => [{ id: "SEAP", name: "SEAP", schema: "seap", recordKinds: ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], lenses: ["MONEY", "COVERAGE", "FLOW"], placementRule: "the contracting authority's seat", methodologyAnchor: "awarded-value", landingStatus: "live" }],
   dataThrough: async () => [{ kind: "DA", date: "2022-03-31" }],
   coverageGrid: async () => [],
   coverageAreas: async () => [],

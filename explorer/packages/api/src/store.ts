@@ -2,6 +2,7 @@ import pg from "pg";
 import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
 import { rollupPlan, rollupWhere } from "./rollup.ts";
 import { roleStore, type RoleStore } from "./role.ts";
+import type { SourceRow } from "./sources.ts";
 import { signalStore, signalsOfRecords, type SignalRow, type SignalStore } from "./signals.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
@@ -14,8 +15,8 @@ export interface EntityRow {
   /** ANAF's status (ACTIV, RADIERE, FUZIUNE ...); null when ANAF has no entry. */
   anafStatus: string | null;
   identityCurated: boolean;
-  /** ANAF (the Reference source) when it has the CUI, else SEAP. `via` is the SEAP file for a SEAP-named entity. */
-  provenance: { source: "ANAF" | "SEAP"; via: string | null; fetchedAt: string };
+  /** ANAF (the Reference source) when it has the CUI; ONRC when only ONRC lists it (ADR 0018); else SEAP. `via` is the SEAP file for a SEAP-named entity. */
+  provenance: { source: "ANAF" | "SEAP" | "ONRC"; via: string | null; fetchedAt: string };
   /** Where it sits (core.placement, #67); null/absent when no source places it. */
   placement?: PlacementRow | null;
 }
@@ -206,6 +207,8 @@ export interface Store extends RoleStore, SignalStore {
   framework(code: string): Promise<FrameworkRow | null>;
   /** The subsequent contracts reported under an award notice's framework, largest first. */
   subsequent(noticeCode: string, page: { limit: number; offset: number }): Promise<RecordRow[]>;
+  /** The `sources` registry the last rebuild stored (`core.source`), in registry order. */
+  sources(): Promise<SourceRow[]>;
   /** Per SEAP record kind, the latest publication date loaded; for the crawled kinds (CONTRACT, AWARD_NOTICE) at least the crawl cursor. */
   dataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The SEAP Coverage grid the last rebuild stored (`seap.coverage_cell`), oldest quarter first, kinds in contract order. */
@@ -287,7 +290,7 @@ interface RawEntity {
   display_name: string;
   anaf_status: string | null;
   identity_curated: boolean;
-  provenance_source: "ANAF" | "SEAP";
+  provenance_source: "ANAF" | "SEAP" | "ONRC";
   provenance_via: string | null;
   fetched_at: string;
 }
@@ -756,9 +759,16 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       return rowsOf(rows as RawRecord[]);
     },
+    async sources() {
+      const { rows } = await pool.query(
+        `SELECT id, name, schema_name AS schema, record_kinds AS "recordKinds", lenses, placement_rule AS "placementRule",
+                methodology_anchor AS "methodologyAnchor", landing_status AS "landingStatus" FROM core.source ORDER BY position`,
+      );
+      return rows as SourceRow[];
+    },
     async dataThrough() {
       const { rows } = await pool.query(
-        // the same definition as pipeline/rebuild.py DATA_THROUGH_SQL (`pipeline status`): the crawled kinds are at least as far as the crawl cursor
+        // a copy of SEAP_DATA_THROUGH_SQL in watchdog/pipeline/sources.py (`pipeline status`); the two must agree: the crawled kinds are at least as far as the crawl cursor
         `SELECT kind, max(d)::text AS date FROM (
            SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
            UNION ALL

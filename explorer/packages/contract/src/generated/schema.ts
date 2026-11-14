@@ -149,7 +149,7 @@ export type Entity = {
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
   placement: Maybe<Placement>;
-  /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer. */
+  /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP. */
   provenance: Array<Provenance>;
   /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
   seap: SeapEntity;
@@ -330,7 +330,7 @@ export type Placement = {
   uat: Maybe<Uat>;
 };
 
-/** Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer). */
+/** Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source); ONRC when ANAF does not know the CUI but ONRC lists it, ADR 0018; else SEAP). */
 export type Provenance = {
   __typename?: 'Provenance';
   /** When we fetched it (from the raw archive). */
