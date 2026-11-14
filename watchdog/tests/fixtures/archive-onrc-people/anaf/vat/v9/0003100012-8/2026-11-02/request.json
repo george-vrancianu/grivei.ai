@@ -1,0 +1,14 @@
+{
+  "endpoint": "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva",
+  "date": "2026-11-02",
+  "cuis": [
+    3100012,
+    3100020,
+    3100039,
+    3100047,
+    3100063,
+    3100110,
+    3100128,
+    3100055
+  ]
+}

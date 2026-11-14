@@ -20,3 +20,22 @@
 # name = "ASOCIEREA EXEMPLU ALFA-BETA"
 # key = "consortium-exemplu-alfa-beta"
 # display_name = "Asocierea Exemplu Alfa-Beta"
+#
+# People (ONRC administrators, ADR 0011; `pipeline/onrc/people.py`) have two kinds of entry of their own, in this same file. Both need a `reason` and a
+# `reviewer`, the named human who reviewed it (never an agent); a merge also needs a `document`, the cited document that shows the records are one person.
+# Person ids are the ones a person's page shows (Private view) and the review queue (`onrc.possible_match.id`) lists. They depend on the secret
+# `GRIVEI_PERSON_ID_SECRET`, so an entry is valid only for the host that holds that secret.
+#
+#   [[person_split]]  carve roles out of a confirmed person (a credible request, or evidence that two people share a name and date):
+#   person   = "<32-hex person id>"
+#   reg_nos  = ["J40/1234/2010"]       # the registrations whose roles move to a new person (a new id)
+#   reason   = "..."
+#   reviewer = "Full Name"
+#
+#   [[person_merge]]  settle a possible match, or merge two confirmed persons: every role of `ids` takes the first id:
+#   ids      = ["<32-hex id>", "<32-hex id>"]
+#   reason   = "..."
+#   reviewer = "Full Name"
+#   document = "the cited document (title, number, URL)"
+#
+# An entry that matches no role in the newest snapshot changes nothing and is named in the rebuild's summary.

@@ -1,8 +1,9 @@
-// Entry point of the API container: DATABASE_URL, PORT (default 4000), API_CACHE_MAX_MB (result cache budget, default 300), SEAP_BASE_URL (default https://e-licitatie.ro), SEAP_LINK_PUBLIC_BASE (default relative).
+// Entry point of the API container: DATABASE_URL, PORT (default 4000), API_CACHE_MAX_MB (result cache budget, default 300), SEAP_BASE_URL (default https://e-licitatie.ro), SEAP_LINK_PUBLIC_BASE (default relative), GRIVEI_RESTRICTED (only the exact value `show` reveals Restricted content, ADR 0015; unset or anything else hides it).
 import pg from "pg";
 import { createApi } from "./server.ts";
 import { cachedStore } from "./cache.ts";
 import { postgresStore } from "./store.ts";
+import { restrictedShown } from "./restricted.ts";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required");
@@ -17,7 +18,7 @@ await store.sync(); // reads the load generation and starts warming the 2-charac
 const watch = setInterval(() => void store.sync(), 30_000);
 watch.unref();
 const server = await createApi(store).listen(port);
-console.log(`api listening on :${port}`);
+console.log(`api listening on :${port}; Restricted content ${restrictedShown() ? "SHOWN (a Private view: never on the open public host)" : "hidden"}`);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {

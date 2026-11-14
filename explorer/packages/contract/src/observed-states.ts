@@ -6,7 +6,7 @@ export const REQUIRED_STATES = [
   "national", "unplaced", "unknown-supplier-county", "unknown-uat",
   "natural-person", "name-only-supplier", "consortium", "framework", "subsequent-contract",
   "suspect-value", "no-value", "estimated-count",
-  "both-roles", "entity-provenance:SEAP", "entity-provenance:ONRC", "onrc-section", "onrc-status-since-at-least", "onrc-status-first-seen", "onrc-alias", "not-found", "identity-curated", "crawled-provisional",
+  "both-roles", "entity-provenance:SEAP", "entity-provenance:ONRC", "onrc-section", "onrc-status-since-at-least", "onrc-status-first-seen", "onrc-alias", "people-holders", "people-unlinked-holder", "people-person-link", "person-page", "not-found", "identity-curated", "crawled-provisional",
   "signal:over-cap", "signal:splitting", "signal:framework-overrun", "signal:no-publication",
   "suspect:DIRECT_PURCHASE_10X_CAP", "suspect:CONTRACT_100X_ESTIMATE", "suspect:CONTRACT_OVER_50BN",
   "gap:LOADED", "gap:KNOWN_GAP", "gap:POSSIBLY_INCOMPLETE", "gap:NOT_IN_SOURCE", "gap:CRAWLED_PROVISIONAL", "gap:NOT_YET_LOADED",
@@ -58,6 +58,11 @@ export function observedStates(data: unknown): Set<string> {
       }
     }
     if (Array.isArray(o.aliases) && o.aliases.some((a) => typeof (a as { current?: Json }).current === "boolean")) seen.add("onrc-alias");
+    // ONRC's people (#177): an organisation's holders, an unlinked one (no birth year), a holder linked to a person page (Restricted), and the person page itself
+    if (key === "people" && Array.isArray(o.holders) && o.holders.length > 0) seen.add("people-holders");
+    if (Array.isArray(o.holders) && o.holders.some((h) => (h as { birthYear?: Json }).birthYear === null)) seen.add("people-unlinked-holder");
+    if (Array.isArray(o.holders) && o.holders.some((h) => (h as { person?: Json }).person !== null && (h as { person?: Json }).person !== undefined)) seen.add("people-person-link");
+    if (key === "person" && typeof o.id === "string" && Array.isArray(o.roles)) seen.add("person-page");
     if (o.countEstimated === true) seen.add("estimated-count");
     if (Array.isArray(o.roles) && o.roles.length > 1) seen.add("both-roles");
     if (o.identityCurated === true) seen.add("identity-curated");

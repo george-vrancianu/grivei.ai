@@ -3,8 +3,8 @@
 Discovery: CKAN `package_search` for the datasets titled "Firme inregistrate la Registrul Comertului pana la data de <date>"; each is one
 snapshot (the register as of that date). Two file layouts exist, told apart by the resource names:
 
-- `current` (from mid-2025): `OD_FIRME.CSV`, `OD_STARE_FIRMA.CSV`, `OD_CAEN_AUTORIZAT.CSV` (and, not fetched yet, the people files
-  `OD_REPREZENTANTI_LEGALI.CSV`, `OD_REPREZENTANTI_IF.CSV`: ticket #177 adds them to `CURRENT_ROLES` and the next run archives them);
+- `current` (from mid-2025): `OD_FIRME.CSV`, `OD_STARE_FIRMA.CSV`, `OD_CAEN_AUTORIZAT.CSV` (and the people files
+  `OD_REPREZENTANTI_LEGALI.CSV`, `OD_REPREZENTANTI_IF.CSV`, the people files of #177, fetched when the dataset lists them);
 - `legacy` (2021 to mid-2025): four company files (`neradiate`/`radiate` x `fara`/`cu sediu`) with the status codes inline, and a
   status nomenclature file. No registration date and no CAEN codes.
 
@@ -54,13 +54,14 @@ MONTHLY_FROM = date(2026, 3, 1)  # birth dates first appear in March 2026 (spec 
 QUARTERLY_FROM = date(2021, 1, 1)
 SHRINK_WARNING = 0.75  # a snapshot with fewer than this share of the previous one's companies is a suspicious success
 
-# The files a `current` snapshot is fetched with, by role. The people files join the tuple with ticket #177.
+# The files a `current` snapshot is fetched with, by role; the people files (`CURRENT_ROLE_FILES`) are optional.
 CURRENT_FILES = {"od_firme.csv": "firme", "od_stare_firma.csv": "stare", "od_caen_autorizat.csv": "caen"}
-CURRENT_ROLES: tuple[str, ...] = ()
+CURRENT_ROLE_FILES = {"od_reprezentanti_legali.csv": "legali", "od_reprezentanti_if.csv": "if"}  # the people files (#177), optional: a `current` snapshot without them is still archived
 # the columns a file must start with (after a BOM): an HTML error page or a changed export is `invalid`, never an archive entry
 EXPECTED_COLUMNS = {
     "firme": ("DENUMIRE", "CUI", "COD_INMATRICULARE"), "stare": ("COD_INMATRICULARE", "COD"), "caen": ("COD_INMATRICULARE", "COD_CAEN_AUTORIZAT"),
     "legacy": ("DENUMIRE", "CUI", "COD_INMATRICULARE", "STARE_FIRMA"), "nomenclature": ("COD", "DENUMIRE"),
+    "legali": ("COD_INMATRICULARE", "PERSOANA_IMPUTERNICITA", "CALITATE"), "if": ("COD_INMATRICULARE", "NUME", "CALITATE"),
 }
 log = logging.getLogger("pipeline.onrc")
 
@@ -162,7 +163,7 @@ def layout_files(dataset: dict) -> tuple[str, list[tuple[str, dict]]] | None:
     resources = [r for r in dataset.get("resources") or [] if isinstance(r, dict) and r.get("id") and r.get("url")]
     by_name = {_resource_name(r).lower(): r for r in resources}
     if all(n in by_name for n in CURRENT_FILES):
-        roles = {**CURRENT_FILES, **{f"od_{r}.csv": r for r in CURRENT_ROLES}}
+        roles = {**CURRENT_FILES, **CURRENT_ROLE_FILES}
         return "current", [(role, by_name[n]) for n, role in roles.items() if n in by_name]
     company = [r for r in resources if "radiate" in _fold(_resource_name(r)) and "sediu" in _fold(_resource_name(r))]
     if company:

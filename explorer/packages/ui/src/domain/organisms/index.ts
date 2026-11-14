@@ -10,6 +10,8 @@ export * from "./FlowLensMap/index.ts";
 export * from "./RecordDetail/index.ts";
 export * from "./EntityOverview/index.ts";
 export * from "./OnrcSection/index.ts";
+export * from "./PeopleSection/index.ts";
+export * from "./PersonDetail/index.ts";
 export * from "./RelationshipsTab/index.ts";
 export * from "./SignalCard/index.ts";
 export * from "./SignalList/index.ts";
