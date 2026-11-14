@@ -30,7 +30,7 @@ The limits live in this one block, named `QUIET-MODE-LIMITS`. Paste it verbatim 
 
 ```
 QUIET-MODE-LIMITS (on until you are told "quiet mode off")
-- Paste this block verbatim into every brief you write for an orchestrator while it is on. SendMessage each running orchestrator you started when the mode changes (off: "quiet mode off, normal limits").
+- Paste this block verbatim into every brief you write for an orchestrator while it is on. SendMessage each running orchestrator you started (your own children, which the hard rules allow) when the mode changes (off: "quiet mode off, normal limits").
 - These limits replace the caps in your own brief (ticket orchestrators, ~18 GB wait).
 - One spec orchestrator in the pipeline, and one ticket orchestrator per spec (so one in all). Running agents above that finish; start nothing new until the count is under the limit.
 - No spawn while the watcher's latest sample is above 16 GB (16384 MB). The latest sample is the last line of `/tmp/mem-watch.log` (`date time MB`, `free -m` "used"); wait and re-check. Read it only: the top level owns the watcher, never start or stop it. `mem-watch.sh peak` is the run-wide maximum, for reports only.
