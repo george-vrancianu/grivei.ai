@@ -42,7 +42,8 @@ def pytest_configure(config):
 # settings): a test sets what it needs itself with monkeypatch
 SCRUBBED_PREFIXES = ("RESTIC_", "AWS_", "B2_", "AZURE_", "GOOGLE_", "PIPELINE_", "PG")
 SCRUBBED_NAMES = ("DATABASE_URL", "GRIVEI_HEALTHCHECK_URL")
-KEPT = ("PIPELINE_TEST_TIMEOUT",)
+# PIPELINE_RESTIC_BIN points at a local binary for the backup tests, not at a remote
+KEPT = ("PIPELINE_TEST_TIMEOUT", "PIPELINE_RESTIC_BIN")
 
 
 def _scrubbed(name: str) -> bool:
