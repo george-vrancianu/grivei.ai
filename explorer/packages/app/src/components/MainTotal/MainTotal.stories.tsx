@@ -11,10 +11,18 @@ const national = fixtures.MainScreen.find((f) => f.name === "empty-filter-nation
 
 export const National: Story = {
   // copy and locale follow the toolbar's language in `render`; the args only satisfy the types
-  args: { total: national.seap.search.total, copy: { heading: catalogue.en.main.total, total: catalogue.en.total }, locale: "en", methodologyHref: "/explore/methodology#awarded-value", suspectHref: "/explore/?badges=suspect-value&tab=records" },
+  args: { total: national.seap.search.total, copy: { heading: catalogue.en.main.total, total: catalogue.en.total, partyCoverage: catalogue.en.partyCoverage }, locale: "en", methodologyHref: "/explore/methodology#awarded-value", partyHref: "/explore/methodology#party-and-leadership", suspectHref: "/explore/?badges=suspect-value&tab=records" },
   render: (args, { globals }) => {
     const locale = globals["locale"] === "ro" ? "ro" : "en";
     const t = catalogue[locale];
-    return <MainTotal {...args} locale={locale} copy={{ heading: t.main.total, total: t.total }} />;
+    return <MainTotal {...args} locale={locale} copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }} />;
   },
+};
+
+const party = fixtures.MainScreen.find((f) => f.name === "party-psd")!.data;
+
+/** A Party-filtered search: the Total, then what the filter covers (direct against subordinate, the share left unattributed). */
+export const PartyFiltered: Story = {
+  ...National,
+  args: { ...National.args, total: party.seap.search.total },
 };

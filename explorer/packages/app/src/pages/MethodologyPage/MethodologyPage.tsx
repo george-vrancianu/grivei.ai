@@ -4,6 +4,7 @@ import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { decodeHash } from "../../routing/decodeHash.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
 import { useMethodologyBaseRates } from "./hooks/useMethodologyBaseRates.ts";
+import { useMethodologyReferenceDates } from "./hooks/useMethodologyReferenceDates.ts";
 
 export interface MethodologyPageProps {
   locale: Locale;
@@ -14,11 +15,13 @@ export function MethodologyPage({ locale }: MethodologyPageProps) {
   const t = useCopy();
   const { hash } = useLocation();
   const baseRates = useMethodologyBaseRates();
+  const referenceDates = useMethodologyReferenceDates();
   const anchor = decodeHash(hash);
   return (
     <Box component="main">
       <MethodologyPageView
         baseRates={baseRates}
+        referenceDates={referenceDates}
         anchor={anchor}
         sectionHref={(id) => `${methodologyHref(locale)}#${id}`}
         // a plain click on a contents link changes the fragment without a load; the links keep their real hrefs

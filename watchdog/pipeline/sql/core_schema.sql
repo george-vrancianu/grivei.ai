@@ -3,7 +3,21 @@
 -- through entity keys: the CUI, `vat-<id>`, `name-<slug>` or a key the identity override file pins. (The operational
 -- pipeline ledger, which is not rebuilt, lives beside them and is never dropped here.)
 CREATE SCHEMA IF NOT EXISTS core;
-DROP TABLE IF EXISTS core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+DROP TABLE IF EXISTS core.source, core.mf_principal, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+
+-- The `sources` registry (pipeline/sources.py), stored at every rebuild: one row per explorable Source. The API's `sources` query and
+-- `coverage(source)` read it; a Source's own tables sit in the schema named here.
+CREATE TABLE core.source (
+    id                 text PRIMARY KEY,          -- the contract's SourceId: SEAP, ONRC ...
+    position           integer NOT NULL,          -- the order `sources` lists them in
+    name               text NOT NULL,
+    schema_name        text NOT NULL,             -- the Postgres schema of the Source's own tables
+    record_kinds       text[] NOT NULL,
+    lenses             text[] NOT NULL,
+    placement_rule     text NOT NULL,
+    methodology_anchor text NOT NULL,             -- the methodology page's section for the Source's measure
+    landing_status     text NOT NULL CHECK (landing_status IN ('live', 'wip', 'next', 'skipped'))
+);
 
 -- One row per CUI ANAF answered "found" for, from the latest archived answer. Placement (#67) reads the address columns:
 -- they are stored exactly as ANAF sent them (`sdenumire_Localitate`, `scod_JudetAuto`, `scod_Judet`, `scod_Postal`, ...).
@@ -29,8 +43,8 @@ CREATE TABLE core.entity (
     name_folded       text NOT NULL DEFAULT '',   -- fold(display_name) (pipeline/fold.py): the Go-to lookup of a name query (#69); '' when only legal forms
     anaf_status       text,
     identity_curated  boolean NOT NULL DEFAULT false,
-    provenance_source text NOT NULL CHECK (provenance_source IN ('ANAF', 'SEAP')),
-    provenance_via    text,                       -- SEAP: the file the latest naming Record came from; ANAF: null
+    provenance_source text NOT NULL CHECK (provenance_source IN ('ANAF', 'SEAP', 'ONRC')),  -- ANAF; ONRC when ANAF does not know the CUI but ONRC lists it (ADR 0018); else SEAP
+    provenance_via    text,                       -- SEAP: the file the latest naming Record came from; ONRC: the snapshot; ANAF: null
     fetched_at        timestamptz NOT NULL
 );
 
@@ -77,7 +91,7 @@ CREATE TABLE core.placement (
     sector            smallint,
     national          boolean NOT NULL,
     national_by       text NOT NULL,              -- award-notice | file | file-override | default
-    placed_by         text NOT NULL CHECK (placed_by IN ('ANAF', 'SEAP')),
+    placed_by         text NOT NULL CHECK (placed_by IN ('ANAF', 'SEAP', 'ONRC')),  -- ONRC: the seat's county of an entity neither ANAF nor SEAP places (#175)
     located_on        timestamptz,                -- when the answer it came from was fetched
     source_path       text                        -- that answer, relative to the archive root
 );
@@ -101,3 +115,13 @@ CREATE TABLE core.mf_entity (
     national          boolean NOT NULL DEFAULT false,
     national_by       text NOT NULL DEFAULT 'default'  -- award-notice | file | file-override | default
 );
+
+-- The principal credit holders (`CIF Ordonator principal de credite`) of every entity in EVERY held monthly snapshot (#180): the tie a subordinate
+-- body's Party rests on. One row per (snapshot, entity, principal); an entity with no principal named has one row with a null principal_cui.
+-- A body inherits Party only when its principal set is exactly one attributed authority in every snapshot that lists it.
+CREATE TABLE core.mf_principal (
+    snapshot_date     date NOT NULL,
+    cui               text NOT NULL,              -- the entity (as in core.mf_entity)
+    principal_cui     text                        -- normalised like cui
+);
+CREATE INDEX mf_principal_cui_idx ON core.mf_principal (cui);

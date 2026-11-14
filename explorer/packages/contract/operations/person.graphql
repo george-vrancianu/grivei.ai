@@ -1,0 +1,4 @@
+# /person/<id> (Restricted, ADR 0015): null unless the host shows Restricted content (a Private view).
+query PersonPage($id: ID!) {
+  person(id: $id) { ...PersonFields }
+}

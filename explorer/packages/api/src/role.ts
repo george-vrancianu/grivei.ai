@@ -4,7 +4,7 @@
 // rule is not applied here, only summed: a Record counts once per group (its winners' shares add up to its counted value), and
 // the supplier side adds the entity's own share. See store.ts `areaTotals` for the same shape per map area.
 import type pg from "pg";
-import { buildWhere, cancellableQuery, type SearchFilter } from "./search.ts";
+import { buildWhere as buildWhereFor, cancellableQuery, type SearchFilter } from "./search.ts";
 import type { EntityRow, RecordRow, SearchOptions, TotalRow } from "./store.ts";
 
 export type RoleSide = "AUTHORITY" | "SUPPLIER";
@@ -94,6 +94,8 @@ export interface RoleDeps {
   rowsOf(raw: unknown[]): Promise<RecordRow[]>;
   recordColumns: string;
   fallbackEntity(key: string, name: string | null, fetchedAt: string): EntityRow;
+  /** Restricted Signal rules are served (#185); default off. */
+  restricted?: boolean;
 }
 
 /**
@@ -134,10 +136,11 @@ function perRecord(groupSql: string, whereSql: string, extra = "", table = "seap
 export function roleStore(deps: RoleDeps): RoleStore {
   const { pool, entitiesOf, fallbackEntity } = deps;
   const { rowsOf } = deps;
+  const whereOf = (filter: SearchFilter) => buildWhereFor(filter, deps.restricted === true);
 
   return {
     async roleCounterparties(side, filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // The counterparty's key: the supplier on an authority's page, the authority on a supplier's. A row with no key is either a natural
       // person (all of them one group, `#person`; the winner's `naturalPerson` flag on the Record says so) or a winner nobody could link,
       // or a Record with no winner (`#unknown`): those are NOT natural persons.
@@ -180,14 +183,18 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async searchFacet(dimension, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       let sql: string;
       if (dimension === "badge" || dimension === "signal") {
         // a Record has several badges (or belongs to several Signals' rules): one row per (value, Record). The inner select is what the index serves; the unnest is above it.
+        // with the Restricted switch shown, a Restricted rule's Records are in the facet too (as the has-Signals chip and the `signal` filter count them); hidden, the column is never read
+        const shown = dimension === "signal" && deps.restricted === true;
         const column = dimension === "badge" ? "badges" : "signals";
+        const columns = shown ? `${column}, restricted_signals` : column;
+        const unnested = shown ? `array_cat(${column}, coalesce(restricted_signals, '{}'::text[]))` : column;
         sql = `SELECT v AS value, ${totalColumns("")}
-                 FROM (SELECT record_code, ${column}, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
-                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, ${column}) r, unnest(${column}) AS v
+                 FROM (SELECT record_code, ${columns}, sum(share_bani) AS sh, bool_or(suspect) AS suspect, bool_or(value_bani IS NULL) AS no_value, max(ceiling_bani) AS ceil
+                         FROM seap.search WHERE ${w.sql} GROUP BY record_code, ${columns}) r, unnest(${unnested}) AS v
                 GROUP BY v ORDER BY coalesce(sum(sh), 0) DESC, v`;
       } else {
         const column = { channel: "channel", procedure: "procedure", year: "award_year::text" }[dimension];
@@ -200,7 +207,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async searchMonths(filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const { rows } = await cancellableQuery<Record<string, unknown> & { month: string }>(
         pool, signal,
         `SELECT g AS month, ${totalColumns("")} FROM (${perRecord("to_char(award_date, 'YYYY-MM')", w.sql)}) r GROUP BY g ORDER BY g`,
@@ -210,7 +217,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleFrameworks(filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const { rows } = await cancellableQuery<{ count: number; ceilings: string; subsequent: string }>(
         pool, signal,
         `WITH m AS (SELECT record_code, max(ceiling_bani) AS ceil FROM seap.search WHERE ${w.sql} GROUP BY record_code),
@@ -225,7 +232,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleConsortia(filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // The Records of the set with more than one winner, grouped by who won them (the sorted member keys; natural persons have no key, they are `#person`).
       // The group's money is the Records' whole counted value on both sides, so one consortium reads the same on the authority's and the supplier's page.
       // (a natural person is `#person`; a winner nobody could link is `#unknown`: the two are different members)
@@ -275,7 +282,7 @@ export function roleStore(deps: RoleDeps): RoleStore {
     },
 
     async roleLargest(filter, { limit }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const codes = await cancellableQuery<{ record_code: string }>(
         pool, signal,
         `SELECT record_code FROM seap.search WHERE ${w.sql} GROUP BY record_code HAVING sum(share_bani) IS NOT NULL

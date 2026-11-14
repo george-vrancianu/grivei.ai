@@ -64,6 +64,8 @@ services:
       SEAP_BASE_URL: ${SEAP_BASE_URL:-https://e-licitatie.ro}
       SEAP_LINK_PUBLIC_BASE: ${SEAP_LINK_PUBLIC_BASE:-}
       API_CACHE_MAX_MB: ${API_CACHE_MAX_MB:-300}
+      # Restricted content (ADR 0015): only the exact value `show` reveals it; empty or anything else hides it. Never `show` on the open public host.
+      GRIVEI_RESTRICTED: ${GRIVEI_RESTRICTED:-}
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +106,7 @@ services:
       DATABASE_URL: postgresql://grivei:${GRIVEI_DB_PASSWORD:-grivei}@db:5432/grivei
       PIPELINE_ARCHIVE: /archive
       PIPELINE_GEO_DIR: /geo
+      GRIVEI_PERSON_ID_SECRET: ${GRIVEI_PERSON_ID_SECRET:-}  # keyed hash of person ids (ADR 0011); a rebuild with ONRC's people files and no secret fails
       PIPELINE_HEALTHCHECK_URL: ${GRIVEI_HEALTHCHECK_URL:-}  # healthchecks.io ping URL of `refresh`; empty = no pings
       # backups (refresh step 5, #82): empty RESTIC_REPOSITORY = skipped with a warning. Password and backend credentials as restic reads them.
       RESTIC_CACHE_DIR: /tmp/restic-cache

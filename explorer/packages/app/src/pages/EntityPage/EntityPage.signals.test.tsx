@@ -101,17 +101,13 @@ describe("the Overview's Signals (English)", () => {
     expect(screen.queryAllByRole("article")).toHaveLength(0);
   });
 
-  it("uses no word a Signal never uses, in any recorded Overview", async () => {
-    for (const f of overviewsWithSignals) {
-      document.body.innerHTML = "";
-      openAt(overviewUrl(f.variables));
-      const { client } = fixtureClient();
-      const { unmount } = render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
-      await screen.findByRole("heading", { name: /^Signals \(\d+\)$/ });
-      await waitFor(() => expect(screen.getAllByRole("article").length).toBe(Math.min(f.data.entity!.seap.role!.signals.count, 20)));
-      for (const card of screen.getAllByRole("article")) expect(forbiddenWords(card.textContent ?? "", "en"), f.name).toEqual([]);
-      unmount();
-    }
+  // one test per recording: the cost of each is constant however many recordings there are, and a failure names the recording
+  it.each(overviewsWithSignals.map((f) => [f.name, f] as const))("uses no word a Signal never uses, in the recorded Overview %s", async (_name, f) => {
+    openAt(overviewUrl(f.variables));
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByRole("heading", { name: /^Signals \(\d+\)$/ });
+    await waitFor(() => expect(screen.getAllByRole("article").length).toBe(Math.min(f.data.entity!.seap.role!.signals.count, 20)));
+    for (const card of screen.getAllByRole("article")) expect(forbiddenWords(card.textContent ?? "", "en")).toEqual([]);
   });
 });
 

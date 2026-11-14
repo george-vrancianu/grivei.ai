@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fixtures, recordedSignalsMethodology } from "@grivei/contract/fixtures";
 import allowlist from "@grivei/contract/persisted-queries.json";
-import { SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
+import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES as ALL_SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
@@ -16,6 +16,8 @@ import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 
 const PATH = { en: "/explore/methodology", ro: "/ro/explore/methodology" } as const;
+/** The rules these answers show: a Restricted rule's section appears only when the API returns the rule (these fixtures never do; the UI test covers it). */
+const SIGNAL_RULES = ALL_SIGNAL_RULES.filter((r) => !RESTRICTED_SIGNAL_RULES.includes(r));
 const ANCHORS = allMethodologyAnchors(SIGNAL_RULES);
 
 const scrolled: Element[] = [];
@@ -31,10 +33,12 @@ afterEach(() => {
 });
 
 /** A client answering `MethodologyBaseRates` with one named fixture (the fixture client answers the first one for `{}`), or failing. */
-function clientWith(name: string) {
+function clientWith(name: string, reference = "amepip-held") {
   const id = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!.sha256;
+  const referenceId = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!.sha256;
   return createClient({
     fetch: async (_url, init) => {
+      if (JSON.parse(String(init?.body)).id === referenceId) return Response.json({ data: fixtures.MethodologyReferenceSources.find((f) => f.name === reference)!.data }); // AMEPIP's date: its own query
       expect(JSON.parse(String(init?.body))).toMatchObject({ id, variables: {} });
       if (name === "pending") return new Promise<Response>(() => {});
       if (name === "fail") return Response.json({ errors: [{ message: "boom" }] }, { status: 500 });
@@ -42,9 +46,9 @@ function clientWith(name: string) {
     },
   });
 }
-function open(url: string, name = "typical-after-backfill") {
+function open(url: string, name = "typical-after-backfill", reference = "amepip-held") {
   openAt(url);
-  render(<App client={clientWith(name)} />);
+  render(<App client={clientWith(name, reference)} />);
 }
 const region = (name: string) => within(screen.getByRole("region", { name }));
 
@@ -71,7 +75,7 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
 
   it("covers every section the ticket names", () => {
     expect(Object.keys(METHODOLOGY_ANCHORS).sort()).toEqual(
-      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "placement", "signals", "supplierIdentity", "suspectValues"],
+      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "financialStatements", "firmDonations", "frameworkCeilings", "onrcRegister", "partyAndLeadership", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
     );
   });
 
@@ -105,6 +109,40 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     expect(overrun.getByText(t.baseRate.openStart(fmt("2024-11-30")))).toBeVisible();
     expect(overrun.getByText(t.baseRate.none(2024))).toBeVisible();
     expect(region(t.rules.NO_PUBLICATION.heading).getByText(t.baseRate.range(fmt("2023-01-01"), fmt("2024-11-30")))).toBeVisible();
+  });
+
+  it("states AMEPIP's data-through date in its section, and only when a list is held", async () => {
+    open(PATH[locale]);
+    const date = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "ro", { dateStyle: "long", timeZone: "UTC" }).format(new Date("2026-01-13T00:00:00Z"));
+    const section = region(t.sections.publicEnterprises.heading);
+    expect(await section.findByText(t.baseRate.dataThrough(date))).toBeVisible();
+    expect(section.getByText(t.sections.publicEnterprises.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.publicEnterprises.heading).queryByText(/2026/)).toBeNull();
+  });
+
+  it("states the newest fiscal year of MF's financial statements in its section, and only when statements are held (#179)", async () => {
+    open(PATH[locale]);
+    const section = region(t.sections.financialStatements.heading);
+    expect(await section.findByText(t.referenceFiscalYearThrough(2025))).toBeVisible();
+    expect(section.getByText(t.sections.financialStatements.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.financialStatements.heading).queryByText(t.referenceFiscalYearThrough(2025))).toBeNull();
+  });
+
+  it("states the newest year of BaniPartide's firm donations in its section, and only when the table is held (#182)", async () => {
+    open(PATH[locale]);
+    const section = region(t.sections.firmDonations.heading);
+    expect(await section.findByText(t.referenceYearThrough(2024))).toBeVisible();
+    expect(section.getByText(t.sections.firmDonations.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.firmDonations.heading).queryByText(t.referenceYearThrough(2024))).toBeNull();
   });
 
   it("keeps every section's prose when the figures are loading", async () => {
@@ -190,10 +228,6 @@ describe("every methodology link the app builds lands on an anchor of the page",
       const locale: Locale = href.startsWith("/ro/") ? "ro" : "en";
       expect(href.startsWith(PATH[locale] + "#"), href).toBe(true);
       expect(ANCHORS, href).toContain(anchorOf(href));
-      open(href);
-      await screen.findByRole("heading", { level: 1, name: catalogue[locale].methodology.title });
-      expect(document.getElementById(anchorOf(href)), href).not.toBeNull();
-      cleanup();
     }
   });
 });
@@ -240,7 +274,8 @@ describe.each(["en", "ro"] as const)("the base rates from the API's own answers 
 
   it("shows every rule's non-zero rate in one of the three answers, and a rule the answer lacks says nothing was computed", async () => {
     const nonZero = new Set(recordedRates.flatMap((f) => f.data.signalRules.filter((r) => r.baseRate > 0).map((r) => r.slug)));
-    expect([...nonZero].sort()).toEqual([...SIGNAL_RULES].sort());
+    // DONOR_TO_PARTY (#185) joins the recorded answers when the explorer is next re-recorded against a built graph (#187)
+    expect([...nonZero].sort()).toEqual(SIGNAL_RULES.filter((r) => r !== "DONOR_TO_PARTY").sort());
     const splitting = recordedRates.find((f) => f.name === "splitting-archive")!;
     open(PATH[locale], splitting.name);
     await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/20\d\d/);

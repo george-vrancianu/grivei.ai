@@ -40,7 +40,8 @@ describe("an entity page", () => {
     const sent = open(`${base}${suffix}`);
     expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
     expect(currentTab()).toEqual([name]);
-    expect(sent.map((s) => s.operation)).toEqual([operation]);
+    // the Records tab also looks up ONRC's registrations of the CUI, for the Source switch (#178)
+    expect(sent.map((s) => s.operation).filter((op) => op !== "OnrcSearch")).toEqual([operation]);
   });
 
   it("opens the /relationships URL on its own tab, running that tab's operation (a recorded entity: ALFA)", async () => {

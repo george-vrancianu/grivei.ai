@@ -65,23 +65,31 @@ A contracting authority whose remit is the whole country (ministry, national age
 _Avoid_: central authority
 
 **Elected leader**:
-A mayor (of a commune, town, municipality, Bucharest sector or Bucharest itself) or a county council president, elected directly; the only officials through whom a Party reaches a contracting authority.
+A mayor (of a commune, town, municipality, Bucharest sector or Bucharest itself) or a county council president, elected directly; the only officials through whom a Party reaches a contracting authority, directly or through its subordinate bodies.
 _Avoid_: local leader, politician, head of authority
 
 **Mandate**:
 One elected leader's term at one authority, from their oath to their successor's oath; an interim leader after a vacancy holds no mandate.
 _Avoid_: term, tenure, office
 
+**Leadership list**:
+The list of an authority's Mandates shown on its page (leader name, list as registered, dates, AEP basis), for a town hall, Bucharest sector, Bucharest city hall or county council and for a Subordinate body (which shows the authority's, with its basis); it warns that a leader may have switched party since the election, and shows a handover window, an interim leader or a mandate without results as a gap, never guessed. Its leaders are never linked to a person page or to ONRC.
+_Avoid_: leadership history, officials list, ruling party
+
 **Party**:
-The list (party, alliance or "Independent") an elected leader ran on for one mandate, as registered at that election; it belongs to the contracting authority for that mandate's dates and never to a supplier or a person. "Independent" is not a party.
+The list (party, alliance or "Independent") an elected leader ran on for one mandate, as registered at that election; it belongs to the contracting authority for that mandate's dates, and through it to that authority's subordinate bodies, and never to a supplier or a person. "Independent" is not a party.
 _Avoid_: political affiliation, current party, party family, ruling party
 
+**Subordinate body**:
+A public body whose only principal credit holder, in MF's Lista entităților publice, is one town hall, Bucharest sector, Bucharest city hall or county council (a county hospital, a social-services or roads directorate); it inherits that authority's Party. A body that shares its principal with a ministry (a school) is not one.
+_Avoid_: subordinate institution, local agency, under the mayor
+
 **Supplier**:
-A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF knows; an entity that both buys and sells is one entity in both roles.
+A company, foreign firm or institution that wins a SEAP record; it receives, a contracting authority pays. One supplier is one CUI that ANAF or ONRC knows; an entity that both buys and sells is one entity in both roles.
 _Avoid_: vendor, contractor, winner, company (when the receiving role is meant)
 
 **Name-only supplier**:
-A supplier with no CUI that ANAF knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
+A supplier with no CUI that ANAF or ONRC knows (mostly foreign firms and consortia), identified by its foreign VAT id or else by its published name; its page says so.
 _Avoid_: unknown supplier, unidentified supplier
 
 **Unattached name**:
@@ -101,7 +109,7 @@ A reviewed, reasoned correction to which supplier a record is attached, which CU
 _Avoid_: manual merge, fix, mapping
 
 **Record**:
-One SEAP document entry in the graph (a direct purchase, a contract with its lots and winners, or an award notice), with its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
+One Source document entry in the graph: for SEAP a direct purchase, a contract with its lots and winners, or an award notice; for ONRC a registration. Each has its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit
 
 **Money measure**:

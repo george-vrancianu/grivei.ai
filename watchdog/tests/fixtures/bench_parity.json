@@ -663,6 +663,60 @@
   "rollup": null
  },
  {
+  "label": "(empty) party PSD (#181)",
+  "filter": {
+   "party": "PARTIDUL SOCIAL DEMOCRAT"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND party = %s",
+   "params": [
+    "PARTIDUL SOCIAL DEMOCRAT"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "(empty) party PNL 2025 (#181)",
+  "filter": {
+   "party": "PARTIDUL NAȚIONAL LIBERAL",
+   "from": "2025-01-01",
+   "to": "2025-12-31"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND award_date >= %s::date AND award_date <= %s::date AND party = %s",
+   "params": [
+    "2025-01-01",
+    "2025-12-31",
+    "PARTIDUL NAȚIONAL LIBERAL"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "ma, party PSD (#181)",
+  "filter": {
+   "q": "ma",
+   "party": "PARTIDUL SOCIAL DEMOCRAT"
+  },
+  "where": {
+   "sql": "doc @@@ pdb.regex(%s::text) AND party = %s",
+   "params": [
+    "ma.*",
+    "PARTIDUL SOCIAL DEMOCRAT"
+   ],
+   "winnerSide": false,
+   "empty": false,
+   "qFolded": "ma"
+  },
+  "rollup": null
+ },
+ {
   "label": "extra: legal-form word only",
   "filter": {
    "q": "SRL"
@@ -828,6 +882,26 @@
     "2025-06-30"
    ],
    "winnerSide": false,
+   "empty": false,
+   "qFolded": null
+  },
+  "rollup": null
+ },
+ {
+  "label": "extra: party with an authority and a supplier (#181)",
+  "filter": {
+   "party": "ALIANȚA USR PLUS",
+   "authority": "4384206",
+   "supplier": "27272953"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND authority_key = %s AND supplier_key = %s AND party = %s",
+   "params": [
+    "4384206",
+    "27272953",
+    "ALIANȚA USR PLUS"
+   ],
+   "winnerSide": true,
    "empty": false,
    "qFolded": null
   },

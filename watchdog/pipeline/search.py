@@ -41,11 +41,12 @@ CREATE INDEX search_bm25 ON seap.search USING paradedb (
     (doc::pdb.simple),
     (record_code::pdb.literal), winner_position, winners,
     (channel::pdb.literal), award_date, award_year, value_bani, (value_bucket::pdb.literal), has_signals,
-    (signals::pdb.literal), (badges::pdb.literal), (procedure::pdb.literal), (cpv_code::pdb.literal),
+    (signals::pdb.literal), (restricted_signals::pdb.literal), (badges::pdb.literal), (procedure::pdb.literal), (cpv_code::pdb.literal),
     counted_bani, ceiling_bani, suspect, share_bani,
     (authority_key::pdb.literal), (authority_county::pdb.literal), (authority_uat::pdb.literal),
     (authority_area::pdb.literal), (supplier_area::pdb.literal),
-    (supplier_key::pdb.literal), (supplier_county::pdb.literal)
+    (supplier_key::pdb.literal), (supplier_county::pdb.literal),
+    (party::pdb.literal), (party_basis::pdb.literal)
 )"""
 
 

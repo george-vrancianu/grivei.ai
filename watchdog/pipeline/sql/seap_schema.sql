@@ -132,8 +132,9 @@ CREATE TABLE seap.search (
     award_year       integer NOT NULL,
     value_bani       bigint,
     value_bucket     text,                -- the ValueBucket enum (contract value-buckets.ts, bani, upper edge inclusive); null = no value
-    has_signals      boolean NOT NULL DEFAULT false,  -- the Record belongs to at least one Signal (pipeline/signals, set before the rollup and the index are built)
-    signals          text[] NOT NULL DEFAULT '{}',    -- the rule slugs (OVER_CAP, ...) of the Signals it belongs to: the `signal` filter reads this
+    has_signals      boolean NOT NULL DEFAULT false,  -- the Record belongs to at least one public Signal (pipeline/signals, set before the rollup and the index are built; a Restricted rule does not count)
+    signals          text[] NOT NULL DEFAULT '{}',    -- the rule slugs (OVER_CAP, ...) of the Signals it belongs to, Restricted rules left out (#185): the `signal` filter reads this
+    restricted_signals text[] NOT NULL DEFAULT '{}',  -- the Restricted rules' slugs of the Record (#185, ADR 0015): never read by a public request. The API reads it only when the host shows Restricted content, so the has-Signals chip and the `signal` filter find those Records then; it is in the index so those filters push down like the public ones. Not in the rollup.
     badges           text[] NOT NULL DEFAULT '{}',    -- the Record's badges (counting, identity, crawl), also the filter chips
     procedure        text,
     cpv_code         text,                -- as published (45233140-2): a prefix filter and a text token
@@ -158,6 +159,9 @@ CREATE TABLE seap.search (
     supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
     supplier_curated boolean NOT NULL DEFAULT false,
     supplier_differs boolean NOT NULL DEFAULT false,  -- the spelling differs from ANAF's name under a confirmed CUI
+    -- Party per Record (#181), copied from aep.record_party at the end of the aep step (null on every row when the Record has no Mandate): the party filter reads these indexed columns
+    party            text,                -- the list as registered ('PSD', an alliance's own name); null for no Mandate AND for an Independent leader, who is never a party
+    party_basis      text,                -- DIRECT (the authority's own Mandate) | SUBORDINATE (inherited through its principal credit holder); null = no Mandate. Set for an Independent too (the coverage counts it apart)
     doc              text NOT NULL,       -- folded text: title, authority name, every winner's name, CPV code and description, public code, CUIs
     UNIQUE (record_code, winner_position)
 );
@@ -198,6 +202,8 @@ CREATE TABLE seap.rollup_entity (
     framework_ceilings bigint NOT NULL
 );
 CREATE INDEX rollup_entity_side_idx ON seap.rollup_entity (side, award_year, channel);
+-- One entity's rows (the entity page's awards per year, #179).
+CREATE INDEX rollup_entity_key_idx ON seap.rollup_entity (entity_key, side);
 -- The load generation: one row, a fresh value for every load. The API's result cache is valid for one generation only.
 CREATE TABLE seap.rollup_meta (generation text NOT NULL);
 -- The 2-character prefixes the tokens of this load start with (the API's cache warms these).
@@ -208,7 +214,7 @@ CREATE TABLE seap.rollup_prefix (prefix text PRIMARY KEY);
 -- reproducing filter (`reproduce`).
 CREATE TABLE seap.signal (
     id             integer PRIMARY KEY,
-    rule           text NOT NULL,        -- the GraphQL SignalRuleSlug: OVER_CAP | SPLITTING | FRAMEWORK_OVERRUN | NO_PUBLICATION
+    rule           text NOT NULL,        -- the GraphQL SignalRuleSlug: OVER_CAP | SPLITTING | FRAMEWORK_OVERRUN | NO_PUBLICATION | YOUNG_FIRM | NO_CONSTRUCTION_CAEN | AFTER_STRIKE_OFF | INSOLVENCY | FEW_EMPLOYEES | NO_FINANCIAL_STATEMENT | DONOR_TO_PARTY | SOE_BOARD_IN_SUPPLIER (Restricted: on a search row only in `restricted_signals`, which the API reads only under `show`)
     authority_key  text NOT NULL,        -- one authority per Signal
     last_date      date NOT NULL,        -- dated by its latest Record (award date, ADR 0002)
     first_date     date NOT NULL,

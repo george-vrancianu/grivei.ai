@@ -6,7 +6,8 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import { SignalRuleBaseRate, type SignalRuleBaseRateCopy } from "../../molecules/SignalRuleBaseRate/index.ts";
 import type { SignalRule, SignalRuleBaseRateData } from "../../types.ts";
 import { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, signalAnchor, type MethodologySectionKey } from "../../utils/methodologyAnchors.ts";
-import { SIGNAL_RULES } from "../../utils/signalWording.ts";
+import { formatDate } from "../../utils/formatDate.ts";
+import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES } from "../../utils/signalWording.ts";
 import { MethodologyContents } from "./components/MethodologyContents/index.ts";
 import { MethodologySection, type MethodologySectionCopy } from "./components/MethodologySection/index.ts";
 import { useScrollToAnchor } from "./hooks/useScrollToAnchor.ts";
@@ -30,13 +31,32 @@ export interface MethodologyPageCopy {
   /** One section per rule; its id is `signalAnchor(rule)`. */
   rules: Record<SignalRule, MethodologyRuleCopy>;
   baseRate: SignalRuleBaseRateCopy;
+  /** The line under a Reference source's section: "Data through 13 January 2026". */
+  referenceDataThrough: (date: string) => string;
+  /** The line under the financial statements' section: "Data through fiscal year 2025" (the newest fiscal year held). */
+  referenceFiscalYearThrough: (year: number) => string;
+  /** The line under the firm donations' section: "Data through 2024" (the newest year BaniPartide's donation rows are filed under). */
+  referenceYearThrough: (year: number) => string;
 }
 
 /** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
 export type MethodologyBaseRates = { status: "loading" | "error" } | { status: "ready"; rules: readonly SignalRuleBaseRateData[] };
 
+/** What the `MethodologyReferenceSources` query gives the page: the day AMEPIP's held list was published (null when none is held or the query failed: the prose stands alone). */
+export interface MethodologyReferenceDates {
+  publicEnterprises: string | null;
+  /** The day AEP's one-off partial-election file runs through (#180). */
+  partyAndLeadership: string | null;
+  /** The newest fiscal year MF's statements held (null when none is held or the query failed). */
+  financialStatements: number | null;
+  /** The newest year BaniPartide's firm donations cover (null when none is held or the query failed). */
+  firmDonations: number | null;
+}
+
 export interface MethodologyPageProps {
   baseRates: MethodologyBaseRates;
+  /** The data-through date of the Reference sources the page describes (AMEPIP); absent until it loads. */
+  referenceDates?: MethodologyReferenceDates;
   /** The section to bring into view (the URL's `#fragment`), or null. */
   anchor?: string | null;
   /** The URL of a section of this page (the contents' links). */
@@ -51,12 +71,16 @@ export interface MethodologyPageProps {
  * section per Signal rule with its exact rule, its window and how often it fires nationally. The prose is the copy; the figures of the
  * Signal rules come from the API and, when they cannot be had, leave the prose readable.
  */
-export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavigate, locale, copy }: MethodologyPageProps) {
+export function MethodologyPage({ baseRates, referenceDates, anchor = null, sectionHref, onNavigate, locale, copy }: MethodologyPageProps) {
   useScrollToAnchor(anchor);
+  // A Restricted rule's section (its window, its firing rate, its existence) appears only when the API returned the rule, which it does only when the host shows Restricted content.
+  // While the figures load, or when they fail, it stays out: nothing is revealed on a guess.
+  const served = baseRates.status === "ready" ? new Set(baseRates.rules.map((r) => r.slug)) : new Set<string>();
+  const rules = SIGNAL_RULES.filter((rule) => !RESTRICTED_SIGNAL_RULES.includes(rule) || served.has(rule));
   const contents = [
     ...METHODOLOGY_SECTIONS.map((key) => ({ anchor: METHODOLOGY_ANCHORS[key], label: copy.sections[key].heading })),
     { anchor: METHODOLOGY_ANCHORS.signals, label: copy.signals.heading },
-    ...SIGNAL_RULES.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
+    ...rules.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
   ];
   return (
     <Box
@@ -86,11 +110,24 @@ export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavig
           <Typography variant="lead" sx={{ textWrap: "pretty" }}>{copy.intro}</Typography>
         </Stack>
         {METHODOLOGY_SECTIONS.map((key) => (
-          <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]} />
+          <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]}>
+            {key === "publicEnterprises" && referenceDates?.publicEnterprises && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.publicEnterprises, locale, "long"))}</Typography>
+            )}
+            {key === "partyAndLeadership" && referenceDates?.partyAndLeadership && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.partyAndLeadership, locale, "long"))}</Typography>
+            )}
+            {key === "financialStatements" && referenceDates?.financialStatements != null && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceFiscalYearThrough(referenceDates.financialStatements)}</Typography>
+            )}
+            {key === "firmDonations" && referenceDates?.firmDonations != null && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceYearThrough(referenceDates.firmDonations)}</Typography>
+            )}
+          </MethodologySection>
         ))}
         <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals}>
           <Stack spacing={2} sx={{ mt: 2 }}>
-            {SIGNAL_RULES.map((rule) => (
+            {rules.map((rule) => (
               <MethodologySection key={rule} id={signalAnchor(rule)} level={3} locale={locale} copy={copy.rules[rule]}>
                 {baseRates.status === "ready" ? (
                   <SignalRuleBaseRate status="ready" rule={baseRates.rules.find((r) => r.slug === rule) ?? null} locale={locale} copy={copy.baseRate} />

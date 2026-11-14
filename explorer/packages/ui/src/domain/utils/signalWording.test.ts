@@ -25,7 +25,7 @@ describe("the neutral-wording checker", () => {
 describe("the sample wording of every rule", () => {
   it.each(["en", "ro"] as const)("has no accusing word in %s (label, sentence, lawful line)", (locale) => {
     const texts = ruleTexts(sampleCopy.signalCard(locale).rules, sampleNumberTexts);
-    expect(texts).toHaveLength(12);
+    expect(texts).toHaveLength(36);
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
   });
 });
@@ -60,5 +60,32 @@ describe("filling a sentence from the Signal's numbers", () => {
       const sentence = signalSentence(signalSamples[rule], "en", sampleCopy.signalCard("en").rules);
       expect(sentence.length).toBeGreaterThan(20);
     }
+  });
+});
+
+describe("the ONRC and financial-statement rules' sentences (#184)", () => {
+  const rules = (locale: "en" | "ro") => sampleCopy.signalCard(locale).rules;
+
+  it("reads their numbers in the locale: counts grouped, years plain, dates long, money with bani", () => {
+    expect(signalNumberTexts(signalSamples.AFTER_STRIKE_OFF.numbers, "en")).toEqual({ rule: "AFTER_STRIKE_OFF", texts: { struckOff: "11 October 2022", daysAfter: "599", daysAfterCount: 599 } });
+    expect(signalNumberTexts(signalSamples.NO_FINANCIAL_STATEMENT.numbers, "ro")).toMatchObject({ texts: { fiscalYear: "2023", previousYear: "2022", legalForm: "SA" } });
+    expect(signalNumberTexts(signalSamples.FEW_EMPLOYEES.numbers, "en")).toMatchObject({ texts: { employees: "1", awarded: "RON 5,400,000.00" } });
+  });
+
+  it("says the insolvency status is undated, and says \"possibly older\" only for the earliest snapshot", () => {
+    const first = signalSentence(signalSamples.INSOLVENCY, "en", rules("en"));
+    expect(first).toContain("The status is undated");
+    expect(first).not.toContain("possibly older");
+    const earliest = { numbers: { ...signalSamples.INSOLVENCY.numbers, sinceAtLeast: true } } as typeof signalSamples.INSOLVENCY;
+    expect(signalSentence(earliest, "en", rules("en"))).toContain("possibly older");
+    expect(signalSentence(earliest, "ro", rules("ro"))).toContain("Starea nu este datată");
+  });
+
+  it("takes the singular for one day and one employee, in both languages", () => {
+    const young = { numbers: { __typename: "YoungFirmNumbers", days: 1, registered: "2024-03-01", counted: null } } as typeof signalSamples.YOUNG_FIRM;
+    expect(signalSentence(young, "en", rules("en"))).toContain("1 day after");
+    expect(signalSentence(young, "ro", rules("ro"))).toContain("1 zi după");
+    expect(signalSentence(signalSamples.FEW_EMPLOYEES, "en", rules("en"))).toContain("1 average employee ");
+    expect(signalSentence(signalSamples.FEW_EMPLOYEES, "ro", rules("ro"))).toContain("1 angajat");
   });
 });

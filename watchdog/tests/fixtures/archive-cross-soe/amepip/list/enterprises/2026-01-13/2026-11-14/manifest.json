@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source": "amepip",
+  "stream": "list",
+  "kind": "enterprises",
+  "unit": "2026-01-13",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://data.gov.ro/dataset/00000000-0000-0000-0000-00000000a001/resource/00000000-0000-0000-0000-00000000b001/download/datecompanii_ind-finnefin.xlsx",
+  "via": "Date financiare si non-financiare",
+  "files": [
+    {
+      "name": "datecompanii_ind-finnefin.xlsx",
+      "sha256": "ccf4c2b404a5f099cb211b760dd86263974112e03c76fb948495c96f801c69eb",
+      "bytes": 6176
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "amepip-indicatori-financiari-demo",
+    "datasetId": "00000000-0000-0000-0000-00000000a001",
+    "datasetTitle": "AMEPIP - Indicatori financiari, nefinanciari si de guvernanta corporativa - ian 2026",
+    "datasetUrl": "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo",
+    "license": "CC-BY-4.0",
+    "resourceId": "00000000-0000-0000-0000-00000000b001",
+    "resourceName": "Date financiare si non-financiare",
+    "url": "https://data.gov.ro/dataset/00000000-0000-0000-0000-00000000a001/resource/00000000-0000-0000-0000-00000000b001/download/datecompanii_ind-finnefin.xlsx",
+    "lastModified": "2026-01-13T14:23:50.041841",
+    "size": 6176,
+    "hash": "",
+    "format": "XLSX"
+  }
+}

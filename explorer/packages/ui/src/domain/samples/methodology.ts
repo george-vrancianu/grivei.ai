@@ -27,17 +27,17 @@ const sections = {
   en: {
     awardedValue: "Awarded value", frameworkCeilings: "Framework ceilings", consortiumShares: "Consortium shares", suspectValues: "Suspect values", blankValues: "Blank values",
     contractModifications: "Contract modifications", backfilledValues: "Values of backfilled 2021–22 Records", supplierIdentity: "Supplier identity", placement: "Placement",
-    coverageStatuses: "Coverage statuses",
+    coverageStatuses: "Coverage statuses", publicEnterprises: "Public enterprises (AMEPIP)", partyAndLeadership: "Party and leadership (AEP)", financialStatements: "Financial statements (MF)", firmDonations: "Firm donations (BaniPartide)", onrcRegister: "ONRC registrations (trade register)",
   },
   ro: {
     awardedValue: "Valoarea atribuită", frameworkCeilings: "Plafoane de acord-cadru", consortiumShares: "Părți din asociere", suspectValues: "Valori suspecte", blankValues: "Valori lipsă",
     contractModifications: "Modificările contractelor", backfilledValues: "Valorile înregistrărilor 2021–22 completate ulterior", supplierIdentity: "Identitatea furnizorului",
-    placement: "Amplasarea", coverageStatuses: "Stări de acoperire",
+    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", partyAndLeadership: "Partid și conducere (AEP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)", onrcRegister: "Înmatriculările ONRC (registrul comerțului)",
   },
 } as const;
 const rules = {
-  en: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
-  ro: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+  en: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
+  ro: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
 } as const;
 
 /** Short stand-in copy: one sentence per section and one rule line per Signal rule. */
@@ -58,13 +58,19 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
     sections: {
       awardedValue: section(s.awardedValue), frameworkCeilings: section(s.frameworkCeilings), consortiumShares: section(s.consortiumShares), suspectValues: section(s.suspectValues),
       blankValues: section(s.blankValues), contractModifications: section(s.contractModifications), backfilledValues: section(s.backfilledValues),
-      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses),
+      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses), publicEnterprises: section(s.publicEnterprises), partyAndLeadership: section(s.partyAndLeadership), financialStatements: section(s.financialStatements), firmDonations: section(s.firmDonations), onrcRegister: section(s.onrcRegister),
     },
     signals: { heading: en ? "Signal rules" : "Regulile Semnalelor", paragraphs: [en ? "A Signal is a set of Records matched by a published rule." : "Un Semnal este un set de înregistrări potrivite de o regulă publicată."] },
     rules: {
       OVER_CAP: rule(rules[locale].OVER_CAP), SPLITTING: rule(rules[locale].SPLITTING), FRAMEWORK_OVERRUN: rule(rules[locale].FRAMEWORK_OVERRUN), NO_PUBLICATION: rule(rules[locale].NO_PUBLICATION),
+      YOUNG_FIRM: rule(rules[locale].YOUNG_FIRM), NO_CONSTRUCTION_CAEN: rule(rules[locale].NO_CONSTRUCTION_CAEN), AFTER_STRIKE_OFF: rule(rules[locale].AFTER_STRIKE_OFF),
+      INSOLVENCY: rule(rules[locale].INSOLVENCY), FEW_EMPLOYEES: rule(rules[locale].FEW_EMPLOYEES), NO_FINANCIAL_STATEMENT: rule(rules[locale].NO_FINANCIAL_STATEMENT),
+      DONOR_TO_PARTY: rule(rules[locale].DONOR_TO_PARTY), SOE_BOARD_IN_SUPPLIER: rule(rules[locale].SOE_BOARD_IN_SUPPLIER),
     },
     baseRate: baseRate[locale],
+    referenceDataThrough: (date) => (locale === "ro" ? `Date până la ${date}` : `Data through ${date}`),
+    referenceFiscalYearThrough: (year) => (locale === "ro" ? `Date până la anul fiscal ${year}` : `Data through fiscal year ${year}`),
+    referenceYearThrough: (year) => (locale === "ro" ? `Date până în ${year}` : `Data through ${year}`),
   };
 }
 

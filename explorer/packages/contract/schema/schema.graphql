@@ -27,12 +27,22 @@ type Query {
   "Signal rules with their methodology numbers (base rate recomputed per load)."
   signalRules: [SignalRule!]!
 
+  "The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page."
+  referenceSources: [ReferenceSource!]!
+
+  """
+  RESTRICTED (ADR 0015): a person page by its id (ticket #177). Null unless the host's `GRIVEI_RESTRICTED` is `show` (a Private view): the resolver returns nothing, not even a count,
+  when the switch is off, and also null for an id no confirmed person has.
+  """
+  person(id: ID!): Person
+
   "Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors."
   counties: [County!]!
   uats(county: CountyCode!): [Uat!]!
 
   # ---- Source-specific search surface (one namespace per Source, ADR 0005)
   seap: SeapQuery!
+  onrc: OnrcQuery!
 }
 
 type SeapQuery {
@@ -44,6 +54,21 @@ type SeapQuery {
 
   "A Record by its public code (e.g. CAN1166685, DA12345678), the Record page's URL key."
   record(code: ID!): SeapRecord
+
+  "The lists the Party filter offers (largest first, at most 1000, never Independent); empty for a graph built without AEP's mandates."
+  partyOptions: [PartyOption!]!
+}
+
+type OnrcQuery {
+  """
+  ONRC registrations by plain text (name, an earlier name, CUI, registration number, authorised CAEN code), with the same contract as SEAP's search:
+  a match count and the top results. One matching set: the count, the Organisations tab and the count lens all come from the same filter.
+  Never people, and never a sole trader's (PFA, II, IF) registration: those are named after a natural person (ADR 0009).
+  """
+  search(filter: OnrcFilter!): OnrcSearch!
+
+  "A registration by its ONRC registration number (e.g. J40/1234/2010), the way the entity page's ONRC section shows it; null for an unknown number and for a sole trader's registration."
+  record(registrationNumber: ID!): OnrcRegistration
 }
 
 # =====================================================================
@@ -75,6 +100,29 @@ input RecordFilter {
   supplier: ID
   cpv: String                     # prefix, e.g. "301"
   signal: SignalRuleSlug
+
+  # Party (#181; ADR 0012)
+  """
+  A list as registered at the election, as `partyOptions` offers it (`PARTIDUL SOCIAL DEMOCRAT`, or an alliance under its own registered name). One value, like the
+  other entity-scoped fields (a second one would be a different question). Matches the Records whose Mandate (direct, or derived through a subordinate body's principal
+  credit holder) ran on that list; there is no "direct only" switch. "Independent" is never a party and matches nothing, an alliance is not matched by its member
+  parties and no party family exists. Never a supplier's: a Party belongs to an authority for a mandate's dates. Narrows only the SEAP search: a Total with this filter
+  states its coverage (`Total.partyCoverage`).
+  """
+  party: String
+}
+
+"""
+ONRC's search state, 1:1 with the URL like RecordFilter (the codec is `ONRC_FILTER_URL`). Every chip is a field; an unset field narrows nothing.
+"""
+input OnrcFilter {
+  q: String                       # free text: name, an earlier name, CUI, registration number, CAEN code; every word must match, the last as a prefix
+  status: [Int!]                  # ONRC status codes (e.g. 1048 in operation, 1084 struck off, 1107 insolvency); a registration matches when it shows any of them
+  caen: String                    # an authorised CAEN code or its prefix, e.g. "4211" or "42"
+  county: MapArea                 # the seat's county (`RO-CJ`), or UNPLACED for a registration with no county (the count lens's tile)
+  registeredFrom: Date            # registration date, inclusive; a registration with no date (the legacy layout carries none) matches no date range
+  registeredTo: Date
+  seapCounterparty: Boolean       # true: only authorities and suppliers of a loaded SEAP Record; false: only the others
 }
 
 input DateRange { from: Date, to: Date }
@@ -151,6 +199,12 @@ type RecordFilterEcho {
 scalar Bani
 
 """
+Integer bani that may be negative (a loss, negative equity), serialised as a decimal string. Only a company's own statements (`FinancialYear`) can be negative;
+every awarded value is a plain `Bani`.
+"""
+scalar SignedBani
+
+"""
 Every money number the explorer shows is a Total, counted by the one rule
 (awarded value; framework ceilings out; consortium once per authority,
 equal shares per supplier; suspect values out). It always says what it left out.
@@ -166,6 +220,39 @@ type Total {
   frameworkCeilings: Bani!
   "True only when `records` is approximated, which exact counts and the rollup never do today: the flag is reserved for a future approximate path. Distinct entity counts (the HyperLogLog ones) carry their own flag: EntityResultPage.countEstimated."
   estimated: Boolean!
+  "Only on a SEAP search whose filter has `party`: what the filter covers. Null on every other Total."
+  partyCoverage: PartyCoverage
+}
+
+"""
+What a Party filter covers (#181), measured over the set the rest of the filter selects. `direct` + `subordinate` are the Total's own Records; the other three are
+what the filter leaves out. The share left unattributed is `unattributed` against the sum of the five (central government, schools, municipal companies, ADIs,
+authorities outside the Leadership list, and gaps in the mandates all sit there). Bani are summed like a Total's: counted value, framework ceilings out, suspect values out.
+"""
+type PartyCoverage {
+  "The list as registered, echoed from the filter."
+  party: String!
+  "Records whose authority itself had the Mandate."
+  direct: PartyShare!
+  "Records of a subordinate body (principal credit holder in MF's list) that inherits the Mandate's Party."
+  subordinate: PartyShare!
+  "Records of authorities led on another list."
+  otherParties: PartyShare!
+  "Records of an Independent leader's authority: attributed to a leader, never to a party."
+  independent: PartyShare!
+  "Records with no Mandate in force on the award date, or no attributed authority."
+  unattributed: PartyShare!
+}
+
+type PartyShare {
+  records: Int!
+  awarded: Bani!
+}
+
+"A list the Party filter offers: as registered, with the Records it led (direct and subordinate)."
+type PartyOption {
+  party: String!
+  records: Int!
 }
 
 type MoneyMap {
@@ -270,12 +357,97 @@ type RecordFacets {
 type FacetCount { value: String!, total: Total! }
 
 # =====================================================================
+#  ONRC search result: one matching set, two views of it
+# =====================================================================
+
+type OnrcSearch {
+  "Echo of the filter as the server understood it."
+  filter: OnrcFilterEcho!
+
+  "The match count: registrations matching the filter, sole traders' left out."
+  count: Int!
+
+  "The results tab that opens first. Organisations only: ONRC search never lists people."
+  defaultTab: OnrcResultTab!
+
+  "The Organisations tab: ranked by text relevance, then newest registration first (a registration with no date last), then ONRC's registration number. Offset/limit paging; the server caps limit at 200."
+  organisations(limit: Int = 50, offset: Int = 0): OnrcResultPage!
+
+  "The count lens: registrations matching the filter, by the seat's county, for the same filter as the count (every chip narrows it, `county` included, as in SEAP's Money lens)."
+  map: OnrcCountMap!
+}
+
+enum OnrcResultTab { ORGANISATIONS }
+
+type OnrcFilterEcho {
+  qFolded: String
+}
+
+type OnrcResultPage {
+  count: Int!
+  rows: [OnrcResult!]!
+}
+
+"""
+One matching registration. Never a person: no administrator, no legal representative (those are the entity page's, and only for organisations tied to public money, ADR 0009).
+"""
+type OnrcResult {
+  registrationNumber: String!
+  "ONRC's legal name as the newest snapshot lists it."
+  name: String!
+  cui: String
+  legalForm: String
+  registrationDate: Date
+  seat: OnrcSeat!
+  "The statuses the newest snapshot shows."
+  statuses: [OnrcCurrentStatus!]!
+  caen: [OnrcCaen!]!
+  "The CUI is an authority or a winner of a loaded SEAP Record."
+  seapCounterparty: Boolean!
+  "The entity page of the CUI; null for a registration with no valid CUI."
+  entity: Entity
+  "Why it matched: every field that holds a query word, strongest first (CUI, registration number, name, an earlier name, CAEN). Empty without a text query."
+  matched: [OnrcMatchedField!]!
+}
+
+type OnrcCurrentStatus {
+  code: Int!
+  "ONRC's nomenclature name (Romanian, source data); null when the held nomenclature does not list the code."
+  name: String
+}
+
+type OnrcMatchedField {
+  field: OnrcMatchableField!
+  "The field's text as published (an earlier name, the CUI, the CAEN code...)."
+  text: String!
+  "Highlight ranges into `text`, [start, end) in UTF-16 code units."
+  highlights: [[Int!]!]!
+}
+
+enum OnrcMatchableField { NAME ALIAS CUI REGISTRATION_NUMBER CAEN }
+
+"""
+ONRC's count lens (ADR 0014: ONRC has no money measure). Counties with no matching registration are absent. The placement rule is the registered
+seat's county; a registration with no county is in the Unplaced tile. Sole traders' registrations are in neither.
+"""
+type OnrcCountMap {
+  counties: [OnrcAreaCount!]!
+  unplacedRegistrations: Int!
+}
+
+type OnrcAreaCount {
+  area: MapArea!
+  name: String!
+  registrations: Int!
+}
+
+# =====================================================================
 #  Provenance, shared by every node that shows data
 # =====================================================================
 
 enum SourceId { SEAP ANAF ONRC ANI MFINANTE JUST }
 
-"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer)."
+"Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source); ONRC when ANAF does not know the CUI but ONRC lists it, ADR 0018; else SEAP)."
 type Provenance {
   source: SourceId!
   "Public page in the Source; null only when the Source has no stable public URL."
@@ -322,17 +494,378 @@ type Entity {
   "ANAF status (ACTIV, RADIERE, FUZIUNE ...), badged when not active."
   anafStatus: String
   identityCurated: Boolean!
+  """
+  MF's annual financial statements for this entity's CUI, one row per fiscal year (a Reference source; ticket #179). Null when MF holds none for the CUI, and for an entity
+  with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
+  """
+  financials: FinancialStatements
+  """
+  The firm donations and loans to parties that BaniPartide lists under this entity's CUI (a Reference source; ticket #182), newest first. Null when it lists none, for an entity
+  with no CUI and for a sole trader (never published against a person's name). The same on both role pages; on a supplier it is context ("also a firm donor"): never a Signal
+  (ADR 0014), never a Party, and never added to awarded value. No individual donor is ever served (ADR 0009).
+  """
+  donations: FirmDonations
+  "Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages."
+  publicEnterprise: PublicEnterprise
+  "The Leadership list (AEP's election results, ADR 0012): set for a town hall, Bucharest sector, Bucharest city hall or county council, and for a subordinate body of one (its authority's list, with the basis of the tie). Null for every other entity, and always null for an entity that is only a supplier. Leaders are never linked to a person page or to ONRC."
+  leadership: Leadership
   placement: Placement
-  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer."
+  "Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP."
   provenance: [Provenance!]!
   "Spellings under which this entity was published, with dates. Never used to merge."
   aliases: [Alias!]!
 
-  "Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only."
+  "Source-specific facets, one sibling per explorable Source (ADR 0005): SEAP, and ONRC below."
   seap: SeapEntity!
+  "The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier."
+  onrc: OnrcRegistration
+  """
+  The administrators and legal representatives ONRC lists for this organisation (ticket #177, public tier, ADR 0015). Named only on a SEAP counterparty (a supplier or an authority
+  in the graph, ADR 0009): null for an organisation that exists only in ONRC, for an entity with no CUI, and when no snapshot with ONRC's people files is held. The same on both role pages.
+  """
+  people: OrganisationPeople
+}
+
+"""
+One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
+undated). No person of the registration is served here: its administrators and legal representatives are `Entity.people`, and an organisation
+that exists only in ONRC never names anyone (ADR 0018).
+"""
+type OnrcRegistration {
+  "ONRC's registration number (COD_INMATRICULARE), e.g. J40/1234/2010. Source data, shown as published."
+  registrationNumber: String!
+  "ONRC's legal name as the newest snapshot lists it."
+  name: String!
+  "The CUI, when it passes the check digit."
+  cui: String
+  "The entity page of the CUI; null for a registration with no valid CUI."
+  entity: Entity
+  "Null when the newest snapshot is in the legacy layout, which carries no registration date."
+  registrationDate: Date
+  "FORMA_JURIDICA as published, e.g. SRL; null when the snapshot has none."
+  legalForm: String
+  "The statuses the newest snapshot shows (a company can carry several, e.g. in operation and in insolvency), by code."
+  statuses: [OnrcStatus!]!
+  "The authorised CAEN codes of the newest snapshot, by code."
+  caen: [OnrcCaen!]!
+  "The registered seat, as published."
+  seat: OnrcSeat!
+  "ONRC's legal name and earlier names, newest first, each with the snapshots it was seen in. Aliases only: they never rename the entity (ADR 0018)."
+  aliases: [OnrcAlias!]!
+  "The snapshot the registration, CAEN codes and seat come from."
+  snapshot: Date!
+  "Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it."
+  provenance: Provenance!
+}
+
+"""
+An organisation's administrators and legal representatives as the newest held ONRC snapshot lists them (ADR 0011, 0015). Holders are listed as ONRC publishes them; a holder with no
+birth date is an unlinked role holder (shown here only). Never served: a birthplace, a full birth date, a CNP, a beneficial owner, a relative, a possible match (a same name and
+birth date with birthplaces in different counties), and the holders of a sole trader (PFA/II) or of an IF.
+"""
+type OrganisationPeople {
+  holders: [RoleHolder!]!
+  "The ONRC snapshot the roles come from: the basis of every holder."
+  snapshot: Date!
+  "ONRC's dataset page, the snapshot's title, and when we fetched it."
+  provenance: Provenance!
+}
+
+type RoleHolder {
+  "As ONRC writes it (source data, shown as published)."
+  name: String!
+  "CALITATE as ONRC publishes it, e.g. administrator (source data, never translated)."
+  role: String!
+  "The year of birth. Null for an unlinked role holder (ONRC lists no birth date). The full date is never served."
+  birthYear: Int
+  """
+  RESTRICTED (ADR 0015): the holder's person page. Null unless the host's `GRIVEI_RESTRICTED` is `show` (only a Private view), and null for an unlinked role holder.
+  """
+  person: PersonRef
+}
+
+type PersonRef {
+  id: ID!
+}
+
+"""
+RESTRICTED (ADR 0015): one person (a confirmed person key, ADR 0011) and their roles across organisations. Served only when the host's `GRIVEI_RESTRICTED` is `show`; otherwise
+`Query.person` is null. A person page shows the name and the birth year only, never the full birth date or the birthplace.
+"""
+type Person {
+  "A keyed hash of the person key: deterministic across rebuilds, not reversible (the secret is held outside the repo)."
+  id: ID!
+  "As ONRC writes it (source data)."
+  name: String!
+  birthYear: Int!
+  "How many roles the person holds across organisations. Restricted like the list."
+  roleCount: Int!
+  roles: [PersonRole!]!
+  "The ONRC snapshot the roles come from: the basis of each."
+  snapshot: Date!
+  provenance: Provenance!
+}
+
+type PersonRole {
+  "The organisation as ONRC names it (source data)."
+  organisationName: String!
+  "The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page."
+  entityKey: ID
+  "The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is."
+  entityRole: Role
+  "CALITATE as ONRC publishes it (source data)."
+  role: String!
+}
+
+type OnrcStatus {
+  "ONRC's status code, e.g. 1048."
+  code: Int!
+  "The status as ONRC's nomenclature names it (Romanian, source data); null when the held nomenclature does not list the code."
+  name: String
+  "The first held snapshot that showed this status (the one it was first seen in; ONRC dates no status itself)."
+  firstSeen: Date!
+  "True when the earliest held snapshot already showed it: the status is at least that old, and firstSeen is a lower bound."
+  sinceAtLeast: Boolean!
+}
+
+type OnrcCaen {
+  code: String!
+  "The CAEN revision ONRC records (0 = 1998, 1 = 2003, 2 = 2008, 3 = 2025); null when unknown."
+  version: Int
+}
+
+type OnrcSeat {
+  "The county as ONRC writes it."
+  county: String
+  locality: String
+  "The seat as one line, as published."
+  address: String
+  postalCode: String
+}
+
+type OnrcAlias {
+  name: String!
+  "The first and the last held snapshot that listed this name."
+  firstSeen: Date!
+  lastSeen: Date!
+  "True when the earliest held snapshot already listed it: it is at least that old."
+  sinceAtLeast: Boolean!
+  "True when the newest snapshot lists it: ONRC's legal name today."
+  current: Boolean!
 }
 
 enum EntityIdentity { CUI NAME_ONLY }
+
+"""
+The basis of the "public enterprise (AMEPIP)" mark: the entity's CUI is on AMEPIP's open-data list of the companies under OUG 109/2011
+(the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises), as the newest held list names it. AMEPIP is a
+Reference source (it has no pages of its own here); its facts are source data, shown as published.
+"""
+type PublicEnterprise {
+  "The company's name as AMEPIP's list writes it (it may differ from the entity's display name)."
+  listedAs: String!
+  "ONRC's registration number as AMEPIP writes it, e.g. J05/14/1991."
+  registrationNumber: String
+  "The ONRC status as AMEPIP writes it for the newest year (Romanian source data)."
+  status: String
+  "The first and the last financial year AMEPIP holds indicators for."
+  firstYear: Int
+  lastYear: Int
+  "The day AMEPIP published the list this comes from: the list's data-through date."
+  snapshot: Date!
+  "AMEPIP's dataset page on data.gov.ro."
+  url: String
+  "The resource as the portal titles it (source data, verbatim)."
+  via: String
+  "The licence the list is published under, e.g. CC-BY-4.0."
+  license: String
+  "When we fetched it (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
+"""
+An authority's Mandates, newest last, with the gaps between them. A Mandate runs from the oath to the successor's oath; the handover window, an interim leader
+and a mandate without results get no Mandate and are listed as gaps, never guessed. The party is as registered at the election: the leader may have
+switched party since (the page says so). Leader names appear only here.
+"""
+type Leadership {
+  mandates: [Mandate!]!
+  gaps: [LeadershipGap!]!
+  "Set for a subordinate body: the authority this list is, and the MF snapshot its principal-credit-holder tie comes from (a funding relation, the current tie)."
+  via: LeadershipVia
+}
+
+type Mandate {
+  "The elected leader's name as AEP wrote it (source data). Never linked to a person."
+  leaderName: String!
+  "The list the leader ran on, as registered at the election: a party, an alliance under its registered name, or 'Independent' (which is no party)."
+  list: String!
+  independent: Boolean!
+  "An alliance's member parties (empty for a party or an independent)."
+  memberParties: [String!]!
+  electionDate: Date!
+  basis: MandateBasis!
+  "The day the basis data runs through: the election day for final minutes, the stated date of the one-off 2025 file."
+  dataThrough: Date!
+  "From the oath (assumed: AEP publishes no per-UAT oath dates, see the methodology page)."
+  startDate: Date!
+  "Null while the mandate is still in force."
+  endDate: Date
+}
+
+enum MandateBasis { FINAL_MINUTES REPEAT_ROUND PARTIAL_MINUTES }
+
+type LeadershipGap {
+  startDate: Date!
+  endDate: Date
+  kind: LeadershipGapKind!
+}
+
+enum LeadershipGapKind { HANDOVER_WINDOW INTERIM NO_RESULTS }
+
+"The authority a subordinate body takes its Leadership list and Party from, and the basis: principal credit holder in MF's list of public entities, as every held snapshot says."
+type LeadershipVia {
+  authority: ID!
+  authorityName: String!
+  "The newest MF snapshot that shows the tie."
+  snapshotDate: Date!
+  "How many held snapshots list the body (all show the same single principal)."
+  snapshots: Int!
+}
+
+"The Party of a SEAP Record: the Mandate in force on its award date at its authority, or through its principal credit holder. Never a supplier's, never a person's."
+type RecordParty {
+  list: String!
+  independent: Boolean!
+  memberParties: [String!]!
+  electionDate: Date!
+  basis: MandateBasis!
+  dataThrough: Date!
+  "Set for a subordinate body's Record: the authority it is inherited through."
+  via: LeadershipVia
+}
+
+"""
+A company's annual financial statements as the Ministry of Finance publishes them (bulk files on data.gov.ro, from fiscal year 2021): turnover, profit or loss, debts,
+equity and the average number of employees, newest year first. A Reference source, shown as context beside the awards; its figures are never added to awarded value (ADR 0014).
+"""
+type FinancialStatements {
+  years: [FinancialYear!]!
+}
+
+"Which release of MF's file a year's figures come from."
+enum FinancialRevision {
+  "The year's first release: MF may still revise it."
+  FIRST_RELEASE
+  "MF's re-published (`actualizat`) file for the year, a year after the first."
+  REVISED
+}
+
+"One fiscal year of one company's statements. Every figure may be null (a blank cell in MF's file); a blank is never read as zero."
+type FinancialYear {
+  fiscalYear: Int!
+  revision: FinancialRevision!
+  "True for the newest fiscal year MF's files hold (for any company) while it is a first release: the page notes it may be revised."
+  mayBeRevised: Boolean!
+  "Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is."
+  turnover: SignedBani
+  "Net profit minus net loss: negative is a loss. Null when MF's file has both blank."
+  profitOrLoss: SignedBani
+  "Debts (datorii). Signed, like the turnover."
+  debts: SignedBani
+  "Equity (capitaluri - total); negative when the company owes more than it owns."
+  equity: SignedBani
+  "The average number of employees. Null when the cell is blank: reads \"not reported\", never zero. A cell that says 0 is 0."
+  averageEmployees: Int
+  """
+  Context, never a Signal and never added to awarded value (ADR 0014): what this entity was awarded as a supplier in the calendar year (the awarded value of the Records
+  awarded that year, the same counting rule as every Total) as bani, and that as a share of the year's turnover. A contract's whole value counts in its award year, so the
+  share can exceed 1 and is no revenue share. Null share when the turnover is blank or zero.
+  """
+  awardedInYear: Bani!
+  awardShareOfTurnover: Float
+  "The file the figures come from: each figure cites MF and it."
+  source: FinancialSource!
+}
+
+"""
+A company's donations and loans to parties as BaniPartide (Expert Forum, CC BY 4.0) lists them from the parties' annual publications, newest first. Amounts are not summed anywhere:
+a donation is a different measure from awarded value (ADR 0014).
+"""
+type FirmDonations {
+  "The newest year BaniPartide covers, for any donor: the list's data-through year. Later donations may be missing."
+  dataThroughYear: Int!
+  donationCount: Int!
+  loanCount: Int!
+  items: [FirmDonation!]!
+  source: DonationSource!
+}
+
+enum DonationKind {
+  DONATION
+  LOAN
+}
+
+"One donation or loan as BaniPartide lists it. The party is exactly as published: it is no Party entity and is not normalised."
+type FirmDonation {
+  kind: DonationKind!
+  party: String!
+  "The year BaniPartide files the row under; null when the row has none."
+  year: Int
+  "Set only when exactly one date is readable from the published cell and it falls in the year."
+  date: Date
+  "The published date cell, verbatim (it can list several dates, or none)."
+  dateText: String!
+  amount: Bani!
+  "The row's number in the BaniPartide table export we hold: what a citation points at."
+  sourceRow: Int!
+}
+
+"BaniPartide's firm-donor table as we hold it. Each row cites BaniPartide and, through its methodology, the underlying publications (Monitorul Oficial, AEP's pages); BaniPartide gives no report reference per row."
+type DonationSource {
+  "BaniPartide's page for the table."
+  datasetUrl: String
+  "The licence as BaniPartide gives it (CC Attribution 4.0)."
+  license: String
+  licenseUrl: String
+  "The publisher, Expert Forum, as BaniPartide names it."
+  publisher: String
+  publisherUrl: String
+  "BaniPartide's methodology page, where it names its underlying sources."
+  underlyingUrl: String
+  "When we fetched the table (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
+"The MF file a year's figures were read from, as the portal publishes it."
+type FinancialSource {
+  "The file's name as MF gives it, e.g. WEB_BL_BS_SL_AN2024.txt."
+  file: String!
+  "MF's dataset page on data.gov.ro."
+  datasetUrl: String
+  "The file's own download link."
+  fileUrl: String
+  "The dataset as the portal titles it (source data, verbatim)."
+  via: String
+  license: String
+  "The day MF published this file."
+  published: Date
+  "When we fetched it (from the raw archive)."
+  fetchedAt: DateTime!
+}
+
+"A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is."
+type ReferenceSource {
+  "The source's short name, e.g. AMEPIP."
+  id: String!
+  name: String!
+  "The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet."
+  dataThrough: Date
+  "For a source published by year (MF's financial statements by fiscal year, BaniPartide's donations by the year they are filed under): the newest year held. Null for the others, and when none is held."
+  fiscalYear: Int
+  "Where the list comes from; null when none is held yet."
+  url: String
+}
 
 type Placement {
   county: County
@@ -481,6 +1014,8 @@ type SeapRecord implements SourceRecord {
   signals: [Signal!]!
   "Why the value is suspect; set exactly when `badges` has SUSPECT_VALUE."
   suspect: SuspectFlag
+  "The Party of the mandate in force on the award date at the authority (ADR 0012). Null when the authority is not a town hall, sector, Bucharest city hall or county council (or a subordinate body of one), or the date falls in a gap."
+  party: RecordParty
 }
 
 enum SeapRecordKind { DA DAN CONTRACT AWARD_NOTICE }
@@ -524,7 +1059,15 @@ type FrameworkLink {
 #  Signals: no stored id, addressed by their reproducing filter
 # =====================================================================
 
-enum SignalRuleSlug { OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION }
+enum SignalRuleSlug {
+  OVER_CAP SPLITTING FRAMEWORK_OVERRUN NO_PUBLICATION
+  "ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds."
+  YOUNG_FIRM NO_CONSTRUCTION_CAEN AFTER_STRIKE_OFF INSOLVENCY FEW_EMPLOYEES NO_FINANCIAL_STATEMENT
+  "Cross-Source rules (#185): a firm that gave to the authority's Party within a year before the award."
+  DONOR_TO_PARTY
+  "RESTRICTED (ADR 0011, ADR 0015): a board member of a public enterprise also holds a role in one of its private suppliers. Served only when the host's GRIVEI_RESTRICTED is `show`; otherwise no Signal, Record, count or rule row of it is returned."
+  SOE_BOARD_IN_SUPPLIER
+}
 
 type SignalRule {
   slug: SignalRuleSlug!
@@ -557,12 +1100,34 @@ type Signal {
   dataThrough: Date!
 }
 
-union SignalNumbers = OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
+union SignalNumbers =
+    OverCapNumbers | SplittingNumbers | FrameworkOverrunNumbers | NoPublicationNumbers
+  | YoungFirmNumbers | NoConstructionCaenNumbers | AfterStrikeOffNumbers | InsolvencyNumbers | FewEmployeesNumbers | NoFinancialStatementNumbers
+  | DonorToPartyNumbers | SoeBoardInSupplierNumbers
 
 type OverCapNumbers { value: Bani!, cap: Bani!, multiple: Float! }
 type SplittingNumbers { purchases: Int!, sum: Bani!, cap: Bani!, cpvGroup: String!, from: Date!, to: Date! }
 type FrameworkOverrunNumbers { ceiling: Bani!, subsequent: Bani!, ratio: Float! }
 type NoPublicationNumbers { procedure: String! }
+"The fewest days between registering and a Record of the Signal; `counted` is that Record's counted value (null when it has none)."
+type YoungFirmNumbers { days: Int!, registered: Date!, counted: Bani }
+"The largest counted value of the Signal's works Records and the fewest authorised CAEN codes among its winners."
+type NoConstructionCaenNumbers { value: Bani!, authorisedCodes: Int! }
+"ANAF's strike-off date and how many days after it the Signal's latest Record is."
+type AfterStrikeOffNumbers { struckOff: Date!, daysAfter: Int! }
+"The status as ONRC names it and the snapshot it was first seen in; the status itself is undated. `sinceAtLeast`: first seen in the earliest snapshot held."
+type InsolvencyNumbers { status: String!, firstSeen: Date!, sinceAtLeast: Boolean! }
+"The supplier's awards for the fiscal year and the average employee count it reported for it (0 or 1)."
+type FewEmployeesNumbers { fiscalYear: Int!, employees: Int!, awarded: Bani! }
+"The supplier's awards for the year and its legal form as ONRC lists it (SRL or SA); no statement is held for the year or the one before."
+type NoFinancialStatementNumbers { fiscalYear: Int!, awarded: Bani!, legalForm: String! }
+"""
+The fewest days between the nearest donation or loan by a winner and the award (0 to 365), the list the Party ran on at the election (`party`, as registered)
+and whether the Party is derived from a subordinate body (`derived`). `kind` is DONATION or LOAN, as the source states it. No donor name, amount or date is here.
+"""
+type DonorToPartyNumbers { days: Int!, party: String!, derived: Boolean!, kind: DonationKind! }
+"RESTRICTED. How many confirmed persons hold a role both in the public enterprise (the authority) and in the supplier; a count only, never a name, birth date or id."
+type SoeBoardInSupplierNumbers { persons: Int! }
 
 "Output twin of RecordFilter (GraphQL inputs can't be outputs), reduced to the fields Signal groupings use."
 type RecordFilterValue {
@@ -597,7 +1162,11 @@ type Coverage {
   unplacedAuthorities: UnplacedTile!
   "MF Lista entităților publice snapshot date."
   referenceSnapshot: Date
+  "What `CountyCoverage.withRecords` is counted against: SEAP's is MF's list of public entities; ONRC has none (its register is the whole population), so its N of M is not stated."
+  denominator: CoverageDenominator!
 }
+
+enum CoverageDenominator { PUBLIC_ENTITIES NONE }
 
 type CountyCoverage {
   county: MapArea!                   # counties plus NATIONAL
@@ -611,7 +1180,8 @@ type CountyCoverage {
 enum CoverageStatus { HARVESTED HARVESTED_WITH_KNOWN_GAPS PARTIAL NOT_HARVESTED }
 
 type GapCell {
-  quarter: String!                   # "2024-Q4"
+  "The grid period: SEAP's is a quarter (`2024-Q4`). ONRC's is one snapshot, written as its date (`2026-05-06`), or a calendar month with no snapshot held (`2026-04`, a KNOWN_GAP)."
+  quarter: String!
   "A record kind of the Source (SEAP: SeapRecordKind). A plain string because kinds belong to each Source (ADR 0005)."
   kind: String!
   state: GapState!

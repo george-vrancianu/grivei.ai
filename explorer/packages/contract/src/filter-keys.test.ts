@@ -1,6 +1,6 @@
 import { isEnumType, isInputObjectType, isListType, isNonNullType, getNamedType, type GraphQLInputType } from "graphql";
 import { describe, expect, it } from "vitest";
-import { RECORD_FILTER_URL, URL_ONLY_KEYS } from "./filter-keys.ts";
+import { ONRC_FILTER_URL, RECORD_FILTER_URL, URL_ONLY_KEYS } from "./filter-keys.ts";
 import { loadSchema } from "./schema.ts";
 
 const schema = loadSchema();
@@ -26,6 +26,32 @@ describe("RecordFilter <-> URL search state", () => {
       expect(spec.encoding === "enum", `${name} enum`).toBe(isEnumType(named));
       if (spec.encoding === "date") expect(named.name).toBe("Date");
       if (spec.encoding === "boolean") expect(named.name).toBe("Boolean");
+    }
+  });
+});
+
+describe("OnrcFilter <-> URL search state (#176)", () => {
+  const onrcFilter = schema.getType("OnrcFilter");
+  if (!isInputObjectType(onrcFilter)) throw new Error("OnrcFilter is not an input type");
+  const onrcFields = onrcFilter.getFields();
+
+  it("has a URL key for every OnrcFilter field and no key for anything else", () => {
+    expect(Object.keys(ONRC_FILTER_URL).sort()).toEqual(Object.keys(onrcFields).sort());
+  });
+  it("uses each URL key once, and never one reserved for tab or page", () => {
+    const own = Object.values(ONRC_FILTER_URL).map((s) => s.key);
+    expect(new Set(own).size).toBe(own.length);
+    expect(own.filter((k) => (Object.values(URL_ONLY_KEYS) as string[]).includes(k))).toEqual([]);
+  });
+  it("describes each field's shape the way the SDL types it", () => {
+    for (const [name, spec] of Object.entries(ONRC_FILTER_URL)) {
+      let t: GraphQLInputType = onrcFields[name]!.type;
+      if (isNonNullType(t)) t = t.ofType;
+      const named = getNamedType(t);
+      expect(spec.repeatable, `${name} repeatable`).toBe(isListType(t));
+      if (spec.encoding === "date") expect(named.name).toBe("Date");
+      if (spec.encoding === "boolean") expect(named.name).toBe("Boolean");
+      if (spec.encoding === "int") expect(named.name).toBe("Int");
     }
   });
 });

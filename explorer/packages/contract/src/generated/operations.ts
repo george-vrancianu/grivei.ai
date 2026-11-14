@@ -10,6 +10,10 @@ export type CountySide =
   | 'AUTHORITY'
   | 'SUPPLIER';
 
+export type CoverageDenominator =
+  | 'NONE'
+  | 'PUBLIC_ENTITIES';
+
 export type CoverageStatus =
   | 'HARVESTED'
   | 'HARVESTED_WITH_KNOWN_GAPS'
@@ -21,9 +25,20 @@ export type DateRange = {
   to?: string | null | undefined;
 };
 
+export type DonationKind =
+  | 'DONATION'
+  | 'LOAN';
+
 export type EntityIdentity =
   | 'CUI'
   | 'NAME_ONLY';
+
+/** Which release of MF's file a year's figures come from. */
+export type FinancialRevision =
+  /** The year's first release: MF may still revise it. */
+  | 'FIRST_RELEASE'
+  /** MF's re-published (`actualizat`) file for the year, a year after the first. */
+  | 'REVISED';
 
 export type GapRule =
   | 'AWAITING_BULK_FILE'
@@ -43,6 +58,16 @@ export type GapState =
   | 'NOT_YET_LOADED'
   | 'POSSIBLY_INCOMPLETE';
 
+export type LeadershipGapKind =
+  | 'HANDOVER_WINDOW'
+  | 'INTERIM'
+  | 'NO_RESULTS';
+
+export type MandateBasis =
+  | 'FINAL_MINUTES'
+  | 'PARTIAL_MINUTES'
+  | 'REPEAT_ROUND';
+
 export type MatchableField =
   | 'AUTHORITY'
   | 'CPV_CODE'
@@ -51,6 +76,27 @@ export type MatchableField =
   | 'PUBLIC_CODE'
   | 'SUPPLIER'
   | 'TITLE';
+
+/** ONRC's search state, 1:1 with the URL like RecordFilter (the codec is `ONRC_FILTER_URL`). Every chip is a field; an unset field narrows nothing. */
+export type OnrcFilter = {
+  caen?: string | null | undefined;
+  county?: string | null | undefined;
+  q?: string | null | undefined;
+  registeredFrom?: string | null | undefined;
+  registeredTo?: string | null | undefined;
+  seapCounterparty?: boolean | null | undefined;
+  status?: Array<number> | null | undefined;
+};
+
+export type OnrcMatchableField =
+  | 'ALIAS'
+  | 'CAEN'
+  | 'CUI'
+  | 'NAME'
+  | 'REGISTRATION_NUMBER';
+
+export type OnrcResultTab =
+  | 'ORGANISATIONS';
 
 /** How we obtained it: from a published bulk file, by crawling the Source's own site, or from its API (ANAF's VAT endpoint). */
 export type ProvenanceKind =
@@ -84,6 +130,14 @@ export type RecordFilter = {
   cpv?: string | null | undefined;
   from?: string | null | undefined;
   hasSignals?: boolean | null | undefined;
+  /**
+   * A list as registered at the election, as `partyOptions` offers it (`PARTIDUL SOCIAL DEMOCRAT`, or an alliance under its own registered name). One value, like the
+   * other entity-scoped fields (a second one would be a different question). Matches the Records whose Mandate (direct, or derived through a subordinate body's principal
+   * credit holder) ran on that list; there is no "direct only" switch. "Independent" is never a party and matches nothing, an alliance is not matched by its member
+   * parties and no party family exists. Never a supplier's: a Party belongs to an authority for a mandate's dates. Narrows only the SEAP search: a Total with this filter
+   * states its coverage (`Total.partyCoverage`).
+   */
+  party?: string | null | undefined;
   procedure?: Array<string> | null | undefined;
   q?: string | null | undefined;
   signal?: SignalRuleSlug | null | undefined;
@@ -113,10 +167,21 @@ export type SignalOrder =
   | 'VALUE_DESC';
 
 export type SignalRuleSlug =
+  | 'AFTER_STRIKE_OFF'
+  /** Cross-Source rules (#185): a firm that gave to the authority's Party within a year before the award. */
+  | 'DONOR_TO_PARTY'
+  | 'FEW_EMPLOYEES'
   | 'FRAMEWORK_OVERRUN'
+  | 'INSOLVENCY'
+  | 'NO_CONSTRUCTION_CAEN'
+  | 'NO_FINANCIAL_STATEMENT'
   | 'NO_PUBLICATION'
   | 'OVER_CAP'
-  | 'SPLITTING';
+  /** RESTRICTED (ADR 0011, ADR 0015): a board member of a public enterprise also holds a role in one of its private suppliers. Served only when the host's GRIVEI_RESTRICTED is `show`; otherwise no Signal, Record, count or rule row of it is returned. */
+  | 'SOE_BOARD_IN_SUPPLIER'
+  | 'SPLITTING'
+  /** ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds. */
+  | 'YOUNG_FIRM';
 
 export type SourceId =
   | 'ANAF'
@@ -183,16 +248,32 @@ export type EntityOverviewQueryVariables = Exact<{
 }>;
 
 
-export type EntityOverviewQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, directPurchaseShare: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, procedures: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, consortia: Array<{ members: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, frameworks: { count: number, ceilings: string, subsequentReported: string }, largestRecords: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+export type EntityOverviewQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, onrc: { registrationNumber: string, registrationDate: string | null, legalForm: string | null, snapshot: string, statuses: Array<{ code: number, name: string | null, firstSeen: string, sinceAtLeast: boolean }>, caen: Array<{ code: string, version: number | null }>, seat: { county: string | null, locality: string | null, address: string | null, postalCode: string | null }, aliases: Array<{ name: string, firstSeen: string, lastSeen: string, sinceAtLeast: boolean, current: boolean }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null, people: { snapshot: string, holders: Array<{ name: string, role: string, birthYear: number | null, person: { id: string } | null }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null, publicEnterprise: { listedAs: string, registrationNumber: string | null, status: string | null, firstYear: number | null, lastYear: number | null, snapshot: string, url: string | null, via: string | null, license: string | null, fetchedAt: string } | null, leadership: { mandates: Array<{ leaderName: string, list: string, independent: boolean, memberParties: Array<string>, electionDate: string, basis: MandateBasis, dataThrough: string, startDate: string, endDate: string | null }>, gaps: Array<{ startDate: string, endDate: string | null, kind: LeadershipGapKind }>, via: { authority: string, authorityName: string, snapshotDate: string, snapshots: number } | null } | null, financials: { years: Array<{ fiscalYear: number, revision: FinancialRevision, mayBeRevised: boolean, turnover: string | null, profitOrLoss: string | null, debts: string | null, equity: string | null, averageEmployees: number | null, awardedInYear: string, awardShareOfTurnover: number | null, source: { file: string, datasetUrl: string | null, fileUrl: string | null, via: string | null, license: string | null, published: string | null, fetchedAt: string } }> } | null, donations: { dataThroughYear: number, donationCount: number, loanCount: number, items: Array<{ kind: DonationKind, party: string, year: number | null, date: string | null, dateText: string, amount: string, sourceRow: number }>, source: { datasetUrl: string | null, license: string | null, licenseUrl: string | null, publisher: string | null, publisherUrl: string | null, underlyingUrl: string | null, fetchedAt: string } } | null, seap: { roles: Array<Role>, role: { role: Role, directPurchaseShare: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, procedures: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, consortia: Array<{ members: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, frameworks: { count: number, ceilings: string, subsequentReported: string }, largestRecords: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+              | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+              | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+              | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
               | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+              | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+              | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+              | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
               | { __typename: 'NoPublicationNumbers', procedure: string }
               | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+              | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
               | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+              | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
             , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }>, signals: { count: number, rows: Array<{ rule: SignalRuleSlug, date: string, firstDate: string, recordCount: number, dataThrough: string, records: Array<{ code: string, provenance: { url: string | null } }>, authority: { key: string, displayName: string, identity: EntityIdentity }, suppliers: Array<{ key: string, displayName: string, identity: EntityIdentity }>, numbers:
+              | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+              | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+              | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
               | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+              | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+              | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+              | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
               | { __typename: 'NoPublicationNumbers', procedure: string }
               | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+              | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
               | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+              | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
             , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
 
 export type EntityRecordsQueryVariables = Exact<{
@@ -205,11 +286,19 @@ export type EntityRecordsQueryVariables = Exact<{
 }>;
 
 
-export type EntityRecordsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, records: { total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, facets: { channel: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, procedure: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, year: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, signal: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, badge: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, counterparty: Array<{ entity: { key: string, displayName: string, identity: EntityIdentity }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+export type EntityRecordsQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, onrc: { registrationNumber: string } | null, seap: { roles: Array<Role>, role: { role: Role, records: { total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, facets: { channel: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, procedure: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, year: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, signal: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, badge: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, counterparty: Array<{ entity: { key: string, displayName: string, identity: EntityIdentity }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+                    | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+                    | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+                    | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
                     | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+                    | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+                    | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+                    | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
                     | { __typename: 'NoPublicationNumbers', procedure: string }
                     | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+                    | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
                     | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+                    | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
                   , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> } } } | null }, aliases: Array<{ name: string, records: number, first: string, last: string, differsFromAnaf: boolean }>, provenance: Array<{ source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }>, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null } | null };
 
 export type EntityRelationshipsQueryVariables = Exact<{
@@ -224,6 +313,8 @@ export type EntityRelationshipsQuery = { entity: { cui: string | null, foreignVa
 
 export type TotalFieldsFragment = { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean };
 
+export type PartyCoverageFieldsFragment = { party: string, direct: { records: number, awarded: string }, subordinate: { records: number, awarded: string }, otherParties: { records: number, awarded: string }, independent: { records: number, awarded: string }, unattributed: { records: number, awarded: string } };
+
 export type EntityRefFragment = { key: string, displayName: string, identity: EntityIdentity };
 
 export type EntityRowFieldsFragment = { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null };
@@ -233,39 +324,87 @@ export type PartyFieldsFragment = { naturalPerson: boolean, publishedName: strin
 export type ProvenanceFieldsFragment = { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string };
 
 export type RecordRowFieldsFragment = { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+      | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+      | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+      | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
       | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+      | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+      | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+      | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
       | { __typename: 'NoPublicationNumbers', procedure: string }
       | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+      | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
       | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+      | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
     , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> };
 
+type SignalNumbersFields_AfterStrikeOffNumbers_Fragment = { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number };
+
+type SignalNumbersFields_DonorToPartyNumbers_Fragment = { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind };
+
+type SignalNumbersFields_FewEmployeesNumbers_Fragment = { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string };
+
 type SignalNumbersFields_FrameworkOverrunNumbers_Fragment = { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number };
+
+type SignalNumbersFields_InsolvencyNumbers_Fragment = { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean };
+
+type SignalNumbersFields_NoConstructionCaenNumbers_Fragment = { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number };
+
+type SignalNumbersFields_NoFinancialStatementNumbers_Fragment = { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string };
 
 type SignalNumbersFields_NoPublicationNumbers_Fragment = { __typename: 'NoPublicationNumbers', procedure: string };
 
 type SignalNumbersFields_OverCapNumbers_Fragment = { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number };
 
+type SignalNumbersFields_SoeBoardInSupplierNumbers_Fragment = { __typename: 'SoeBoardInSupplierNumbers', persons: number };
+
 type SignalNumbersFields_SplittingNumbers_Fragment = { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string };
 
+type SignalNumbersFields_YoungFirmNumbers_Fragment = { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null };
+
 export type SignalNumbersFieldsFragment =
+  | SignalNumbersFields_AfterStrikeOffNumbers_Fragment
+  | SignalNumbersFields_DonorToPartyNumbers_Fragment
+  | SignalNumbersFields_FewEmployeesNumbers_Fragment
   | SignalNumbersFields_FrameworkOverrunNumbers_Fragment
+  | SignalNumbersFields_InsolvencyNumbers_Fragment
+  | SignalNumbersFields_NoConstructionCaenNumbers_Fragment
+  | SignalNumbersFields_NoFinancialStatementNumbers_Fragment
   | SignalNumbersFields_NoPublicationNumbers_Fragment
   | SignalNumbersFields_OverCapNumbers_Fragment
+  | SignalNumbersFields_SoeBoardInSupplierNumbers_Fragment
   | SignalNumbersFields_SplittingNumbers_Fragment
+  | SignalNumbersFields_YoungFirmNumbers_Fragment
 ;
 
 export type SignalBadgeFieldsFragment = { rule: SignalRuleSlug, date: string, numbers:
+    | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+    | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+    | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
     | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+    | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+    | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+    | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
     | { __typename: 'NoPublicationNumbers', procedure: string }
     | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+    | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
     | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+    | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
   , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } };
 
 export type SignalFieldsFragment = { rule: SignalRuleSlug, date: string, firstDate: string, recordCount: number, dataThrough: string, authority: { key: string, displayName: string, identity: EntityIdentity }, suppliers: Array<{ key: string, displayName: string, identity: EntityIdentity }>, numbers:
+    | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+    | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+    | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
     | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+    | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+    | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+    | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
     | { __typename: 'NoPublicationNumbers', procedure: string }
     | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+    | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
     | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+    | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
   , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } };
 
 export type MoneyMapFieldsFragment = { side: CountySide, counties: Array<{ area: string, name: string, entities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, national: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, unplaced: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } | null, unknownSupplierCounty: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } | null };
@@ -279,11 +418,35 @@ export type EntityHeaderFieldsFragment = { cui: string | null, foreignVatId: str
 export type EntityResultPageFieldsFragment = { count: number, countEstimated: boolean, rows: Array<{ signalCount: number, entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> };
 
 export type RecordResultFieldsFragment = { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+          | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+          | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+          | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
           | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+          | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+          | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+          | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
           | { __typename: 'NoPublicationNumbers', procedure: string }
           | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+          | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
           | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+          | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
         , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> };
+
+export type OnrcRegistrationFieldsFragment = { registrationNumber: string, registrationDate: string | null, legalForm: string | null, snapshot: string, statuses: Array<{ code: number, name: string | null, firstSeen: string, sinceAtLeast: boolean }>, caen: Array<{ code: string, version: number | null }>, seat: { county: string | null, locality: string | null, address: string | null, postalCode: string | null }, aliases: Array<{ name: string, firstSeen: string, lastSeen: string, sinceAtLeast: boolean, current: boolean }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
+
+export type OrganisationPeopleFieldsFragment = { snapshot: string, holders: Array<{ name: string, role: string, birthYear: number | null, person: { id: string } | null }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
+
+export type PersonFieldsFragment = { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, entityRole: Role | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } };
+
+export type PublicEnterpriseFieldsFragment = { listedAs: string, registrationNumber: string | null, status: string | null, firstYear: number | null, lastYear: number | null, snapshot: string, url: string | null, via: string | null, license: string | null, fetchedAt: string };
+
+export type LeadershipFieldsFragment = { mandates: Array<{ leaderName: string, list: string, independent: boolean, memberParties: Array<string>, electionDate: string, basis: MandateBasis, dataThrough: string, startDate: string, endDate: string | null }>, gaps: Array<{ startDate: string, endDate: string | null, kind: LeadershipGapKind }>, via: { authority: string, authorityName: string, snapshotDate: string, snapshots: number } | null };
+
+export type RecordPartyFieldsFragment = { list: string, independent: boolean, memberParties: Array<string>, electionDate: string, basis: MandateBasis, dataThrough: string, via: { authority: string, authorityName: string, snapshotDate: string, snapshots: number } | null };
+
+export type FinancialStatementsFieldsFragment = { years: Array<{ fiscalYear: number, revision: FinancialRevision, mayBeRevised: boolean, turnover: string | null, profitOrLoss: string | null, debts: string | null, equity: string | null, averageEmployees: number | null, awardedInYear: string, awardShareOfTurnover: number | null, source: { file: string, datasetUrl: string | null, fileUrl: string | null, via: string | null, license: string | null, published: string | null, fetchedAt: string } }> };
+
+export type FirmDonationsFieldsFragment = { dataThroughYear: number, donationCount: number, loanCount: number, items: Array<{ kind: DonationKind, party: string, year: number | null, date: string | null, dateText: string, amount: string, sourceRow: number }>, source: { datasetUrl: string | null, license: string | null, licenseUrl: string | null, publisher: string | null, publisherUrl: string | null, underlyingUrl: string | null, fetchedAt: string } };
 
 export type FullResultsAuthoritiesQueryVariables = Exact<{
   filter: RecordFilter;
@@ -312,10 +475,18 @@ export type FullResultsRecordsQueryVariables = Exact<{
 
 
 export type FullResultsRecordsQuery = { seap: { search: { total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, records: { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+                | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+                | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+                | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
                 | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+                | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+                | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+                | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
                 | { __typename: 'NoPublicationNumbers', procedure: string }
                 | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+                | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
                 | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+                | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
               , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> } } } };
 
 export type MainScreenQueryVariables = Exact<{
@@ -323,11 +494,19 @@ export type MainScreenQueryVariables = Exact<{
 }>;
 
 
-export type MainScreenQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, seap: { search: { filter: { qFolded: string | null, authority: { key: string, displayName: string, identity: EntityIdentity } | null, supplier: { key: string, displayName: string, identity: EntityIdentity } | null }, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, map: { side: CountySide, counties: Array<{ area: string, name: string, entities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, national: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, unplaced: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } | null, unknownSupplierCounty: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } | null }, goTo: { key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role> } } | null, facets: { procedure: Array<{ value: string }> }, authorities: { count: number, countEstimated: boolean, rows: Array<{ signalCount: number, entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, suppliers: { count: number, countEstimated: boolean, rows: Array<{ signalCount: number, entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+export type MainScreenQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, seap: { partyOptions: Array<{ party: string, records: number }>, search: { filter: { qFolded: string | null, authority: { key: string, displayName: string, identity: EntityIdentity } | null, supplier: { key: string, displayName: string, identity: EntityIdentity } | null }, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean, partyCoverage: { party: string, direct: { records: number, awarded: string }, subordinate: { records: number, awarded: string }, otherParties: { records: number, awarded: string }, independent: { records: number, awarded: string }, unattributed: { records: number, awarded: string } } | null }, map: { side: CountySide, counties: Array<{ area: string, name: string, entities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, national: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, unplaced: { authorities: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } } | null, unknownSupplierCounty: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } | null }, goTo: { key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role> } } | null, facets: { procedure: Array<{ value: string }> }, authorities: { count: number, countEstimated: boolean, rows: Array<{ signalCount: number, entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, suppliers: { count: number, countEstimated: boolean, rows: Array<{ signalCount: number, entity: { anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, placement: { national: boolean, placedBy: SourceId, county: { code: string, name: string } | null, uat: { siruta: string, name: string } | null } | null }, matched: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, records: { count: number, rows: Array<{ areaShare: string | null, record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+                | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+                | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+                | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
                 | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+                | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+                | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+                | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
                 | { __typename: 'NoPublicationNumbers', procedure: string }
                 | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+                | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
                 | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+                | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
               , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> } } } };
 
 export type ZoomedCountyQueryVariables = Exact<{
@@ -343,19 +522,79 @@ export type MethodologyBaseRatesQueryVariables = Exact<{ [key: string]: never; }
 
 export type MethodologyBaseRatesQuery = { signalRules: Array<{ slug: SignalRuleSlug, baseRate: number, baseRateYear: number, dataThrough: string, window: { from: string | null, to: string | null } }> };
 
+export type MethodologyReferenceSourcesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MethodologyReferenceSourcesQuery = { referenceSources: Array<{ id: string, name: string, dataThrough: string | null, fiscalYear: number | null, url: string | null }> };
+
+export type OnrcResultFieldsFragment = { registrationNumber: string, name: string, cui: string | null, legalForm: string | null, registrationDate: string | null, seapCounterparty: boolean, seat: { county: string | null, locality: string | null }, statuses: Array<{ code: number, name: string | null }>, caen: Array<{ code: string, version: number | null }>, entity: { key: string, displayName: string, identity: EntityIdentity } | null, matched: Array<{ field: OnrcMatchableField, text: string, highlights: Array<Array<number>> }> };
+
+export type OnrcSearchQueryVariables = Exact<{
+  filter: OnrcFilter;
+  limit: number;
+  offset: number;
+}>;
+
+
+export type OnrcSearchQuery = { onrc: { search: { count: number, defaultTab: OnrcResultTab, filter: { qFolded: string | null }, organisations: { count: number, rows: Array<{ registrationNumber: string, name: string, cui: string | null, legalForm: string | null, registrationDate: string | null, seapCounterparty: boolean, seat: { county: string | null, locality: string | null }, statuses: Array<{ code: number, name: string | null }>, caen: Array<{ code: string, version: number | null }>, entity: { key: string, displayName: string, identity: EntityIdentity } | null, matched: Array<{ field: OnrcMatchableField, text: string, highlights: Array<Array<number>> }> }> }, map: { unplacedRegistrations: number, counties: Array<{ area: string, name: string, registrations: number }> } } } };
+
+export type OnrcCountQueryVariables = Exact<{
+  filter: OnrcFilter;
+}>;
+
+
+export type OnrcCountQuery = { onrc: { search: { count: number } } };
+
+export type OnrcRecordQueryVariables = Exact<{
+  registrationNumber: string | number;
+}>;
+
+
+export type OnrcRecordQuery = { onrc: { record: { name: string, cui: string | null, registrationNumber: string, registrationDate: string | null, legalForm: string | null, snapshot: string, entity: { key: string, displayName: string, identity: EntityIdentity } | null, statuses: Array<{ code: number, name: string | null, firstSeen: string, sinceAtLeast: boolean }>, caen: Array<{ code: string, version: number | null }>, seat: { county: string | null, locality: string | null, address: string | null, postalCode: string | null }, aliases: Array<{ name: string, firstSeen: string, lastSeen: string, sinceAtLeast: boolean, current: boolean }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null } };
+
+export type OnrcCoverageQueryVariables = Exact<{
+  window?: DateRange | null | undefined;
+}>;
+
+
+export type OnrcCoverageQuery = { sources: Array<{ id: SourceId, name: string, harvested: boolean, dataThrough: Array<{ kind: string, date: string }> }>, coverage: { denominator: CoverageDenominator, window: { from: string | null, to: string | null }, counties: Array<{ county: string, status: CoverageStatus, withRecords: number, publicEntities: number, otherAuthorities: number }>, grid: Array<{ quarter: string, kind: string, state: GapState, rule: GapRule | null, note: string | null, records: number, crawlOnly: number, dataThrough: string | null }> } };
+
+export type PersonPageQueryVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type PersonPageQuery = { person: { id: string, name: string, birthYear: number, roleCount: number, snapshot: string, roles: Array<{ organisationName: string, entityKey: string | null, entityRole: Role | null, role: string }>, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string } } | null };
+
 export type RecordPageQueryVariables = Exact<{
   code: string | number;
 }>;
 
 
-export type RecordPageQuery = { seap: { record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, contractType: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, cpv: { code: string, description: string } | null, suspect: { rule: SuspectRule, threshold: string | null } | null, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }, framework: { ceiling: string | null, subsequentReported: string, ratio: number | null, agreement: { code: string, title: string } | null, subsequent: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+export type RecordPageQuery = { seap: { record: { code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, contractType: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, party: { list: string, independent: boolean, memberParties: Array<string>, electionDate: string, basis: MandateBasis, dataThrough: string, via: { authority: string, authorityName: string, snapshotDate: string, snapshots: number } | null } | null, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, cpv: { code: string, description: string } | null, suspect: { rule: SuspectRule, threshold: string | null } | null, provenance: { source: SourceId, url: string | null, via: string | null, kind: ProvenanceKind, fetchedAt: string }, framework: { ceiling: string | null, subsequentReported: string, ratio: number | null, agreement: { code: string, title: string } | null, subsequent: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+              | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+              | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+              | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
               | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+              | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+              | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+              | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
               | { __typename: 'NoPublicationNumbers', procedure: string }
               | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+              | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
               | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+              | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
             , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }> } | null, signals: Array<{ rule: SignalRuleSlug, date: string, firstDate: string, recordCount: number, dataThrough: string, records: Array<{ code: string, title: string, date: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge> }>, authority: { key: string, displayName: string, identity: EntityIdentity }, suppliers: Array<{ key: string, displayName: string, identity: EntityIdentity }>, numbers:
+          | { __typename: 'AfterStrikeOffNumbers', struckOff: string, daysAfter: number }
+          | { __typename: 'DonorToPartyNumbers', days: number, party: string, derived: boolean, kind: DonationKind }
+          | { __typename: 'FewEmployeesNumbers', fiscalYear: number, employees: number, awarded: string }
           | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
+          | { __typename: 'InsolvencyNumbers', status: string, firstSeen: string, sinceAtLeast: boolean }
+          | { __typename: 'NoConstructionCaenNumbers', value: string, authorisedCodes: number }
+          | { __typename: 'NoFinancialStatementNumbers', fiscalYear: number, awarded: string, legalForm: string }
           | { __typename: 'NoPublicationNumbers', procedure: string }
           | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
+          | { __typename: 'SoeBoardInSupplierNumbers', persons: number }
           | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
+          | { __typename: 'YoungFirmNumbers', days: number, registered: string, counted: string | null }
         , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> } | null } };

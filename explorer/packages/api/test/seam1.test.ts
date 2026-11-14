@@ -20,19 +20,20 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { SignalFieldsFragment, CoverageLensQuery, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { OnrcCoverageQuery, OnrcRecordQuery, OnrcSearchQuery, SignalFieldsFragment, CoverageLensQuery, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
-import { RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
+import { ENTITY_KEYS, RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
 import { RECORDED_RECORD_CASES, type RecordedRecordCase } from "./recordedRecordCases.ts";
 import { RECORDED_RELATIONSHIPS_CASES, type RecordedRelationshipsCase } from "./recordedRelationshipsCases.ts";
 import { createSeapLink, seapLinkUrl } from "../src/seapLink.ts";
 import { RECORDED_SIGNAL_CASES, type RecordedSignalCase } from "./recordedSignalCases.ts";
+import { RECORDED_PARTY_CASES } from "./recordedPartyCases.ts";
 import { RECORDED_ZOOM_CASES } from "./recordedZoomCases.ts";
 import { RECORDED_COVERAGE_CASES } from "./recordedCoverageCases.ts";
 
@@ -45,6 +46,13 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const onrcPeopleArchive = join(watchdog, "tests/fixtures/archive-onrc-people"); // archive-onrc with ONRC's people files, a PFA and an IF: administrators, the same person twice, namesakes, a possible match, an unlinked holder (#177)
+const onrcSearchArchive = join(watchdog, "tests/fixtures/archive-onrc-search"); // the ONRC world plus three sole traders (PFA, II, a long legal form) with valid CUIs, which ONRC search must never make findable (#176)
+const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
+const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
+const banipartideArchive = join(watchdog, "tests/fixtures/archive-banipartide"); // BaniPartide's firm-donor table: a donation, a loan with two dates, three rows that are not firms (individuals), a donor with no entity; copied onto archive-overview (#182)
+const amepipArchive = join(watchdog, "tests/fixtures/archive-amepip"); // AMEPIP's list of public enterprises (CUIs of two roles-world entities, two that no Record names), copied onto archive-overview (#183)
+const aepArchive = join(watchdog, "tests/fixtures/archive-aep"); // AEP's minutes (2020, 2024, the repeat round, the 2025 partial election), two MF snapshots with principal credit holders and the Records that meet the mandates; overlaid on archive-mf (#180)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
@@ -56,6 +64,8 @@ const mfGaps = join(watchdog, "tests/fixtures/mf-known-gaps.csv"); // the placem
 const searchArchive = join(watchdog, "tests/fixtures/archive-search"); // one Record per matching rule, a consortium, tied sums (#68)
 const rolesEdgeArchive = join(watchdog, "tests/fixtures/archive-roles-edge"); // an unlinked winner, a person, a consortium framework agreement (#73)
 const rolesArchive = join(watchdog, "tests/fixtures/archive-roles"); // an authority, a supplier and a both-roles entity, consortia, a framework, a person, blank and suspect values (#73)
+const onrcSignalsArchive = join(watchdog, "tests/fixtures/archive-onrc-signals"); // the six ONRC and financial-statement Signal rules: positive, boundary and negative suppliers, ONRC snapshots, MF statements, ANAF answers (#184)
+const onrcSignalsRevisedArchive = join(watchdog, "tests/fixtures/archive-onrc-signals-revised"); // FY2024's revised release alone: copied over the one above it makes the newest fiscal year evaluable (#184)
 const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
 const splittingArchive = join(watchdog, "tests/fixtures/archive-splitting"); // the splitting rule: a trigger, a 31-day near miss, merging windows, a cap change, left-out cases (#75)
 const frameworkOverrunArchive = join(watchdog, "tests/fixtures/archive-framework-overrun"); // the framework-overrun rule: a crossing, exactly 110%, 90%, a blank ceiling, a pre-2021 framework, summed ceilings (#76)
@@ -98,6 +108,9 @@ const coveragePage = allowlist.operations.find((o) => o.name === "CoveragePage")
 const entityRecords = allowlist.operations.find((o) => o.name === "EntityRecords")!;
 const entityRelationships = allowlist.operations.find((o) => o.name === "EntityRelationships")!;
 const zoomedCounty = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
+const onrcSearch = allowlist.operations.find((o) => o.name === "OnrcSearch")!;
+const onrcRecord = allowlist.operations.find((o) => o.name === "OnrcRecord")!;
+const onrcCoverage = allowlist.operations.find((o) => o.name === "OnrcCoverage")!;
 // The authorities of the placement fixture (watchdog/tests/fixtures/build_placement_archive.py): CUIs with valid check digits, invented.
 const P = {
   sanpetru: "51000005", caragiale: "51000102", apahida: "51000200", rasnov: "51000307", sinca: "51000404", brasov: "51000501", bucharest3: "51000609",
@@ -131,6 +144,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(placementArchive, join(scratch, "archive-mf"), { recursive: true });
     cpSync(mfArchive, join(scratch, "archive-mf"), { recursive: true }); // merges: the MF unit lands beside the placement world's units
     cpSync(placementData, join(scratch, "mf-data"), { recursive: true });
+    cpSync(placementArchive, join(scratch, "archive-party"), { recursive: true }); // the placement world + MF's list + AEP's results: Party and Leadership lists (#180)
+    cpSync(mfArchive, join(scratch, "archive-party"), { recursive: true });
+    cpSync(aepArchive, join(scratch, "archive-party"), { recursive: true });
     appendFileSync(join(scratch, "mf-data/national_authorities.csv"), `${M.nationalOnly},true,false,INSTITUTUL NATIONAL FICTIV,"fictional: an MF-only national institute"\n`);
     // The default for every rebuild that passes no --placement-data: the fixture's reviewed files without a UAT table, so placement
     // is by county only. Never the checked-in national tables (pipeline/placement/data): this seam's answers must not move with them.
@@ -144,6 +160,9 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(rolesArchive, join(scratch, "archive-roles"), { recursive: true });
     cpSync(rolesEdgeArchive, join(scratch, "archive-roles-edge"), { recursive: true });
     cpSync(signalsArchive, join(scratch, "archive-signals"), { recursive: true });
+    cpSync(onrcSignalsArchive, join(scratch, "archive-onrc-signals"), { recursive: true });
+    cpSync(onrcSignalsArchive, join(scratch, "archive-onrc-signals-revised"), { recursive: true });
+    cpSync(onrcSignalsRevisedArchive, join(scratch, "archive-onrc-signals-revised"), { recursive: true });
     cpSync(splittingArchive, join(scratch, "archive-splitting"), { recursive: true });
     cpSync(frameworkOverrunArchive, join(scratch, "archive-framework-overrun"), { recursive: true });
     execFileSync("docker", [
@@ -187,6 +206,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     await admin.query("CREATE DATABASE roles_a");
     await admin.query("CREATE DATABASE roles_edge");
     await admin.query("CREATE DATABASE signals_a");
+    await admin.query("CREATE DATABASE onrc_signals_a");
+    await admin.query("CREATE DATABASE onrc_signals_b");
     await admin.query("CREATE DATABASE splitting_a");
     await admin.query("CREATE DATABASE framework_overrun_a");
   });
@@ -202,11 +223,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   // PIPELINE_PLACEMENT_DATA pins the placement tables to the fixture's county-only directory; an explicit --placement-data in `extra` wins
   const rebuild = (db: string, archive = "archive", extra: string[] = []) => {
     const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`, "--in-place", ...extra], {
-      cwd: watchdog, encoding: "utf8", env: { ...process.env, PIPELINE_PLACEMENT_DATA: join(scratch, "county-only-data") },
+      cwd: watchdog, encoding: "utf8", env: { ...process.env, PIPELINE_PLACEMENT_DATA: join(scratch, "county-only-data"), GRIVEI_PERSON_ID_SECRET: "dummy-secret-for-tests-only-0123456789" },
     });
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
     return r.stdout;
   };
+
+  /** The party world (#180): a rebuild with the placement tables and MF's known gaps of the fixture, in its own database and geography directory. */
+  const partyRebuild = (db: string) => rebuild(db, "archive-party", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, `geo-${db}`), "--today", "2026-11-20", "--known-gaps", mfGaps]);
 
   const apis = new Map<string, ReturnType<typeof createApi>>(); // one pool per database: a response needs a few connections, a test asks for many
   const ask = async (db: string, id: string, variables: unknown = EMPTY_FILTER) => {
@@ -240,6 +264,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       noValue: 1,
       frameworkCeilings: "0",
       estimated: false,
+      partyCoverage: null, // no Party filter, no coverage (#181)
     });
     const { count, rows } = data.seap.search.records;
     expect(count).toBe(4);
@@ -815,7 +840,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // counted: DA 1,350,599 + 2,000,000 + 5,000,000 + 50,000,000; contracts 5,000,000 + 2,500,000 + 700,000 + 300,000 + 500,000 + 1,000 + 2,000;
     // mega 2 bn + 3 bn + 4 bn + 70 bn. Left out: 4 suspect DA + 3 suspect mega contracts; no value: 2 DA + the blank ceiling; ceilings 10M + 6M + 4M.
     expect((r.body.data as MainScreenQuery).seap.search.total).toEqual({
-      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false,
+      awarded: bani(58_350_599n + 9_003_000n + 79_000_000_000n), records: 29, suspectLeftOut: 7, noValue: 3, frameworkCeilings: bani(20_000_000), estimated: false, partyCoverage: null,
     });
   });
 
@@ -1398,6 +1423,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       const b = canonicalFilter({ q: "santier", badges: ["CUI_MISMATCH", "NO_VALUE"], procedure: ["a", "b"], countySide: "AUTHORITY", channel: null });
       expect(a).toBe(b);
       expect(canonicalFilter({ hasSignals: false })).not.toBe(canonicalFilter({}));
+      expect(canonicalFilter({ party: "PARTIDUL SOCIAL DEMOCRAT" })).not.toBe(canonicalFilter({})); // a Party-filtered answer is never served for the unfiltered key (#181)
       expect(canonicalFilter({ q: "srl" })).toBe(canonicalFilter({}));
     });
 
@@ -1411,14 +1437,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(cache.stats()).toMatchObject({ hits: 0, flushes: 0 });
       const misses = cache.stats().misses;
       expect(await answer(api, { q: "santier srl" })).toEqual(first); // the same normalised filter: all hits
-      expect(cache.stats()).toMatchObject({ misses, hits: 8 }); // total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
+      expect(cache.stats()).toMatchObject({ misses, hits: 9 }); // the lists of the Party chip are one more cached read per answer (#181); total, two tabs, Records, the map, the Go-to lookup (keyed by the folded query), and each tab's Signal counts (#104)
 
       const report = await cache.warm();
       expect(report).toMatchObject({ failed: 0 });
       expect(report.prefixes).toBeGreaterThan(20);
       const before = cache.stats();
       const de = await answer(api, { q: "De" }); // a 2-character prefix with no chips: already cached
-      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 8 });
+      expect(cache.stats()).toMatchObject({ misses: before.misses, hits: before.hits + 9 });
       expect(de.total.records).toBeGreaterThan(0);
       const empty = await answer(api, {});
       expect(empty.total.records).toBe(13);
@@ -2303,6 +2329,8 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         { slug: "FRAMEWORK_OVERRUN", window: { from: "2023-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-02-01" },
         // the backfill reaches 2021; only the hospital had a no-publication award in 2023 (the commune's is in 2024)
         { slug: "NO_PUBLICATION", window: { from: "2021-01-01", to: null }, baseRate: 1 / 3, baseRateYear: 2023, dataThrough: "2024-02-01" },
+        // after-strike-off (#184) reads ANAF's answers, which every load has: no supplier here was struck off, so it is shown with a rate of 0 (the five other ONRC and statement rules read ONRC or MF, not loaded here: no row)
+        { slug: "AFTER_STRIKE_OFF", window: { from: "2021-01-01", to: null }, baseRate: 0, baseRateYear: 2023, dataThrough: "2024-02-01" },
       ]);
     });
 
@@ -2479,15 +2507,23 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
     const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
-    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c" } as const;
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d", party: "entity_rec_e", people: "entity_rec_f" } as const;
 
     beforeAll(async () => {
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
       cpSync(rolesArchive, join(scratch, "archive-overview"), { recursive: true });
       cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
+      cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true });
+      cpSync(onrcPeopleArchive, join(scratch, "archive-onrc-people"), { recursive: true });
+      cpSync(amepipArchive, join(scratch, "archive-overview"), { recursive: true }); // AMEPIP's list: a Reference source beside the roles world's SEAP units (#183)
+      cpSync(financialsArchive, join(scratch, "archive-overview"), { recursive: true }); // MF's annual financial statements: another Reference source (#179)
+      cpSync(banipartideArchive, join(scratch, "archive-overview"), { recursive: true }); // BaniPartide's firm donors and lenders: another Reference source (#182)
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
+      rebuild(DBS.onrc, "archive-onrc");
+      rebuild(DBS.people, "archive-onrc-people");
+      partyRebuild(DBS.party);
       rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-entity-recorded")]);
     });
 
@@ -2511,8 +2547,127 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
     });
 
+    it("shows the Leadership list of a town hall: a party switch is two mandates, the handover window is a gap, the party is as registered (#180)", () => {
+      const mandate = (leaderName: string, list: string, election: string, start: string, end: string | null, extra: object = {}) => ({
+        leaderName, list, independent: false, memberParties: [], electionDate: election, basis: "FINAL_MINUTES", dataThrough: election, startDate: start, endDate: end, ...extra,
+      });
+      const brasov = entityOf("party-town-hall")!.leadership!;
+      expect(brasov.mandates).toEqual([
+        mandate("POPESCU ION", "PARTIDUL SOCIAL DEMOCRAT", "2020-09-27", "2020-10-27", "2024-09-27"),
+        mandate("POPESCU ION", "PARTIDUL NAȚIONAL LIBERAL", "2024-06-09", "2024-10-27", null), // the same person, another list: never a "current party"
+      ]);
+      expect(brasov.gaps).toEqual([{ startDate: "2024-09-27", endDate: "2024-10-27", kind: "HANDOVER_WINDOW" }]);
+      expect(brasov.via).toBeNull();
+      // a partial election: the old mandate cut 90 days before it, an interim gap, the winner from partial counts of a one-off file with its stated date
+      const rasnov = entityOf("party-partial-election")!.leadership!;
+      expect(rasnov.mandates.map((m) => [m.list, m.startDate, m.endDate, m.basis, m.dataThrough])).toEqual([
+        ["PARTIDUL NAȚIONAL LIBERAL", "2020-10-27", "2024-09-27", "FINAL_MINUTES", "2020-09-27"],
+        ["PARTIDUL SOCIAL DEMOCRAT", "2024-10-27", "2025-09-08", "FINAL_MINUTES", "2024-06-09"],
+        ["PARTIDUL NAȚIONAL LIBERAL", "2026-01-06", null, "PARTIAL_MINUTES", "2025-12-09"],
+      ]);
+      expect(rasnov.gaps.map((g) => [g.kind, g.startDate, g.endDate])).toEqual([["HANDOVER_WINDOW", "2024-09-27", "2024-10-27"], ["INTERIM", "2025-09-08", "2026-01-06"]]);
+      // a repeat round replaces a September tie; a UAT missing from the 2024 minutes has a mandate without results: a gap, never a guess
+      const sinca = entityOf("party-repeat-round-and-no-results")!.leadership!;
+      expect(sinca.mandates.map((m) => [m.leaderName, m.basis, m.electionDate, m.startDate])).toEqual([["GHEORGHE TUDOR", "REPEAT_ROUND", "2020-10-11", "2020-11-10"]]);
+      expect(sinca.gaps.map((g) => g.kind)).toEqual(["HANDOVER_WINDOW", "NO_RESULTS"]);
+    });
+
+    it("gives a subordinate body its authority's Leadership list with the basis of the tie, and a school, a supplier and every other entity none (#180)", async () => {
+      const hospital = entityOf("party-subordinate-body")!.leadership!;
+      expect(hospital.via).toEqual({ authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 });
+      expect(hospital.mandates).toEqual(entityOf("party-town-hall")!.leadership!.mandates);
+      expect(entityOf("party-school")!.leadership).toBeNull(); // the town hall AND a ministry are its principals
+      // an alliance keeps its registered name with its member parties (no party family); an independent is "Independent" and is no party
+      expect(entityOf("party-alliance-and-independent")!.leadership!.mandates.map((m) => [m.list, m.independent, m.memberParties])).toEqual([
+        ["ALIANȚA USR PLUS", false, ["PARTIDUL USR", "PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE"]],
+        ["Independent", true, []],
+      ]);
+      expect(entityOf("party-town-hall-supplier-page")!.leadership).not.toBeNull(); // the entity-level field: the page gates it by role
+      const supplier = await ask(DBS.party, entityOverview.sha256, { key: ENTITY_KEYS.partySupplier, role: "SUPPLIER", filter: {} });
+      expect((supplier.body.data as EntityOverviewQuery).entity).toMatchObject({ key: "2000007", leadership: null }); // a supplier never has a Party
+      for (const name of ["authority", "supplier", "name-only-supplier", "both-roles-authority-page", "onrc-supplier"]) expect(entityOf(name)!.leadership, name).toBeNull();
+    });
+
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
       expectDistinctVariables(RECORDED_ENTITY_CASES);
+    });
+
+    it("lists ONRC as a harvested Source with its data-through date once a snapshot is held (#175)", async () => {
+      const r = await ask(DBS.onrc, mainScreen.sha256);
+      expect(r.body.errors).toBeUndefined();
+      const sources = (r.body.data as MainScreenQuery).sources;
+      expect(sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
+      expect(sources.map((x) => x.id)).toEqual(["SEAP", "ONRC", "ANI", "MFINANTE", "JUST"]); // held first, then the planned ones: ONRC once
+    });
+
+    it("states AEP's one-off file's data-through date for the methodology page once held (#180)", async () => {
+      const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
+      const held = await ask(DBS.party, op.sha256, {});
+      expect((held.body.data as { referenceSources: { id: string; dataThrough: string | null }[] }).referenceSources.find((r) => r.id === "AEP")!.dataThrough).toBe("2025-12-09");
+    });
+
+    it("returns the ONRC section for a SEAP supplier, an authority and an organisation that exists only in ONRC (#175)", () => {
+      const onrc = (name: string) => entityOf(name)!.onrc!;
+      const status = (code: number, name: string, firstSeen: string, sinceAtLeast: boolean) => ({ code, name, firstSeen, sinceAtLeast });
+      // a supplier: the status already in the earliest snapshot is "since at least"; the insolvency is first seen in the snapshot that shows it
+      expect(onrc("onrc-supplier")).toMatchObject({
+        registrationNumber: "J40/1001/2015", registrationDate: "2015-03-10", legalForm: "SRL", snapshot: "2026-05-06",
+        statuses: [status(1048, "funcțiune", "2025-03-18", true), status(1107, "insolvență", "2026-04-03", false)],
+        caen: [{ code: "4120", version: 2 }, { code: "4211", version: 2 }],
+        seat: { county: "Cluj", locality: "Cluj-Napoca" },
+        provenance: { source: "ONRC", kind: "BULK", url: "https://data.gov.ro/dataset/firme-06-05-2026", via: "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026" },
+      });
+      expect(entityOf("onrc-supplier")).toMatchObject({ displayName: "ALFA ONRC SRL", provenance: [{ source: "ANAF" }], seap: { roles: ["SUPPLIER"] } });
+      // an authority
+      expect(onrc("onrc-authority")).toMatchObject({ registrationNumber: "J03/1006/1995", registrationDate: "1995-02-02", caen: [{ code: "8411", version: 2 }] });
+      expect(entityOf("onrc-authority")!.seap.role).toMatchObject({ role: "AUTHORITY", total: { records: 5 } });
+      // an entity that is both: the same section on each role page
+      expect(entityOf("onrc-both-roles-authority-page")!.seap.roles).toEqual(["AUTHORITY", "SUPPLIER"]);
+      expect(onrc("onrc-both-roles-supplier-page")).toEqual(onrc("onrc-both-roles-authority-page"));
+      expect(onrc("onrc-both-roles-supplier-page").registrationNumber).toBe("J40/1005/2008");
+      // a rename is two dated aliases, newest first; ONRC's names never change the display name (ANAF's)
+      expect(entityOf("onrc-renamed-supplier")).toMatchObject({ displayName: "BETA ONRC SRL", provenance: [{ source: "ANAF" }] });
+      expect(onrc("onrc-renamed-supplier").aliases).toEqual([
+        { name: "BETA NOU SRL", firstSeen: "2026-04-03", lastSeen: "2026-05-06", sinceAtLeast: false, current: true },
+        { name: "BETA VECHI SRL", firstSeen: "2025-03-18", lastSeen: "2026-03-02", sinceAtLeast: true, current: false },
+      ]);
+      // a strike-off: first seen in the newest snapshot, the earlier status is no longer current
+      expect(onrc("onrc-struck-off-supplier").statuses).toEqual([status(1084, "radiată", "2026-05-06", false)]);
+      // a CUI ANAF does not know but ONRC lists: provenance ONRC (the badge), ONRC's name as the display name, placed by ONRC's seat county; its SEAP Record attached
+      expect(entityOf("onrc-cui-unknown-to-anaf")).toMatchObject({
+        key: "3100055", identity: "CUI", cui: "3100055", displayName: "DELTA ONRC SRL", anafStatus: null,
+        provenance: [{ source: "ONRC", via: "2026-05-06", kind: "BULK" }], placement: { county: { code: "RO-BV" }, uat: null, placedBy: "ONRC" },
+        seap: { roles: ["SUPPLIER"], role: { total: { records: 1 } } },
+      });
+      expect(onrc("onrc-cui-unknown-to-anaf").statuses).toEqual([status(1048, "funcțiune", "2026-03-02", false)]); // registered after the earliest snapshot: first seen where it appears
+      // an organisation that exists only in ONRC: an entity page with its ONRC section, no SEAP role, placed by its seat county, no person anywhere
+      expect(entityOf("onrc-only-organisation")).toMatchObject({
+        key: "3100071", displayName: "OMEGA ONLY SRL", provenance: [{ source: "ONRC" }], placement: { county: { code: "RO-CJ" }, uat: null, placedBy: "ONRC" },
+        seap: { roles: [], role: null }, onrc: { registrationNumber: "J12/1007/2020", statuses: [status(1048, "funcțiune", "2025-03-18", true)] },
+      });
+      expect(Object.keys(onrc("onrc-only-organisation")).sort()).toEqual(["aliases", "caen", "legalForm", "provenance", "registrationDate", "registrationNumber", "seat", "snapshot", "statuses"]);
+      // no county in the registration: no placement, the Unplaced tile
+      expect(entityOf("onrc-only-unplaced")).toMatchObject({ key: "3100080", placement: null, onrc: { seat: { county: null } } });
+    });
+
+    it("names the administrators of SEAP counterparties only, with birth year and basis; never a possible match, a birthplace, a sole trader's or an IF's holder, or a person link in the public view (#177)", () => {
+      const people = (name: string) => (entityOf(name) as { people: { holders: { name: string; role: string; birthYear: number | null; person: unknown }[]; snapshot: string; provenance: { source: string; url: string | null } } | null }).people;
+      const listed = (name: string) => people(name)!.holders.map((h) => [h.name, h.role, h.birthYear]);
+      // ALFA: two administrators (the legal representative RADU GHEORGHE is a possible match with DELTA's: left out), the basis is the newest snapshot that carries the people files
+      expect(listed("people-supplier")).toEqual([["IONESCU MARIA", "administrator", 1980], ["POPESCU ION", "administrator", 1975]]);
+      expect(people("people-supplier")).toMatchObject({ snapshot: "2026-05-06", provenance: { source: "ONRC", url: "https://data.gov.ro/dataset/firme-06-05-2026" } });
+      // the same person (word order differs) is listed on the other company too; a legal person with no birth date is an unlinked role holder, last
+      expect(listed("people-same-person-other-company")).toEqual([["ION POPESCU", "administrator", 1975], ["TOMA GHEORGHE", "administrator", 1965], ["SC SERVICII EXEMPLU SRL", "reprezentant al persoanei juridice", null]]);
+      expect(listed("people-namesake")).toEqual([["POPESCU ION", "administrator", 1962]]); // same name, another birth date: another person
+      expect(listed("people-unlinked-holder")).toEqual([["NEGRU TUDOR", "administrator", null]]); // an unlinked role holder; the possible match is not here
+      // organisation only in ONRC: its people are not named at all; a PFA's holder is the registration; an IF's members are not on the public page
+      expect(people("people-only-in-onrc")).toBeNull();
+      expect(listed("people-pfa-supplier")).toEqual([]);
+      expect(listed("people-if-supplier")).toEqual([]);
+      const everyHolder = RECORDED_ENTITY_CASES.filter((c) => c.archive === "people").flatMap((c) => people(c.name)?.holders ?? []);
+      expect(everyHolder.every((h) => h.person === null)).toBe(true); // Restricted: no person link while the switch is off
+      const text = JSON.stringify([...answers.values()].filter((a) => a.name.startsWith("people-")));
+      for (const never of ["RADU GHEORGHE", "Bihor", "Oradea", "BISTRA", "1975-03-12", "TOMA ELENA"]) expect(text, never).not.toContain(never);
     });
 
     it("gives the cases the numbers they are named for", () => {
@@ -2562,6 +2717,184 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
       expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
+    });
+
+    it("flags the entities whose CUI appears in AMEPIP's tables, with the basis, and no other (#183)", async () => {
+      const basis = {
+        listedAs: "ALFA DEMO SRL", registrationNumber: "J40/1/2005", status: "funcţiune", firstYear: 2022, lastYear: 2023, snapshot: "2026-01-13",
+        url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo", via: "Date financiare si non-financiare", license: "CC-BY-4.0", fetchedAt: "2026-11-14T09:00:00Z",
+      };
+      // 2000007 is `RO 2000007` in the list, under another spelling of its name: the newest year's spelling, matched by CUI
+      expect(entityOf("supplier")!.publicEnterprise).toEqual(basis);
+      // the entity with both roles carries the same mark on each of its role pages; AMEPIP's own status wording is kept as published
+      const cnair = { ...basis, listedAs: "CNAIR DEMO S.A.", registrationNumber: "J40/2/2005", status: "este sub incidenţa Legii nr. 85/2014, insolvenţă", firstYear: 2023 };
+      expect(entityOf("both-roles-authority-page")!.publicEnterprise).toEqual(cnair);
+      expect(entityOf("both-roles-supplier-page")!.publicEnterprise).toEqual(cnair);
+      // everything else is unmarked: authorities, a supplier of the same world that is not on the list, name-only suppliers (no CUI), an unknown key
+      for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.publicEnterprise, name).toBeNull();
+      const beta = await ask(DBS.overview, entityOverview.sha256, { key: "2000015", role: "SUPPLIER", filter: {} });
+      expect((beta.body.data as EntityOverviewQuery).entity).toMatchObject({ key: "2000015", publicEnterprise: null });
+      // the list names two CUIs no Record has: they flag nobody (no entity of theirs exists)
+      const unlisted = await ask(DBS.overview, entityOverview.sha256, { key: "4300011", role: "SUPPLIER", filter: {} });
+      expect((unlisted.body.data as EntityOverviewQuery).entity).toBeNull();
+    });
+
+    it("serves each Reference source's data-through date through the persisted MethodologyReferenceSources, and none for a graph built without them (#183, #179)", async () => {
+      const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
+      const held = await ask(DBS.overview, op.sha256, {});
+      expect(held.body.errors).toBeUndefined();
+      expect(held.body.data).toEqual({ referenceSources: [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", fiscalYear: null, url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" },
+        { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: "2025-12-31", fiscalYear: 2025, url: "https://data.gov.ro/organization/mfp" }, // the latest fiscal year held
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: "2024-12-31", fiscalYear: 2024, url: "https://www.banipartide.ro/donatori-persoane-juridice.html" }, // the newest year any firm row is filed under (#182)
+      ] });
+      expect(validateResponse(schema, parse(op.document), held.body.data, {})).toEqual([]);
+      const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds neither
+      expect(none.body.data).toEqual({ referenceSources: [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: null, fiscalYear: null, url: null },
+        { id: "AEP", name: "AEP", dataThrough: null, fiscalYear: null, url: null },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: null, fiscalYear: null, url: null },
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: null, fiscalYear: null, url: null },
+      ] });
+    });
+
+    describe("MF's financial statements on the entity page (#179)", () => {
+      const RON = (n: number) => String(n * 100);
+      const awardedIn = async (key: string, year: number) => {
+        const r = await ask(DBS.overview, entityOverview.sha256, { key, role: "SUPPLIER", filter: { from: `${year}-01-01`, to: `${year}-12-31` } });
+        expect(r.body.errors).toBeUndefined();
+        return ((r.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded;
+      };
+      const yearsOf = (name: string) => entityOf(name)!.financials!.years;
+
+      it("returns one row per fiscal year, newest first, with the revision, a blank count as null and a reported zero as 0", () => {
+        const years = yearsOf("supplier"); // ALFA DEMO SRL
+        expect(years.map((y) => [y.fiscalYear, y.revision, y.mayBeRevised, y.averageEmployees])).toEqual([
+          [2025, "FIRST_RELEASE", true, null], // the newest year MF holds: a first release that may be revised; blank employees
+          [2024, "FIRST_RELEASE", false, 0], // a revised file exists for 2024 but does not hold ALFA: still a first release, and not "may be revised"; a reported zero
+          [2023, "REVISED", false, 41], // the `actualizat` file's row, not the first release's (11M turnover, 40 employees)
+          [2022, "FIRST_RELEASE", false, null], // blank employees: "not reported", never zero
+        ]);
+        expect(years.map((y) => [y.turnover, y.profitOrLoss, y.debts, y.equity])).toEqual([
+          ["3000000000", "90000000", null, "300000000"], // blank debts stay null
+          ["2000000000", "100000000", "300000000", "250000000"],
+          ["1200000000", "-15000000", "210000000", "135000000"], // a loss is negative bani
+          ["400000000", "20000000", "100000000", "90000000"],
+        ]);
+      });
+
+      it("cites MF and the file each year's figures come from", () => {
+        const [y2025, , y2023] = yearsOf("supplier");
+        expect(y2023!.source).toEqual({
+          file: "web_bl_bs_sl_an2023.txt", datasetUrl: "https://data.gov.ro/dataset/situatii_financiare2023", via: "Situații financiare 2023", license: "CC-BY-4.0",
+          fileUrl: "https://data.gov.ro/dataset/ds/resource/r2023bl-rev/download/web_bl_bs_sl_an2023.txt", published: "2025-07-27", fetchedAt: "2026-11-14T09:00:00Z",
+        });
+        expect(y2025!.source).toMatchObject({ file: "web_bl_bs_sl_an2025.txt", published: "2026-06-11", datasetUrl: "https://data.gov.ro/dataset/situatii_financiare_2025" });
+      });
+
+      it("serves awards as a share of turnover per year as context: the year's awarded value (the page's own counting rule) over the year's turnover", async () => {
+        const years = yearsOf("supplier");
+        for (const y of years) expect(y.awardedInYear, String(y.fiscalYear)).toBe(await awardedIn("2000007", y.fiscalYear)); // the same number every Total shows for that calendar year
+        expect(years.map((y) => y.awardedInYear)).toEqual(["0", RON(25_000), RON(5_890_000), "0"]); // 2023's 5,890,000 RON counted, 2024's one 25,000 RON direct award
+        expect(years.map((y) => y.awardShareOfTurnover)).toEqual([0, 25_000 / 20_000_000, 5_890_000 / 12_000_000, 0]);
+        // the awarded value of the whole page is untouched by the financials (ADR 0014): the Total still sums awards only
+        const all = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        expect(((all.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded).toBe(RON(5_915_000));
+        // both roles: CNAIR's statement is the same on each page; its awards are the supplier role's
+        expect(entityOf("both-roles-supplier-page")!.financials).toEqual(entityOf("both-roles-authority-page")!.financials);
+        const [cnair] = yearsOf("both-roles-supplier-page");
+        expect([cnair!.fiscalYear, cnair!.revision, cnair!.averageEmployees, cnair!.awardedInYear]).toEqual([2023, "FIRST_RELEASE", 3000, RON(2_020_000)]);
+        expect(cnair!.mayBeRevised).toBe(false); // not the newest year MF holds
+        expect(cnair!.awardShareOfTurnover).toBeCloseTo(2_020_000 / 100_000_000, 12);
+      });
+
+      it("has no share when the turnover is blank or zero, and no statements for an entity MF does not list", async () => {
+        const beta = await ask(DBS.overview, entityOverview.sha256, { key: "2000015", role: "SUPPLIER", filter: {} });
+        const years = (beta.body.data as EntityOverviewQuery).entity!.financials!.years;
+        expect(years.map((y) => [y.fiscalYear, y.revision, y.turnover, y.awardShareOfTurnover])).toEqual([[2025, "FIRST_RELEASE", null, null], [2024, "REVISED", "800000000", expect.any(Number)]]); // 2025 is a UU-file row with a blank turnover
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect((gamma.body.data as EntityOverviewQuery).entity!.financials!.years[0]).toMatchObject({ fiscalYear: 2023, turnover: "0", awardShareOfTurnover: null, averageEmployees: 1 });
+        for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.financials, name).toBeNull();
+      });
+
+      it("serves a negative turnover or debts cell as it is (MF's files are not validated), with no share, and the Overview still answers", async () => {
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect(gamma.body.errors).toBeUndefined();
+        const years = (gamma.body.data as EntityOverviewQuery).entity!.financials!.years;
+        expect(years.map((y) => [y.fiscalYear, y.turnover, y.debts, y.awardShareOfTurnover])).toEqual([[2023, "0", "1000000", null], [2022, "-25000000", "-100000", null]]);
+      });
+
+      it("reads one entity's awards per year through an index of seap.rollup_entity, not a scan of every supplier row", async () => {
+        const db = new pg.Pool({ connectionString: `${baseUrl}/${DBS.overview}`, max: 1 });
+        pools.push(db);
+        const client = await db.connect();
+        try {
+          await client.query("SET enable_seqscan = off"); // the fixture's tables are tiny: ask whether the index CAN serve the query shape the page uses
+          const plan = (await client.query<{ "QUERY PLAN": string }>(
+            "EXPLAIN SELECT award_year, sum(awarded) FROM seap.rollup_entity WHERE side = 'SUPPLIER' AND entity_key = $1 GROUP BY award_year".replace("$1", "'2000007'"),
+          )).rows.map((r) => r["QUERY PLAN"]).join("\n");
+          expect(plan).toContain("rollup_entity_key_idx");
+        } finally {
+          client.release();
+        }
+      });
+    });
+
+    describe("BaniPartide's firm donations on the entity page (#182)", () => {
+      const RON = (n: number) => String(n * 100);
+      const donationsOf = (name: string) => entityOf(name)!.donations!;
+      const source = {
+        datasetUrl: "https://www.banipartide.ro/donatori-persoane-juridice.html", license: "CC Attribution 4.0 License", licenseUrl: "http://creativecommons.org/licenses/by/4.0/",
+        publisher: "Expert Forum", publisherUrl: "https://expertforum.ro/tag/finantare-politica/", underlyingUrl: "https://www.banipartide.ro/metodologie.html", fetchedAt: "2026-11-14T09:00:00Z",
+      };
+
+      it("lists a supplier's donation and loan newest first with the party as published, the date only where one is readable, and the citation", () => {
+        const d = donationsOf("supplier"); // ALFA DEMO SRL: a supplier that is also a firm donor
+        expect(entityOf("supplier")!.seap.role).not.toBeNull(); // the supplier page carries the donor context beside its awards
+        expect([d.dataThroughYear, d.donationCount, d.loanCount]).toEqual([2024, 1, 1]);
+        expect(d.items).toEqual([
+          { kind: "LOAN", party: "PSD", year: 2024, date: null, dateText: "20.01.2024; 15.05.2024", amount: "25000050", sourceRow: 2 }, // the cell lists two dates: none is claimed
+          { kind: "DONATION", party: "PNL", year: 2023, date: "2023-03-15", dateText: "15.03.2023", amount: RON(50_000), sourceRow: 1 },
+        ]);
+        expect(d.source).toEqual(source);
+      });
+
+      it("serves the same donations on both role pages of an entity with both roles, the party exactly as published", () => {
+        expect(entityOf("both-roles-authority-page")!.donations).toEqual(entityOf("both-roles-supplier-page")!.donations);
+        expect(donationsOf("both-roles-supplier-page").items).toEqual([{ kind: "DONATION", party: "PSD+PC", year: 2021, date: "2021-06-09", dateText: "9 iunie 2021", amount: RON(12_000), sourceRow: 4 }]);
+        expect(entityOf("supplier-financials-blank-turnover")!.donations!.items).toEqual([{ kind: "DONATION", party: "USR", year: 2022, date: "2022-10-04", dateText: "4102022", amount: "800536", sourceRow: 3 }]);
+      });
+
+      it("is context, never summed: the page's Total still counts awards only, and nothing else of the page changes", async () => {
+        const all = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        expect(((all.body.data as EntityOverviewQuery).entity!.seap.role!).total.awarded).toBe(RON(5_915_000)); // the donation and the loan add nothing
+        expect(Object.keys((all.body.data as EntityOverviewQuery).entity!.donations!).sort()).toEqual(["donationCount", "items", "loanCount", "dataThroughYear", "source"].sort()); // no Signal, no sum, no Party
+      });
+
+      it("has no donations for an entity BaniPartide does not list, and none can be reached for a donor with no entity", async () => {
+        for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.donations, name).toBeNull();
+        const orphan = await ask(DBS.overview, entityOverview.sha256, { key: "5443785", role: "SUPPLIER", filter: {} }); // a valid CUI in the table that no Record or register names
+        expect((orphan.body.data as EntityOverviewQuery).entity).toBeNull();
+        const gamma = await ask(DBS.overview, entityOverview.sha256, { key: "2000023", role: "SUPPLIER", filter: {} });
+        expect((gamma.body.data as EntityOverviewQuery).entity!.donations).toBeNull();
+      });
+
+      it("never serves an individual donor's name, or a company representative's, anywhere in an API response or a table of the graph (ADR 0009)", async () => {
+        const needles = ["ZAMFIR", "POPA ELENA", "Reprezentant Fictiv", "1,85E+12"];
+        const everything = JSON.stringify([...answers.values()]);
+        const rows = await ask(DBS.overview, entityOverview.sha256, { key: "2000007", role: "SUPPLIER", filter: {} });
+        for (const n of needles) expect(everything + JSON.stringify(rows.body), n).not.toContain(n);
+        const db = new pg.Pool({ connectionString: `${baseUrl}/${DBS.overview}`, max: 1 });
+        pools.push(db);
+        const tables = (await db.query(`SELECT table_schema AS s, table_name AS t FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_type = 'BASE TABLE'`)).rows;
+        expect(tables.some((t) => t.s === "donations")).toBe(true);
+        for (const { s, t } of tables) {
+          const dump = ((await db.query(`SELECT string_agg(x::text, ' ') AS d FROM "${s}"."${t}" x`)).rows[0].d as string | null) ?? "";
+          for (const n of needles) expect(dump, `${s}.${t} ${n}`).not.toContain(n);
+        }
+        expect((await db.query(`SELECT count(*)::int AS n FROM donations.donation`)).rows[0].n).toBe(5); // the three non-firm rows and two unreadable ones were dropped at the read
+      });
     });
   });
 
@@ -3045,6 +3378,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       crawl: { db: "record_crawl", dir: "archive-crawl", extra: [] as string[] },
       signals: { db: "record_signals", dir: "archive-signals", extra: [] as string[] },
       splitting: { db: "record_splitting", dir: "archive-splitting", extra: [] as string[] },
+      party: { db: "record_party", dir: "archive-party", get extra() { return ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-record-party"), "--today", "2026-11-20", "--known-gaps", mfGaps]; } },  // scratch is set in beforeAll
     };
 
     beforeAll(async () => {
@@ -3120,6 +3454,19 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(recordOf("crawled-provisional")).toMatchObject({ badges: ["CRAWLED_PROVISIONAL"], provenance: { kind: "CRAWL", url: "https://e-licitatie.ro/pub/notices/ca-notices/view-c/92000013", fetchedAt: "2026-11-12T09:00:00Z" } });
       expect(recordOf("crawled-request-for-quotation").provenance.url).toBe("https://e-licitatie.ro/pub/notices/ca-notices/view-rfq/92000014");
       expect(recordOf("bulk-over-crawl")).toMatchObject({ badges: [], provenance: { kind: "BULK", via: "Contracte 2026 - T1" } });
+      // Party (#180): the mandate in force on the award date at the authority; a gap or a school has none; never on a winner, never the leader's name
+      const listOf = (name: string) => recordOf(name).party;
+      expect(listOf("party-direct")).toEqual({ list: "PARTIDUL NAȚIONAL LIBERAL", independent: false, memberParties: [], electionDate: "2024-06-09", basis: "FINAL_MINUTES", dataThrough: "2024-06-09", via: null });
+      expect(listOf("party-independent")).toMatchObject({ list: "Independent", independent: true, memberParties: [], via: null });
+      expect(listOf("party-subordinate-body")).toMatchObject({ list: "PARTIDUL NAȚIONAL LIBERAL", via: { authority: "51000501", authorityName: "MUNICIPIUL BRASOV", snapshotDate: "2026-12-01", snapshots: 2 } });
+      expect(listOf("party-handover-window")).toBeNull();
+      expect(listOf("party-school-two-principals")).toBeNull();
+      expect(listOf("party-contradicted-tie")).toBeNull(); // a held snapshot names another principal set: the tie is contradicted, nothing is inherited
+      for (const c of RECORDED_RECORD_CASES) {
+        const found = (answers.get(c.name)!.data as RecordPageQuery).seap.record;
+        for (const winner of found?.winners ?? []) expect(Object.keys(winner).filter((k) => /party|leadership|mandate|list/i.test(k)), `${c.name}: a winner carries no Party`).toEqual([]);
+        if (found) expect(JSON.stringify(found.party ?? null)).not.toMatch(/leaderName/); // the leader's name is only on the Leadership list
+      }
       // Signals: the Record lists its Signals with their Records and numbers
       const over = recordOf("over-cap-signal");
       expect(over.signals).toHaveLength(1);
@@ -3184,13 +3531,204 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   });
 
 
-  describe("recorded fixtures (#89): archive-signals, archive-splitting, archive-framework-overrun -> rebuild -> Signals on every screen", () => {
+  describe("ONRC and financial-statement Signals (#184): archive-onrc-signals -> rebuild -> the six rules at their positive, boundary and negative cases", () => {
+    // The world of watchdog/tests/fixtures/build_onrc_signals_archive.py (its docstring lists every case); each supplier is one case, named by its label.
+    const A1 = "3200011";
+    const A2 = "3200020";
+    const SUP = {
+      YF_FIRST_EARLY: "3201017", YF_FIRST_90: "3201025", YF_FIRST_91: "3201033", YF_LARGE_180: "3201041", YF_LARGE_181: "3201050", YF_UNDER_1M: "3201068", YF_BEFORE: "3201076", OLD_FIRM: "3201084",
+      NC_NONE_1M: "3201092", NC_UNDER: "3201106", NC_REV2: "3201114", NC_REV3: "3201122", NC_REV2_DIV45: "3201130", NC_REV1_45: "3201149", NC_SUPPLIES: "3201157", NC_UNKNOWN: "3201165",
+      SO_STRUCK: "3201173", SO_ONRC_ONLY: "3201181", SO_NO_DATE: "3201190",
+      IN_FIRST_APR: "3201203", IN_SINCE_AT_LEAST: "3201211", IN_FORMER: "3201220", IN_DISSOLVED: "3201238", IN_REORG: "3201246",
+      FE_BOUNDARY: "3201254", FE_UNDER: "3201262", FE_TWO: "3201270", FE_BLANK: "3201289", FE_SUMMED: "3201297", FE_OTHER_YEAR: "3201300",
+      NF_EXACT: "3201319", NF_UNDER: "3201327", NF_SA: "3201335", NF_PRIOR_ONLY: "3201343", NF_YEAR_ONLY: "3201351", NF_OTHER_FORM: "3201360", NF_NEWEST_YEAR: "3201378", NF_FIRST_YEAR: "3201386", NF_NOT_ONRC: "3201394",
+    } as const;
+    const LABEL = Object.fromEntries(Object.entries(SUP).map(([label, key]) => [key, label]));
+    const RULES = ["YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT"] as const;
+    type Repro = { authority: string | null; supplier: string | null; signal: string | null; cpv: string | null; from: string | null; to: string | null };
+    type Sig = { rule: string; date: string; firstDate: string; recordCount: number; authority: { key: string }; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Repro };
+    const DB = { main: "onrc_signals_a", revised: "onrc_signals_b" } as const;
+    const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+
+    beforeAll(() => {
+      const out = rebuild(DB.main, "archive-onrc-signals");
+      expect(out).toContain("YOUNG_FIRM 4, NO_CONSTRUCTION_CAEN 2, AFTER_STRIKE_OFF 2, INSOLVENCY 4, FEW_EMPLOYEES 3, NO_FINANCIAL_STATEMENT 2"); // the six rules' Signals of this load
+      rebuild(DB.revised, "archive-onrc-signals-revised");
+    });
+
+    const op = async (db: string, o: { sha256: string; document: string; name: string }, variables: Record<string, unknown>) => {
+      const r = await ask(db, o.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(o.document), r.body.data, variables)).toEqual([]);
+      return r.body.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const rolePage = async (key: string, role: string, rule?: string, db: string = DB.main) =>
+      (await op(db, entityOverview, { key, role, filter: rule ? { signal: rule } : {}, signalOrder: "DATE_DESC", signalOffset: 0 })).entity.seap.role.signals as { count: number; rows: Sig[] };
+    /** A Signal as (authority, date, supplier labels): what each case is asserted by. */
+    const brief = (s: Sig) => [s.authority.key, s.date, s.suppliers.map((x) => LABEL[x.key] ?? x.key).sort().join("+")] as const;
+    const ofRule = async (rule: string, db: string = DB.main) => {
+      const rows = [...(await rolePage(A1, "AUTHORITY", rule, db)).rows, ...(await rolePage(A2, "AUTHORITY", rule, db)).rows];
+      return rows.sort((a, b) => a.date.localeCompare(b.date) || a.authority.key.localeCompare(b.authority.key));
+    };
+    const doc = (db: string, source: string, variableValues: Record<string, unknown> = {}) => {
+      const pool = pools.find((p) => (p.options as { connectionString?: string }).connectionString === `${baseUrl}/${db}`)!;
+      return graphql({ schema, source, rootValue: rootValue(postgresStore(pool)), variableValues }).then((r) => {
+        expect(r.errors).toBeUndefined();
+        return r.data as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+    };
+    const RON = (n: number) => String(Math.round(n * 100));
+
+    it("young firm: a first Record within 90 days or one of 1M RON within 180 days; the day after each, 999,999.99 RON, a Record before registering and later Records are not", async () => {
+      const found = await ofRule("YOUNG_FIRM");
+      expect(found.map(brief)).toEqual([
+        [A1, "2025-03-11", "YF_FIRST_EARLY"], // day 10: the supplier's first Record
+        [A1, "2025-05-30", "YF_FIRST_90"],    // boundary: day 90
+        [A2, "2025-05-30", "YF_FIRST_90"],    // the same supplier's other Record of its first day: also a first Record
+        [A2, "2025-08-28", "YF_LARGE_180"],   // boundary: exactly 1,000,000 RON on day 180 (its first Record, on day 100, is no Signal)
+      ]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "YoungFirmNumbers", days: 10, registered: "2025-03-01", counted: RON(50_000) },
+        { __typename: "YoungFirmNumbers", days: 90, registered: "2025-03-01", counted: RON(30_000) },
+        { __typename: "YoungFirmNumbers", days: 90, registered: "2025-03-01", counted: RON(30_000) },
+        { __typename: "YoungFirmNumbers", days: 180, registered: "2025-03-01", counted: RON(1_000_000) },
+      ]);
+      for (const label of ["YF_FIRST_91", "YF_LARGE_181", "YF_UNDER_1M", "YF_BEFORE", "OLD_FIRM"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "YOUNG_FIRM")).count, label).toBe(0);
+    });
+
+    it("young firm: a later Record within 90 days of registering is context, never a Signal on its own (the 'any record within 90 days' item)", async () => {
+      // YF_FIRST_EARLY's second Record (day 80, 2025-05-20) is in the supplier's Records and in no Signal; its first Record (day 10) is
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 10, offset: 0, order: DATE_DESC) { rows { record { code date signals { rule } } } } } } }`;
+      const rows = (await doc(DB.main, search, { f: { supplier: SUP.YF_FIRST_EARLY } })).seap.search.records.rows as { record: { date: string; signals: { rule: string }[] } }[];
+      expect(rows.map((r) => [r.record.date, r.record.signals.map((s) => s.rule)])).toEqual([["2025-05-20", []], ["2025-03-11", ["YOUNG_FIRM"]]]);
+    });
+
+    it("works without a construction CAEN: exactly 1M RON in; 999,999.99, a Rev.2/Rev.3/Rev.1 construction code, supplies and unknown codes are not; Rev.2 division 45 is not construction", async () => {
+      const found = await ofRule("NO_CONSTRUCTION_CAEN");
+      expect(found.map(brief)).toEqual([[A1, "2025-04-10", "NC_NONE_1M"], [A1, "2025-04-14", "NC_REV2_DIV45"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "NoConstructionCaenNumbers", value: RON(1_000_000), authorisedCodes: 1 },
+        { __typename: "NoConstructionCaenNumbers", value: RON(2_000_000), authorisedCodes: 1 },
+      ]);
+      for (const label of ["NC_UNDER", "NC_REV2", "NC_REV3", "NC_REV1_45", "NC_SUPPLIES", "NC_UNKNOWN"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "NO_CONSTRUCTION_CAEN")).count, label).toBe(0);
+    });
+
+    it("record after strike-off: the day after ANAF's strike-off and later are in; the day before, the day itself, ONRC's undated status and a bare RADIERE are not", async () => {
+      const found = await ofRule("AFTER_STRIKE_OFF");
+      expect(found.map(brief)).toEqual([[A1, "2025-03-16", "SO_STRUCK"], [A2, "2025-06-01", "SO_STRUCK"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "AfterStrikeOffNumbers", struckOff: "2025-03-15", daysAfter: 1 },
+        { __typename: "AfterStrikeOffNumbers", struckOff: "2025-03-15", daysAfter: 78 },
+      ]);
+      expect((await rolePage(SUP.SO_STRUCK, "SUPPLIER", "AFTER_STRIKE_OFF")).count).toBe(2);
+      for (const label of ["SO_ONRC_ONLY", "SO_NO_DATE"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "AFTER_STRIKE_OFF")).count, label).toBe(0);
+    });
+
+    it("insolvency: the status is read by name, undated (first seen in a snapshot) and looked at over the 6 months to the newest snapshot (2026-05-06); former, dissolved and later Records are not", async () => {
+      const found = await ofRule("INSOLVENCY");
+      expect(found.map(brief)).toEqual([
+        [A1, "2025-11-06", "IN_FIRST_APR"],        // boundary: exactly 6 months before the snapshot (2025-11-05 is out)
+        [A1, "2026-01-15", "IN_SINCE_AT_LEAST"],
+        [A2, "2026-02-10", "IN_REORG"],            // "reorganizare judiciara": told by the name, not by a code
+        [A1, "2026-05-06", "IN_FIRST_APR"],        // the snapshot day itself (2026-05-07 is after it)
+      ]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2026-04-03", sinceAtLeast: false },
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2025-03-18", sinceAtLeast: true }, // shown by the earliest snapshot held: "at least since"
+        { __typename: "InsolvencyNumbers", status: "reorganizare judiciară", firstSeen: "2026-05-06", sinceAtLeast: false },
+        { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2026-04-03", sinceAtLeast: false },
+      ]);
+      for (const label of ["IN_FORMER", "IN_DISSOLVED"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "INSOLVENCY")).count, label).toBe(0);
+    });
+
+    it("at most one employee: exactly 5M RON with the revised figure, and a sum over two authorities, are in; 4,999,999.99, two employees, a blank count and another year's statement are not", async () => {
+      const found = await ofRule("FEW_EMPLOYEES");
+      expect(found.map(brief)).toEqual([[A1, "2023-06-10", "FE_BOUNDARY"], [A1, "2024-02-01", "FE_SUMMED"], [A2, "2024-09-01", "FE_SUMMED"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2023, employees: 1, awarded: RON(5_000_000) }, // the first release said 4 employees, the revised one 1
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2024, employees: 0, awarded: RON(5_000_000) }, // 3M + 2M, a reported zero
+        { __typename: "FewEmployeesNumbers", fiscalYear: 2024, employees: 0, awarded: RON(5_000_000) },
+      ]);
+      expect((await rolePage(SUP.FE_SUMMED, "SUPPLIER", "FEW_EMPLOYEES")).count).toBe(2);
+      for (const label of ["FE_UNDER", "FE_TWO", "FE_BLANK", "FE_OTHER_YEAR"] as const) expect((await rolePage(SUP[label], "SUPPLIER", "FEW_EMPLOYEES")).count, label).toBe(0);
+    });
+
+    it("no financial statement: an SRL with exactly 1M RON and an SA are in; 999,999.99, a statement for Y or Y-1, another legal form, the newest fiscal year, the first year and an unlisted firm are not", async () => {
+      const found = await ofRule("NO_FINANCIAL_STATEMENT");
+      expect(found.map(brief)).toEqual([[A1, "2023-05-10", "NF_EXACT"], [A1, "2023-05-12", "NF_SA"]]);
+      expect(found.map((s) => s.numbers)).toEqual([
+        { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: RON(1_000_000), legalForm: "SRL" },
+        { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: RON(2_000_000), legalForm: "SA" },
+      ]);
+      for (const label of ["NF_UNDER", "NF_PRIOR_ONLY", "NF_YEAR_ONLY", "NF_OTHER_FORM", "NF_NEWEST_YEAR", "NF_FIRST_YEAR", "NF_NOT_ONRC"] as const)
+        expect((await rolePage(SUP[label], "SUPPLIER", "NO_FINANCIAL_STATEMENT")).count, label).toBe(0);
+    });
+
+    it("no financial statement: the newest fiscal year counts once its revised release is held (and the revised employee count replaces the first release's)", async () => {
+      expect((await ofRule("NO_FINANCIAL_STATEMENT", DB.revised)).map(brief)).toEqual([[A1, "2023-05-10", "NF_EXACT"], [A1, "2023-05-12", "NF_SA"], [A1, "2024-05-16", "NF_NEWEST_YEAR"]]);
+      expect((await ofRule("FEW_EMPLOYEES", DB.revised)).map(brief)).toEqual([[A1, "2023-06-10", "FE_BOUNDARY"]]); // FE_SUMMED's revised FY2024 figure is 5
+    });
+
+    it("each Signal is on every entity page its Records touch and on no other rule's page, counted and never scored (the authority's page and the supplier's)", async () => {
+      let checked = 0;
+      for (const rule of RULES) {
+        for (const s of await ofRule(rule)) {
+          for (const sup of s.suppliers) {
+            const page = (await rolePage(sup.key, "SUPPLIER", rule)).rows;
+            expect(page.map((x) => JSON.stringify(x.reproduce)), `${rule} ${s.date} on ${LABEL[sup.key]}`).toContain(JSON.stringify(s.reproduce));
+            checked++;
+          }
+          expect(Object.keys(s)).not.toContain("score");
+        }
+      }
+      expect(checked).toBe(17); // every Signal of the six rules (4 + 2 + 2 + 4 + 3 + 2), each with one supplier
+      expect((await rolePage(A1, "AUTHORITY")).count).toBeGreaterThan(10); // unfiltered, the authority's page carries the six rules' Signals beside the others
+    });
+
+    it("running a Signal's reproduce filter returns exactly its Records, for every Signal of the six rules", async () => {
+      const q = `query($k: ID!) { entity(key: $k) { seap { role(role: AUTHORITY) { signals(limit: 200) { rows { rule reproduce { authority supplier signal cpv from to } records(limit: 200) { code } } } } } } }`;
+      const search = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: DATE_DESC) { count rows { record { code } } } } } }`;
+      let checked = 0;
+      for (const k of [A1, A2]) {
+        const { entity } = await doc(DB.main, q, { k });
+        for (const s of entity.seap.role.signals.rows as { rule: string; reproduce: Record<string, string | null>; records: { code: string }[] }[]) {
+          if (!(RULES as readonly string[]).includes(s.rule)) continue;
+          const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+          const found = (await doc(DB.main, search, { f: filter })).seap.search.records;
+          expect(found.rows.map((r: { record: { code: string } }) => r.record.code).sort(), JSON.stringify(s.reproduce)).toEqual(s.records.map((r) => r.code).sort());
+          expect(found.count).toBe(s.records.length);
+          checked++;
+        }
+      }
+      expect(checked).toBe(17);
+    });
+
+    it("serves each rule's window, firing rate (recomputed in this load) and data-through; a rule whose Reference source is not loaded has no row", async () => {
+      const data = await op(DB.main, methodology, {});
+      const rows = Object.fromEntries((data.signalRules as { slug: string; window: { from: string | null; to: string | null }; baseRate: number; baseRateYear: number; dataThrough: string }[]).map((r) => [r.slug, r]));
+      // of the 2 authorities with a Record in the year (insolvency: in the six months to the snapshot), how many had a Signal of the rule dated in it; the two statement rules measure in the newest year they can see
+      expect(RULES.map((r) => [r, rows[r]!.baseRate, rows[r]!.baseRateYear])).toEqual([
+        ["YOUNG_FIRM", 1, 2025], ["NO_CONSTRUCTION_CAEN", 0.5, 2025], ["AFTER_STRIKE_OFF", 1, 2025], ["INSOLVENCY", 1, 2026], ["FEW_EMPLOYEES", 1, 2024], ["NO_FINANCIAL_STATEMENT", 1, 2023],
+      ]);
+      for (const r of RULES) expect(rows[r]).toMatchObject({ window: { from: "2022-01-01", to: null }, dataThrough: "2026-04-20" });
+      // archive-signals has ANAF answers (so after-strike-off has its source) and neither ONRC nor MF: the other five rules have no row there
+      expect(Object.keys(rows)).toEqual(["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", ...RULES]);
+    });
+
+    it("filters the search by each rule (signal in the URL) and counts Records, not Signals: the filter's Total is the rule's Records", async () => {
+      const total = `query($f: RecordFilter!) { seap { search(filter: $f) { total { records } } } }`;
+      const records = async (rule: string) => (await doc(DB.main, total, { f: { signal: rule } })).seap.search.total.records as number;
+      expect(await Promise.all(RULES.map(records))).toEqual([4, 2, 2, 4, 3, 2]);
+    });
+  });
+
+  describe("recorded fixtures (#89): archive-signals, archive-splitting, archive-framework-overrun, archive-onrc-signals -> rebuild -> Signals on every screen", () => {
     // The app's seam 3 renders the Signals on every screen against these answers. Same convention as #83/#86: this block fails when an answer
     // drifts from the committed JSON; `RECORD_FIXTURES=1` rewrites it. One JSON file per operation under recorded/signals/.
     const recording = process.env.RECORD_FIXTURES === "1";
     const dir = resolve(here, "../../contract/src/fixtures/recorded/signals");
-    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c" } as const;
-    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun" } as const;
+    const DBS = { signals: "sig89_a", splitting: "sig89_b", frameworkOverrun: "sig89_c", onrcSignals: "sig89_d", onrc: "sig89_e" } as const;
+    const DIRS = { signals: "archive-signals", splitting: "archive-splitting", frameworkOverrun: "archive-framework-overrun", onrcSignals: "archive-onrc-signals", onrc: "archive-onrc" } as const;
     const OPS = {
       EntityOverview: entityOverview,
       EntityRecords: entityRecords,
@@ -3206,6 +3744,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     type Answer = { name: string; kind: string; description: string; variables: Record<string, unknown>; data: unknown };
 
     beforeAll(async () => {
+      cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true }); // also copied by the #86 block: this one must not depend on it having run
       for (const a of Object.keys(DBS) as (keyof typeof DBS)[]) {
         await admin.query(`CREATE DATABASE ${DBS[a]}`);
         rebuild(DBS[a], DIRS[a]);
@@ -3241,9 +3780,10 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       // one Records-tab case per Signal the recorded Overviews show: the Signal and its Records list cannot drift apart
       const seen = new Set<string>();
       // (and the hospital's Signals of #86's recorded Overview, which this block does not ask again)
-      const earlier = (JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[]).filter((x) => x.name === "authority-with-signals");
+      const earlier = (JSON.parse(readFileSync(resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json"), "utf8")) as { name: string; data: EntityOverviewQuery }[]).filter((x) => (x.name === "authority-with-signals" || /^(onrc|people)-/.test(x.name)) && x.data.entity?.seap.role);
       const shown = [
-        ...earlier.map((x) => ({ archive: "signals" as const, rows: x.data.entity!.seap.role!.signals.rows })),
+        // (#175's ONRC world, and #177's with people, show insolvency Signals since #184: their Records lists are asked of archive-onrc)
+        ...earlier.map((x) => ({ archive: x.name === "authority-with-signals" ? ("signals" as const) : ("onrc" as const), rows: x.data.entity!.seap.role!.signals.rows })),
         ...RECORDED_SIGNAL_CASES.filter((x) => x.operation === "EntityOverview").map((c) => ({ archive: c.archive, rows: (answers.get(`EntityOverview/${c.name}`)!.data as EntityOverviewQuery).entity!.seap.role!.signals.rows })),
       ];
       for (const { archive, rows } of shown) {
@@ -3336,6 +3876,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
         const v = c.variables as { key: string; filter: { signal: string; from?: string; to?: string } };
         const r = await graphql({ schema, source: signalsDoc, rootValue: rootValue(postgresStore(pool)), variableValues: { key: v.key, role: "AUTHORITY" } });
         expect(r.errors, c.name).toBeUndefined();
+        expect((r.data as { entity: unknown }).entity, c.name).not.toBeNull();
         type Row = { rule: string; date: string; firstDate: string; recordCount: number; reproduce: Record<string, string | null>; records: { code: string }[] };
         const rows = (r.data as { entity: { seap: { role: { signals: { rows: Row[] } } } } }).entity.seap.role.signals.rows;
         // the Signal whose reproduce filter this case is
@@ -3392,9 +3933,502 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
 
     it("answers each rule's base rate through signalRules, per archive (the methodology page shows them)", () => {
       const rates = (name: string) => Object.fromEntries((answers.get(`MethodologyBaseRates/${name}`)!.data as { signalRules: { slug: string; baseRate: number; baseRateYear: number; window: { from: string | null } }[] }).signalRules.map((r) => [r.slug, [r.baseRate, r.baseRateYear, r.window.from]]));
-      expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"] });
+      expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"], AFTER_STRIKE_OFF: [0, 2023, "2021-01-01"] });
       expect(rates("splitting-archive")).toMatchObject({ SPLITTING: [1, 2022, "2022-01-01"], OVER_CAP: [0, 2022, "2022-01-01"] });
+      expect(rates("onrc-signals-archive")).toMatchObject({
+        YOUNG_FIRM: [1, 2025, "2022-01-01"], NO_CONSTRUCTION_CAEN: [0.5, 2025, "2022-01-01"], AFTER_STRIKE_OFF: [1, 2025, "2022-01-01"], INSOLVENCY: [1, 2026, "2022-01-01"],
+        FEW_EMPLOYEES: [1, 2024, "2022-01-01"], NO_FINANCIAL_STATEMENT: [1, 2023, "2022-01-01"],
+      });
       expect(rates("framework-overrun-archive")).toMatchObject({ FRAMEWORK_OVERRUN: [1, 2023, "2021-01-01"] }); // the rule's 2021 floor, although a 2020 Contracte file is loaded
+    });
+  });
+
+
+  describe("ONRC search, count lens and Coverage (#176): archive-onrc-search -> rebuild -> onrc { search, record }, coverage(source: ONRC)", () => {
+    // The world of watchdog/tests/fixtures/build_onrc_archive.py, newest snapshot 2026-05-06, plus three sole traders with valid CUIs. Nine registrations are searchable:
+    //   AUTH   PRIMARIA EXEMPLU ONRC  J03/1006/1995  3100012  RO-BN  1048          8411        SEAP counterparty  1995-02-02
+    //   ALFA   ALFA ONRC SRL          J40/1001/2015  3100020  RO-CJ  1048,1107     4120,4211   SEAP counterparty  2015-03-10
+    //   BETA   BETA NOU SRL (BETA VECHI SRL before)  J40/1002/2012  3100039  RO-B  1048  4321    SEAP counterparty  2015-03-10
+    //   GAMMA  GAMMA ONRC SRL         J12/1003/2010  3100047  RO-CJ  1084          4120        SEAP counterparty  2015-03-10
+    //   DELTA  DELTA ONRC SRL         J05/1004/2018  3100055  RO-BV  1048          6201,6202   SEAP counterparty  2026-02-20
+    //   DUBLA  DUBLA ONRC SA          J40/1005/2008  3100063  RO-IS  1048          4211        SEAP counterparty  2008-05-14
+    //   OMEGA  OMEGA ONLY SRL         J12/1007/2020  3100071  RO-CJ  1048          6201        not                2020-06-03
+    //   ZETA   ZETA FARA JUDET SRL    J99/1008/2021  3100080  (no county)  1048,2110  none     not                2021-01-11
+    //   GRESIT FIRMA CUI GRESIT SRL   J40/1010/2017  (no valid CUI)  RO-CJ  1048     none        not                2017-07-01
+    // Left out as sole traders: POPESCU DEMO PFA (no CUI), IONESCU ALFA PFA, VASILESCU MARIA ALFA II, DEMETER PERSOANA FIZICA AUTORIZATA.
+    const DB = { search: "onrc_search_a", gap: "onrc_search_gap" } as const;
+    const PEOPLE = ["IONESCU", "VASILESCU", "DEMETER", "POPESCU", "MARIA", "PERSOANA FIZICA"];
+    const SOLE_TRADER_REGISTRATIONS = ["F12/2001/2019", "F40/2002/2020", "F03/2003/2021", "F40/1009/2019"];
+    const REGS = { auth: "J03/1006/1995", alfa: "J40/1001/2015", beta: "J40/1002/2012", gamma: "J12/1003/2010", delta: "J05/1004/2018", dubla: "J40/1005/2008", omega: "J12/1007/2020", zeta: "J99/1008/2021", gresit: "J40/1010/2017" } as const;
+    const nameOf = new Map<string, string>(Object.entries(REGS).map(([k, v]) => [v, k]));
+
+    beforeAll(async () => {
+      cpSync(onrcSearchArchive, join(scratch, "archive-onrc-search"), { recursive: true });
+      cpSync(onrcSearchArchive, join(scratch, "archive-onrc-gap"), { recursive: true });
+      rmSync(join(scratch, "archive-onrc-gap/onrc/snapshot/firme/2026-04-03"), { recursive: true }); // April 2026 has no snapshot: a known gap
+      for (const db of Object.values(DB)) await admin.query(`CREATE DATABASE ${db}`);
+      rebuild(DB.search, "archive-onrc-search");
+      rebuild(DB.gap, "archive-onrc-gap");
+    });
+
+    type Search = OnrcSearchQuery["onrc"]["search"];
+    const search = async (filter: Record<string, unknown>, o: { limit?: number; offset?: number; db?: string } = {}): Promise<Search> => {
+      const variables = { filter, limit: o.limit ?? 50, offset: o.offset ?? 0 };
+      const r = await ask(o.db ?? DB.search, onrcSearch.sha256, variables);
+      expect(r.status).toBe(200);
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      expect(validateResponse(schema, parse(onrcSearch.document), r.body.data, variables), JSON.stringify(filter)).toEqual([]);
+      return (r.body.data as OnrcSearchQuery).onrc.search;
+    };
+    const regs = (s: Search) => s.organisations.rows.map((x) => nameOf.get(x.registrationNumber) ?? x.registrationNumber);
+    const sortedRegs = (s: Search) => [...regs(s)].sort();
+
+    it("finds a registration by name, with the match count, the top result and the highlight in the name", async () => {
+      const s = await search({ q: "alfa" });
+      expect(s).toMatchObject({ filter: { qFolded: "alfa" }, count: 1, defaultTab: "ORGANISATIONS" }); // the sole traders named ALFA are not findable
+      expect(s.organisations.count).toBe(1);
+      expect(s.organisations.rows[0]).toMatchObject({
+        registrationNumber: REGS.alfa, name: "ALFA ONRC SRL", cui: "3100020", legalForm: "SRL", registrationDate: "2015-03-10", seapCounterparty: true,
+        seat: { county: "Cluj", locality: "Cluj-Napoca" }, statuses: [{ code: 1048, name: "funcțiune" }, { code: 1107, name: "insolvență" }], caen: [{ code: "4120", version: 2 }, { code: "4211", version: 2 }],
+        entity: { key: "3100020", displayName: "ALFA ONRC SRL", identity: "CUI" }, matched: [{ field: "NAME", text: "ALFA ONRC SRL", highlights: [[0, 4]] }],
+      });
+      // legal forms are noise (folded away), diacritics and case do not matter, the last word is a prefix
+      expect((await search({ q: "SRL" })).count).toBe(9); // folds to nothing: the empty query
+      expect(sortedRegs(await search({ q: "ALF" }))).toEqual(["alfa"]);
+      expect(sortedRegs(await search({ q: "Alfa Onrc S.R.L." }))).toEqual(["alfa"]);
+      expect((await search({ q: "nothing like this" })).count).toBe(0);
+    });
+
+    it("finds a registration by an earlier name: the match is the alias, highlighted in its own text", async () => {
+      const s = await search({ q: "beta vechi" });
+      expect(regs(s)).toEqual(["beta"]);
+      expect(s.organisations.rows[0]).toMatchObject({ name: "BETA NOU SRL", matched: [{ field: "ALIAS", text: "BETA VECHI SRL", highlights: [[0, 4], [5, 10]] }, { field: "NAME", text: "BETA NOU SRL", highlights: [[0, 4]] }] });
+      expect(s.organisations.rows[0]!.entity).toMatchObject({ key: "3100039", displayName: "BETA ONRC SRL" }); // ANAF's name is the entity's, ONRC's names are aliases
+    });
+
+    it("finds a registration by CUI (RO prefix included) and by registration number, and says which field matched", async () => {
+      for (const q of ["3100020", "RO3100020"]) {
+        const s = await search({ q });
+        expect(regs(s), q).toEqual(["alfa"]);
+        expect(s.organisations.rows[0]!.matched[0], q).toMatchObject({ field: "CUI", text: "3100020", highlights: [[0, 7]] });
+      }
+      const byNumber = await search({ q: "J40/1001/2015" });
+      expect(regs(byNumber)).toEqual(["alfa"]);
+      expect(byNumber.organisations.rows[0]!.matched[0]).toMatchObject({ field: "REGISTRATION_NUMBER", text: REGS.alfa, highlights: [[0, 3], [4, 8], [9, 13]] });
+      expect(sortedRegs(await search({ q: "31000" }))).toEqual(["alfa", "auth", "beta", "delta", "dubla", "gamma", "omega", "zeta"]); // a CUI prefix: every 31000xx (GRESIT has no valid CUI)
+    });
+
+    it("finds registrations by a CAEN code, highlighted in the code", async () => {
+      const s = await search({ q: "4211" });
+      expect(sortedRegs(s)).toEqual(["alfa", "dubla"]); // the sole trader that also carries 4211 is left out
+      for (const row of s.organisations.rows) expect(row.matched, row.name).toEqual([{ field: "CAEN", text: "4211", highlights: [[0, 4]] }]);
+      expect(sortedRegs(await search({ q: "62" }))).toEqual(["delta", "omega"]); // a code prefix, the last word being one
+    });
+
+    it("ranks by text relevance first, then the newest registration first", async () => {
+      // "onrc" is one word in five documents (the typed word also matches as an exact term, which scores): the shorter documents score higher (GAMMA and DUBLA, 7 words), the longer ones tie (AUTH, DELTA, ALFA, 8 words)
+      // and a tie goes to the newest registration, so the 2026 DELTA beats the 2015 ALFA and the 1995 AUTH, while a relevance win beats a newer date (GAMMA 2015 before DELTA 2026)
+      const s = await search({ q: "onrc" });
+      expect(regs(s)).toEqual(["gamma", "dubla", "delta", "alfa", "auth"]);
+      // no text: the newest registration first, ties by the registration number, and a page of the same order
+      const all = await search({});
+      expect(regs(all)).toEqual(["delta", "zeta", "omega", "gresit", "gamma", "alfa", "beta", "dubla", "auth"].map((n) => n)); // 2026-02-20, 2021, 2020, 2017, the three of 2015-03-10 in registration-number order, 2008, 1995
+      expect(regs(await search({}, { limit: 3, offset: 3 }))).toEqual(["gresit", "gamma", "alfa"]);
+      expect((await search({}, { limit: 3, offset: 3 })).organisations.count).toBe(9);
+    });
+
+    it("narrows by each filter, and the filters compose", async () => {
+      expect((await search({})).count).toBe(9);
+      // status: any of the codes the registration shows (ONRC's own, 1107 insolvency, 1084 struck off, 2110 annual balance sheet not filed)
+      expect(sortedRegs(await search({ status: [1107] }))).toEqual(["alfa"]);
+      expect(sortedRegs(await search({ status: [1084] }))).toEqual(["gamma"]);
+      expect(sortedRegs(await search({ status: [1107, 1084] }))).toEqual(["alfa", "gamma"]);
+      expect(sortedRegs(await search({ status: [2110] }))).toEqual(["zeta"]);
+      expect((await search({ status: [1048] })).count).toBe(8); // every one but the struck-off GAMMA
+      // authorised CAEN: a code or its prefix
+      expect(sortedRegs(await search({ caen: "4211" }))).toEqual(["alfa", "dubla"]);
+      expect(sortedRegs(await search({ caen: "42" }))).toEqual(["alfa", "dubla"]);
+      expect(sortedRegs(await search({ caen: "4120" }))).toEqual(["alfa", "gamma"]);
+      expect(sortedRegs(await search({ caen: "62" }))).toEqual(["delta", "omega"]);
+      expect((await search({ caen: "5610" })).count).toBe(0); // only the sole traders carry it
+      // seat county, and the Unplaced tile
+      expect(sortedRegs(await search({ county: "RO-CJ" }))).toEqual(["alfa", "gamma", "gresit", "omega"]);
+      expect(sortedRegs(await search({ county: "RO-B" }))).toEqual(["beta"]);
+      expect(sortedRegs(await search({ county: "UNPLACED" }))).toEqual(["zeta"]);
+      expect((await search({ county: "RO-TL" })).count).toBe(0); // a stale URL is an empty set, not an error
+      // registration date range, inclusive at both ends
+      expect(sortedRegs(await search({ registeredFrom: "2020-06-03" }))).toEqual(["delta", "omega", "zeta"]);
+      expect(sortedRegs(await search({ registeredTo: "2008-05-14" }))).toEqual(["auth", "dubla"]);
+      expect(sortedRegs(await search({ registeredFrom: "2015-03-11", registeredTo: "2018-12-31" }))).toEqual(["gresit"]);
+      // SEAP counterparty: an authority or a winner of a loaded Record; false is the others
+      expect(sortedRegs(await search({ seapCounterparty: true }))).toEqual(["alfa", "auth", "beta", "delta", "dubla", "gamma"]);
+      expect(sortedRegs(await search({ seapCounterparty: false }))).toEqual(["gresit", "omega", "zeta"]);
+      // composed with the text: every narrowing keeps the text
+      expect(regs(await search({ q: "onrc", status: [1107] }))).toEqual(["alfa"]);
+      expect(await search({ q: "onrc", county: "RO-CJ", seapCounterparty: true, caen: "41" }).then(sortedRegs)).toEqual(["alfa", "gamma"]);
+      expect((await search({ q: "alfa", status: [1084] })).count).toBe(0);
+    });
+
+    it("never lists or names a person: a sole trader's registration is neither found nor counted, by any door", async () => {
+      // by name (the holder's name, the legal form's words, the shared word of a company), by their registration number and CUI, by the code only they carry
+      for (const q of ["ionescu", "vasilescu maria", "demeter", "popescu", "persoana fizica", "F12/2001/2019", "F40/2002/2020", "5610", ...SOLE_TRADER_REGISTRATIONS]) {
+        expect((await search({ q })).count, q).toBe(0);
+      }
+      expect((await search({ caen: "56" })).count).toBe(0);
+      // the whole register as the search lists it, and every other answer, hold no person's name or their registrations
+      const everything = [await search({}, { limit: 200 }), await search({ q: "alfa" }), await search({ q: "onrc" }), await search({ county: "RO-CJ" }), await search({ county: "RO-B" }), await search({ seapCounterparty: false }),
+        await search({ q: "omega" }), await search({ q: "omega only" })]; // OMEGA ONLY SRL was once OMEGA IONESCU PFA: that earlier name is no alias, neither a highlight nor a match
+      const text = JSON.stringify(everything);
+      for (const p of [...PEOPLE, ...SOLE_TRADER_REGISTRATIONS]) expect(text, p).not.toMatch(new RegExp(`(?<![\\p{L}\\p{N}])${p.replace(/[/]/g, "\\/")}(?![\\p{L}\\p{N}])`, "iu")); // as whole words: PRIMARIA is no MARIA
+      for (const s of everything) for (const row of s.organisations.rows) expect(Object.keys(row).sort()).toEqual(["caen", "cui", "entity", "legalForm", "matched", "name", "registrationDate", "registrationNumber", "seapCounterparty", "seat", "statuses"]);
+      const omega = await search({ q: "omega" });
+      expect(omega.organisations.rows.map((r) => r.registrationNumber)).toEqual([REGS.omega]);
+      expect(omega.organisations.rows[0]!.matched.every((m) => m.field !== "ALIAS")).toBe(true);
+      expect((await search({ q: "omega ionescu" })).count).toBe(0);
+      // the count lens leaves them out too
+      const lens = (await search({})).map;
+      expect(lens.counties.reduce((n, c) => n + c.registrations, 0) + lens.unplacedRegistrations).toBe(9);
+      // and the registration number of a sole trader is no record
+      for (const registrationNumber of [...SOLE_TRADER_REGISTRATIONS, "J00/0/2000"]) {
+        const r = await ask(DB.search, onrcRecord.sha256, { registrationNumber });
+        expect(r.body.errors, registrationNumber).toBeUndefined();
+        expect((r.body.data as OnrcRecordQuery).onrc.record, registrationNumber).toBeNull();
+      }
+    });
+
+    it("answers a registration by its registration number, with the entity page it belongs to", async () => {
+      const r = await ask(DB.search, onrcRecord.sha256, { registrationNumber: REGS.alfa });
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(onrcRecord.document), r.body.data, { registrationNumber: REGS.alfa })).toEqual([]);
+      expect((r.body.data as OnrcRecordQuery).onrc.record).toMatchObject({
+        registrationNumber: REGS.alfa, name: "ALFA ONRC SRL", cui: "3100020", entity: { key: "3100020" }, snapshot: "2026-05-06", legalForm: "SRL",
+        statuses: [{ code: 1048, firstSeen: "2025-03-18", sinceAtLeast: true }, { code: 1107, firstSeen: "2026-04-03", sinceAtLeast: false }],
+        provenance: { source: "ONRC", url: "https://data.gov.ro/dataset/firme-06-05-2026" },
+      });
+      const noCui = await ask(DB.search, onrcRecord.sha256, { registrationNumber: REGS.gresit });
+      expect((noCui.body.data as OnrcRecordQuery).onrc.record).toMatchObject({ registrationNumber: REGS.gresit, cui: null, entity: null }); // an organisation with no valid CUI: a record, no entity
+    });
+
+    it("lists each result's SEAP-counterparty flag and entity link, and none for a registration with no valid CUI", async () => {
+      const s = await search({}, { limit: 200 });
+      const row = (n: keyof typeof REGS) => s.organisations.rows.find((x) => x.registrationNumber === REGS[n])!;
+      expect([row("omega").seapCounterparty, row("zeta").seapCounterparty, row("gresit").seapCounterparty, row("auth").seapCounterparty]).toEqual([false, false, false, true]);
+      expect(row("gresit").entity).toBeNull();
+      expect(row("omega").entity).toMatchObject({ key: "3100071", displayName: "OMEGA ONLY SRL" });
+      expect(row("zeta")).toMatchObject({ seat: { county: null, locality: null }, caen: [], statuses: [{ code: 1048 }, { code: 2110, name: "bilanțul anual nedepus la registrul comerțului" }] });
+      expect(s.organisations.rows.every((x) => x.matched.length === 0)).toBe(true); // no text, nothing to say about why
+    });
+
+    it("the count lens: registrations per county for the query, Unplaced registrations in the Unplaced tile", async () => {
+      const counts = (s: Search) => Object.fromEntries(s.map.counties.map((c) => [c.area, c.registrations]));
+      const all = await search({});
+      expect(counts(all)).toEqual({ "RO-B": 1, "RO-BN": 1, "RO-BV": 1, "RO-CJ": 4, "RO-IS": 1 });
+      expect(all.map.unplacedRegistrations).toBe(1); // ZETA has no county
+      expect(all.map.counties.find((c) => c.area === "RO-CJ")).toEqual({ area: "RO-CJ", name: "Cluj", registrations: 4 });
+      expect(all.map.counties.map((c) => c.area)).toEqual(["RO-B", "RO-BN", "RO-BV", "RO-CJ", "RO-IS"]); // sorted, counties with none absent
+      // the same count as the search: the sum of the lens is the match count
+      expect(all.map.counties.reduce((n, c) => n + c.registrations, 0) + all.map.unplacedRegistrations).toBe(all.count);
+      // the query narrows the lens
+      const onrc = await search({ q: "onrc" });
+      expect(counts(onrc)).toEqual({ "RO-BN": 1, "RO-BV": 1, "RO-CJ": 2, "RO-IS": 1 });
+      expect(onrc.map.unplacedRegistrations).toBe(0);
+      const unplaced = await search({ status: [2110] });
+      expect(unplaced.map).toEqual({ counties: [], unplacedRegistrations: 1 });
+      const cj = await search({ county: "RO-CJ", status: [1048] });
+      expect(counts(cj)).toEqual({ "RO-CJ": 3 }); // every chip narrows the lens, the county's own included, as in SEAP's Money lens
+      expect((await search({ q: "nothing like this" })).map).toEqual({ counties: [], unplacedRegistrations: 0 });
+    });
+
+    it("Coverage of ONRC: one cell per snapshot, the data-through date is the snapshot's, no denominator", async () => {
+      const ask1 = async (db: string, window: unknown = null) => {
+        const r = await ask(db, onrcCoverage.sha256, { window });
+        expect(r.body.errors).toBeUndefined();
+        expect(validateResponse(schema, parse(onrcCoverage.document), r.body.data, { window })).toEqual([]);
+        return r.body.data as OnrcCoverageQuery;
+      };
+      const full = await ask1(DB.search);
+      expect(full.coverage.denominator).toBe("NONE");
+      expect(full.sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
+      // the four held snapshots (the earliest in the legacy layout, which lists seven registrations), each a LOADED cell of its own date
+      expect(full.coverage.grid).toEqual([
+        { quarter: "2025-03-18", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 7, crawlOnly: 0, dataThrough: "2025-03-18" },
+        { quarter: "2026-03-02", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-03-02" },
+        { quarter: "2026-04-03", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-04-03" },
+        { quarter: "2026-05-06", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-05-06" },
+      ]);
+      // a county's status is the window's, and no N of M is stated: every county carries zeros
+      expect(full.coverage.counties).toHaveLength(42);
+      expect(new Set(full.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED"]));
+      expect(full.coverage.counties.every((c) => c.withRecords === 0 && c.publicEntities === 0 && c.otherAuthorities === 0)).toBe(true);
+      expect(full.coverage.counties.find((c) => c.county === "RO-CJ")).toBeDefined();
+    });
+
+    it("Coverage of ONRC: a month with no snapshot is a known gap, and the window narrows the cells", async () => {
+      const r = await ask(DB.gap, onrcCoverage.sha256, { window: null });
+      expect(r.body.errors).toBeUndefined();
+      const data = r.body.data as OnrcCoverageQuery;
+      expect(data.coverage.grid.map((c) => [c.quarter, c.state, c.records, c.dataThrough])).toEqual([
+        ["2025-03-18", "LOADED", 7, "2025-03-18"], ["2026-03-02", "LOADED", 13, "2026-03-02"], ["2026-04", "KNOWN_GAP", 0, null], ["2026-05-06", "LOADED", 13, "2026-05-06"],
+      ]);
+      expect(data.coverage.grid.find((c) => c.state === "KNOWN_GAP")).toMatchObject({ kind: "REGISTRATION", rule: null, note: null, crawlOnly: 0 });
+      expect(new Set(data.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED_WITH_KNOWN_GAPS"]));
+      expect(data.coverage.denominator).toBe("NONE");
+      expect(data.sources.find((x) => x.id === "ONRC")!.dataThrough).toEqual([{ kind: "REGISTRATION", date: "2026-05-06" }]);
+      // the window follows the date chip: April alone holds the gap (and no snapshot); May alone is harvested
+      const april = (await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2026-04-01", to: "2026-04-30" } })).body.data as OnrcCoverageQuery;
+      expect(april.coverage.grid.map((c) => [c.quarter, c.state])).toEqual([["2026-04", "KNOWN_GAP"]]);
+      const may = (await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2026-05-01", to: "2026-05-31" } })).body.data as OnrcCoverageQuery;
+      expect(may.coverage.grid.map((c) => [c.quarter, c.state])).toEqual([["2026-05-06", "LOADED"]]);
+      expect(new Set(may.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED"]));
+      expect((await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2020-01-01", to: "2020-12-31" } })).body.data).toMatchObject({ coverage: { grid: [], counties: expect.any(Array) } });
+    });
+
+    it("keeps ONRC cells out of SEAP's Coverage grid", async () => {
+      const r = await ask(DB.search, coveragePage.sha256, { window: null });
+      expect(r.body.errors).toBeUndefined();
+      const c = (r.body.data as CoveragePageQuery).coverage;
+      expect(c.grid.every((cell) => ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].includes(cell.kind))).toBe(true); // no ONRC cell in SEAP's grid
+    });
+  });
+
+  describe("Party filter (#181): archive-party -> rebuild -> RecordFilter.party and the coverage of its Total", () => {
+    // The party world of watchdog/tests/fixtures/build_aep_archive.py: Records DA95000001..14 (Brasov's town hall and its hospital, a school, a roads directorate, an independent
+    // mayor, an alliance, Rasnov's partial election, a county council, Bucharest's general mayor, a handover-window Record).
+    const DB = "party_filter";
+    const PSD = "PARTIDUL SOCIAL DEMOCRAT";
+    const PNL = "PARTIDUL NAȚIONAL LIBERAL";
+    beforeAll(async () => {
+      await admin.query(`CREATE DATABASE ${DB}`);
+      partyRebuild(DB);
+    });
+    const searched = async (filter: Record<string, unknown>) => {
+      const r = await ask(DB, mainScreen.sha256, { filter });
+      expect(r.status).toBe(200);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(mainScreen.document), r.body.data, { filter }), JSON.stringify(filter)).toEqual([]);
+      const search = (r.body.data as MainScreenQuery).seap.search;
+      return { total: search.total, coverage: search.total.partyCoverage, codes: search.records.rows.map((x) => x.record.code).sort() };
+    };
+
+    it("records the main screen answers the app's Party tests run on (recorded/party/MainScreen.json)", async () => {
+      const file = resolve(here, "../../contract/src/fixtures/recorded/party/MainScreen.json");
+      const recorded = [];
+      for (const c of RECORDED_PARTY_CASES) {
+        const r = await ask(DB, mainScreen.sha256, c.variables);
+        expect(r.status, c.name).toBe(200);
+        expect(r.body.errors, c.name).toBeUndefined();
+        expect(validateResponse(schema, parse(mainScreen.document), r.body.data, c.variables), c.name).toEqual([]);
+        recorded.push({ name: c.name, kind: c.kind, description: c.description, variables: c.variables, data: r.body.data });
+      }
+      if (process.env.RECORD_FIXTURES === "1") {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, `${JSON.stringify(recorded, null, 2)}\n`);
+      }
+      // through JSON, so undefined and key order do not matter
+      expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
+      expect(new Set(RECORDED_PARTY_CASES.map((c) => JSON.stringify(c.variables))).size).toBe(RECORDED_PARTY_CASES.length);
+    });
+
+    it("returns only the Records whose Mandate matches, direct and derived, and states the coverage of its Total", async () => {
+      const pnl = await searched({ party: PNL });
+      // Brasov's town hall (direct), its hospital (derived through the principal credit holder), the county council, Bucharest's general mayor, Rasnov's partial-election winner and two more
+      expect(pnl.codes).toEqual(["DA94000005", "DA94000009", "DA95000002", "DA95000003", "DA95000006", "DA95000007", "DA95000014"]);
+      expect(pnl.coverage).toEqual({
+        party: PNL, direct: { records: 6, awarded: "600000" }, subordinate: { records: 1, awarded: "100000" },
+        otherParties: { records: 6, awarded: "600000" }, independent: { records: 2, awarded: "200000" }, unattributed: { records: 13, awarded: "1300000" },
+      });
+      // the matched Total is the two matched slices, to the bani and to the Record
+      expect(pnl.total).toMatchObject({ records: 7, awarded: "700000", estimated: false });
+      const psd = await searched({ party: PSD });
+      expect(psd.codes).toEqual(["DA94000003", "DA94000004", "DA94000012", "DA95000009", "DA95000012"]);
+      expect(psd.coverage).toMatchObject({ direct: { records: 5, awarded: "500000" }, subordinate: { records: 0, awarded: "0" } });
+      expect(psd.total).toMatchObject({ records: 5, awarded: "500000" });
+    });
+
+    it("splits the whole set into five slices that add up to the unfiltered Total, whatever the party", async () => {
+      const all = await searched({});
+      expect(all.total.partyCoverage).toBeNull(); // no Party filter, no coverage
+      for (const party of [PNL, PSD, "ALIANȚA USR PLUS", "Independent", "NO SUCH LIST"]) {
+        const { total, coverage } = await searched({ party });
+        const c = coverage!;
+        const slices = [c.direct, c.subordinate, c.otherParties, c.independent, c.unattributed];
+        expect(slices.reduce((n, x) => n + x.records, 0), party).toBe(all.total.records);
+        expect(slices.reduce((n, x) => n + BigInt(x.awarded), 0n).toString(), party).toBe(all.total.awarded);
+        expect(c.direct.records + c.subordinate.records, party).toBe(total.records);
+        expect(BigInt(c.direct.awarded) + BigInt(c.subordinate.awarded), party).toBe(BigInt(total.awarded));
+        expect(c.unattributed.records).toBe(13); // the school, the roads directorate, the handover window, central government...: never a party, whoever is asked
+      }
+    });
+
+    it("leaves out the unattributed, the independent and the other lists: a school, a gap, an independent mayor and a contradicted tie never match", async () => {
+      const everyParty = new Set<string>();
+      for (const party of [PNL, PSD, "ALIANȚA USR PLUS"]) for (const code of (await searched({ party })).codes) everyParty.add(code);
+      for (const code of ["DA95000001", "DA95000004", "DA95000005", "DA95000008", "DA95000013"]) expect(everyParty.has(code), code).toBe(false); // handover window, school, roads directorate, independent mayor, interim leader
+      expect((await searched({ party: "Independent" })).codes).toEqual([]); // "Independent" is never a party
+      expect((await searched({ party: "independent" })).codes).toEqual([]);
+    });
+
+    it("matches an alliance under its registered name only: its member parties do not match it, and it does not match them", async () => {
+      expect((await searched({ party: "ALIANȚA USR PLUS" })).codes).toEqual(["DA94000010"]);
+      expect((await searched({ party: "PARTIDUL USR" })).codes).toEqual([]); // a member party of the alliance: no party family
+      expect((await searched({ party: "PARTIDUL USR" })).coverage!.direct).toEqual({ records: 0, awarded: "0" });
+    });
+
+    it("combines with the other chips and the text query, and the coverage follows the same set", async () => {
+      const dated = await searched({ party: PNL, from: "2024-01-01", to: "2024-12-31" });
+      const undated = await searched({ party: PNL });
+      expect(dated.total.records).toBeLessThan(undated.total.records);
+      expect(dated.coverage!.direct.records + dated.coverage!.subordinate.records).toBe(dated.total.records);
+      const sliced = await searched({ party: PNL, q: "zzzznothingmatches" });
+      expect(sliced.total).toMatchObject({ records: 0, awarded: "0" });
+      expect(sliced.coverage).toMatchObject({ direct: { records: 0 }, subordinate: { records: 0 }, otherParties: { records: 0 }, unattributed: { records: 0 } });
+      // a supplier-side filter (a Record can match on several rows): each Record still counts once
+      const withSupplier = await searched({ party: PNL, supplier: "2000007" });
+      expect(withSupplier.coverage!.direct.records + withSupplier.coverage!.subordinate.records).toBe(withSupplier.total.records);
+      // an authority's own page: Party filters it like any chip
+      expect((await searched({ party: PNL, authority: P.brasov })).codes).toEqual(["DA95000002"]); // the hospital is another authority
+    });
+
+    it("lists the Records the Total counts: the Records tab count is the Total's", async () => {
+      const r = await ask(DB, mainScreen.sha256, { filter: { party: PNL } });
+      const search = (r.body.data as MainScreenQuery).seap.search;
+      expect(search.records.count).toBe(search.total.records);
+      expect(search.authorities.count).toBeGreaterThan(0);
+    });
+
+    it("offers the lists present in the graph with every MainScreen answer, largest first, never Independent and never a member party", async () => {
+      const r = await ask(DB, mainScreen.sha256, EMPTY_FILTER); // MainScreen asks for them beside every search, so the chip never needs a request of its own
+      expect(r.body.errors).toBeUndefined();
+      const options = (r.body.data as MainScreenQuery).seap.partyOptions;
+      expect(options.map((o) => o.party).sort()).toEqual([PNL, PSD, "ALIANȚA USR PLUS"].sort());
+      expect(options.map((o) => o.records)).toEqual([...options.map((o) => o.records)].sort((a, b) => b - a));
+      expect(options.find((o) => o.party === PNL)!.records).toBe(7); // the Records the filter returns: the two agree
+    });
+  });
+
+  describe("cross-Source Signals (#185): archive-cross-donors on the party world, archive-cross-soe on the people world -> rebuild -> the two rules", () => {
+    // The worlds of watchdog/tests/fixtures/build_cross_signals_archive.py (its docstring lists every case): each donor firm is one case named by its label; the SOE world's BETA
+    // (a public enterprise) awards ALFA (private, one confirmed person administers both), GAMMA (a namesake), FAM TOMA IF (an IF) and DUBLA awards OMEGA (also a public enterprise).
+    const DB = { donors: "cross_donors", soe: "cross_soe" } as const;
+    type Sig = { rule: string; date: string; recordCount: number; authority: { key: string }; suppliers: { key: string }[]; numbers: Record<string, unknown>; reproduce: Record<string, string | null> };
+    const keys = new Map<string, string>(); // display name -> entity key, per database
+    const keyOf = (db: string, name: string) => keys.get(`${db}/${name}`)!;
+    const donorName = (label: string) => (label === "PFA" ? "ZAMFIR DEMO PFA" : `DONATOR ${label.replace("_", " ")} SRL`);
+    // `show` for the Restricted rule needs the host's switch on: the store and the API both read it (a test passes it, the host's environment is never touched)
+    const showApi = new Map<string, ReturnType<typeof createApi>>();
+    const askShown = (db: string, id: string, variables: unknown) => showApi.get(db)!.respond({ id, variables });
+
+    beforeAll(async () => {
+      // the party world plus BaniPartide's donors and their Records (a rebuild reads the whole archive); the people world plus AMEPIP's list and the enterprises' Records
+      cpSync(placementArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(mfArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(aepArchive, join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-cross-donors"), join(scratch, "archive-cross-donors"), { recursive: true });
+      cpSync(onrcPeopleArchive, join(scratch, "archive-cross-soe"), { recursive: true });
+      cpSync(join(watchdog, "tests/fixtures/archive-cross-soe"), join(scratch, "archive-cross-soe"), { recursive: true });
+      for (const db of Object.values(DB)) await admin.query(`CREATE DATABASE ${db}`);
+      const out = rebuild(DB.donors, "archive-cross-donors", ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-cross-donors"), "--today", "2026-11-20", "--known-gaps", mfGaps]);
+      expect(out).toContain("DONOR_TO_PARTY 8"); // the eight cases that fire; the SOE rule does not exist in this world's data
+      expect(rebuild(DB.soe, "archive-cross-soe")).toContain("SOE_BOARD_IN_SUPPLIER 2");
+      for (const db of Object.values(DB)) {
+        const pool = new pg.Pool({ connectionString: `${baseUrl}/${db}`, max: 2 });
+        pools.push(pool);
+        for (const r of (await pool.query("SELECT key, display_name FROM core.entity")).rows) keys.set(`${db}/${r.display_name}`, r.key);
+        showApi.set(db, createApi(postgresStore(pool, { restricted: true }), schema, { restricted: true }));
+      }
+    });
+
+    const rolePage = async (db: string, key: string, role: string, rule?: string, shown = false) => {
+      const variables = { key, role, filter: rule ? { signal: rule } : {}, signalOrder: "DATE_DESC", signalOffset: 0 };
+      const r = shown ? await askShown(db, entityOverview.sha256, variables) : await ask(db, entityOverview.sha256, variables);
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(entityOverview.document), r.body.data, variables)).toEqual([]);
+      return (r.body.data as any).entity.seap.role.signals as { count: number; rows: Sig[] }; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+    const donorSignals = async (label: string) => (await rolePage(DB.donors, keyOf(DB.donors, donorName(label)), "SUPPLIER", "DONOR_TO_PARTY"));
+    // a Signal reproduces by its filter: the main screen run with `reproduce` (its non-null fields) finds exactly the Signal's Records
+    const reproduced = async (db: string, s: Sig, shown = false): Promise<number> => {
+      const filter = Object.fromEntries(Object.entries(s.reproduce).filter(([, v]) => v !== null));
+      const r = shown ? await askShown(db, mainScreen.sha256, { filter }) : await ask(db, mainScreen.sha256, { filter });
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      return (r.body.data as MainScreenQuery).seap.search.total.records;
+    };
+
+    it("donor to the authority's Party: inside the window (the award day and day 365 included), a loan, an alliance's member party and a derived Party fire", async () => {
+      const expected: Record<string, [string, number, string, boolean, string]> = {
+        WITHIN: ["2023-06-01", 92, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        SAME_DAY: ["2023-06-02", 0, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        DAY_365: ["2023-06-05", 365, "PARTIDUL SOCIAL DEMOCRAT", false, "DONATION"],
+        LOAN: ["2023-06-08", 38, "PARTIDUL SOCIAL DEMOCRAT", false, "LOAN"],
+        PNL: ["2023-06-21", 51, "PARTIDUL NAȚIONAL LIBERAL", false, "DONATION"],
+        DERIVED: ["2023-06-12", 42, "PARTIDUL SOCIAL DEMOCRAT", true, "DONATION"],
+        MANDATE_NEW: ["2024-11-16", 337, "PARTIDUL NAȚIONAL LIBERAL", false, "DONATION"], // the Mandate in force on the award day (PNL since the 2024 handover) is the one that counts
+      };
+      for (const [label, [date, days, party, derived, kind]] of Object.entries(expected)) {
+        const found = await donorSignals(label);
+        expect(found.count, label).toBe(1);
+        const s = found.rows[0]!;
+        expect([s.rule, s.date, s.recordCount, s.suppliers.map((x) => x.key)], label).toEqual(["DONOR_TO_PARTY", date, 1, [keyOf(DB.donors, donorName(label))]]);
+        expect(s.numbers, label).toEqual({ __typename: "DonorToPartyNumbers", days, party, derived, kind });
+        // the awarding authority's own page lists the same Signal (same reproduce), and the filter reproduces its Records
+        const authorityPage = await rolePage(DB.donors, s.authority.key, "AUTHORITY", "DONOR_TO_PARTY");
+        expect(authorityPage.rows, `${label} on the authority's page`).toContainEqual(s);
+        expect(s.reproduce.signal, label).toBe("DONOR_TO_PARTY");
+        expect(await reproduced(DB.donors, s), `${label} reproduces`).toBe(s.recordCount);
+      }
+      const alliance = (await donorSignals("ALLIANCE")).rows;
+      expect(alliance).toHaveLength(1); // USR is a recorded member party of the alliance that holds the Mandate
+      expect(alliance[0]!.numbers).toMatchObject({ __typename: "DonorToPartyNumbers", days: 98, derived: false, kind: "DONATION" });
+    });
+
+    it("donor to the authority's Party: day 366, a donation after the award, another party, no readable day, a predecessor party, a non-member of the alliance, a sole trader and a donation to the outgoing Party of a changed Mandate do not fire", async () => {
+      for (const label of ["DAY_366", "AFTER", "OTHER_PARTY", "NO_DAY", "PREDECESSOR", "NOT_MEMBER", "PFA", "MANDATE_OLD"]) expect((await donorSignals(label)).count, label).toBe(0);
+    });
+
+    it("donor to the authority's Party: is a public rule, in the methodology answer with its window and firing rate, and filters the search by `signal`", async () => {
+      const methodology = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!;
+      const r = await ask(DB.donors, methodology.sha256, {});
+      expect(r.body.errors).toBeUndefined();
+      const rule = (r.body.data as any).signalRules.find((x: { slug: string }) => x.slug === "DONOR_TO_PARTY"); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(rule).toMatchObject({ window: { from: "2023-01-01" }, baseRateYear: 2023 }); // the window starts at the first year of Records (2023 here; never before 2021); the rate year is the newest year BaniPartide's rows are filed under
+      expect(rule.baseRate).toBeGreaterThan(0);
+      const filter = { signal: "DONOR_TO_PARTY" };
+      const found = await ask(DB.donors, mainScreen.sha256, { filter });
+      expect(found.body.errors).toBeUndefined();
+      expect((found.body.data as MainScreenQuery).seap.search.total.records).toBe(8);
+      const chip = await ask(DB.donors, mainScreen.sha256, { filter: { hasSignals: true } });
+      expect((chip.body.data as MainScreenQuery).seap.search.total.records).toBe(8); // a public rule is behind the chip too
+    });
+
+    it("SOE board member in a supplier (Restricted), shown: a confirmed person in the enterprise and a private supplier fires; a public-enterprise supplier, a namesake and an IF do not", async () => {
+      const beta = keyOf(DB.soe, "BETA ONRC SRL");
+      const found = await rolePage(DB.soe, beta, "AUTHORITY", "SOE_BOARD_IN_SUPPLIER", true);
+      expect(found.rows.map((s) => [s.date, s.recordCount, s.suppliers.map((x) => x.key), s.numbers])).toEqual([
+        ["2026-04-27", 1, [keyOf(DB.soe, "ALFA ONRC SRL")], { __typename: "SoeBoardInSupplierNumbers", persons: 1 }],
+        ["2026-04-20", 2, [keyOf(DB.soe, "ALFA ONRC SRL")], { __typename: "SoeBoardInSupplierNumbers", persons: 1 }],
+      ]);
+      expect(found.count).toBe(2);
+      for (const s of found.rows) {
+        // the supplier's page lists the same Signal, and the filter reproduces its Records through the restricted branch (hidden, it would find none: restrictedSignals.test.ts)
+        expect((await rolePage(DB.soe, s.suppliers[0]!.key, "SUPPLIER", "SOE_BOARD_IN_SUPPLIER", true)).rows, "on the supplier's page").toContainEqual(s);
+        expect(s.reproduce.signal).toBe("SOE_BOARD_IN_SUPPLIER");
+        expect(await reproduced(DB.soe, s, true), `${s.date} reproduces`).toBe(s.recordCount);
+      }
+      for (const [role, name] of [["AUTHORITY", "DUBLA ONRC SA"], ["SUPPLIER", "OMEGA ONLY SRL"], ["SUPPLIER", "GAMMA ONRC SRL"], ["SUPPLIER", "FAM TOMA IF"]] as const) {
+        expect((await rolePage(DB.soe, keyOf(DB.soe, name), role, "SOE_BOARD_IN_SUPPLIER", true)).count, name).toBe(0);
+      }
+    });
+
+    it("SOE board member in a supplier (Restricted), shown: the Signals filter and the has-Signals chip find its Records, with the same count as the Signals' Records", async () => {
+      const bySignal = await askShown(DB.soe, mainScreen.sha256, { filter: { signal: "SOE_BOARD_IN_SUPPLIER" } });
+      const byChip = await askShown(DB.soe, mainScreen.sha256, { filter: { hasSignals: true } });
+      const without = await askShown(DB.soe, mainScreen.sha256, { filter: { hasSignals: false } });
+      const all = await askShown(DB.soe, mainScreen.sha256, EMPTY_FILTER);
+      for (const r of [bySignal, byChip, without, all]) expect(r.body.errors).toBeUndefined();
+      const records = (r: typeof bySignal) => (r.body.data as MainScreenQuery).seap.search.total.records;
+      expect(records(bySignal)).toBe(3); // ALFA's three Records of the enterprise BETA
+      expect(records(byChip)).toBeGreaterThanOrEqual(3); // the public rules' Records too
+      expect(records(without) + records(byChip)).toBe(records(all)); // the chip's two sides partition the set
     });
   });
 

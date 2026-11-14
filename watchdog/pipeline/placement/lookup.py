@@ -54,7 +54,7 @@ def archive_lookup(archive: Archive, kind: str, cui: str, request: Mapping, resp
 
 def read_units(archive: Archive, kind: str) -> Iterator[Unit]:
     """Complete units of `kind`, oldest first (the latest answer for a CUI wins)."""
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind) == (SOURCE, STREAM, kind)]
+    units = [u for u in archive.units(SOURCE) if (u.source, u.stream, u.kind) == (SOURCE, STREAM, kind)]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     yield from units
 

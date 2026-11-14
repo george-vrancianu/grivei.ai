@@ -66,7 +66,7 @@ class GeoFetchSummary:
 
 
 def _latest(archive: Archive, source: str, stream: str, kind: str, unit: str):
-    units = [u for u in archive.units() if (u.source, u.stream, u.kind, u.unit) == (source, stream, kind, unit)]
+    units = [u for u in archive.units(source) if (u.source, u.stream, u.kind, u.unit) == (source, stream, kind, unit)]
     return max(units, key=lambda u: (u.fetched_at, str(u.path)), default=None)
 
 

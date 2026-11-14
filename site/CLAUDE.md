@@ -35,6 +35,7 @@ The source rows (`<ol id="sources">`) are the single source of truth, **once per
 - Each `<li class="source">` carries `data-status`: `live`, `wip`, `next` or `skipped`. The visible words are `live` / `in progress` / `next` / `skipped` in English and `funcțional` / `în lucru` / `urmează` / `omis` in Romanian.
 - A `skipped` row also carries a `<p class="source__note">` saying why, citing its source document (the law or ruling, with dates).
 - To change a source's status, change `data-status` **and** the word inside `<p class="status">`. Nothing else.
+- A Source the pipeline holds also has its row in the `sources` registry (`watchdog/pipeline/sources.py`); `watchdog/tests/test_sources_registry.py` fails when a row here and its registry entry disagree (status, wording, either language). The page itself stays static and does not read the registry.
 - Row numbers come from a CSS counter. The segmented bar and the summary line ("1 funcțională · 1 în lucru · 3 urmează") are rebuilt from the rows by `status.js`, which picks the wording from `<html lang>`. The static bar and summary in the markup are the no-JS fallback, so keep them in sync when you edit rows.
 - Keep rows ordered `live`, then `wip`, then `next`, then `skipped`, so the bar reads left to right. The summary leaves out groups with no rows.
 - The project phase is plain text in the top bar: `phase: research` / `stadiu: cercetare`.
@@ -46,7 +47,7 @@ Current status and why:
 | --- | --- | --- |
 | SEAP | live | Harvester, loader, views and reports exist. |
 | ANI | skipped | Decided by the user 2026-11-12: CCR Decision 297/2025 (29 May 2025) struck down online publication of declarations; Law 180/2026 (in force 31 Aug 2026) keeps full declarations confidential. Research: [ANI declarations](https://github.com/george-vrancianu/grivei.ai/issues/114). |
-| ONRC | next | README "Ce urmează". |
+| ONRC | wip | Release 2 (#173): the Connector, the `onrc` schema and the entity page's ONRC section exist (#175); not yet publicly explorable. |
 | Ministry of Finance (Ministerul Finanțelor) | next | README "Ce urmează". |
 | portal.just.ro | next | README "Ce urmează". |
 

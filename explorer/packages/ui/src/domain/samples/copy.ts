@@ -10,6 +10,7 @@ import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
 import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
+import type { PartyCoverageCopy } from "../molecules/PartyCoverage/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
 import type { GoToCardCopy } from "../molecules/GoToCard/index.ts";
@@ -28,7 +29,11 @@ import type { CoveragePageLayoutCopy } from "../templates/CoveragePageLayout/ind
 import type { CoverageLensMapCopy } from "../organisms/CoverageLensMap/index.ts";
 import type { FlowLensMapCopy } from "../organisms/FlowLensMap/index.ts";
 import type { EntityOverviewCopy } from "../organisms/EntityOverview/index.ts";
+import type { OnrcSectionCopy } from "../organisms/OnrcSection/index.ts";
+import type { PeopleSectionCopy } from "../organisms/PeopleSection/index.ts";
+import type { PersonDetailCopy } from "../organisms/PersonDetail/index.ts";
 import type { RelationshipsTabCopy } from "../organisms/RelationshipsTab/index.ts";
+import { partyCopy } from "./leadership.ts";
 import type { RecordDetailCopy } from "../organisms/RecordDetail/index.ts";
 import type { SignalCardCopy } from "../organisms/SignalCard/index.ts";
 import type { SignalBadgeCopy } from "../molecules/SignalBadge/index.ts";
@@ -92,7 +97,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Badges and what they mean" },
     signals: {
       heading: "Signals this Record belongs to",
-      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+      rules: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
       date: (when) => `dated ${when}`,
       records: (n, f) => `${f} ${n === 1 ? "Record" : "Records"}`,
     },
@@ -106,6 +111,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       checkIn: (source) => `Check in ${source}`,
       noPublicPage: (source) => `${source} has no stable public page for this Record yet.`,
     },
+    party: partyCopy.en,
   },
   ro: {
     heading: {
@@ -151,7 +157,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
       heading: "Semnalele din care face parte această înregistrare",
-      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+      rules: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
       date: (when) => `din ${when}`,
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
     },
@@ -165,6 +171,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       checkIn: (source) => `Verifică în ${source}`,
       noPublicPage: (source) => `${source} nu are încă o pagină publică stabilă pentru această înregistrare.`,
     },
+    party: partyCopy.ro,
   },
 };
 
@@ -213,6 +220,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Foreign VAT ID",
       nameOnly: { label: "Identified by name only", explanation: "No CUI that ANAF knows for this supplier, so it is identified by its foreign VAT id or its published name. Figures may mix up namesakes." },
       identityCurated: { label: "Identity curated", explanation: "A person reviewed and fixed this entity's identity." },
+      onrcOnly: { label: "CUI in ONRC only", explanation: "ANAF does not know this CUI. ONRC, the trade register, lists it, so this page shows ONRC's name and facts." },
     },
     anafStatus: { label: "ANAF status", inactive: (status) => `ANAF lists this entity as ${status}, not active.` },
     placement: {
@@ -241,6 +249,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
       foreignVatId: "Cod TVA străin",
       nameOnly: { label: "Identificat doar după denumire", explanation: "Pentru acest furnizor nu există un CUI cunoscut de ANAF, deci este identificat după codul TVA străin sau după denumirea publicată. Cifrele pot amesteca entități omonime." },
       identityCurated: { label: "Identitate verificată manual", explanation: "O persoană a verificat și corectat identitatea acestei entități." },
+      onrcOnly: { label: "CUI doar în ONRC", explanation: "ANAF nu cunoaște acest CUI. ONRC, registrul comerțului, îl listează, deci această pagină arată numele și datele din ONRC." },
     },
     anafStatus: { label: "Stare ANAF", inactive: (status) => `ANAF indică această entitate ca ${status}, nu activă.` },
     placement: {
@@ -441,12 +450,14 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
       procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
+      party: { group: "Partid", select: "Lista, așa cum a fost înregistrată", any: "Orice partid" },
       badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
       active: {
         group: "Filtre active",
         none: "Niciun filtru activ.",
         from: (when) => `Din ${when}`,
         to: (when) => `Până în ${when}`,
+        party: (list) => `Partid: ${list}`,
         remove: (chip) => `Elimină ${chip}`,
         clearAll: "Șterge tot",
       },
@@ -469,12 +480,14 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
       procedure: { group: "Procedure", empty: "No procedures to choose from." },
+      party: { group: "Party", select: "List as registered", any: "Any party" },
       badges: { group: "Record badges", badges: BADGES },
       active: {
         group: "Active filters",
         none: "No filters on.",
         from: (when) => `From ${when}`,
         to: (when) => `Until ${when}`,
+        party: (list) => `Party: ${list}`,
         remove: (chip) => `Remove ${chip}`,
         clearAll: "Clear all",
       },
@@ -491,7 +504,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Contraparte ${key}`,
-        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare" },
+        signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
         channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         badges: badges.ro,
       }
@@ -503,7 +516,7 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         },
         option: (label, count) => `${label} (${count})`,
         counterpartyKey: (key) => `Counterparty ${key}`,
-        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication" },
+        signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
         channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         badges: badges.en,
       };
@@ -586,6 +599,110 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
 const searchBar: Record<Locale, SearchBarCopy> = {
   en: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", hint: "The data is in Romanian. Try deszăpezire, a company name, a CUI with or without RO, or a CPV prefix such as 45. Diacritics, case and legal forms (SRL, SA) are ignored.", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   ro: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
+};
+
+/** ONRC's N_VERSIUNE_CAEN: version 0 is the 1998 classification, 1 is 2003, 2 is 2008, 3 is 2025. */
+const CAEN_YEARS = [1998, 2003, 2008, 2025];
+
+const onrcSection: Record<Locale, OnrcSectionCopy> = {
+  en: {
+    heading: "ONRC registration",
+    registrationNumber: "Registration number",
+    registrationDate: "Registered",
+    registrationDateUnknown: "not in the snapshot we read",
+    legalForm: "Legal form",
+    seat: "Registered seat",
+    seatUnknown: "no seat published",
+    statuses: {
+      heading: "Status",
+      none: "ONRC lists no status.",
+      unnamed: (code) => `status code ${code}`,
+      firstSeen: (snapshot) => `first seen in the snapshot of ${snapshot}`,
+      sinceAtLeast: (snapshot) => `since at least the snapshot of ${snapshot}`,
+      caveat: "ONRC publishes statuses without dates. A date here is the first snapshot we hold that shows the status, found by comparing snapshots; the change itself may be older.",
+    },
+    caen: { heading: "Authorised CAEN codes", none: "ONRC lists no authorised CAEN code.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
+    aliases: {
+      heading: "ONRC names",
+      none: "ONRC lists no name.",
+      current: "legal name today",
+      range: (first, last) => (first === last ? `seen in the snapshot of ${first}` : `seen in the snapshots of ${first} to ${last}`),
+      rangeSinceAtLeast: (first, last) => (first === last ? `seen in the snapshot of ${first}, at least` : `seen since at least ${first}, last on ${last}`),
+      note: "These are ONRC's spellings, kept as aliases. They never change the name at the top of the page.",
+    },
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+    onrcOnly: "This organisation is in ONRC only: no purchase in SEAP names it. No person of it is shown.",
+  },
+  ro: {
+    heading: "Înmatriculare ONRC",
+    registrationNumber: "Număr de înmatriculare",
+    registrationDate: "Înmatriculată",
+    registrationDateUnknown: "nu apare în instantaneul citit",
+    legalForm: "Formă juridică",
+    seat: "Sediu social",
+    seatUnknown: "niciun sediu publicat",
+    statuses: {
+      heading: "Stare",
+      none: "ONRC nu listează nicio stare.",
+      unnamed: (code) => `cod de stare ${code}`,
+      firstSeen: (snapshot) => `văzută prima oară în instantaneul din ${snapshot}`,
+      sinceAtLeast: (snapshot) => `cel puțin din instantaneul din ${snapshot}`,
+      caveat: "ONRC publică stările fără date. O dată de aici este primul instantaneu pe care îl deținem și care arată starea, aflat prin compararea instantaneelor; schimbarea în sine poate fi mai veche.",
+    },
+    caen: { heading: "Coduri CAEN autorizate", none: "ONRC nu listează niciun cod CAEN autorizat.", version: (v) => (v === null ? "" : `CAEN ${CAEN_YEARS[v] ?? v}`) },
+    aliases: {
+      heading: "Denumiri ONRC",
+      none: "ONRC nu listează nicio denumire.",
+      current: "denumirea legală azi",
+      range: (first, last) => (first === last ? `văzută în instantaneul din ${first}` : `văzută în instantaneele din ${first} până în ${last}`),
+      rangeSinceAtLeast: (first, last) => (first === last ? `văzută în instantaneul din ${first}, cel puțin` : `văzută cel puțin din ${first}, ultima dată în ${last}`),
+      note: "Acestea sunt grafiile ONRC, păstrate ca alias-uri. Nu schimbă niciodată numele din capul paginii.",
+    },
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+    onrcOnly: "Această organizație există doar în ONRC: nicio achiziție din SEAP nu o numește. Nicio persoană a ei nu este afișată.",
+  },
+};
+
+const peopleSection: Record<Locale, PeopleSectionCopy> = {
+  en: {
+    heading: "Administrators and legal representatives",
+    intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
+    none: "ONRC lists no administrator or legal representative for this organisation.",
+    born: (year) => `born ${year}`,
+    unlinked: "no birth date in ONRC: listed on this page only, linked to no one",
+    personLink: (name) => `${name}: person page`,
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+  },
+  ro: {
+    heading: "Administratori și reprezentanți legali",
+    intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
+    none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
+    born: (year) => `anul nașterii ${year}`,
+    unlinked: "fără dată a nașterii în ONRC: listat doar pe această pagină, nelegat de nimeni",
+    personLink: (name) => `${name}: pagina persoanei`,
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+  },
+};
+
+const personDetail: Record<Locale, PersonDetailCopy> = {
+  en: {
+    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
+    born: (year) => `born ${year}`,
+    rolesHeading: "Roles",
+    roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    noPage: "no organisation page",
+    basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
+    source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
+  },
+  ro: {
+    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
+    born: (year) => `anul nașterii ${year}`,
+    rolesHeading: "Roluri",
+    roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    noPage: "fără pagină de organizație",
+    basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
+    source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
+  },
 };
 
 const entityOverview = (locale: Locale): EntityOverviewCopy => {
@@ -674,6 +791,47 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         sentence: (n) => `Awarded by the procedure "${n.procedure}", which has no prior publication of a notice.`,
         lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
       },
+      YOUNG_FIRM: {
+        label: "Young firm",
+        sentence: (n) => `A Record is dated ${n.days} ${n.daysCount === 1 ? "day" : "days"} after the supplier registered, on ${n.registered}.`,
+        lawful: "Possible lawful explanations: a company set up for one contract, or an established business that took a new registration after a restructuring or a change of legal form.",
+      },
+      NO_CONSTRUCTION_CAEN: {
+        label: "Works without a construction CAEN",
+        sentence: (n) => `A works Record of ${n.value} went to a firm with no construction CAEN among its ${n.codes} authorised ${n.codesCount === 1 ? "code" : "codes"}.`,
+        lawful: "Possible lawful explanations: a subcontractor or consortium partner does the building, the register is out of date, or the firm works under a code it did not list.",
+      },
+      AFTER_STRIKE_OFF: {
+        label: "After strike-off",
+        sentence: (n) => `A Record is dated ${n.daysAfter} ${n.daysAfterCount === 1 ? "day" : "days"} after ANAF shows the supplier struck off, on ${n.struckOff}.`,
+        lawful: "Possible lawful explanations: a delay between the award and its publication, a successor company that took over under another number, or a strike-off ANAF later reversed.",
+      },
+      INSOLVENCY: {
+        label: "Insolvency",
+        sentence: (n) => `ONRC lists the supplier with the status "${n.status}", first seen in its ${n.firstSeen} snapshot${n.sinceAtLeast ? " (the earliest held, so possibly older)" : ""}. The status is undated; the supplier has Records in the six months up to ONRC's latest snapshot.`,
+        lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
+      },
+      FEW_EMPLOYEES: {
+        label: "At most one employee",
+        sentence: (n) => `The supplier was awarded ${n.awarded} in ${n.fiscalYear} and reported ${n.employees} average ${n.employeesCount === 1 ? "employee" : "employees"} for that fiscal year.`,
+        lawful: "Possible lawful explanations: the work is subcontracted or done by staff employed through another company, or a yearly average understates a seasonal workforce.",
+      },
+      NO_FINANCIAL_STATEMENT: {
+        label: "No financial statement",
+        sentence: (n) => `An ${n.legalForm} was awarded ${n.awarded} in ${n.fiscalYear}; no financial statement is held for ${n.fiscalYear} or ${n.previousYear}.`,
+        lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
+      },
+      DONOR_TO_PARTY: {
+        label: "Donor to the authority's Party",
+        sentence: (n) =>
+          `A supplier made ${n.loan ? "a loan" : "a donation"} to ${n.party}, the Party of the authority's Mandate, ${n.days} ${n.daysCount === 1 ? "day" : "days"} before the award.${n.derived ? " The Party is derived: it comes from the Mandate of the body this authority is subordinate to." : ""}`,
+        lawful: "Possible lawful explanations: a donation or loan within the legal limits is lawful and public, a firm can support a Party and also win contracts in open competition, and a Party's local branch may have had no say in the award.",
+      },
+      SOE_BOARD_IN_SUPPLIER: {
+        label: "Public-enterprise board member in a supplier",
+        sentence: (n) => `${n.persons} confirmed ${n.personsCount === 1 ? "person holds" : "people hold"} a role both in this public enterprise and in the private supplier it awarded a Record to.`,
+        lawful: "Possible lawful explanations: a person may lawfully and openly sit on several boards, the roles may not have overlapped in time with the award, or the supplier won an open competition.",
+      },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
     date: (when) => `Latest Record: ${when}`,
@@ -712,6 +870,47 @@ const signalCard: Record<Locale, SignalCardCopy> = {
         sentence: (n) => `Atribuită prin procedura „${n.procedure}”, care nu presupune publicarea prealabilă a unui anunț.`,
         lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
       },
+      YOUNG_FIRM: {
+        label: "Firmă tânără",
+        sentence: (n) => `O înregistrare este datată la ${roCount(n.daysCount, n.days, "zi", "zile")} după înmatricularea furnizorului, la ${n.registered}.`,
+        lawful: "Explicații legale posibile: o societate înființată pentru un singur contract sau o afacere existentă care a primit o înmatriculare nouă după o restructurare ori o schimbare a formei juridice.",
+      },
+      NO_CONSTRUCTION_CAEN: {
+        label: "Lucrări fără CAEN de construcții",
+        sentence: (n) => `O înregistrare de lucrări în valoare de ${n.value} a revenit unei firme fără niciun cod CAEN de construcții ${n.codesCount === 1 ? "în singurul său cod autorizat" : `printre cele ${roCount(n.codesCount, n.codes, "cod autorizat", "coduri autorizate")}`}.`,
+        lawful: "Explicații legale posibile: construcția este făcută de un subcontractant sau de un asociat, registrul este depășit ori firma lucrează sub un cod pe care nu l-a înscris.",
+      },
+      AFTER_STRIKE_OFF: {
+        label: "După radiere",
+        sentence: (n) => `O înregistrare este datată la ${roCount(n.daysAfterCount, n.daysAfter, "zi", "zile")} după radierea furnizorului din evidența ANAF, la ${n.struckOff}.`,
+        lawful: "Explicații legale posibile: o întârziere între atribuire și publicare, o societate succesoare care a preluat activitatea sub alt număr sau o radiere pe care ANAF a anulat-o ulterior.",
+      },
+      INSOLVENCY: {
+        label: "Insolvență",
+        sentence: (n) => `ONRC înscrie furnizorul cu starea „${n.status}”, văzută prima oară în instantaneul din ${n.firstSeen}${n.sinceAtLeast ? " (cel mai vechi păstrat, deci poate mai veche)" : ""}. Starea nu este datată; furnizorul are înregistrări în ultimele șase luni până la cel mai recent instantaneu ONRC.`,
+        lawful: "Explicații legale posibile: înregistrarea a fost atribuită înainte de începerea procedurii sau procedura permite continuarea activității printr-un plan de reorganizare.",
+      },
+      FEW_EMPLOYEES: {
+        label: "Cel mult un angajat",
+        sentence: (n) => `Furnizorului i s-au atribuit ${n.awarded} în ${n.fiscalYear}, iar pentru acel an fiscal a raportat în medie ${roCount(n.employeesCount, n.employees, "angajat", "angajați")}.`,
+        lawful: "Explicații legale posibile: lucrarea este subcontractată sau făcută de personal angajat printr-o altă societate ori media anuală subestimează o forță de muncă sezonieră.",
+      },
+      NO_FINANCIAL_STATEMENT: {
+        label: "Fără situații financiare",
+        sentence: (n) => `Unei ${n.legalForm} i s-au atribuit ${n.awarded} în ${n.fiscalYear}; nu avem nicio situație financiară pentru ${n.fiscalYear} sau ${n.previousYear}.`,
+        lawful: "Explicații legale posibile: societatea a depus târziu sau sub alt CUI, s-a înființat cu puțin timp înainte ori fișierele Ministerului Finanțelor sunt incomplete.",
+      },
+      DONOR_TO_PARTY: {
+        label: "Donator al Partidului autorității",
+        sentence: (n) =>
+          `Un furnizor a făcut ${n.loan ? "un împrumut" : "o donație"} către ${n.party}, Partidul mandatului autorității, cu ${roCount(n.daysCount, n.days, "zi", "zile")} înainte de atribuire.${n.derived ? " Partidul este derivat: provine din mandatul organismului căruia îi este subordonată această autoritate." : ""}`,
+        lawful: "Explicații legale posibile: o donație sau un împrumut în limitele legale este legal și public, o firmă poate sprijini un partid și poate câștiga contracte în competiție deschisă, iar filiala locală a partidului poate să nu fi avut niciun cuvânt de spus în atribuire.",
+      },
+      SOE_BOARD_IN_SUPPLIER: {
+        label: "Administrator al unei întreprinderi publice într-un furnizor",
+        sentence: (n) => `${roCount(n.personsCount, n.persons, "persoană confirmată are", "persoane confirmate au")} o funcție atât în această întreprindere publică, cât și în furnizorul privat căruia i-a atribuit o înregistrare.`,
+        lawful: "Explicații legale posibile: o persoană poate face parte legal și deschis din mai multe consilii, funcțiile s-ar putea să nu se fi suprapus în timp cu atribuirea sau furnizorul a câștigat o competiție deschisă.",
+      },
     },
     compact: { text: (label, when) => `${label}, ${when}` },
     date: (when) => `Ultima înregistrare: ${when}`,
@@ -740,6 +939,9 @@ export const sampleCopy = {
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
   entityOverview,
+  onrcSection: (locale: Locale): OnrcSectionCopy => onrcSection[locale],
+  peopleSection: (locale: Locale): PeopleSectionCopy => peopleSection[locale],
+  personDetail: (locale: Locale): PersonDetailCopy => personDetail[locale],
   searchBar: (locale: Locale): SearchBarCopy => searchBar[locale],
   recordsFacets,
   recordsTab,
@@ -1134,6 +1336,30 @@ export const sampleCopy = {
         error: "Coverage could not be loaded. Try again in a moment.",
       },
   coverageGrid: (locale: Locale): CoverageGridCopy => sampleCopy.coveragePageLayout(locale).grid,
+  partyCoverage: (locale: Locale): PartyCoverageCopy =>
+    locale === "ro"
+      ? {
+          heading: (list) => `Acoperire pe partide: ${list}`,
+          direct: (n, f, amount) => `Conduse direct de această listă: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          subordinate: (n, f, amount) => `Prin organisme subordonate: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          otherParties: (n, f, amount) => `Conduse de alte liste: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          independent: (n, f, amount) => `Conduse de lideri independenți (nu sunt partid): ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          unattributed: (n, f, amount) => `Neatribuite vreunui partid: ${roCount(n, f, "înregistrare", "înregistrări")} · ${amount}`,
+          unattributedShare: (percent) => `${percent} din valoarea acestui set nu este atribuită niciunui partid.`,
+          unattributedNote: "Administrația centrală, școlile, companiile municipale, ADI-urile și golurile din mandate nu au Partid.",
+          methodology: "Cum se atribuie un Partid",
+        }
+      : {
+          heading: (list) => `Party coverage: ${list}`,
+          direct: (n, f, amount) => `Led by this list directly: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          subordinate: (n, f, amount) => `Through subordinate bodies: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          otherParties: (n, f, amount) => `Led by other lists: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          independent: (n, f, amount) => `Led by independent leaders (not a party): ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          unattributed: (n, f, amount) => `Not attributed to a party: ${f} ${plural(n, "Record", "Records")} · ${amount}`,
+          unattributedShare: (percent) => `${percent} of the value in this set is not attributed to any party.`,
+          unattributedNote: "Central government, schools, municipal companies, ADIs and gaps in the mandates carry no Party.",
+          methodology: "How a Party is attributed",
+        },
   total: (locale: Locale): TotalFigureCopy =>
     locale === "ro"
       ? {

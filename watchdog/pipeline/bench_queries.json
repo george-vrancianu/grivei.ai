@@ -35,5 +35,8 @@
   {"label": "(empty) direct purchases, up to 135k", "filter": {"channel": "DIRECT_PURCHASE", "valueBucket": "UP_TO_135K"}},
   {"label": "(empty) 2025, has Signals", "filter": {"from": "2025-01-01", "to": "2025-12-31", "hasSignals": true}},
   {"label": "(empty) over 1 bn", "filter": {"valueBucket": "OVER_1B"}},
-  {"label": "(empty) badge SUSPECT_VALUE (not a rollup dimension)", "filter": {"badges": ["SUSPECT_VALUE"]}}
+  {"label": "(empty) badge SUSPECT_VALUE (not a rollup dimension)", "filter": {"badges": ["SUSPECT_VALUE"]}},
+  {"label": "(empty) party PSD (#181)", "filter": {"party": "PARTIDUL SOCIAL DEMOCRAT"}},
+  {"label": "(empty) party PNL 2025 (#181)", "filter": {"party": "PARTIDUL NAȚIONAL LIBERAL", "from": "2025-01-01", "to": "2025-12-31"}},
+  {"label": "ma, party PSD (#181)", "filter": {"q": "ma", "party": "PARTIDUL SOCIAL DEMOCRAT"}}
 ]

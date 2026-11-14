@@ -131,7 +131,7 @@ def test_no_publication_has_no_window_of_its_own_in_the_rule_so_edges_are_the_da
 # ---- the registry --------------------------------------------------------------------------------------------------------------------
 
 def test_every_rule_module_has_the_one_shape_and_a_unique_slug():
-    assert [r.SLUG for r in RULES] == ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"]
+    assert [r.SLUG for r in RULES] == ["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION", "YOUNG_FIRM", "NO_CONSTRUCTION_CAEN", "AFTER_STRIKE_OFF", "INSOLVENCY", "FEW_EMPLOYEES", "NO_FINANCIAL_STATEMENT", "DONOR_TO_PARTY", "SOE_BOARD_IN_SUPPLIER"]
     for r in RULES:
         assert r.KINDS and r.WHERE and callable(r.detect)
 

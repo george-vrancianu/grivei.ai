@@ -21,6 +21,7 @@ const isCalendarDate = (v: string) => {
 
 const checks: Record<string, (v: string) => boolean> = {
   Bani: (v) => /^\d+$/.test(v),
+  SignedBani: (v) => /^-?\d+$/.test(v),
   Date: isCalendarDate,
   DateTime: (v) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v) && isCalendarDate(v.slice(0, 10)),
   CountyCode: (v) => COUNTY_CODES.includes(v),

@@ -3,6 +3,7 @@
 // strings and bound parameters: no input is ever spliced into SQL.
 import pg from "pg";
 import { foldTokens } from "./fold.ts";
+import { RESTRICTED_RULES } from "./restricted.ts";
 
 /** The RecordFilter as the API receives it (the contract's input type; every field optional). */
 export interface SearchFilter {
@@ -21,6 +22,8 @@ export interface SearchFilter {
   supplier?: string | null;
   cpv?: string | null;
   signal?: string | null;
+  /** A list as registered at the election (`PARTIDUL SOCIAL DEMOCRAT`, an alliance's own name): Records whose Mandate (direct or derived) ran on it (#181). */
+  party?: string | null;
 }
 
 export interface Where {
@@ -41,7 +44,7 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Every token of the folded query must match; the last one is a prefix (a regex over the terms), so `45` finds every
  * 45xxxxxx CPV code. A query that folds to nothing (only legal-form words, or blank) is the empty query.
  */
-export function buildWhere(filter: SearchFilter): Where {
+export function buildWhere(filter: SearchFilter, restricted = false): Where {
   const params: unknown[] = [];
   const preds: string[] = [];
   const bind = (value: unknown, cast = "") => {
@@ -76,8 +79,23 @@ export function buildWhere(filter: SearchFilter): Where {
   }
   if (filter.uat) add(`authority_uat = ${bind(filter.uat)}`);
   // has_signals / signals are filled by the pipeline's Signal step (watchdog/pipeline/signals) before the index is built
-  if (filter.hasSignals != null) add(`has_signals = ${bind(filter.hasSignals)}`);
-  if (filter.signal) add(`signals @> ARRAY[${bind(filter.signal)}]::text[]`);
+  // `has_signals` and `signals` carry the public rules only. With the Restricted switch on, the Records of a Restricted rule (#185), marked on `restricted_signals`,
+  // count as having Signals and a `signal` filter on such a rule finds them (the rollup is bypassed for hasSignals then, store.ts). Off, the column is never read.
+  const restrictedMember = (slugs: readonly string[]) => slugs.map((slug) => `restricted_signals @> ARRAY[${bind(slug)}]::text[]`).join(" OR ");
+  if (filter.hasSignals != null) {
+    if (!restricted) add(`has_signals = ${bind(filter.hasSignals)}`);
+    else {
+      const member = restrictedMember(RESTRICTED_RULES);
+      add(filter.hasSignals ? `(has_signals OR ${member})` : `(NOT has_signals AND NOT (${member}))`);
+    }
+  }
+  // Party per Record (#181): one exact term on the search row (filled at rebuild from aep.record_party, Independent leaders and Records with no Mandate hold null).
+  // An alliance is matched under its own registered name only: a member party never matches it, and no party family exists (ADR 0012).
+  if (filter.party) add(`party = ${bind(filter.party)}`);
+  if (filter.signal) {
+    if (restricted && RESTRICTED_RULES.includes(filter.signal)) add(restrictedMember([filter.signal]));
+    else add(`signals @> ARRAY[${bind(filter.signal)}]::text[]`);
+  }
   if (filter.county) {
     // A county, or an off-map tile of the Money lens (#71). The area columns are never null: the county code, or NATIONAL / UNPLACED
     // (authority side) / UNKNOWN_SUPPLIER_COUNTY (supplier side). An area that belongs to the other side of the lens matches nothing:

@@ -10,6 +10,10 @@ import * as w from "./world.ts";
 type Role = "AUTHORITY" | "SUPPLIER";
 type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
+/** The EntityRecords entity: the header, the SEAP role and whether ONRC lists a registration under the CUI (`onrc`, null here: the recorded cases carry the listed ones). */
+const withListedOnrc = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null });
+/** The EntityOverview's entity: the header, the SEAP role, the ONRC section (`onrc`, null when ONRC lists no registration), its administrators (`people`, #177: null here, the hand fixtures below and the recorded cases carry the listed ones) the AMEPIP mark (`publicEnterprise`, #183) and MF's statements (`financials`, #179): null here, the recorded cases carry the listed ones. */
+const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null, people: null, publicEnterprise: null, financials: null, leadership: null, donations: null });
 
 /** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
 const overviewSignal = (s: SignalFieldsFragment) => ({ ...s, records: [{ code: "DA12345678", provenance: { url: "/source/seap/DA12345678" } }] });
@@ -32,7 +36,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "supplier-typical", kind: "typical",
     description: "a supplier with Signals, a consortium, a framework line, aliases (one differing from ANAF) and a natural-person-free counterparty list",
     variables: { key: "30000001", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.hachiHeader, {
+    data: { entity: withOverview(w.hachiHeader, {
       role: "SUPPLIER" as Role,
       total: total({ awarded: ron(3_400_000), records: 49, suspectLeftOut: 1, noValue: 2 }),
       counterparties: { count: 3, topShare: 0.82, rows: [
@@ -51,10 +55,21 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     }) },
   },
   {
+    name: "supplier-reference-signals", kind: "extreme",
+    description: "a supplier with a Signal of each ONRC and financial-statement rule (#184): numbers from the Reference sources, undated insolvency, no score",
+    variables: { key: "30000002", role: "SUPPLIER", filter: { signal: "INSOLVENCY" } },
+    data: { entity: withOverview(w.constructiiHeader, {
+      ...emptyOverview("SUPPLIER"),
+      total: total({ awarded: ron(14_200_000), records: 98 }),
+      counterparties: { count: 1, topShare: 1, rows: [{ entity: w.primariaBrasov, naturalPerson: false, total: total({ awarded: ron(14_200_000), records: 98 }) }] },
+      signals: { count: 6, rows: [w.sYoungFirm, w.sNoConstructionCaen, w.sAfterStrikeOff, w.sInsolvency, w.sFewEmployees, w.sNoFinancialStatement].map(overviewSignal) },
+    }) },
+  },
+  {
     name: "authority-both-roles", kind: "typical",
     description: "an entity that buys and sells (roles has both), identity curated, with a framework and a framework-overrun Signal",
     variables: { key: "4000002", role: "AUTHORITY", filter: { from: "2021-01-01" } },
-    data: { entity: withSeap(w.cnairHeader, {
+    data: { entity: withOverview(w.cnairHeader, {
       role: "AUTHORITY" as Role,
       total: total({ awarded: ron(9_000_000_000), records: 1_200, noValue: 14, frameworkCeilings: ron(100_000_000) }),
       counterparties: { count: 220, topShare: 0.12, rows: [
@@ -73,7 +88,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "deregistered-supplier-extreme-concentration", kind: "extreme",
     description: "ANAF status RADIERE, a single counterparty with the whole total (topShare 1)",
     variables: { key: "30000003", role: "SUPPLIER" },
-    data: { entity: withSeap(w.drumariiHeader, {
+    data: { entity: withOverview(w.drumariiHeader, {
       role: "SUPPLIER" as Role,
       total: total({ awarded: ron(112_400_000), records: 13 }),
       counterparties: { count: 1, topShare: 1, rows: [{ entity: w.drumuriNationale, naturalPerson: false, total: total({ awarded: ron(112_400_000), records: 13 }) }] },
@@ -89,7 +104,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "supplier-many-aliases", kind: "extreme",
     description: "a supplier SEAP spells eight ways (five differ from ANAF's name), no Signals",
     variables: { key: "30000002", role: "SUPPLIER", filter: {} },
-    data: { entity: withSeap(w.constructiiHeader, {
+    data: { entity: withOverview(w.constructiiHeader, {
       ...emptyOverview("SUPPLIER"),
       total: total({ awarded: ron(14_200_000), records: 98 }),
       counterparties: { count: 2, topShare: 0.9, rows: [
@@ -108,7 +123,7 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
     name: "authority-many-counterparties", kind: "extreme",
     description: "an authority with 220 counterparties (the first rows sent, a natural person among them), a consortium, a framework line and suspect and ceiling Records left out of the largest list",
     variables: { key: "4000002", role: "AUTHORITY", filter: {} },
-    data: { entity: withSeap(w.cnairHeader, {
+    data: { entity: withOverview(w.cnairHeader, {
       role: "AUTHORITY" as Role,
       total: total({ awarded: ron(9_000_000_000), records: 1_200, suspectLeftOut: 2, noValue: 14, frameworkCeilings: ron(100_000_000) }),
       counterparties: { count: 220, topShare: 0.12, rows: [
@@ -128,6 +143,35 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       largestRecords: [w.rConsortium, w.rSubsequent, w.rDirect],
       signals: { count: 3, rows: [overviewSignal(w.sFrameworkOverrun)] },
     }) },
+  },
+];
+
+const onrcBasis = { source: "ONRC" as const, url: "https://data.gov.ro/dataset/firme-06-05-2026", via: "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026", kind: "BULK" as const, fetchedAt: "2026-11-13T04:00:00Z" };
+const supplierTypical = entityOverviewHand[0]!;
+
+/** The administrators of a SEAP counterparty (public tier, #177): linked holders with their birth year, an unlinked role holder with none, and the Restricted person link only in a Private view. */
+const administrators = (private_: boolean) => ({
+  holders: [
+    { name: "POPESCU ION", role: "administrator", birthYear: 1975, person: private_ ? { id: "0123456789abcdef0123456789abcdef" } : null },
+    { name: "IONESCU MARIA", role: "reprezentant legal", birthYear: 1980, person: private_ ? { id: "89abcdef0123456789abcdef01234567" } : null },
+    { name: "NEGRU TUDOR", role: "administrator", birthYear: null, person: null },
+  ],
+  snapshot: "2026-05-06", provenance: onrcBasis,
+});
+
+/** The same supplier with its administrators, in the public view (the host hides Restricted content) and in a Private view (the switch is `show`: each linked holder carries a person page). */
+export const entityOverviewPeople: FixtureSet<EntityOverviewQuery, EntityOverviewQueryVariables> = [
+  {
+    name: "supplier-administrators-public", kind: "typical",
+    description: "a SEAP counterparty with ONRC administrators on the public tier: name, role and birth year, one unlinked role holder with no birth year, and no person link",
+    variables: { key: "30000001", role: "SUPPLIER", filter: { from: "2020-01-01" } },
+    data: { entity: { ...supplierTypical.data.entity!, people: administrators(false) } },
+  },
+  {
+    name: "supplier-administrators-private-view", kind: "extreme",
+    description: "the same page in a Private view: each linked administrator links to a person page; the unlinked role holder never does",
+    variables: { key: "30000001", role: "SUPPLIER", filter: { from: "2019-01-01" } },
+    data: { entity: { ...supplierTypical.data.entity!, people: administrators(true) } },
   },
 ];
 
@@ -201,7 +245,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-one-supplier", kind: "typical",
     description: "an authority's Records tab with one supplier chosen from the counterparty facet (RecordFilter.supplier)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { supplier: "30000001" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(598_400), records: 4 }),
@@ -214,7 +258,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-text-search", kind: "typical",
     description: "an authority's Records tab with a text search (RecordFilter.q): the row says which field matched and where (matchedField)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { q: "deszăpezire" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(300_000), records: 1 }),
@@ -227,7 +271,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-estimated-total", kind: "extreme",
     description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 1 of many",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { to: "2030-12-31" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
@@ -243,7 +287,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-estimated-total-page-2", kind: "extreme",
     description: "an authority with a huge Records set: the total and the count are estimates (≈), on page 2 of many (offset 100)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 100, filter: { to: "2030-12-31" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(8_400_000_000), records: 1_240_000, suspectLeftOut: 12, noValue: 3_100, estimated: true }),
@@ -259,7 +303,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "supplier-one-authority", kind: "typical",
     description: "a supplier's Records with one authority picked in the Relationships tab's graph (RecordFilter.authority): the side panel's list",
     variables: { key: "30000001", role: "SUPPLIER", limit: 100, offset: 0, filter: { authority: "4000001" } },
-    data: { entity: withSeap(w.hachiHeader, {
+    data: { entity: withListedOnrc(w.hachiHeader, {
       role: "SUPPLIER" as Role,
       records: {
         total: total({ awarded: ron(598_400), records: 4 }),
@@ -272,7 +316,7 @@ export const entityRecordsHand: FixtureSet<EntityRecordsQuery, EntityRecordsQuer
     name: "authority-one-supplier-contract", kind: "typical",
     description: "an authority's Records with a contract supplier picked in the Relationships tab's graph (RecordFilter.supplier)",
     variables: { key: "4000001", role: "AUTHORITY", limit: 100, offset: 0, filter: { supplier: "30000002" } },
-    data: { entity: withSeap(w.primariaBrasovHeader, {
+    data: { entity: withListedOnrc(w.primariaBrasovHeader, {
       role: "AUTHORITY" as Role,
       records: {
         total: total({ awarded: ron(12_800_000), records: 1 }),

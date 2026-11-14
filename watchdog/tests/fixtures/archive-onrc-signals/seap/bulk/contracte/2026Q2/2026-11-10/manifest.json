@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "contracte",
+  "unit": "2026Q2",
+  "fetchedAt": "2026-11-10T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-contracte-t2-2026.csv",
+  "via": "Contracte t2-2026",
+  "files": [
+    {
+      "name": "raport-contracte-t2-2026.csv",
+      "sha256": "51a7b8de4f56b67dbde9949afe95b242faefed49f7232864af98676ac91cf579",
+      "bytes": 566
+    }
+  ]
+}

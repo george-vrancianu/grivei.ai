@@ -28,7 +28,7 @@ describe("operations", () => {
     expect(names).toEqual([
       "CoverageLens", "CoveragePage", "EntityOverview", "EntityRecords", "EntityRelationships",
       "FullResultsAuthorities", "FullResultsRecords", "FullResultsSuppliers", "MainScreen",
-      "MethodologyBaseRates", "RecordPage", "ZoomedCounty",
+      "MethodologyBaseRates", "MethodologyReferenceSources", "OnrcCount", "OnrcCoverage", "OnrcRecord", "OnrcSearch", "PersonPage", "RecordPage", "ZoomedCounty",
     ]);
   });
   it("are queries only", () => {
@@ -48,10 +48,29 @@ describe("operations", () => {
       "Source.name", "DataThrough.kind", "GapCell.kind", "GapCell.quarter", "GapCell.note",
       "Entity.displayName", "Entity.cui", "Entity.foreignVatId", "Entity.anafStatus",
       "Placement.locality", "Alias.name",
-      "Party.publishedName", "Cpv.code", "Cpv.description",
+      "Party.publishedName", "PartyCoverage.party", "PartyOption.party", "Cpv.code", "Cpv.description",
       "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
       "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
+      // ONRC's registration as published (#175): identifiers, ONRC's own nomenclature words and the seat; none is prose of ours
+      "OnrcRegistration.registrationNumber", "OnrcRegistration.legalForm", "OnrcStatus.name", "OnrcCaen.code", "OnrcSeat.county", "OnrcSeat.locality", "OnrcSeat.address", "OnrcSeat.postalCode", "OnrcAlias.name",
+      // ONRC's people as published (#177): the holder's name and role, the organisation's name; none is prose of ours
+      "RoleHolder.name", "RoleHolder.role", "Person.name", "PersonRole.organisationName", "PersonRole.role",
+      // ONRC's search (#176): the registration's name and number as published, the folded query the server understood, a status's nomenclature name, a county's name
+      "OnrcRegistration.name", "OnrcRegistration.cui", "OnrcResult.registrationNumber", "OnrcResult.name", "OnrcResult.cui", "OnrcResult.legalForm", "OnrcCurrentStatus.name", "OnrcMatchedField.text", "OnrcFilterEcho.qFolded", "OnrcAreaCount.name",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
+      // the ONRC and financial-statement Signals (#184): ONRC's status name as published and the legal form as an abbreviation (SRL, SA); no prose of ours
+      "InsolvencyNumbers.status", "NoFinancialStatementNumbers.legalForm",
+      // the donor-to-Party Signal (#185): the list as registered; no prose of ours
+      "DonorToPartyNumbers.party",
+      // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
+      "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
+      "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
+      // AEP's mandates (#180): the leader's name and the list as registered (source data), an alliance's member parties, the authority's display name
+      "Mandate.leaderName", "Mandate.list", "Mandate.memberParties", "LeadershipVia.authorityName", "RecordParty.list", "RecordParty.memberParties",
+      // MF's statements (#179): the file's name, its links, the dataset's title and the licence, as the portal publishes them
+      // BaniPartide's donations (#182): the party and the date cell as published, and the publisher's own links, name and licence
+      "FirmDonation.party", "FirmDonation.dateText", "DonationSource.datasetUrl", "DonationSource.license", "DonationSource.licenseUrl", "DonationSource.publisher", "DonationSource.publisherUrl", "DonationSource.underlyingUrl",
+      "FinancialSource.file", "FinancialSource.datasetUrl", "FinancialSource.fileUrl", "FinancialSource.via", "FinancialSource.license",
     ]);
     const found: string[] = [];
     for (const type of Object.values(schema.getTypeMap())) {

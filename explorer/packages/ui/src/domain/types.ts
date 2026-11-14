@@ -1,12 +1,15 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, PartyCoverageFieldsFragment, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
+import type { OnrcCoverageQuery, OnrcSearchQuery } from "@grivei/contract";
 
 export type { RecordBadge };
 export type Total = TotalFieldsFragment;
+/** What a Party-filtered search's Total covers (#181): direct and subordinate matches and what the filter leaves out. */
+export type PartyCoverageData = PartyCoverageFieldsFragment;
 /** Integer bani (1/100 RON) as a decimal string. */
 export type Bani = Total["awarded"];
 export type EntityRef = EntityRefFragment;
@@ -30,6 +33,22 @@ export type MoneyMap = MoneyMapFieldsFragment;
 
 /** What an Entity page's header shows (`EntityHeaderFields`). */
 export type EntityHeaderData = EntityHeaderFieldsFragment;
+/** An authority's Mandates and gaps (`LeadershipFields`), present only on the Overview's entity: a town hall, sector, Bucharest city hall, county council or a subordinate body of one (#180). */
+export type LeadershipData = LeadershipFieldsFragment;
+/** The Party of a Record (`RecordPartyFields`): the mandate in force on its award date. Never a winner's. */
+export type RecordPartyData = RecordPartyFieldsFragment;
+/** MF's annual financial statements of an entity with the awards of each year beside them (`FinancialStatementsFields`), present only on the Overview's entity. */
+export type FinancialStatementsData = FinancialStatementsFieldsFragment;
+/** One fiscal year of them. */
+export type FinancialYearData = FinancialStatementsFieldsFragment["years"][number];
+/** A company's firm donations and loans as BaniPartide lists them (`FirmDonationsFields`), present only on the Overview's entity. */
+export type FirmDonationsData = FirmDonationsFieldsFragment;
+/** One donation or loan of them. */
+export type FirmDonationData = FirmDonationsFieldsFragment["items"][number];
+/** The BaniPartide table every line cites. */
+export type DonationSourceData = FirmDonationsFieldsFragment["source"];
+/** The basis of the "public enterprise (AMEPIP)" mark (`PublicEnterpriseFields`), present only on the Overview's entity. */
+export type PublicEnterpriseData = PublicEnterpriseFieldsFragment;
 /** The contract's `Role` (AUTHORITY | SUPPLIER) an Entity page asks for; `EntityRole` above is the lowercase URL segment. */
 export type EntityPageRole = Role;
 /** The three tabs of an Entity page; each has its own URL. */
@@ -79,6 +98,12 @@ export type OverviewCounterparties = EntityOverviewData["counterparties"];
 export type OverviewConsortium = EntityOverviewData["consortia"][number];
 export type OverviewProcedure = EntityOverviewData["procedures"][number];
 export type OverviewFrameworks = EntityOverviewData["frameworks"];
+/** The administrators and legal representatives ONRC lists for an organisation (`EntityOverview`'s `people`, public tier). `person` on a holder is Restricted: set only in a Private view. */
+export type OrganisationPeopleData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["people"]>;
+/** A person page (`PersonPage`'s `person`, Restricted: only a Private view receives it). */
+export type PersonPageData = NonNullable<PersonPageQuery["person"]>;
+/** The ONRC registration of an entity (`EntityOverview`'s `onrc`): facts from the newest snapshot, history derived by comparing snapshots. */
+export type OnrcRegistrationData = NonNullable<NonNullable<EntityOverviewQuery["entity"]>["onrc"]>;
 /** Every spelling of an Entity's name in SEAP ("Appears in SEAP as"). */
 export type EntityAliases = EntityHeaderData["aliases"];
 
@@ -100,3 +125,12 @@ export type GapCellData = CoveragePageQuery["coverage"]["grid"][number];
 
 /** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
 export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];
+
+/** ONRC's search answer (`OnrcSearch`): the count, one page of the Organisations tab and the count lens (#176). */
+export type OnrcSearchData = OnrcSearchQuery["onrc"]["search"];
+/** One registration of ONRC's Organisations tab. Never a sole trader's: the API leaves those out. */
+export type OnrcResultData = OnrcSearchData["organisations"]["rows"][number];
+/** The count lens: registrations by the seat's county, and those with none. */
+export type OnrcCountMapData = OnrcSearchData["map"];
+/** One cell of ONRC's coverage grid: its `quarter` is the snapshot's period key (a date, or a month for a missing snapshot), not a quarter. */
+export type SnapshotCellData = OnrcCoverageQuery["coverage"]["grid"][number];

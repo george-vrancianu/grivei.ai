@@ -10,6 +10,16 @@ fragment TotalFields on Total {
   estimated
 }
 
+# A Party-filtered search's coverage (#181): how the Total splits and what the filter leaves out.
+fragment PartyCoverageFields on PartyCoverage {
+  party
+  direct { records awarded }
+  subordinate { records awarded }
+  otherParties { records awarded }
+  independent { records awarded }
+  unattributed { records awarded }
+}
+
 fragment EntityRef on Entity {
   key
   displayName
@@ -65,6 +75,14 @@ fragment SignalNumbersFields on SignalNumbers {
   ... on SplittingNumbers { purchases sum cap cpvGroup from to }
   ... on FrameworkOverrunNumbers { ceiling subsequent ratio }
   ... on NoPublicationNumbers { procedure }
+  ... on YoungFirmNumbers { days registered counted }
+  ... on NoConstructionCaenNumbers { value authorisedCodes }
+  ... on AfterStrikeOffNumbers { struckOff daysAfter }
+  ... on InsolvencyNumbers { status firstSeen sinceAtLeast }
+  ... on FewEmployeesNumbers { fiscalYear employees awarded }
+  ... on NoFinancialStatementNumbers { fiscalYear awarded legalForm }
+  ... on DonorToPartyNumbers { days party derived kind }
+  ... on SoeBoardInSupplierNumbers { persons }
 }
 
 # What a Record's row needs of each Signal it is in: enough for the compact badge and its reproducing link.
@@ -136,4 +154,91 @@ fragment RecordResultFields on RecordResultPage {
     matchedField { field text highlights }
     areaShare
   }
+}
+
+# The ONRC section of an entity page: the registration and the history derived from the held snapshots.
+fragment OnrcRegistrationFields on OnrcRegistration {
+  registrationNumber
+  registrationDate
+  legalForm
+  statuses { code name firstSeen sinceAtLeast }
+  caen { code version }
+  seat { county locality address postalCode }
+  aliases { name firstSeen lastSeen sinceAtLeast current }
+  snapshot
+  provenance { ...ProvenanceFields }
+}
+
+# The administrators and legal representatives of an organisation (public tier, #177). `person` is Restricted: null unless the host shows Restricted content.
+fragment OrganisationPeopleFields on OrganisationPeople {
+  holders { name role birthYear person { id } }
+  snapshot
+  provenance { ...ProvenanceFields }
+}
+
+# A person page (Restricted, #177): the name, the birth year and the roles across organisations.
+fragment PersonFields on Person {
+  id
+  name
+  birthYear
+  roleCount
+  roles { organisationName entityKey entityRole role }
+  snapshot
+  provenance { ...ProvenanceFields }
+}
+
+# The basis of the "public enterprise (AMEPIP)" mark on an entity page.
+fragment PublicEnterpriseFields on PublicEnterprise {
+  listedAs
+  registrationNumber
+  status
+  firstYear
+  lastYear
+  snapshot
+  url
+  via
+  license
+  fetchedAt
+}
+
+# The Leadership list of an authority (AEP's mandates, #180), and of a subordinate body (its authority's, with the basis of the tie).
+fragment LeadershipFields on Leadership {
+  mandates { leaderName list independent memberParties electionDate basis dataThrough startDate endDate }
+  gaps { startDate endDate kind }
+  via { authority authorityName snapshotDate snapshots }
+}
+
+# The Party of a SEAP Record (#180).
+fragment RecordPartyFields on RecordParty {
+  list
+  independent
+  memberParties
+  electionDate
+  basis
+  dataThrough
+  via { authority authorityName snapshotDate snapshots }
+}
+
+fragment FinancialStatementsFields on FinancialStatements {
+  years {
+    fiscalYear
+    revision
+    mayBeRevised
+    turnover
+    profitOrLoss
+    debts
+    equity
+    averageEmployees
+    awardedInYear
+    awardShareOfTurnover
+    source { file datasetUrl fileUrl via license published fetchedAt }
+  }
+}
+
+fragment FirmDonationsFields on FirmDonations {
+  dataThroughYear
+  donationCount
+  loanCount
+  items { kind party year date dateText amount sourceRow }
+  source { datasetUrl license licenseUrl publisher publisherUrl underlyingUrl fetchedAt }
 }

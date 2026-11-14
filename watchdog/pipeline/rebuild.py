@@ -47,18 +47,29 @@ from .estimates import read_estimates
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
 from .mf.build import MfSummary, build_mf
+from .onrc.people import PersonOverrides
+from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
+from .onrc.search import SearchSummary as OnrcSearchSummary, build_onrc_search, vacuum as vacuum_onrc_search
+from .amepip.build import AmepipSummary, build_amepip
+from .aep.build import AepSummary, build_aep
+from .financials.build import FinancialsSummary, build_financials
+from .banipartide.build import DonationsSummary, build_donations
 from .placement.build import PlacementSummary, build_placement
 from .progress import Progress
 from .rollup import build_rollup
 from .signals import build_signals
+from .sources import SEAP, SOURCES
 from .search import create_index, value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
 
 SQL_DIR = Path(__file__).parent / "sql"
-SCHEMA_SQL = SQL_DIR / "seap_schema.sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
+AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
+AEP_SQL = SQL_DIR / "aep_schema.sql"
+FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
+DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
 
 
 @dataclass
@@ -73,6 +84,12 @@ class RebuildSummary:
     signals: dict[str, int] = field(default_factory=dict)  # Signals found per rule (#74)
     placement: PlacementSummary | None = None
     mf: MfSummary | None = None  # the MF list step (#80)
+    onrc: OnrcSummary | None = None  # the ONRC step (#175)
+    onrc_search: OnrcSearchSummary | None = None  # ONRC's search table (#176)
+    amepip: AmepipSummary | None = None  # the AMEPIP public-enterprise list step (#183)
+    aep: AepSummary | None = None  # AEP's Mandates, Leadership list and Party per Record (#180)
+    financials: FinancialsSummary | None = None  # the MF annual financial statements step (#179)
+    donations: DonationsSummary | None = None  # the BaniPartide firm donations step (#182)
     geo_line: str | None = None  # the TopoJSON step's one line
     coverage: list[str] = field(default_factory=list)  # the Coverage grid's flagged cells (#79): possibly incomplete, not yet loaded, hand-entered gaps
     duplicate_files: list[Path] = field(default_factory=list)  # byte-identical to a file already planned: nothing to load
@@ -92,6 +109,18 @@ class RebuildSummary:
             out.append(self.placement.line())
         if self.mf is not None:
             out.append(self.mf.line())
+        if self.onrc is not None:
+            out.append(self.onrc.line())
+        if self.onrc_search is not None:
+            out.append(self.onrc_search.line())
+        if self.amepip is not None:
+            out.append(self.amepip.line())
+        if self.aep is not None:
+            out.append(self.aep.line())
+        if self.financials is not None:
+            out.append(self.financials.line())
+        if self.donations is not None:
+            out.append(self.donations.line())
         if self.geo_line:
             out.append(self.geo_line)
         out += [f"skipped, same file already loaded: {p}" for p in self.duplicate_files]
@@ -105,15 +134,16 @@ class RebuildSummary:
         return out
 
 
-# The data-through date per Record kind, the one definition `sources` (API) and `pipeline status` share: the latest publication date
-# of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days after the kind's last bulk quarter (crawled Records' own dates do not count:
-# one past a hole would hide the hole; a crawled day with nothing new still means "looked through that day").
-DATA_THROUGH_SQL = """
-SELECT kind, max(d)::text FROM (
-    SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
-    UNION ALL
-    SELECT kind, through FROM seap.crawl_state
-) x GROUP BY kind ORDER BY kind"""
+DATA_THROUGH_SQL = SEAP.data_through_sql  # SEAP's data-through date per Record kind (defined in sources.py, where `pipeline status` and the API's `sources` share it)
+
+
+def store_sources(cur: psycopg.Cursor) -> None:
+    """`core.source`: the registry (sources.py) as the API reads it. Rebuilt with every graph, so the table never disagrees with the code that built it."""
+    for position, s in enumerate(SOURCES):
+        cur.execute(
+            "INSERT INTO core.source (id, position, name, schema_name, record_kinds, lenses, placement_rule, methodology_anchor, landing_status) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (s.id, position, s.name, s.schema, list(s.record_kinds), list(s.lenses), s.placement_rule, s.methodology_anchor, s.landing_row.status))
 
 
 def _quarter_label(unit: str) -> str:
@@ -261,8 +291,8 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
     Oldest fetch first, so a re-uploaded file (a later fetch of the same unit) is applied after the original. A file
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
     """
-    summary.incomplete = archive.incomplete()
-    units = [u for u in archive.units() if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
+    summary.incomplete = archive.incomplete(skip=("onrc", "financials"))  # ONRC and the financial statements report their own (their files are too big to hash twice)
+    units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     if progress:
         progress.start(len(units), archive.root)
@@ -370,13 +400,15 @@ SELECT k.key,
        CASE WHEN k.key ~ '^[0-9]+$' THEN 'CUI' ELSE 'NAME_ONLY' END,
        CASE WHEN k.key ~ '^[0-9]+$' THEN k.key END,
        k.vat,
-       coalesce(a.name, top.name, k.vat, k.key),
+       coalesce(a.name, nullif(o.name, ''), top.name, k.vat, k.key),
        a.status, k.curated,
-       CASE WHEN a.cui IS NOT NULL THEN 'ANAF' ELSE 'SEAP' END,
-       CASE WHEN a.cui IS NULL THEN f.via END,
-       coalesce(a.fetched_at, f.fetched_at)
+       CASE WHEN a.cui IS NOT NULL THEN 'ANAF' WHEN o.cui IS NOT NULL THEN 'ONRC' ELSE 'SEAP' END,
+       CASE WHEN a.cui IS NOT NULL THEN NULL WHEN o.cui IS NOT NULL THEN o.snapshot_date::text ELSE f.via END,
+       coalesce(a.fetched_at, os.fetched_at, f.fetched_at)
   FROM (SELECT key, max(vat) AS vat, bool_or(curated) AS curated, max(source_file_id) AS file_id FROM party GROUP BY key) k
   LEFT JOIN core.anaf_company a ON a.cui = k.key
+  LEFT JOIN onrc.registration o ON o.cui = k.key AND o.primary_for_cui AND a.cui IS NULL  -- ONRC names a CUI ANAF does not know (ADR 0018)
+  LEFT JOIN onrc.snapshot os ON os.snapshot_date = o.snapshot_date
   LEFT JOIN LATERAL (SELECT name FROM spelling WHERE entity_key = k.key ORDER BY records DESC, name LIMIT 1) top ON true
   JOIN seap.source_file f ON f.id = k.file_id
 """
@@ -384,12 +416,13 @@ SELECT k.key,
 
 def _fold_names(cur: psycopg.Cursor, chunk: int = 50_000) -> None:
     """`core.entity.name_folded` (the Go-to lookup of a name query, #69) from the final display names, folded as every query is."""
-    cur.execute("SELECT key, display_name FROM core.entity")
-    rows = cur.fetchall()
-    for i in range(0, len(rows), chunk):
-        part = rows[i:i + chunk]
-        cur.execute("UPDATE core.entity e SET name_folded = v.f FROM unnest(%s::text[], %s::text[]) AS v(k, f) WHERE e.key = v.k",
-                    ([k for k, _ in part], [fold(n) for _, n in part]))
+    # a server-side cursor: ONRC makes core.entity millions of rows, never all of them in Python at once (the cursor sees the table as it was opened)
+    with cur.connection.cursor(name="fold_names") as names:
+        names.itersize = chunk
+        names.execute("SELECT key, display_name FROM core.entity")
+        while part := names.fetchmany(chunk):
+            cur.execute("UPDATE core.entity e SET name_folded = v.f FROM unnest(%s::text[], %s::text[]) AS v(k, f) WHERE e.key = v.k",
+                        ([k for k, _ in part], [fold(n) for _, n in part]))
     cur.execute("CREATE INDEX entity_name_folded ON core.entity (name_folded) WHERE name_folded <> ''")
 
 
@@ -402,7 +435,9 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
                 "FROM party WHERE name IS NOT NULL AND name <> '' GROUP BY key, name")
     cur.execute(_ENTITIES)  # entities first: core.alias references them
     cur.execute(_ALIASES)
-    cur.execute("UPDATE core.entity SET display_name = translate(display_name, 'ŞşŢţ', 'ȘșȚț') WHERE provenance_source = 'ANAF'")
+    if summary.onrc is not None:  # every registration no Record names becomes an entity too (ADR 0018); an override-pinned CUI keeps the override's entity
+        summary.onrc.entities_only = build_onrc_entities(cur, list(overrides.by_id))
+    cur.execute("UPDATE core.entity SET display_name = translate(display_name, 'ŞşŢţ', 'ȘșȚț') WHERE provenance_source IN ('ANAF', 'ONRC')")
     for override in (*overrides.by_id.values(), *overrides.by_name.values()):
         if override.display_name:
             cur.execute("UPDATE core.entity SET display_name = %s WHERE key = %s", (override.display_name, override.key))
@@ -447,6 +482,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     today = today or datetime.now(timezone.utc).date()
     bulk_rows: dict[tuple[str, tuple[int, int]], int] = {}  # (kind, quarter) -> data rows of the largest loaded bulk unit: the possibly-incomplete rule's count
     overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
+    person_overrides = PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES)  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
 
     def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
         return progress.step(name) if progress else nullcontext()
@@ -455,10 +491,20 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
             with step("schema"):
                 cur.execute(CORE_SQL.read_text(encoding="utf-8"))
-                cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
+                for source in SOURCES:  # each Source's own schema (sql/<schema>_schema.sql), in registry order
+                    cur.execute((SQL_DIR / f"{source.schema}_schema.sql").read_text(encoding="utf-8"))
+                store_sources(cur)
                 cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
+                cur.execute(AMEPIP_SQL.read_text(encoding="utf-8"))  # a Reference source's own tables (#183): not in the registry
+                cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
+                cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
+                cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
             with step("anaf-identities"):
-                resolver = Resolver(load_anaf(cur, archive, summary), overrides)
+                anaf_names = load_anaf(cur, archive, summary)
+            with step("onrc"):
+                summary.onrc = build_onrc(cur, archive, placement_dir, person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
+                names_cur = conn.cursor()
+                resolver = Resolver(OnrcNames(names_cur, anaf_names), overrides)
             with step("estimates"):
                 estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
                 summary.estimates = len(estimates)
@@ -505,10 +551,19 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 summary.estimates_missing = cur.fetchone()[0]
             with step("entities"):
                 build_entities(cur, overrides, summary)
+                names_cur.close()  # the resolver's cursor: the units are loaded
             with step("placement"):
-                summary.placement = build_placement(cur, archive, placement_dir)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+                summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
             with step("mf"):
                 summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
+            with step("amepip"):
+                summary.amepip = build_amepip(cur, archive)  # #183: AMEPIP's public enterprises, flagged by CUI on the entities
+            with step("aep"):
+                summary.aep = build_aep(cur, archive, placement_dir)  # #180: Mandates, Leadership gaps, subordinate bodies, Party per Record (after placement and the MF list)
+            with step("financials"):
+                summary.financials = build_financials(cur, archive)  # #179: MF's annual statements, one row per CUI per fiscal year; read beside the awards, never added to them
+            with step("donations"):
+                summary.donations = build_donations(cur, archive)  # #182: BaniPartide's firm donors and lenders by CUI; context beside an entity, never a Party or a Signal
             with step("coverage"):
                 cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
                 summary.coverage = flagged_cells(cells)
@@ -518,8 +573,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("signals"):
                 cur.execute("SELECT count(*) FROM seap.record")
                 summary.records = cur.fetchone()[0]
-                cur.execute(DATA_THROUGH_SQL)
-                data_through = dict(cur.fetchall())
+                cur.execute(SEAP.data_through_sql)
+                data_through = dict(cur.fetchall())  # the signals and the status file are SEAP's today (ONRC's dates are read by `pipeline status` and the API)
                 summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
             with step("record-indexes"):
                 # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
@@ -533,6 +588,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             with step("analyze-search"):
                 cur.execute("ANALYZE seap.search")
+            with step("onrc-search"):
+                summary.onrc_search = build_onrc_search(cur)  # #176: after the SEAP search table (it reads who is a SEAP counterparty); its BM25 index is in this transaction too
             with step("commit"):
                 conn.commit()  # what leaving the `with` would do; explicit so the commit is timed
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
@@ -552,8 +609,9 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     try:
         with step("vacuum"):
             vacuum(db_url)  # cannot run inside the transaction above: right after the commit
+            vacuum_onrc_search(db_url)
     except Exception as e:  # the rebuild has committed: search stays correct without the VACUUM, only slower
-        log.warning("VACUUM ANALYZE of seap.search failed after the commit (search is correct, but slower until it runs): %s", e)
+        log.warning("VACUUM ANALYZE of seap.search or onrc.search failed after the commit (search is correct, but slower until it runs): %s", e)
     # the county and UAT outlines are static files, not graph: built after the commit (a failure here never undoes the load)
     from .geo.topo import build_topojson
 

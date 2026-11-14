@@ -23,6 +23,7 @@ function navItemOf(route: Route): NavItem | null {
     case "main":
     case "entity":
     case "record":
+    case "person":
       return "explore";
     case "search":
     case "coverage":

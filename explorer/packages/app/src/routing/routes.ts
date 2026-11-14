@@ -12,6 +12,7 @@ export type Route =
   | { name: "search" }
   | { name: "entity"; entity: EntityRoute; key: string; view: EntityView }
   | { name: "record"; code: string }
+  | { name: "person"; id: string }
   | { name: "coverage" }
   | { name: "methodology" }
   | { name: "not-found" };
@@ -53,6 +54,10 @@ export function parsePath(pathname: string): ParsedLocation {
     const code = decode(second);
     return code === null ? notFound : { locale, route: { name: "record", code } };
   }
+  if (first === "person" && second !== undefined && third === undefined) {
+    const id = decode(second);
+    return id === null ? notFound : { locale, route: { name: "person", id } };
+  }
   const entity = ENTITY_SEGMENTS.find((e) => e === first);
   if (entity && second !== undefined) {
     const key = decode(second);
@@ -78,6 +83,8 @@ export function pathFor(locale: Locale, route: Route): string {
       return `${base}/methodology`;
     case "record":
       return `${base}/record/${encodeURIComponent(route.code)}`;
+    case "person":
+      return `${base}/person/${encodeURIComponent(route.id)}`;
     case "entity": {
       const root = `${base}/${route.entity}/${encodeURIComponent(route.key)}`;
       return route.view === "overview" ? root : `${root}/${route.view}`;

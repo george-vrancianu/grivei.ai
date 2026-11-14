@@ -114,6 +114,57 @@ export const sNoPublication: SignalFieldsFragment = {
   reproduce: reproduce({ authority: "4000003", supplier: "vat-DE811128135", signal: "NO_PUBLICATION", from: "2023-12-01", to: "2023-12-01" }),
 };
 
+// The ONRC and financial-statement rules (#184): each Signal names the facts of the Reference source it read in its `numbers`.
+export const sYoungFirm: SignalFieldsFragment = {
+  rule: "YOUNG_FIRM", date: "2024-05-30", firstDate: "2024-05-30", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "YoungFirmNumbers", days: 90, registered: "2024-03-01", counted: ron(300_000) },
+  reproduce: reproduce({ authority: "4000001", signal: "YOUNG_FIRM", from: "2024-05-30", to: "2024-05-30" }),
+};
+export const sNoConstructionCaen: SignalFieldsFragment = {
+  rule: "NO_CONSTRUCTION_CAEN", date: "2024-04-10", firstDate: "2024-04-10", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [hachi],
+  numbers: { __typename: "NoConstructionCaenNumbers", value: ron(2_000_000), authorisedCodes: 3 },
+  reproduce: reproduce({ authority: "4000001", signal: "NO_CONSTRUCTION_CAEN", from: "2024-04-10", to: "2024-04-10" }),
+};
+export const sAfterStrikeOff: SignalFieldsFragment = {
+  rule: "AFTER_STRIKE_OFF", date: "2024-06-01", firstDate: "2024-06-01", recordCount: 1, dataThrough: "2024-11-30",
+  authority: drumuriNationale, suppliers: [drumarii],
+  numbers: { __typename: "AfterStrikeOffNumbers", struckOff: "2022-10-11", daysAfter: 599 },
+  reproduce: reproduce({ authority: "4000002", signal: "AFTER_STRIKE_OFF", from: "2024-06-01", to: "2024-06-01" }),
+};
+export const sInsolvency: SignalFieldsFragment = {
+  rule: "INSOLVENCY", date: "2024-10-15", firstDate: "2024-10-15", recordCount: 1, dataThrough: "2024-11-30",
+  authority: spitalSibiu, suppliers: [constructii],
+  numbers: { __typename: "InsolvencyNumbers", status: "insolvență", firstSeen: "2024-09-02", sinceAtLeast: false },
+  reproduce: reproduce({ authority: "4000003", signal: "INSOLVENCY", from: "2024-10-15", to: "2024-10-15" }),
+};
+export const sFewEmployees: SignalFieldsFragment = {
+  rule: "FEW_EMPLOYEES", date: "2023-09-12", firstDate: "2023-09-12", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [hachi],
+  numbers: { __typename: "FewEmployeesNumbers", fiscalYear: 2023, employees: 1, awarded: ron(5_400_000) },
+  reproduce: reproduce({ authority: "4000001", signal: "FEW_EMPLOYEES", from: "2023-09-12", to: "2023-09-12" }),
+};
+export const sNoFinancialStatement: SignalFieldsFragment = {
+  rule: "NO_FINANCIAL_STATEMENT", date: "2023-11-08", firstDate: "2023-11-08", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "NoFinancialStatementNumbers", fiscalYear: 2023, awarded: ron(12_800_000), legalForm: "SA" },
+  reproduce: reproduce({ authority: "4000001", signal: "NO_FINANCIAL_STATEMENT", from: "2023-11-08", to: "2023-11-08" }),
+};
+export const sDonorToParty: SignalFieldsFragment = {
+  rule: "DONOR_TO_PARTY", date: "2023-11-20", firstDate: "2023-11-20", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "DonorToPartyNumbers", days: 112, party: "PARTIDUL SOCIAL DEMOCRAT", derived: false, kind: "DONATION" },
+  reproduce: reproduce({ authority: "4000001", signal: "DONOR_TO_PARTY", from: "2023-11-20", to: "2023-11-20" }),
+};
+/** Restricted: only served when the host shows Restricted content. */
+export const sSoeBoardInSupplier: SignalFieldsFragment = {
+  rule: "SOE_BOARD_IN_SUPPLIER", date: "2023-11-21", firstDate: "2023-11-21", recordCount: 1, dataThrough: "2024-11-30",
+  authority: primariaBrasov, suppliers: [constructii],
+  numbers: { __typename: "SoeBoardInSupplierNumbers", persons: 1 },
+  reproduce: reproduce({ authority: "4000001", signal: "SOE_BOARD_IN_SUPPLIER", from: "2023-11-21", to: "2023-11-21" }),
+};
+
 /** A Signal as a Record's row carries it: rule, date, numbers and reproducing filter. */
 export const signalBadge = ({ rule, date, numbers, reproduce: r }: SignalFieldsFragment): SignalBadgeFieldsFragment => ({ rule, date, numbers, reproduce: r });
 

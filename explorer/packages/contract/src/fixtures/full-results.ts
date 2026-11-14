@@ -44,12 +44,13 @@ export const fullResultsAuthoritiesHand: FixtureSet<FullResultsAuthoritiesQuery,
 ];
 
 const textQuery = recordedMainScreen.find((f) => f.name === "text-query")!.data.seap.search;
+const textQueryTotal = Object.fromEntries(Object.entries(textQuery.total).filter(([field]) => field !== "partyCoverage")) as Omit<typeof textQuery.total, "partyCoverage">; // MainScreen selects the coverage, the full-results operations do not
 
 export const fullResultsSuppliersHand: FixtureSet<FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables> = [
   {
     name: "text-query", kind: "typical", description: "the suppliers of the recorded text query \"comuna\", first page (rows as the main screen's: test data for the carried-search link, #106)",
     variables: { filter: { q: "comuna" }, limit: 50, offset: 0 },
-    data: { seap: { search: { total: textQuery.total, suppliers: textQuery.suppliers } } },
+    data: { seap: { search: { total: textQueryTotal, suppliers: textQuery.suppliers } } },
   },
 ];
 

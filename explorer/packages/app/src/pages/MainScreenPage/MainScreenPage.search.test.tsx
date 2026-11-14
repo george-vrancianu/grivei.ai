@@ -2,6 +2,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import allowlist from "@grivei/contract/persisted-queries.json";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { createClient, type GraphqlClient } from "../../graphql/client.ts";
@@ -74,6 +75,9 @@ describe("the placeholder", () => {
   });
 });
 
+/** The picker's count of the other Source (ONRC's, for the query typed) is not what these tests are about: it is answered at once, apart from the screen's own requests. */
+const isOnrcCount = (id: string) => allowlist.operations.find((o) => o.sha256 === id)?.name === "OnrcCount";
+
 /** A client that ignores the abort signal and holds every answer until the test releases it. */
 function heldClient() {
   const real = fixtureClient().client;
@@ -81,6 +85,7 @@ function heldClient() {
   const client: GraphqlClient = {
     query: (op, variables) => {
       const answer = real.query(op, variables);
+      if (op.name === "OnrcCount") return answer;
       return new Promise((resolve, reject) => void held.push(() => void answer.then(resolve, reject)));
     },
   };
@@ -126,7 +131,7 @@ describe("a superseded request", () => {
       fetch: (_input, init) =>
         new Promise((_resolve, reject) => {
           const signal = init?.signal as AbortSignal;
-          signals.push(signal);
+          if (!isOnrcCount((JSON.parse(String(init?.body)) as { id: string }).id)) signals.push(signal);
           signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
         }),
     });

@@ -11,9 +11,18 @@ from typing import Callable
 from ..anaf import AnafClient, AnafProgress, collect_cuis, lookup
 from ..archive import Archive
 from ..crawl import CrawlError, CrawlProgress, Crawler, plan_run, run_crawl
+from ..onrc.fetch import held_snapshots
 from .engine import DeterministicError, StepResult, TransientError
 
 RECHECK_ANAF_AFTER_DAYS = 365
+ONRC_STALE_AFTER_DAYS = 70  # ONRC publishes monthly: a newest snapshot older than this means the dataset stopped (suspicious success)
+
+
+def _onrc_stale(archive: Archive, now: datetime) -> str | None:
+    held = sorted(held_snapshots(archive))
+    if held and (now.astimezone(timezone.utc).date() - date.fromisoformat(held[-1])).days > ONRC_STALE_AFTER_DAYS:
+        return f"the newest ONRC snapshot held is {held[-1]}, more than {ONRC_STALE_AFTER_DAYS} days old: the register may have stopped publishing"
+    return None
 
 
 @dataclass
@@ -30,7 +39,12 @@ class Impl:
     pgdump_fn: Callable[[], StepResult] | None = None
     crawl_delay: float = 0.35
     crawl_start: date | None = None  # PIPELINE_CRAWL_START: where a first crawl with no cursor starts
+    fetch_onrc: Callable | None = None  # (archive, limit=) -> OnrcFetchSummary: ONRC's snapshots (#175); None = not wired, the step skips
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
+    fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
+    check_aep: Callable | None = None  # (archive) -> list of alert texts (#180): only checks the one-off 2025 file for a newer upstream set; None = not wired
+    fetch_financials: Callable | None = None  # (archive) -> FinancialsFetchSummary (#179); None = not wired, the step is left out
+    check_banipartide: Callable | None = None  # (archive) -> CheckResult (#182): only a check; None = not wired, the step is left out
 
     def crawl(self) -> StepResult:
         progress = CrawlProgress(self.archive.root / "crawl-progress.json", now=self.now)  # prints its own timestamped lines
@@ -53,6 +67,50 @@ class Impl:
         if failed:
             raise TransientError(f"{len(failed)} data.gov.ro/MF download(s) failed: {failed[0]}")
         return StepResult({"archived": len(bulk.archived), "unchanged": len(bulk.unchanged), "mfArchived": len(mf.archived)}, [], warnings)
+
+    def onrc(self, limit: int | None = None) -> StepResult:
+        """ONRC's monthly snapshots. Its own step, so a failing ONRC never blocks SEAP's: the three failure classes are the connector's own (onrc/fetch.py). `limit` caps the snapshots downloaded in this run (the refresh passes a small one, the seed none)."""
+        if self.fetch_onrc is None:
+            raise DeterministicError("ONRC fetch is not configured")
+        summary = self.fetch_onrc(self.archive, limit=limit)
+        if summary.invalid:
+            raise DeterministicError(f"{len(summary.invalid)} ONRC file(s) are not what they should be: {summary.invalid[0]}")  # retrying fetches the same file
+        if summary.failed:
+            raise TransientError(f"{len(summary.failed)} ONRC download(s) failed: {summary.failed[0]}")
+        warnings = [f"ONRC dataset not classified: {t}" for t in summary.unclassified] + list(summary.warnings)
+        warnings += [w for w in [_onrc_stale(self.archive, self.now())] if w]
+        return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def amepip(self) -> StepResult:
+        """AMEPIP's public-enterprise list (#183): its own step, so a failing portal never holds back data.gov.ro, ANAF or the load."""
+        summary = self.fetch_amepip(self.archive)
+        warnings = [f"AMEPIP resource not classified: {t}" for t in summary.unclassified]
+        if summary.failed:
+            raise TransientError(f"{len(summary.failed)} AMEPIP fetch failure(s): {summary.failed[0]}")
+        return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def aep(self) -> StepResult:
+        """AEP's one-off 2025 file (#180): the step only CHECKS for a newer upstream file and alerts (a warning in the run); it never downloads."""
+        alerts = self.check_aep(self.archive)
+        return StepResult({"alerts": len(alerts)}, [], list(alerts))
+
+    def financials(self) -> StepResult:
+        """MF's annual financial statements (#179): its own step, so a failing portal never holds back data.gov.ro, ANAF or the load. A download that is not a statements file is deterministic (the same file again), a portal or network error is transient."""
+        summary = self.fetch_financials(self.archive)
+        if summary.invalid:
+            raise DeterministicError(f"{len(summary.invalid)} financial-statements file(s) are not what they should be: {summary.invalid[0]}")
+        if summary.failed:
+            raise TransientError(f"{len(summary.failed)} financial-statements fetch failure(s): {summary.failed[0]}")
+        warnings = [f"financial-statements resource not classified: {t}" for t in summary.unclassified]
+        return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def banipartide(self) -> StepResult:
+        """BaniPartide's firm donors (#182) are loaded once from an archived file: this step only CHECKS for a newer upstream database and warns (the alert), never fetches. A failed check is transient."""
+        result = self.check_banipartide(self.archive)
+        if result.state == "failed":
+            raise TransientError(result.detail)
+        warnings = [result.detail] if result.state in ("newer", "nothing held") else []
+        return StepResult({"state": result.state}, [], warnings)
 
     def anaf(self) -> StepResult:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")

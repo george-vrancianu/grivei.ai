@@ -3,7 +3,7 @@ import type { Locale } from "../../../theme/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 
 /** The `RecordFilter` fields the chips own. Everything else (q, county, uat, authority, supplier, cpv, signal, countySide) passes through untouched. */
-export const CHIP_FIELDS = ["from", "to", "channel", "valueBucket", "hasSignals", "procedure", "badges"] as const satisfies readonly (keyof RecordFilter)[];
+export const CHIP_FIELDS = ["from", "to", "channel", "valueBucket", "hasSignals", "procedure", "badges", "party"] as const satisfies readonly (keyof RecordFilter)[];
 export type ChipField = (typeof CHIP_FIELDS)[number];
 
 /** The first year the data covers (spec default: SEAP bulk data from 2021). */
@@ -70,6 +70,8 @@ export const toggleChannel = (filter: RecordFilter, channel: Channel): RecordFil
   withFields(filter, { channel: filter.channel === channel ? undefined : channel });
 export const toggleValueBucket = (filter: RecordFilter, bucket: ValueBucket): RecordFilter =>
   withFields(filter, { valueBucket: filter.valueBucket === bucket ? undefined : bucket });
+/** The Party filter holds one list: choosing it sets it, `undefined` unsets it. */
+export const setParty = (filter: RecordFilter, party: string | undefined): RecordFilter => withFields(filter, { party });
 /** The chip offers `true` or nothing; a given `false` ("without Signals") is replaced by `true`. */
 export const toggleHasSignals = (filter: RecordFilter): RecordFilter => withFields(filter, { hasSignals: filter.hasSignals === true ? undefined : true });
 
@@ -97,10 +99,11 @@ export interface ActiveChipText {
   hasSignals: string;
   withoutSignals: string;
   badges: Record<RecordBadge, string>;
+  party: (list: string) => string;
 }
 
 /**
- * One entry per active chip, in a stable order: dates, channel, value bucket, Signals, procedures, badges (in the
+ * One entry per active chip, in a stable order: dates, channel, value bucket, Signals, procedures, the Party, badges (in the
  * order of the filter's list). A date that is not Jan 1 (from) or Dec 31 (to) is shown as the date, not as its year.
  */
 export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: Locale): ActiveChip[] {
@@ -125,6 +128,7 @@ export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: 
     });
   for (const name of filter.procedure ?? [])
     chips.push({ id: `procedure:${name}`, label: name, remove: (f) => withFields(f, { procedure: (f.procedure ?? []).filter((p) => p !== name) }) });
+  if (filter.party) chips.push({ id: "party", label: text.party(filter.party), remove: (f) => withFields(f, { party: undefined }) });
   for (const badge of filter.badges ?? [])
     chips.push({ id: `badge:${badge}`, label: text.badges[badge], remove: (f) => withFields(f, { badges: (f.badges ?? []).filter((b) => b !== badge) }) });
   return chips;

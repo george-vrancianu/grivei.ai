@@ -100,6 +100,15 @@ def _database_exists_at(url: str) -> bool:
         return _exists(admin, conninfo_to_dict(url)["dbname"])
 
 
+def _optional_count(c, table: str) -> int:
+    """The rows of a table a graph from before Release 2 does not have (0 then)."""
+    try:
+        with c.transaction():
+            return c.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+    except (psycopg.errors.UndefinedTable, psycopg.errors.InvalidSchemaName):
+        return 0
+
+
 def _graph_counts(url: str) -> dict[str, int] | None:
     """Record, search-row and entity counts of a database; None when it holds no graph (no `seap.record` yet)."""
     try:
@@ -108,6 +117,7 @@ def _graph_counts(url: str) -> dict[str, int] | None:
                 "records": c.execute("SELECT count(*) FROM seap.record").fetchone()[0],
                 "search": c.execute("SELECT count(*) FROM seap.search").fetchone()[0],
                 "entities": c.execute("SELECT count(*) FROM core.entity").fetchone()[0],
+                "registrations": _optional_count(c, "onrc.registration"),
             }
     except (psycopg.errors.UndefinedTable, psycopg.errors.InvalidSchemaName, psycopg.errors.InvalidCatalogName):
         return None
@@ -135,12 +145,22 @@ def check_graph(url: str, against: str | None = None, min_ratio: float = MIN_RAT
                 indexed = c.execute("SELECT count(*) FROM seap.search WHERE id @@@ pdb.all()").fetchone()[0]
                 if indexed != counts["search"]:
                     failures.append(f"the search index holds {indexed} rows, the table {counts['search']}")
+            if counts["registrations"]:  # ONRC is in the graph: its search index must be there and agree (a rebuild that lost the register has none to check)
+                if c.execute("SELECT 1 FROM pg_indexes WHERE schemaname = 'onrc' AND indexname = 'search_bm25'").fetchone() is None:
+                    failures.append("the ONRC search index (onrc.search_bm25) is missing")
+                else:
+                    indexed = c.execute("SELECT count(*) FROM onrc.search WHERE id @@@ pdb.all()").fetchone()[0]
+                    total = c.execute("SELECT count(*) FROM onrc.search").fetchone()[0]
+                    if indexed != total:
+                        failures.append(f"the ONRC search index holds {indexed} rows, the table {total}")
         if against and not failures:
             if not _database_exists_at(against):  # never skip the floor because the live database is gone: that is an interrupted swap, not a first build
                 return [f"the live database ({conninfo_to_dict(against).get('dbname')}) does not exist: nothing to compare with and nothing to switch (an interrupted swap? the next run or `pipeline rollback` restores the old graph)"]
             before = _graph_counts(against)
             if before and before["records"] and counts["records"] < before["records"] * min_ratio:
                 failures.append(f"{counts['records']} Records, but the graph it would replace has {before['records']} (floor {min_ratio:.0%}): the archive lost data or a quarter failed to load")
+            if before and before.get("registrations") and counts["registrations"] < before["registrations"] * min_ratio:
+                failures.append(f"{counts['registrations']} ONRC registrations, but the graph it would replace has {before['registrations']} (floor {min_ratio:.0%}): the archive lost its onrc/ snapshots or they did not read")
     except psycopg.Error as e:
         failures.append(f"a check could not run: {type(e).__name__}: {e}")
     return failures

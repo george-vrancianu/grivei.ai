@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "source": "onrc",
+  "stream": "snapshot",
+  "kind": "firme",
+  "unit": "2025-03-18",
+  "fetchedAt": "2026-11-13T04:00:00Z",
+  "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025",
+  "via": "Firme înregistrate la Registrul Comerțului până la data de 18 martie 2025",
+  "files": [
+    {
+      "name": "1neradiate_fara_sediu_2025-03-18.csv",
+      "sha256": "f607275a583a4d4abd8e10bb5226dced95f3e5bbb3506be1063e9a8250fce278",
+      "bytes": 124
+    },
+    {
+      "name": "2radiate_fara_sediu_2025-03-18.csv",
+      "sha256": "2c61e5c6a88d1af7bdfb2b80c858577898c6084d4410c4a04a0b798683d599e8",
+      "bytes": 51
+    },
+    {
+      "name": "3neradiate_cu_sediu_2025-03-18.csv",
+      "sha256": "b4df43d89200318308cb9f61eeb080a228b9a3355052e4f50618e97a820d2590",
+      "bytes": 1074
+    },
+    {
+      "name": "4radiate_cu_sediu_2025-03-18.csv",
+      "sha256": "a58a09e518e5f989701169166e5f4da4bc1c3476a9662a00794b3158c14c1c1b",
+      "bytes": 218
+    },
+    {
+      "name": "5nomenclator_stari_firma.csv",
+      "sha256": "cc44ac0ebca8ab0720ee93e31c69b61113e7934fb09f45a0f8102787c38566d6",
+      "bytes": 158
+    }
+  ],
+  "origin": {
+    "system": "data.gov.ro",
+    "dataset": "firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025",
+    "datasetId": "id-firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025",
+    "datasetTitle": "Firme înregistrate la Registrul Comerțului până la data de 18 martie 2025",
+    "layout": "legacy",
+    "snapshot": "2025-03-18",
+    "resources": [
+      {
+        "role": "legacy",
+        "resourceId": "c9eedbce-0000-4000-8000-000000000000",
+        "name": "neradiate fără sediu",
+        "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025/resource/c9eedbce-0000-4000-8000-000000000000/download/1neradiate_fara_sediu_2025-03-18.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 122,
+        "hash": "",
+        "format": "CSV",
+        "rows": 1
+      },
+      {
+        "role": "legacy",
+        "resourceId": "140e5791-0000-4000-8000-000000000001",
+        "name": "radiate fără sediu",
+        "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025/resource/140e5791-0000-4000-8000-000000000001/download/2radiate_fara_sediu_2025-03-18.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 49,
+        "hash": "",
+        "format": "CSV",
+        "rows": 0
+      },
+      {
+        "role": "legacy",
+        "resourceId": "23af65e2-0000-4000-8000-000000000002",
+        "name": "neradiate cu sediu",
+        "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025/resource/23af65e2-0000-4000-8000-000000000002/download/3neradiate_cu_sediu_2025-03-18.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 1053,
+        "hash": "",
+        "format": "CSV",
+        "rows": 6
+      },
+      {
+        "role": "legacy",
+        "resourceId": "06c5eeec-0000-4000-8000-000000000003",
+        "name": "radiate cu sediu",
+        "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025/resource/06c5eeec-0000-4000-8000-000000000003/download/4radiate_cu_sediu_2025-03-18.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 216,
+        "hash": "",
+        "format": "CSV",
+        "rows": 0
+      },
+      {
+        "role": "nomenclature",
+        "resourceId": "c4de135c-0000-4000-8000-000000000004",
+        "name": "nomenclator stări firmă",
+        "url": "https://data.gov.ro/dataset/firme-inregistrate-la-registrul-comertului-pana-la-data-de-18-martie-2025/resource/c4de135c-0000-4000-8000-000000000004/download/5nomenclator_stari_firma.csv",
+        "lastModified": "2026-11-06T05:15:47",
+        "size": 150,
+        "hash": "",
+        "format": "CSV",
+        "rows": null
+      }
+    ]
+  }
+}

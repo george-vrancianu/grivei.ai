@@ -1,0 +1,23 @@
+import { fixtures } from "@grivei/contract/fixtures";
+import type { ExtraFixture } from "./fixtureClient.ts";
+
+/**
+ * Test-local answers for what an app screen asks of the Source that the contract has no fixture for (the picker's count of the other Source, an ONRC coverage with no window).
+ * They are the recorded and hand-written fixtures' own data, under the variables the screen sends: no new numbers are invented here.
+ */
+const onrcCount = fixtures.OnrcCount.find((f) => f.name === "typical-text-query")!;
+const seapTextQuery = fixtures.MainScreen.find((f) => f.name === "text-query")!;
+const onrcCoverage = fixtures.OnrcCoverage.find((f) => f.name === "typical-snapshots-and-a-known-gap")!;
+
+/** The picker's ONRC count for a query, from the hand-written count (2 registrations). */
+export const onrcCountFor = (q: string): ExtraFixture => ({ operation: "OnrcCount", variables: { filter: { q } }, data: onrcCount.data });
+/** The picker's SEAP count for a query, from the recorded text query (8 Records). */
+export const seapCountFor = (q: string): ExtraFixture => ({
+  operation: "FullResultsRecords",
+  variables: { filter: { q }, limit: 0, offset: 0 },
+  data: { seap: { search: { total: seapTextQuery.data.seap.search.total, records: { count: seapTextQuery.data.seap.search.total.records, rows: [] } } } },
+});
+/** ONRC's whole coverage (no window), from the hand-written typical one: two snapshots and a month with none. */
+export const onrcWholeCoverage: ExtraFixture = { operation: "OnrcCoverage", variables: {}, data: onrcCoverage.data };
+export const SEAP_TEXT_QUERY_RECORDS = seapTextQuery.data.seap.search.total.records;
+export const ONRC_TYPICAL_COUNT = onrcCount.data.onrc.search.count;

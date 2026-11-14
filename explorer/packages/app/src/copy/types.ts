@@ -1,6 +1,7 @@
 import type {
-  BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
 } from "@grivei/ui";
+import type { OnrcCountMapCopy, OnrcFilterChipsCopy, OnrcResultsCopy, SnapshotCoverageCopy, SourcePickerCopy } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
 
 /**
@@ -61,12 +62,20 @@ export interface Copy {
   party: PartyNameCopy;
   dataThrough: DataThroughDateCopy;
   total: TotalFigureCopy;
+  /** What a Party-filtered Total covers (#181): shown under the main screen's Total. */
+  partyCoverage: PartyCoverageCopy;
   /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */
   recordPage: Omit<RecordDetailCopy, "recordRow"> & { notFound: { title: string; body: (code: string) => string } };
+  /** The person page (Restricted, a Private view only): its display and the answer a host that hides Restricted content gives. */
+  personPage: PersonDetailCopy & { notFound: { title: string; body: string } };
   /** The Entity pages: the layout's tab names, the header and each tab's strings. */
   entityPage: {
     layout: EntityPageLayoutCopy;
     header: EntityHeaderCopy;
+    /** The ONRC section of the Overview. */
+    onrc: OnrcSectionCopy;
+    /** The administrators and legal representatives of a SEAP counterparty (public tier; the person link only in a Private view). */
+    people: PeopleSectionCopy;
     notFound: { title: string; body: string };
     /**
      * The Relationships tab: the graph, timeline and side panel's strings (the entity-link, Record row and page-link copy come from the catalogue's own `entityLink`, `results` and `fullResults`),
@@ -88,6 +97,13 @@ export interface Copy {
       largest: Omit<EntityOverviewCopy["largest"], "recordRow">;
       aliases: Omit<EntityOverviewCopy["aliases"], "badges">;
     };
+    /** The "public enterprise (AMEPIP)" section on the Overview: the mark and its basis (#183). */
+    publicEnterprise: PublicEnterpriseSectionCopy;
+    /** The Leadership list on an authority's (or a subordinate body's) Overview (#180). */
+    leadership: LeadershipSectionCopy;
+    financials: FinancialStatementsSectionCopy;
+    /** BaniPartide's firm donations on the Overview, with "also a firm donor" on a supplier's page (#182). */
+    donations: FirmDonationsSectionCopy;
     /** The Records tab when the entity has no Records in the page's role (a stale or typed URL). */
     recordsNoRole: { authority: string; supplier: string };
     /** The page links under the Overview's Signals when they run over one page. */
@@ -107,4 +123,42 @@ export interface Copy {
   coverage: CoveragePageLayoutCopy;
   /** The methodology page ("About the numbers"). */
   methodology: MethodologyPageCopy;
+  /** The Source picker, the ONRC screens, and the Source switch of the Records tab and of Coverage (#178). */
+  sources: SourcesCopy;
+}
+
+/** A Source's own words in the picker and its switches: the API's Source names are not translated, so these are the acronyms. */
+export type SourceNames = Record<"SEAP" | "ONRC", string>;
+
+export interface SourcesCopy {
+  names: SourceNames;
+  /** The Source picker beside the search bar. */
+  picker: SourcePickerCopy;
+  /** The match count beside each Source's name in the picker: a Source's own unit, never a shared one (SEAP counts Records, ONRC registrations). */
+  counts: Record<"SEAP" | "ONRC", (n: number, formatted: string) => string>;
+  /** The Source switch on an entity's Records tab: its name and the text of each option. */
+  recordsSwitch: SourcePickerCopy & { options: SourceNames };
+  /** The Source selector of the Coverage lens and page. */
+  coverageSwitch: SourcePickerCopy;
+  onrc: {
+    /** The eyebrow above the search bar on the ONRC screen. */
+    eyebrow: { search: string; scope: string; period: string };
+    title: string;
+    searchBar: SearchBarCopy;
+    results: OnrcResultsCopy;
+    filterChips: OnrcFilterChipsCopy;
+    countMap: OnrcCountMapCopy;
+    /** The lens toggle names of the ONRC screen (its first lens counts registrations) and the regions. */
+    layout: MainScreenLayoutCopy;
+    /** The ONRC registrations on an entity's Records tab. */
+    registrations: { noMatch: string };
+    coverage: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      /** The heading above the snapshots table. */
+      heading: string;
+      snapshots: Omit<SnapshotCoverageCopy, "states">;
+    };
+  };
 }

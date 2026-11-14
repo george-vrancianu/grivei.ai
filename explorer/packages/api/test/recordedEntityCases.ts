@@ -6,11 +6,14 @@
  *
  * Three archives: `overview` is `archive-roles` with the name-only suppliers of `archive-roles-names` merged on (an authority,
  * suppliers, an entity with both roles, name-only suppliers); `signals` is `archive-signals` (an authority and a supplier whose
- * Records are in Signals); `moneymap` is the placement world (authorities placed in a county and UAT, a national one, an unplaced one).
+ * Records are in Signals); `moneymap` is the placement world (authorities placed in a county and UAT, a national one, an unplaced one);
+ * `onrc` is `archive-onrc` (ONRC snapshots in both layouts beside a SEAP slice: a supplier with a status change, a rename, a strike-off, a CUI ANAF
+ * does not know, an entity with both roles, organisations that exist only in ONRC; #175); `people` is `archive-onrc-people` (the same world with ONRC's people files: the same person
+ * in two companies, namesakes, a possible match, an unlinked role holder, a PFA, an IF; #177), answered as a public host answers it (Restricted content hidden).
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedEntityArchive = "overview" | "signals" | "moneymap";
+export type RecordedEntityArchive = "overview" | "signals" | "moneymap" | "onrc" | "party" | "people";
 
 export interface RecordedEntityCase {
   operation: "EntityOverview";
@@ -27,6 +30,7 @@ export const ENTITY_KEYS = {
   hospital: "1000017", // SPITALUL EXEMPLU: an authority only
   commune: "1000009", // COMUNA EXEMPLU: an authority only
   alfa: "2000007", // ALFA DEMO SRL: a supplier only
+  beta: "2000015", // BETA DEMO SRL: a supplier with MF statements where the newest year has a blank turnover (#179)
   cnair: "2000031", // CNAIR DEMO SA: both roles
   localSupplier: "name-furnizor-local-srl", // no tax id published: name-only
   foreignSupplier: "vat-bg103029862", // a foreign VAT id: name-only
@@ -34,6 +38,23 @@ export const ENTITY_KEYS = {
   sanpetru: "51000005", // a commune placed in a county and UAT (archive-moneymap)
   ministry: "51001000", // a national authority
   unplaced: "51000900", // an authority neither ANAF nor SEAP places
+  onrcAuthority: "3100012", // PRIMARIA EXEMPLU ONRC: an authority ANAF and ONRC know (archive-onrc)
+  onrcAlfa: "3100020", // ALFA ONRC SRL: insolvency first seen after the earliest snapshot, CAEN codes
+  onrcBeta: "3100039", // BETA ONRC SRL: ONRC renamed it (BETA VECHI SRL -> BETA NOU SRL); ANAF's name stays the display name
+  onrcGamma: "3100047", // GAMMA ONRC SRL: struck off in the newest snapshot
+  onrcDelta: "3100055", // DELTA ONRC SRL: a CUI ANAF does not know, ONRC lists
+  partyBrasov: "51000501", // MUNICIPIUL BRASOV: a town hall with two mandates, a party switch and a handover window (archive-party, #180)
+  partyHospital: "51003206", // SPITALUL CLINIC JUDETEAN DEMO BRASOV: a subordinate body, Brasov's principal tie
+  partySchool: "51001507", // SCOALA GIMNAZIALA FICTIVA BRASOV: the town hall and a ministry are its principals: no Leadership list
+  partyRasnov: "51000307", // ORAS RASNOV: a partial election and its interim gap
+  partySinca: "51000404", // COMUNA SINCA NOUA: a repeat round, then no results
+  partySanpetru: "51000005", // COMUNA SANPETRU: an alliance's list with its member parties in 2020, an independent in 2024
+  partySupplier: "2000007", // SANTIERUL TARA DEMO SRL: a supplier of the party world: never a Leadership list (asked by seam1.test.ts, not recorded: the key and role are another archive's case)
+  onrcDubla: "3100063", // DUBLA ONRC SA: both roles
+  onrcOnly: "3100071", // OMEGA ONLY SRL: in ONRC only, seat in Cluj
+  peoplePfa: "3100110", // VASILESCU DEMO PFA: a PFA with a CUI that is a SEAP supplier (archive-onrc-people)
+  peopleIf: "3100128", // FAM TOMA IF: an IF (family enterprise) that is a SEAP supplier (archive-onrc-people)
+  onrcUnplaced: "3100080", // ZETA FARA JUDET SRL: in ONRC only, no county
 } as const;
 
 // The page always sends the filter (empty here) and omits the Signals' order and offset unless the URL says so.
@@ -54,6 +75,11 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "supplier", archive: "overview", kind: "typical",
     description: "a supplier only: its own share of each Record, consortium shares, a framework agreement and its subsequent contracts",
     variables: page(ENTITY_KEYS.alfa, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "supplier-financials-blank-turnover", archive: "overview", kind: "typical",
+    description: "a supplier whose newest MF year (a first release) has a blank turnover and whose older year is revised: no award share for the blank year, the revision marker on the other",
+    variables: page(ENTITY_KEYS.beta, "SUPPLIER"),
   },
   {
     operation: "EntityOverview", name: "both-roles-authority-page", archive: "overview", kind: "typical",
@@ -129,5 +155,121 @@ export const RECORDED_ENTITY_CASES: readonly RecordedEntityCase[] = [
     operation: "EntityOverview", name: "supplier-with-signals", archive: "signals", kind: "typical",
     description: "a supplier whose Records are in Signals: the Signals count on the supplier's page (?signalOrder=date-desc)",
     variables: page(ENTITY_KEYS.alfa, "SUPPLIER", { signalOrder: "DATE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-supplier", archive: "onrc", kind: "typical",
+    description: "a SEAP supplier with an ONRC section: registration date, a status already in the earliest snapshot (since at least) and an insolvency first seen later, authorised CAEN codes, the registered seat",
+    variables: page(ENTITY_KEYS.onrcAlfa, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-authority", archive: "onrc", kind: "typical",
+    description: "a contracting authority with an ONRC section on its authority page",
+    variables: page(ENTITY_KEYS.onrcAuthority, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-renamed-supplier", archive: "onrc", kind: "typical",
+    description: "ONRC renamed the company: both names are dated ONRC aliases, the display name stays ANAF's",
+    variables: page(ENTITY_KEYS.onrcBeta, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-struck-off-supplier", archive: "onrc", kind: "typical",
+    description: "a supplier struck off in the newest snapshot: the strike-off is first seen there, the earlier status is gone",
+    variables: page(ENTITY_KEYS.onrcGamma, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-cui-unknown-to-anaf", archive: "onrc", kind: "typical",
+    description: "a supplier whose CUI ANAF does not know but ONRC lists: provenance ONRC (the page badges it), ONRC's name as the display name, its SEAP Records attached",
+    variables: page(ENTITY_KEYS.onrcDelta, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-both-roles-authority-page", archive: "onrc", kind: "typical",
+    description: "an entity that is an authority and a supplier, on its authority page: the same ONRC section",
+    variables: page(ENTITY_KEYS.onrcDubla, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-both-roles-supplier-page", archive: "onrc", kind: "typical",
+    description: "the same entity on its supplier page: the ONRC section is the same on both role pages",
+    variables: page(ENTITY_KEYS.onrcDubla, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-only-organisation", archive: "onrc", kind: "empty",
+    description: "an organisation that exists only in ONRC (never a SEAP counterparty): an entity page with its ONRC section, no SEAP role, placed by its seat's county",
+    variables: page(ENTITY_KEYS.onrcOnly, "SUPPLIER"),
+  },
+  {
+    operation: "EntityOverview", name: "onrc-only-unplaced", archive: "onrc", kind: "empty",
+    description: "an organisation only in ONRC whose registration names no county: no placement (the Unplaced tile)",
+    variables: page(ENTITY_KEYS.onrcUnplaced, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-town-hall", archive: "party", kind: "typical",
+    description: "a town hall: its Leadership list with a party switch (two mandates for the same leader), the handover window shown as a gap",
+    variables: page(ENTITY_KEYS.partyBrasov, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-partial-election", archive: "party", kind: "extreme",
+    description: "a town hall with a partial election: the old mandate cut at the vacancy bound, an interim gap, the partial winner's mandate (partial counts, a one-off file)",
+    variables: page(ENTITY_KEYS.partyRasnov, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-repeat-round-and-no-results", archive: "party", kind: "extreme",
+    description: "a commune decided by the October 2020 repeat round and absent from the 2024 minutes: a mandate without results is a gap",
+    variables: page(ENTITY_KEYS.partySinca, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-subordinate-body", archive: "party", kind: "typical",
+    description: "a hospital that is a subordinate body of the town hall: the authority's Leadership list with the basis of the tie",
+    variables: page(ENTITY_KEYS.partyHospital, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-school", archive: "party", kind: "empty",
+    description: "a school with the town hall and a ministry as principals: no Leadership list, no Party",
+    variables: page(ENTITY_KEYS.partySchool, "AUTHORITY"),
+  },
+  {
+    operation: "EntityOverview", name: "party-alliance-and-independent", archive: "party", kind: "typical",
+    description: "a commune won by an alliance in 2020 (its registered name with its member parties) and by an independent in 2024 (the list reads Independent, which is no party)",
+    variables: page(ENTITY_KEYS.partySanpetru, "AUTHORITY", { signalOrder: "VALUE_DESC" }), // asked in the Signals order the default is not, so it differs from the moneymap world's case for the same key
+  },
+  {
+    operation: "EntityOverview", name: "party-town-hall-supplier-page", archive: "party", kind: "empty",
+    description: "a town hall opened on its SUPPLIER role page: the entity carries its Leadership list, and the app shows it on the authority page only",
+    variables: page(ENTITY_KEYS.partyBrasov, "SUPPLIER"),
+  },
+  // ONRC's people (#177): the public tier as a host with the Restricted switch off serves it; the hand fixtures `supplier-administrators-*` carry the Private view's links
+  {
+    operation: "EntityOverview", name: "people-supplier", archive: "people", kind: "typical",
+    description: "a SEAP supplier with administrators: name, role and birth year each, the snapshot as basis; a possible match (same name and birth date, another birth county) is left out and nobody links to a person page",
+    variables: page(ENTITY_KEYS.onrcAlfa, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-same-person-other-company", archive: "people", kind: "typical",
+    description: "the same person as an administrator of the first company, written in another word order: listed on each page as ONRC writes it; a legal-person representative with no birth date is an unlinked role holder",
+    variables: page(ENTITY_KEYS.onrcBeta, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-namesake", archive: "people", kind: "typical",
+    description: "an administrator who shares a name with another company's, with another birth date: another person, shown with his own birth year",
+    variables: page(ENTITY_KEYS.onrcGamma, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-unlinked-holder", archive: "people", kind: "extreme",
+    description: "a supplier whose only listed holder has no birth date (an unlinked role holder: no birth year, no link), the other being a possible match that is never served",
+    variables: page(ENTITY_KEYS.onrcDelta, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-only-in-onrc", archive: "people", kind: "empty",
+    description: "an organisation that exists only in ONRC: its people are loaded for matching but not named",
+    variables: page(ENTITY_KEYS.onrcOnly, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-pfa-supplier", archive: "people", kind: "empty",
+    description: "a PFA that is a SEAP supplier: its holder is the registration itself, so the page lists no holder",
+    variables: page(ENTITY_KEYS.peoplePfa, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
+  },
+  {
+    operation: "EntityOverview", name: "people-if-supplier", archive: "people", kind: "empty",
+    description: "an IF (family enterprise) that is a SEAP supplier: its members are not listed on the public page (they link on person pages in a Private view)",
+    variables: page(ENTITY_KEYS.peopleIf, "SUPPLIER", { signalOrder: "VALUE_DESC" }),
   },
 ];

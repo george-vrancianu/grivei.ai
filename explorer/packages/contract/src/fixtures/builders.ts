@@ -4,7 +4,7 @@
 // institution types and procedure names, which are as SEAP publishes them.
 import type {
   DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, EntityRowFieldsFragment,
-  MoneyMapFieldsFragment, PartyFieldsFragment, RecordRowFieldsFragment, SignalFieldsFragment,
+  MoneyMapFieldsFragment, PartyCoverageFieldsFragment, PartyFieldsFragment, RecordRowFieldsFragment, SignalFieldsFragment,
   TotalFieldsFragment,
 } from "../generated/operations.ts";
 
@@ -16,6 +16,9 @@ export const total = (o: Partial<TotalFieldsFragment> = {}): TotalFieldsFragment
 });
 
 export const zeroTotal = total();
+
+/** A search's Total as MainScreen selects it: the Total fields and, for a Party-filtered search, the coverage (null otherwise). */
+export const searchTotal = (o: Partial<TotalFieldsFragment> = {}, partyCoverage: PartyCoverageFieldsFragment | null = null) => ({ ...total(o), partyCoverage });
 
 export const entityRef = (key: string, displayName: string, identity: EntityRefFragment["identity"] = "CUI"): EntityRefFragment => ({
   key, displayName, identity,

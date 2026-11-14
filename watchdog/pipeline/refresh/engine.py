@@ -1,11 +1,12 @@
 """`pipeline refresh` (#28, #81): one locked run, each step due from its own last success.
 
-Order: crawl -> data.gov.ro check (bulk files + the MF list) -> ANAF -> load. The spec numbers the load before ANAF; ANAF runs first here
+Order: crawl -> data.gov.ro check (bulk files + the MF list) -> ONRC -> ANAF -> load. The spec numbers the load before ANAF; ANAF runs first here
 on purpose: the load reads the archived ANAF answers, so placement is right on the first load after new CUIs arrive (deviation, README).
 Step 5 of the spec (#82, backup.py): `backup` (restic of the archive, nightly) and `pgdump` (weekly) follow `load`; unconfigured they skip with a warning.
 
 Due rules (a calendar day is a UTC day, so a 03:00 timer and an on-boot trigger the same day never both run a step):
 - crawl: no success today. data.gov.ro: 7 days since the last success.
+- ONRC (#175): 28 days since the last success, or 7 when no snapshot of the current month is held yet (the register publishes in the first days of a month).
 - ANAF: the archive gained units other than ANAF answers since the last ANAF success, or 7 days passed (the 365-day re-check rides on that).
 - load: the archive's units changed since the last load (new files, a requeue), or it never ran.
 - backup: no success today; pgdump: 7 days since the last success. A skipped run (no RESTIC_REPOSITORY) counts as no success.
@@ -34,6 +35,7 @@ import requests
 from ..anaf import AnafUnavailable
 from ..archive import QUARANTINE_DIR, Archive
 from ..crawl import CrawlError
+from ..onrc.fetch import held_snapshots
 from .ledger import LEDGER_NAME, Ledger, parse, stamp
 from .pings import Pinger
 
@@ -41,6 +43,13 @@ LOCK_NAME = "refresh.lock"
 BACKOFF = (60, 300)  # seconds slept before the 2nd and the 3rd attempt of a transient failure
 DATAGOV_EVERY_DAYS = 7
 ANAF_EVERY_DAYS = 7
+ONRC_EVERY_DAYS = 28
+ONRC_RETRY_DAYS = 7
+ONRC_REFRESH_LIMIT = 2  # snapshots a nightly refresh downloads per ONRC step (each is over 1 GB): the backlog is the seed's (or `fetch-onrc --limit`), never the refresh lock's
+AEP_EVERY_DAYS = 7  # the check for a newer 2025 partial-election file (#180); nothing is downloaded
+FINANCIALS_EVERY_DAYS = 7  # MF publishes each year's files in June and re-publishes them a year later; a weekly look is cheap (an unchanged resource is not downloaded)
+BANIPARTIDE_EVERY_DAYS = 28  # BaniPartide is a one-off archived load; the step only checks (two small JSON documents) whether a newer upstream database exists
+AMEPIP_EVERY_DAYS = 7  # AMEPIP publishes a list once or twice a year; a weekly look is cheap (an unchanged resource is not downloaded)
 PGDUMP_EVERY_DAYS = 7
 ALERT_AFTER_FAILED_RUNS = 2  # alert when MORE than this many runs in a row failed
 
@@ -121,6 +130,21 @@ def _markers(archive: Archive) -> tuple[Callable[[], dict], Callable[[], dict]]:
     return (lambda: archive_fingerprint(archive, without_source="anaf", quarantine_apart=False)), (lambda: archive_fingerprint(archive))
 
 
+def _has_amepip(impl) -> bool:
+    """AMEPIP's step runs when the impl has one and it is wired (`Impl.fetch_amepip`); a test double without it keeps the old steps."""
+    return hasattr(impl, "amepip") and getattr(impl, "fetch_amepip", True) is not None
+
+
+def _has_financials(impl) -> bool:
+    """The financial-statements step runs when the impl has one and it is wired (`Impl.fetch_financials`); a test double without it keeps the old steps."""
+    return hasattr(impl, "financials") and getattr(impl, "fetch_financials", True) is not None
+
+
+def _has_banipartide(impl) -> bool:
+    """The BaniPartide check runs when the impl has one and it is wired (`Impl.check_banipartide`); a test double without it keeps the old steps."""
+    return hasattr(impl, "banipartide") and getattr(impl, "check_banipartide", True) is not None
+
+
 def refresh_steps(archive: Archive, impl) -> list[Step]:
     """The steps of a refresh. `impl` has `crawl()`, `datagov()`, `anaf()`, `load()`, each returning a `StepResult`."""
     fingerprint_no_anaf, fingerprint_all = _markers(archive)
@@ -138,6 +162,19 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
                 return "never ran"
             return f"last success {last['ended']}, {days} days passed" if _days_since(last, now) >= days else None
         return due
+
+    def onrc_due(ledger: Ledger, now: datetime) -> str | None:
+        """Monthly, from the last success: every 28 days, or after a week when this month's snapshot is not held yet (ONRC publishes in the first days of a month)."""
+        last = ledger.last_success("onrc")
+        if last is None:
+            return "never ran"
+        days = _days_since(last, now)
+        if days >= ONRC_EVERY_DAYS:
+            return f"last success {last['ended']}, {ONRC_EVERY_DAYS} days passed"
+        month = (now.astimezone(timezone.utc).year, now.astimezone(timezone.utc).month)
+        if days >= ONRC_RETRY_DAYS and not any(tuple(map(int, d.split("-")[:2])) == month for d in held_snapshots(archive)):
+            return f"last success {last['ended']}, no snapshot of this month held yet"
+        return None
 
     def anaf_due(ledger: Ledger, now: datetime) -> str | None:
         last = ledger.last_success("anaf")
@@ -166,9 +203,21 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
     backups = [Step(name, getattr(impl, name), unless_skipped(name, due)) for name, due in (("backup", backup_due), ("pgdump", dump_due))]
 
+    # AMEPIP's public-enterprise list (#183) has its own isolated step: its failure never blocks data.gov.ro, ANAF or the load
+    amepip = [Step("amepip", impl.amepip, weekly("amepip", AMEPIP_EVERY_DAYS))] if _has_amepip(impl) else []
+    aep = [Step("aep", impl.aep, weekly("aep", AEP_EVERY_DAYS))] if getattr(impl, "check_aep", None) is not None else []
+    # MF's annual financial statements (#179) likewise: isolated, due from its last success
+    financials = [Step("financials", impl.financials, weekly("financials", FINANCIALS_EVERY_DAYS))] if _has_financials(impl) else []
+    # BaniPartide's firm donations (#182) are an archived one-off load: this step only checks for a newer upstream file and warns, it never fetches
+    banipartide = [Step("banipartide", impl.banipartide, weekly("banipartide", BANIPARTIDE_EVERY_DAYS))] if _has_banipartide(impl) else []
     return [
         Step("crawl", impl.crawl, daily),
         Step("datagov", impl.datagov, weekly("datagov", DATAGOV_EVERY_DAYS)),
+        Step("onrc", lambda: impl.onrc(limit=ONRC_REFRESH_LIMIT), onrc_due),  # its own step (#175): ONRC failing never blocks SEAP's; its snapshots change the archive, so the load follows
+        *amepip,
+        *aep,
+        *financials,
+        *banipartide,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),
         Step("load", impl.load, load_due, fingerprint_all),
         *backups,  # step 5 (#82): the raw archive to restic nightly, a pg_dump of the graph weekly, same repository
@@ -176,17 +225,21 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
 
 
 def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
-    """The first-time sequence: data.gov.ro + MF list, ANAF, load, optionally the 2021-22 backfill. Done = succeeded once in a seed run."""
+    """The first-time sequence: data.gov.ro + MF list, ANAF, load, optionally the 2021-22 backfill, then ONRC. Done = succeeded once in a seed run."""
     def not_done(name):
         return lambda ledger, now: None if ledger.last_success(name, "seed") else "not done yet"
 
     # the markers are the refresh's: after a seed, the first refresh finds ANAF and the load up to date
     marker_anaf, marker_load = _markers(archive)
     steps = [Step("datagov", impl.datagov, not_done("datagov")),
+             *([Step("amepip", impl.amepip, not_done("amepip"))] if _has_amepip(impl) else []),
+             *([Step("financials", impl.financials, not_done("financials"))] if _has_financials(impl) else []),
              Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
              Step("load", impl.load, not_done("load"), marker_load)]
     if backfill:
         steps.append(Step("backfill", impl.backfill, not_done("backfill")))
+    # ONRC last: a failing ONRC step (or ~60 snapshots to download) never holds up SEAP's ANAF and load; the next refresh's load picks the snapshots up
+    steps.append(Step("onrc", impl.onrc, not_done("onrc")))
     return steps
 
 

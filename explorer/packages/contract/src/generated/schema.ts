@@ -20,7 +20,19 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
   /** A county ISO 3166-2:RO code, or one of the off-map tiles. */
   MapArea: { input: string; output: string; }
+  /**
+   * Integer bani that may be negative (a loss, negative equity), serialised as a decimal string. Only a company's own statements (`FinancialYear`) can be negative;
+   * every awarded value is a plain `Bani`.
+   */
+  SignedBani: { input: string; output: string; }
   Siruta: { input: string; output: string; }
+};
+
+/** ANAF's strike-off date and how many days after it the Signal's latest Record is. */
+export type AfterStrikeOffNumbers = {
+  __typename?: 'AfterStrikeOffNumbers';
+  daysAfter: Scalars['Int']['output'];
+  struckOff: Scalars['Date']['output'];
 };
 
 export type Alias = {
@@ -98,6 +110,8 @@ export type CountySide =
 export type Coverage = {
   __typename?: 'Coverage';
   counties: Array<CountyCoverage>;
+  /** What `CountyCoverage.withRecords` is counted against: SEAP's is MF's list of public entities; ONRC has none (its register is the whole population), so its N of M is not stated. */
+  denominator: CoverageDenominator;
   /** Planned Sources' greyed marks, per county, come from `sources` (harvested: false). */
   grid: Array<GapCell>;
   /** MF Lista entităților publice snapshot date. */
@@ -106,6 +120,10 @@ export type Coverage = {
   unplacedAuthorities: UnplacedTile;
   window: Period;
 };
+
+export type CoverageDenominator =
+  | 'NONE'
+  | 'PUBLIC_ENTITIES';
 
 export type CoverageStatus =
   | 'HARVESTED'
@@ -131,6 +149,39 @@ export type DateRange = {
   to?: InputMaybe<Scalars['Date']['input']>;
 };
 
+export type DonationKind =
+  | 'DONATION'
+  | 'LOAN';
+
+/** BaniPartide's firm-donor table as we hold it. Each row cites BaniPartide and, through its methodology, the underlying publications (Monitorul Oficial, AEP's pages); BaniPartide gives no report reference per row. */
+export type DonationSource = {
+  __typename?: 'DonationSource';
+  /** BaniPartide's page for the table. */
+  datasetUrl: Maybe<Scalars['String']['output']>;
+  /** When we fetched the table (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The licence as BaniPartide gives it (CC Attribution 4.0). */
+  license: Maybe<Scalars['String']['output']>;
+  licenseUrl: Maybe<Scalars['String']['output']>;
+  /** The publisher, Expert Forum, as BaniPartide names it. */
+  publisher: Maybe<Scalars['String']['output']>;
+  publisherUrl: Maybe<Scalars['String']['output']>;
+  /** BaniPartide's methodology page, where it names its underlying sources. */
+  underlyingUrl: Maybe<Scalars['String']['output']>;
+};
+
+/**
+ * The fewest days between the nearest donation or loan by a winner and the award (0 to 365), the list the Party ran on at the election (`party`, as registered)
+ * and whether the Party is derived from a subordinate body (`derived`). `kind` is DONATION or LOAN, as the source states it. No donor name, amount or date is here.
+ */
+export type DonorToPartyNumbers = {
+  __typename?: 'DonorToPartyNumbers';
+  days: Scalars['Int']['output'];
+  derived: Scalars['Boolean']['output'];
+  kind: DonationKind;
+  party: Scalars['String']['output'];
+};
+
 /**
  * One contracting authority, supplier, or both. URLs use the role
  * (/explore/authority/<key>, /explore/supplier/<key>), the API doesn't:
@@ -144,14 +195,36 @@ export type Entity = {
   anafStatus: Maybe<Scalars['String']['output']>;
   cui: Maybe<Scalars['String']['output']>;
   displayName: Scalars['String']['output'];
+  /**
+   * The firm donations and loans to parties that BaniPartide lists under this entity's CUI (a Reference source; ticket #182), newest first. Null when it lists none, for an entity
+   * with no CUI and for a sole trader (never published against a person's name). The same on both role pages; on a supplier it is context ("also a firm donor"): never a Signal
+   * (ADR 0014), never a Party, and never added to awarded value. No individual donor is ever served (ADR 0009).
+   */
+  donations: Maybe<FirmDonations>;
+  /**
+   * MF's annual financial statements for this entity's CUI, one row per fiscal year (a Reference source; ticket #179). Null when MF holds none for the CUI, and for an entity
+   * with no CUI. The same on both role pages; the page shows it on the supplier's. Context only: never a Signal, and never added to awarded value (ADR 0014).
+   */
+  financials: Maybe<FinancialStatements>;
   foreignVatId: Maybe<Scalars['String']['output']>;
   identity: EntityIdentity;
   identityCurated: Scalars['Boolean']['output'];
   key: Scalars['ID']['output'];
+  /** The Leadership list (AEP's election results, ADR 0012): set for a town hall, Bucharest sector, Bucharest city hall or county council, and for a subordinate body of one (its authority's list, with the basis of the tie). Null for every other entity, and always null for an entity that is only a supplier. Leaders are never linked to a person page or to ONRC. */
+  leadership: Maybe<Leadership>;
+  /** The ONRC registration under this entity's CUI (ADR 0018). Null when ONRC lists none (a name-only supplier has none). The same on both role pages of an entity that is an authority and a supplier. */
+  onrc: Maybe<OnrcRegistration>;
+  /**
+   * The administrators and legal representatives ONRC lists for this organisation (ticket #177, public tier, ADR 0015). Named only on a SEAP counterparty (a supplier or an authority
+   * in the graph, ADR 0009): null for an organisation that exists only in ONRC, for an entity with no CUI, and when no snapshot with ONRC's people files is held. The same on both role pages.
+   */
+  people: Maybe<OrganisationPeople>;
   placement: Maybe<Placement>;
-  /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source), or SEAP when ANAF has no answer. */
+  /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP. */
   provenance: Array<Provenance>;
-  /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
+  /** Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages. */
+  publicEnterprise: Maybe<PublicEnterprise>;
+  /** Source-specific facets, one sibling per explorable Source (ADR 0005): SEAP, and ONRC below. */
   seap: SeapEntity;
 };
 
@@ -188,6 +261,106 @@ export type FacetCount = {
   __typename?: 'FacetCount';
   total: Total;
   value: Scalars['String']['output'];
+};
+
+/** The supplier's awards for the fiscal year and the average employee count it reported for it (0 or 1). */
+export type FewEmployeesNumbers = {
+  __typename?: 'FewEmployeesNumbers';
+  awarded: Scalars['Bani']['output'];
+  employees: Scalars['Int']['output'];
+  fiscalYear: Scalars['Int']['output'];
+};
+
+/** Which release of MF's file a year's figures come from. */
+export type FinancialRevision =
+  /** The year's first release: MF may still revise it. */
+  | 'FIRST_RELEASE'
+  /** MF's re-published (`actualizat`) file for the year, a year after the first. */
+  | 'REVISED';
+
+/** The MF file a year's figures were read from, as the portal publishes it. */
+export type FinancialSource = {
+  __typename?: 'FinancialSource';
+  /** MF's dataset page on data.gov.ro. */
+  datasetUrl: Maybe<Scalars['String']['output']>;
+  /** When we fetched it (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The file's name as MF gives it, e.g. WEB_BL_BS_SL_AN2024.txt. */
+  file: Scalars['String']['output'];
+  /** The file's own download link. */
+  fileUrl: Maybe<Scalars['String']['output']>;
+  license: Maybe<Scalars['String']['output']>;
+  /** The day MF published this file. */
+  published: Maybe<Scalars['Date']['output']>;
+  /** The dataset as the portal titles it (source data, verbatim). */
+  via: Maybe<Scalars['String']['output']>;
+};
+
+/**
+ * A company's annual financial statements as the Ministry of Finance publishes them (bulk files on data.gov.ro, from fiscal year 2021): turnover, profit or loss, debts,
+ * equity and the average number of employees, newest year first. A Reference source, shown as context beside the awards; its figures are never added to awarded value (ADR 0014).
+ */
+export type FinancialStatements = {
+  __typename?: 'FinancialStatements';
+  years: Array<FinancialYear>;
+};
+
+/** One fiscal year of one company's statements. Every figure may be null (a blank cell in MF's file); a blank is never read as zero. */
+export type FinancialYear = {
+  __typename?: 'FinancialYear';
+  /** The average number of employees. Null when the cell is blank: reads "not reported", never zero. A cell that says 0 is 0. */
+  averageEmployees: Maybe<Scalars['Int']['output']>;
+  awardShareOfTurnover: Maybe<Scalars['Float']['output']>;
+  /**
+   * Context, never a Signal and never added to awarded value (ADR 0014): what this entity was awarded as a supplier in the calendar year (the awarded value of the Records
+   * awarded that year, the same counting rule as every Total) as bani, and that as a share of the year's turnover. A contract's whole value counts in its award year, so the
+   * share can exceed 1 and is no revenue share. Null share when the turnover is blank or zero.
+   */
+  awardedInYear: Scalars['Bani']['output'];
+  /** Debts (datorii). Signed, like the turnover. */
+  debts: Maybe<Scalars['SignedBani']['output']>;
+  /** Equity (capitaluri - total); negative when the company owes more than it owns. */
+  equity: Maybe<Scalars['SignedBani']['output']>;
+  fiscalYear: Scalars['Int']['output'];
+  /** True for the newest fiscal year MF's files hold (for any company) while it is a first release: the page notes it may be revised. */
+  mayBeRevised: Scalars['Boolean']['output'];
+  /** Net profit minus net loss: negative is a loss. Null when MF's file has both blank. */
+  profitOrLoss: Maybe<Scalars['SignedBani']['output']>;
+  revision: FinancialRevision;
+  /** The file the figures come from: each figure cites MF and it. */
+  source: FinancialSource;
+  /** Net turnover (cifra de afaceri neta). Signed: MF's files are not validated, so a negative cell is served as it is. */
+  turnover: Maybe<Scalars['SignedBani']['output']>;
+};
+
+/** One donation or loan as BaniPartide lists it. The party is exactly as published: it is no Party entity and is not normalised. */
+export type FirmDonation = {
+  __typename?: 'FirmDonation';
+  amount: Scalars['Bani']['output'];
+  /** Set only when exactly one date is readable from the published cell and it falls in the year. */
+  date: Maybe<Scalars['Date']['output']>;
+  /** The published date cell, verbatim (it can list several dates, or none). */
+  dateText: Scalars['String']['output'];
+  kind: DonationKind;
+  party: Scalars['String']['output'];
+  /** The row's number in the BaniPartide table export we hold: what a citation points at. */
+  sourceRow: Scalars['Int']['output'];
+  /** The year BaniPartide files the row under; null when the row has none. */
+  year: Maybe<Scalars['Int']['output']>;
+};
+
+/**
+ * A company's donations and loans to parties as BaniPartide (Expert Forum, CC BY 4.0) lists them from the parties' annual publications, newest first. Amounts are not summed anywhere:
+ * a donation is a different measure from awarded value (ADR 0014).
+ */
+export type FirmDonations = {
+  __typename?: 'FirmDonations';
+  /** The newest year BaniPartide covers, for any donor: the list's data-through year. Later donations may be missing. */
+  dataThroughYear: Scalars['Int']['output'];
+  donationCount: Scalars['Int']['output'];
+  items: Array<FirmDonation>;
+  loanCount: Scalars['Int']['output'];
+  source: DonationSource;
 };
 
 export type FrameworkLink = {
@@ -230,6 +403,7 @@ export type GapCell = {
   kind: Scalars['String']['output'];
   /** The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated. */
   note: Maybe<Scalars['String']['output']>;
+  /** The grid period: SEAP's is a quarter (`2024-Q4`). ONRC's is one snapshot, written as its date (`2026-05-06`), or a calendar month with no snapshot held (`2026-04`, a KNOWN_GAP). */
   quarter: Scalars['String']['output'];
   records: Scalars['Int']['output'];
   /** The published rule that explains the state. The frontend's catalogue words it in both languages. */
@@ -254,6 +428,74 @@ export type GapState =
   | 'NOT_IN_SOURCE'
   | 'NOT_YET_LOADED'
   | 'POSSIBLY_INCOMPLETE';
+
+/** The status as ONRC names it and the snapshot it was first seen in; the status itself is undated. `sinceAtLeast`: first seen in the earliest snapshot held. */
+export type InsolvencyNumbers = {
+  __typename?: 'InsolvencyNumbers';
+  firstSeen: Scalars['Date']['output'];
+  sinceAtLeast: Scalars['Boolean']['output'];
+  status: Scalars['String']['output'];
+};
+
+/**
+ * An authority's Mandates, newest last, with the gaps between them. A Mandate runs from the oath to the successor's oath; the handover window, an interim leader
+ * and a mandate without results get no Mandate and are listed as gaps, never guessed. The party is as registered at the election: the leader may have
+ * switched party since (the page says so). Leader names appear only here.
+ */
+export type Leadership = {
+  __typename?: 'Leadership';
+  gaps: Array<LeadershipGap>;
+  mandates: Array<Mandate>;
+  /** Set for a subordinate body: the authority this list is, and the MF snapshot its principal-credit-holder tie comes from (a funding relation, the current tie). */
+  via: Maybe<LeadershipVia>;
+};
+
+export type LeadershipGap = {
+  __typename?: 'LeadershipGap';
+  endDate: Maybe<Scalars['Date']['output']>;
+  kind: LeadershipGapKind;
+  startDate: Scalars['Date']['output'];
+};
+
+export type LeadershipGapKind =
+  | 'HANDOVER_WINDOW'
+  | 'INTERIM'
+  | 'NO_RESULTS';
+
+/** The authority a subordinate body takes its Leadership list and Party from, and the basis: principal credit holder in MF's list of public entities, as every held snapshot says. */
+export type LeadershipVia = {
+  __typename?: 'LeadershipVia';
+  authority: Scalars['ID']['output'];
+  authorityName: Scalars['String']['output'];
+  /** The newest MF snapshot that shows the tie. */
+  snapshotDate: Scalars['Date']['output'];
+  /** How many held snapshots list the body (all show the same single principal). */
+  snapshots: Scalars['Int']['output'];
+};
+
+export type Mandate = {
+  __typename?: 'Mandate';
+  basis: MandateBasis;
+  /** The day the basis data runs through: the election day for final minutes, the stated date of the one-off 2025 file. */
+  dataThrough: Scalars['Date']['output'];
+  electionDate: Scalars['Date']['output'];
+  /** Null while the mandate is still in force. */
+  endDate: Maybe<Scalars['Date']['output']>;
+  independent: Scalars['Boolean']['output'];
+  /** The elected leader's name as AEP wrote it (source data). Never linked to a person. */
+  leaderName: Scalars['String']['output'];
+  /** The list the leader ran on, as registered at the election: a party, an alliance under its registered name, or 'Independent' (which is no party). */
+  list: Scalars['String']['output'];
+  /** An alliance's member parties (empty for a party or an independent). */
+  memberParties: Array<Scalars['String']['output']>;
+  /** From the oath (assumed: AEP publishes no per-UAT oath dates, see the methodology page). */
+  startDate: Scalars['Date']['output'];
+};
+
+export type MandateBasis =
+  | 'FINAL_MINUTES'
+  | 'PARTIAL_MINUTES'
+  | 'REPEAT_ROUND';
 
 export type MatchableField =
   | 'AUTHORITY'
@@ -289,9 +531,240 @@ export type MonthTotal = {
   total: Total;
 };
 
+/** The largest counted value of the Signal's works Records and the fewest authorised CAEN codes among its winners. */
+export type NoConstructionCaenNumbers = {
+  __typename?: 'NoConstructionCaenNumbers';
+  authorisedCodes: Scalars['Int']['output'];
+  value: Scalars['Bani']['output'];
+};
+
+/** The supplier's awards for the year and its legal form as ONRC lists it (SRL or SA); no statement is held for the year or the one before. */
+export type NoFinancialStatementNumbers = {
+  __typename?: 'NoFinancialStatementNumbers';
+  awarded: Scalars['Bani']['output'];
+  fiscalYear: Scalars['Int']['output'];
+  legalForm: Scalars['String']['output'];
+};
+
 export type NoPublicationNumbers = {
   __typename?: 'NoPublicationNumbers';
   procedure: Scalars['String']['output'];
+};
+
+export type OnrcAlias = {
+  __typename?: 'OnrcAlias';
+  /** True when the newest snapshot lists it: ONRC's legal name today. */
+  current: Scalars['Boolean']['output'];
+  /** The first and the last held snapshot that listed this name. */
+  firstSeen: Scalars['Date']['output'];
+  lastSeen: Scalars['Date']['output'];
+  name: Scalars['String']['output'];
+  /** True when the earliest held snapshot already listed it: it is at least that old. */
+  sinceAtLeast: Scalars['Boolean']['output'];
+};
+
+export type OnrcAreaCount = {
+  __typename?: 'OnrcAreaCount';
+  area: Scalars['MapArea']['output'];
+  name: Scalars['String']['output'];
+  registrations: Scalars['Int']['output'];
+};
+
+export type OnrcCaen = {
+  __typename?: 'OnrcCaen';
+  code: Scalars['String']['output'];
+  /** The CAEN revision ONRC records (0 = 1998, 1 = 2003, 2 = 2008, 3 = 2025); null when unknown. */
+  version: Maybe<Scalars['Int']['output']>;
+};
+
+/**
+ * ONRC's count lens (ADR 0014: ONRC has no money measure). Counties with no matching registration are absent. The placement rule is the registered
+ * seat's county; a registration with no county is in the Unplaced tile. Sole traders' registrations are in neither.
+ */
+export type OnrcCountMap = {
+  __typename?: 'OnrcCountMap';
+  counties: Array<OnrcAreaCount>;
+  unplacedRegistrations: Scalars['Int']['output'];
+};
+
+export type OnrcCurrentStatus = {
+  __typename?: 'OnrcCurrentStatus';
+  code: Scalars['Int']['output'];
+  /** ONRC's nomenclature name (Romanian, source data); null when the held nomenclature does not list the code. */
+  name: Maybe<Scalars['String']['output']>;
+};
+
+/** ONRC's search state, 1:1 with the URL like RecordFilter (the codec is `ONRC_FILTER_URL`). Every chip is a field; an unset field narrows nothing. */
+export type OnrcFilter = {
+  caen?: InputMaybe<Scalars['String']['input']>;
+  county?: InputMaybe<Scalars['MapArea']['input']>;
+  q?: InputMaybe<Scalars['String']['input']>;
+  registeredFrom?: InputMaybe<Scalars['Date']['input']>;
+  registeredTo?: InputMaybe<Scalars['Date']['input']>;
+  seapCounterparty?: InputMaybe<Scalars['Boolean']['input']>;
+  status?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+export type OnrcFilterEcho = {
+  __typename?: 'OnrcFilterEcho';
+  qFolded: Maybe<Scalars['String']['output']>;
+};
+
+export type OnrcMatchableField =
+  | 'ALIAS'
+  | 'CAEN'
+  | 'CUI'
+  | 'NAME'
+  | 'REGISTRATION_NUMBER';
+
+export type OnrcMatchedField = {
+  __typename?: 'OnrcMatchedField';
+  field: OnrcMatchableField;
+  /** Highlight ranges into `text`, [start, end) in UTF-16 code units. */
+  highlights: Array<Array<Scalars['Int']['output']>>;
+  /** The field's text as published (an earlier name, the CUI, the CAEN code...). */
+  text: Scalars['String']['output'];
+};
+
+export type OnrcQuery = {
+  __typename?: 'OnrcQuery';
+  /** A registration by its ONRC registration number (e.g. J40/1234/2010), the way the entity page's ONRC section shows it; null for an unknown number and for a sole trader's registration. */
+  record: Maybe<OnrcRegistration>;
+  /**
+   * ONRC registrations by plain text (name, an earlier name, CUI, registration number, authorised CAEN code), with the same contract as SEAP's search:
+   * a match count and the top results. One matching set: the count, the Organisations tab and the count lens all come from the same filter.
+   * Never people, and never a sole trader's (PFA, II, IF) registration: those are named after a natural person (ADR 0009).
+   */
+  search: OnrcSearch;
+};
+
+
+export type OnrcQueryRecordArgs = {
+  registrationNumber: Scalars['ID']['input'];
+};
+
+
+export type OnrcQuerySearchArgs = {
+  filter: OnrcFilter;
+};
+
+/**
+ * One ONRC registration as the newest held snapshot lists it, with the history derived by comparing snapshots (ONRC's statuses and names are
+ * undated). No person of the registration is served here: its administrators and legal representatives are `Entity.people`, and an organisation
+ * that exists only in ONRC never names anyone (ADR 0018).
+ */
+export type OnrcRegistration = {
+  __typename?: 'OnrcRegistration';
+  /** ONRC's legal name and earlier names, newest first, each with the snapshots it was seen in. Aliases only: they never rename the entity (ADR 0018). */
+  aliases: Array<OnrcAlias>;
+  /** The authorised CAEN codes of the newest snapshot, by code. */
+  caen: Array<OnrcCaen>;
+  /** The CUI, when it passes the check digit. */
+  cui: Maybe<Scalars['String']['output']>;
+  /** The entity page of the CUI; null for a registration with no valid CUI. */
+  entity: Maybe<Entity>;
+  /** FORMA_JURIDICA as published, e.g. SRL; null when the snapshot has none. */
+  legalForm: Maybe<Scalars['String']['output']>;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: Scalars['String']['output'];
+  /** Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it. */
+  provenance: Provenance;
+  /** Null when the newest snapshot is in the legacy layout, which carries no registration date. */
+  registrationDate: Maybe<Scalars['Date']['output']>;
+  /** ONRC's registration number (COD_INMATRICULARE), e.g. J40/1234/2010. Source data, shown as published. */
+  registrationNumber: Scalars['String']['output'];
+  /** The registered seat, as published. */
+  seat: OnrcSeat;
+  /** The snapshot the registration, CAEN codes and seat come from. */
+  snapshot: Scalars['Date']['output'];
+  /** The statuses the newest snapshot shows (a company can carry several, e.g. in operation and in insolvency), by code. */
+  statuses: Array<OnrcStatus>;
+};
+
+/** One matching registration. Never a person: no administrator, no legal representative (those are the entity page's, and only for organisations tied to public money, ADR 0009). */
+export type OnrcResult = {
+  __typename?: 'OnrcResult';
+  caen: Array<OnrcCaen>;
+  cui: Maybe<Scalars['String']['output']>;
+  /** The entity page of the CUI; null for a registration with no valid CUI. */
+  entity: Maybe<Entity>;
+  legalForm: Maybe<Scalars['String']['output']>;
+  /** Why it matched: every field that holds a query word, strongest first (CUI, registration number, name, an earlier name, CAEN). Empty without a text query. */
+  matched: Array<OnrcMatchedField>;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: Scalars['String']['output'];
+  registrationDate: Maybe<Scalars['Date']['output']>;
+  registrationNumber: Scalars['String']['output'];
+  /** The CUI is an authority or a winner of a loaded SEAP Record. */
+  seapCounterparty: Scalars['Boolean']['output'];
+  seat: OnrcSeat;
+  /** The statuses the newest snapshot shows. */
+  statuses: Array<OnrcCurrentStatus>;
+};
+
+export type OnrcResultPage = {
+  __typename?: 'OnrcResultPage';
+  count: Scalars['Int']['output'];
+  rows: Array<OnrcResult>;
+};
+
+export type OnrcResultTab =
+  | 'ORGANISATIONS';
+
+export type OnrcSearch = {
+  __typename?: 'OnrcSearch';
+  /** The match count: registrations matching the filter, sole traders' left out. */
+  count: Scalars['Int']['output'];
+  /** The results tab that opens first. Organisations only: ONRC search never lists people. */
+  defaultTab: OnrcResultTab;
+  /** Echo of the filter as the server understood it. */
+  filter: OnrcFilterEcho;
+  /** The count lens: registrations matching the filter, by the seat's county, for the same filter as the count (every chip narrows it, `county` included, as in SEAP's Money lens). */
+  map: OnrcCountMap;
+  /** The Organisations tab: ranked by text relevance, then newest registration first (a registration with no date last), then ONRC's registration number. Offset/limit paging; the server caps limit at 200. */
+  organisations: OnrcResultPage;
+};
+
+
+export type OnrcSearchOrganisationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type OnrcSeat = {
+  __typename?: 'OnrcSeat';
+  /** The seat as one line, as published. */
+  address: Maybe<Scalars['String']['output']>;
+  /** The county as ONRC writes it. */
+  county: Maybe<Scalars['String']['output']>;
+  locality: Maybe<Scalars['String']['output']>;
+  postalCode: Maybe<Scalars['String']['output']>;
+};
+
+export type OnrcStatus = {
+  __typename?: 'OnrcStatus';
+  /** ONRC's status code, e.g. 1048. */
+  code: Scalars['Int']['output'];
+  /** The first held snapshot that showed this status (the one it was first seen in; ONRC dates no status itself). */
+  firstSeen: Scalars['Date']['output'];
+  /** The status as ONRC's nomenclature names it (Romanian, source data); null when the held nomenclature does not list the code. */
+  name: Maybe<Scalars['String']['output']>;
+  /** True when the earliest held snapshot already showed it: the status is at least that old, and firstSeen is a lower bound. */
+  sinceAtLeast: Scalars['Boolean']['output'];
+};
+
+/**
+ * An organisation's administrators and legal representatives as the newest held ONRC snapshot lists them (ADR 0011, 0015). Holders are listed as ONRC publishes them; a holder with no
+ * birth date is an unlinked role holder (shown here only). Never served: a birthplace, a full birth date, a CNP, a beneficial owner, a relative, a possible match (a same name and
+ * birth date with birthplaces in different counties), and the holders of a sole trader (PFA/II) or of an IF.
+ */
+export type OrganisationPeople = {
+  __typename?: 'OrganisationPeople';
+  holders: Array<RoleHolder>;
+  /** ONRC's dataset page, the snapshot's title, and when we fetched it. */
+  provenance: Provenance;
+  /** The ONRC snapshot the roles come from: the basis of every holder. */
+  snapshot: Scalars['Date']['output'];
 };
 
 export type OverCapNumbers = {
@@ -313,11 +786,81 @@ export type Party = {
   share: Maybe<Scalars['Bani']['output']>;
 };
 
+/**
+ * What a Party filter covers (#181), measured over the set the rest of the filter selects. `direct` + `subordinate` are the Total's own Records; the other three are
+ * what the filter leaves out. The share left unattributed is `unattributed` against the sum of the five (central government, schools, municipal companies, ADIs,
+ * authorities outside the Leadership list, and gaps in the mandates all sit there). Bani are summed like a Total's: counted value, framework ceilings out, suspect values out.
+ */
+export type PartyCoverage = {
+  __typename?: 'PartyCoverage';
+  /** Records whose authority itself had the Mandate. */
+  direct: PartyShare;
+  /** Records of an Independent leader's authority: attributed to a leader, never to a party. */
+  independent: PartyShare;
+  /** Records of authorities led on another list. */
+  otherParties: PartyShare;
+  /** The list as registered, echoed from the filter. */
+  party: Scalars['String']['output'];
+  /** Records of a subordinate body (principal credit holder in MF's list) that inherits the Mandate's Party. */
+  subordinate: PartyShare;
+  /** Records with no Mandate in force on the award date, or no attributed authority. */
+  unattributed: PartyShare;
+};
+
+/** A list the Party filter offers: as registered, with the Records it led (direct and subordinate). */
+export type PartyOption = {
+  __typename?: 'PartyOption';
+  party: Scalars['String']['output'];
+  records: Scalars['Int']['output'];
+};
+
+export type PartyShare = {
+  __typename?: 'PartyShare';
+  awarded: Scalars['Bani']['output'];
+  records: Scalars['Int']['output'];
+};
+
 /** Output twin of DateRange. */
 export type Period = {
   __typename?: 'Period';
   from: Maybe<Scalars['Date']['output']>;
   to: Maybe<Scalars['Date']['output']>;
+};
+
+/**
+ * RESTRICTED (ADR 0015): one person (a confirmed person key, ADR 0011) and their roles across organisations. Served only when the host's `GRIVEI_RESTRICTED` is `show`; otherwise
+ * `Query.person` is null. A person page shows the name and the birth year only, never the full birth date or the birthplace.
+ */
+export type Person = {
+  __typename?: 'Person';
+  birthYear: Scalars['Int']['output'];
+  /** A keyed hash of the person key: deterministic across rebuilds, not reversible (the secret is held outside the repo). */
+  id: Scalars['ID']['output'];
+  /** As ONRC writes it (source data). */
+  name: Scalars['String']['output'];
+  provenance: Provenance;
+  /** How many roles the person holds across organisations. Restricted like the list. */
+  roleCount: Scalars['Int']['output'];
+  roles: Array<PersonRole>;
+  /** The ONRC snapshot the roles come from: the basis of each. */
+  snapshot: Scalars['Date']['output'];
+};
+
+export type PersonRef = {
+  __typename?: 'PersonRef';
+  id: Scalars['ID']['output'];
+};
+
+export type PersonRole = {
+  __typename?: 'PersonRole';
+  /** The organisation's entity key; null when the registration has no CUI that passes the check digit, so it has no entity page. */
+  entityKey: Maybe<Scalars['ID']['output']>;
+  /** The role page to open the entity on: its SEAP role (SUPPLIER when it holds both, and for an entity that is in ONRC only). Null when `entityKey` is. */
+  entityRole: Maybe<Role>;
+  /** The organisation as ONRC names it (source data). */
+  organisationName: Scalars['String']['output'];
+  /** CALITATE as ONRC publishes it (source data). */
+  role: Scalars['String']['output'];
 };
 
 export type Placement = {
@@ -330,7 +873,7 @@ export type Placement = {
   uat: Maybe<Uat>;
 };
 
-/** Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source), or SEAP when ANAF has no answer). */
+/** Where a shown fact came from. Every Record has one; so does every Entity (ANAF (the Reference source); ONRC when ANAF does not know the CUI but ONRC lists it, ADR 0018; else SEAP). */
 export type Provenance = {
   __typename?: 'Provenance';
   /** When we fetched it (from the raw archive). */
@@ -349,6 +892,34 @@ export type ProvenanceKind =
   | 'BULK'
   | 'CRAWL';
 
+/**
+ * The basis of the "public enterprise (AMEPIP)" mark: the entity's CUI is on AMEPIP's open-data list of the companies under OUG 109/2011
+ * (the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises), as the newest held list names it. AMEPIP is a
+ * Reference source (it has no pages of its own here); its facts are source data, shown as published.
+ */
+export type PublicEnterprise = {
+  __typename?: 'PublicEnterprise';
+  /** When we fetched it (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The first and the last financial year AMEPIP holds indicators for. */
+  firstYear: Maybe<Scalars['Int']['output']>;
+  lastYear: Maybe<Scalars['Int']['output']>;
+  /** The licence the list is published under, e.g. CC-BY-4.0. */
+  license: Maybe<Scalars['String']['output']>;
+  /** The company's name as AMEPIP's list writes it (it may differ from the entity's display name). */
+  listedAs: Scalars['String']['output'];
+  /** ONRC's registration number as AMEPIP writes it, e.g. J05/14/1991. */
+  registrationNumber: Maybe<Scalars['String']['output']>;
+  /** The day AMEPIP published the list this comes from: the list's data-through date. */
+  snapshot: Scalars['Date']['output'];
+  /** The ONRC status as AMEPIP writes it for the newest year (Romanian source data). */
+  status: Maybe<Scalars['String']['output']>;
+  /** AMEPIP's dataset page on data.gov.ro. */
+  url: Maybe<Scalars['String']['output']>;
+  /** The resource as the portal titles it (source data, verbatim). */
+  via: Maybe<Scalars['String']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   /** Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors. */
@@ -357,6 +928,14 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
+  onrc: OnrcQuery;
+  /**
+   * RESTRICTED (ADR 0015): a person page by its id (ticket #177). Null unless the host's `GRIVEI_RESTRICTED` is `show` (a Private view): the resolver returns nothing, not even a count,
+   * when the switch is off, and also null for an id no confirmed person has.
+   */
+  person: Maybe<Person>;
+  /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
+  referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
   signalRules: Array<SignalRule>;
@@ -374,6 +953,11 @@ export type QueryCoverageArgs = {
 
 export type QueryEntityArgs = {
   key: Scalars['ID']['input'];
+};
+
+
+export type QueryPersonArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -418,6 +1002,14 @@ export type RecordFilter = {
   cpv?: InputMaybe<Scalars['String']['input']>;
   from?: InputMaybe<Scalars['Date']['input']>;
   hasSignals?: InputMaybe<Scalars['Boolean']['input']>;
+  /**
+   * A list as registered at the election, as `partyOptions` offers it (`PARTIDUL SOCIAL DEMOCRAT`, or an alliance under its own registered name). One value, like the
+   * other entity-scoped fields (a second one would be a different question). Matches the Records whose Mandate (direct, or derived through a subordinate body's principal
+   * credit holder) ran on that list; there is no "direct only" switch. "Independent" is never a party and matches nothing, an alliance is not matched by its member
+   * parties and no party family exists. Never a supplier's: a Party belongs to an authority for a mandate's dates. Narrows only the SEAP search: a Total with this filter
+   * states its coverage (`Total.partyCoverage`).
+   */
+  party?: InputMaybe<Scalars['String']['input']>;
   procedure?: InputMaybe<Array<Scalars['String']['input']>>;
   q?: InputMaybe<Scalars['String']['input']>;
   signal?: InputMaybe<SignalRuleSlug>;
@@ -450,6 +1042,19 @@ export type RecordOrder =
   | 'DATE_DESC'
   | 'VALUE_DESC';
 
+/** The Party of a SEAP Record: the Mandate in force on its award date at its authority, or through its principal credit holder. Never a supplier's, never a person's. */
+export type RecordParty = {
+  __typename?: 'RecordParty';
+  basis: MandateBasis;
+  dataThrough: Scalars['Date']['output'];
+  electionDate: Scalars['Date']['output'];
+  independent: Scalars['Boolean']['output'];
+  list: Scalars['String']['output'];
+  memberParties: Array<Scalars['String']['output']>;
+  /** Set for a subordinate body's Record: the authority it is inherited through. */
+  via: Maybe<LeadershipVia>;
+};
+
 export type RecordResult = {
   __typename?: 'RecordResult';
   /**
@@ -471,9 +1076,35 @@ export type RecordResultPage = {
   rows: Array<RecordResult>;
 };
 
+/** A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is. */
+export type ReferenceSource = {
+  __typename?: 'ReferenceSource';
+  /** The day the held list was published (a source published by fiscal year: the end of the newest year held); null when none is held yet. */
+  dataThrough: Maybe<Scalars['Date']['output']>;
+  /** For a source published by year (MF's financial statements by fiscal year, BaniPartide's donations by the year they are filed under): the newest year held. Null for the others, and when none is held. */
+  fiscalYear: Maybe<Scalars['Int']['output']>;
+  /** The source's short name, e.g. AMEPIP. */
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  /** Where the list comes from; null when none is held yet. */
+  url: Maybe<Scalars['String']['output']>;
+};
+
 export type Role =
   | 'AUTHORITY'
   | 'SUPPLIER';
+
+export type RoleHolder = {
+  __typename?: 'RoleHolder';
+  /** The year of birth. Null for an unlinked role holder (ONRC lists no birth date). The full date is never served. */
+  birthYear: Maybe<Scalars['Int']['output']>;
+  /** As ONRC writes it (source data, shown as published). */
+  name: Scalars['String']['output'];
+  /** RESTRICTED (ADR 0015): the holder's person page. Null unless the host's `GRIVEI_RESTRICTED` is `show` (only a Private view), and null for an unlinked role holder. */
+  person: Maybe<PersonRef>;
+  /** CALITATE as ONRC publishes it, e.g. administrator (source data, never translated). */
+  role: Scalars['String']['output'];
+};
 
 /**
  * SEAP side of an entity. The page asks for the role it shows, so one operation
@@ -500,6 +1131,8 @@ export type SeapEntityRoleArgs = {
 
 export type SeapQuery = {
   __typename?: 'SeapQuery';
+  /** The lists the Party filter offers (largest first, at most 1000, never Independent); empty for a graph built without AEP's mandates. */
+  partyOptions: Array<PartyOption>;
   /** A Record by its public code (e.g. CAN1166685, DA12345678), the Record page's URL key. */
   record: Maybe<SeapRecord>;
   /**
@@ -533,6 +1166,8 @@ export type SeapRecord = SourceRecord & {
   /** Set for a framework agreement (ceiling) and for its subsequent contracts. */
   framework: Maybe<FrameworkLink>;
   kind: SeapRecordKind;
+  /** The Party of the mandate in force on the award date at the authority (ADR 0012). Null when the authority is not a town hall, sector, Bucharest city hall or county council (or a subordinate body of one), or the date falls in a gap. */
+  party: Maybe<RecordParty>;
   procedure: Maybe<Scalars['String']['output']>;
   provenance: Provenance;
   /** Signals this Record belongs to. */
@@ -708,7 +1343,7 @@ export type SignalRecordsArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type SignalNumbers = FrameworkOverrunNumbers | NoPublicationNumbers | OverCapNumbers | SplittingNumbers;
+export type SignalNumbers = AfterStrikeOffNumbers | DonorToPartyNumbers | FewEmployeesNumbers | FrameworkOverrunNumbers | InsolvencyNumbers | NoConstructionCaenNumbers | NoFinancialStatementNumbers | NoPublicationNumbers | OverCapNumbers | SoeBoardInSupplierNumbers | SplittingNumbers | YoungFirmNumbers;
 
 export type SignalOrder =
   | 'DATE_DESC'
@@ -732,10 +1367,27 @@ export type SignalRule = {
 };
 
 export type SignalRuleSlug =
+  | 'AFTER_STRIKE_OFF'
+  /** Cross-Source rules (#185): a firm that gave to the authority's Party within a year before the award. */
+  | 'DONOR_TO_PARTY'
+  | 'FEW_EMPLOYEES'
   | 'FRAMEWORK_OVERRUN'
+  | 'INSOLVENCY'
+  | 'NO_CONSTRUCTION_CAEN'
+  | 'NO_FINANCIAL_STATEMENT'
   | 'NO_PUBLICATION'
   | 'OVER_CAP'
-  | 'SPLITTING';
+  /** RESTRICTED (ADR 0011, ADR 0015): a board member of a public enterprise also holds a role in one of its private suppliers. Served only when the host's GRIVEI_RESTRICTED is `show`; otherwise no Signal, Record, count or rule row of it is returned. */
+  | 'SOE_BOARD_IN_SUPPLIER'
+  | 'SPLITTING'
+  /** ONRC and financial-statement rules (#184): each reads a Reference source and fires only on Records that meet its thresholds. */
+  | 'YOUNG_FIRM';
+
+/** RESTRICTED. How many confirmed persons hold a role both in the public enterprise (the authority) and in the supplier; a count only, never a name, birth date or id. */
+export type SoeBoardInSupplierNumbers = {
+  __typename?: 'SoeBoardInSupplierNumbers';
+  persons: Scalars['Int']['output'];
+};
 
 export type Source = {
   __typename?: 'Source';
@@ -808,6 +1460,8 @@ export type Total = {
   frameworkCeilings: Scalars['Bani']['output'];
   /** Records with no value in SEAP: counted here, add nothing. */
   noValue: Scalars['Int']['output'];
+  /** Only on a SEAP search whose filter has `party`: what the filter covers. Null on every other Total. */
+  partyCoverage: Maybe<PartyCoverage>;
   records: Scalars['Int']['output'];
   /** Records in the set whose value is suspect: shown, searchable, not summed. */
   suspectLeftOut: Scalars['Int']['output'];
@@ -866,6 +1520,14 @@ export type ValueBucket =
   | 'UP_TO_135K'
   | 'UP_TO_270K'
   | 'UP_TO_900K';
+
+/** The fewest days between registering and a Record of the Signal; `counted` is that Record's counted value (null when it has none). */
+export type YoungFirmNumbers = {
+  __typename?: 'YoungFirmNumbers';
+  counted: Maybe<Scalars['Bani']['output']>;
+  days: Scalars['Int']['output'];
+  registered: Scalars['Date']['output'];
+};
 
 
 
@@ -939,10 +1601,18 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 /** Mapping of union types */
 export type ResolversUnionTypes<_RefType extends Record<string, unknown>> = {
   SignalNumbers:
+    | ( AfterStrikeOffNumbers )
+    | ( DonorToPartyNumbers )
+    | ( FewEmployeesNumbers )
     | ( FrameworkOverrunNumbers )
+    | ( InsolvencyNumbers )
+    | ( NoConstructionCaenNumbers )
+    | ( NoFinancialStatementNumbers )
     | ( NoPublicationNumbers )
     | ( OverCapNumbers )
+    | ( SoeBoardInSupplierNumbers )
     | ( SplittingNumbers )
+    | ( YoungFirmNumbers )
   ;
 };
 
@@ -953,6 +1623,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AfterStrikeOffNumbers: ResolverTypeWrapper<AfterStrikeOffNumbers>;
   Alias: ResolverTypeWrapper<Alias>;
   AreaKey: ResolverTypeWrapper<Scalars['AreaKey']['output']>;
   AreaTotal: ResolverTypeWrapper<AreaTotal>;
@@ -967,17 +1638,28 @@ export type ResolversTypes = {
   CountyCoverage: ResolverTypeWrapper<CountyCoverage>;
   CountySide: CountySide;
   Coverage: ResolverTypeWrapper<Coverage>;
+  CoverageDenominator: CoverageDenominator;
   CoverageStatus: CoverageStatus;
   Cpv: ResolverTypeWrapper<Cpv>;
   DataThrough: ResolverTypeWrapper<DataThrough>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   DateRange: DateRange;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DonationKind: DonationKind;
+  DonationSource: ResolverTypeWrapper<DonationSource>;
+  DonorToPartyNumbers: ResolverTypeWrapper<DonorToPartyNumbers>;
   Entity: ResolverTypeWrapper<Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversTypes['Alias']>, seap: ResolversTypes['SeapEntity'] }>;
   EntityIdentity: EntityIdentity;
   EntityResult: ResolverTypeWrapper<Omit<EntityResult, 'entity'> & { entity: ResolversTypes['Entity'] }>;
   EntityResultPage: ResolverTypeWrapper<EntityResultPage>;
   FacetCount: ResolverTypeWrapper<FacetCount>;
+  FewEmployeesNumbers: ResolverTypeWrapper<FewEmployeesNumbers>;
+  FinancialRevision: FinancialRevision;
+  FinancialSource: ResolverTypeWrapper<FinancialSource>;
+  FinancialStatements: ResolverTypeWrapper<FinancialStatements>;
+  FinancialYear: ResolverTypeWrapper<FinancialYear>;
+  FirmDonation: ResolverTypeWrapper<FirmDonation>;
+  FirmDonations: ResolverTypeWrapper<FirmDonations>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FrameworkLink: ResolverTypeWrapper<Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversTypes['SeapRecord']>, subsequent: Array<ResolversTypes['SeapRecord']> }>;
   FrameworkOverrunNumbers: ResolverTypeWrapper<FrameworkOverrunNumbers>;
@@ -986,19 +1668,53 @@ export type ResolversTypes = {
   GapRule: GapRule;
   GapState: GapState;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  InsolvencyNumbers: ResolverTypeWrapper<InsolvencyNumbers>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  Leadership: ResolverTypeWrapper<Leadership>;
+  LeadershipGap: ResolverTypeWrapper<LeadershipGap>;
+  LeadershipGapKind: LeadershipGapKind;
+  LeadershipVia: ResolverTypeWrapper<LeadershipVia>;
+  Mandate: ResolverTypeWrapper<Mandate>;
+  MandateBasis: MandateBasis;
   MapArea: ResolverTypeWrapper<Scalars['MapArea']['output']>;
   MatchableField: MatchableField;
   MatchedField: ResolverTypeWrapper<MatchedField>;
   MoneyMap: ResolverTypeWrapper<MoneyMap>;
   MonthTotal: ResolverTypeWrapper<MonthTotal>;
+  NoConstructionCaenNumbers: ResolverTypeWrapper<NoConstructionCaenNumbers>;
+  NoFinancialStatementNumbers: ResolverTypeWrapper<NoFinancialStatementNumbers>;
   NoPublicationNumbers: ResolverTypeWrapper<NoPublicationNumbers>;
+  OnrcAlias: ResolverTypeWrapper<OnrcAlias>;
+  OnrcAreaCount: ResolverTypeWrapper<OnrcAreaCount>;
+  OnrcCaen: ResolverTypeWrapper<OnrcCaen>;
+  OnrcCountMap: ResolverTypeWrapper<OnrcCountMap>;
+  OnrcCurrentStatus: ResolverTypeWrapper<OnrcCurrentStatus>;
+  OnrcFilter: OnrcFilter;
+  OnrcFilterEcho: ResolverTypeWrapper<OnrcFilterEcho>;
+  OnrcMatchableField: OnrcMatchableField;
+  OnrcMatchedField: ResolverTypeWrapper<OnrcMatchedField>;
+  OnrcQuery: ResolverTypeWrapper<Omit<OnrcQuery, 'search'> & { search: ResolversTypes['OnrcSearch'] }>;
+  OnrcRegistration: ResolverTypeWrapper<Omit<OnrcRegistration, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  OnrcResult: ResolverTypeWrapper<Omit<OnrcResult, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  OnrcResultPage: ResolverTypeWrapper<Omit<OnrcResultPage, 'rows'> & { rows: Array<ResolversTypes['OnrcResult']> }>;
+  OnrcResultTab: OnrcResultTab;
+  OnrcSearch: ResolverTypeWrapper<Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversTypes['OnrcFilterEcho'], organisations: ResolversTypes['OnrcResultPage'] }>;
+  OnrcSeat: ResolverTypeWrapper<OnrcSeat>;
+  OnrcStatus: ResolverTypeWrapper<OnrcStatus>;
+  OrganisationPeople: ResolverTypeWrapper<OrganisationPeople>;
   OverCapNumbers: ResolverTypeWrapper<OverCapNumbers>;
   Party: ResolverTypeWrapper<Omit<Party, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  PartyCoverage: ResolverTypeWrapper<PartyCoverage>;
+  PartyOption: ResolverTypeWrapper<PartyOption>;
+  PartyShare: ResolverTypeWrapper<PartyShare>;
   Period: ResolverTypeWrapper<Period>;
+  Person: ResolverTypeWrapper<Person>;
+  PersonRef: ResolverTypeWrapper<PersonRef>;
+  PersonRole: ResolverTypeWrapper<PersonRole>;
   Placement: ResolverTypeWrapper<Placement>;
   Provenance: ResolverTypeWrapper<Provenance>;
   ProvenanceKind: ProvenanceKind;
+  PublicEnterprise: ResolverTypeWrapper<PublicEnterprise>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   RecordBadge: RecordBadge;
   RecordFacets: ResolverTypeWrapper<RecordFacets>;
@@ -1006,9 +1722,12 @@ export type ResolversTypes = {
   RecordFilterEcho: ResolverTypeWrapper<Omit<RecordFilterEcho, 'authority' | 'supplier'> & { authority?: Maybe<ResolversTypes['Entity']>, supplier?: Maybe<ResolversTypes['Entity']> }>;
   RecordFilterValue: ResolverTypeWrapper<RecordFilterValue>;
   RecordOrder: RecordOrder;
+  RecordParty: ResolverTypeWrapper<RecordParty>;
   RecordResult: ResolverTypeWrapper<Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversTypes['MatchedField']>, record: ResolversTypes['SeapRecord'] }>;
   RecordResultPage: ResolverTypeWrapper<Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversTypes['RecordResult']> }>;
+  ReferenceSource: ResolverTypeWrapper<ReferenceSource>;
   Role: Role;
+  RoleHolder: ResolverTypeWrapper<RoleHolder>;
   SeapEntity: ResolverTypeWrapper<Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversTypes['SeapRole']> }>;
   SeapQuery: ResolverTypeWrapper<Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversTypes['SeapRecord']>, search: ResolversTypes['SeapSearch'] }>;
   SeapRecord: ResolverTypeWrapper<Omit<SeapRecord, 'authority' | 'cpv' | 'signals' | 'winners'> & { authority: ResolversTypes['Entity'], cpv?: Maybe<ResolversTypes['Cpv']>, signals: Array<ResolversTypes['Signal']>, winners: Array<ResolversTypes['Party']> }>;
@@ -1021,7 +1740,9 @@ export type ResolversTypes = {
   SignalPage: ResolverTypeWrapper<Omit<SignalPage, 'rows'> & { rows: Array<ResolversTypes['Signal']> }>;
   SignalRule: ResolverTypeWrapper<SignalRule>;
   SignalRuleSlug: SignalRuleSlug;
+  SignedBani: ResolverTypeWrapper<Scalars['SignedBani']['output']>;
   Siruta: ResolverTypeWrapper<Scalars['Siruta']['output']>;
+  SoeBoardInSupplierNumbers: ResolverTypeWrapper<SoeBoardInSupplierNumbers>;
   Source: ResolverTypeWrapper<Source>;
   SourceId: SourceId;
   SourceRecord: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['SourceRecord']>;
@@ -1034,10 +1755,12 @@ export type ResolversTypes = {
   UatMap: ResolverTypeWrapper<UatMap>;
   UnplacedTile: ResolverTypeWrapper<UnplacedTile>;
   ValueBucket: ValueBucket;
+  YoungFirmNumbers: ResolverTypeWrapper<YoungFirmNumbers>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AfterStrikeOffNumbers: AfterStrikeOffNumbers;
   Alias: Alias;
   AreaKey: Scalars['AreaKey']['output'];
   AreaTotal: AreaTotal;
@@ -1055,34 +1778,75 @@ export type ResolversParentTypes = {
   Date: Scalars['Date']['output'];
   DateRange: DateRange;
   DateTime: Scalars['DateTime']['output'];
+  DonationSource: DonationSource;
+  DonorToPartyNumbers: DonorToPartyNumbers;
   Entity: Omit<Entity, 'aliases' | 'seap'> & { aliases: Array<ResolversParentTypes['Alias']>, seap: ResolversParentTypes['SeapEntity'] };
   EntityResult: Omit<EntityResult, 'entity'> & { entity: ResolversParentTypes['Entity'] };
   EntityResultPage: EntityResultPage;
   FacetCount: FacetCount;
+  FewEmployeesNumbers: FewEmployeesNumbers;
+  FinancialSource: FinancialSource;
+  FinancialStatements: FinancialStatements;
+  FinancialYear: FinancialYear;
+  FirmDonation: FirmDonation;
+  FirmDonations: FirmDonations;
   Float: Scalars['Float']['output'];
   FrameworkLink: Omit<FrameworkLink, 'agreement' | 'subsequent'> & { agreement?: Maybe<ResolversParentTypes['SeapRecord']>, subsequent: Array<ResolversParentTypes['SeapRecord']> };
   FrameworkOverrunNumbers: FrameworkOverrunNumbers;
   FrameworkSummary: FrameworkSummary;
   GapCell: GapCell;
   ID: Scalars['ID']['output'];
+  InsolvencyNumbers: InsolvencyNumbers;
   Int: Scalars['Int']['output'];
+  Leadership: Leadership;
+  LeadershipGap: LeadershipGap;
+  LeadershipVia: LeadershipVia;
+  Mandate: Mandate;
   MapArea: Scalars['MapArea']['output'];
   MatchedField: MatchedField;
   MoneyMap: MoneyMap;
   MonthTotal: MonthTotal;
+  NoConstructionCaenNumbers: NoConstructionCaenNumbers;
+  NoFinancialStatementNumbers: NoFinancialStatementNumbers;
   NoPublicationNumbers: NoPublicationNumbers;
+  OnrcAlias: OnrcAlias;
+  OnrcAreaCount: OnrcAreaCount;
+  OnrcCaen: OnrcCaen;
+  OnrcCountMap: OnrcCountMap;
+  OnrcCurrentStatus: OnrcCurrentStatus;
+  OnrcFilter: OnrcFilter;
+  OnrcFilterEcho: OnrcFilterEcho;
+  OnrcMatchedField: OnrcMatchedField;
+  OnrcQuery: Omit<OnrcQuery, 'search'> & { search: ResolversParentTypes['OnrcSearch'] };
+  OnrcRegistration: Omit<OnrcRegistration, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  OnrcResult: Omit<OnrcResult, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  OnrcResultPage: Omit<OnrcResultPage, 'rows'> & { rows: Array<ResolversParentTypes['OnrcResult']> };
+  OnrcSearch: Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversParentTypes['OnrcFilterEcho'], organisations: ResolversParentTypes['OnrcResultPage'] };
+  OnrcSeat: OnrcSeat;
+  OnrcStatus: OnrcStatus;
+  OrganisationPeople: OrganisationPeople;
   OverCapNumbers: OverCapNumbers;
   Party: Omit<Party, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  PartyCoverage: PartyCoverage;
+  PartyOption: PartyOption;
+  PartyShare: PartyShare;
   Period: Period;
+  Person: Person;
+  PersonRef: PersonRef;
+  PersonRole: PersonRole;
   Placement: Placement;
   Provenance: Provenance;
+  PublicEnterprise: PublicEnterprise;
   Query: Record<PropertyKey, never>;
   RecordFacets: RecordFacets;
   RecordFilter: RecordFilter;
   RecordFilterEcho: Omit<RecordFilterEcho, 'authority' | 'supplier'> & { authority?: Maybe<ResolversParentTypes['Entity']>, supplier?: Maybe<ResolversParentTypes['Entity']> };
   RecordFilterValue: RecordFilterValue;
+  RecordParty: RecordParty;
   RecordResult: Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversParentTypes['MatchedField']>, record: ResolversParentTypes['SeapRecord'] };
   RecordResultPage: Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversParentTypes['RecordResult']> };
+  ReferenceSource: ReferenceSource;
+  RoleHolder: RoleHolder;
   SeapEntity: Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversParentTypes['SeapRole']> };
   SeapQuery: Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversParentTypes['SeapRecord']>, search: ResolversParentTypes['SeapSearch'] };
   SeapRecord: Omit<SeapRecord, 'authority' | 'cpv' | 'signals' | 'winners'> & { authority: ResolversParentTypes['Entity'], cpv?: Maybe<ResolversParentTypes['Cpv']>, signals: Array<ResolversParentTypes['Signal']>, winners: Array<ResolversParentTypes['Party']> };
@@ -1092,7 +1856,9 @@ export type ResolversParentTypes = {
   SignalNumbers: ResolversUnionTypes<ResolversParentTypes>['SignalNumbers'];
   SignalPage: Omit<SignalPage, 'rows'> & { rows: Array<ResolversParentTypes['Signal']> };
   SignalRule: SignalRule;
+  SignedBani: Scalars['SignedBani']['output'];
   Siruta: Scalars['Siruta']['output'];
+  SoeBoardInSupplierNumbers: SoeBoardInSupplierNumbers;
   Source: Source;
   SourceRecord: ResolversInterfaceTypes<ResolversParentTypes>['SourceRecord'];
   SplittingNumbers: SplittingNumbers;
@@ -1102,6 +1868,13 @@ export type ResolversParentTypes = {
   Uat: Uat;
   UatMap: UatMap;
   UnplacedTile: UnplacedTile;
+  YoungFirmNumbers: YoungFirmNumbers;
+};
+
+export type AfterStrikeOffNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['AfterStrikeOffNumbers'] = ResolversParentTypes['AfterStrikeOffNumbers']> = {
+  daysAfter?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  struckOff?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type AliasResolvers<ContextType = any, ParentType extends ResolversParentTypes['Alias'] = ResolversParentTypes['Alias']> = {
@@ -1167,6 +1940,7 @@ export type CountyCoverageResolvers<ContextType = any, ParentType extends Resolv
 
 export type CoverageResolvers<ContextType = any, ParentType extends ResolversParentTypes['Coverage'] = ResolversParentTypes['Coverage']> = {
   counties?: Resolver<Array<ResolversTypes['CountyCoverage']>, ParentType, ContextType>;
+  denominator?: Resolver<ResolversTypes['CoverageDenominator'], ParentType, ContextType>;
   grid?: Resolver<Array<ResolversTypes['GapCell']>, ParentType, ContextType>;
   referenceSnapshot?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   source?: Resolver<ResolversTypes['Source'], ParentType, ContextType>;
@@ -1192,17 +1966,41 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
   name: 'DateTime';
 }
 
+export type DonationSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['DonationSource'] = ResolversParentTypes['DonationSource']> = {
+  datasetUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  licenseUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publisher?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publisherUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  underlyingUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type DonorToPartyNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['DonorToPartyNumbers'] = ResolversParentTypes['DonorToPartyNumbers']> = {
+  days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  derived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['DonationKind'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type EntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['Entity'] = ResolversParentTypes['Entity']> = {
   aliases?: Resolver<Array<ResolversTypes['Alias']>, ParentType, ContextType>;
   anafStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   displayName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  donations?: Resolver<Maybe<ResolversTypes['FirmDonations']>, ParentType, ContextType>;
+  financials?: Resolver<Maybe<ResolversTypes['FinancialStatements']>, ParentType, ContextType>;
   foreignVatId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   identity?: Resolver<ResolversTypes['EntityIdentity'], ParentType, ContextType>;
   identityCurated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  leadership?: Resolver<Maybe<ResolversTypes['Leadership']>, ParentType, ContextType>;
+  onrc?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType>;
+  people?: Resolver<Maybe<ResolversTypes['OrganisationPeople']>, ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
   provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
+  publicEnterprise?: Resolver<Maybe<ResolversTypes['PublicEnterprise']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapEntity'], ParentType, ContextType>;
 };
 
@@ -1221,6 +2019,59 @@ export type EntityResultPageResolvers<ContextType = any, ParentType extends Reso
 export type FacetCountResolvers<ContextType = any, ParentType extends ResolversParentTypes['FacetCount'] = ResolversParentTypes['FacetCount']> = {
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
   value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type FewEmployeesNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['FewEmployeesNumbers'] = ResolversParentTypes['FewEmployeesNumbers']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  employees?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type FinancialSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialSource'] = ResolversParentTypes['FinancialSource']> = {
+  datasetUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  file?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  fileUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  published?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type FinancialStatementsResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialStatements'] = ResolversParentTypes['FinancialStatements']> = {
+  years?: Resolver<Array<ResolversTypes['FinancialYear']>, ParentType, ContextType>;
+};
+
+export type FinancialYearResolvers<ContextType = any, ParentType extends ResolversParentTypes['FinancialYear'] = ResolversParentTypes['FinancialYear']> = {
+  averageEmployees?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  awardShareOfTurnover?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  awardedInYear?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  debts?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  equity?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  mayBeRevised?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  profitOrLoss?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+  revision?: Resolver<ResolversTypes['FinancialRevision'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['FinancialSource'], ParentType, ContextType>;
+  turnover?: Resolver<Maybe<ResolversTypes['SignedBani']>, ParentType, ContextType>;
+};
+
+export type FirmDonationResolvers<ContextType = any, ParentType extends ResolversParentTypes['FirmDonation'] = ResolversParentTypes['FirmDonation']> = {
+  amount?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  dateText?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['DonationKind'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sourceRow?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  year?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+};
+
+export type FirmDonationsResolvers<ContextType = any, ParentType extends ResolversParentTypes['FirmDonations'] = ResolversParentTypes['FirmDonations']> = {
+  dataThroughYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  donationCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  items?: Resolver<Array<ResolversTypes['FirmDonation']>, ParentType, ContextType>;
+  loanCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  source?: Resolver<ResolversTypes['DonationSource'], ParentType, ContextType>;
 };
 
 export type FrameworkLinkResolvers<ContextType = any, ParentType extends ResolversParentTypes['FrameworkLink'] = ResolversParentTypes['FrameworkLink']> = {
@@ -1255,6 +2106,44 @@ export type GapCellResolvers<ContextType = any, ParentType extends ResolversPare
   state?: Resolver<ResolversTypes['GapState'], ParentType, ContextType>;
 };
 
+export type InsolvencyNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['InsolvencyNumbers'] = ResolversParentTypes['InsolvencyNumbers']> = {
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type LeadershipResolvers<ContextType = any, ParentType extends ResolversParentTypes['Leadership'] = ResolversParentTypes['Leadership']> = {
+  gaps?: Resolver<Array<ResolversTypes['LeadershipGap']>, ParentType, ContextType>;
+  mandates?: Resolver<Array<ResolversTypes['Mandate']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['LeadershipVia']>, ParentType, ContextType>;
+};
+
+export type LeadershipGapResolvers<ContextType = any, ParentType extends ResolversParentTypes['LeadershipGap'] = ResolversParentTypes['LeadershipGap']> = {
+  endDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['LeadershipGapKind'], ParentType, ContextType>;
+  startDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
+export type LeadershipViaResolvers<ContextType = any, ParentType extends ResolversParentTypes['LeadershipVia'] = ResolversParentTypes['LeadershipVia']> = {
+  authority?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  authorityName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  snapshotDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  snapshots?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type MandateResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mandate'] = ResolversParentTypes['Mandate']> = {
+  basis?: Resolver<ResolversTypes['MandateBasis'], ParentType, ContextType>;
+  dataThrough?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  electionDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  endDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  leaderName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  list?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  memberParties?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  startDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
 export interface MapAreaScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['MapArea'], any> {
   name: 'MapArea';
 }
@@ -1278,9 +2167,128 @@ export type MonthTotalResolvers<ContextType = any, ParentType extends ResolversP
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
 };
 
+export type NoConstructionCaenNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoConstructionCaenNumbers'] = ResolversParentTypes['NoConstructionCaenNumbers']> = {
+  authorisedCodes?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type NoFinancialStatementNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoFinancialStatementNumbers'] = ResolversParentTypes['NoFinancialStatementNumbers']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  fiscalYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  legalForm?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type NoPublicationNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['NoPublicationNumbers'] = ResolversParentTypes['NoPublicationNumbers']> = {
   procedure?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type OnrcAliasResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcAlias'] = ResolversParentTypes['OnrcAlias']> = {
+  current?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  lastSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+};
+
+export type OnrcAreaCountResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcAreaCount'] = ResolversParentTypes['OnrcAreaCount']> = {
+  area?: Resolver<ResolversTypes['MapArea'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type OnrcCaenResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCaen'] = ResolversParentTypes['OnrcCaen']> = {
+  code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  version?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+};
+
+export type OnrcCountMapResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCountMap'] = ResolversParentTypes['OnrcCountMap']> = {
+  counties?: Resolver<Array<ResolversTypes['OnrcAreaCount']>, ParentType, ContextType>;
+  unplacedRegistrations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type OnrcCurrentStatusResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCurrentStatus'] = ResolversParentTypes['OnrcCurrentStatus']> = {
+  code?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcFilterEchoResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcFilterEcho'] = ResolversParentTypes['OnrcFilterEcho']> = {
+  qFolded?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcMatchedFieldResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcMatchedField'] = ResolversParentTypes['OnrcMatchedField']> = {
+  field?: Resolver<ResolversTypes['OnrcMatchableField'], ParentType, ContextType>;
+  highlights?: Resolver<Array<Array<ResolversTypes['Int']>>, ParentType, ContextType>;
+  text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type OnrcQueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcQuery'] = ResolversParentTypes['OnrcQuery']> = {
+  record?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType, RequireFields<OnrcQueryRecordArgs, 'registrationNumber'>>;
+  search?: Resolver<ResolversTypes['OnrcSearch'], ParentType, ContextType, RequireFields<OnrcQuerySearchArgs, 'filter'>>;
+};
+
+export type OnrcRegistrationResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcRegistration'] = ResolversParentTypes['OnrcRegistration']> = {
+  aliases?: Resolver<Array<ResolversTypes['OnrcAlias']>, ParentType, ContextType>;
+  caen?: Resolver<Array<ResolversTypes['OnrcCaen']>, ParentType, ContextType>;
+  cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType>;
+  legalForm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  registrationDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  registrationNumber?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  seat?: Resolver<ResolversTypes['OnrcSeat'], ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  statuses?: Resolver<Array<ResolversTypes['OnrcStatus']>, ParentType, ContextType>;
+};
+
+export type OnrcResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcResult'] = ResolversParentTypes['OnrcResult']> = {
+  caen?: Resolver<Array<ResolversTypes['OnrcCaen']>, ParentType, ContextType>;
+  cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType>;
+  legalForm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  matched?: Resolver<Array<ResolversTypes['OnrcMatchedField']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrationDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  registrationNumber?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  seapCounterparty?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  seat?: Resolver<ResolversTypes['OnrcSeat'], ParentType, ContextType>;
+  statuses?: Resolver<Array<ResolversTypes['OnrcCurrentStatus']>, ParentType, ContextType>;
+};
+
+export type OnrcResultPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcResultPage'] = ResolversParentTypes['OnrcResultPage']> = {
+  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  rows?: Resolver<Array<ResolversTypes['OnrcResult']>, ParentType, ContextType>;
+};
+
+export type OnrcSearchResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcSearch'] = ResolversParentTypes['OnrcSearch']> = {
+  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  defaultTab?: Resolver<ResolversTypes['OnrcResultTab'], ParentType, ContextType>;
+  filter?: Resolver<ResolversTypes['OnrcFilterEcho'], ParentType, ContextType>;
+  map?: Resolver<ResolversTypes['OnrcCountMap'], ParentType, ContextType>;
+  organisations?: Resolver<ResolversTypes['OnrcResultPage'], ParentType, ContextType, RequireFields<OnrcSearchOrganisationsArgs, 'limit' | 'offset'>>;
+};
+
+export type OnrcSeatResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcSeat'] = ResolversParentTypes['OnrcSeat']> = {
+  address?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  county?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  locality?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  postalCode?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcStatusResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcStatus'] = ResolversParentTypes['OnrcStatus']> = {
+  code?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  firstSeen?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+};
+
+export type OrganisationPeopleResolvers<ContextType = any, ParentType extends ResolversParentTypes['OrganisationPeople'] = ResolversParentTypes['OrganisationPeople']> = {
+  holders?: Resolver<Array<ResolversTypes['RoleHolder']>, ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
 };
 
 export type OverCapNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['OverCapNumbers'] = ResolversParentTypes['OverCapNumbers']> = {
@@ -1297,9 +2305,49 @@ export type PartyResolvers<ContextType = any, ParentType extends ResolversParent
   share?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
 };
 
+export type PartyCoverageResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyCoverage'] = ResolversParentTypes['PartyCoverage']> = {
+  direct?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  otherParties?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  subordinate?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+  unattributed?: Resolver<ResolversTypes['PartyShare'], ParentType, ContextType>;
+};
+
+export type PartyOptionResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyOption'] = ResolversParentTypes['PartyOption']> = {
+  party?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type PartyShareResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartyShare'] = ResolversParentTypes['PartyShare']> = {
+  awarded?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
+  records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
 export type PeriodResolvers<ContextType = any, ParentType extends ResolversParentTypes['Period'] = ResolversParentTypes['Period']> = {
   from?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   to?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+};
+
+export type PersonResolvers<ContextType = any, ParentType extends ResolversParentTypes['Person'] = ResolversParentTypes['Person']> = {
+  birthYear?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
+  roleCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  roles?: Resolver<Array<ResolversTypes['PersonRole']>, ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+};
+
+export type PersonRefResolvers<ContextType = any, ParentType extends ResolversParentTypes['PersonRef'] = ResolversParentTypes['PersonRef']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+};
+
+export type PersonRoleResolvers<ContextType = any, ParentType extends ResolversParentTypes['PersonRole'] = ResolversParentTypes['PersonRole']> = {
+  entityKey?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  entityRole?: Resolver<Maybe<ResolversTypes['Role']>, ParentType, ContextType>;
+  organisationName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };
 
 export type PlacementResolvers<ContextType = any, ParentType extends ResolversParentTypes['Placement'] = ResolversParentTypes['Placement']> = {
@@ -1318,10 +2366,26 @@ export type ProvenanceResolvers<ContextType = any, ParentType extends ResolversP
   via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
+export type PublicEnterpriseResolvers<ContextType = any, ParentType extends ResolversParentTypes['PublicEnterprise'] = ResolversParentTypes['PublicEnterprise']> = {
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  firstYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  lastYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  listedAs?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrationNumber?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   counties?: Resolver<Array<ResolversTypes['County']>, ParentType, ContextType>;
   coverage?: Resolver<ResolversTypes['Coverage'], ParentType, ContextType, RequireFields<QueryCoverageArgs, 'source'>>;
   entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType, RequireFields<QueryEntityArgs, 'key'>>;
+  onrc?: Resolver<ResolversTypes['OnrcQuery'], ParentType, ContextType>;
+  person?: Resolver<Maybe<ResolversTypes['Person']>, ParentType, ContextType, RequireFields<QueryPersonArgs, 'id'>>;
+  referenceSources?: Resolver<Array<ResolversTypes['ReferenceSource']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapQuery'], ParentType, ContextType>;
   signalRules?: Resolver<Array<ResolversTypes['SignalRule']>, ParentType, ContextType>;
   sources?: Resolver<Array<ResolversTypes['Source']>, ParentType, ContextType>;
@@ -1352,6 +2416,16 @@ export type RecordFilterValueResolvers<ContextType = any, ParentType extends Res
   to?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
 };
 
+export type RecordPartyResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordParty'] = ResolversParentTypes['RecordParty']> = {
+  basis?: Resolver<ResolversTypes['MandateBasis'], ParentType, ContextType>;
+  dataThrough?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  electionDate?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  independent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  list?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  memberParties?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['LeadershipVia']>, ParentType, ContextType>;
+};
+
 export type RecordResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordResult'] = ResolversParentTypes['RecordResult']> = {
   areaShare?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
   matchedField?: Resolver<Maybe<ResolversTypes['MatchedField']>, ParentType, ContextType>;
@@ -1363,12 +2437,28 @@ export type RecordResultPageResolvers<ContextType = any, ParentType extends Reso
   rows?: Resolver<Array<ResolversTypes['RecordResult']>, ParentType, ContextType>;
 };
 
+export type ReferenceSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReferenceSource'] = ResolversParentTypes['ReferenceSource']> = {
+  dataThrough?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  fiscalYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type RoleHolderResolvers<ContextType = any, ParentType extends ResolversParentTypes['RoleHolder'] = ResolversParentTypes['RoleHolder']> = {
+  birthYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  person?: Resolver<Maybe<ResolversTypes['PersonRef']>, ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
 export type SeapEntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['SeapEntity'] = ResolversParentTypes['SeapEntity']> = {
   role?: Resolver<Maybe<ResolversTypes['SeapRole']>, ParentType, ContextType, RequireFields<SeapEntityRoleArgs, 'role'>>;
   roles?: Resolver<Array<ResolversTypes['Role']>, ParentType, ContextType>;
 };
 
 export type SeapQueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['SeapQuery'] = ResolversParentTypes['SeapQuery']> = {
+  partyOptions?: Resolver<Array<ResolversTypes['PartyOption']>, ParentType, ContextType>;
   record?: Resolver<Maybe<ResolversTypes['SeapRecord']>, ParentType, ContextType, RequireFields<SeapQueryRecordArgs, 'code'>>;
   search?: Resolver<ResolversTypes['SeapSearch'], ParentType, ContextType, RequireFields<SeapQuerySearchArgs, 'filter'>>;
 };
@@ -1384,6 +2474,7 @@ export type SeapRecordResolvers<ContextType = any, ParentType extends ResolversP
   date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   framework?: Resolver<Maybe<ResolversTypes['FrameworkLink']>, ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['SeapRecordKind'], ParentType, ContextType>;
+  party?: Resolver<Maybe<ResolversTypes['RecordParty']>, ParentType, ContextType>;
   procedure?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
   signals?: Resolver<Array<ResolversTypes['Signal']>, ParentType, ContextType>;
@@ -1435,7 +2526,7 @@ export type SignalResolvers<ContextType = any, ParentType extends ResolversParen
 };
 
 export type SignalNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalNumbers'] = ResolversParentTypes['SignalNumbers']> = {
-  __resolveType: TypeResolveFn<'FrameworkOverrunNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SplittingNumbers', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'AfterStrikeOffNumbers' | 'DonorToPartyNumbers' | 'FewEmployeesNumbers' | 'FrameworkOverrunNumbers' | 'InsolvencyNumbers' | 'NoConstructionCaenNumbers' | 'NoFinancialStatementNumbers' | 'NoPublicationNumbers' | 'OverCapNumbers' | 'SoeBoardInSupplierNumbers' | 'SplittingNumbers' | 'YoungFirmNumbers', ParentType, ContextType>;
 };
 
 export type SignalPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['SignalPage'] = ResolversParentTypes['SignalPage']> = {
@@ -1451,9 +2542,18 @@ export type SignalRuleResolvers<ContextType = any, ParentType extends ResolversP
   window?: Resolver<ResolversTypes['Period'], ParentType, ContextType>;
 };
 
+export interface SignedBaniScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['SignedBani'], any> {
+  name: 'SignedBani';
+}
+
 export interface SirutaScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Siruta'], any> {
   name: 'Siruta';
 }
+
+export type SoeBoardInSupplierNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['SoeBoardInSupplierNumbers'] = ResolversParentTypes['SoeBoardInSupplierNumbers']> = {
+  persons?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
 
 export type SourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Source'] = ResolversParentTypes['Source']> = {
   dataThrough?: Resolver<Array<ResolversTypes['DataThrough']>, ParentType, ContextType>;
@@ -1486,6 +2586,7 @@ export type TotalResolvers<ContextType = any, ParentType extends ResolversParent
   estimated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   frameworkCeilings?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
   noValue?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  partyCoverage?: Resolver<Maybe<ResolversTypes['PartyCoverage']>, ParentType, ContextType>;
   records?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   suspectLeftOut?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
@@ -1506,7 +2607,15 @@ export type UnplacedTileResolvers<ContextType = any, ParentType extends Resolver
   total?: Resolver<ResolversTypes['Total'], ParentType, ContextType>;
 };
 
+export type YoungFirmNumbersResolvers<ContextType = any, ParentType extends ResolversParentTypes['YoungFirmNumbers'] = ResolversParentTypes['YoungFirmNumbers']> = {
+  counted?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
+  days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  registered?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type Resolvers<ContextType = any> = {
+  AfterStrikeOffNumbers?: AfterStrikeOffNumbersResolvers<ContextType>;
   Alias?: AliasResolvers<ContextType>;
   AreaKey?: GraphQLScalarType;
   AreaTotal?: AreaTotalResolvers<ContextType>;
@@ -1522,30 +2631,70 @@ export type Resolvers<ContextType = any> = {
   DataThrough?: DataThroughResolvers<ContextType>;
   Date?: GraphQLScalarType;
   DateTime?: GraphQLScalarType;
+  DonationSource?: DonationSourceResolvers<ContextType>;
+  DonorToPartyNumbers?: DonorToPartyNumbersResolvers<ContextType>;
   Entity?: EntityResolvers<ContextType>;
   EntityResult?: EntityResultResolvers<ContextType>;
   EntityResultPage?: EntityResultPageResolvers<ContextType>;
   FacetCount?: FacetCountResolvers<ContextType>;
+  FewEmployeesNumbers?: FewEmployeesNumbersResolvers<ContextType>;
+  FinancialSource?: FinancialSourceResolvers<ContextType>;
+  FinancialStatements?: FinancialStatementsResolvers<ContextType>;
+  FinancialYear?: FinancialYearResolvers<ContextType>;
+  FirmDonation?: FirmDonationResolvers<ContextType>;
+  FirmDonations?: FirmDonationsResolvers<ContextType>;
   FrameworkLink?: FrameworkLinkResolvers<ContextType>;
   FrameworkOverrunNumbers?: FrameworkOverrunNumbersResolvers<ContextType>;
   FrameworkSummary?: FrameworkSummaryResolvers<ContextType>;
   GapCell?: GapCellResolvers<ContextType>;
+  InsolvencyNumbers?: InsolvencyNumbersResolvers<ContextType>;
+  Leadership?: LeadershipResolvers<ContextType>;
+  LeadershipGap?: LeadershipGapResolvers<ContextType>;
+  LeadershipVia?: LeadershipViaResolvers<ContextType>;
+  Mandate?: MandateResolvers<ContextType>;
   MapArea?: GraphQLScalarType;
   MatchedField?: MatchedFieldResolvers<ContextType>;
   MoneyMap?: MoneyMapResolvers<ContextType>;
   MonthTotal?: MonthTotalResolvers<ContextType>;
+  NoConstructionCaenNumbers?: NoConstructionCaenNumbersResolvers<ContextType>;
+  NoFinancialStatementNumbers?: NoFinancialStatementNumbersResolvers<ContextType>;
   NoPublicationNumbers?: NoPublicationNumbersResolvers<ContextType>;
+  OnrcAlias?: OnrcAliasResolvers<ContextType>;
+  OnrcAreaCount?: OnrcAreaCountResolvers<ContextType>;
+  OnrcCaen?: OnrcCaenResolvers<ContextType>;
+  OnrcCountMap?: OnrcCountMapResolvers<ContextType>;
+  OnrcCurrentStatus?: OnrcCurrentStatusResolvers<ContextType>;
+  OnrcFilterEcho?: OnrcFilterEchoResolvers<ContextType>;
+  OnrcMatchedField?: OnrcMatchedFieldResolvers<ContextType>;
+  OnrcQuery?: OnrcQueryResolvers<ContextType>;
+  OnrcRegistration?: OnrcRegistrationResolvers<ContextType>;
+  OnrcResult?: OnrcResultResolvers<ContextType>;
+  OnrcResultPage?: OnrcResultPageResolvers<ContextType>;
+  OnrcSearch?: OnrcSearchResolvers<ContextType>;
+  OnrcSeat?: OnrcSeatResolvers<ContextType>;
+  OnrcStatus?: OnrcStatusResolvers<ContextType>;
+  OrganisationPeople?: OrganisationPeopleResolvers<ContextType>;
   OverCapNumbers?: OverCapNumbersResolvers<ContextType>;
   Party?: PartyResolvers<ContextType>;
+  PartyCoverage?: PartyCoverageResolvers<ContextType>;
+  PartyOption?: PartyOptionResolvers<ContextType>;
+  PartyShare?: PartyShareResolvers<ContextType>;
   Period?: PeriodResolvers<ContextType>;
+  Person?: PersonResolvers<ContextType>;
+  PersonRef?: PersonRefResolvers<ContextType>;
+  PersonRole?: PersonRoleResolvers<ContextType>;
   Placement?: PlacementResolvers<ContextType>;
   Provenance?: ProvenanceResolvers<ContextType>;
+  PublicEnterprise?: PublicEnterpriseResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RecordFacets?: RecordFacetsResolvers<ContextType>;
   RecordFilterEcho?: RecordFilterEchoResolvers<ContextType>;
   RecordFilterValue?: RecordFilterValueResolvers<ContextType>;
+  RecordParty?: RecordPartyResolvers<ContextType>;
   RecordResult?: RecordResultResolvers<ContextType>;
   RecordResultPage?: RecordResultPageResolvers<ContextType>;
+  ReferenceSource?: ReferenceSourceResolvers<ContextType>;
+  RoleHolder?: RoleHolderResolvers<ContextType>;
   SeapEntity?: SeapEntityResolvers<ContextType>;
   SeapQuery?: SeapQueryResolvers<ContextType>;
   SeapRecord?: SeapRecordResolvers<ContextType>;
@@ -1555,7 +2704,9 @@ export type Resolvers<ContextType = any> = {
   SignalNumbers?: SignalNumbersResolvers<ContextType>;
   SignalPage?: SignalPageResolvers<ContextType>;
   SignalRule?: SignalRuleResolvers<ContextType>;
+  SignedBani?: GraphQLScalarType;
   Siruta?: GraphQLScalarType;
+  SoeBoardInSupplierNumbers?: SoeBoardInSupplierNumbersResolvers<ContextType>;
   Source?: SourceResolvers<ContextType>;
   SourceRecord?: SourceRecordResolvers<ContextType>;
   SplittingNumbers?: SplittingNumbersResolvers<ContextType>;
@@ -1564,5 +2715,6 @@ export type Resolvers<ContextType = any> = {
   Uat?: UatResolvers<ContextType>;
   UatMap?: UatMapResolvers<ContextType>;
   UnplacedTile?: UnplacedTileResolvers<ContextType>;
+  YoungFirmNumbers?: YoungFirmNumbersResolvers<ContextType>;
 };
 

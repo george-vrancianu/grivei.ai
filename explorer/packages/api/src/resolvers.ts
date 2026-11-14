@@ -1,25 +1,19 @@
 import { GraphQLError } from "graphql";
-import { coverageStatus } from "./coverage.ts";
 import { buildWhere, type SearchFilter } from "./search.ts";
 import { matchedFieldOf } from "./matched.ts";
+import { onrcMatchedFields } from "./onrcMatched.ts";
+import type { OnrcSearchFilter } from "./onrcSearch.ts";
 import { foldTokens } from "./fold.ts";
+import { adapterOf, plannedSources, SOURCE_ADAPTERS, type SourceRow } from "./sources.ts";
+import type { SourceId } from "@grivei/contract/schema-types";
 import { seapLinkUrl } from "./seapLink.ts";
 import { roleObject } from "./roleResolvers.ts";
 import { signalObject as makeSignal, type SignalRow } from "./signals.ts";
-import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit } from "./store.ts";
+import type { Store, EntityRow, RecordRow, RecordDetail, RecordOrderKey, CountyRow, PlacementRow, EntityHit, FinancialYearRow, FirmDonationsRow, OnrcRegistrationRow } from "./store.ts";
 
 const MAX_SUBSEQUENT = 200;
-/** The later Sources (spec story 37): listed so the Coverage lens can grey them as "not harvested"; nothing is loaded from them yet. */
-const PLANNED_SOURCES = [
-  { id: "ONRC" as const, name: "ONRC" },
-  { id: "ANI" as const, name: "ANI" },
-  { id: "MFINANTE" as const, name: "Ministerul Finanțelor" },
-  { id: "JUST" as const, name: "portal.just.ro" },
-].map((source) => ({ ...source, harvested: false, dataThrough: [] }));
-
 // The graph's root value: plain objects whose function-valued fields graphql-js calls as resolvers.
-// The tracer bullet serves the SEAP Total and Records list for the empty filter, and returns empty-but-valid values for
-// the rest of what the main screen selects (maps, tabs, goTo), until the tickets that own them land.
+// The root serves `sources`, `coverage(source)`, `seap { search, record }`, `onrc { search, record }`, `person` and `referenceSources`.
 // No copy lives here: only data, enums and identifiers.
 
 const MAX_LIMIT = 200; // the SDL: "the server caps limit at 200"
@@ -47,14 +41,6 @@ const placementObject = (p: PlacementRow | null | undefined) => {
   };
 };
 
-/** Does the quarter (`2024-Q4`) overlap the window (open ends allowed; `Date`s are `YYYY-MM-DD`, which sort as text)? */
-function overlaps(quarter: string, from: string | null, to: string | null): boolean {
-  const [year, q] = quarter.split("-Q") as [string, string];
-  const first = `${year}-${String(3 * Number(q) - 2).padStart(2, "0")}-01`;
-  const last = `${year}-${String(3 * Number(q)).padStart(2, "0")}-${Number(q) === 1 || Number(q) === 4 ? "31" : "30"}`;
-  return (from === null || last >= from) && (to === null || first <= to);
-}
-
 const zeroTotal = () => ({ awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false });
 
 // The order of the RecordBadge enum.
@@ -66,6 +52,8 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
     ...recordRow(r),
     contractType: r.contractType,
     cpv: r.cpv,
+    // the Party of the Mandate in force on the award date at the authority (#180); never on a winner
+    party: () => store.recordParty(r.code),
     // the link to its framework agreement (the counting rule): set for an agreement's own contract and for a contract awarded under one
     framework: r.frameworkRole
       ? async () => {
@@ -95,7 +83,41 @@ const matchSource = (r: RecordRow) => ({
   winners: r.winners.filter((w) => !w.naturalPerson).map((w) => ({ name: w.name, cui: w.entity?.cui ?? null, foreignVatId: w.entity?.foreignVatId ?? null })),
 });
 
-export function rootValue(store: Store) {
+/** The statements of an entity as the contract serves them; the award share is context (ADR 0014): awarded in the calendar year over the year's turnover, null when that is blank or zero. */
+export function financialsObject(rows: FinancialYearRow[]) {
+  if (rows.length === 0) return null;
+  return {
+    years: rows.map((y) => ({
+      fiscalYear: y.fiscalYear,
+      revision: y.revision === "REVISED" ? ("REVISED" as const) : ("FIRST_RELEASE" as const),
+      mayBeRevised: y.newest && y.revision === "FIRST",
+      turnover: y.turnover,
+      profitOrLoss: y.profitOrLoss,
+      debts: y.debts,
+      equity: y.equity,
+      averageEmployees: y.averageEmployees,
+      awardedInYear: y.awardedInYear,
+      awardShareOfTurnover: y.turnover !== null && BigInt(y.turnover) > 0n ? Number(y.awardedInYear) / Number(y.turnover) : null,
+      source: y.source,
+    })),
+  };
+}
+
+/** An entity's firm donations as the contract serves them (#182): counts of each kind, never a sum; context, never a Signal (ADR 0014). */
+export function donationsObject(found: FirmDonationsRow | null) {
+  if (found === null) return null;
+  return {
+    dataThroughYear: found.dataThroughYear,
+    donationCount: found.items.filter((i) => i.kind === "DONATION").length,
+    loanCount: found.items.filter((i) => i.kind === "LOAN").length,
+    items: found.items,
+    source: found.source,
+  };
+}
+
+export function rootValue(store: Store, options: { restricted?: boolean } = {}) {
+  // Restricted content (ADR 0015): fail closed. Only an explicit `true` (the host's `GRIVEI_RESTRICTED` is `show`, restricted.ts) reveals it.
+  const restricted = options.restricted === true;
   /** An Entity of the shared core (ADR 0003); its SEAP role aggregates are in roleResolvers.ts (#73). */
   const entityObject = (e: EntityRow) => ({
     __typename: "Entity" as const,
@@ -117,12 +139,45 @@ export function rootValue(store: Store) {
       },
     ],
     aliases: () => store.aliases(e.key),
+    // the ONRC section (#175): the same on both role pages; null for an entity with no CUI or no registration
+    onrc: async () => {
+      const found = e.cui ? await store.onrc(e.cui) : null;
+      return found && onrcRegistrationObject(found);
+    },
+    // ONRC's administrators and legal representatives (#177), public tier: named only on a SEAP counterparty (ADR 0009); an organisation that exists only in ONRC is not named.
+    // The person link of a linked holder is Restricted (ADR 0015): the store is not even asked for the ids unless the switch shows them.
+    people: async () => {
+      if (!e.cui || (await store.roles(e.key)).length === 0) return null;
+      const found = await store.people(e.cui, { personIds: restricted });
+      return (
+        found && {
+          snapshot: found.snapshot,
+          provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+          holders: found.holders.map((h) => ({ name: h.name, role: h.role, birthYear: h.birthYear, person: restricted && h.personId ? { id: h.personId } : null })),
+        }
+      );
+    },
+    // AMEPIP's list holds CUIs only (#183): an entity with no CUI is never a public enterprise
+    publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
+    // the Leadership list (#180): only an attributed authority or a subordinate body has one; null for every other entity, a supplier never
+    leadership: () => store.leadership(e.key),
+    // MF's annual statements for the CUI (#179), with the awards of each year beside them as context: null when MF holds none
+    financials: async () => (e.cui ? financialsObject(await store.financials(e.cui, e.key)) : null),
+    // BaniPartide's firm donations and loans under the CUI (#182): null when it lists none; on a supplier the page reads it as "also a firm donor", context only
+    donations: async () => (e.cui ? donationsObject(await store.donations(e.cui)) : null),
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
       role: async ({ role }: { role: "AUTHORITY" | "SUPPLIER" }) =>
         (await store.roles(e.key)).includes(role) ? roleObject(store, role, e.key, { entityObject, recordRow, search: (f, other) => searchObject(f, other), moneyMap, withEstimated: (t) => ({ ...zeroTotal(), ...t }), signalObject }) : null,
     }),
+  });
+
+  /** An ONRC registration as the contract serves it (the entity page's section and `onrc.record`): its provenance is ONRC's snapshot dataset; its entity is the page of its CUI. */
+  const onrcRegistrationObject = (found: OnrcRegistrationRow) => ({
+    ...found,
+    provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+    entity: async () => (found.cui ? ((await store.entity(found.cui).then((e) => (e ? entityObject(e) : null))) ?? null) : null),
   });
 
   const signalObject = (s: SignalRow) => makeSignal(store, s, { entityObject, recordRow });
@@ -214,7 +269,13 @@ export function rootValue(store: Store) {
   function searchObject(filter: SearchFilter, counterparties?: "AUTHORITY" | "SUPPLIER") {
     const where = buildWhere(filter);
     // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
-    const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
+    const total = (_: unknown, ctx: Ctx) =>
+      store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({
+        ...zeroTotal(),
+        ...t,
+        // only a Party-filtered search states its coverage, and only when the query selects it (a second grouped scan)
+        partyCoverage: () => (filter.party ? store.searchPartyCoverage(filter, { signal: ctx?.signal }) : null),
+      }));
     const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
       const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
       return {
@@ -266,47 +327,106 @@ export function rootValue(store: Store) {
     };
   }
 
-  const seapSource = async () => ({ id: "SEAP" as const, name: "SEAP", harvested: true, dataThrough: await store.dataThrough() });
+  /** ONRC's search (#176): the match count, the Organisations tab and the count lens of one filter. No person is ever in it (the search table holds organisations only). */
+  function onrcSearchObject(filter: OnrcSearchFilter) {
+    const queryTokens = foldTokens(filter.q ?? "");
+    // `count` and the Organisations page both need the match count: it is counted once per search object
+    let counted: Promise<number> | undefined;
+    const matchCount = (ctx: Ctx) => (counted ??= store.onrcCount(filter, { signal: ctx?.signal }));
+    return {
+      filter: { qFolded: queryTokens.length ? queryTokens.join(" ") : null },
+      count: (_: unknown, ctx: Ctx) => matchCount(ctx),
+      defaultTab: "ORGANISATIONS" as const,
+      organisations: async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
+        const page = await store.onrcSearch(filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal, count: await matchCount(ctx) });
+        return {
+          count: page.count,
+          rows: page.rows.map((r) => ({
+            registrationNumber: r.registrationNumber,
+            name: r.name,
+            cui: r.cui,
+            legalForm: r.legalForm,
+            registrationDate: r.registrationDate,
+            seat: r.seat,
+            statuses: r.statuses,
+            caen: r.caen,
+            seapCounterparty: r.seapCounterparty,
+            entity: r.entity ? entityObject(r.entity) : null,
+            matched: onrcMatchedFields({ name: r.name, aliases: r.aliases, cui: r.cui, registrationNumber: r.registrationNumber, caen: r.caen }, queryTokens),
+          })),
+        };
+      },
+      map: async (_: unknown, ctx: Ctx) => {
+        const [m, counties] = await Promise.all([store.onrcCountMap(filter, { signal: ctx?.signal }), store.counties()]);
+        const names = new Map(counties.map((c) => [`RO-${c.iso}`, c.name]));
+        return { counties: m.counties.map((c) => ({ area: c.area, name: names.get(c.area) ?? c.area, registrations: c.registrations })), unplacedRegistrations: m.unplaced };
+      },
+    };
+  }
+
+  /** A registry entry as the `Source` type: its data-through dates come from its adapter. */
+  const sourceObject = async (row: Pick<SourceRow, "id" | "name">) => {
+    const dataThrough = await adapterOf(row.id).dataThrough(store);
+    // a Source in the registry whose tables are empty (an ONRC with no snapshot archived yet) is not harvested; SEAP always is (its Coverage grid says what is missing)
+    return { id: row.id as SourceId, name: row.name, harvested: row.id === "SEAP" || dataThrough.length > 0, dataThrough };
+  };
 
   return {
-    sources: async () => [await seapSource(), ...PLANNED_SOURCES],
+    // the registry (`core.source`, stored by every rebuild) first, then the planned Sources it does not hold yet
+    sources: async () => {
+      const held = await store.sources();
+      return [...(await Promise.all(held.map(sourceObject))), ...plannedSources(held.map((row) => row.id))];
+    },
     entity: async ({ key }: { key: string }) => {
       const found = await store.entity(key);
       return found ? entityObject(found) : null;
     },
     // The grid (#79) and the per-county figures (#80) follow the date window: quarters overlapping it, Records dated in it.
     coverage: ({ source, window }: { source: string; window?: { from?: string | null; to?: string | null } | null }) => {
-      if (source !== "SEAP") throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
-      const from = window?.from || null;
-      const to = window?.to || null;
-      let cached: Promise<Awaited<ReturnType<typeof store.coverageGrid>>> | undefined; // one read per request even when grid and counties are both selected
-      const grid = () => (cached ??= store.coverageGrid().then((cells) => cells.filter((cell) => overlaps(cell.quarter, from, to))));
-      return {
-        source: seapSource,
-        window: { from, to },
-        grid,
-        counties: async () => {
-          const status = coverageStatus(await grid()); // the same for every area: SEAP is harvested nationally (see coverage.ts)
-          return (await store.coverageAreas({ from, to })).map((a) => ({ county: a.area, status, withRecords: a.withRecords, publicEntities: a.publicEntities, otherAuthorities: a.otherAuthorities }));
-        },
-        unplacedAuthorities: async () => {
-          const unplaced = await store.unplacedAuthorities({ from, to });
-          return { authorities: unplaced.authorities, total: { ...zeroTotal(), ...unplaced.total } };
-        },
-        referenceSnapshot: () => store.referenceSnapshot(),
+      const adapter = SOURCE_ADAPTERS[source];
+      if (!adapter) throw new GraphQLError(`coverage of ${source} is not served yet`, { extensions: { code: "NOT_IMPLEMENTED" } });
+      const named = async () => {
+        const row = (await store.sources()).find((r) => r.id === source);
+        return sourceObject(row ?? { id: source, name: source });
       };
+      return { source: named, ...adapter.coverage(store, { from: window?.from || null, to: window?.to || null }, zeroTotal) };
+    },
+    referenceSources: () => store.referenceSources(),
+    // RESTRICTED (ADR 0015): with the switch off the resolver answers null before it asks the store anything, so not even the existence or the count of a person's roles is served
+    person: async ({ id }: { id: string }) => {
+      if (!restricted) return null;
+      const found = await store.person(id);
+      return (
+        found && {
+          id: found.id,
+          name: found.name,
+          birthYear: found.birthYear,
+          roleCount: found.roles.length,
+          roles: found.roles,
+          snapshot: found.snapshot,
+          provenance: { source: "ONRC" as const, kind: "BULK" as const, ...found.provenance },
+        }
+      );
     },
     signalRules: async () =>
       (await store.signalRules()).map((r) => ({ slug: r.slug, window: r.window, baseRate: r.baseRate, baseRateYear: r.baseRateYear, dataThrough: r.dataThrough })),
     counties: async () => (await store.counties()).map(county),
     uats: async ({ county: code }: { county: string }) =>
       (await store.uats(code.replace(/^RO-/, ""))).map((u) => ({ siruta: u.siruta, name: u.name, county: county(u.county) })),
+    onrc: () => ({
+      search: ({ filter }: { filter: OnrcSearchFilter }) => onrcSearchObject(filter),
+      record: async ({ registrationNumber }: { registrationNumber: string }) => {
+        const found = await store.onrcRecord(registrationNumber);
+        return found ? onrcRegistrationObject(found) : null;
+      },
+    }),
     seap: () => ({
       record: async ({ code }: { code: string }) => {
         const found = await store.record(code);
         return found ? recordPage(found, recordRow, store) : null;
       },
       search: ({ filter }: { filter: SearchFilter }) => searchObject(filter),
+      partyOptions: () => store.partyOptions(),
     }),
   };
 }

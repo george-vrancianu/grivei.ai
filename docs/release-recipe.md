@@ -94,6 +94,8 @@ A Release is done when:
 
 Release 1's own run of this list (the real rebuild, the latency benchmark, the validation fixture, the unattended week) is in [release-1-runbook.md](release-1-runbook.md).
 
+Release 2's run of it (ONRC and its Reference sources, the Party-filtered search, the Restricted check) is in [release-2-runbook.md](release-2-runbook.md).
+
 ## First reuse (Release 2 only)
 
 The second Source is the first to reuse the generic parts, so Release 2 also builds, once:
@@ -101,7 +103,7 @@ The second Source is the first to reuse the generic parts, so Release 2 also bui
 - the Source picker beside the search bar, with match counts per Source;
 - the Source switch on the Records tab;
 - the Source selector on the Coverage lens and page;
-- a `sources` registry: name, record kinds, lenses, placement rule, methodology anchor, and landing-page row;
+- a `sources` registry: name, record kinds, lenses, placement rule, methodology anchor, and landing-page row (`watchdog/pipeline/sources.py`; the rebuild stores it as `core.source`, and `sources`, `coverage(source)` and `pipeline status` read it through the API adapters in `explorer/packages/api/src/sources.ts`. A new Source adds an entry, its own `sql/<schema>_schema.sql` and an adapter, and `tests/test_sources_registry.py` checks its landing-page row, because `site/` is static HTML);
 - the move of SEAP's tables into a `seap` schema.
 
 Later Releases skip this section.

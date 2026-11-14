@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import psycopg
 
@@ -48,7 +49,9 @@ def _seat(seat: dict | None, fiscal: dict | None) -> tuple[str | None, str | Non
     return fiscal.get("dcod_JudetAuto"), fiscal.get("dcod_Judet"), fiscal.get("ddenumire_Localitate"), fiscal.get("dcod_Postal") or None
 
 
-def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None) -> PlacementSummary:
+def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None,
+                    after_insert: "Callable[[psycopg.Cursor], int] | None" = None) -> PlacementSummary:
+    """`after_insert` runs once ANAF's and SEAP's placements are in (a Source that places what they could not, e.g. ONRC's seat county), before the search rows take their county."""
     out = PlacementSummary()
     gaz, out.has_uat_table = load_gazetteer(data_dir)
     for c in gaz.counties:
@@ -106,6 +109,8 @@ def build_placement(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str 
         cur.executemany(
             """INSERT INTO core.placement (entity_key, county_iso, uat_siruta, village_siruta, sector, national, national_by, placed_by, located_on, source_path)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", rows[i:i + 1000])
+    if after_insert is not None:
+        after_insert(cur)
     # the search rows carry the county (ISO 3166-2:RO, `RO-BV`), the UAT for the county/UAT filter and the Money lens area (#71); this runs before the
     # pg_search index is built. A national authority keeps a NULL county/UAT (never counted in Bucharest) but its area is NATIONAL; an authority with
     # no county and not national keeps the column defaults (UNPLACED); a supplier takes its county from its own placement. A national entity acting as a

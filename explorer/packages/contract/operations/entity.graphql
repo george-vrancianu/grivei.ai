@@ -5,6 +5,12 @@
 query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrder: SignalOrder, $signalOffset: Int) {
   entity(key: $key) {
     ...EntityHeaderFields
+    onrc { ...OnrcRegistrationFields }
+    people { ...OrganisationPeopleFields }
+    publicEnterprise { ...PublicEnterpriseFields }
+    leadership { ...LeadershipFields }
+    financials { ...FinancialStatementsFields }
+    donations { ...FirmDonationsFields }
     seap {
       role(role: $role) {
         role
@@ -40,6 +46,7 @@ query EntityOverview($key: ID!, $role: Role!, $filter: RecordFilter, $signalOrde
 query EntityRecords($key: ID!, $role: Role!, $filter: RecordFilter!, $limit: Int!, $offset: Int!, $order: RecordOrder) {
   entity(key: $key) {
     ...EntityHeaderFields
+    onrc { registrationNumber }
     seap {
       role(role: $role) {
         role

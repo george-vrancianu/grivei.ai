@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "seap",
+  "stream": "bulk",
+  "kind": "da",
+  "unit": "2024Q4",
+  "fetchedAt": "2026-11-14T09:00:00Z",
+  "url": "https://data.gov.ro/fixture/raport-achizitii-directe-t4-2024.csv",
+  "via": "Achizitii directe 2024Q4",
+  "files": [
+    {
+      "name": "raport-achizitii-directe-t4-2024.csv",
+      "sha256": "40922e70f9069820239d702390939d04e5e621a48b1c3fc64a4fa5534fa4b5f5",
+      "bytes": 2529
+    }
+  ]
+}

@@ -22,6 +22,8 @@ export interface FilterChipsCopy {
     without: string;
   };
   procedure: { group: string; empty: string };
+  /** The Party filter (#181): the group name, the select's label and its "no party chosen" choice. The lists themselves are source data. */
+  party: { group: string; select: string; any: string };
   badges: { group: string; badges: BadgeCopy };
   active: {
     group: string;
@@ -29,6 +31,8 @@ export interface FilterChipsCopy {
     /** "From 2023" / "From 15 Mar 2024": `when` is a year, or a date when the filter's date is not a year edge. */
     from: (when: string) => string;
     to: (when: string) => string;
+    /** The active chip of the Party filter: "Party: PARTIDUL SOCIAL DEMOCRAT"; gets the list as registered. */
+    party: (list: string) => string;
     /** The accessible name of an active chip's remove action. */
     remove: (chip: string) => string;
     clearAll: string;

@@ -85,12 +85,60 @@ export const methodologyEn: MethodologyPageCopy = {
         "A known gap is a period and Record kind for which a Source's Records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason.",
       ],
     },
+    publicEnterprises: {
+      heading: "Public enterprises (AMEPIP)",
+      paragraphs: [
+        "An organisation's page says \"public enterprise (AMEPIP)\" when its CUI appears in the indicator tables AMEPIP publishes as open data: the companies under Emergency Ordinance 109/2011 on the corporate governance of public enterprises. AMEPIP is the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises. The match is by CUI alone, never by name, and the page shows the row of the table it rests on, with the financial years it appears for.",
+        "AMEPIP has no list of CUIs of its own: the explorer reads the CUIs from the newest financial and governance indicators release AMEPIP publishes on data.gov.ro, under the licence CC-BY-4.0. A release holds several financial years, and a company is marked when it appears in any of them. So a company that was privatised, merged or dropped from monitoring in an earlier year of that release is still marked, which is why the page shows the years it appears for. AMEPIP publishes a release once or twice a year, so a company that became a public enterprise since may not be marked yet. Not being marked says only that the CUI is not in the release we hold, not that the company is private. Its name, registration number and ONRC status are shown as AMEPIP writes them.",
+        "What the list leaves out: it holds only the companies AMEPIP monitors under that Ordinance and that appear in its indicator tables. A company owned by the state or by a local authority but outside the Ordinance, or one for which AMEPIP published no indicators, is not on it. The explorer reads only the CUI, name, registration number, status and years as AMEPIP writes them, and nothing about the owner, the share held or the board. AMEPIP publishes on no fixed schedule, so the list can be out of date; the release date is shown below.",
+      ],
+    },
+    partyAndLeadership: {
+      heading: "Party and leadership (AEP)",
+      paragraphs: [
+        "An authority's page can show a Leadership list, and a Record can show a Party, for the town halls, Bucharest sectors, Bucharest's city hall and county councils. The explorer reads who won from the vote counts in the Permanent Electoral Authority's (AEP) final minutes of the 2020 and 2024 local elections, the October 2020 repeat round in three communes, and the December 2025 partial elections. The Party of a mandate is the list its leader ran on, exactly as registered at that election. An independent runs on no list, so \"Independent\" is shown and is never a party; an alliance keeps its registered name, with its member parties recorded where we know them; and there are no party families (ALDE is never counted as PNL). A leader may have switched party since the election: no source records switches, so the page never claims a current party, and leaders are never linked to a person page.",
+        "A mandate runs from the oath to the successor's oath. AEP publishes no oath dates per commune, so we assume the oath 30 days after the election (and, for 2024, after 27 September 2024, when the 2020 mandates ended). What falls between two mandates is shown as a gap and is never given to the nearest leader: the handover window of autumn 2024, an interim leader after a vacancy (the mandate we hold is cut on the vacancy date where we know it, and otherwise, as an assumption, 90 days before the partial election, which is only the earliest a vacancy normally is), and a mandate without results (an authority with no winner in the minutes, or a tie). We do not hold the partial elections of May 2025 or of 2021 to 2023, and we know the vacancy date for only a few authorities: for any other vacancy the previous leader's mandate stays open and its Party can still be shown for Records after the vacancy, so a Party near a change of leader is not a certainty. The December 2025 results are partial counts from a one-off file (Code for Romania's backup of AEP's site), never refreshed automatically; the date it runs through is stated below.",
+        "A Record's Party is the Party of the mandate in force on its award date at its authority. A subordinate body inherits it when its principal credit holder, in the Ministry of Finance's list of public entities, is exactly one town hall, sector, city hall or county council, and every held monthly snapshot of the list that names the body says the same: the page then states \"via the authority, principal credit holder, MF list snapshot, funding relation, current tie\". A school (dual-funded, with a ministry among its principals), a municipal company, an intercommunity development association (ADI), a body whose tie a held snapshot contradicts, and central government have no Party. A supplier never has a Party.",
+        "The Party filter on search keeps the Records whose Party is the list you pick, exactly as registered. An alliance matches under its own name and never through one of its member parties, and \"Independent\" is never offered as a party. Records of subordinate bodies that inherit a Party are included; there is no direct-only view. The Total under the filter says what it covers: the matched Records and their value, split into directly led authorities and subordinate bodies, what the filter leaves out (other lists, independent leaders, and Records with no Party at all) and the share of the set's value that no Party is attributed to. Read it as the awards of authorities led by one list, never as all public money.",
+        "A Party is the list at the election, never later. For a subordinate body it also rests on a tie that is today's: the Ministry of Finance's list of public entities is a monthly snapshot, and the explorer holds only a few of them, because it fetches the newest one each time. The tie read from them is applied to all of the body's Records in the mandate windows we hold, whenever they were awarded, so a body that had another principal in 2020 or 2021 shows today's authority's Party for those awards. A tie on which two held snapshots disagree is dropped, but with a single snapshot held a change of principal cannot be seen. This is why such a Party is labelled as derived, counted apart from the directly led authorities in the Total under a Party filter, and said to be a funding relation and a current tie.",
+      ],
+    },
+    financialStatements: {
+      heading: "Financial statements (MF)",
+      paragraphs: [
+        "A supplier's page shows its annual financial statements by year: turnover, profit or loss, debts, equity and the average number of employees. They come from the bulk files the Ministry of Finance (MF) publishes on data.gov.ro under the licence CC-BY-4.0, one set of files per fiscal year, from fiscal year 2021. The explorer reads the companies' files: long and short balance sheets, the abbreviated format and IFRS reporters. Banks, insurers, funds and non-profits file other forms and are not shown. Every row names MF and the file its figures were read from. Amounts are in RON as filed, and profit or loss is net profit minus net loss.",
+        "MF publishes a year's files the following June and re-publishes them a year later with corrections. Each row says which release it comes from: a year MF has re-published shows the revised figures, and the newest year is a first release that may still be revised. A cell MF leaves blank is shown as \"not reported\", never as zero: a blank average number of employees is not a firm of no employees. A company that did not file for a year has no row for it.",
+        "Beside the figures the page shows the awards of the same calendar year and their share of that year's turnover. It is context, never a Signal, and it is never added to awarded value: a company's statements and its awards are unlike measures and stay apart. The awards are the supplier's awarded value, counted by the same rule as every other total, by the year of the award date. A contract's whole value counts in the year it was awarded, however many years it runs, so the share can exceed 100% and is not a share of the company's revenue. A blank or zero turnover gives no share.",
+        // #187: the 24% is a placeholder taken from the ticket text, not measured; re-measure on the national build and update here, in the other language and in methodology.test.ts.
+        "Three limits go with the figures. First, a blank is common: about a quarter of the rows (24%) report no turnover, and blank employee counts occur too; both show as \"not reported\", and with no, zero or negative turnover there is no share of turnover. Second, the figures are as the companies filed them and MF published them, and the explorer does not check or correct them: a typing slip or a negative turnover is shown as published. Third, a first release is revised at most once: MF re-publishes a year's files a year later, and the revised row replaces the first release only for the companies the revised file holds, so another company's year stays a first release, labelled as such. The Signal rules that read these figures say how they treat a blank and the newest year.",
+      ],
+    },
+    firmDonations: {
+      heading: "Firm donations (BaniPartide)",
+      paragraphs: [
+        "An organisation's page lists the donations and loans that companies made to parties, when the company's CUI appears in BaniPartide's table of firm donors. BaniPartide is a platform of Expert Forum, published under the licence CC Attribution 4.0. It compiles the table from the parties' annual publications in Monitorul Oficial and on the pages of the Permanent Electoral Authority (AEP). BaniPartide gives no report reference per row, so every line cites BaniPartide and, through its methodology, those publications. The match is by CUI alone, never by name. The party is shown exactly as BaniPartide publishes it: it is not matched to a Party, and a firm donation is never a Party.",
+        "The explorer loads the table once from an archived copy and only checks from time to time whether BaniPartide has published a newer one, so recent donations may be missing: the page states the newest year the table covers. A row is filed under a year. A date is shown only where BaniPartide's published cell holds a single date; otherwise the cell is shown as published. Only companies are loaded. Individual donors are never loaded, shown or counted here, and a sole trader (PFA, II or IF) is not shown as a donor.",
+        "On a supplier's page, \"this supplier is also a firm donor\" is context, never a Signal by itself: a company that wins public contracts and gives to a party is not by that fact doing anything wrong. Only a donation to the Party of the awarding authority's Mandate, within 365 days before an award, makes a Signal (\"Donor to the authority's Party\"). A donation is a different measure from awarded value, so its amount is never added to it, and donations are never summed together.",
+        "BaniPartide is a secondary source: a table that Expert Forum compiles from the parties' own annual publications, not those publications. A typing slip or a missing row in it carries over, and the explorer neither corrects nor completes it. A row with no valid CUI (an individual entered among the firms, \"n/a\", or an empty id, as in some loans) is dropped, so a company's donation that BaniPartide records without a CUI is not listed. The explorer holds one archived copy, up to the year stated below: donations of later years are not there until a newer table is loaded. The donor's name and the company representative's name are never loaded.",
+      ],
+    },
+    onrcRegister: {
+      heading: "ONRC registrations (trade register)",
+      paragraphs: [
+        "ONRC, the National Trade Register Office, publishes the commercial register as open data on data.gov.ro, a whole snapshot of the register at a date. The explorer holds one snapshot for every month since March 2026, the month birth dates first appear in the files, and the last snapshot of each quarter back to 2021. A registration is the ONRC Record: search and the map count registrations, never money. ONRC has no money measure, so its counts are never ranked against SEAP's. The data-through date is the newest snapshot's date, and a month since March 2026 with no snapshot held is a known gap on the Coverage page. A registration with no registration number is left out.",
+        "The registration facts shown (registration date, legal form, seat, authorised CAEN codes) are read from the newest snapshot only. The snapshots before mid-2025 are in an older layout with no registration date and no CAEN codes: they serve only to date statuses and names. A company that ONRC lists with no registration date is never in a Signal rule that needs one. A CUI that is blank, zero or fails the check digit joins the registration to no organisation.",
+        "ONRC's statuses (struck off, insolvency, reorganisation and the others) are undated: a snapshot lists the statuses a company has, not when they began. The explorer dates a status by comparing snapshots: \"first seen in the snapshot of a date\" is the first held snapshot that shows it, and \"at least since\" when that is the earliest snapshot held. The change itself may be older, by up to the time between two snapshots, and by more when a month's snapshot is missing. A date here is never the date the status began. The strike-off date used by a Signal comes from ANAF, not from ONRC.",
+        "ONRC lists the CAEN codes a company is authorised for and does not say which is its main one, so the explorer shows no main activity. A rule that asks whether a company may do some kind of work asks whether any of its authorised codes is of that kind, and an authorisation is not a record of what the company does. The files carry no SIRUTA code either: the seat is a county and a written address. An organisation's UAT comes from ANAF's address when ANAF has the CUI; otherwise the registration is placed at county level, and with no county it sits in the \"No county\" tile.",
+        "A registration joins an organisation by CUI alone. A CUI that ANAF does not know but ONRC lists becomes a page of its own, badged \"CUI in ONRC only\". ONRC's names are kept as aliases and never replace the name at the top of the page, which is ANAF's. Branches and successors stay separate.",
+        "ONRC's files list administrators and legal representatives with a name and a birth date, and no CNP. Birth dates appear only in the snapshots since March 2026. Only the people of an organisation tied to public money, a SEAP supplier or authority, are named: an organisation that exists only in ONRC has its page and facts but its people are not shown. A holder is shown with name, role and birth year, citing the snapshot. People who share a name are never merged: two role rows are one person only when name and full birth date match, a holder with no birth date is listed on that page only and linked to no one, and a same name and date with birthplaces in different counties is a possible match, held for review and never shown. The holders of a sole trader's registration (PFA, II or IF) are not shown, and no beneficial owner, relative or CNP is ever shown.",
+      ],
+    },
   },
   signals: {
     heading: "Signal rules",
     paragraphs: [
       "A Signal is a set of Records matched by a published rule, worth verifying in the source documents. It is never a conclusion or an accusation: each rule describes a pattern, and a pattern can have an ordinary explanation. Signals are counted, never scored or ranked.",
-      "A Signal is dated by its latest Record. Each Signal links to a filter of the Records tab that reproduces it, and to the Record in SEAP. A value the counting rule leaves out of sums never triggers a Signal and never counts inside one. There are four rules; for each, the window is the period of Records the rule looks at, and the national base rate is the share of contracting authorities that had at least one Signal of that rule in the base-rate year, out of those that had Records the rule looks at that year. Both are recomputed every time the data is loaded.",
+      "A Signal is dated by its latest Record. Each Signal links to a filter of the Records tab that reproduces it, and to the Record in SEAP. A value the counting rule leaves out of sums never triggers a Signal and never counts inside one. There are ten rules; for each, the window is the period of Records the rule looks at, and the national base rate is the share of contracting authorities that had at least one Signal of that rule in the base-rate year, out of those that had Records the rule looks at that year. Both are recomputed every time the data is loaded.",
     ],
   },
   rules: {
@@ -138,7 +186,103 @@ export const methodologyEn: MethodologyPageCopy = {
       ],
       lawful: "Possible lawful explanations: an emergency, a single possible supplier, or another legal ground.",
     },
+    YOUNG_FIRM: {
+      heading: "Young firm",
+      paragraphs: ["Young firm: a supplier whose first Record comes within 90 days of its registration, or that wins a large Record within 180 days of it."],
+      items: [
+        "Registration date: the date ONRC records for the supplier's registration, from ONRC's newest snapshot. A supplier ONRC lists without a registration date (the older snapshot layout has none) is never in this rule, and the rule is not shown at all while no registration date is loaded. The date is the company's own: one that re-registered can look younger than its business is.",
+        "First contract: the supplier's Records on the earliest day it has a Record in the explorer (several Records that day, from different authorities or a contract and its award notice, all count). They count when that day is on or after the registration and at most 90 days after it. Records on later days within those 90 days are context only and are never a Signal on their own.",
+        withAmounts((a) => `Large Record: any Record with a counted value of at least ${a} (exactly that counts), dated at most 180 days after the registration, whether or not it is the supplier's first. A blank, left-out or ceiling value counts as nothing.`, ["100000000"]),
+        "Days are calendar days from the registration day to the Record's award date; day 90 and day 180 are in. A Record dated before the registration never counts. A consortium Record counts when any of its members meets the rule.",
+        "Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load, over a calendar year like the other rules.",
+      ],
+      lawful: "Possible lawful explanations: a company set up for one contract, or an established business that took a new registration after a restructuring or a change of legal form.",
+    },
+    NO_CONSTRUCTION_CAEN: {
+      heading: "Works without a construction CAEN",
+      paragraphs: ["Works without a construction CAEN: a works Record of a large value won by a firm with no construction CAEN code among its authorised codes."],
+      items: [
+        withAmounts((a) => `Works are told as in the counting rule: the contract type Lucrări, or CPV division 45. The Record's counted value is at least ${a} (exactly that counts); a blank, left-out or ceiling value never triggers.`, ["100000000"]),
+        "The authorised codes are the ones in ONRC's newest snapshot. Construction is divisions 41, 42 and 43 of CAEN Rev.2 (2008) and of Rev.3 (2025), told by each code's own revision; for the older CAEN 1998 and 2003 codes it is division 45.",
+        "Unknown is never a Signal: a winner without an entity, without an ONRC registration or without codes on record (the older snapshot layout has none) does not trigger. A consortium triggers only when none of its members has a construction code.",
+        "A register lets a firm hold codes it does not use and work under codes it does not hold. Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: a subcontractor or consortium partner does the building, the register is out of date, or the firm works under a code it did not list.",
+    },
+    AFTER_STRIKE_OFF: {
+      heading: "After strike-off",
+      paragraphs: ["After strike-off: a Record dated after the day ANAF shows the supplier struck off."],
+      items: [
+        "The strike-off is the date in ANAF's answer for the supplier's CUI (\"RADIERE din data ...\"), as of the day that answer was last fetched. ONRC's own struck-off status is undated and is not used here. An answer that says struck off without a date never triggers.",
+        "The Record's award date must be after the strike-off day: a Record on the day itself is not. Any Record counts, whatever its value, a blank one included.",
+        "A company struck off and later re-registered, or whose strike-off was reversed, shows the state ANAF last gave. A merger or a successor is another entity and is not linked.",
+        "Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: a delay between the award and its publication, a successor company that took over under another number, or a strike-off ANAF later reversed.",
+    },
+    INSOLVENCY: {
+      heading: "Insolvency",
+      paragraphs: ["Insolvency: the supplier is now in insolvency or reorganisation and has Records in the last six months."],
+      items: [
+        "Status: the status codes ONRC shows for the supplier in its newest snapshot, read by the name ONRC publishes for each: insolvency, judicial reorganisation or bankruptcy. A name that says the procedure is closed (\"closing of proceedings\", \"exit from insolvency\") does not count. Other statuses (dissolution, liquidation, suspension, struck off) are not part of this rule.",
+        "The status is undated. ONRC's open data lists the statuses a company has in each snapshot, not when they began, so the explorer can only say which snapshot a status was first seen in (and \"at least since\" when that is the earliest snapshot held). The proceedings may be older than that snapshot, or younger than the Record: a Signal says \"in insolvency now and won recently\", never \"won while in insolvency\".",
+        "\"Now\" is the date of ONRC's newest snapshot, and \"the last six months\" are the six calendar months up to and including it. A Record dated after that snapshot is outside what the status says. Any Record counts, whatever its value.",
+        "Firing rate: unlike the other rules, the rate below is measured over the six months to ONRC's newest snapshot (the slice of time this rule can see), as the share of authorities with a Record in those months that have a Signal in them. The year shown with the rate is the year of that snapshot. It is recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the Record was awarded before the proceedings began, or the proceedings let the business go on under a reorganisation plan.",
+    },
+    FEW_EMPLOYEES: {
+      heading: "At most one employee",
+      paragraphs: ["At most one employee: a supplier awarded a large sum in one year that reported at most one average employee for that fiscal year."],
+      items: [
+        withAmounts((a) => `Awards: the supplier's awarded value for the calendar year of the Records' award dates, counted by the same rule as every other total (a consortium member has an equal share; a blank, left-out or ceiling value adds nothing), at least ${a} (exactly that counts). The Signal lists that supplier's counted Records of the year.`, ["500000000"]),
+        "Employees: the average number of employees the supplier reported to the Ministry of Finance for the same fiscal year, from the statement the explorer holds (the revised release where there is one). A reported 0 or 1 counts. A blank is \"not reported\" and never triggers; with no statement for the year there is no Signal, so an award year newer than the newest fiscal year held cannot trigger.",
+        "The count is a yearly average: a firm can keep it low by subcontracting or by employing through another company, and a statement can carry a mistaken figure.",
+        "Window and firing rate: the firing rate below is measured in the newest fiscal year held, the newest year this rule can see, and recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the work is subcontracted or done by staff employed through another company, or a yearly average understates a seasonal workforce.",
+    },
+    NO_FINANCIAL_STATEMENT: {
+      heading: "No financial statement",
+      paragraphs: ["No financial statement: an SRL or an SA awarded a large sum in one year with no financial statement for that fiscal year or the year before."],
+      items: [
+        "Legal form: the supplier's legal form as ONRC lists it, an SRL or an SA. Sole traders, public institutions and other forms never trigger, and neither does a supplier ONRC does not list (its legal form is unknown).",
+        withAmounts((a) => `Awards: counted as for the employees rule, at least ${a} (exactly that counts) in the calendar year of the Records' award dates.`, ["100000000"]),
+        "No statement: the explorer holds no statement of that CUI for the award year nor for the year before, in any release; either one keeps the supplier out.",
+        "The newest fiscal year is left out until its revised release. The Ministry of Finance publishes a year's statements the following June and corrects and completes them a year later, so a statement missing from a first release may only be missing from it. An award year is not evaluated while the newest fiscal year held has no revised release and the award year is that one or later; nor is it evaluated unless the year before it is one the explorer holds statements for (the first fiscal year held is 2021, so the first award year is 2022).",
+        "A company registered shortly before the award year may have no statement yet, and a statement can be filed under another CUI after a merger. Window and firing rate: the firing rate below is measured in the newest award year the rule evaluates, and recomputed at every load.",
+      ],
+      lawful: "Possible lawful explanations: the company filed late or under another CUI, was registered shortly before, or the Ministry of Finance's files are incomplete.",
+    },
+    DONOR_TO_PARTY: {
+      heading: "Donor to the authority's Party",
+      paragraphs: ["Donor to the authority's Party: a firm that won a Record from an authority whose Mandate's Party had received a donation or loan from that firm in the 365 days before the award."],
+      items: [
+        "Donation: a donation or a loan by a company to a party, from BaniPartide's table of firm donors (see Firm donations), matched to the winner by CUI alone, never by name. Only a donation whose cell holds a single readable date counts: a list of dates, or none, has no day and never triggers. Sole traders (PFA, II, IF) and individuals are not in the table, so no Signal can name one.",
+        "Party: the Party of the Mandate in force at the awarding authority on the award date (see Party and leadership). A Record with no Mandate, a leader who ran as Independent (Independent is not a party), a handover window or a gap has no Party and never triggers. A derived Party counts, and the Signal says so: a subordinate body has the Party of the Mandate of the body it is subordinate to, which is a weaker link than the authority's own Mandate.",
+        "Window: from 365 days before the award date up to the award date itself, both days in (day 365 is in, day 366 is not; a donation after the award is not). The award date is the Record's own. Days are calendar days. A consortium Record triggers when any of its keyed winners meets the rule. One Signal for each authority and award day.",
+        "Matching the party: the donation's party is matched to the Mandate's list as registered with AEP, or to one of the member parties recorded for an alliance, through a reviewed and versioned table of names (an abbreviation such as PSD, or a spelling), with a stated reason for every entry. A predecessor or successor party is never merged into another: a donation to a party that has since merged or been renamed does not count for the one that came after. No party family is built, and an alliance is matched through its own name or its recorded member parties only.",
+        "A donation and a Party are context on their own: firms give to parties within the law and the law caps and publishes it, and a donation does not say why a contract was awarded. Only the combination inside the window is a Signal. The Signal shows how many days apart, the Party and whether it is derived; it never shows an amount, and a donation's amount is never added to a Record's value.",
+        "Window and firing rate: the donations end with the newest year BaniPartide has published, so the firing rate below is measured in that year (an award of a later year cannot be matched to donations not yet published), and the window starts in 2021, the first whole year of AEP's 2020 Mandates. It is recomputed at every load. A national figure for it is set when the data has been loaded and measured. The rate is the share of all contracting authorities with a Record that year that have at least one Signal of this rule, not only of those that have a Party: an authority with no Mandate cannot trigger it, so the figure is lower than among authorities that have one.",
+      ],
+      lawful: "Possible lawful explanations: a donation or loan within the legal limits is lawful and public, a firm can support a Party and also win contracts in open competition, and a Party's local branch may have had no say in the award.",
+    },
+    SOE_BOARD_IN_SUPPLIER: {
+      heading: "Public-enterprise board member in a supplier",
+      paragraphs: ["Public-enterprise board member in a supplier: a person who holds a role in a public enterprise also holds a role in a private supplier that the enterprise awarded a Record. This rule and its section are shown on a private view only."],
+      items: [
+        "Public enterprise: a company on AMEPIP's list (see Public enterprises); the Records it awarded as the contracting authority are the ones read.",
+        "Person: a confirmed person only, that is the same name and the same full date of birth in ONRC's register. A namesake with another birth date is another person; a possible match, a holder shown without a birth date and the holders of sole traders and family enterprises are never joined.",
+        "Role: any role the register lists for the person in the enterprise and in the supplier, as of ONRC's newest snapshot. A role is not dated, so the rule cannot tell whether the person held it when the contract was awarded.",
+        "Supplier: a keyed winner of the Record that is not itself a public enterprise; a supplier on AMEPIP's list is left out. A consortium Record triggers when any of its keyed winners meets the rule. The Signal shows how many persons the two share, never a name, a birth date or an identifier.",
+        "Window and firing rate: the window starts with the first Record loaded, and the firing rate below is recomputed at every load, over a calendar year like the other rules. It is shown only on a private view. The rate is the share of all contracting authorities with a Record that year that have at least one Signal of this rule, not only of public enterprises: only an authority on AMEPIP's list can trigger it, so the figure is lower than among enterprises.",
+      ],
+      lawful: "Possible lawful explanations: a person may lawfully and openly sit on several boards, the roles may not have overlapped in time with the award, or the supplier won an open competition.",
+    },
   },
+  referenceDataThrough: (date) => `Data through ${date}`,
+  referenceFiscalYearThrough: (year) => `Data through fiscal year ${year}`,
+  referenceYearThrough: (year) => `Data through ${year}`,
   baseRate: {
     windowLabel: "Time window",
     range: (from, to) => `${from} to ${to}`,

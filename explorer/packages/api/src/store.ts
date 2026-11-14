@@ -1,7 +1,10 @@
 import pg from "pg";
-import { buildWhere, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
-import { rollupPlan, rollupWhere } from "./rollup.ts";
+import { buildWhere as buildWhereFor, cancellableQuery, type SearchFilter, type Where } from "./search.ts";
+import { rollupPlan as rollupPlanFor, rollupWhere } from "./rollup.ts";
+import { restrictedShown } from "./restricted.ts";
+import { onrcStore, type OnrcStore } from "./onrcSearch.ts";
 import { roleStore, type RoleStore } from "./role.ts";
+import type { SourceRow } from "./sources.ts";
 import { signalStore, signalsOfRecords, type SignalRow, type SignalStore } from "./signals.ts";
 
 /** One entity of the shared core (ADR 0003): a CUI, a foreign VAT id or a name, with where its name and status came from. */
@@ -14,10 +17,102 @@ export interface EntityRow {
   /** ANAF's status (ACTIV, RADIERE, FUZIUNE ...); null when ANAF has no entry. */
   anafStatus: string | null;
   identityCurated: boolean;
-  /** ANAF (the Reference source) when it has the CUI, else SEAP. `via` is the SEAP file for a SEAP-named entity. */
-  provenance: { source: "ANAF" | "SEAP"; via: string | null; fetchedAt: string };
+  /** ANAF (the Reference source) when it has the CUI; ONRC when only ONRC lists it (ADR 0018); else SEAP. `via` is the SEAP file for a SEAP-named entity. */
+  provenance: { source: "ANAF" | "SEAP" | "ONRC"; via: string | null; fetchedAt: string };
   /** Where it sits (core.placement, #67); null/absent when no source places it. */
   placement?: PlacementRow | null;
+}
+
+/** The basis of the public-enterprise mark: the AMEPIP list's row for the entity's CUI and the snapshot it came from (`amepip.*`, #183). */
+export interface PublicEnterpriseRow {
+  listedAs: string;
+  registrationNumber: string | null;
+  status: string | null;
+  firstYear: number | null;
+  lastYear: number | null;
+  snapshot: string;
+  url: string | null;
+  via: string | null;
+  license: string | null;
+  fetchedAt: string;
+}
+
+/** One Mandate of a Leadership list (`aep.mandate`, #180). Dates are `YYYY-MM-DD`; the end is null while the mandate is still in force. */
+export interface MandateRow {
+  leaderName: string;
+  list: string;
+  independent: boolean;
+  memberParties: string[];
+  electionDate: string;
+  basis: "FINAL_MINUTES" | "REPEAT_ROUND" | "PARTIAL_MINUTES";
+  dataThrough: string;
+  startDate: string;
+  endDate: string | null;
+}
+
+export interface LeadershipGapRow {
+  startDate: string;
+  endDate: string | null;
+  kind: "HANDOVER_WINDOW" | "INTERIM" | "NO_RESULTS";
+}
+
+/** For a subordinate body: the authority whose Leadership list it shows and the MF snapshot the tie rests on (`aep.subordinate`). */
+export interface LeadershipViaRow {
+  authority: string;
+  authorityName: string;
+  snapshotDate: string;
+  snapshots: number;
+}
+
+/** An attributed authority's Mandates and gaps, or a subordinate body's authority's with the basis of the tie. */
+export interface LeadershipRow {
+  mandates: MandateRow[];
+  gaps: LeadershipGapRow[];
+  via: LeadershipViaRow | null;
+}
+
+/** The Party of a Record: the Mandate in force on its award date at its authority (or its principal credit holder). Never the leader's name. */
+export interface RecordPartyRow {
+  list: string;
+  independent: boolean;
+  memberParties: string[];
+  electionDate: string;
+  basis: MandateRow["basis"];
+  dataThrough: string;
+  via: LeadershipViaRow | null;
+}
+
+/** One fiscal year of an entity's MF statements, with the awards of the same calendar year as context (`financials.*` and `seap.rollup_entity`, #179). Money is bani as text; null = a blank cell. */
+export interface FinancialYearRow {
+  fiscalYear: number;
+  revision: "FIRST" | "REVISED";
+  /** The newest fiscal year MF's files hold (for any company). */
+  newest: boolean;
+  turnover: string | null;
+  profitOrLoss: string | null;
+  debts: string | null;
+  equity: string | null;
+  averageEmployees: number | null;
+  /** The supplier's awarded value (the stored counting rule) of the Records awarded in this calendar year; "0" when none. */
+  awardedInYear: string;
+  source: { file: string; datasetUrl: string | null; fileUrl: string | null; via: string | null; license: string | null; published: string | null; fetchedAt: string };
+}
+
+/** A firm's donations and loans as BaniPartide lists them (`donations.*`, #182). Money is bani as text; the party and the date cell are exactly as published. */
+export interface FirmDonationsRow {
+  dataThroughYear: number;
+  items: { kind: "DONATION" | "LOAN"; party: string; year: number | null; date: string | null; dateText: string; amount: string; sourceRow: number }[];
+  source: { datasetUrl: string | null; license: string | null; licenseUrl: string | null; publisher: string | null; publisherUrl: string | null; underlyingUrl: string | null; fetchedAt: string };
+}
+
+/** A Reference source as the methodology page names it: when the held list was published (null when none is held). */
+export interface ReferenceSourceRow {
+  id: string;
+  name: string;
+  dataThrough: string | null;
+  /** The newest fiscal year held, for a source published by fiscal year (MF's financial statements); null otherwise. */
+  fiscalYear: number | null;
+  url: string | null;
 }
 
 /** core.placement joined to its county and UAT names. A national authority keeps its seat here; the API serves none of it. */
@@ -28,7 +123,43 @@ export interface PlacementRow {
   /** The village's SIRUTA when ANAF or SEAP named one: stored, not plotted. */
   villageSiruta: string | null;
   national: boolean;
-  placedBy: "ANAF" | "SEAP";
+  placedBy: "ANAF" | "SEAP" | "ONRC";
+}
+
+/** The ONRC registration under an entity's CUI (`onrc.registration`) with the history derived from the held snapshots (ADR 0018). */
+export interface OnrcRegistrationRow {
+  registrationNumber: string;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: string;
+  /** The CUI when it passes the check digit. */
+  cui: string | null;
+  registrationDate: string | null;
+  legalForm: string | null;
+  statuses: { code: number; name: string | null; firstSeen: string; sinceAtLeast: boolean }[];
+  caen: { code: string; version: number | null }[];
+  seat: { county: string | null; locality: string | null; address: string | null; postalCode: string | null };
+  aliases: { name: string; firstSeen: string; lastSeen: string; sinceAtLeast: boolean; current: boolean }[];
+  /** The snapshot the registration comes from. */
+  snapshot: string;
+  /** The snapshot dataset's public page, its title as ONRC gives it, and when we fetched it. */
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
+}
+
+/** The role holders ONRC lists for a CUI (`onrc.role`, ticket #177): the public tier (administrators and legal representatives; never an IF or PFA/II row, a possible match or a birthplace). */
+export interface OrganisationPeopleRow {
+  holders: { name: string; role: string; birthYear: number | null; /** only read when Restricted content is shown, else always null */ personId: string | null }[];
+  snapshot: string;
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
+}
+
+/** A confirmed person (`onrc.person`) and their roles across organisations (Restricted, ADR 0015). An organisation is shown under its entity's display name (ADR 0018), else as ONRC writes it. */
+export interface PersonRow {
+  id: string;
+  name: string;
+  birthYear: number;
+  roles: { organisationName: string; entityKey: string | null; entityRole: "AUTHORITY" | "SUPPLIER" | null; role: string }[];
+  snapshot: string;
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
 }
 
 /** A county of core.county: ISO 3166-2:RO without `RO-` (Bucharest is `B`) and its Romanian name. */
@@ -114,6 +245,49 @@ export interface TotalRow {
   frameworkCeilings: string;
 }
 
+/** One group of the coverage scan: the Records (and the awarded bani) of one (party, basis) pair. A null basis is a Record no Mandate is attributed to; a null party with a basis is an independent leader. */
+export interface PartyGroupRow { party: string | null; basis: string | null; awarded: string; records: number }
+
+/** Sorts the groups into the five slices of `PartyCoverageRow` for one list; the bani are summed as integers. */
+export function classifyPartyGroups(party: string, rows: readonly PartyGroupRow[]): PartyCoverageRow {
+  const sums = { direct: { records: 0, awarded: 0n }, subordinate: { records: 0, awarded: 0n }, otherParties: { records: 0, awarded: 0n }, independent: { records: 0, awarded: 0n }, unattributed: { records: 0, awarded: 0n } };
+  for (const r of rows) {
+    const slice = r.basis === null ? sums.unattributed : r.party === null ? sums.independent : r.party !== party ? sums.otherParties : r.basis === "SUBORDINATE" ? sums.subordinate : sums.direct;
+    slice.records += r.records;
+    slice.awarded += BigInt(r.awarded);
+  }
+  const out = (x: { records: number; awarded: bigint }): PartyShareRow => ({ records: x.records, awarded: x.awarded.toString() });
+  return { party, direct: out(sums.direct), subordinate: out(sums.subordinate), otherParties: out(sums.otherParties), independent: out(sums.independent), unattributed: out(sums.unattributed) };
+}
+
+/** One slice of the Party coverage: the Records and the awarded value (bani, summed like a Total's) in it. */
+export interface PartyShareRow {
+  records: number;
+  awarded: string;
+}
+
+/**
+ * What a Party-filtered Total covers (#181), over the set the rest of the filter selects: `direct` and `subordinate` are the matched Records split by the basis
+ * of their Party; the others are what the filter leaves out, so the share left unattributed is `unattributed` against the sum of the five.
+ */
+export interface PartyCoverageRow {
+  party: string;
+  direct: PartyShareRow;
+  subordinate: PartyShareRow;
+  /** Records led by another list. */
+  otherParties: PartyShareRow;
+  /** Records of an Independent leader's authority: attributed to a leader, never to a party. */
+  independent: PartyShareRow;
+  /** Records with no Mandate: central government, schools, municipal companies, ADIs, an authority outside the Leadership list, or a gap in the mandates. */
+  unattributed: PartyShareRow;
+}
+
+/** A list the Party filter offers, with the Records it led (directly or through a subordinate body). */
+export interface PartyOptionRow {
+  party: string;
+  records: number;
+}
+
 /** One map area of the Coverage lens (a county as `RO-BV`, or `NATIONAL`) in a window: N of M public entities and the other authorities (#80). */
 export interface CoverageAreaRow {
   area: string;
@@ -197,7 +371,7 @@ export interface SearchOptions {
 
 export type RecordOrderKey = "VALUE_DESC" | "DATE_DESC" | "DATE_ASC";
 
-export interface Store extends RoleStore, SignalStore {
+export interface Store extends RoleStore, SignalStore, OnrcStore {
   total(): Promise<TotalRow>;
   records(page: { limit: number; offset: number; order: RecordOrderKey }): Promise<RecordRow[]>;
   /** A Record by its public code (DA, DAN, `<award notice>~<contract number>`, award notice), or null. */
@@ -206,6 +380,8 @@ export interface Store extends RoleStore, SignalStore {
   framework(code: string): Promise<FrameworkRow | null>;
   /** The subsequent contracts reported under an award notice's framework, largest first. */
   subsequent(noticeCode: string, page: { limit: number; offset: number }): Promise<RecordRow[]>;
+  /** The `sources` registry the last rebuild stored (`core.source`), in registry order. */
+  sources(): Promise<SourceRow[]>;
   /** Per SEAP record kind, the latest publication date loaded; for the crawled kinds (CONTRACT, AWARD_NOTICE) at least the crawl cursor. */
   dataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The SEAP Coverage grid the last rebuild stored (`seap.coverage_cell`), oldest quarter first, kinds in contract order. */
@@ -216,8 +392,25 @@ export interface Store extends RoleStore, SignalStore {
   unplacedAuthorities(window: { from: string | null; to: string | null }): Promise<{ authorities: number; total: TotalRow }>;
   /** The date of the MF list the last rebuild loaded, or null when none was. */
   referenceSnapshot(): Promise<string | null>;
+  /** The ONRC registration under a CUI (the entity page's ONRC section), or null when ONRC lists none. */
+  onrc(cui: string): Promise<OnrcRegistrationRow | null>;
+  /**
+   * The administrators and legal representatives of the registration under a CUI (public tier), or null when no snapshot with ONRC's people files is held. The caller decides
+   * whether the organisation may be named (a SEAP counterparty); `personIds` selects the person ids of linked holders, which only a Private view serves (Restricted, ADR 0015).
+   */
+  people(cui: string, options: { personIds: boolean }): Promise<OrganisationPeopleRow | null>;
+  /** RESTRICTED: a confirmed person by id with their roles across organisations, or null. Callers must have checked the switch. */
+  person(id: string): Promise<PersonRow | null>;
+  /** The date of the newest ONRC snapshot read: ONRC's data-through date per record kind (REGISTRATION; ROLE: the newest snapshot carrying the people files, the same as `ONRC_DATA_THROUGH_SQL`). */
+  onrcDataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
   searchTotal(filter: SearchFilter, options?: SearchOptions): Promise<TotalRow>;
+  /** The Party coverage of the matching set (the filter's `party` is set): how its Total splits, and what the party filter leaves out. */
+  searchPartyCoverage(filter: SearchFilter, options?: SearchOptions): Promise<PartyCoverageRow>;
+  /** What `searchPartyCoverage` is made of: the groups of the set the rest of the filter selects, the same for every party (the filter's `party` is ignored), so a cache can keep one scan for all of them. */
+  searchPartyGroups(filter: SearchFilter, options?: SearchOptions): Promise<PartyGroupRow[]>;
+  /** The lists present in `aep.record_party`, largest first (an Independent is never one); empty when the `aep` schema is missing. */
+  partyOptions(): Promise<PartyOptionRow[]>;
   /** The Money lens of the matching set, on the side the filter's `countySide` names (the filter is not narrowed by the lens). */
   searchMap(side: "AUTHORITY" | "SUPPLIER", filter: SearchFilter, options?: SearchOptions): Promise<MoneyMapRow>;
   /** The zoomed county (ISO code with `RO-`): the matching set's authority side, by UAT. */
@@ -235,6 +428,18 @@ export interface Store extends RoleStore, SignalStore {
   entity(key: string): Promise<EntityRow | null>;
   /** Its spellings, most used first. */
   aliases(key: string): Promise<AliasRow[]>;
+  /** The AMEPIP list's row for a CUI (the entity's key), or null when the CUI is not on the list or no list is held (#183). */
+  publicEnterprise(cui: string): Promise<PublicEnterpriseRow | null>;
+  /** MF's annual statements for a CUI, newest year first, each with the awards of that calendar year as the entity's supplier role (`key` is its entity key); empty when MF holds none (#179). */
+  financials(cui: string, key: string): Promise<FinancialYearRow[]>;
+  /** The firm donations and loans under a CUI, newest first; null when BaniPartide lists none (#182). */
+  donations(cui: string): Promise<FirmDonationsRow | null>;
+  /** The Reference sources held, each with its data-through date (#183). */
+  referenceSources(): Promise<ReferenceSourceRow[]>;
+  /** The Leadership list of an entity that is an attributed authority or a subordinate body; null for every other entity (never a supplier, #180). */
+  leadership(key: string): Promise<LeadershipRow | null>;
+  /** The Party of a SEAP Record (the Mandate in force on its award date), or null: no attributed authority, or a gap. */
+  recordParty(code: string): Promise<RecordPartyRow | null>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
   roles(key: string): Promise<("AUTHORITY" | "SUPPLIER")[]>;
   /** Every county, by ISO code. */
@@ -287,7 +492,7 @@ interface RawEntity {
   display_name: string;
   anaf_status: string | null;
   identity_curated: boolean;
-  provenance_source: "ANAF" | "SEAP";
+  provenance_source: "ANAF" | "SEAP" | "ONRC";
   provenance_via: string | null;
   fetched_at: string;
 }
@@ -300,7 +505,7 @@ interface RawPlacement {
   uat_name: string | null;
   village_siruta: string | null;
   national: boolean;
-  placed_by: "ANAF" | "SEAP";
+  placed_by: "ANAF" | "SEAP" | "ONRC";
 }
 
 const ENTITY_COLUMNS = `key, identity, cui, foreign_vat_id, display_name, anaf_status, identity_curated, provenance_source, provenance_via,
@@ -357,6 +562,11 @@ export interface PostgresStoreOptions {
   exactGroupLimit?: number;
   /** Serve the empty and chips-only states from the rollup (default). `false` forces the full scan: the tests compare the two. */
   rollup?: boolean;
+  /**
+   * Whether Restricted Signal rules (#185) are served: their Signals, Records, counts and the rule's row. Default: the host's `GRIVEI_RESTRICTED` is exactly `show`
+   * (read once, when the store is created); anything else hides them. The API's own `restricted` option (server.ts) gates the resolvers; this gates the SQL.
+   */
+  restricted?: boolean;
 }
 
 const SEARCH_ORDER: Record<RecordOrderKey, string> = {
@@ -371,7 +581,53 @@ const SIDE_KEY = { AUTHORITY: "authority_key", SUPPLIER: "supplier_key" } as con
 /** The most buckets one terms aggregation may return (Tantivy's `search.max_term_agg_buckets` default). */
 const AGG_BUCKET_CAP = 65_000;
 
-export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true }: PostgresStoreOptions = {}): Store {
+/** A missing table (42P01, undefined_table) means "nothing loaded yet": an empty result. Any other failure is thrown on (cf. cache.ts). */
+function noTable(e: unknown): { rows: never[] } {
+  if ((e as { code?: string }).code === "42P01") return { rows: [] };
+  throw e;
+}
+
+export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true, restricted = restrictedShown() }: PostgresStoreOptions = {}): Store {
+  // every filter of this store is read with the Restricted switch it was created with (a Restricted rule's Records join the Signal chips only when shown)
+  const whereOf = (filter: SearchFilter): Where => buildWhereFor(filter, restricted);
+  // the rollup counts the public rules only, so a has-Signals filter is answered from the index when Restricted rules are shown
+  const planOf = (filter: SearchFilter) => (restricted && filter.hasSignals != null ? null : rollupPlanFor(filter));
+  /** The ONRC registration a predicate on `onrc.registration r` (one bound parameter) finds, with the history derived from the held snapshots. */
+  async function onrcWhere(where: string, param: string): Promise<OnrcRegistrationRow | null> {
+    const { rows } = await pool.query(
+      `SELECT r.reg_no, r.name, r.cui, r.registration_date::text AS registration_date, r.legal_form, r.county_name, r.locality, r.address, r.postal_code, r.snapshot_date::text AS snapshot,
+              s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+         FROM onrc.registration r JOIN onrc.snapshot s ON s.snapshot_date = r.snapshot_date WHERE ${where}`,
+      [param],
+    );
+    const r = rows[0];
+    if (!r) return null;
+    const statuses = await pool.query(
+      `SELECT sp.code, n.name, sp.first_seen::text AS "firstSeen", sp.since_at_least AS "sinceAtLeast"
+         FROM onrc.status_span sp LEFT JOIN onrc.status_name n ON n.code = sp.code WHERE sp.reg_no = $1 AND sp.last_seen = $2::date ORDER BY sp.code`,
+      [r.reg_no, r.snapshot],
+    );
+    const caen = await pool.query(`SELECT code, version FROM onrc.caen WHERE reg_no = $1 ORDER BY code`, [r.reg_no]);
+    const aliases = await pool.query(
+      `SELECT name, first_seen::text AS "firstSeen", last_seen::text AS "lastSeen", since_at_least AS "sinceAtLeast", last_seen = $2::date AS current
+         FROM onrc.name_span WHERE reg_no = $1 ORDER BY last_seen DESC, first_seen DESC, name`,
+      [r.reg_no, r.snapshot],
+    );
+    return {
+      registrationNumber: r.reg_no,
+      name: r.name,
+      cui: r.cui,
+      registrationDate: r.registration_date,
+      legalForm: r.legal_form,
+      statuses: statuses.rows,
+      caen: caen.rows,
+      seat: { county: r.county_name, locality: r.locality, address: r.address, postalCode: r.postal_code },
+      aliases: aliases.rows,
+      snapshot: r.snapshot,
+      provenance: { url: r.url, via: r.title, fetchedAt: r.fetched_at },
+    };
+  }
+
   /** The entities of `keys`, one query. */
   async function entitiesOf(keys: string[]): Promise<Map<string, EntityRow>> {
     if (!keys.length) return new Map();
@@ -418,7 +674,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       for (const f of found.rows) files.set(f.id, { via: f.via, fetchedAt: f.fetched_at });
     }
-    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf);
+    const signals = await signalsOfRecords(pool, raw.map((r) => r.code), entitiesOf, restricted);
     const now = new Date().toISOString();
     const fileOf = (id: number) => {
       const f = files.get(id);
@@ -506,7 +762,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   });
 
   const searchTotal: Store["searchTotal"] = async (filter, { signal } = {}) => {
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       if (plan) {
         const params: unknown[] = [];
         const where = rollupWhere(plan, params);
@@ -519,7 +775,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         );
         return totalOf(r.rows[0]!);
       }
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // Matched RON = the winners' shares that matched. A Record counts once: on its first winner's row, or, when the filter
       // restricts the winners (it can then match on several rows, or not on the first), once per Record after grouping.
       const sql = w.winnerSide
@@ -531,12 +787,38 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return totalOf((await cancellableQuery<Parameters<typeof totalOf>[0]>(pool, signal, sql, w.params)).rows[0]!);
   };
 
+  /** The rows behind the Party coverage (#181): the set the rest of the filter selects (the party left out), grouped on the indexed party columns. A Record counts once, as in `searchTotal`. */
+  const searchPartyGroups: Store["searchPartyGroups"] = async (filter, { signal } = {}) => {
+    const w = whereOf({ ...filter, party: undefined });
+    const sql = w.winnerSide
+      ? `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, count(*)::int AS records
+           FROM (SELECT party, party_basis, record_code, sum(share_bani) AS sh FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, record_code) g
+          GROUP BY party, party_basis`
+      : `SELECT party, party_basis AS basis, coalesce(sum(sh), 0)::text AS awarded, coalesce(sum(n) FILTER (WHERE pos = 1), 0)::int AS records
+           FROM (SELECT party, party_basis, winner_position AS pos, sum(share_bani) AS sh, count(*) AS n FROM seap.search WHERE ${w.sql} GROUP BY party, party_basis, winner_position) g
+          GROUP BY party, party_basis`;
+    return (await cancellableQuery<PartyGroupRow>(pool, signal, sql, w.params)).rows;
+  };
+  const searchPartyCoverage: Store["searchPartyCoverage"] = async (filter, options) => classifyPartyGroups(filter.party ?? "", await searchPartyGroups(filter, options));
+
   return {
-    ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity }),
-    ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS }),
+    ...roleStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, fallbackEntity, restricted }),
+    ...onrcStore({ pool, entitiesOf }),
+    ...signalStore({ pool, entitiesOf, rowsOf: (raw) => rowsOf(raw as RawRecord[]), recordColumns: RECORD_COLUMNS, restricted }),
     searchTotal,
+    searchPartyGroups,
+    searchPartyCoverage,
+    async partyOptions() {
+      // No `aep` schema (a graph built before it) offers no party: the chip is simply absent. The list is capped so a native select stays usable; the largest lists come first.
+      const { rows } = await pool.query(
+        `SELECT m.list_name AS party, count(*)::int AS records
+           FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
+          WHERE NOT m.independent GROUP BY m.list_name ORDER BY count(*) DESC, m.list_name LIMIT 1000`,
+      ).catch(noTable);
+      return rows as PartyOptionRow[];
+    },
     async searchEntities(side, filter, { limit, offset }, { signal } = {}) {
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       if (plan) {
         // the rollup holds every entity's numbers per chip cell: one exact GROUP BY, ordered as the scan orders (matched RON, then key)
         const params: unknown[] = [side];
@@ -555,7 +837,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         const now = new Date().toISOString();
         return { count, estimated: false, rows: r.rows.map((x) => ({ entity: entities.get(x.key) ?? fallbackEntity(x.key, null, now), matched: totalOf(x) })) };
       }
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const key = SIDE_KEY[side];
       // 1. how many distinct entities: a HyperLogLog estimate, cheap and inside the index
       const card = await cancellableQuery(pool, signal, `SELECT pdb.agg('{"cardinality":{"field":"${key}"}}'::jsonb) AS c FROM seap.search WHERE ${w.sql}`, w.params);
@@ -624,10 +906,10 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return { count, estimated, rows };
     },
     async searchRecords(filter, { limit, offset, order }, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       // each Record once: its first winner's row, or, when the filter restricts the winners, grouped per Record.
       // A chips-only count comes from the rollup; the page itself is always the Top-K query on the index (a Record page is not a rollup).
-      const plan = rollup ? rollupPlan(filter) : null;
+      const plan = rollup ? planOf(filter) : null;
       const count = plan
         ? (await searchTotal(filter, { signal })).records
         : (
@@ -666,7 +948,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       return { count, rows: wanted.map((c) => byCode.get(c)).filter((r): r is RecordRow => !!r) };
     },
     async searchMap(side, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       const rows = await areaTotals(w, side === "AUTHORITY" ? "authority_area" : "supplier_area", side === "AUTHORITY" ? "authority_key" : "supplier_key", side === "SUPPLIER" || w.winnerSide, signal);
       const off = new Map(rows.map((r) => [r.area, r]));
       const unplaced = off.get("UNPLACED");
@@ -678,7 +960,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       };
     },
     async searchUatMap(county, filter, { signal } = {}) {
-      const w = buildWhere(filter);
+      const w = whereOf(filter);
       w.params.push(county);
       w.sql += ` AND authority_county = $${w.params.length}`;
       // the zoomed county is the authority side (UATs place authorities); a Record counts once, even when the filter restricts the winners
@@ -756,9 +1038,16 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       return rowsOf(rows as RawRecord[]);
     },
+    async sources() {
+      const { rows } = await pool.query(
+        `SELECT id, name, schema_name AS schema, record_kinds AS "recordKinds", lenses, placement_rule AS "placementRule",
+                methodology_anchor AS "methodologyAnchor", landing_status AS "landingStatus" FROM core.source ORDER BY position`,
+      );
+      return rows as SourceRow[];
+    },
     async dataThrough() {
       const { rows } = await pool.query(
-        // the same definition as pipeline/rebuild.py DATA_THROUGH_SQL (`pipeline status`): the crawled kinds are at least as far as the crawl cursor
+        // a copy of SEAP_DATA_THROUGH_SQL in watchdog/pipeline/sources.py (`pipeline status`); the two must agree: the crawled kinds are at least as far as the crawl cursor
         `SELECT kind, max(d)::text AS date FROM (
            SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
            UNION ALL
@@ -825,6 +1114,61 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       const { rows } = await pool.query(`SELECT max(snapshot_date)::text AS d FROM core.mf_snapshot`);
       return (rows[0]?.d as string | null) ?? null;
     },
+    async people(cui, { personIds }) {
+      const snapshot = await pool.query(
+        `SELECT s.snapshot_date::text AS snapshot, s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+           FROM onrc.snapshot s WHERE s.snapshot_date = (SELECT snapshot_date FROM onrc.role LIMIT 1)`,
+      );
+      const s = snapshot.rows[0];
+      if (!s) return null;
+      // every role row carries the one snapshot the roles were built from, so one row names it (no scan of the national table)
+      // Public tier: ONRC's legal-representative file only (never an IF member or a sole trader's row), holders with a person key or no birth date (never a possible match)
+      const { rows } = await pool.query(
+        `SELECT r.holder_name AS name, r.role, r.birth_year AS "birthYear", CASE WHEN $2 THEN r.person_id END AS "personId"
+           FROM onrc.role r JOIN onrc.registration g ON g.reg_no = r.reg_no AND g.primary_for_cui
+          WHERE g.cui = $1 AND r.kind = 'LEGAL' AND r.link IN ('LINKED', 'UNLINKED')
+          ORDER BY (r.link = 'UNLINKED'), r.role, r.holder_name`,
+        [cui, personIds],
+      );
+      return { holders: rows, snapshot: s.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
+    },
+    async person(id) {
+      const found = await pool.query(
+        `SELECT p.id, p.name, p.birth_year AS "birthYear", (SELECT max(snapshot_date) FROM onrc.role WHERE person_id = p.id)::text AS snapshot FROM onrc.person p WHERE p.id = $1`,
+        [id],
+      );
+      const p = found.rows[0];
+      if (!p) return null;
+      const roles = await pool.query(
+        `SELECT coalesce(e.display_name, translate(coalesce(g.name, r.reg_no), 'ŞşŢţ', 'ȘșȚț')) AS "organisationName", e.key AS "entityKey",
+                CASE WHEN e.key IS NULL THEN NULL WHEN EXISTS (SELECT 1 FROM seap.search WHERE supplier_key = e.key) THEN 'SUPPLIER'
+                     WHEN EXISTS (SELECT 1 FROM seap.record WHERE authority_key = e.key) THEN 'AUTHORITY' ELSE 'SUPPLIER' END AS "entityRole", r.role
+           FROM onrc.role r LEFT JOIN onrc.registration g ON g.reg_no = r.reg_no
+           LEFT JOIN core.entity e ON e.key = g.cui AND g.primary_for_cui
+          WHERE r.person_id = $1 AND r.link = 'LINKED' ORDER BY 1, r.role, r.reg_no`,
+        [id],
+      );
+      const snapshot = await pool.query(
+        `SELECT url, title, to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at FROM onrc.snapshot WHERE snapshot_date = $1::date`,
+        [p.snapshot],
+      );
+      const s = snapshot.rows[0];
+      // a role's snapshot always has its onrc.snapshot row (foreign key): a missing one is a broken build, not a date to invent
+      if (!s) throw new Error(`onrc.snapshot has no row for the snapshot ${p.snapshot} of person ${id}`);
+      return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
+    },
+    async onrcDataThrough() {
+      const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0
+         UNION ALL SELECT 'ROLE', max(snapshot_date)::text FROM onrc.role HAVING count(*) > 0`);
+      return rows;
+    },
+    async onrc(cui) {
+      return onrcWhere("r.cui = $1 AND r.primary_for_cui", cui);
+    },
+    async onrcRecord(regNo) {
+      // only a registration ONRC search can list: a sole trader's (PFA, II, IF) is not served by its number either (ADR 0009)
+      return onrcWhere("r.reg_no = $1 AND EXISTS (SELECT 1 FROM onrc.search x WHERE x.reg_no = r.reg_no)", regNo);
+    },
     async entity(key) {
       return (await entitiesOf([key])).get(key) ?? null;
     },
@@ -835,6 +1179,109 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         [key],
       );
       return rows;
+    },
+    async publicEnterprise(cui) {
+      const { rows } = await pool.query(
+        `SELECT a.name AS "listedAs", a.registration_number AS "registrationNumber", a.status, a.first_year AS "firstYear", a.last_year AS "lastYear",
+                a.snapshot_date::text AS snapshot, s.dataset_url AS url, s.via, s.license,
+                to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM amepip.enterprise a JOIN amepip.snapshot s ON s.snapshot_date = a.snapshot_date WHERE a.cui = $1`,
+        [cui],
+      );
+      return (rows[0] as PublicEnterpriseRow | undefined) ?? null;
+    },
+    async leadership(key) {
+      // A graph built before the aep schema existed (deployed ahead of a rebuild) has no Leadership list or Party: the pages still work.
+      const direct = await pool.query(`SELECT area FROM aep.authority WHERE entity_key = $1`, [key]).catch(noTable);
+      let area = direct.rows[0]?.area as string | undefined;
+      let via: LeadershipViaRow | null = null;
+      if (!area) {
+        const sub = await pool.query(
+          `SELECT s.authority_key AS "authorityKey", e.display_name AS "authorityName", s.snapshot_date::text AS "snapshotDate", s.snapshots, a.area
+             FROM aep.subordinate s JOIN aep.authority a ON a.entity_key = s.authority_key JOIN core.entity e ON e.key = s.authority_key WHERE s.entity_key = $1`,
+          [key],
+        ).catch(noTable);
+        if (!sub.rows[0]) return null;
+        ({ area } = sub.rows[0] as { area: string });
+        via = { authority: sub.rows[0].authorityKey, authorityName: sub.rows[0].authorityName, snapshotDate: sub.rows[0].snapshotDate, snapshots: Number(sub.rows[0].snapshots) };
+      }
+      const mandates = await pool.query(
+        `SELECT leader_name AS "leaderName", list_name AS "list", independent, member_parties AS "memberParties", election_date::text AS "electionDate", basis,
+                data_through::text AS "dataThrough", start_date::text AS "startDate", end_date::text AS "endDate"
+           FROM aep.mandate WHERE area = $1 ORDER BY start_date`,
+        [area],
+      );
+      const gaps = await pool.query(`SELECT start_date::text AS "startDate", end_date::text AS "endDate", reason AS kind FROM aep.gap WHERE area = $1 ORDER BY start_date`, [area]);
+      return { mandates: mandates.rows as MandateRow[], gaps: gaps.rows as LeadershipGapRow[], via };
+    },
+    async recordParty(code) {
+      const { rows } = await pool.query(
+        `SELECT m.list_name AS list, m.independent, m.member_parties AS "memberParties", m.election_date::text AS "electionDate", m.basis, m.data_through::text AS "dataThrough",
+                p.via_key AS "viaKey", e.display_name AS "viaName", s.snapshot_date::text AS "snapshotDate", s.snapshots
+           FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
+           JOIN seap.record r ON r.code = p.record_code
+           LEFT JOIN aep.subordinate s ON s.entity_key = r.authority_key AND p.via_key IS NOT NULL
+           LEFT JOIN core.entity e ON e.key = p.via_key
+          WHERE p.record_code = $1`,
+        [code],
+      ).catch(noTable);
+      const r = rows[0];
+      if (!r) return null;
+      return {
+        list: r.list, independent: r.independent, memberParties: r.memberParties, electionDate: r.electionDate, basis: r.basis, dataThrough: r.dataThrough,
+        via: r.viaKey ? { authority: r.viaKey, authorityName: r.viaName, snapshotDate: r.snapshotDate, snapshots: Number(r.snapshots) } : null,
+      };
+    },
+    async financials(cui, key) {
+      // A graph built before the financials schema existed (deployed ahead of a rebuild) has no statements: the Overview still works.
+      const { rows } = await pool.query(
+        `SELECT s.fiscal_year AS "fiscalYear", s.revision, s.fiscal_year = (SELECT max(fiscal_year) FROM financials.source_file) AS newest,
+                s.turnover_bani::text AS turnover, s.profit_loss_bani::text AS "profitOrLoss", s.debts_bani::text AS debts, s.equity_bani::text AS equity,
+                s.employees AS "averageEmployees", coalesce(a.awarded, 0)::text AS "awardedInYear",
+                f.file_name AS file, f.dataset_url AS "datasetUrl", f.resource_url AS "fileUrl", f.dataset_title AS via, f.license, f.published::text AS published,
+                to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM financials.statement s
+           JOIN financials.source_file f ON f.id = s.source_file_id
+           LEFT JOIN (SELECT award_year, sum(awarded) AS awarded FROM seap.rollup_entity WHERE side = 'SUPPLIER' AND entity_key = $2 GROUP BY award_year) a
+                  ON a.award_year = s.fiscal_year
+          WHERE s.cui = $1
+          ORDER BY s.fiscal_year DESC`,
+        [cui, key],
+      ).catch(noTable);
+      return rows.map(({ file, datasetUrl, fileUrl, via, license, published, fetchedAt, ...year }) => ({ ...year, source: { file, datasetUrl, fileUrl, via, license, published, fetchedAt } })) as FinancialYearRow[];
+    },
+    async donations(cui) {
+      // A graph built before the donations schema existed (deployed ahead of a rebuild) has none: the Overview still works.
+      const { rows } = await pool.query(
+        `SELECT d.kind, d.party, d.donation_year AS year, d.donation_date::text AS date, d.date_text AS "dateText", d.amount_bani::text AS amount, d.source_row AS "sourceRow",
+                f.through_year AS "dataThroughYear", f.dataset_url AS "datasetUrl", f.license, f.license_url AS "licenseUrl", f.source AS publisher, f.source_url AS "publisherUrl",
+                f.underlying_url AS "underlyingUrl", to_char(f.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM donations.donation d JOIN donations.source_file f ON f.id = d.source_file_id
+          WHERE d.donor_cui = $1
+          ORDER BY d.donation_year DESC NULLS LAST, d.donation_date DESC NULLS LAST, d.source_row`,
+        [cui],
+      ).catch(noTable);
+      if (rows.length === 0) return null;
+      const { dataThroughYear, datasetUrl, license, licenseUrl, publisher, publisherUrl, underlyingUrl, fetchedAt } = rows[0];
+      return {
+        dataThroughYear,
+        items: rows.map(({ kind, party, year, date, dateText, amount, sourceRow }) => ({ kind, party, year, date, dateText, amount, sourceRow })),
+        source: { datasetUrl, license, licenseUrl, publisher, publisherUrl, underlyingUrl, fetchedAt },
+      } as FirmDonationsRow;
+    },
+    async referenceSources() {
+      const amepip = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`).catch(noTable);
+      const aep = await pool.query(`SELECT max(data_through)::text AS d FROM aep.snapshot WHERE basis = 'PARTIAL_MINUTES'`).catch(noTable); // the one-off file's stated date (#180)
+      const fs = await pool.query(`SELECT max(fiscal_year) AS year FROM financials.source_file`).catch(noTable);
+      const year = (fs.rows[0]?.year as number | null | undefined) ?? null;
+      const bp = await pool.query(`SELECT through_year AS year, dataset_url AS url FROM donations.source_file ORDER BY id DESC LIMIT 1`).catch(noTable);
+      const bpYear = (bp.rows[0]?.year as number | null | undefined) ?? null;
+      return [
+        { id: "AMEPIP", name: "AMEPIP", dataThrough: (amepip.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: (amepip.rows[0]?.url as string | null | undefined) ?? null },
+        { id: "AEP", name: "AEP", dataThrough: (aep.rows[0]?.d as string | undefined) ?? null, fiscalYear: null, url: null },
+        { id: "FINANCIAL_STATEMENTS", name: "MF financial statements", dataThrough: year === null ? null : `${year}-12-31`, fiscalYear: year, url: year === null ? null : "https://data.gov.ro/organization/mfp" },
+        { id: "BANIPARTIDE", name: "BaniPartide", dataThrough: bpYear === null ? null : `${bpYear}-12-31`, fiscalYear: bpYear, url: (bp.rows[0]?.url as string | null | undefined) ?? null },
+      ];
     },
     async counties() {
       const { rows } = await pool.query(`SELECT iso, name FROM core.county ORDER BY iso`);
