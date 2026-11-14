@@ -10,8 +10,8 @@ import * as w from "./world.ts";
 type Role = "AUTHORITY" | "SUPPLIER";
 type Row = { record: { code: string; channel: string; value?: string | null } };
 const withSeap = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...header, seap: { ...header.seap, role } });
-/** The EntityOverview's entity: the header, the SEAP role, the ONRC section (`onrc`, null when ONRC lists no registration) the AMEPIP mark (`publicEnterprise`, #183) and MF's statements (`financials`, #179): null here, the recorded cases carry the listed ones. */
-const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null, publicEnterprise: null, financials: null, leadership: null, donations: null });
+/** The EntityOverview's entity: the header, the SEAP role, the ONRC section (`onrc`, null when ONRC lists no registration), its administrators (`people`, #177: null here, the hand fixtures below and the recorded cases carry the listed ones) the AMEPIP mark (`publicEnterprise`, #183) and MF's statements (`financials`, #179): null here, the recorded cases carry the listed ones. */
+const withOverview = <R>(header: EntityHeaderFieldsFragment, role: R) => ({ ...withSeap(header, role), onrc: null, people: null, publicEnterprise: null, financials: null, leadership: null, donations: null });
 
 /** An Overview Signal as the query reads it: the Signal and its first Record (for the card's "Check in SEAP"). */
 const overviewSignal = (s: SignalFieldsFragment) => ({ ...s, records: [{ code: "DA12345678", provenance: { url: "/source/seap/DA12345678" } }] });
@@ -130,6 +130,35 @@ export const entityOverviewHand: FixtureSet<EntityOverviewQuery, EntityOverviewQ
       largestRecords: [w.rConsortium, w.rSubsequent, w.rDirect],
       signals: { count: 3, rows: [overviewSignal(w.sFrameworkOverrun)] },
     }) },
+  },
+];
+
+const onrcBasis = { source: "ONRC" as const, url: "https://data.gov.ro/dataset/firme-06-05-2026", via: "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026", kind: "BULK" as const, fetchedAt: "2026-11-13T04:00:00Z" };
+const supplierTypical = entityOverviewHand[0]!;
+
+/** The administrators of a SEAP counterparty (public tier, #177): linked holders with their birth year, an unlinked role holder with none, and the Restricted person link only in a Private view. */
+const administrators = (private_: boolean) => ({
+  holders: [
+    { name: "POPESCU ION", role: "administrator", birthYear: 1975, person: private_ ? { id: "0123456789abcdef0123456789abcdef" } : null },
+    { name: "IONESCU MARIA", role: "reprezentant legal", birthYear: 1980, person: private_ ? { id: "89abcdef0123456789abcdef01234567" } : null },
+    { name: "NEGRU TUDOR", role: "administrator", birthYear: null, person: null },
+  ],
+  snapshot: "2026-05-06", provenance: onrcBasis,
+});
+
+/** The same supplier with its administrators, in the public view (the host hides Restricted content) and in a Private view (the switch is `show`: each linked holder carries a person page). */
+export const entityOverviewPeople: FixtureSet<EntityOverviewQuery, EntityOverviewQueryVariables> = [
+  {
+    name: "supplier-administrators-public", kind: "typical",
+    description: "a SEAP counterparty with ONRC administrators on the public tier: name, role and birth year, one unlinked role holder with no birth year, and no person link",
+    variables: { key: "30000001", role: "SUPPLIER", filter: { from: "2020-01-01" } },
+    data: { entity: { ...supplierTypical.data.entity!, people: administrators(false) } },
+  },
+  {
+    name: "supplier-administrators-private-view", kind: "extreme",
+    description: "the same page in a Private view: each linked administrator links to a person page; the unlinked role holder never does",
+    variables: { key: "30000001", role: "SUPPLIER", filter: { from: "2019-01-01" } },
+    data: { entity: { ...supplierTypical.data.entity!, people: administrators(true) } },
   },
 ];
 

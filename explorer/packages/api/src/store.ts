@@ -139,6 +139,23 @@ export interface OnrcRegistrationRow {
   provenance: { url: string | null; via: string | null; fetchedAt: string };
 }
 
+/** The role holders ONRC lists for a CUI (`onrc.role`, ticket #177): the public tier (administrators and legal representatives; never an IF or PFA/II row, a possible match or a birthplace). */
+export interface OrganisationPeopleRow {
+  holders: { name: string; role: string; birthYear: number | null; /** only read when Restricted content is shown, else always null */ personId: string | null }[];
+  snapshot: string;
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
+}
+
+/** A confirmed person (`onrc.person`) and their roles across organisations (Restricted, ADR 0015). An organisation is shown under its entity's display name (ADR 0018), else as ONRC writes it. */
+export interface PersonRow {
+  id: string;
+  name: string;
+  birthYear: number;
+  roles: { organisationName: string; entityKey: string | null; role: string }[];
+  snapshot: string;
+  provenance: { url: string | null; via: string | null; fetchedAt: string };
+}
+
 /** A county of core.county: ISO 3166-2:RO without `RO-` (Bucharest is `B`) and its Romanian name. */
 export interface CountyRow {
   iso: string;
@@ -328,6 +345,13 @@ export interface Store extends RoleStore, SignalStore {
   referenceSnapshot(): Promise<string | null>;
   /** The ONRC registration under a CUI (the entity page's ONRC section), or null when ONRC lists none. */
   onrc(cui: string): Promise<OnrcRegistrationRow | null>;
+  /**
+   * The administrators and legal representatives of the registration under a CUI (public tier), or null when no snapshot with ONRC's people files is held. The caller decides
+   * whether the organisation may be named (a SEAP counterparty); `personIds` selects the person ids of linked holders, which only a Private view serves (Restricted, ADR 0015).
+   */
+  people(cui: string, options: { personIds: boolean }): Promise<OrganisationPeopleRow | null>;
+  /** RESTRICTED: a confirmed person by id with their roles across organisations, or null. Callers must have checked the switch. */
+  person(id: string): Promise<PersonRow | null>;
   /** The date of the newest ONRC snapshot read: ONRC's data-through date per record kind (REGISTRATION). */
   onrcDataThrough(): Promise<{ kind: string; date: string }[]>;
   /** The Total of the matching set: matched RON is the sum of the winners' shares. */
@@ -963,6 +987,44 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     async referenceSnapshot() {
       const { rows } = await pool.query(`SELECT max(snapshot_date)::text AS d FROM core.mf_snapshot`);
       return (rows[0]?.d as string | null) ?? null;
+    },
+    async people(cui, { personIds }) {
+      const snapshot = await pool.query(
+        `SELECT s.snapshot_date::text AS snapshot, s.url, s.title, to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at
+           FROM onrc.snapshot s WHERE s.snapshot_date = (SELECT max(snapshot_date) FROM onrc.role)`,
+      );
+      const s = snapshot.rows[0];
+      if (!s) return null;
+      // Public tier: ONRC's legal-representative file only (never an IF member or a sole trader's row), holders with a person key or no birth date (never a possible match)
+      const { rows } = await pool.query(
+        `SELECT r.holder_name AS name, r.role, r.birth_year AS "birthYear", CASE WHEN $2 THEN r.person_id END AS "personId"
+           FROM onrc.role r JOIN onrc.registration g ON g.reg_no = r.reg_no AND g.primary_for_cui
+          WHERE g.cui = $1 AND r.kind = 'LEGAL' AND r.link IN ('LINKED', 'UNLINKED')
+          ORDER BY (r.link = 'UNLINKED'), r.role, r.holder_name`,
+        [cui, personIds],
+      );
+      return { holders: rows, snapshot: s.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
+    },
+    async person(id) {
+      const found = await pool.query(
+        `SELECT p.id, p.name, p.birth_year AS "birthYear", (SELECT max(snapshot_date) FROM onrc.role WHERE person_id = p.id)::text AS snapshot FROM onrc.person p WHERE p.id = $1`,
+        [id],
+      );
+      const p = found.rows[0];
+      if (!p) return null;
+      const roles = await pool.query(
+        `SELECT coalesce(e.display_name, translate(coalesce(g.name, r.reg_no), 'ŞşŢţ', 'ȘșȚț')) AS "organisationName", e.key AS "entityKey", r.role
+           FROM onrc.role r LEFT JOIN onrc.registration g ON g.reg_no = r.reg_no
+           LEFT JOIN core.entity e ON e.key = g.cui AND g.primary_for_cui
+          WHERE r.person_id = $1 AND r.link = 'LINKED' ORDER BY 1, r.role, r.reg_no`,
+        [id],
+      );
+      const snapshot = await pool.query(
+        `SELECT url, title, to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS fetched_at FROM onrc.snapshot WHERE snapshot_date = $1::date`,
+        [p.snapshot],
+      );
+      const s = snapshot.rows[0] ?? {};
+      return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url ?? null, via: s.title ?? null, fetchedAt: s.fetched_at ?? "1970-01-01T00:00:00Z" } };
     },
     async onrcDataThrough() {
       const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0`);

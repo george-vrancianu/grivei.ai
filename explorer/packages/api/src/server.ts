@@ -3,6 +3,7 @@ import { execute, GraphQLError, type GraphQLSchema } from "graphql";
 import { loadSchema } from "@grivei/contract/node";
 import { loadPersistedQueries, type PersistedQuery } from "./persisted.ts";
 import { rootValue } from "./resolvers.ts";
+import { restrictedShown } from "./restricted.ts";
 import type { Store } from "./store.ts";
 import { codeFromPath, createSeapLink, type SeapLink } from "./seapLink.ts";
 
@@ -27,11 +28,13 @@ export interface Api {
 /**
  * The API answers persisted queries only: the client sends `{ "id": <sha256 of the document>, "variables": {...} }`.
  * Anything carrying query text, or an id that is not on the contract's allowlist, is refused with HTTP 400.
+ * `options.restricted` (default: the host's `GRIVEI_RESTRICTED` is `show`) is the Restricted switch, read once.
  */
-export function createApi(store: Store, schema: GraphQLSchema = loadSchema(), options: { seapLink?: SeapLink } = {}): Api {
+export function createApi(store: Store, schema: GraphQLSchema = loadSchema(), options: { seapLink?: SeapLink; restricted?: boolean } = {}): Api {
   const seapLink = options.seapLink ?? createSeapLink();
   const queries = loadPersistedQueries(schema);
-  const root = rootValue(store);
+  // read once, here: `GRIVEI_RESTRICTED=show` (and only that value) reveals Restricted content (ADR 0015); a test passes `restricted` to pin it
+  const root = rootValue(store, { restricted: options.restricted ?? restrictedShown() });
 
   async function respond(body: unknown, options: { signal?: AbortSignal } = {}): Promise<ApiResponse> {
     if (typeof body !== "object" || body === null || Array.isArray(body)) {

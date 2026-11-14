@@ -28,7 +28,7 @@ describe("operations", () => {
     expect(names).toEqual([
       "CoverageLens", "CoveragePage", "EntityOverview", "EntityRecords", "EntityRelationships",
       "FullResultsAuthorities", "FullResultsRecords", "FullResultsSuppliers", "MainScreen",
-      "MethodologyBaseRates", "MethodologyReferenceSources", "RecordPage", "ZoomedCounty",
+      "MethodologyBaseRates", "MethodologyReferenceSources", "PersonPage", "RecordPage", "ZoomedCounty",
     ]);
   });
   it("are queries only", () => {
@@ -53,6 +53,8 @@ describe("operations", () => {
       "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
       // ONRC's registration as published (#175): identifiers, ONRC's own nomenclature words and the seat; none is prose of ours
       "OnrcRegistration.registrationNumber", "OnrcRegistration.legalForm", "OnrcStatus.name", "OnrcCaen.code", "OnrcSeat.county", "OnrcSeat.locality", "OnrcSeat.address", "OnrcSeat.postalCode", "OnrcAlias.name",
+      // ONRC's people as published (#177): the holder's name and role, the organisation's name; none is prose of ours
+      "RoleHolder.name", "RoleHolder.role", "Person.name", "PersonRole.organisationName", "PersonRole.role",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
       // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
       "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",

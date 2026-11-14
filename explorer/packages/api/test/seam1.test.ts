@@ -45,6 +45,7 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const onrcPeopleArchive = join(watchdog, "tests/fixtures/archive-onrc-people"); // archive-onrc with ONRC's people files, a PFA and an IF: administrators, the same person twice, namesakes, a possible match, an unlinked holder (#177)
 const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
 const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
 const banipartideArchive = join(watchdog, "tests/fixtures/archive-banipartide"); // BaniPartide's firm-donor table: a donation, a loan with two dates, three rows that are not firms (individuals), a donor with no entity; copied onto archive-overview (#182)
@@ -210,7 +211,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   // PIPELINE_PLACEMENT_DATA pins the placement tables to the fixture's county-only directory; an explicit --placement-data in `extra` wins
   const rebuild = (db: string, archive = "archive", extra: string[] = []) => {
     const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, archive), "rebuild", "--db", `${baseUrl}/${db}`, "--in-place", ...extra], {
-      cwd: watchdog, encoding: "utf8", env: { ...process.env, PIPELINE_PLACEMENT_DATA: join(scratch, "county-only-data") },
+      cwd: watchdog, encoding: "utf8", env: { ...process.env, PIPELINE_PLACEMENT_DATA: join(scratch, "county-only-data"), GRIVEI_PERSON_ID_SECRET: "dummy-secret-for-tests-only-0123456789" },
     });
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
     return r.stdout;
@@ -2490,13 +2491,14 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     // answer drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
     const file = resolve(here, "../../contract/src/fixtures/recorded/EntityOverview.json");
-    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d", party: "entity_rec_e" } as const;
+    const DBS = { overview: "entity_rec_a", signals: "entity_rec_b", moneymap: "entity_rec_c", onrc: "entity_rec_d", party: "entity_rec_e", people: "entity_rec_f" } as const;
 
     beforeAll(async () => {
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
       cpSync(rolesArchive, join(scratch, "archive-overview"), { recursive: true });
       cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
       cpSync(onrcArchive, join(scratch, "archive-onrc"), { recursive: true });
+      cpSync(onrcPeopleArchive, join(scratch, "archive-onrc-people"), { recursive: true });
       cpSync(amepipArchive, join(scratch, "archive-overview"), { recursive: true }); // AMEPIP's list: a Reference source beside the roles world's SEAP units (#183)
       cpSync(financialsArchive, join(scratch, "archive-overview"), { recursive: true }); // MF's annual financial statements: another Reference source (#179)
       cpSync(banipartideArchive, join(scratch, "archive-overview"), { recursive: true }); // BaniPartide's firm donors and lenders: another Reference source (#182)
@@ -2504,6 +2506,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
       rebuild(DBS.onrc, "archive-onrc");
+      rebuild(DBS.people, "archive-onrc-people");
       partyRebuild(DBS.party);
       rebuild(DBS.moneymap, "archive-moneymap", ["--placement-data", placementData, "--geo-dir", join(scratch, "geo-entity-recorded")]);
     });
@@ -2629,6 +2632,26 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(Object.keys(onrc("onrc-only-organisation")).sort()).toEqual(["aliases", "caen", "legalForm", "provenance", "registrationDate", "registrationNumber", "seat", "snapshot", "statuses"]);
       // no county in the registration: no placement, the Unplaced tile
       expect(entityOf("onrc-only-unplaced")).toMatchObject({ key: "3100080", placement: null, onrc: { seat: { county: null } } });
+    });
+
+    it("names the administrators of SEAP counterparties only, with birth year and basis; never a possible match, a birthplace, a sole trader's or an IF's holder, or a person link in the public view (#177)", () => {
+      const people = (name: string) => (entityOf(name) as { people: { holders: { name: string; role: string; birthYear: number | null; person: unknown }[]; snapshot: string; provenance: { source: string; url: string | null } } | null }).people;
+      const listed = (name: string) => people(name)!.holders.map((h) => [h.name, h.role, h.birthYear]);
+      // ALFA: two administrators (the legal representative RADU GHEORGHE is a possible match with DELTA's: left out), the basis is the newest snapshot that carries the people files
+      expect(listed("people-supplier")).toEqual([["IONESCU MARIA", "administrator", 1980], ["POPESCU ION", "administrator", 1975]]);
+      expect(people("people-supplier")).toMatchObject({ snapshot: "2026-05-06", provenance: { source: "ONRC", url: "https://data.gov.ro/dataset/firme-06-05-2026" } });
+      // the same person (word order differs) is listed on the other company too; a legal person with no birth date is an unlinked role holder, last
+      expect(listed("people-same-person-other-company")).toEqual([["ION POPESCU", "administrator", 1975], ["TOMA GHEORGHE", "administrator", 1965], ["SC SERVICII EXEMPLU SRL", "reprezentant al persoanei juridice", null]]);
+      expect(listed("people-namesake")).toEqual([["POPESCU ION", "administrator", 1962]]); // same name, another birth date: another person
+      expect(listed("people-unlinked-holder")).toEqual([["NEGRU TUDOR", "administrator", null]]); // an unlinked role holder; the possible match is not here
+      // organisation only in ONRC: its people are not named at all; a PFA's holder is the registration; an IF's members are not on the public page
+      expect(people("people-only-in-onrc")).toBeNull();
+      expect(listed("people-pfa-supplier")).toEqual([]);
+      expect(listed("people-if-supplier")).toEqual([]);
+      const everyHolder = RECORDED_ENTITY_CASES.filter((c) => c.archive === "people").flatMap((c) => people(c.name)?.holders ?? []);
+      expect(everyHolder.every((h) => h.person === null)).toBe(true); // Restricted: no person link while the switch is off
+      const text = JSON.stringify([...answers.values()].filter((a) => a.name.startsWith("people-")));
+      for (const never of ["RADU GHEORGHE", "Bihor", "Oradea", "BISTRA", "1975-03-12", "TOMA ELENA"]) expect(text, never).not.toContain(never);
     });
 
     it("gives the cases the numbers they are named for", () => {

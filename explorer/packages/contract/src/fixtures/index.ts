@@ -2,10 +2,11 @@
 // and validated against the schema and the operation in CI (fixtures.test.ts).
 import type { Fixture } from "./types.ts";
 import { coverageLensHand, coveragePageHand } from "./coverage.ts";
-import { entityOverviewHand, entityRecordsHand, entityRelationships } from "./entity.ts";
+import { entityOverviewHand, entityOverviewPeople, entityRecordsHand, entityRelationships } from "./entity.ts";
 import { fullResultsAuthoritiesHand, fullResultsRecordsHand, fullResultsSuppliersHand } from "./full-results.ts";
 import { mainScreenHand, zoomedCountyHand } from "./main-screen.ts";
 import { methodologyBaseRates, methodologyReferenceSources } from "./methodology.ts";
+import { personPage } from "./person.ts";
 import { recordPageHand } from "./record-page.ts";
 import { recordedEntityOverview } from "./recorded/entity.ts";
 import { recordedEntityRecords } from "./recorded/records.ts";
@@ -36,7 +37,7 @@ export const fixtures = {
   FullResultsAuthorities: [...recordedFullResultsAuthorities, ...recordedSignalsFullResultsAuthorities, ...fullResultsAuthoritiesHand],
   FullResultsSuppliers: [...recordedFullResultsSuppliers, ...recordedSignalsFullResultsSuppliers, ...fullResultsSuppliersHand],
   FullResultsRecords: [...recordedFullResultsRecords, ...recordedSignalsFullResultsRecords, ...fullResultsRecordsHand],
-  EntityOverview: [...recordedEntityOverview, ...recordedSignalsEntityOverview, ...entityOverviewHand],
+  EntityOverview: [...recordedEntityOverview, ...recordedSignalsEntityOverview, ...entityOverviewHand, ...entityOverviewPeople],
   EntityRecords: [...recordedEntityRecords, ...recordedEntityRecordsSidePanel, ...recordedSignalsEntityRecords, ...entityRecordsHand],
   EntityRelationships: [...recordedEntityRelationships, ...recordedSignalsEntityRelationships, ...entityRelationships],
   RecordPage: [...recordedRecordPage, ...recordedSignalsRecordPage, ...recordPageHand],
@@ -44,6 +45,7 @@ export const fixtures = {
   CoveragePage: [...recordedCoveragePage, ...coveragePageHand],
   MethodologyBaseRates: [...methodologyBaseRates, ...recordedSignalsMethodology],
   MethodologyReferenceSources: methodologyReferenceSources,
+  PersonPage: personPage,
 } as const;
 
 export type OperationName = keyof typeof fixtures;

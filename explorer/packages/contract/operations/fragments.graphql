@@ -151,6 +151,24 @@ fragment OnrcRegistrationFields on OnrcRegistration {
   provenance { ...ProvenanceFields }
 }
 
+# The administrators and legal representatives of an organisation (public tier, #177). `person` is Restricted: null unless the host shows Restricted content.
+fragment OrganisationPeopleFields on OrganisationPeople {
+  holders { name role birthYear person { id } }
+  snapshot
+  provenance { ...ProvenanceFields }
+}
+
+# A person page (Restricted, #177): the name, the birth year and the roles across organisations.
+fragment PersonFields on Person {
+  id
+  name
+  birthYear
+  roleCount
+  roles { organisationName entityKey role }
+  snapshot
+  provenance { ...ProvenanceFields }
+}
+
 # The basis of the "public enterprise (AMEPIP)" mark on an entity page.
 fragment PublicEnterpriseFields on PublicEnterprise {
   listedAs

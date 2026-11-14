@@ -611,6 +611,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -958,6 +959,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -1504,6 +1506,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": {
           "listedAs": "ALFA DEMO SRL",
           "registrationNumber": "J40/1/2005",
@@ -2155,6 +2158,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": {
@@ -2416,6 +2420,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": {
           "listedAs": "CNAIR DEMO S.A.",
           "registrationNumber": "J40/2/2005",
@@ -2651,6 +2656,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": {
           "listedAs": "CNAIR DEMO S.A.",
           "registrationNumber": "J40/2/2005",
@@ -2865,6 +2871,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -2991,6 +2998,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -3042,6 +3050,7 @@
           "role": null
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -3101,6 +3110,7 @@
           "role": null
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": {
           "listedAs": "ALFA DEMO SRL",
           "registrationNumber": "J40/1/2005",
@@ -3755,6 +3765,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -3837,6 +3848,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -4076,6 +4088,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -4248,6 +4261,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -4480,6 +4494,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -5485,6 +5500,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -6490,6 +6506,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -7348,6 +7365,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -7578,6 +7596,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -7933,6 +7952,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8115,6 +8135,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8290,6 +8311,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8469,6 +8491,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8645,6 +8668,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8821,6 +8845,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8911,6 +8936,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -8994,6 +9020,7 @@
             "fetchedAt": "2026-11-13T04:00:00Z"
           }
         },
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -9189,6 +9216,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -9446,6 +9474,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -9661,6 +9690,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -9814,6 +9844,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -9978,6 +10009,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": null,
         "financials": null,
@@ -10145,6 +10177,7 @@
           }
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -10243,6 +10276,7 @@
           "role": null
         },
         "onrc": null,
+        "people": null,
         "publicEnterprise": null,
         "leadership": {
           "mandates": [
@@ -10278,6 +10312,1322 @@
           ],
           "via": null
         },
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-supplier",
+    "kind": "typical",
+    "description": "a SEAP supplier with administrators: name, role and birth year each, the snapshot as basis; a possible match (same name and birth date, another birth county) is left out and nobody links to a person page",
+    "variables": {
+      "key": "3100020",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100020",
+        "displayName": "ALFA ONRC SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3100020",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "ALFA ONRC SRL",
+            "records": 2,
+            "first": "2026-02-10",
+            "last": "2026-02-17",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "11000000",
+              "records": 2,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 2,
+              "topShare": 0.909090909,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "10000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                },
+                {
+                  "entity": {
+                    "key": "3100063",
+                    "displayName": "DUBLA ONRC SA",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "1000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000001",
+                "title": "Achizitie DA95000001",
+                "date": "2026-02-10",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "10000000",
+                "counted": "10000000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA ONRC SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              },
+              {
+                "code": "DA95000006",
+                "title": "Achizitie DA95000006",
+                "date": "2026-02-17",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "1000000",
+                "counted": "1000000",
+                "badges": [],
+                "authority": {
+                  "key": "3100063",
+                  "displayName": "DUBLA ONRC SA",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "ALFA ONRC SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3100020",
+                      "displayName": "ALFA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J40/1001/2015",
+          "registrationDate": "2015-03-10",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            },
+            {
+              "code": 1107,
+              "name": "insolvență",
+              "firstSeen": "2026-04-03",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [
+            {
+              "code": "4120",
+              "version": 2
+            },
+            {
+              "code": "4211",
+              "version": 2
+            }
+          ],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Cluj-Napoca",
+            "address": "Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "ALFA ONRC SRL",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [
+            {
+              "name": "IONESCU MARIA",
+              "role": "administrator",
+              "birthYear": 1980,
+              "person": null
+            },
+            {
+              "name": "POPESCU ION",
+              "role": "administrator",
+              "birthYear": 1975,
+              "person": null
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-same-person-other-company",
+    "kind": "typical",
+    "description": "the same person as an administrator of the first company, written in another word order: listed on each page as ONRC writes it; a legal-person representative with no birth date is an unlinked role holder",
+    "variables": {
+      "key": "3100039",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100039",
+        "displayName": "BETA ONRC SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3100039",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "BETA ONRC SRL",
+            "records": 1,
+            "first": "2026-02-12",
+            "last": "2026-02-12",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "5000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "5000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000002",
+                "title": "Achizitie DA95000002",
+                "date": "2026-02-12",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "5000000",
+                "counted": "5000000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "BETA ONRC SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3100039",
+                      "displayName": "BETA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J40/1002/2012",
+          "registrationDate": "2015-03-10",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [
+            {
+              "code": "4321",
+              "version": 2
+            }
+          ],
+          "seat": {
+            "county": "Bucureşti",
+            "locality": "Bucureşti Sectorul 3",
+            "address": "Bucureşti Sectorul 3, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "BETA NOU SRL",
+              "firstSeen": "2026-04-03",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            },
+            {
+              "name": "BETA VECHI SRL",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-03-02",
+              "sinceAtLeast": true,
+              "current": false
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [
+            {
+              "name": "ION POPESCU",
+              "role": "administrator",
+              "birthYear": 1975,
+              "person": null
+            },
+            {
+              "name": "TOMA GHEORGHE",
+              "role": "administrator",
+              "birthYear": 1965,
+              "person": null
+            },
+            {
+              "name": "SC SERVICII EXEMPLU SRL",
+              "role": "reprezentant al persoanei juridice",
+              "birthYear": null,
+              "person": null
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-namesake",
+    "kind": "typical",
+    "description": "an administrator who shares a name with another company's, with another birth date: another person, shown with his own birth year",
+    "variables": {
+      "key": "3100047",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100047",
+        "displayName": "GAMMA ONRC SRL",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3100047",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "GAMMA ONRC SRL",
+            "records": 1,
+            "first": "2026-02-14",
+            "last": "2026-02-14",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "3000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "3000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000003",
+                "title": "Achizitie DA95000003",
+                "date": "2026-02-14",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "3000000",
+                "counted": "3000000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "GAMMA ONRC SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3100047",
+                      "displayName": "GAMMA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J12/1003/2010",
+          "registrationDate": "2015-03-10",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1084,
+              "name": "radiată",
+              "firstSeen": "2026-05-06",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [
+            {
+              "code": "4120",
+              "version": 2
+            }
+          ],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Turda",
+            "address": "Turda, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "GAMMA ONRC SRL",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [
+            {
+              "name": "POPESCU ION",
+              "role": "administrator",
+              "birthYear": 1962,
+              "person": null
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-unlinked-holder",
+    "kind": "extreme",
+    "description": "a supplier whose only listed holder has no birth date (an unlinked role holder: no birth year, no link), the other being a possible match that is never served",
+    "variables": {
+      "key": "3100055",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100055",
+        "displayName": "DELTA ONRC SRL",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": {
+          "county": {
+            "code": "RO-BV",
+            "name": "Brașov"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ONRC"
+        },
+        "cui": "3100055",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "DELTA ONRC SRL",
+            "records": 1,
+            "first": "2026-02-15",
+            "last": "2026-02-15",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ONRC",
+            "url": null,
+            "via": "2026-05-06",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "2000000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "2000000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000004",
+                "title": "Achizitie DA95000004",
+                "date": "2026-02-15",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "2000000",
+                "counted": "2000000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "DELTA ONRC SRL",
+                    "share": null,
+                    "entity": {
+                      "key": "3100055",
+                      "displayName": "DELTA ONRC SRL",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "J05/1004/2018",
+          "registrationDate": "2026-02-20",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2026-03-02",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [
+            {
+              "code": "6201",
+              "version": 3
+            },
+            {
+              "code": "6202",
+              "version": 3
+            }
+          ],
+          "seat": {
+            "county": "Braşov",
+            "locality": "Braşov",
+            "address": "Braşov, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "DELTA ONRC SRL",
+              "firstSeen": "2026-03-02",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [
+            {
+              "name": "NEGRU TUDOR",
+              "role": "administrator",
+              "birthYear": null,
+              "person": null
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-only-in-onrc",
+    "kind": "empty",
+    "description": "an organisation that exists only in ONRC: its people are loaded for matching but not named",
+    "variables": {
+      "key": "3100071",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100071",
+        "displayName": "OMEGA ONLY SRL",
+        "identity": "CUI",
+        "anafStatus": null,
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ONRC"
+        },
+        "cui": "3100071",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [],
+        "provenance": [
+          {
+            "source": "ONRC",
+            "url": null,
+            "via": "2026-05-06",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [],
+          "role": null
+        },
+        "onrc": {
+          "registrationNumber": "J12/1007/2020",
+          "registrationDate": "2020-06-03",
+          "legalForm": "SRL",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2025-03-18",
+              "sinceAtLeast": true
+            }
+          ],
+          "caen": [
+            {
+              "code": "6201",
+              "version": 2
+            }
+          ],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Floreşti",
+            "address": "Floreşti, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "OMEGA ONLY SRL",
+              "firstSeen": "2025-03-18",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": true,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": null,
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-pfa-supplier",
+    "kind": "empty",
+    "description": "a PFA that is a SEAP supplier: its holder is the registration itself, so the page lists no holder",
+    "variables": {
+      "key": "3100110",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100110",
+        "displayName": "VASILESCU DEMO PFA",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3100110",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "VASILESCU DEMO PFA",
+            "records": 1,
+            "first": "2026-02-18",
+            "last": "2026-02-18",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "700000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "700000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000007",
+                "title": "Achizitie DA95000007",
+                "date": "2026-02-18",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "700000",
+                "counted": "700000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "VASILESCU DEMO PFA",
+                    "share": null,
+                    "entity": {
+                      "key": "3100110",
+                      "displayName": "VASILESCU DEMO PFA",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "F40/1011/2019",
+          "registrationDate": "2019-09-03",
+          "legalForm": "PFA",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2026-03-02",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Cluj-Napoca",
+            "address": "Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "VASILESCU DEMO PFA",
+              "firstSeen": "2026-03-02",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
+        "financials": null,
+        "donations": null
+      }
+    }
+  },
+  {
+    "name": "people-if-supplier",
+    "kind": "empty",
+    "description": "an IF (family enterprise) that is a SEAP supplier: its members are not listed on the public page (they link on person pages in a Private view)",
+    "variables": {
+      "key": "3100128",
+      "role": "SUPPLIER",
+      "filter": {},
+      "signalOrder": "VALUE_DESC"
+    },
+    "data": {
+      "entity": {
+        "key": "3100128",
+        "displayName": "FAM TOMA IF",
+        "identity": "CUI",
+        "anafStatus": "ACTIV",
+        "placement": {
+          "county": {
+            "code": "RO-CJ",
+            "name": "Cluj"
+          },
+          "uat": null,
+          "national": false,
+          "placedBy": "ANAF"
+        },
+        "cui": "3100128",
+        "foreignVatId": null,
+        "identityCurated": false,
+        "aliases": [
+          {
+            "name": "FAM TOMA IF",
+            "records": 1,
+            "first": "2026-02-19",
+            "last": "2026-02-19",
+            "differsFromAnaf": false
+          }
+        ],
+        "provenance": [
+          {
+            "source": "ANAF",
+            "url": null,
+            "via": null,
+            "kind": "API",
+            "fetchedAt": "2026-11-02T08:00:00Z"
+          }
+        ],
+        "seap": {
+          "roles": [
+            "SUPPLIER"
+          ],
+          "role": {
+            "role": "SUPPLIER",
+            "total": {
+              "awarded": "800000",
+              "records": 1,
+              "suspectLeftOut": 0,
+              "noValue": 0,
+              "frameworkCeilings": "0",
+              "estimated": false
+            },
+            "counterparties": {
+              "count": 1,
+              "topShare": 1,
+              "rows": [
+                {
+                  "entity": {
+                    "key": "3100012",
+                    "displayName": "PRIMARIA EXEMPLU ONRC",
+                    "identity": "CUI"
+                  },
+                  "naturalPerson": false,
+                  "total": {
+                    "awarded": "800000",
+                    "records": 1,
+                    "suspectLeftOut": 0,
+                    "noValue": 0,
+                    "frameworkCeilings": "0",
+                    "estimated": false
+                  }
+                }
+              ]
+            },
+            "directPurchaseShare": 1,
+            "procedures": [],
+            "consortia": [],
+            "frameworks": {
+              "count": 0,
+              "ceilings": "0",
+              "subsequentReported": "0"
+            },
+            "largestRecords": [
+              {
+                "code": "DA95000008",
+                "title": "Achizitie DA95000008",
+                "date": "2026-02-19",
+                "kind": "DA",
+                "channel": "DIRECT_PURCHASE",
+                "procedure": null,
+                "value": "800000",
+                "counted": "800000",
+                "badges": [],
+                "authority": {
+                  "key": "3100012",
+                  "displayName": "PRIMARIA EXEMPLU ONRC",
+                  "identity": "CUI"
+                },
+                "winners": [
+                  {
+                    "naturalPerson": false,
+                    "publishedName": "FAM TOMA IF",
+                    "share": null,
+                    "entity": {
+                      "key": "3100128",
+                      "displayName": "FAM TOMA IF",
+                      "identity": "CUI"
+                    }
+                  }
+                ],
+                "signals": []
+              }
+            ],
+            "signals": {
+              "count": 0,
+              "rows": []
+            }
+          }
+        },
+        "onrc": {
+          "registrationNumber": "F01/1012/2018",
+          "registrationDate": "2018-06-01",
+          "legalForm": "ÎNTREPRINDERE FAMILIALĂ",
+          "statuses": [
+            {
+              "code": 1048,
+              "name": "funcțiune",
+              "firstSeen": "2026-03-02",
+              "sinceAtLeast": false
+            }
+          ],
+          "caen": [],
+          "seat": {
+            "county": "Cluj",
+            "locality": "Cluj-Napoca",
+            "address": "Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001",
+            "postalCode": "400001"
+          },
+          "aliases": [
+            {
+              "name": "FAM TOMA IF",
+              "firstSeen": "2026-03-02",
+              "lastSeen": "2026-05-06",
+              "sinceAtLeast": false,
+              "current": true
+            }
+          ],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "people": {
+          "holders": [],
+          "snapshot": "2026-05-06",
+          "provenance": {
+            "source": "ONRC",
+            "url": "https://data.gov.ro/dataset/firme-06-05-2026",
+            "via": "Firme înregistrate la Registrul Comerțului până la data de 06.05.2026",
+            "kind": "BULK",
+            "fetchedAt": "2026-11-13T04:00:00Z"
+          }
+        },
+        "publicEnterprise": null,
+        "leadership": null,
         "financials": null,
         "donations": null
       }
