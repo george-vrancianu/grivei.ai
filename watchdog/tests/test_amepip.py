@@ -170,7 +170,7 @@ def test_the_refresh_has_its_own_isolated_amepip_step_only_when_wired(tmp_path):
     r = resource("r1", "2026-01-13T14:23:50")
     http = Stub([dataset("d", "AMEPIP - Indicatori", [r])], {r["url"]: CSV})
     wired = Impl(archive, print, None, None, None, None, lambda: StepResult(), fetch_amepip=lambda a: fetch_amepip(a, now=NOW, http=http))
-    assert [s.name for s in refresh_steps(archive, wired)] == ["crawl", "datagov", "amepip", "anaf", "load", "backup", "pgdump"]
+    assert [s.name for s in refresh_steps(archive, wired)] == ["crawl", "datagov", "onrc", "amepip", "anaf", "load", "backup", "pgdump"]
     assert wired.amepip().counts == {"archived": 1, "unchanged": 0}
     assert wired.amepip().counts == {"archived": 0, "unchanged": 1}
     down = Impl(archive, print, None, None, None, None, lambda: StepResult(), fetch_amepip=lambda a: fetch_amepip(a, now=NOW, http=Stub([], {})))
