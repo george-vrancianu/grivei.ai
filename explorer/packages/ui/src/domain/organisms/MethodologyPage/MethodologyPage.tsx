@@ -31,6 +31,8 @@ export interface MethodologyPageCopy {
   /** One section per rule; its id is `signalAnchor(rule)`. */
   rules: Record<SignalRule, MethodologyRuleCopy>;
   baseRate: SignalRuleBaseRateCopy;
+  /** The line under a Reference source's section: "Data through 13 January 2026". */
+  referenceDataThrough: (date: string) => string;
 }
 
 /** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
@@ -96,7 +98,7 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
         {METHODOLOGY_SECTIONS.map((key) => (
           <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]}>
             {key === "publicEnterprises" && referenceDates?.publicEnterprises && (
-              <Typography sx={{ color: "text.secondary" }}>{copy.baseRate.dataThrough(formatDate(referenceDates.publicEnterprises, locale, "long"))}</Typography>
+              <Typography sx={{ color: "text.secondary" }}>{copy.referenceDataThrough(formatDate(referenceDates.publicEnterprises, locale, "long"))}</Typography>
             )}
           </MethodologySection>
         ))}

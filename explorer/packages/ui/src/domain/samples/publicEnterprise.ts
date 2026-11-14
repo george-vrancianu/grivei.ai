@@ -6,19 +6,19 @@ import type { PublicEnterpriseData } from "../types.ts";
 export const publicEnterpriseCopy: Record<Locale, PublicEnterpriseSectionCopy> = {
   en: {
     heading: "Public enterprise (AMEPIP)",
-    basis: (cui, published) => `CUI ${cui} is on AMEPIP's list of public enterprises under OUG 109/2011, published ${published}. The match is by CUI.`,
+    basis: (cui, published) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}, for the financial years shown below. The match is by CUI.`,
     listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
     years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
     fetched: (fetched, license) => `Fetched ${fetched} from data.gov.ro${license ? `, licence ${license}` : ""}`,
-    link: "AMEPIP's list on data.gov.ro",
+    link: "AMEPIP's indicator tables on data.gov.ro",
   },
   ro: {
     heading: "Întreprindere publică (AMEPIP)",
-    basis: (cui, published) => `CUI ${cui} se află pe lista AMEPIP a întreprinderilor publice din OUG 109/2011, publicată la ${published}. Potrivirea se face după CUI.`,
+    basis: (cui, published) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}, pentru anii financiari afișați mai jos. Potrivirea se face după CUI.`,
     listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
     years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
     fetched: (fetched, license) => `Preluată la ${fetched} de pe data.gov.ro${license ? `, licența ${license}` : ""}`,
-    link: "Lista AMEPIP pe data.gov.ro",
+    link: "Tabelele de indicatori AMEPIP pe data.gov.ro",
   },
 };
 

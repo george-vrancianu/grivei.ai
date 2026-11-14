@@ -19,7 +19,7 @@ export interface PublicEnterpriseSectionCopy {
   years: (first: number, last: number) => string;
   /** "Fetched 14 November 2026 from data.gov.ro, licence CC-BY-4.0", given the formatted day and the licence (null when the portal names none). */
   fetched: (fetched: string, license: string | null) => string;
-  /** The link text to AMEPIP's list on data.gov.ro. */
+  /** The link text to AMEPIP's indicator tables on data.gov.ro. */
   link: string;
 }
 
@@ -33,7 +33,7 @@ export interface PublicEnterpriseSectionProps {
 }
 
 /**
- * "Public enterprise (AMEPIP)" on an entity page with its basis: the entity's CUI is on AMEPIP's list of the companies under OUG 109/2011.
+ * "Public enterprise (AMEPIP)" on an entity page with its basis: the entity's CUI appears in AMEPIP's indicator tables of the companies under OUG 109/2011 (for the financial years shown).
  * AMEPIP is a Reference source, so this is a short section on the page and not a Source of its own. The wording of the status and the
  * registration number is AMEPIP's (Romanian source data), never translated.
  */

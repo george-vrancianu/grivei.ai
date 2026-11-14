@@ -2566,7 +2566,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
     });
 
-    it("flags the entities whose CUI is on AMEPIP's list, with the basis, and no other (#183)", async () => {
+    it("flags the entities whose CUI appears in AMEPIP's tables, with the basis, and no other (#183)", async () => {
       const basis = {
         listedAs: "ALFA DEMO SRL", registrationNumber: "J40/1/2005", status: "funcţiune", firstYear: 2022, lastYear: 2023, snapshot: "2026-01-13",
         url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo", via: "Date financiare si non-financiare", license: "CC-BY-4.0", fetchedAt: "2026-11-14T09:00:00Z",

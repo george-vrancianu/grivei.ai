@@ -123,6 +123,22 @@ def test_failures_leave_nothing_in_the_archive(tmp_path):
     assert not list(archive.root.rglob("manifest.json")) and not list(archive.root.glob(".amepip-download-*"))
 
 
+def test_a_newer_resource_that_does_not_validate_falls_back_to_the_next_newest(tmp_path):
+    kpi, good, older = resource("r-kpi", "2026-03-01T00:00:00"), resource("r-good", "2026-01-13T14:23:50"), resource("r-older", "2024-08-14T08:08:00")
+    http = Stub([dataset("d", "AMEPIP - Indicatori ian 2026", [kpi, good]), dataset("o", "AMEPIP - Indicatori 2024", [older])],
+                {kpi["url"]: b"indicator,value\nx,1\n", good["url"]: CSV, older["url"]: CSV})
+    archive = Archive(tmp_path / "archive")
+    summary = fetch_amepip(archive, now=NOW, http=http)
+    assert (summary.archived, summary.superseded, summary.failed) == (["2026-01-13"], 1, [])  # the broken newest is only a log warning
+    assert http.downloads == [kpi["url"], good["url"]]  # the older one is never downloaded
+    assert [u.unit for u in latest_units(archive)] == ["2026-01-13"] and not list(archive.root.glob(".amepip-download-*"))
+    again = fetch_amepip(archive, now=NOW, http=http)  # the weekly run: the broken one is looked at again, the good one is unchanged
+    assert (again.archived, again.unchanged, again.failed) == ([], ["2026-01-13"], [])
+    only_bad = Stub([dataset("d", "AMEPIP - Indicatori", [kpi])], {kpi["url"]: b"indicator,value\nx,1\n"})
+    failed = fetch_amepip(Archive(tmp_path / "other"), now=NOW, http=only_bad).failed
+    assert len(failed) == 1 and "not a list of public enterprises" in failed[0]
+
+
 def test_the_newest_unit_that_parses_wins_and_a_broken_newer_one_is_named(tmp_path):
     root = tmp_path / "archive"
     shutil.copytree(FIXTURE, root)

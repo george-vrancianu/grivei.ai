@@ -8,8 +8,10 @@ AMEPIP publishes a NEW dataset for each release (an `.xlsx` of January 2026 with
 an earlier `.csv` export of August 2024) instead of updating one, so discovery is a CKAN `package_search` on the organisation, not a fixed
 dataset id. There is no schedule: releases came about once or twice a year.
 
-Discovery picks the NEWEST resource (by its `last_modified`) of a `.xlsx`, `.xls` or `.csv` file in a dataset whose title mentions
-"indicatori". Only that one is fetched (a list, not a history); older ones are logged `superseded`. The snapshot date ("as of") is the date the
+Discovery tries the candidates, `.xlsx`, `.xls` or `.csv` resources in datasets whose title mentions "indicatori", NEWEST first (by
+`last_modified`) until one validates (a newer resource with no `cui` column, say a KPI table, does not block an older real one). Only one is
+archived (a list, not a history); the older ones are logged `superseded`; a candidate that failed is a warning in the log, and a failure
+(exit code 1, an alert) only when none validated. The snapshot date ("as of") is the date the
 resource was published (`last_modified`), which is the list's data-through date.
 
 Layout: `<archive>/amepip/list/enterprises/<snapshot date>/<fetched on>/<file as fetched>` + manifest (resource id, URL, last_modified, size,
@@ -93,8 +95,6 @@ def _archived_origins(archive: Archive) -> dict[str, dict]:
 
 def fetch_amepip(archive: Archive, *, now: datetime | None = None, timeout: float = 120, http=requests.get) -> AmepipFetchSummary:
     """Find the newest list, fetch it unless it is archived with the same marker. `http` is `requests.get` (tests pass a stub)."""
-    from .read import AmepipError, read_list  # lazy: the reader needs openpyxl only when a file is validated
-
     now = now or datetime.now(timezone.utc)
     summary = AmepipFetchSummary()
     for stale in archive.root.glob(".amepip-download-*") if archive.root.is_dir() else []:
@@ -131,17 +131,33 @@ def fetch_amepip(archive: Archive, *, now: datetime | None = None, timeout: floa
         summary.failed.append("no .xlsx, .xls or .csv resource in an AMEPIP indicators dataset")
         log.warning("failed      amepip: %s", summary.failed[-1])
         return summary
-    found.sort(key=lambda x: (x[0], x[1]))
-    for when, _, _, r in found[:-1]:
-        summary.superseded += 1
-        log.info("superseded  %s %r: a newer list exists", when, (r.get("name") or "").strip())
-    when, _, dataset, resource = found[-1]
-    origin = _origin(dataset, resource)
-    known = _archived_origins(archive).get(resource["id"])
-    if known and all(known.get(k) == origin[k] for k in MARKER):
-        summary.unchanged.append(when.isoformat())
-        log.info("unchanged   snapshot %s: already archived, same marker", when)
-        return summary
+    found.sort(key=lambda x: (x[0], x[1]), reverse=True)  # newest first
+    errors: list[str] = []
+    for n, (when, _, dataset, resource) in enumerate(found):
+        origin = _origin(dataset, resource)
+        known = _archived_origins(archive).get(resource["id"])
+        if known and all(known.get(k) == origin[k] for k in MARKER):
+            summary.unchanged.append(when.isoformat())
+            summary.superseded = len(found) - n - 1
+            log.info("unchanged   snapshot %s: already archived, same marker", when)
+            return summary
+        error = _archive_one(archive, summary, when, dataset, resource, origin, now=now, timeout=timeout, http=http)
+        if error is None:
+            summary.superseded = len(found) - n - 1  # the older candidates: a list, not a history
+            for old_when, _, _, old in found[n + 1:]:
+                log.info("superseded  %s %r: a newer list exists", old_when, (old.get("name") or "").strip())
+            return summary
+        errors.append(error)
+        log.warning("failed      snapshot %s: %s%s", when, error, "; trying the next newest" if n + 1 < len(found) else "")
+    summary.failed.extend(errors)  # no candidate validated: every one is a failure (an alert); one that did makes the others a warning in the log
+    return summary
+
+
+def _archive_one(archive: Archive, summary: AmepipFetchSummary, when: date, dataset: dict, resource: dict, origin: dict, *, now: datetime,
+                 timeout: float, http) -> str | None:
+    """Download one candidate, validate it and archive it. None on success, else the failure's text (nothing half-written is left)."""
+    from .read import AmepipError, read_list
+
     name = posixpath.basename(unquote(urlparse(resource["url"]).path)) or "amepip-list"
     archive.root.mkdir(parents=True, exist_ok=True)
     tmp_path: Path | None = None
@@ -160,12 +176,10 @@ def fetch_amepip(archive: Archive, *, now: datetime | None = None, timeout: floa
         where = archive.write_unit(source=SOURCE, stream=STREAM, kind=KIND, unit=when.isoformat(), fetched_at=now, files={name: tmp_path},
                                    url=resource["url"], via=origin["resourceName"], origin=origin, same_day=True)
     except Exception as e:  # noqa: BLE001 - nothing half-written is left in the archive
-        summary.failed.append(f"snapshot {when}: {str(e) or type(e).__name__}")
-        log.warning("failed      snapshot %s: %s", when, summary.failed[-1])
-        return summary
+        return f"snapshot {when}: {str(e) or type(e).__name__}"
     finally:
         if tmp_path is not None:
             tmp_path.unlink(missing_ok=True)
     summary.archived.append(when.isoformat())
     log.info("archived    snapshot %s: %s bytes -> %s", when, (where / name).stat().st_size, where)
-    return summary
+    return None

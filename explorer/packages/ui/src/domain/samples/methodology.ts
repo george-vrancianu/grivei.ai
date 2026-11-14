@@ -65,6 +65,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
       OVER_CAP: rule(rules[locale].OVER_CAP), SPLITTING: rule(rules[locale].SPLITTING), FRAMEWORK_OVERRUN: rule(rules[locale].FRAMEWORK_OVERRUN), NO_PUBLICATION: rule(rules[locale].NO_PUBLICATION),
     },
     baseRate: baseRate[locale],
+    referenceDataThrough: (date) => (locale === "ro" ? `Date până la ${date}` : `Data through ${date}`),
   };
 }
 

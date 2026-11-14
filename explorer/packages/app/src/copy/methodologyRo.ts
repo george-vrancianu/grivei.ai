@@ -88,8 +88,8 @@ export const methodologyRo: MethodologyPageCopy = {
     publicEnterprises: {
       heading: "Întreprinderi publice (AMEPIP)",
       paragraphs: [
-        "Pagina unei organizații spune „întreprindere publică (AMEPIP)” când CUI-ul ei se află pe lista pe care AMEPIP o publică ca date deschise: societățile cărora li se aplică Ordonanța de urgență nr. 109/2011 privind guvernanța corporativă a întreprinderilor publice. AMEPIP este Agenția pentru Monitorizarea și Evaluarea Performanțelor Întreprinderilor Publice. Potrivirea se face doar după CUI, niciodată după nume, iar pagina arată rândul din listă pe care se sprijină.",
-        "AMEPIP nu are o listă proprie de CUI-uri: exploratorul citește CUI-urile din cel mai nou tabel de indicatori financiari și de guvernanță pe care AMEPIP îl publică pe data.gov.ro, sub licența CC-BY-4.0. Publică un tabel nou o dată sau de două ori pe an, așa că o societate devenită între timp întreprindere publică poate să nu fie încă marcată, iar una ieșită de pe listă rămâne marcată până la următorul tabel. Lipsa marcajului spune doar că CUI-ul nu se află pe lista pe care o avem, nu că societatea este privată. Denumirea, numărul de înregistrare și starea ONRC apar așa cum le scrie AMEPIP.",
+        "Pagina unei organizații spune „întreprindere publică (AMEPIP)” când CUI-ul ei apare în tabelele de indicatori pe care AMEPIP le publică ca date deschise: societățile cărora li se aplică Ordonanța de urgență nr. 109/2011 privind guvernanța corporativă a întreprinderilor publice. AMEPIP este Agenția pentru Monitorizarea și Evaluarea Performanțelor Întreprinderilor Publice. Potrivirea se face doar după CUI, niciodată după nume, iar pagina arată rândul din tabel pe care se sprijină, cu anii financiari pentru care apare.",
+        "AMEPIP nu are o listă proprie de CUI-uri: exploratorul citește CUI-urile din cea mai nouă ediție a indicatorilor financiari și de guvernanță pe care AMEPIP o publică pe data.gov.ro, sub licența CC-BY-4.0. O ediție cuprinde mai mulți ani financiari, iar o societate este marcată dacă apare în oricare dintre ei. Așadar o societate privatizată, fuzionată sau scoasă din monitorizare într-un an anterior al ediției rămâne marcată, motiv pentru care pagina arată anii pentru care apare. AMEPIP publică o ediție o dată sau de două ori pe an, așa că o societate devenită între timp întreprindere publică poate să nu fie încă marcată. Lipsa marcajului spune doar că CUI-ul nu se află în ediția pe care o avem, nu că societatea este privată. Denumirea, numărul de înregistrare și starea ONRC apar așa cum le scrie AMEPIP.",
       ],
     },
   },
@@ -146,6 +146,7 @@ export const methodologyRo: MethodologyPageCopy = {
       lawful: "Explicații legale posibile: urgența, un singur furnizor posibil sau un alt temei legal.",
     },
   },
+  referenceDataThrough: (date) => `Date până la ${date}`,
   baseRate: {
     windowLabel: "Fereastra de timp",
     range: (from, to) => `${from} – ${to}`,

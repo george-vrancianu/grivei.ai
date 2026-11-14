@@ -10,6 +10,8 @@ from types import SimpleNamespace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from .amepip.fetch import fetch_amepip
+from .amepip.status import describe as describe_amepip
 from .anaf import DEFAULT_STATUS_NAME as ANAF_STATUS_NAME
 from .anaf import ENDPOINT as ANAF_ENDPOINT
 from .anaf import AnafClient, AnafProgress, collect_cuis, describe_anaf, lookup
@@ -26,8 +28,6 @@ from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
-from .amepip.fetch import fetch_amepip
-from .amepip.status import describe as describe_amepip
 from . import acceptance_cli, placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps

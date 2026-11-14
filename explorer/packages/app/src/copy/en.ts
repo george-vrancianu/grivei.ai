@@ -411,11 +411,11 @@ export const en: Copy = {
     signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     publicEnterprise: {
       heading: "Public enterprise (AMEPIP)",
-      basis: (cui, published) => `CUI ${cui} is on AMEPIP's list of public enterprises under OUG 109/2011, published ${published}. The match is by CUI.`,
+      basis: (cui, published) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}, for the financial years shown below. The match is by CUI.`,
       listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
       years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
       fetched: (fetched, license) => `Fetched ${fetched} from data.gov.ro${license ? `, licence ${license}` : ""}`,
-      link: "AMEPIP's list on data.gov.ro",
+      link: "AMEPIP's indicator tables on data.gov.ro",
     },
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {

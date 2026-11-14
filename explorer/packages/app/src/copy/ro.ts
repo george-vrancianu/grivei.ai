@@ -416,11 +416,11 @@ export const ro: Copy = {
     signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     publicEnterprise: {
       heading: "Întreprindere publică (AMEPIP)",
-      basis: (cui, published) => `CUI ${cui} se află pe lista AMEPIP a întreprinderilor publice din OUG 109/2011, publicată la ${published}. Potrivirea se face după CUI.`,
+      basis: (cui, published) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}, pentru anii financiari afișați mai jos. Potrivirea se face după CUI.`,
       listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
       years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
       fetched: (fetched, license) => `Preluată la ${fetched} de pe data.gov.ro${license ? `, licența ${license}` : ""}`,
-      link: "Lista AMEPIP pe data.gov.ro",
+      link: "Tabelele de indicatori AMEPIP pe data.gov.ro",
     },
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {

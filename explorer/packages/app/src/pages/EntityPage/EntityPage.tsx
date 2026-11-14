@@ -66,7 +66,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const loading = state.status === "loading";
   const flowCopy = flowLensCopy(t);
   const entity = state.entity;
-  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI is on AMEPIP's list (the same on both role pages)
+  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI appears in AMEPIP's tables (the same on both role pages)
   const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
