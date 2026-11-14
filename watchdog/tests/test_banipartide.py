@@ -51,6 +51,17 @@ def test_amounts_are_lei_with_a_decimal_point_or_comma_and_nothing_else_is_a_don
     assert [parse_amount(t) for t in ("0", "-5", "abc", "", "12,345")] == [None] * 5
 
 
+def test_an_amount_is_never_scaled_by_a_guessed_thousands_separator():
+    # One separator then exactly three digits reads as a decimal point or as thousands grouping: ambiguous, so it is not a donation (counted, never guessed).
+    assert [parse_amount(t) for t in ("30.000", "1,500", "24.060", "0,500", "999.999")] == [None] * 5
+    # Repeated separators of one kind, or both kinds, are unambiguous grouping; the last of two kinds is the decimal one.
+    assert [parse_amount(t) for t in ("1.000.000", "1,000,000", "1.234,56", "1,234.56", "12.345.678,9")] == [100_000_000, 100_000_000, 123_456, 123_456, 1_234_567_890]
+    # Misplaced grouping and other shapes that are not an amount.
+    assert [parse_amount(t) for t in ("1.00.000", "1,2345,678", "1.234,5.6", ".500", "1.5.0")] == [None] * 5
+    # Fewer or more than three digits after one separator are decimals.
+    assert [parse_amount(t) for t in ("1,5", "1.50", "250000,50", "100.5")] == [150, 150, 25_000_050, 10_050]
+
+
 def test_a_file_that_is_not_the_firm_table_is_refused(tmp_path):
     for body in (b"<html>error</html>\n", b"", b"rowid,Nume\n1,x\n"):
         path = tmp_path / "f.csv"

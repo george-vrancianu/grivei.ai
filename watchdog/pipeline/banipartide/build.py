@@ -73,12 +73,12 @@ def build_donations(cur: psycopg.Cursor, archive: Archive) -> DonationsSummary:
         log.warning("donations %s skipped: %s", path, e)
         return summary
     cuis = sorted({d.cui for d in donations})
-    names = dict(cur.execute("SELECT key, display_name FROM core.entity WHERE key = ANY(%s)", (cuis,)).fetchall())
+    names = dict(cur.execute("SELECT key, display_name FROM core.entity WHERE cui = ANY(%s)", (cuis,)).fetchall())
     forms = dict(cur.execute("SELECT cui, legal_form FROM onrc.registration WHERE cui = ANY(%s)", (cuis,)).fetchall())
     sole = {c for c in cuis if is_sole_trader(names.get(c), forms.get(c))}
     kept = [d for d in donations if d.cui not in sole]
     origin = unit.origin or {}
-    years = [d.year for d in kept if d.year is not None]
+    years = [d.year for d in donations if d.year is not None]  # any firm row, as `pipeline status` reads it
     cur.execute(
         "INSERT INTO donations.source_file (id, database_hash, table_name, dataset_url, table_url, license, license_url, source, source_url, underlying, underlying_url,"
         " archive_path, fetched_at, row_count, loaded_count, through_year) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",

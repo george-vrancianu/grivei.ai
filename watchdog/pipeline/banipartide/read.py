@@ -64,15 +64,36 @@ def check_file(path: Path) -> None:
 
 
 def parse_amount(text: str) -> int | None:
-    """`Suma` in whole or decimal lei (`30000`, `8005.36`, `17417,6`) as bani; None when it does not read or is not positive."""
+    """`Suma` in whole or decimal lei (`30000`, `8005.36`, `17417,6`, grouped `1.234,56` / `1,234.56` / `1.000.000`) as bani.
+
+    The column is hand-typed, so a separator is read by a stated rule and an amount is never scaled by a guess:
+    - both `.` and `,`: the last is the decimal separator and the other must group the integer part in threes;
+    - one kind repeated (`1.000.000`): thousands grouping, in threes;
+    - one separator once, followed by exactly three digits (`30.000`, `1,500`): decimal point or thousands, ambiguous, so None (counted, never loaded);
+    - one separator once, any other digit count: the decimal separator.
+    None too when it does not read, has more than two decimals or is not positive."""
     s = re.sub(r"[\s\u00a0]", "", text or "")
-    if not s:
+    if not s or not re.fullmatch(r"[\d.,]+", s):
         return None
-    if "," in s and "." in s:  # the last separator is the decimal one
+    group = r"\d{1,3}(?:%s\d{3})+"
+    if "," in s and "." in s:
         decimal = "," if s.rfind(",") > s.rfind(".") else "."
-        s = s.replace("." if decimal == "," else ",", "").replace(decimal, ".")
+        thousands = "." if decimal == "," else ","
+        whole, _, frac = s.rpartition(decimal)
+        if thousands == decimal or decimal in whole or not re.fullmatch(group % re.escape(thousands), whole):
+            return None
+        s = whole.replace(thousands, "") + "." + frac
     else:
-        s = s.replace(",", ".")
+        sep = "," if "," in s else "." if "." in s else ""
+        if sep and s.count(sep) > 1:
+            if not re.fullmatch(group % re.escape(sep), s):
+                return None
+            s = s.replace(sep, "")
+        elif sep:
+            whole, _, frac = s.partition(sep)
+            if len(frac) == 3 or not whole and not frac:
+                return None
+            s = f"{whole or '0'}.{frac}"
     try:
         value = Decimal(s)
     except InvalidOperation:
