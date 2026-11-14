@@ -10,7 +10,7 @@ import pytest
 
 from pipeline.archive import Archive
 from pipeline.banipartide.build import is_sole_trader
-from pipeline.banipartide.fetch import FILE_NAME, check_banipartide, fetch_banipartide, held_manifests
+from pipeline.banipartide.fetch import FILE_NAME, check_banipartide, fetch_banipartide, held_manifests, table_url, tilde_encode
 from pipeline.banipartide.read import BaniPartideError, ReadStats, check_file, parse_amount, parse_date, read_donations
 from pipeline.banipartide.status import data_through_year, describe
 
@@ -172,3 +172,10 @@ def test_the_refresh_has_its_own_check_only_step_only_when_wired(tmp_path):
         Impl(archive, print, None, None, None, None, lambda: StepResult(), check_banipartide=lambda a: check_banipartide(a, http=down)).banipartide()
     unwired = Impl(archive, print, None, None, None, None, lambda: StepResult())
     assert "banipartide" not in [s.name for s in refresh_steps(archive, unwired)]
+
+
+def test_table_url_uses_datasettes_tilde_encoding():
+    # a %-encoded name is redirected by Datasette 0.65 to `...juridice~2Ecsv` (the suffix folded into the name), which 404s
+    assert tilde_encode("Donatori persoane juridice") == "Donatori~20persoane~20juridice"
+    assert tilde_encode("a.b/ț") == "a~2Eb~2F~C8~9B"
+    assert table_url() == "https://db.banipartide.ro/banipartide/Donatori~20persoane~20juridice.csv?_size=max&_stream=on"
