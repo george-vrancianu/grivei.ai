@@ -94,6 +94,8 @@ A Release is done when:
 
 Release 1's own run of this list (the real rebuild, the latency benchmark, the validation fixture, the unattended week) is in [release-1-runbook.md](release-1-runbook.md).
 
+Release 2's run of it (ONRC and its Reference sources, the Party-filtered search, the Restricted check) is in [release-2-runbook.md](release-2-runbook.md).
+
 ## First reuse (Release 2 only)
 
 The second Source is the first to reuse the generic parts, so Release 2 also builds, once:
