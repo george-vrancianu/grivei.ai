@@ -342,6 +342,20 @@ describe("Coverage grid (#79)", () => {
     expect(quarters(await ask({ w: { to: "2021-03-31" } }))).toEqual(["2021-Q1"]);
   });
 
+  // The Date scalar rejects "" over GraphQL, so this goes straight at the resolver (the store cache treats "" as no bound too).
+  it("treats empty-string bounds as no bound", async () => {
+    const seen: unknown[] = [];
+    const custom = { ...store, coverageGrid: async () => grid, unplacedAuthorities: async (w: unknown) => (seen.push(w), { authorities: 0, total: { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" } }), coverageAreas: async (w: unknown) => (seen.push(w), []) };
+    const coverage = (w: { from?: string; to?: string }) => rootValue(custom).coverage({ source: "SEAP", window: w });
+    const empty = coverage({ from: "", to: "" });
+    expect(empty.window).toEqual({ from: null, to: null });
+    expect((await empty.grid()).map((c) => c.quarter)).toEqual(["2021-Q1", "2021-Q4", "2022-Q1", "2022-Q2"]);
+    expect((await coverage({ from: "", to: "2021-03-31" }).grid()).map((c) => c.quarter)).toEqual(["2021-Q1"]);
+    await empty.counties();
+    await empty.unplacedAuthorities();
+    expect(seen).toEqual([{ from: null, to: null }, { from: null, to: null }]);
+  });
+
   it("serves the counties with N, M and the other authorities, the unplaced tile and the snapshot date, one status for the window (#80)", async () => {
     const areas = [{ area: "RO-BV", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { area: "NATIONAL", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }];
     const total = { awarded: "100000", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };

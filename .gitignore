@@ -4,3 +4,4 @@
 /geo/
 /.data/
 .env
+node_modules/
