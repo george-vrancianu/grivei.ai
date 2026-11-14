@@ -10,6 +10,15 @@ function show(content: CoveragePageContent | undefined, status: "loading" | "err
 const section = (name: string) => within(screen.getByRole("region", { name }));
 
 describe("the Coverage page", () => {
+  it("shows the Source selector slot under the intro in every state, and nothing without one", () => {
+    const { rerender } = render(<CoveragePageLayout status="loading" locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} copy={sampleCopy.coveragePageLayout("en")} />);
+    expect(screen.getByText("selector")).toBeVisible();
+    rerender(<CoveragePageLayout status="ready" content={samplePageContent()} locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} copy={sampleCopy.coveragePageLayout("en")} />);
+    expect(screen.getByText("selector")).toBeVisible();
+    rerender(<CoveragePageLayout status="ready" content={samplePageContent()} locale="en" methodologyHref="/m" lensHref="/l" copy={sampleCopy.coveragePageLayout("en")} />);
+    expect(screen.queryByText("selector")).toBeNull();
+  });
+
   it("lists each known gap with its reason: the note verbatim, or the rule in words, and its Record count", () => {
     show(samplePageContent());
     const list = section("Known gaps");

@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, StateNote, toMapLens, toResultTab, Typography,
+  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -15,6 +15,9 @@ import { navigate } from "../../routing/location.tsx";
 import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
+import { asSource, NO_COUNTS, pickerOptions } from "../../sources/sourceCounts.ts";
+import { searchSourceHref } from "../../sources/sourceLinks.ts";
+import { useSourceCounts } from "../../sources/useSourceCounts.ts";
 import { entityHrefFrom } from "../../urlState/carriedSearch.ts";
 import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
@@ -25,7 +28,7 @@ import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
 import { useZoomedCounty } from "./hooks/useZoomedCounty.ts";
 
-/** The Source the main screen searches: SEAP is the only explorable one (ADR 0005); a Source picker would hold this in the URL. */
+/** The Source this screen searches. ONRC has its own screen (`OnrcPage`, `source=onrc`); the picker beside the search bar goes between them (ADR 0005). */
 const SEARCHED_SOURCE = "SEAP";
 
 /**
@@ -61,6 +64,9 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const [partyOptions, setPartyOptions] = useState<string[]>([]);
   if (state.status === "ready" && !sameLists(state.data.seap.partyOptions, partyOptions)) setPartyOptions(state.data.seap.partyOptions.map((o) => o.party));
   const eyebrowId = useId();
+  // Each Source's match count: this screen's own answer for SEAP, ONRC's for the query text alone (what a switch shows)
+  const counts = useSourceCounts(filter.q ?? undefined, SEARCHED_SOURCE, search ? { n: search.total.records, estimated: search.total.estimated } : null);
+  const goToSource = (id: string) => navigate(searchSourceHref(locale, asSource(id), { q: filter.q ?? undefined, ...(lens ? { lens } : {}) }), "push");
 
   return (
     <MainScreenLayout
@@ -70,7 +76,12 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             {t.main.title}
           </Typography>
           <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
-          <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
+            <SourcePicker options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+            </Box>
+          </Stack>
         </>
       }
       filters={
@@ -125,6 +136,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             cells={coverageGrid.status === "ready" ? coverageGrid.data.coverage.grid : null}
             dateWindow={highlightWindow(filter)}
             pageHref={`${pathFor(locale, { name: "coverage" })}${currentSearch}`}
+            sourceSelector={<SourcePicker options={pickerOptions(t.sources, NO_COUNTS, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.coverageSwitch} />}
             onNavigate={(href) => navigate(href, "push")}
             county={filter.county ?? undefined}
             // The same choice as the Money lens (a click on the chosen county takes it back); a UAT belongs to its county, so it goes with it.

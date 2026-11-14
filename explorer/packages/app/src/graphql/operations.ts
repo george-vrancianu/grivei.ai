@@ -1,6 +1,6 @@
 import allowlist from "@grivei/contract/persisted-queries.json";
 import type {
-  CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
+  OnrcCoverageQuery, OnrcCoverageQueryVariables, OnrcSearchQuery, OnrcSearchQueryVariables, CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
   EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables, PersonPageQuery, PersonPageQueryVariables, RecordPageQuery, RecordPageQueryVariables,
@@ -35,3 +35,5 @@ export const CoverageLens = operation<CoverageLensQuery, CoverageLensQueryVariab
 export const CoveragePage = operation<CoveragePageQuery, CoveragePageQueryVariables>("CoveragePage");
 export const MethodologyBaseRates = operation<MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables>("MethodologyBaseRates");
 export const MethodologyReferenceSources = operation<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables>("MethodologyReferenceSources");
+export const OnrcSearch = operation<OnrcSearchQuery, OnrcSearchQueryVariables>("OnrcSearch");
+export const OnrcCoverage = operation<OnrcCoverageQuery, OnrcCoverageQueryVariables>("OnrcCoverage");

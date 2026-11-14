@@ -23,6 +23,25 @@ export interface UrlState {
    * offers "only Records matching ..." while this is present (#106). Absent when empty.
    */
   carried?: RecordFilter;
+  /**
+   * The Source the page shows (#178): on an entity's Records tab, the Source switch; on the Coverage page and lens, the Source selector.
+   * Absent = SEAP, the default, which every link from before the picker still means.
+   */
+  source?: SourceId;
+}
+
+/** The Sources the explorer can search (ADR 0005). SEAP is the default and is left out of the URL; ONRC is `source=onrc`. */
+export type SourceId = "SEAP" | "ONRC";
+export const SOURCE_KEY = "source";
+const SOURCE_PARAM: Record<Exclude<SourceId, "SEAP">, string> = { ONRC: "onrc" };
+
+/** The Source a `source` URL value names; anything unknown, `seap` included, is SEAP (the default, so an old link is never refused). */
+export const sourceFromParam = (value: string | null | undefined): SourceId => (value === SOURCE_PARAM.ONRC ? "ONRC" : "SEAP");
+/** The Source of a query string (with or without a leading `?`). */
+export const sourceOf = (search: string): SourceId => sourceFromParam(new URLSearchParams(search).get(SOURCE_KEY));
+/** `source=onrc` for ONRC, nothing for SEAP, appended to `params` last (the canonical position). */
+function appendSource(params: URLSearchParams, source: SourceId | undefined): void {
+  if (source && source !== "SEAP") params.set(SOURCE_KEY, SOURCE_PARAM[source]);
 }
 
 export const EMPTY_URL_STATE: UrlState = { filter: {} };
@@ -157,6 +176,8 @@ export function decodeUrlState(search: string): UrlState {
     const filter = decodeFilter(new URLSearchParams(carried));
     if (Object.keys(filter).length > 0) state.carried = filter;
   }
+  const source = sourceOf(search);
+  if (source !== "SEAP") state.source = source;
   if (state.order === undefined) delete state.order;
   if (state.signalOrder === undefined) delete state.signalOrder;
   return state;
@@ -164,7 +185,7 @@ export function decodeUrlState(search: string): UrlState {
 
 /**
  * URL state into a query string with a leading `?` ("" when there is nothing to say). Keys come out in one canonical
- * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens, counterparty, carried); unset fields and the
+ * order (the filter's fields as the contract lists them, then tab, page, order, signalOrder, lens, counterparty, carried, source); unset fields and the
  * default `countySide` are left out.
  */
 export function encodeUrlState(state: UrlState): string {
@@ -181,6 +202,7 @@ export function encodeUrlState(state: UrlState): string {
     appendFilter(carried, state.carried);
     if (carried.size > 0) params.set(URL_ONLY_KEYS.carried, carried.toString());
   }
+  appendSource(params, state.source);
   const text = params.toString();
   return text === "" ? "" : `?${text}`;
 }

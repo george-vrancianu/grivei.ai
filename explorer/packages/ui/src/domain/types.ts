@@ -1,6 +1,6 @@
 // Shared prop types for the domain displays, taken from the generated contract.
 import type {
-  CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
+  OnrcCoverageQuery, OnrcSearchQuery, CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
   MethodologyBaseRatesQuery, PartyCoverageFieldsFragment, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
@@ -124,3 +124,12 @@ export type GapCellData = CoveragePageQuery["coverage"]["grid"][number];
 
 /** One rule's window and national base rate (`MethodologyBaseRates`' `signalRules`). */
 export type SignalRuleBaseRateData = MethodologyBaseRatesQuery["signalRules"][number];
+
+/** ONRC's search answer (`OnrcSearch`): the count, one page of the Organisations tab and the count lens (#176). */
+export type OnrcSearchData = OnrcSearchQuery["onrc"]["search"];
+/** One registration of ONRC's Organisations tab. Never a sole trader's: the API leaves those out. */
+export type OnrcResultData = OnrcSearchData["organisations"]["rows"][number];
+/** The count lens: registrations by the seat's county, and those with none. */
+export type OnrcCountMapData = OnrcSearchData["map"];
+/** One cell of ONRC's coverage grid: its `quarter` is the snapshot's period key (a date, or a month for a missing snapshot), not a quarter. */
+export type SnapshotCellData = OnrcCoverageQuery["coverage"]["grid"][number];
