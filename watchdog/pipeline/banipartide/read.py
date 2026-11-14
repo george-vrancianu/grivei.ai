@@ -65,7 +65,7 @@ def check_file(path: Path) -> None:
 
 def parse_amount(text: str) -> int | None:
     """`Suma` in whole or decimal lei (`30000`, `8005.36`, `17417,6`) as bani; None when it does not read or is not positive."""
-    s = re.sub(r"[\s ]", "", text or "")
+    s = re.sub(r"[\s\u00a0]", "", text or "")
     if not s:
         return None
     if "," in s and "." in s:  # the last separator is the decimal one

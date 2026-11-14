@@ -27,12 +27,12 @@ const sections = {
   en: {
     awardedValue: "Awarded value", frameworkCeilings: "Framework ceilings", consortiumShares: "Consortium shares", suspectValues: "Suspect values", blankValues: "Blank values",
     contractModifications: "Contract modifications", backfilledValues: "Values of backfilled 2021–22 Records", supplierIdentity: "Supplier identity", placement: "Placement",
-    coverageStatuses: "Coverage statuses", publicEnterprises: "Public enterprises (AMEPIP)", financialStatements: "Financial statements (MF)",
+    coverageStatuses: "Coverage statuses", publicEnterprises: "Public enterprises (AMEPIP)", financialStatements: "Financial statements (MF)", firmDonations: "Firm donations (BaniPartide)",
   },
   ro: {
     awardedValue: "Valoarea atribuită", frameworkCeilings: "Plafoane de acord-cadru", consortiumShares: "Părți din asociere", suspectValues: "Valori suspecte", blankValues: "Valori lipsă",
     contractModifications: "Modificările contractelor", backfilledValues: "Valorile înregistrărilor 2021–22 completate ulterior", supplierIdentity: "Identitatea furnizorului",
-    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", financialStatements: "Situații financiare (MF)",
+    placement: "Amplasarea", coverageStatuses: "Stări de acoperire", publicEnterprises: "Întreprinderi publice (AMEPIP)", financialStatements: "Situații financiare (MF)", firmDonations: "Donații ale firmelor (BaniPartide)",
   },
 } as const;
 const rules = {
@@ -58,7 +58,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
     sections: {
       awardedValue: section(s.awardedValue), frameworkCeilings: section(s.frameworkCeilings), consortiumShares: section(s.consortiumShares), suspectValues: section(s.suspectValues),
       blankValues: section(s.blankValues), contractModifications: section(s.contractModifications), backfilledValues: section(s.backfilledValues),
-      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses), publicEnterprises: section(s.publicEnterprises), financialStatements: section(s.financialStatements),
+      supplierIdentity: section(s.supplierIdentity), placement: section(s.placement), coverageStatuses: section(s.coverageStatuses), publicEnterprises: section(s.publicEnterprises), financialStatements: section(s.financialStatements), firmDonations: section(s.firmDonations),
     },
     signals: { heading: en ? "Signal rules" : "Regulile Semnalelor", paragraphs: [en ? "A Signal is a set of Records matched by a published rule." : "Un Semnal este un set de înregistrări potrivite de o regulă publicată."] },
     rules: {
@@ -67,6 +67,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
     baseRate: baseRate[locale],
     referenceDataThrough: (date) => (locale === "ro" ? `Date până la ${date}` : `Data through ${date}`),
     referenceFiscalYearThrough: (year) => (locale === "ro" ? `Date până la anul fiscal ${year}` : `Data through fiscal year ${year}`),
+    referenceYearThrough: (year) => (locale === "ro" ? `Date până în ${year}` : `Data through ${year}`),
   };
 }
 

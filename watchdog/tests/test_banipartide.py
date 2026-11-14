@@ -47,7 +47,7 @@ def test_dirty_dates_set_a_date_only_when_one_date_explains_the_cell_and_the_yea
 
 
 def test_amounts_are_lei_with_a_decimal_point_or_comma_and_nothing_else_is_a_donation():
-    assert [parse_amount(t) for t in ("30000", "8005.36", "17417,6", "24.06", "1.234,56", "1 500 ")] == [3_000_000, 800_536, 1_741_760, 2406, 123_456, 150_000]
+    assert [parse_amount(t) for t in ("30000", "8005.36", "17417,6", "24.06", "1.234,56", "1 500\u00a0")] == [3_000_000, 800_536, 1_741_760, 2406, 123_456, 150_000]
     assert [parse_amount(t) for t in ("0", "-5", "abc", "", "12,345")] == [None] * 5
 
 

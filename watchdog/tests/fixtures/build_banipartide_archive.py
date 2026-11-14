@@ -48,7 +48,7 @@ ROWS = [
     (2, "S.C. ALFA DEMO - S.R.L.", "250000,50", "2024", "PSD", LOAN, "2000007", "Cluj-Napoca, Jud. Cluj", "română", "20.01.2024; 15.05.2024", ""),
     (3, "BETA DEMO SRL", "8005.36", "2022", "USR", DONATION, "2000015", "București Sector 1", "română", "4102022", "Bani"),
     (4, "CNAIR DEMO SA", "12000", "2021", "PSD+PC", DONATION, "RO 2000031", "București Sector 1", "română", "9 iunie 2021", "Virament"),
-    (5, "Donor fara intrare SRL", "700", "2020", "PNL", DONATION, "5443785 ", "Brăila", "română", "", "Bani"),
+    (5, "Donor fara intrare SRL", "700", "2020", "PNL", DONATION, "5443785\u00a0", "Brăila", "română", "", "Bani"),
     (6, "P.F. ZAMFIR ADRIAN FICTIV", "6000", "2008", "PDL", DONATION, "1,85E+12", "Sibiu", "română", "07.05.2008", "Bani"),
     (7, "POPA ELENA FICTIVA", "233800", "2020", "USR", LOAN, "", "", "", "", ""),
     (8, "Ambasada Exemplu", "5000", "2013", "PNL", DONATION, "n/a2", "", "croată", "17 iulie 2013", "Bani"),

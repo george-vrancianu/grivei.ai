@@ -2,7 +2,7 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, PublicEnterpriseFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, PublicEnterpriseFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 export type { RecordBadge };
@@ -34,6 +34,12 @@ export type EntityHeaderData = EntityHeaderFieldsFragment;
 export type FinancialStatementsData = FinancialStatementsFieldsFragment;
 /** One fiscal year of them. */
 export type FinancialYearData = FinancialStatementsFieldsFragment["years"][number];
+/** A company's firm donations and loans as BaniPartide lists them (`FirmDonationsFields`), present only on the Overview's entity. */
+export type FirmDonationsData = FirmDonationsFieldsFragment;
+/** One donation or loan of them. */
+export type FirmDonationData = FirmDonationsFieldsFragment["items"][number];
+/** The BaniPartide table every line cites. */
+export type DonationSourceData = FirmDonationsFieldsFragment["source"];
 /** The basis of the "public enterprise (AMEPIP)" mark (`PublicEnterpriseFields`), present only on the Overview's entity. */
 export type PublicEnterpriseData = PublicEnterpriseFieldsFragment;
 /** The contract's `Role` (AUTHORITY | SUPPLIER) an Entity page asks for; `EntityRole` above is the lowercase URL segment. */
