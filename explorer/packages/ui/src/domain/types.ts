@@ -2,11 +2,13 @@
 import type {
   CoverageLensQuery, CoveragePageQuery, PersonPageQuery, GapRule as ContractGapRule, GapState as ContractGapState, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, CoverageStatus as ContractCoverageStatus, DataThroughFieldsFragment, EntityHeaderFieldsFragment, EntityRefFragment, MainScreenQuery, ZoomedCountyQuery, EntityResultPageFieldsFragment,
   EntityRowFieldsFragment, MoneyMapFieldsFragment, PartyFieldsFragment, RecordBadge, RecordPageQuery, RecordResultFieldsFragment, RecordRowFieldsFragment, Role,
-  MethodologyBaseRatesQuery, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
+  MethodologyBaseRatesQuery, PartyCoverageFieldsFragment, FinancialStatementsFieldsFragment, FirmDonationsFieldsFragment, LeadershipFieldsFragment, PublicEnterpriseFieldsFragment, RecordPartyFieldsFragment, SignalFieldsFragment, SignalRuleSlug, TotalFieldsFragment,
 } from "@grivei/contract";
 
 export type { RecordBadge };
 export type Total = TotalFieldsFragment;
+/** What a Party-filtered search's Total covers (#181): direct and subordinate matches and what the filter leaves out. */
+export type PartyCoverageData = PartyCoverageFieldsFragment;
 /** Integer bani (1/100 RON) as a decimal string. */
 export type Bani = Total["awarded"];
 export type EntityRef = EntityRefFragment;

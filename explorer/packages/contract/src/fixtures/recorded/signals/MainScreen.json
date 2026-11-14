@@ -55,6 +55,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -67,7 +68,8 @@
             "suspectLeftOut": 0,
             "noValue": 1,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",
@@ -1073,6 +1075,7 @@
         }
       ],
       "seap": {
+        "partyOptions": [],
         "search": {
           "filter": {
             "qFolded": null,
@@ -1085,7 +1088,8 @@
             "suspectLeftOut": 1,
             "noValue": 0,
             "frameworkCeilings": "0",
-            "estimated": false
+            "estimated": false,
+            "partyCoverage": null
           },
           "map": {
             "side": "AUTHORITY",

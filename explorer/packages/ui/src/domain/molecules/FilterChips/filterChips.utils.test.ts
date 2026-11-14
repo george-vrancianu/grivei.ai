@@ -2,7 +2,7 @@ import type { RecordFilter } from "@grivei/contract";
 import { describe, expect, it } from "vitest";
 import { sampleCopy } from "../../samples/copy.ts";
 import {
-  activeChips, chipFieldsOf, clearChips, procedureChoices, setFromYear, setToYear, toggleBadge, toggleChannel, toggleHasSignals, toggleItem,
+  activeChips, chipFieldsOf, clearChips, procedureChoices, setFromYear, setParty, setToYear, toggleBadge, toggleChannel, toggleHasSignals, toggleItem,
   toggleProcedure, toggleValueBucket, withFields, yearOf, yearOptions,
   type ActiveChipText,
 } from "./filterChips.utils.ts";
@@ -16,6 +16,7 @@ const text: ActiveChipText = {
   hasSignals: copy.signals.has,
   withoutSignals: copy.signals.without,
   badges: Object.fromEntries(Object.entries(copy.badges.badges).map(([b, t]) => [b, t.label])) as ActiveChipText["badges"],
+  party: copy.active.party,
 };
 
 describe("filter helpers", () => {
@@ -76,9 +77,16 @@ describe("filter helpers", () => {
 
   it("chipFieldsOf names every chip field, absent ones undefined", () => {
     const patch = chipFieldsOf({ channel: "CONTRACT" });
-    expect(Object.keys(patch).sort()).toEqual(["badges", "channel", "from", "hasSignals", "procedure", "to", "valueBucket"]);
+    expect(Object.keys(patch).sort()).toEqual(["badges", "channel", "from", "hasSignals", "party", "procedure", "to", "valueBucket"]);
     expect(patch.from).toBeUndefined();
     expect(patch.channel).toBe("CONTRACT");
+  });
+
+  it("sets the Party to one list and unsets it, and clears it with the other chips (#181)", () => {
+    expect(setParty({ q: "a" }, "ALIANȚA USR PLUS")).toEqual({ q: "a", party: "ALIANȚA USR PLUS" });
+    expect(setParty({ q: "a", party: "X" }, "Y")).toEqual({ q: "a", party: "Y" });
+    expect(setParty({ q: "a", party: "X" }, undefined)).toEqual({ q: "a" });
+    expect(clearChips({ q: "a", party: "X", channel: "CONTRACT" })).toEqual({ q: "a" });
   });
 
   it("adds procedures the filter holds to those offered", () => {
@@ -106,6 +114,10 @@ describe("activeChips", () => {
     expect(chips.map((chip) => chip.label)).toEqual([
       "Until 2024", "Contract", "135,060–270,120 RON", "Without Signals", "Licitație deschisă", "Achiziție directă", "No value", "Suspect value",
     ]);
+    // the Party chip sits after the procedures and before the badges, shows the list as registered, and removes only itself
+    const withParty = activeChips({ ...filter, party: "PARTIDUL SOCIAL DEMOCRAT" }, text, "en");
+    expect(withParty.map((chip) => chip.label).slice(4, 8)).toEqual(["Licitație deschisă", "Achiziție directă", "Party: PARTIDUL SOCIAL DEMOCRAT", "No value"]);
+    expect(withParty[6]!.remove({ ...filter, party: "PARTIDUL SOCIAL DEMOCRAT" })).toEqual(filter);
     const base: RecordFilter = { ...filter };
     expect(chips[3]!.remove(base)).not.toHaveProperty("hasSignals");
     expect(chips[4]!.remove(base).procedure).toEqual(["Achiziție directă"]);

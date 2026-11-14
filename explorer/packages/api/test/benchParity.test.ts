@@ -29,6 +29,7 @@ const EXTRA: Query[] = [
   { label: "extra: UAT and Signal", filter: { uat: "40198", signal: "OVER_CAP" } },
   { label: "extra: procedure and badges", filter: { procedure: ["x", "y"], badges: ["NO_VALUE", "SUSPECT_VALUE"] } },
   { label: "extra: partial dates", filter: { from: "2025-03-01", to: "2025-06-30" } },
+  { label: "extra: party with an authority and a supplier (#181)", filter: { party: "ALIANȚA USR PLUS", authority: "4384206", supplier: "27272953" } },
   { label: "extra: hasSignals false", filter: { hasSignals: false, channel: "CONTRACT", valueBucket: "OVER_1B" } },
 ];
 

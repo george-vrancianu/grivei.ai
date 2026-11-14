@@ -11,9 +11,11 @@ const PROCEDURES = ["Achiziție directă", "Licitație deschisă"];
 // fields the chips do not own: they must come back untouched
 const OTHERS: RecordFilter = { q: "pod", county: "RO-BV", uat: "12345", authority: "4000001", supplier: "30000001", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER" };
 
-function setup(filter: RecordFilter = {}, extra: { lastYear?: number; firstYear?: number } = {}) {
+const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "ALIANȚA USR PLUS"];
+
+function setup(filter: RecordFilter = {}, extra: { lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
   const onChange = vi.fn();
-  render(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} lastYear={2025} locale="en" copy={copy} {...extra} />);
+  render(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
   return onChange;
 }
 const bar = () => screen.getByRole("region", { name: "Filters" });
@@ -69,6 +71,33 @@ describe("FilterChips: what the reader sees", () => {
     await userEvent.tab(); // first channel chip
     await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ channel: "DIRECT_PURCHASE" });
+  });
+});
+
+describe("FilterChips: the Party filter (#181)", () => {
+  it("offers the lists as registered in a select, none chosen", () => {
+    setup();
+    const select = screen.getByRole("combobox", { name: "List as registered" });
+    expect(select).toHaveValue("");
+    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual(["Any party", ...PARTIES]);
+  });
+
+  it("picking a list sets only the party; Any unsets it", async () => {
+    const onChange = setup(OTHERS);
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "List as registered" }), "ALIANȚA USR PLUS");
+    expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, party: "ALIANȚA USR PLUS" });
+  });
+
+  it("shows the chosen list as an active chip that removes only itself", async () => {
+    const onChange = setup({ ...OTHERS, party: "PARTIDUL SOCIAL DEMOCRAT" });
+    expect(screen.getByRole("combobox", { name: "List as registered" })).toHaveValue("PARTIDUL SOCIAL DEMOCRAT");
+    await userEvent.click(active().getByRole("button", { name: "Remove Party: PARTIDUL SOCIAL DEMOCRAT" }));
+    expect(onChange).toHaveBeenLastCalledWith(OTHERS);
+  });
+
+  it("is absent when the graph offers no list (no AEP), unless the URL holds one", () => {
+    setup({}, { partyOptions: [] });
+    expect(screen.queryByRole("combobox", { name: "List as registered" })).toBeNull();
   });
 });
 

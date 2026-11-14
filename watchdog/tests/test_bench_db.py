@@ -181,3 +181,54 @@ def test_the_validation_fixture_agrees_with_the_graph_it_was_made_from_and_fails
 
     assert cli.main(["--archive", str(tmp_path), "check-fixture", "--batch", str(path), "--quarter", "all", "--authority", "all", "--allow-missing-contracts", "0"]) == 1
     assert "not in the crawl:" in capsys.readouterr().out
+
+
+PARTY_QUERIES = [
+    {"label": "party", "filter": {"party": "PARTIDUL NAȚIONAL LIBERAL"}},
+    {"label": "party + year", "filter": {"party": "PARTIDUL SOCIAL DEMOCRAT", "from": "2024-01-01", "to": "2024-12-31"}},
+    {"label": "party + text", "filter": {"q": "servicii", "party": "PARTIDUL NAȚIONAL LIBERAL"}},
+    {"label": "party + supplier", "filter": {"party": "PARTIDUL NAȚIONAL LIBERAL", "supplier": "2000007"}},
+]
+
+
+@pytest.fixture
+def party_built(db, tmp_path):
+    """The party world of test_aep_db.py: archive-placement + archive-mf + archive-aep (Mandates, a subordinate hospital, an independent, an alliance)."""
+    root = tmp_path / "archive"
+    for name in ("archive-placement", "archive-mf", "archive-aep"):
+        shutil.copytree(Path(__file__).parent / "fixtures" / name, root, dirs_exist_ok=True)
+    data = tmp_path / "data"
+    shutil.copytree(Path(__file__).parent / "fixtures" / "placement-data", data)
+    rebuild(Archive(root), db, placement_dir=data, geo_dir=tmp_path / "geo", known_gaps_path=Path(__file__).parent / "fixtures" / "mf-known-gaps.csv", today=__import__("datetime").date(2026, 11, 20))
+    return db
+
+
+def test_a_party_filtered_keystroke_runs_its_statements_within_the_target_on_the_party_fixture(party_built):
+    """#181: the Party filter reads the indexed `party` column and the coverage is one more scan statement; on the fixture every state is far under the ~500 ms
+    target (it proves the statements run and are timed, not that Postgres is fast on the national graph: that is the operator's benchmark, #187)."""
+    report = bench.run_sql(party_built, PARTY_QUERIES, repetitions=3, threshold_ms=500)
+    print(bench.render_table(report))  # shown with `pytest -s`
+    assert report["summary"]["failed"] == 0, report["summary"]
+    for q in report["queries"]:
+        assert "party_coverage" in q["statements"], q["label"]
+        assert q["state"] in ("chips-scan", "text"), q["label"]  # a Party filter is never a rollup state: it is judged like a text query
+        assert q["wall_ms"]["median"] < 500, (q["label"], q["wall_ms"])
+
+
+def test_the_party_coverage_statement_agrees_with_the_total_it_sits_beside(party_built):
+    f = {"party": "PARTIDUL NAȚIONAL LIBERAL"}
+    with psycopg.connect(party_built) as conn:
+        rows = {}
+
+        def timed(name, sql, params):
+            rows[name] = conn.execute(sql, params).fetchall()
+            return rows[name]
+
+        for t in bench.plan_tasks(f, rollup=True):
+            if t.name in ("total", "party_coverage"):
+                t.run(timed)
+    total_awarded, total_records = int(rows["total"][0][0]), rows["total"][0][1]
+    matched = [r for r in rows["party_coverage"] if r[0] == f["party"]]
+    assert sum(int(r[2]) for r in matched) == total_awarded and sum(r[3] for r in matched) == total_records > 0
+    assert all(r[1] in ("DIRECT", "SUBORDINATE") for r in matched)
+    assert not [r for r in rows["party_coverage"] if r[0] is not None and r[1] is None]  # a party always has a basis

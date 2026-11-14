@@ -270,7 +270,13 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
   function searchObject(filter: SearchFilter, counterparties?: "AUTHORITY" | "SUPPLIER") {
     const where = buildWhere(filter);
     // The store serves the empty and chips-only states from the rollup and the rest from the search index (#70).
-    const total = (_: unknown, ctx: Ctx) => store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({ ...zeroTotal(), ...t }));
+    const total = (_: unknown, ctx: Ctx) =>
+      store.searchTotal(filter, { signal: ctx?.signal }).then((t) => ({
+        ...zeroTotal(),
+        ...t,
+        // only a Party-filtered search states its coverage, and only when the query selects it (a second grouped scan)
+        partyCoverage: () => (filter.party ? store.searchPartyCoverage(filter, { signal: ctx?.signal }) : null),
+      }));
     const entityPage = (side: "AUTHORITY" | "SUPPLIER") => async ({ limit, offset }: { limit: number; offset: number }, ctx: Ctx) => {
       const page = await store.searchEntities(side, filter, { limit: Math.min(Math.max(limit, 0), MAX_LIMIT), offset: Math.max(offset, 0) }, { signal: ctx?.signal });
       return {
@@ -418,6 +424,7 @@ export function rootValue(store: Store, options: { restricted?: boolean } = {}) 
         return found ? recordPage(found, recordRow, store) : null;
       },
       search: ({ filter }: { filter: SearchFilter }) => searchObject(filter),
+      partyOptions: () => store.partyOptions(),
     }),
   };
 }
