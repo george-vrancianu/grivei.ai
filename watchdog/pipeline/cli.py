@@ -389,7 +389,7 @@ def _impl(archive: Archive, args) -> Impl:
                 backup_fn=lambda: backup_module.backup_archive(archive, backup_module.Restic(), _log_line),
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
                 crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
-                fetch_onrc=lambda a: fetch_onrc(a))
+                fetch_onrc=lambda a, limit=None: fetch_onrc(a, limit=limit))
 
 
 def _logging_to_stderr() -> None:

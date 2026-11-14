@@ -148,12 +148,12 @@ def _impl(archive, fetch):
 def test_the_refresh_step_maps_the_failure_classes_and_warns_on_a_stale_register(archive, world):
     summary = fetch_onrc(archive, now=FETCHED, http=ckan(*world))
     assert summary.archived
-    held = lambda a: fetch_onrc(a, now=FETCHED, http=ckan(*world))  # noqa: E731
+    held = lambda a, limit=None: fetch_onrc(a, now=FETCHED, http=ckan(*world), limit=limit)  # noqa: E731
     assert _impl(archive, held).onrc().counts == {"archived": 0, "unchanged": 4}
     late = Impl(archive, print, None, None, None, None, lambda: None, fetch_onrc=held,
                 now=lambda: datetime.combine(date.fromisoformat(S4) + timedelta(days=ONRC_STALE_AFTER_DAYS + 1), datetime.min.time(), tzinfo=timezone.utc))
     assert any("stopped publishing" in w for w in late.onrc().warnings)
-    down = lambda a: fetch_onrc(a, now=FETCHED, http=ckan(*world, fail_on=("package_search",)))  # noqa: E731
+    down = lambda a, limit=None: fetch_onrc(a, now=FETCHED, http=ckan(*world, fail_on=("package_search",)), limit=limit)  # noqa: E731
     with pytest.raises(TransientError):
         _impl(archive, down).onrc()
     packages, bodies = world
@@ -162,4 +162,4 @@ def test_the_refresh_step_maps_the_failure_classes_and_warns_on_a_stale_register
     for r in packages["firme-06-05-2026"]["resources"]:
         r["last_modified"] = "2026-12-01T00:00:00"  # a new marker: the changed file is fetched again, and is not a CSV
     with pytest.raises(DeterministicError):
-        _impl(archive, lambda a: fetch_onrc(a, now=FETCHED, http=ckan(packages, bodies))).onrc()
+        _impl(archive, lambda a, limit=None: fetch_onrc(a, now=FETCHED, http=ckan(packages, bodies))).onrc()

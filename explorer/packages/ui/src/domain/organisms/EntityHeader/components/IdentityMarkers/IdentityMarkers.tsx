@@ -29,7 +29,7 @@ function Marker({ label, explanation }: MarkerText) {
   );
 }
 
-/** How the entity is identified: its CUI, a foreign VAT id, "identified by name only", the curated-identity marker and the "ONRC only" badge (ANAF does not know the CUI). */
+/** How the entity is identified: its CUI, a foreign VAT id, "identified by name only", the curated-identity marker and the "CUI in ONRC only" badge (ANAF does not know the CUI). */
 export function IdentityMarkers({ entity, copy }: IdentityMarkersProps) {
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>

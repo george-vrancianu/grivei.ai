@@ -70,7 +70,7 @@ class FakeImpl:
 
     def crawl(self): return self._step("crawl")
     def datagov(self): return self._step("datagov")
-    def onrc(self):  # not recorded in `ran` either: ONRC's own steps are tested in test_onrc_fetch.py; it only fails when a test says so
+    def onrc(self, limit=None):  # not recorded in `ran` either: ONRC's own steps are tested in test_onrc_fetch.py; it only fails when a test says so
         if self.fail.get("onrc"):
             raise self.fail["onrc"].pop(0)
         return StepResult({"n": 1})
@@ -337,7 +337,7 @@ def cli_world(archive, monkeypatch):
     monkeypatch.setattr(cli, "make_client", lambda delay, log: EliClient(post=eli.post, sleep=clock.sleep, clock=lambda: clock.moment.timestamp(), log=log, delay=0))
     monkeypatch.setattr(cli, "fetch_datagov", lambda a: FetchSummary())
     monkeypatch.setattr(cli, "fetch_mf", lambda a: MfFetchSummary())
-    monkeypatch.setattr(cli, "fetch_onrc", lambda a: OnrcFetchSummary())
+    monkeypatch.setattr(cli, "fetch_onrc", lambda a, limit=None: OnrcFetchSummary())
     monkeypatch.setattr(cli, "AnafClient", lambda endpoint=None: AnafClient(post=lambda *a, **k: pytest.fail("ANAF has no CUI to ask about"), endpoint=endpoint or "x"))
     loads = []
 
@@ -537,3 +537,28 @@ def test_a_failing_onrc_step_in_a_refresh_does_not_stop_seaps_steps(go, impl):
     impl.fail["onrc"] = [DeterministicError("down")]
     go()
     assert impl.ran == ["crawl", "datagov", "anaf", "load"]
+
+
+def test_the_refresh_caps_the_onrc_snapshots_it_downloads_and_the_seed_does_not(archive, clock):
+    """A first refresh must not become a ~70 GB seed inside the refresh lock: it asks for a couple of snapshots, the seed for all."""
+    from pipeline.refresh.engine import ONRC_REFRESH_LIMIT, refresh_steps, seed_steps
+    asked = []
+
+    class Spy(FakeImpl):
+        def onrc(self, limit=None):
+            asked.append(limit)
+            return StepResult()
+
+    spy = Spy(archive)
+    next(s for s in refresh_steps(archive, spy) if s.name == "onrc").run()
+    next(s for s in seed_steps(archive, spy, backfill=False) if s.name == "onrc").run()
+    assert asked == [ONRC_REFRESH_LIMIT, None] and 0 < ONRC_REFRESH_LIMIT <= 2
+
+
+def test_the_real_onrc_step_hands_the_limit_to_the_fetch(archive):
+    from pipeline.refresh.steps import Impl
+    seen = []
+    impl = Impl(archive, print, None, None, None, None, lambda: None, fetch_onrc=lambda a, limit=None: seen.append(limit) or OnrcFetchSummary())
+    impl.onrc(limit=2)
+    impl.onrc()
+    assert seen == [2, None]

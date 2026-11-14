@@ -39,7 +39,7 @@ class Impl:
     pgdump_fn: Callable[[], StepResult] | None = None
     crawl_delay: float = 0.35
     crawl_start: date | None = None  # PIPELINE_CRAWL_START: where a first crawl with no cursor starts
-    fetch_onrc: Callable | None = None  # (archive) -> OnrcFetchSummary: ONRC's snapshots (#175); None = not wired, the step skips
+    fetch_onrc: Callable | None = None  # (archive, limit=) -> OnrcFetchSummary: ONRC's snapshots (#175); None = not wired, the step skips
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
 
     def crawl(self) -> StepResult:
@@ -64,11 +64,11 @@ class Impl:
             raise TransientError(f"{len(failed)} data.gov.ro/MF download(s) failed: {failed[0]}")
         return StepResult({"archived": len(bulk.archived), "unchanged": len(bulk.unchanged), "mfArchived": len(mf.archived)}, [], warnings)
 
-    def onrc(self) -> StepResult:
-        """ONRC's monthly snapshots. Its own step, so a failing ONRC never blocks SEAP's: the three failure classes are the connector's own (onrc/fetch.py)."""
+    def onrc(self, limit: int | None = None) -> StepResult:
+        """ONRC's monthly snapshots. Its own step, so a failing ONRC never blocks SEAP's: the three failure classes are the connector's own (onrc/fetch.py). `limit` caps the snapshots downloaded in this run (the refresh passes a small one, the seed none)."""
         if self.fetch_onrc is None:
             raise DeterministicError("ONRC fetch is not configured")
-        summary = self.fetch_onrc(self.archive)
+        summary = self.fetch_onrc(self.archive, limit=limit)
         if summary.invalid:
             raise DeterministicError(f"{len(summary.invalid)} ONRC file(s) are not what they should be: {summary.invalid[0]}")  # retrying fetches the same file
         if summary.failed:

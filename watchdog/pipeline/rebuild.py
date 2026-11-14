@@ -391,12 +391,13 @@ SELECT k.key,
 
 def _fold_names(cur: psycopg.Cursor, chunk: int = 50_000) -> None:
     """`core.entity.name_folded` (the Go-to lookup of a name query, #69) from the final display names, folded as every query is."""
-    cur.execute("SELECT key, display_name FROM core.entity")
-    rows = cur.fetchall()
-    for i in range(0, len(rows), chunk):
-        part = rows[i:i + chunk]
-        cur.execute("UPDATE core.entity e SET name_folded = v.f FROM unnest(%s::text[], %s::text[]) AS v(k, f) WHERE e.key = v.k",
-                    ([k for k, _ in part], [fold(n) for _, n in part]))
+    # a server-side cursor: ONRC makes core.entity millions of rows, never all of them in Python at once (the cursor sees the table as it was opened)
+    with cur.connection.cursor(name="fold_names") as names:
+        names.itersize = chunk
+        names.execute("SELECT key, display_name FROM core.entity")
+        while part := names.fetchmany(chunk):
+            cur.execute("UPDATE core.entity e SET name_folded = v.f FROM unnest(%s::text[], %s::text[]) AS v(k, f) WHERE e.key = v.k",
+                        ([k for k, _ in part], [fold(n) for _, n in part]))
     cur.execute("CREATE INDEX entity_name_folded ON core.entity (name_folded) WHERE name_folded <> ''")
 
 
