@@ -21,6 +21,28 @@ export interface EntityRow {
   placement?: PlacementRow | null;
 }
 
+/** The basis of the public-enterprise mark: the AMEPIP list's row for the entity's CUI and the snapshot it came from (`amepip.*`, #183). */
+export interface PublicEnterpriseRow {
+  listedAs: string;
+  registrationNumber: string | null;
+  status: string | null;
+  firstYear: number | null;
+  lastYear: number | null;
+  snapshot: string;
+  url: string | null;
+  via: string | null;
+  license: string | null;
+  fetchedAt: string;
+}
+
+/** A Reference source as the methodology page names it: when the held list was published (null when none is held). */
+export interface ReferenceSourceRow {
+  id: string;
+  name: string;
+  dataThrough: string | null;
+  url: string | null;
+}
+
 /** core.placement joined to its county and UAT names. A national authority keeps its seat here; the API serves none of it. */
 export interface PlacementRow {
   countyIso: string | null;
@@ -238,6 +260,10 @@ export interface Store extends RoleStore, SignalStore {
   entity(key: string): Promise<EntityRow | null>;
   /** Its spellings, most used first. */
   aliases(key: string): Promise<AliasRow[]>;
+  /** The AMEPIP list's row for a CUI (the entity's key), or null when the CUI is not on the list or no list is held (#183). */
+  publicEnterprise(cui: string): Promise<PublicEnterpriseRow | null>;
+  /** The Reference sources held, each with its data-through date (#183). */
+  referenceSources(): Promise<ReferenceSourceRow[]>;
   /** SEAP roles it has: AUTHORITY if it ever bought, SUPPLIER if it ever won. */
   roles(key: string): Promise<("AUTHORITY" | "SUPPLIER")[]>;
   /** Every county, by ISO code. */
@@ -845,6 +871,20 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         [key],
       );
       return rows;
+    },
+    async publicEnterprise(cui) {
+      const { rows } = await pool.query(
+        `SELECT a.name AS "listedAs", a.registration_number AS "registrationNumber", a.status, a.first_year AS "firstYear", a.last_year AS "lastYear",
+                a.snapshot_date::text AS snapshot, s.dataset_url AS url, s.via, s.license,
+                to_char(s.fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "fetchedAt"
+           FROM amepip.enterprise a JOIN amepip.snapshot s ON s.snapshot_date = a.snapshot_date WHERE a.cui = $1`,
+        [cui],
+      );
+      return (rows[0] as PublicEnterpriseRow | undefined) ?? null;
+    },
+    async referenceSources() {
+      const { rows } = await pool.query(`SELECT snapshot_date::text AS d, dataset_url AS url FROM amepip.snapshot ORDER BY snapshot_date DESC LIMIT 1`);
+      return [{ id: "AMEPIP", name: "AMEPIP", dataThrough: (rows[0]?.d as string | undefined) ?? null, url: (rows[0]?.url as string | null | undefined) ?? null }];
     },
     async counties() {
       const { rows } = await pool.query(`SELECT iso, name FROM core.county ORDER BY iso`);

@@ -1,4 +1,4 @@
-import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, StateNote, Typography, type Locale } from "@grivei/ui";
+import { EntityHeader, EntityOverview, EntityPageLayout, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
@@ -66,6 +66,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const loading = state.status === "loading";
   const flowCopy = flowLensCopy(t);
   const entity = state.entity;
+  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI is on AMEPIP's list (the same on both role pages)
+  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
   return (
@@ -104,7 +106,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       ) : view === "overview" ? (
         state.overview && entity ? (
           // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
-          <div aria-busy={loading}>
+          <Stack spacing={3} aria-busy={loading}>
+            {publicEnterpriseSection}
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               signalsToolbar={
                 <SignalOrderToggle
@@ -129,7 +132,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                   }}
                 />
               } {...overviewTab} />
-          </div>
+          </Stack>
         ) : loading ? (
           <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : (

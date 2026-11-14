@@ -183,7 +183,7 @@ export type EntityOverviewQueryVariables = Exact<{
 }>;
 
 
-export type EntityOverviewQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, seap: { roles: Array<Role>, role: { role: Role, directPurchaseShare: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, procedures: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, consortia: Array<{ members: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, frameworks: { count: number, ceilings: string, subsequentReported: string }, largestRecords: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
+export type EntityOverviewQuery = { entity: { cui: string | null, foreignVatId: string | null, identityCurated: boolean, anafStatus: string | null, key: string, displayName: string, identity: EntityIdentity, publicEnterprise: { listedAs: string, registrationNumber: string | null, status: string | null, firstYear: number | null, lastYear: number | null, snapshot: string, url: string | null, via: string | null, license: string | null, fetchedAt: string } | null, seap: { roles: Array<Role>, role: { role: Role, directPurchaseShare: number, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean }, counterparties: { count: number, topShare: number | null, rows: Array<{ naturalPerson: boolean, entity: { key: string, displayName: string, identity: EntityIdentity } | null, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }> }, procedures: Array<{ value: string, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, consortia: Array<{ members: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, total: { awarded: string, records: number, suspectLeftOut: number, noValue: number, frameworkCeilings: string, estimated: boolean } }>, frameworks: { count: number, ceilings: string, subsequentReported: string }, largestRecords: Array<{ code: string, title: string, date: string | null, kind: SeapRecordKind, channel: Channel, procedure: string | null, value: string | null, counted: string | null, badges: Array<RecordBadge>, authority: { key: string, displayName: string, identity: EntityIdentity }, winners: Array<{ naturalPerson: boolean, publishedName: string | null, share: string | null, entity: { key: string, displayName: string, identity: EntityIdentity } | null }>, signals: Array<{ rule: SignalRuleSlug, date: string, numbers:
               | { __typename: 'FrameworkOverrunNumbers', ceiling: string, subsequent: string, ratio: number }
               | { __typename: 'NoPublicationNumbers', procedure: string }
               | { __typename: 'OverCapNumbers', value: string, cap: string, multiple: number }
@@ -285,6 +285,8 @@ export type RecordResultFieldsFragment = { count: number, rows: Array<{ areaShar
           | { __typename: 'SplittingNumbers', purchases: number, sum: string, cap: string, cpvGroup: string, from: string, to: string }
         , reproduce: { authority: string | null, supplier: string | null, signal: SignalRuleSlug | null, cpv: string | null, from: string | null, to: string | null } }> }, matchedField: { field: MatchableField, text: string, highlights: Array<Array<number>> } | null }> };
 
+export type PublicEnterpriseFieldsFragment = { listedAs: string, registrationNumber: string | null, status: string | null, firstYear: number | null, lastYear: number | null, snapshot: string, url: string | null, via: string | null, license: string | null, fetchedAt: string };
+
 export type FullResultsAuthoritiesQueryVariables = Exact<{
   filter: RecordFilter;
   limit: number;
@@ -342,6 +344,11 @@ export type MethodologyBaseRatesQueryVariables = Exact<{ [key: string]: never; }
 
 
 export type MethodologyBaseRatesQuery = { signalRules: Array<{ slug: SignalRuleSlug, baseRate: number, baseRateYear: number, dataThrough: string, window: { from: string | null, to: string | null } }> };
+
+export type MethodologyReferenceSourcesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MethodologyReferenceSourcesQuery = { referenceSources: Array<{ id: string, name: string, dataThrough: string | null, url: string | null }> };
 
 export type RecordPageQueryVariables = Exact<{
   code: string | number;

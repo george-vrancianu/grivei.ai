@@ -121,6 +121,15 @@ nohup python -m pipeline fetch-mf >> ~/grivei-data/fetch-mf.log 2>&1 &
 - **N** = MF entities of the area with at least one SEAP Record in the window, **M** = MF entities of the area; both by MF's county, except national authorities, who are in National. **Other authorities** = authorities with a Record in the window that are not on the MF list, by our placement (a national authority is National, a county-placed one is in its county). **Unplaced** = authorities with a Record in the window that `core.placement` has no row for (whether MF lists them or not): their count and the `Total` of their Records.
 - **Status** (never a ratio; N and M do not enter it, so "bought nothing" never reads as "not harvested"): the grid cells overlapping the window are good (`LOADED`), flagged (`KNOWN_GAP`, `POSSIBLY_INCOMPLETE`, `NOT_IN_SOURCE`, `CRAWLED_PROVISIONAL`, and `NOT_YET_LOADED` with rule `AWAITING_BULK_FILE`, the expected lag: the current quarter's bulk file is never published yet, so counting it as a hole would make every county partial in the default window) or missing (`NOT_YET_LOADED` with no rule: a bulk file of that quarter was quarantined). No cell, or every cell `NOT_YET_LOADED`: not harvested. Some cell missing: partial. Else some cell flagged: harvested with known gaps. Else harvested. SEAP is harvested nationally, so all counties and National share the window's status; N of M is what differs.
 
+## AMEPIP's list of public enterprises (#183)
+
+A Reference source: the companies under OUG 109/2011, flagged on the entities whose CUI is on the list ("public enterprise (AMEPIP)" on the entity page, with its basis).
+
+- **Source:** AMEPIP's open data on data.gov.ro (organisation `agentia-pentru-monitorizarea-si-evaluarea-performantelor-intreprinderilor-publice`), licence CC-BY-4.0. There is no CUI list as such: AMEPIP publishes the financial and governance indicators of all its companies, one row per company and year with `cui`, `company`, `registration_number` and `status`; the list is the set of CUIs in them. A NEW dataset appears with each release (about once or twice a year), so discovery is a CKAN `package_search` on the organisation, not a fixed dataset id.
+- `python -m pipeline fetch-amepip`: newest resource of an "Indicatori" dataset (`.xlsx`, `.xls` or `.csv`), unchanged and dated, to `amepip/list/enterprises/<published day>/<fetched on>/` with the resource identity and licence in the manifest; an unchanged resource is not downloaded again. The snapshot (published) day is the list's data-through date.
+- `pipeline refresh` has an isolated `amepip` step (weekly); `pipeline status` shows the snapshot, its data-through date and the counts.
+- `rebuild` step `amepip` fills `amepip.snapshot` and `amepip.enterprise` (`sql/amepip_schema.sql`); an entity is flagged when its key equals a listed CUI. No list archived: nobody is flagged.
+
 ## Contracts and award notices: identity, precedence, value
 
 Archived kinds `contracte` (Record kind `CONTRACT`) and `fara-anunt` (`AWARD_NOTICE`), loaded like DA and DAN (header eras in `headers.py`, all or nothing per unit, a failing unit is quarantined, exact duplicate rows dropped). ADR 0002 as amended:
@@ -471,6 +480,7 @@ Tests: `pytest tests/test_placement.py` (rules, generator, TopoJSON, fetch and l
 | --- | --- | --- |
 | `crawl` | e-licitatie catch-up from the cursor plus the 3-day trailing re-crawl (`pipeline crawl`) | no success today |
 | `datagov` | data.gov.ro bulk files (`fetch-datagov`) and the MF list (`fetch-mf`) | 7 days since its last success |
+| `amepip` | AMEPIP's public-enterprise list (`fetch-amepip`) | 7 days since its last success |
 | `anaf` | ANAF for new CUIs, plus the 365-day re-check (`anaf-lookup --recheck-after-days 365`) | the archive gained units (other than ANAF answers) since its last success, or 7 days passed |
 | `load` | `rebuild` beside the live database, checked, then switched over (new or re-uploaded files, requeued units; evaluates the possibly-incomplete rule into the Coverage grid) | the archive's units changed since its last load, or it never ran |
 | `backup` | `restic backup` of the raw archive to the encrypted repository (#82) | no success today |

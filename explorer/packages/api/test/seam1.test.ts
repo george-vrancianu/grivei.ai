@@ -45,6 +45,7 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const amepipArchive = join(watchdog, "tests/fixtures/archive-amepip"); // AMEPIP's list of public enterprises (CUIs of two roles-world entities, two that no Record names), copied onto archive-overview (#183)
 const placementArchive = join(watchdog, "tests/fixtures/archive-placement"); // authorities placed by commune, village, sector, SEAP; national ones; the geography snapshots (#67)
 const placementData = join(watchdog, "tests/fixtures/placement-data"); // the UAT table `geo-table` made of those snapshots, and the reviewed files
 const countingArchive = join(watchdog, "tests/fixtures/archive-counting"); // every case of the counting rule, with archived estimated-value answers (#65)
@@ -2485,6 +2486,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       // the name-only suppliers' quarter lands beside the roles world's units (a rebuild reads the whole archive)
       cpSync(rolesArchive, join(scratch, "archive-overview"), { recursive: true });
       cpSync(join(watchdog, "tests/fixtures/archive-roles-names"), join(scratch, "archive-overview"), { recursive: true });
+      cpSync(amepipArchive, join(scratch, "archive-overview"), { recursive: true }); // AMEPIP's list: a Reference source beside the roles world's SEAP units (#183)
       for (const db of Object.values(DBS)) await admin.query(`CREATE DATABASE ${db}`);
       rebuild(DBS.overview, "archive-overview");
       rebuild(DBS.signals, "archive-signals");
@@ -2562,6 +2564,36 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(dates("authority-with-signals-by-value")[0]).toBe("OVER_CAP 2023-01-14"); // the largest first
       expect([...dates("authority-with-signals-by-value")].sort()).toEqual([...dates("authority-with-signals")].sort());
       expect(role("authority").signals).toEqual({ count: 0, rows: [] }); // no Signals in the other archive
+    });
+
+    it("flags the entities whose CUI is on AMEPIP's list, with the basis, and no other (#183)", async () => {
+      const basis = {
+        listedAs: "ALFA DEMO SRL", registrationNumber: "J40/1/2005", status: "funcţiune", firstYear: 2022, lastYear: 2023, snapshot: "2026-01-13",
+        url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo", via: "Date financiare si non-financiare", license: "CC-BY-4.0", fetchedAt: "2026-11-14T09:00:00Z",
+      };
+      // 2000007 is `RO 2000007` in the list, under another spelling of its name: the newest year's spelling, matched by CUI
+      expect(entityOf("supplier")!.publicEnterprise).toEqual(basis);
+      // the entity with both roles carries the same mark on each of its role pages; AMEPIP's own status wording is kept as published
+      const cnair = { ...basis, listedAs: "CNAIR DEMO S.A.", registrationNumber: "J40/2/2005", status: "este sub incidenţa Legii nr. 85/2014, insolvenţă", firstYear: 2023 };
+      expect(entityOf("both-roles-authority-page")!.publicEnterprise).toEqual(cnair);
+      expect(entityOf("both-roles-supplier-page")!.publicEnterprise).toEqual(cnair);
+      // everything else is unmarked: authorities, a supplier of the same world that is not on the list, name-only suppliers (no CUI), an unknown key
+      for (const name of ["authority", "second-authority", "name-only-supplier", "foreign-vat-supplier"]) expect(entityOf(name)!.publicEnterprise, name).toBeNull();
+      const beta = await ask(DBS.overview, entityOverview.sha256, { key: "2000015", role: "SUPPLIER", filter: {} });
+      expect((beta.body.data as EntityOverviewQuery).entity).toMatchObject({ key: "2000015", publicEnterprise: null });
+      // the list names two CUIs no Record has: they flag nobody (no entity of theirs exists)
+      const unlisted = await ask(DBS.overview, entityOverview.sha256, { key: "4300011", role: "SUPPLIER", filter: {} });
+      expect((unlisted.body.data as EntityOverviewQuery).entity).toBeNull();
+    });
+
+    it("serves AMEPIP's data-through date through the persisted MethodologyReferenceSources, and none for a graph built without a list (#183)", async () => {
+      const op = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!;
+      const held = await ask(DBS.overview, op.sha256, {});
+      expect(held.body.errors).toBeUndefined();
+      expect(held.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: "2026-01-13", url: "https://data.gov.ro/dataset/amepip-indicatori-financiari-demo" }] });
+      expect(validateResponse(schema, parse(op.document), held.body.data, {})).toEqual([]);
+      const none = await ask(DBS.signals, op.sha256, {}); // archive-signals holds no AMEPIP list
+      expect(none.body.data).toEqual({ referenceSources: [{ id: "AMEPIP", name: "AMEPIP", dataThrough: null, url: null }] });
     });
   });
 

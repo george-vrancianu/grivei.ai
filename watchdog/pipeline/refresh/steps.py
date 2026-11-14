@@ -31,6 +31,7 @@ class Impl:
     crawl_delay: float = 0.35
     crawl_start: date | None = None  # PIPELINE_CRAWL_START: where a first crawl with no cursor starts
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
+    fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
 
     def crawl(self) -> StepResult:
         progress = CrawlProgress(self.archive.root / "crawl-progress.json", now=self.now)  # prints its own timestamped lines
@@ -53,6 +54,14 @@ class Impl:
         if failed:
             raise TransientError(f"{len(failed)} data.gov.ro/MF download(s) failed: {failed[0]}")
         return StepResult({"archived": len(bulk.archived), "unchanged": len(bulk.unchanged), "mfArchived": len(mf.archived)}, [], warnings)
+
+    def amepip(self) -> StepResult:
+        """AMEPIP's public-enterprise list (#183): its own step, so a failing portal never holds back data.gov.ro, ANAF or the load."""
+        summary = self.fetch_amepip(self.archive)
+        warnings = [f"AMEPIP resource not classified: {t}" for t in summary.unclassified]
+        if summary.failed:
+            raise TransientError(f"{len(summary.failed)} AMEPIP fetch failure(s): {summary.failed[0]}")
+        return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
 
     def anaf(self) -> StepResult:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")

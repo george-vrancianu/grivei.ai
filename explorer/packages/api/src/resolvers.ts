@@ -102,6 +102,8 @@ export function rootValue(store: Store) {
       },
     ],
     aliases: () => store.aliases(e.key),
+    // AMEPIP's list holds CUIs only (#183): an entity with no CUI is never a public enterprise
+    publicEnterprise: () => (e.cui ? store.publicEnterprise(e.cui) : null),
     seap: () => ({
       roles: () => store.roles(e.key),
       // null when the entity never held the role (the contract); #73
@@ -279,6 +281,7 @@ export function rootValue(store: Store) {
       };
       return { source: named, ...adapter.coverage(store, { from: window?.from || null, to: window?.to || null }, zeroTotal) };
     },
+    referenceSources: () => store.referenceSources(),
     signalRules: async () =>
       (await store.signalRules()).map((r) => ({ slug: r.slug, window: r.window, baseRate: r.baseRate, baseRateYear: r.baseRateYear, dataThrough: r.dataThrough })),
     counties: async () => (await store.counties()).map(county),

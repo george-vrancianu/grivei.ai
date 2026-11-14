@@ -28,7 +28,7 @@ describe("operations", () => {
     expect(names).toEqual([
       "CoverageLens", "CoveragePage", "EntityOverview", "EntityRecords", "EntityRelationships",
       "FullResultsAuthorities", "FullResultsRecords", "FullResultsSuppliers", "MainScreen",
-      "MethodologyBaseRates", "RecordPage", "ZoomedCounty",
+      "MethodologyBaseRates", "MethodologyReferenceSources", "RecordPage", "ZoomedCounty",
     ]);
   });
   it("are queries only", () => {
@@ -52,6 +52,9 @@ describe("operations", () => {
       "SeapRecord.title", "SeapRecord.procedure", "SeapRecord.contractType",
       "FacetCount.value", "MonthTotal.month", "Uat.name", "County.name", "AreaTotal.name",
       "SplittingNumbers.cpvGroup", "NoPublicationNumbers.procedure", "MatchedField.text",
+      // AMEPIP's list row (#183): source data as published, and the Reference source's identifier, name and page
+      "PublicEnterprise.listedAs", "PublicEnterprise.registrationNumber", "PublicEnterprise.status", "PublicEnterprise.url", "PublicEnterprise.via", "PublicEnterprise.license",
+      "ReferenceSource.id", "ReferenceSource.name", "ReferenceSource.url",
     ]);
     const found: string[] = [];
     for (const type of Object.values(schema.getTypeMap())) {

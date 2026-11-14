@@ -85,6 +85,13 @@ export const methodologyRo: MethodologyPageCopy = {
         "O lacună cunoscută este o perioadă și un tip de înregistrare pentru care înregistrările unei Surse lipsesc sau pot fi incomplete, fie marcate de o regulă publicată, fie introduse manual cu un motiv scris.",
       ],
     },
+    publicEnterprises: {
+      heading: "Întreprinderi publice (AMEPIP)",
+      paragraphs: [
+        "Pagina unei organizații spune „întreprindere publică (AMEPIP)” când CUI-ul ei se află pe lista pe care AMEPIP o publică ca date deschise: societățile cărora li se aplică Ordonanța de urgență nr. 109/2011 privind guvernanța corporativă a întreprinderilor publice. AMEPIP este Agenția pentru Monitorizarea și Evaluarea Performanțelor Întreprinderilor Publice. Potrivirea se face doar după CUI, niciodată după nume, iar pagina arată rândul din listă pe care se sprijină.",
+        "AMEPIP nu are o listă proprie de CUI-uri: exploratorul citește CUI-urile din cel mai nou tabel de indicatori financiari și de guvernanță pe care AMEPIP îl publică pe data.gov.ro, sub licența CC-BY-4.0. Publică un tabel nou o dată sau de două ori pe an, așa că o societate devenită între timp întreprindere publică poate să nu fie încă marcată, iar una ieșită de pe listă rămâne marcată până la următorul tabel. Lipsa marcajului spune doar că CUI-ul nu se află pe lista pe care o avem, nu că societatea este privată. Denumirea, numărul de înregistrare și starea ONRC apar așa cum le scrie AMEPIP.",
+      ],
+    },
   },
   signals: {
     heading: "Regulile Semnalelor",

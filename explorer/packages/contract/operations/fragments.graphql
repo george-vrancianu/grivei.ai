@@ -137,3 +137,17 @@ fragment RecordResultFields on RecordResultPage {
     areaShare
   }
 }
+
+# The basis of the "public enterprise (AMEPIP)" mark on an entity page.
+fragment PublicEnterpriseFields on PublicEnterprise {
+  listedAs
+  registrationNumber
+  status
+  firstYear
+  lastYear
+  snapshot
+  url
+  via
+  license
+  fetchedAt
+}

@@ -6,6 +6,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import { SignalRuleBaseRate, type SignalRuleBaseRateCopy } from "../../molecules/SignalRuleBaseRate/index.ts";
 import type { SignalRule, SignalRuleBaseRateData } from "../../types.ts";
 import { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, signalAnchor, type MethodologySectionKey } from "../../utils/methodologyAnchors.ts";
+import { formatDate } from "../../utils/formatDate.ts";
 import { SIGNAL_RULES } from "../../utils/signalWording.ts";
 import { MethodologyContents } from "./components/MethodologyContents/index.ts";
 import { MethodologySection, type MethodologySectionCopy } from "./components/MethodologySection/index.ts";
@@ -35,8 +36,15 @@ export interface MethodologyPageCopy {
 /** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
 export type MethodologyBaseRates = { status: "loading" | "error" } | { status: "ready"; rules: readonly SignalRuleBaseRateData[] };
 
+/** What the `MethodologyReferenceSources` query gives the page: the day AMEPIP's held list was published (null when none is held or the query failed: the prose stands alone). */
+export interface MethodologyReferenceDates {
+  publicEnterprises: string | null;
+}
+
 export interface MethodologyPageProps {
   baseRates: MethodologyBaseRates;
+  /** The data-through date of the Reference sources the page describes (AMEPIP); absent until it loads. */
+  referenceDates?: MethodologyReferenceDates;
   /** The section to bring into view (the URL's `#fragment`), or null. */
   anchor?: string | null;
   /** The URL of a section of this page (the contents' links). */
@@ -51,7 +59,7 @@ export interface MethodologyPageProps {
  * section per Signal rule with its exact rule, its window and how often it fires nationally. The prose is the copy; the figures of the
  * Signal rules come from the API and, when they cannot be had, leave the prose readable.
  */
-export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavigate, locale, copy }: MethodologyPageProps) {
+export function MethodologyPage({ baseRates, referenceDates, anchor = null, sectionHref, onNavigate, locale, copy }: MethodologyPageProps) {
   useScrollToAnchor(anchor);
   const contents = [
     ...METHODOLOGY_SECTIONS.map((key) => ({ anchor: METHODOLOGY_ANCHORS[key], label: copy.sections[key].heading })),
@@ -86,7 +94,11 @@ export function MethodologyPage({ baseRates, anchor = null, sectionHref, onNavig
           <Typography variant="lead" sx={{ textWrap: "pretty" }}>{copy.intro}</Typography>
         </Stack>
         {METHODOLOGY_SECTIONS.map((key) => (
-          <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]} />
+          <MethodologySection key={key} id={METHODOLOGY_ANCHORS[key]} locale={locale} copy={copy.sections[key]}>
+            {key === "publicEnterprises" && referenceDates?.publicEnterprises && (
+              <Typography sx={{ color: "text.secondary" }}>{copy.baseRate.dataThrough(formatDate(referenceDates.publicEnterprises, locale, "long"))}</Typography>
+            )}
+          </MethodologySection>
         ))}
         <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals}>
           <Stack spacing={2} sx={{ mt: 2 }}>

@@ -31,10 +31,12 @@ afterEach(() => {
 });
 
 /** A client answering `MethodologyBaseRates` with one named fixture (the fixture client answers the first one for `{}`), or failing. */
-function clientWith(name: string) {
+function clientWith(name: string, reference = "amepip-held") {
   const id = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!.sha256;
+  const referenceId = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!.sha256;
   return createClient({
     fetch: async (_url, init) => {
+      if (JSON.parse(String(init?.body)).id === referenceId) return Response.json({ data: fixtures.MethodologyReferenceSources.find((f) => f.name === reference)!.data }); // AMEPIP's date: its own query
       expect(JSON.parse(String(init?.body))).toMatchObject({ id, variables: {} });
       if (name === "pending") return new Promise<Response>(() => {});
       if (name === "fail") return Response.json({ errors: [{ message: "boom" }] }, { status: 500 });
@@ -42,9 +44,9 @@ function clientWith(name: string) {
     },
   });
 }
-function open(url: string, name = "typical-after-backfill") {
+function open(url: string, name = "typical-after-backfill", reference = "amepip-held") {
   openAt(url);
-  render(<App client={clientWith(name)} />);
+  render(<App client={clientWith(name, reference)} />);
 }
 const region = (name: string) => within(screen.getByRole("region", { name }));
 
@@ -71,7 +73,7 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
 
   it("covers every section the ticket names", () => {
     expect(Object.keys(METHODOLOGY_ANCHORS).sort()).toEqual(
-      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "placement", "signals", "supplierIdentity", "suspectValues"],
+      ["awardedValue", "backfilledValues", "blankValues", "consortiumShares", "contractModifications", "coverageStatuses", "frameworkCeilings", "placement", "publicEnterprises", "signals", "supplierIdentity", "suspectValues"],
     );
   });
 
@@ -105,6 +107,18 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     expect(overrun.getByText(t.baseRate.openStart(fmt("2024-11-30")))).toBeVisible();
     expect(overrun.getByText(t.baseRate.none(2024))).toBeVisible();
     expect(region(t.rules.NO_PUBLICATION.heading).getByText(t.baseRate.range(fmt("2023-01-01"), fmt("2024-11-30")))).toBeVisible();
+  });
+
+  it("states AMEPIP's data-through date in its section, and only when a list is held", async () => {
+    open(PATH[locale]);
+    const date = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "ro", { dateStyle: "long", timeZone: "UTC" }).format(new Date("2026-01-13T00:00:00Z"));
+    const section = region(t.sections.publicEnterprises.heading);
+    expect(await section.findByText(t.baseRate.dataThrough(date))).toBeVisible();
+    expect(section.getByText(t.sections.publicEnterprises.paragraphs[0]!)).toBeVisible();
+    cleanup();
+    open(PATH[locale], "typical-after-backfill", "amepip-not-held");
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(region(t.sections.publicEnterprises.heading).queryByText(/2026/)).toBeNull();
   });
 
   it("keeps every section's prose when the figures are loading", async () => {

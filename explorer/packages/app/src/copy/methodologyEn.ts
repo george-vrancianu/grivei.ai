@@ -85,6 +85,13 @@ export const methodologyEn: MethodologyPageCopy = {
         "A known gap is a period and Record kind for which a Source's Records are missing or possibly incomplete, either flagged by a published rule or entered by hand with a written reason.",
       ],
     },
+    publicEnterprises: {
+      heading: "Public enterprises (AMEPIP)",
+      paragraphs: [
+        "An organisation's page says \"public enterprise (AMEPIP)\" when its CUI is on the list AMEPIP publishes as open data: the companies under Emergency Ordinance 109/2011 on the corporate governance of public enterprises. AMEPIP is the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises. The match is by CUI alone, never by name, and the page shows the row of the list it rests on.",
+        "AMEPIP has no list of CUIs of its own: the explorer reads the CUIs from the newest financial and governance indicators table AMEPIP publishes on data.gov.ro, under the licence CC-BY-4.0. It publishes a new table once or twice a year, so a company that became a public enterprise since may not be marked yet, and one that left the list stays marked until the next table. Not being marked says only that the CUI is not on the list we hold, not that the company is private. Its name, registration number and ONRC status are shown as AMEPIP writes them.",
+      ],
+    },
   },
   signals: {
     heading: "Signal rules",

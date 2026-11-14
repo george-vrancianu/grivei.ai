@@ -151,6 +151,8 @@ export type Entity = {
   placement: Maybe<Placement>;
   /** Where the name and ANAF status came from and when we fetched them: ANAF (the Reference source); ONRC when ANAF has no answer but ONRC lists the CUI (ADR 0018); else SEAP. */
   provenance: Array<Provenance>;
+  /** Set when AMEPIP's list of public enterprises (OUG 109/2011) holds this entity's CUI; the entity's own basis for it. Null otherwise, and for every entity with no CUI. The same on both role pages. */
+  publicEnterprise: Maybe<PublicEnterprise>;
   /** Source-specific facets, one sibling per explorable Source (ADR 0005). Release 1 has SEAP only. */
   seap: SeapEntity;
 };
@@ -349,6 +351,34 @@ export type ProvenanceKind =
   | 'BULK'
   | 'CRAWL';
 
+/**
+ * The basis of the "public enterprise (AMEPIP)" mark: the entity's CUI is on AMEPIP's open-data list of the companies under OUG 109/2011
+ * (the Agency for the Monitoring and Evaluation of the Performance of Public Enterprises), as the newest held list names it. AMEPIP is a
+ * Reference source (it has no pages of its own here); its facts are source data, shown as published.
+ */
+export type PublicEnterprise = {
+  __typename?: 'PublicEnterprise';
+  /** When we fetched it (from the raw archive). */
+  fetchedAt: Scalars['DateTime']['output'];
+  /** The first and the last financial year AMEPIP holds indicators for. */
+  firstYear: Maybe<Scalars['Int']['output']>;
+  lastYear: Maybe<Scalars['Int']['output']>;
+  /** The licence the list is published under, e.g. CC-BY-4.0. */
+  license: Maybe<Scalars['String']['output']>;
+  /** The company's name as AMEPIP's list writes it (it may differ from the entity's display name). */
+  listedAs: Scalars['String']['output'];
+  /** ONRC's registration number as AMEPIP writes it, e.g. J05/14/1991. */
+  registrationNumber: Maybe<Scalars['String']['output']>;
+  /** The day AMEPIP published the list this comes from: the list's data-through date. */
+  snapshot: Scalars['Date']['output'];
+  /** The ONRC status as AMEPIP writes it for the newest year (Romanian source data). */
+  status: Maybe<Scalars['String']['output']>;
+  /** AMEPIP's dataset page on data.gov.ro. */
+  url: Maybe<Scalars['String']['output']>;
+  /** The resource as the portal titles it (source data, verbatim). */
+  via: Maybe<Scalars['String']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   /** Counties and UATs as keys and names only; geometry ships as static TopoJSON. Bucharest's UATs are its six sectors. */
@@ -357,6 +387,8 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
+  /** The Reference sources held beside the explorable ones (today AMEPIP's public enterprises), each with its data-through date; for the methodology page. */
+  referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
   /** Signal rules with their methodology numbers (base rate recomputed per load). */
   signalRules: Array<SignalRule>;
@@ -469,6 +501,18 @@ export type RecordResultPage = {
   __typename?: 'RecordResultPage';
   count: Scalars['Int']['output'];
   rows: Array<RecordResult>;
+};
+
+/** A Reference source: held to enrich entities, never explorable on its own (no search, no Coverage). Its data-through date says how current it is. */
+export type ReferenceSource = {
+  __typename?: 'ReferenceSource';
+  /** The day the held list was published; null when none is held yet. */
+  dataThrough: Maybe<Scalars['Date']['output']>;
+  /** The source's short name, e.g. AMEPIP. */
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  /** Where the list comes from; null when none is held yet. */
+  url: Maybe<Scalars['String']['output']>;
 };
 
 export type Role =
@@ -999,6 +1043,7 @@ export type ResolversTypes = {
   Placement: ResolverTypeWrapper<Placement>;
   Provenance: ResolverTypeWrapper<Provenance>;
   ProvenanceKind: ProvenanceKind;
+  PublicEnterprise: ResolverTypeWrapper<PublicEnterprise>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   RecordBadge: RecordBadge;
   RecordFacets: ResolverTypeWrapper<RecordFacets>;
@@ -1008,6 +1053,7 @@ export type ResolversTypes = {
   RecordOrder: RecordOrder;
   RecordResult: ResolverTypeWrapper<Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversTypes['MatchedField']>, record: ResolversTypes['SeapRecord'] }>;
   RecordResultPage: ResolverTypeWrapper<Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversTypes['RecordResult']> }>;
+  ReferenceSource: ResolverTypeWrapper<ReferenceSource>;
   Role: Role;
   SeapEntity: ResolverTypeWrapper<Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversTypes['SeapRole']> }>;
   SeapQuery: ResolverTypeWrapper<Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversTypes['SeapRecord']>, search: ResolversTypes['SeapSearch'] }>;
@@ -1076,6 +1122,7 @@ export type ResolversParentTypes = {
   Period: Period;
   Placement: Placement;
   Provenance: Provenance;
+  PublicEnterprise: PublicEnterprise;
   Query: Record<PropertyKey, never>;
   RecordFacets: RecordFacets;
   RecordFilter: RecordFilter;
@@ -1083,6 +1130,7 @@ export type ResolversParentTypes = {
   RecordFilterValue: RecordFilterValue;
   RecordResult: Omit<RecordResult, 'matchedField' | 'record'> & { matchedField?: Maybe<ResolversParentTypes['MatchedField']>, record: ResolversParentTypes['SeapRecord'] };
   RecordResultPage: Omit<RecordResultPage, 'rows'> & { rows: Array<ResolversParentTypes['RecordResult']> };
+  ReferenceSource: ReferenceSource;
   SeapEntity: Omit<SeapEntity, 'role'> & { role?: Maybe<ResolversParentTypes['SeapRole']> };
   SeapQuery: Omit<SeapQuery, 'record' | 'search'> & { record?: Maybe<ResolversParentTypes['SeapRecord']>, search: ResolversParentTypes['SeapSearch'] };
   SeapRecord: Omit<SeapRecord, 'authority' | 'cpv' | 'signals' | 'winners'> & { authority: ResolversParentTypes['Entity'], cpv?: Maybe<ResolversParentTypes['Cpv']>, signals: Array<ResolversParentTypes['Signal']>, winners: Array<ResolversParentTypes['Party']> };
@@ -1203,6 +1251,7 @@ export type EntityResolvers<ContextType = any, ParentType extends ResolversParen
   key?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   placement?: Resolver<Maybe<ResolversTypes['Placement']>, ParentType, ContextType>;
   provenance?: Resolver<Array<ResolversTypes['Provenance']>, ParentType, ContextType>;
+  publicEnterprise?: Resolver<Maybe<ResolversTypes['PublicEnterprise']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapEntity'], ParentType, ContextType>;
 };
 
@@ -1318,10 +1367,24 @@ export type ProvenanceResolvers<ContextType = any, ParentType extends ResolversP
   via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
+export type PublicEnterpriseResolvers<ContextType = any, ParentType extends ResolversParentTypes['PublicEnterprise'] = ResolversParentTypes['PublicEnterprise']> = {
+  fetchedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  firstYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  lastYear?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  license?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  listedAs?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrationNumber?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  via?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   counties?: Resolver<Array<ResolversTypes['County']>, ParentType, ContextType>;
   coverage?: Resolver<ResolversTypes['Coverage'], ParentType, ContextType, RequireFields<QueryCoverageArgs, 'source'>>;
   entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType, RequireFields<QueryEntityArgs, 'key'>>;
+  referenceSources?: Resolver<Array<ResolversTypes['ReferenceSource']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapQuery'], ParentType, ContextType>;
   signalRules?: Resolver<Array<ResolversTypes['SignalRule']>, ParentType, ContextType>;
   sources?: Resolver<Array<ResolversTypes['Source']>, ParentType, ContextType>;
@@ -1361,6 +1424,13 @@ export type RecordResultResolvers<ContextType = any, ParentType extends Resolver
 export type RecordResultPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['RecordResultPage'] = ResolversParentTypes['RecordResultPage']> = {
   count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   rows?: Resolver<Array<ResolversTypes['RecordResult']>, ParentType, ContextType>;
+};
+
+export type ReferenceSourceResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReferenceSource'] = ResolversParentTypes['ReferenceSource']> = {
+  dataThrough?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
 export type SeapEntityResolvers<ContextType = any, ParentType extends ResolversParentTypes['SeapEntity'] = ResolversParentTypes['SeapEntity']> = {
@@ -1540,12 +1610,14 @@ export type Resolvers<ContextType = any> = {
   Period?: PeriodResolvers<ContextType>;
   Placement?: PlacementResolvers<ContextType>;
   Provenance?: ProvenanceResolvers<ContextType>;
+  PublicEnterprise?: PublicEnterpriseResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RecordFacets?: RecordFacetsResolvers<ContextType>;
   RecordFilterEcho?: RecordFilterEchoResolvers<ContextType>;
   RecordFilterValue?: RecordFilterValueResolvers<ContextType>;
   RecordResult?: RecordResultResolvers<ContextType>;
   RecordResultPage?: RecordResultPageResolvers<ContextType>;
+  ReferenceSource?: ReferenceSourceResolvers<ContextType>;
   SeapEntity?: SeapEntityResolvers<ContextType>;
   SeapQuery?: SeapQueryResolvers<ContextType>;
   SeapRecord?: SeapRecordResolvers<ContextType>;

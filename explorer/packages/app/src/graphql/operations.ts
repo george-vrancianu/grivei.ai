@@ -3,7 +3,7 @@ import type {
   CoverageLensQuery, CoverageLensQueryVariables, CoveragePageQuery, CoveragePageQueryVariables, EntityOverviewQuery, EntityOverviewQueryVariables, EntityRecordsQuery, EntityRecordsQueryVariables,
   EntityRelationshipsQuery, FullResultsAuthoritiesQuery, FullResultsAuthoritiesQueryVariables, FullResultsRecordsQuery,
   FullResultsRecordsQueryVariables, FullResultsSuppliersQuery, FullResultsSuppliersQueryVariables,
-  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, RecordPageQuery, RecordPageQueryVariables,
+  EntityRelationshipsQueryVariables, MainScreenQuery, MainScreenQueryVariables, MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables, MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables, RecordPageQuery, RecordPageQueryVariables,
   ZoomedCountyQuery, ZoomedCountyQueryVariables,
 } from "@grivei/contract";
 
@@ -33,3 +33,4 @@ export const ZoomedCounty = operation<ZoomedCountyQuery, ZoomedCountyQueryVariab
 export const CoverageLens = operation<CoverageLensQuery, CoverageLensQueryVariables>("CoverageLens");
 export const CoveragePage = operation<CoveragePageQuery, CoveragePageQueryVariables>("CoveragePage");
 export const MethodologyBaseRates = operation<MethodologyBaseRatesQuery, MethodologyBaseRatesQueryVariables>("MethodologyBaseRates");
+export const MethodologyReferenceSources = operation<MethodologyReferenceSourcesQuery, MethodologyReferenceSourcesQueryVariables>("MethodologyReferenceSources");

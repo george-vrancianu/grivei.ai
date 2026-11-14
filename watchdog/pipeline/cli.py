@@ -26,6 +26,8 @@ from .estimates import candidates as estimate_candidates
 from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
+from .amepip.fetch import fetch_amepip
+from .amepip.status import describe as describe_amepip
 from . import acceptance_cli, placement_cli
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
@@ -130,6 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--since-year", type=int, default=2021, help="first dataset year (achizitii-publice-YYYY), default 2021")
     g.add_argument("--delay", type=float, default=1.0, help="seconds between requests to data.gov.ro, default 1")
 
+    sub.add_parser("fetch-amepip", help="fetch AMEPIP's newest list of public enterprises (CUIs) from data.gov.ro into the raw archive (no loading; resumable)")
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
 
 
@@ -265,6 +268,15 @@ def main(argv: list[str] | None = None) -> int:
         for line in summary.lines():
             print(line)
         return 1 if summary.failed else 0
+    if args.verb == "fetch-amepip":
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+        logging.getLogger("pipeline").handlers[:] = [handler]
+        logging.getLogger("pipeline").setLevel(logging.INFO)
+        summary = fetch_amepip(archive)
+        for line in summary.lines():
+            print(line)
+        return 1 if summary.failed else 0
     if args.verb == "fetch-mf":
         handler = logging.StreamHandler(sys.stderr)  # flushes every record: a nohup log is current line by line
         handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
@@ -378,7 +390,8 @@ def _impl(archive: Archive, args) -> Impl:
                 lambda: AnafClient(endpoint=os.environ.get("PIPELINE_ANAF_URL", ANAF_ENDPOINT)), _loader(archive, args), backfill, crawl_delay=args.delay,
                 backup_fn=lambda: backup_module.backup_archive(archive, backup_module.Restic(), _log_line),
                 pgdump_fn=lambda: backup_module.backup_dump(args.db, backup_module.Restic(), _log_line),
-                crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None)
+                crawl_start=_day(os.environ["PIPELINE_CRAWL_START"]) if os.environ.get("PIPELINE_CRAWL_START") else None,
+                fetch_amepip=lambda a: fetch_amepip(a))
 
 
 def _logging_to_stderr() -> None:
@@ -449,6 +462,8 @@ def _status(archive: Archive, args) -> int:
             code = 0  # no rebuild yet is not a failure once an ANAF lookup is on record (a Source's hook below may still set 1)
     for source in SOURCES:  # each Source prints its own sections (SEAP: the crawl and the backfill) and says what the exit code is
         code = source.status(archive, args, status, anaf, code)
+    for line in describe_amepip(archive):  # the Reference source's own section (#183): not a registry entry, so not one of SOURCES' hooks
+        print(line)
     ledger = Ledger(archive.root / LEDGER_NAME)
     print()  # the refresh run (#81): recent runs, what is due, open quarantines
     dummy = SimpleNamespace(crawl=None, datagov=None, anaf=None, load=None, backup=None, pgdump=None)
