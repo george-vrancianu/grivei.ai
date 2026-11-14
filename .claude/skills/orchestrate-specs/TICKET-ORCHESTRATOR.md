@@ -10,7 +10,7 @@ This is the per-ticket loop from `implement-spec`.
 
 1. Create your worktree and branch from the integration tip (`scripts/worktree.sh ticket-<ticket> <integration-branch>` if present, else `git -C <main> worktree add`, copy the `.env` files from the main checkout (read-only copy), then the install commands the codebase map names).
 2. Explore: spawn haiku explorers in parallel (`model: haiku`), one per area the ticket touches: pipeline, contract and API, app and UI, docs and ADRs. Each writes its map to `/tmp/pp-<spec>-notes/<ticket>-map-<area>.md` in the map format below (an exception to the report name below); the map is its report, handed back by the rule below. Explorers read in the ticket worktree, read-only, and first check `/tmp/pp-<spec>-notes/*-map-<area>.md` from earlier tickets and build on them. Done when every touched area has a map. Start more explorers between layers or fix rounds when an agent's next work leaves the mapped ground.
-3. Decide the split from the maps. The layers are pipeline, contract, API, app/UI, and fixtures/seam 1. A ticket touching three or more layers gets one sonnet implementer per layer, spawned one after another in dependency order; each hands over to the next through its report file, named `<ticket>-impl-<layer>-<round>.md`, which the next brief points at. A smaller ticket gets one sonnet implementer. Every implementer works only in the ticket worktree. Its brief points at the map files and says it starts from them and reads beyond them when the work needs it, and at "## Quiet test output" below. It uses `tdd` where there is code to test, commits, runs `git fetch` and merges the integration tip, then reports. An implementer finishes its own work whatever its context size: no brief tells it to stop or hand over mid-work.
+3. Decide the split from the maps and the ticket (the maps group areas more coarsely than the layers). The layers are pipeline, contract, API, app/UI, and fixtures/seam 1. A ticket touching three or more layers gets one sonnet implementer per layer, spawned one after another in dependency order; each hands over to the next through its report file, named `<ticket>-impl-<layer>-<round>.md`, which the next brief points at. A smaller ticket gets one sonnet implementer. Every implementer works only in the ticket worktree. Its brief points at the map files and says it starts from them and reads beyond them when the work needs it, at "## Quiet test output" and at "## Big calls" below. It uses `tdd` where there is code to test, commits, runs `git fetch` and merges the integration tip, then reports. An implementer finishes its own work whatever its context size: no brief tells it to stop or hand over mid-work.
 4. Spawn an opus reviewer with `code-review`, base = the integration branch. If the reviewer can't spawn the Standards and Spec sub-agents (it's already inside an agent), it runs Standards then Spec sequentially, each with its own checklist (Standards: `CODING_STANDARDS.md` if present; Spec: the ticket's acceptance criteria), and reports them separately. The vendored `code-review` skill is not edited.
 5. Fix loop until the reviewer is satisfied, re-reviewing after each fix. Spawn a fresh sonnet fixer once the previous agent (the last layer's implementer, or the last fixer) is above ~150K context. The fixer brief points at the review and the map files, as in step 3. The ~150K rule only decides when a fresh fixer takes the next fix round; a fixer finishes its round.
 6. Leave the branch local; the spec orchestrator's merger merges it.
@@ -19,7 +19,23 @@ Every agent you spawn writes its full report to `/tmp/pp-<spec>-notes/<ticket>-<
 
 ## Quiet test output
 
-The one rule for every agent that runs tests. Implementer, fixer and merger briefs point at this section by path (the merger's CI steps are in `SPEC-ORCHESTRATOR.md`): `.claude/skills/orchestrate-specs/TICKET-ORCHESTRATOR.md`, "## Quiet test output". Run `pytest -q` and, where the command takes it (a direct `vitest run`), vitest with the dot reporter; redirect the full output to a log file (`> /tmp/<name>.log 2>&1`, still under `timeout -s KILL`), and read back only the failures (`grep`, `tail`). Copy the failure blocks into your report before deleting the log.
+The one rule for every agent that runs tests. Briefs point at this section by path (the merger's CI steps are in `SPEC-ORCHESTRATOR.md`): `.claude/skills/orchestrate-specs/TICKET-ORCHESTRATOR.md`, "## Quiet test output". Run `pytest -q` and, where the command takes it (a direct `vitest run`), vitest with the dot reporter (`--reporter=dot`); redirect the full output to a log file (`> /tmp/<name>.log 2>&1`, still under `timeout -s KILL`), and read back only the failures (`grep`, `tail`). Copy the failure blocks into your report before deleting the log.
+
+## Big calls
+
+The one definition of the big-call list and the `QUESTION:` hand-back. Implementer and fixer briefs point at this section by path: `.claude/skills/orchestrate-specs/TICKET-ORCHESTRATOR.md`, "## Big calls". You are the advisor for these.
+
+A big call is any of:
+
+- a schema or contract change the ticket does not state;
+- a privacy or publication decision;
+- a conflict with an ADR or the glossary;
+- a test that contradicts the spec;
+- a choice between two designs the ticket leaves open.
+
+When an agent meets a big call, it pauses and hands back (the one hand-back allowed before its work is done) a message that begins `QUESTION:`, gives the options it sees (each with its consequence), and says which it favours. A pause is not a hand-over: the agent keeps its own work and is resumed to finish it, whatever its context size. Smaller choices stay with the agent; it decides them and notes them in its report.
+
+Your side: answer from the ticket, the spec, the ADRs and the glossary, then resume the same agent with SendMessage (the hard rules allow it, it is your child) with the decision and the reason. A question only the user can answer goes up the chain in your own hand-back, as in "## Hand-back"; resume the agent with the user's answer once it comes down. Record each question and its answer in your report.
 
 ## Map format
 
