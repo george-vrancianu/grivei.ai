@@ -43,6 +43,7 @@ class Impl:
     now: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
     fetch_amepip: Callable | None = None  # (archive) -> AmepipFetchSummary (#183); None = not wired, the step is left out
     fetch_financials: Callable | None = None  # (archive) -> FinancialsFetchSummary (#179); None = not wired, the step is left out
+    check_banipartide: Callable | None = None  # (archive) -> CheckResult (#182): only a check; None = not wired, the step is left out
 
     def crawl(self) -> StepResult:
         progress = CrawlProgress(self.archive.root / "crawl-progress.json", now=self.now)  # prints its own timestamped lines
@@ -96,6 +97,14 @@ class Impl:
             raise TransientError(f"{len(summary.failed)} financial-statements fetch failure(s): {summary.failed[0]}")
         warnings = [f"financial-statements resource not classified: {t}" for t in summary.unclassified]
         return StepResult({"archived": len(summary.archived), "unchanged": len(summary.unchanged)}, [], warnings)
+
+    def banipartide(self) -> StepResult:
+        """BaniPartide's firm donors (#182) are loaded once from an archived file: this step only CHECKS for a newer upstream database and warns (the alert), never fetches. A failed check is transient."""
+        result = self.check_banipartide(self.archive)
+        if result.state == "failed":
+            raise TransientError(result.detail)
+        warnings = [result.detail] if result.state in ("newer", "nothing held") else []
+        return StepResult({"state": result.state}, [], warnings)
 
     def anaf(self) -> StepResult:
         progress = AnafProgress(self.archive.root / "anaf-progress.json")
