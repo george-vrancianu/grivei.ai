@@ -1,0 +1,362 @@
+[
+ {
+  "label": "al (2-char prefix)",
+  "filter": {
+   "q": "al"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "al.*",
+    "al"
+   ],
+   "text": true,
+   "qFolded": "al"
+  }
+ },
+ {
+  "label": "ma (2-char prefix)",
+  "filter": {
+   "q": "ma"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "ma.*",
+    "ma"
+   ],
+   "text": true,
+   "qFolded": "ma"
+  }
+ },
+ {
+  "label": "construct",
+  "filter": {
+   "q": "construct"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "construct.*",
+    "construct"
+   ],
+   "text": true,
+   "qFolded": "construct"
+  }
+ },
+ {
+  "label": "alfa onrc (multi-token, prefix)",
+  "filter": {
+   "q": "alfa onr"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND (doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "alfa",
+    "onr.*",
+    "onr"
+   ],
+   "text": true,
+   "qFolded": "alfa onr"
+  }
+ },
+ {
+  "label": "CUI",
+  "filter": {
+   "q": "3100020"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "3100020.*",
+    "3100020"
+   ],
+   "text": true,
+   "qFolded": "3100020"
+  }
+ },
+ {
+  "label": "CUI prefix",
+  "filter": {
+   "q": "31000"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "31000.*",
+    "31000"
+   ],
+   "text": true,
+   "qFolded": "31000"
+  }
+ },
+ {
+  "label": "registration number",
+  "filter": {
+   "q": "J40/1001/2015"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND (doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "j40 1001",
+    "2015.*",
+    "2015"
+   ],
+   "text": true,
+   "qFolded": "j40 1001 2015"
+  }
+ },
+ {
+  "label": "CAEN code as text",
+  "filter": {
+   "q": "4211"
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "4211.*",
+    "4211"
+   ],
+   "text": true,
+   "qFolded": "4211"
+  }
+ },
+ {
+  "label": "empty query",
+  "filter": {},
+  "where": {
+   "sql": "id @@@ pdb.all()",
+   "params": [],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "legal-form word only (folds to nothing)",
+  "filter": {
+   "q": "SRL"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all()",
+   "params": [],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "status chip",
+  "filter": {
+   "status": [
+    1107,
+    1084
+   ]
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND statuses @@@ pdb.term_set(%s::text[])",
+   "params": [
+    [
+     "1107",
+     "1084"
+    ]
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "CAEN prefix chip",
+  "filter": {
+   "caen": "42"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND caen @@@ pdb.regex(%s::text)",
+   "params": [
+    "42.*"
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "county chip",
+  "filter": {
+   "county": "RO-CJ"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND area = %s",
+   "params": [
+    "RO-CJ"
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "Unplaced tile",
+  "filter": {
+   "county": "UNPLACED"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND area = %s",
+   "params": [
+    "UNPLACED"
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "registration date range",
+  "filter": {
+   "registeredFrom": "2015-01-01",
+   "registeredTo": "2020-12-31"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND registration_date >= %s::date AND registration_date <= %s::date",
+   "params": [
+    "2015-01-01",
+    "2020-12-31"
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "SEAP counterparties only",
+  "filter": {
+   "seapCounterparty": true
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND seap_counterparty = %s",
+   "params": [
+    true
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "text and every chip",
+  "filter": {
+   "q": "alfa",
+   "status": [
+    1048
+   ],
+   "caen": "42",
+   "county": "RO-CJ",
+   "registeredFrom": "2010-01-01",
+   "registeredTo": "2026-12-31",
+   "seapCounterparty": true
+  },
+  "where": {
+   "sql": "(doc @@@ pdb.regex(%s::text) OR doc ||| %s::text) AND statuses @@@ pdb.term_set(%s::text[]) AND caen @@@ pdb.regex(%s::text) AND area = %s AND registration_date >= %s::date AND registration_date <= %s::date AND seap_counterparty = %s",
+   "params": [
+    "alfa.*",
+    "alfa",
+    [
+     "1048"
+    ],
+    "42.*",
+    "RO-CJ",
+    "2010-01-01",
+    "2026-12-31",
+    true
+   ],
+   "text": true,
+   "qFolded": "alfa"
+  }
+ },
+ {
+  "label": "extra: RO-prefixed CUI and a legal form",
+  "filter": {
+   "q": "ALFA S.R.L. RO3100020"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND (doc @@@ pdb.regex(%s::text) OR doc ||| %s::text)",
+   "params": [
+    "alfa",
+    "3100020.*",
+    "3100020"
+   ],
+   "text": true,
+   "qFolded": "alfa 3100020"
+  }
+ },
+ {
+  "label": "extra: regex metacharacters",
+  "filter": {
+   "q": "a+b (c)",
+   "caen": "4.2"
+  },
+  "where": {
+   "sql": "doc &&& %s::text AND (doc @@@ pdb.regex(%s::text) OR doc ||| %s::text) AND caen @@@ pdb.regex(%s::text)",
+   "params": [
+    "a b",
+    "c.*",
+    "c",
+    "4\\.2.*"
+   ],
+   "text": true,
+   "qFolded": "a b c"
+  }
+ },
+ {
+  "label": "extra: one status",
+  "filter": {
+   "status": [
+    1107
+   ]
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND statuses @@@ pdb.term_set(%s::text[])",
+   "params": [
+    [
+     "1107"
+    ]
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "extra: open date range",
+  "filter": {
+   "registeredFrom": "2025-03-01"
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND registration_date >= %s::date",
+   "params": [
+    "2025-03-01"
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "extra: seapCounterparty false",
+  "filter": {
+   "seapCounterparty": false
+  },
+  "where": {
+   "sql": "id @@@ pdb.all() AND seap_counterparty = %s",
+   "params": [
+    false
+   ],
+   "text": false,
+   "qFolded": null
+  }
+ },
+ {
+  "label": "extra: blank CAEN and an empty status list",
+  "filter": {
+   "caen": "",
+   "status": []
+  },
+  "where": {
+   "sql": "id @@@ pdb.all()",
+   "params": [],
+   "text": false,
+   "qFolded": null
+  }
+ }
+]

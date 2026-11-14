@@ -20,7 +20,7 @@ import { graphql, parse } from "graphql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import allowlist from "@grivei/contract/persisted-queries.json" with { type: "json" };
 import { loadSchema, validateResponse } from "@grivei/contract/node";
-import type { SignalFieldsFragment, CoverageLensQuery, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
+import type { OnrcCoverageQuery, OnrcRecordQuery, OnrcSearchQuery, SignalFieldsFragment, CoverageLensQuery, CoveragePageQuery, EntityOverviewQuery, EntityRecordsQuery, EntityRelationshipsQuery, FullResultsSuppliersQuery, MainScreenQuery, RecordPageQuery } from "@grivei/contract";
 import { createApi } from "../src/server.ts";
 import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
@@ -45,6 +45,7 @@ const crawlArchive = join(watchdog, "tests/fixtures/archive-crawl"); // a Q1 bul
 const backfillArchive = join(watchdog, "tests/fixtures/archive-backfill"); // backfilled weeks (2021-22 and 2023-today) beside a 2023 Q1 bulk (#78)
 const identityArchive = join(watchdog, "tests/fixtures/archive-identity"); // every identity case, with archived ANAF answers (#66)
 const identityOverrides = join(watchdog, "tests/fixtures/identity-overrides.toml");
+const onrcSearchArchive = join(watchdog, "tests/fixtures/archive-onrc-search"); // the ONRC world plus three sole traders (PFA, II, a long legal form) with valid CUIs, which ONRC search must never make findable (#176)
 const onrcArchive = join(watchdog, "tests/fixtures/archive-onrc"); // ONRC snapshots in both layouts beside a SEAP slice and archived ANAF answers (#175)
 const financialsArchive = join(watchdog, "tests/fixtures/archive-financials"); // MF's annual statements for ALFA, CNAIR, BETA, GAMMA: a first release, a revised year, blank employees, copied onto archive-overview (#179)
 const banipartideArchive = join(watchdog, "tests/fixtures/archive-banipartide"); // BaniPartide's firm-donor table: a donation, a loan with two dates, three rows that are not firms (individuals), a donor with no entity; copied onto archive-overview (#182)
@@ -103,6 +104,9 @@ const coveragePage = allowlist.operations.find((o) => o.name === "CoveragePage")
 const entityRecords = allowlist.operations.find((o) => o.name === "EntityRecords")!;
 const entityRelationships = allowlist.operations.find((o) => o.name === "EntityRelationships")!;
 const zoomedCounty = allowlist.operations.find((o) => o.name === "ZoomedCounty")!;
+const onrcSearch = allowlist.operations.find((o) => o.name === "OnrcSearch")!;
+const onrcRecord = allowlist.operations.find((o) => o.name === "OnrcRecord")!;
+const onrcCoverage = allowlist.operations.find((o) => o.name === "OnrcCoverage")!;
 // The authorities of the placement fixture (watchdog/tests/fixtures/build_placement_archive.py): CUIs with valid check digits, invented.
 const P = {
   sanpetru: "51000005", caragiale: "51000102", apahida: "51000200", rasnov: "51000307", sinca: "51000404", brasov: "51000501", bucharest3: "51000609",
@@ -3703,6 +3707,254 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(rates("signals-archive")).toEqual({ OVER_CAP: [2 / 3, 2023, "2022-01-01"], SPLITTING: [0, 2023, "2022-01-01"], FRAMEWORK_OVERRUN: [0, 2023, "2023-01-01"], NO_PUBLICATION: [1 / 3, 2023, "2021-01-01"] });
       expect(rates("splitting-archive")).toMatchObject({ SPLITTING: [1, 2022, "2022-01-01"], OVER_CAP: [0, 2022, "2022-01-01"] });
       expect(rates("framework-overrun-archive")).toMatchObject({ FRAMEWORK_OVERRUN: [1, 2023, "2021-01-01"] }); // the rule's 2021 floor, although a 2020 Contracte file is loaded
+    });
+  });
+
+
+  describe("ONRC search, count lens and Coverage (#176): archive-onrc-search -> rebuild -> onrc { search, record }, coverage(source: ONRC)", () => {
+    // The world of watchdog/tests/fixtures/build_onrc_archive.py, newest snapshot 2026-05-06, plus three sole traders with valid CUIs. Nine registrations are searchable:
+    //   AUTH   PRIMARIA EXEMPLU ONRC  J03/1006/1995  3100012  RO-BN  1048          8411        SEAP counterparty  1995-02-02
+    //   ALFA   ALFA ONRC SRL          J40/1001/2015  3100020  RO-CJ  1048,1107     4120,4211   SEAP counterparty  2015-03-10
+    //   BETA   BETA NOU SRL (BETA VECHI SRL before)  J40/1002/2012  3100039  RO-B  1048  4321    SEAP counterparty  2015-03-10
+    //   GAMMA  GAMMA ONRC SRL         J12/1003/2010  3100047  RO-CJ  1084          4120        SEAP counterparty  2015-03-10
+    //   DELTA  DELTA ONRC SRL         J05/1004/2018  3100055  RO-BV  1048          6201,6202   SEAP counterparty  2026-02-20
+    //   DUBLA  DUBLA ONRC SA          J40/1005/2008  3100063  RO-IS  1048          4211        SEAP counterparty  2008-05-14
+    //   OMEGA  OMEGA ONLY SRL         J12/1007/2020  3100071  RO-CJ  1048          6201        not                2020-06-03
+    //   ZETA   ZETA FARA JUDET SRL    J99/1008/2021  3100080  (no county)  1048,2110  none     not                2021-01-11
+    //   GRESIT FIRMA CUI GRESIT SRL   J40/1010/2017  (no valid CUI)  RO-CJ  1048     none        not                2017-07-01
+    // Left out as sole traders: POPESCU DEMO PFA (no CUI), IONESCU ALFA PFA, VASILESCU MARIA ALFA II, DEMETER PERSOANA FIZICA AUTORIZATA.
+    const DB = { search: "onrc_search_a", gap: "onrc_search_gap" } as const;
+    const PEOPLE = ["IONESCU", "VASILESCU", "DEMETER", "POPESCU", "MARIA", "PERSOANA FIZICA"];
+    const SOLE_TRADER_REGISTRATIONS = ["F12/2001/2019", "F40/2002/2020", "F03/2003/2021", "F40/1009/2019"];
+    const REGS = { auth: "J03/1006/1995", alfa: "J40/1001/2015", beta: "J40/1002/2012", gamma: "J12/1003/2010", delta: "J05/1004/2018", dubla: "J40/1005/2008", omega: "J12/1007/2020", zeta: "J99/1008/2021", gresit: "J40/1010/2017" } as const;
+    const nameOf = new Map<string, string>(Object.entries(REGS).map(([k, v]) => [v, k]));
+
+    beforeAll(async () => {
+      cpSync(onrcSearchArchive, join(scratch, "archive-onrc-search"), { recursive: true });
+      cpSync(onrcSearchArchive, join(scratch, "archive-onrc-gap"), { recursive: true });
+      rmSync(join(scratch, "archive-onrc-gap/onrc/snapshot/firme/2026-04-03"), { recursive: true }); // April 2026 has no snapshot: a known gap
+      for (const db of Object.values(DB)) await admin.query(`CREATE DATABASE ${db}`);
+      rebuild(DB.search, "archive-onrc-search");
+      rebuild(DB.gap, "archive-onrc-gap");
+    });
+
+    type Search = OnrcSearchQuery["onrc"]["search"];
+    const search = async (filter: Record<string, unknown>, o: { limit?: number; offset?: number; db?: string } = {}): Promise<Search> => {
+      const variables = { filter, limit: o.limit ?? 50, offset: o.offset ?? 0 };
+      const r = await ask(o.db ?? DB.search, onrcSearch.sha256, variables);
+      expect(r.status).toBe(200);
+      expect(r.body.errors, JSON.stringify(filter)).toBeUndefined();
+      expect(validateResponse(schema, parse(onrcSearch.document), r.body.data, variables), JSON.stringify(filter)).toEqual([]);
+      return (r.body.data as OnrcSearchQuery).onrc.search;
+    };
+    const regs = (s: Search) => s.organisations.rows.map((x) => nameOf.get(x.registrationNumber) ?? x.registrationNumber);
+    const sortedRegs = (s: Search) => [...regs(s)].sort();
+
+    it("finds a registration by name, with the match count, the top result and the highlight in the name", async () => {
+      const s = await search({ q: "alfa" });
+      expect(s).toMatchObject({ filter: { qFolded: "alfa" }, count: 1, defaultTab: "ORGANISATIONS" }); // the sole traders named ALFA are not findable
+      expect(s.organisations.count).toBe(1);
+      expect(s.organisations.rows[0]).toMatchObject({
+        registrationNumber: REGS.alfa, name: "ALFA ONRC SRL", cui: "3100020", legalForm: "SRL", registrationDate: "2015-03-10", seapCounterparty: true,
+        seat: { county: "Cluj", locality: "Cluj-Napoca" }, statuses: [{ code: 1048, name: "funcțiune" }, { code: 1107, name: "insolvență" }], caen: [{ code: "4120", version: 2 }, { code: "4211", version: 2 }],
+        entity: { key: "3100020", displayName: "ALFA ONRC SRL", identity: "CUI" }, matched: [{ field: "NAME", text: "ALFA ONRC SRL", highlights: [[0, 4]] }],
+      });
+      // legal forms are noise (folded away), diacritics and case do not matter, the last word is a prefix
+      expect((await search({ q: "SRL" })).count).toBe(9); // folds to nothing: the empty query
+      expect(sortedRegs(await search({ q: "ALF" }))).toEqual(["alfa"]);
+      expect(sortedRegs(await search({ q: "Alfa Onrc S.R.L." }))).toEqual(["alfa"]);
+      expect((await search({ q: "nothing like this" })).count).toBe(0);
+    });
+
+    it("finds a registration by an earlier name: the match is the alias, highlighted in its own text", async () => {
+      const s = await search({ q: "beta vechi" });
+      expect(regs(s)).toEqual(["beta"]);
+      expect(s.organisations.rows[0]).toMatchObject({ name: "BETA NOU SRL", matched: [{ field: "ALIAS", text: "BETA VECHI SRL", highlights: [[0, 4], [5, 10]] }, { field: "NAME", text: "BETA NOU SRL", highlights: [[0, 4]] }] });
+      expect(s.organisations.rows[0]!.entity).toMatchObject({ key: "3100039", displayName: "BETA ONRC SRL" }); // ANAF's name is the entity's, ONRC's names are aliases
+    });
+
+    it("finds a registration by CUI (RO prefix included) and by registration number, and says which field matched", async () => {
+      for (const q of ["3100020", "RO3100020"]) {
+        const s = await search({ q });
+        expect(regs(s), q).toEqual(["alfa"]);
+        expect(s.organisations.rows[0]!.matched[0], q).toMatchObject({ field: "CUI", text: "3100020", highlights: [[0, 7]] });
+      }
+      const byNumber = await search({ q: "J40/1001/2015" });
+      expect(regs(byNumber)).toEqual(["alfa"]);
+      expect(byNumber.organisations.rows[0]!.matched[0]).toMatchObject({ field: "REGISTRATION_NUMBER", text: REGS.alfa, highlights: [[0, 3], [4, 8], [9, 13]] });
+      expect(sortedRegs(await search({ q: "31000" }))).toEqual(["alfa", "auth", "beta", "delta", "dubla", "gamma", "omega", "zeta"]); // a CUI prefix: every 31000xx (GRESIT has no valid CUI)
+    });
+
+    it("finds registrations by a CAEN code, highlighted in the code", async () => {
+      const s = await search({ q: "4211" });
+      expect(sortedRegs(s)).toEqual(["alfa", "dubla"]); // the sole trader that also carries 4211 is left out
+      for (const row of s.organisations.rows) expect(row.matched, row.name).toEqual([{ field: "CAEN", text: "4211", highlights: [[0, 4]] }]);
+      expect(sortedRegs(await search({ q: "62" }))).toEqual(["delta", "omega"]); // a code prefix, the last word being one
+    });
+
+    it("ranks by text relevance first, then the newest registration first", async () => {
+      // "onrc" is one word in five documents (the typed word also matches as an exact term, which scores): the shorter documents score higher (GAMMA and DUBLA, 7 words), the longer ones tie (AUTH, DELTA, ALFA, 8 words)
+      // and a tie goes to the newest registration, so the 2026 DELTA beats the 2015 ALFA and the 1995 AUTH, while a relevance win beats a newer date (GAMMA 2015 before DELTA 2026)
+      const s = await search({ q: "onrc" });
+      expect(regs(s)).toEqual(["gamma", "dubla", "delta", "alfa", "auth"]);
+      // no text: the newest registration first, ties by the registration number, and a page of the same order
+      const all = await search({});
+      expect(regs(all)).toEqual(["delta", "zeta", "omega", "gresit", "gamma", "alfa", "beta", "dubla", "auth"].map((n) => n)); // 2026-02-20, 2021, 2020, 2017, the three of 2015-03-10 in registration-number order, 2008, 1995
+      expect(regs(await search({}, { limit: 3, offset: 3 }))).toEqual(["gresit", "gamma", "alfa"]);
+      expect((await search({}, { limit: 3, offset: 3 })).organisations.count).toBe(9);
+    });
+
+    it("narrows by each filter, and the filters compose", async () => {
+      expect((await search({})).count).toBe(9);
+      // status: any of the codes the registration shows (ONRC's own, 1107 insolvency, 1084 struck off, 2110 annual balance sheet not filed)
+      expect(sortedRegs(await search({ status: [1107] }))).toEqual(["alfa"]);
+      expect(sortedRegs(await search({ status: [1084] }))).toEqual(["gamma"]);
+      expect(sortedRegs(await search({ status: [1107, 1084] }))).toEqual(["alfa", "gamma"]);
+      expect(sortedRegs(await search({ status: [2110] }))).toEqual(["zeta"]);
+      expect((await search({ status: [1048] })).count).toBe(8); // every one but the struck-off GAMMA
+      // authorised CAEN: a code or its prefix
+      expect(sortedRegs(await search({ caen: "4211" }))).toEqual(["alfa", "dubla"]);
+      expect(sortedRegs(await search({ caen: "42" }))).toEqual(["alfa", "dubla"]);
+      expect(sortedRegs(await search({ caen: "4120" }))).toEqual(["alfa", "gamma"]);
+      expect(sortedRegs(await search({ caen: "62" }))).toEqual(["delta", "omega"]);
+      expect((await search({ caen: "5610" })).count).toBe(0); // only the sole traders carry it
+      // seat county, and the Unplaced tile
+      expect(sortedRegs(await search({ county: "RO-CJ" }))).toEqual(["alfa", "gamma", "gresit", "omega"]);
+      expect(sortedRegs(await search({ county: "RO-B" }))).toEqual(["beta"]);
+      expect(sortedRegs(await search({ county: "UNPLACED" }))).toEqual(["zeta"]);
+      expect((await search({ county: "RO-TL" })).count).toBe(0); // a stale URL is an empty set, not an error
+      // registration date range, inclusive at both ends
+      expect(sortedRegs(await search({ registeredFrom: "2020-06-03" }))).toEqual(["delta", "omega", "zeta"]);
+      expect(sortedRegs(await search({ registeredTo: "2008-05-14" }))).toEqual(["auth", "dubla"]);
+      expect(sortedRegs(await search({ registeredFrom: "2015-03-11", registeredTo: "2018-12-31" }))).toEqual(["gresit"]);
+      // SEAP counterparty: an authority or a winner of a loaded Record; false is the others
+      expect(sortedRegs(await search({ seapCounterparty: true }))).toEqual(["alfa", "auth", "beta", "delta", "dubla", "gamma"]);
+      expect(sortedRegs(await search({ seapCounterparty: false }))).toEqual(["gresit", "omega", "zeta"]);
+      // composed with the text: every narrowing keeps the text
+      expect(regs(await search({ q: "onrc", status: [1107] }))).toEqual(["alfa"]);
+      expect(await search({ q: "onrc", county: "RO-CJ", seapCounterparty: true, caen: "41" }).then(sortedRegs)).toEqual(["alfa", "gamma"]);
+      expect((await search({ q: "alfa", status: [1084] })).count).toBe(0);
+    });
+
+    it("never lists or names a person: a sole trader's registration is neither found nor counted, by any door", async () => {
+      // by name (the holder's name, the legal form's words, the shared word of a company), by their registration number and CUI, by the code only they carry
+      for (const q of ["ionescu", "vasilescu maria", "demeter", "popescu", "persoana fizica", "F12/2001/2019", "F40/2002/2020", "5610", ...SOLE_TRADER_REGISTRATIONS]) {
+        expect((await search({ q })).count, q).toBe(0);
+      }
+      expect((await search({ caen: "56" })).count).toBe(0);
+      // the whole register as the search lists it, and every other answer, hold no person's name or their registrations
+      const everything = [await search({}, { limit: 200 }), await search({ q: "alfa" }), await search({ q: "onrc" }), await search({ county: "RO-CJ" }), await search({ county: "RO-B" }), await search({ seapCounterparty: false }),
+        await search({ q: "omega" }), await search({ q: "omega only" })]; // OMEGA ONLY SRL was once OMEGA IONESCU PFA: that earlier name is no alias, neither a highlight nor a match
+      const text = JSON.stringify(everything);
+      for (const p of [...PEOPLE, ...SOLE_TRADER_REGISTRATIONS]) expect(text, p).not.toMatch(new RegExp(`(?<![\\p{L}\\p{N}])${p.replace(/[/]/g, "\\/")}(?![\\p{L}\\p{N}])`, "iu")); // as whole words: PRIMARIA is no MARIA
+      for (const s of everything) for (const row of s.organisations.rows) expect(Object.keys(row).sort()).toEqual(["caen", "cui", "entity", "legalForm", "matched", "name", "registrationDate", "registrationNumber", "seapCounterparty", "seat", "statuses"]);
+      const omega = await search({ q: "omega" });
+      expect(omega.organisations.rows.map((r) => r.registrationNumber)).toEqual([REGS.omega]);
+      expect(omega.organisations.rows[0]!.matched.every((m) => m.field !== "ALIAS")).toBe(true);
+      expect((await search({ q: "omega ionescu" })).count).toBe(0);
+      // the count lens leaves them out too
+      const lens = (await search({})).map;
+      expect(lens.counties.reduce((n, c) => n + c.registrations, 0) + lens.unplacedRegistrations).toBe(9);
+      // and the registration number of a sole trader is no record
+      for (const registrationNumber of [...SOLE_TRADER_REGISTRATIONS, "J00/0/2000"]) {
+        const r = await ask(DB.search, onrcRecord.sha256, { registrationNumber });
+        expect(r.body.errors, registrationNumber).toBeUndefined();
+        expect((r.body.data as OnrcRecordQuery).onrc.record, registrationNumber).toBeNull();
+      }
+    });
+
+    it("answers a registration by its registration number, with the entity page it belongs to", async () => {
+      const r = await ask(DB.search, onrcRecord.sha256, { registrationNumber: REGS.alfa });
+      expect(r.body.errors).toBeUndefined();
+      expect(validateResponse(schema, parse(onrcRecord.document), r.body.data, { registrationNumber: REGS.alfa })).toEqual([]);
+      expect((r.body.data as OnrcRecordQuery).onrc.record).toMatchObject({
+        registrationNumber: REGS.alfa, name: "ALFA ONRC SRL", cui: "3100020", entity: { key: "3100020" }, snapshot: "2026-05-06", legalForm: "SRL",
+        statuses: [{ code: 1048, firstSeen: "2025-03-18", sinceAtLeast: true }, { code: 1107, firstSeen: "2026-04-03", sinceAtLeast: false }],
+        provenance: { source: "ONRC", url: "https://data.gov.ro/dataset/firme-06-05-2026" },
+      });
+      const noCui = await ask(DB.search, onrcRecord.sha256, { registrationNumber: REGS.gresit });
+      expect((noCui.body.data as OnrcRecordQuery).onrc.record).toMatchObject({ registrationNumber: REGS.gresit, cui: null, entity: null }); // an organisation with no valid CUI: a record, no entity
+    });
+
+    it("lists each result's SEAP-counterparty flag and entity link, and none for a registration with no valid CUI", async () => {
+      const s = await search({}, { limit: 200 });
+      const row = (n: keyof typeof REGS) => s.organisations.rows.find((x) => x.registrationNumber === REGS[n])!;
+      expect([row("omega").seapCounterparty, row("zeta").seapCounterparty, row("gresit").seapCounterparty, row("auth").seapCounterparty]).toEqual([false, false, false, true]);
+      expect(row("gresit").entity).toBeNull();
+      expect(row("omega").entity).toMatchObject({ key: "3100071", displayName: "OMEGA ONLY SRL" });
+      expect(row("zeta")).toMatchObject({ seat: { county: null, locality: null }, caen: [], statuses: [{ code: 1048 }, { code: 2110, name: "bilanțul anual nedepus la registrul comerțului" }] });
+      expect(s.organisations.rows.every((x) => x.matched.length === 0)).toBe(true); // no text, nothing to say about why
+    });
+
+    it("the count lens: registrations per county for the query, Unplaced registrations in the Unplaced tile", async () => {
+      const counts = (s: Search) => Object.fromEntries(s.map.counties.map((c) => [c.area, c.registrations]));
+      const all = await search({});
+      expect(counts(all)).toEqual({ "RO-B": 1, "RO-BN": 1, "RO-BV": 1, "RO-CJ": 4, "RO-IS": 1 });
+      expect(all.map.unplacedRegistrations).toBe(1); // ZETA has no county
+      expect(all.map.counties.find((c) => c.area === "RO-CJ")).toEqual({ area: "RO-CJ", name: "Cluj", registrations: 4 });
+      expect(all.map.counties.map((c) => c.area)).toEqual(["RO-B", "RO-BN", "RO-BV", "RO-CJ", "RO-IS"]); // sorted, counties with none absent
+      // the same count as the search: the sum of the lens is the match count
+      expect(all.map.counties.reduce((n, c) => n + c.registrations, 0) + all.map.unplacedRegistrations).toBe(all.count);
+      // the query narrows the lens
+      const onrc = await search({ q: "onrc" });
+      expect(counts(onrc)).toEqual({ "RO-BN": 1, "RO-BV": 1, "RO-CJ": 2, "RO-IS": 1 });
+      expect(onrc.map.unplacedRegistrations).toBe(0);
+      const unplaced = await search({ status: [2110] });
+      expect(unplaced.map).toEqual({ counties: [], unplacedRegistrations: 1 });
+      const cj = await search({ county: "RO-CJ", status: [1048] });
+      expect(counts(cj)).toEqual({ "RO-CJ": 3 }); // every chip narrows the lens, the county's own included, as in SEAP's Money lens
+      expect((await search({ q: "nothing like this" })).map).toEqual({ counties: [], unplacedRegistrations: 0 });
+    });
+
+    it("Coverage of ONRC: one cell per snapshot, the data-through date is the snapshot's, no denominator", async () => {
+      const ask1 = async (db: string, window: unknown = null) => {
+        const r = await ask(db, onrcCoverage.sha256, { window });
+        expect(r.body.errors).toBeUndefined();
+        expect(validateResponse(schema, parse(onrcCoverage.document), r.body.data, { window })).toEqual([]);
+        return r.body.data as OnrcCoverageQuery;
+      };
+      const full = await ask1(DB.search);
+      expect(full.coverage.denominator).toBe("NONE");
+      expect(full.sources.find((x) => x.id === "ONRC")).toEqual({ id: "ONRC", name: "ONRC", harvested: true, dataThrough: [{ kind: "REGISTRATION", date: "2026-05-06" }] });
+      // the four held snapshots (the earliest in the legacy layout, which lists seven registrations), each a LOADED cell of its own date
+      expect(full.coverage.grid).toEqual([
+        { quarter: "2025-03-18", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 7, crawlOnly: 0, dataThrough: "2025-03-18" },
+        { quarter: "2026-03-02", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-03-02" },
+        { quarter: "2026-04-03", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-04-03" },
+        { quarter: "2026-05-06", kind: "REGISTRATION", state: "LOADED", rule: null, note: null, records: 13, crawlOnly: 0, dataThrough: "2026-05-06" },
+      ]);
+      // a county's status is the window's, and no N of M is stated: every county carries zeros
+      expect(full.coverage.counties).toHaveLength(42);
+      expect(new Set(full.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED"]));
+      expect(full.coverage.counties.every((c) => c.withRecords === 0 && c.publicEntities === 0 && c.otherAuthorities === 0)).toBe(true);
+      expect(full.coverage.counties.find((c) => c.county === "RO-CJ")).toBeDefined();
+    });
+
+    it("Coverage of ONRC: a month with no snapshot is a known gap, and the window narrows the cells", async () => {
+      const r = await ask(DB.gap, onrcCoverage.sha256, { window: null });
+      expect(r.body.errors).toBeUndefined();
+      const data = r.body.data as OnrcCoverageQuery;
+      expect(data.coverage.grid.map((c) => [c.quarter, c.state, c.records, c.dataThrough])).toEqual([
+        ["2025-03-18", "LOADED", 7, "2025-03-18"], ["2026-03-02", "LOADED", 13, "2026-03-02"], ["2026-04", "KNOWN_GAP", 0, null], ["2026-05-06", "LOADED", 13, "2026-05-06"],
+      ]);
+      expect(data.coverage.grid.find((c) => c.state === "KNOWN_GAP")).toMatchObject({ kind: "REGISTRATION", rule: null, note: null, crawlOnly: 0 });
+      expect(new Set(data.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED_WITH_KNOWN_GAPS"]));
+      expect(data.coverage.denominator).toBe("NONE");
+      expect(data.sources.find((x) => x.id === "ONRC")!.dataThrough).toEqual([{ kind: "REGISTRATION", date: "2026-05-06" }]);
+      // the window follows the date chip: April alone holds the gap (and no snapshot); May alone is harvested
+      const april = (await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2026-04-01", to: "2026-04-30" } })).body.data as OnrcCoverageQuery;
+      expect(april.coverage.grid.map((c) => [c.quarter, c.state])).toEqual([["2026-04", "KNOWN_GAP"]]);
+      const may = (await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2026-05-01", to: "2026-05-31" } })).body.data as OnrcCoverageQuery;
+      expect(may.coverage.grid.map((c) => [c.quarter, c.state])).toEqual([["2026-05-06", "LOADED"]]);
+      expect(new Set(may.coverage.counties.map((c) => c.status))).toEqual(new Set(["HARVESTED"]));
+      expect((await ask(DB.gap, onrcCoverage.sha256, { window: { from: "2020-01-01", to: "2020-12-31" } })).body.data).toMatchObject({ coverage: { grid: [], counties: expect.any(Array) } });
+    });
+
+    it("keeps ONRC cells out of SEAP's Coverage grid", async () => {
+      const r = await ask(DB.search, coveragePage.sha256, { window: null });
+      expect(r.body.errors).toBeUndefined();
+      const c = (r.body.data as CoveragePageQuery).coverage;
+      expect(c.grid.every((cell) => ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"].includes(cell.kind))).toBe(true); // no ONRC cell in SEAP's grid
     });
   });
 

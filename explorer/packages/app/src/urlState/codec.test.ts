@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { RECORD_FILTER_URL, URL_ONLY_KEYS, type RecordFilter } from "@grivei/contract";
-import { decodeUrlState, encodeUrlState } from "./codec.ts";
+import { ONRC_FILTER_URL, RECORD_FILTER_URL, URL_ONLY_KEYS, type OnrcFilter, type RecordFilter } from "@grivei/contract";
+import { decodeOnrcUrlState, decodeUrlState, encodeOnrcUrlState, encodeUrlState } from "./codec.ts";
 
 /** One citable query string per RecordFilter field, written in the codec's canonical form. A new field makes this fail to compile. */
 const QUERY_OF_FIELD: Record<keyof RecordFilter, string> = {
@@ -170,5 +170,55 @@ describe("the URL <-> RecordFilter codec", () => {
     it("sits after the counterparty in the canonical order", () => {
       expect(encodeUrlState({ filter: { cpv: "301" }, counterparty: "123", carried: { q: "a" } })).toBe("?cpv=301&counterparty=123&search=q%3Da");
     });
+  });
+});
+
+/** ONRC's chips (#176): one citable query string per OnrcFilter field, in the canonical form. A new field makes this fail to compile. */
+const ONRC_QUERY_OF_FIELD: Record<keyof OnrcFilter, string> = {
+  q: "q=Alfa+%C8%98antier",
+  status: "status=1107&status=1084",
+  caen: "caen=4211",
+  county: "county=RO-CJ",
+  registeredFrom: "registeredFrom=2020-01-01",
+  registeredTo: "registeredTo=2024-12-31",
+  seapCounterparty: "seapCounterparty=true",
+};
+
+describe("the URL <-> OnrcFilter codec (#176)", () => {
+  const roundTripOnrc = (query: string) => encodeOnrcUrlState(decodeOnrcUrlState(`?${query}`));
+
+  it("covers exactly the contract's ONRC fields", () => {
+    expect(Object.keys(ONRC_QUERY_OF_FIELD).sort()).toEqual(Object.keys(ONRC_FILTER_URL).sort());
+  });
+
+  it.each(Object.entries(ONRC_QUERY_OF_FIELD))("round-trips %s (URL -> filter -> URL unchanged)", (field, query) => {
+    const state = decodeOnrcUrlState(`?${query}`);
+    expect(Object.keys(state.filter)).toEqual([field]);
+    expect(encodeOnrcUrlState(state)).toBe(`?${query}`);
+  });
+
+  it("decodes each chip to the type the API takes: status codes are numbers, the dates stay text", () => {
+    const { filter } = decodeOnrcUrlState(`?${Object.values(ONRC_QUERY_OF_FIELD).join("&")}`);
+    expect(filter).toEqual({ q: "Alfa Șantier", status: [1107, 1084], caen: "4211", county: "RO-CJ", registeredFrom: "2020-01-01", registeredTo: "2024-12-31", seapCounterparty: true });
+  });
+
+  it("round-trips every chip at once with the tab and the page, in canonical order", () => {
+    const query = `${Object.values(ONRC_QUERY_OF_FIELD).join("&")}&tab=organisations&page=2`;
+    expect(roundTripOnrc(query)).toBe(`?${query}`);
+  });
+
+  it("keeps seapCounterparty=false distinct from unset, and leaves out page 1 and an empty state", () => {
+    expect(roundTripOnrc("seapCounterparty=false")).toBe("?seapCounterparty=false");
+    expect(encodeOnrcUrlState({ filter: {}, page: 1 })).toBe("");
+    expect(decodeOnrcUrlState("")).toEqual({ filter: {} });
+  });
+
+  it("ignores unknown keys and malformed values instead of passing them on", () => {
+    expect(decodeOnrcUrlState("?utm=1&status=abc&status=-1&caen=4a&county=ro-cj&registeredFrom=yesterday&seapCounterparty=yes&page=0")).toEqual({ filter: {} });
+    expect(decodeOnrcUrlState("?status=1048&status=x&status=1084").filter).toEqual({ status: [1048, 1084] });
+  });
+
+  it("a SEAP-only key is ignored, so an ONRC URL never carries a SEAP chip", () => {
+    expect(decodeOnrcUrlState("?channel=contract&supplier=123&q=alfa")).toEqual({ filter: { q: "alfa" } });
   });
 });

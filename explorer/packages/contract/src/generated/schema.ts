@@ -103,6 +103,8 @@ export type CountySide =
 export type Coverage = {
   __typename?: 'Coverage';
   counties: Array<CountyCoverage>;
+  /** What `CountyCoverage.withRecords` is counted against: SEAP's is MF's list of public entities; ONRC has none (its register is the whole population), so its N of M is not stated. */
+  denominator: CoverageDenominator;
   /** Planned Sources' greyed marks, per county, come from `sources` (harvested: false). */
   grid: Array<GapCell>;
   /** MF Lista entităților publice snapshot date. */
@@ -111,6 +113,10 @@ export type Coverage = {
   unplacedAuthorities: UnplacedTile;
   window: Period;
 };
+
+export type CoverageDenominator =
+  | 'NONE'
+  | 'PUBLIC_ENTITIES';
 
 export type CoverageStatus =
   | 'HARVESTED'
@@ -365,6 +371,7 @@ export type GapCell = {
   kind: Scalars['String']['output'];
   /** The gap file's written reason, set only for HAND_ENTERED: source data shown verbatim, never translated. */
   note: Maybe<Scalars['String']['output']>;
+  /** The grid period: SEAP's is a quarter (`2024-Q4`). ONRC's is one snapshot, written as its date (`2026-05-06`), or a calendar month with no snapshot held (`2026-04`, a KNOWN_GAP). */
   quarter: Scalars['String']['output'];
   records: Scalars['Int']['output'];
   /** The published rule that explains the state. The frontend's catalogue words it in both languages. */
@@ -501,11 +508,89 @@ export type OnrcAlias = {
   sinceAtLeast: Scalars['Boolean']['output'];
 };
 
+export type OnrcAreaCount = {
+  __typename?: 'OnrcAreaCount';
+  area: Scalars['MapArea']['output'];
+  name: Scalars['String']['output'];
+  registrations: Scalars['Int']['output'];
+};
+
 export type OnrcCaen = {
   __typename?: 'OnrcCaen';
   code: Scalars['String']['output'];
   /** The CAEN revision ONRC records (0 = 1998, 1 = 2003, 2 = 2008, 3 = 2025); null when unknown. */
   version: Maybe<Scalars['Int']['output']>;
+};
+
+/**
+ * ONRC's count lens (ADR 0014: ONRC has no money measure). Counties with no matching registration are absent. The placement rule is the registered
+ * seat's county; a registration with no county is in the Unplaced tile. Sole traders' registrations are in neither.
+ */
+export type OnrcCountMap = {
+  __typename?: 'OnrcCountMap';
+  counties: Array<OnrcAreaCount>;
+  unplacedRegistrations: Scalars['Int']['output'];
+};
+
+export type OnrcCurrentStatus = {
+  __typename?: 'OnrcCurrentStatus';
+  code: Scalars['Int']['output'];
+  /** ONRC's nomenclature name (Romanian, source data); null when the held nomenclature does not list the code. */
+  name: Maybe<Scalars['String']['output']>;
+};
+
+/** ONRC's search state, 1:1 with the URL like RecordFilter (the codec is `ONRC_FILTER_URL`). Every chip is a field; an unset field narrows nothing. */
+export type OnrcFilter = {
+  caen?: InputMaybe<Scalars['String']['input']>;
+  county?: InputMaybe<Scalars['MapArea']['input']>;
+  q?: InputMaybe<Scalars['String']['input']>;
+  registeredFrom?: InputMaybe<Scalars['Date']['input']>;
+  registeredTo?: InputMaybe<Scalars['Date']['input']>;
+  seapCounterparty?: InputMaybe<Scalars['Boolean']['input']>;
+  status?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+export type OnrcFilterEcho = {
+  __typename?: 'OnrcFilterEcho';
+  qFolded: Maybe<Scalars['String']['output']>;
+};
+
+export type OnrcMatchableField =
+  | 'ALIAS'
+  | 'CAEN'
+  | 'CUI'
+  | 'NAME'
+  | 'REGISTRATION_NUMBER';
+
+export type OnrcMatchedField = {
+  __typename?: 'OnrcMatchedField';
+  field: OnrcMatchableField;
+  /** Highlight ranges into `text`, [start, end) in UTF-16 code units. */
+  highlights: Array<Array<Scalars['Int']['output']>>;
+  /** The field's text as published (an earlier name, the CUI, the CAEN code...). */
+  text: Scalars['String']['output'];
+};
+
+export type OnrcQuery = {
+  __typename?: 'OnrcQuery';
+  /** A registration by its ONRC registration number (e.g. J40/1234/2010), the way the entity page's ONRC section shows it; null for an unknown number and for a sole trader's registration. */
+  record: Maybe<OnrcRegistration>;
+  /**
+   * ONRC registrations by plain text (name, an earlier name, CUI, registration number, authorised CAEN code), with the same contract as SEAP's search:
+   * a match count and the top results. One matching set: the count, the Organisations tab and the count lens all come from the same filter.
+   * Never people, and never a sole trader's (PFA, II, IF) registration: those are named after a natural person (ADR 0009).
+   */
+  search: OnrcSearch;
+};
+
+
+export type OnrcQueryRecordArgs = {
+  registrationNumber: Scalars['ID']['input'];
+};
+
+
+export type OnrcQuerySearchArgs = {
+  filter: OnrcFilter;
 };
 
 /**
@@ -519,8 +604,14 @@ export type OnrcRegistration = {
   aliases: Array<OnrcAlias>;
   /** The authorised CAEN codes of the newest snapshot, by code. */
   caen: Array<OnrcCaen>;
+  /** The CUI, when it passes the check digit. */
+  cui: Maybe<Scalars['String']['output']>;
+  /** The entity page of the CUI; null for a registration with no valid CUI. */
+  entity: Maybe<Entity>;
   /** FORMA_JURIDICA as published, e.g. SRL; null when the snapshot has none. */
   legalForm: Maybe<Scalars['String']['output']>;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: Scalars['String']['output'];
   /** Where it came from: ONRC's dataset page, the snapshot's title, and when we fetched it. */
   provenance: Provenance;
   /** Null when the newest snapshot is in the legacy layout, which carries no registration date. */
@@ -533,6 +624,56 @@ export type OnrcRegistration = {
   snapshot: Scalars['Date']['output'];
   /** The statuses the newest snapshot shows (a company can carry several, e.g. in operation and in insolvency), by code. */
   statuses: Array<OnrcStatus>;
+};
+
+/** One matching registration. Never a person: no administrator, no legal representative (those are the entity page's, and only for organisations tied to public money, ADR 0009). */
+export type OnrcResult = {
+  __typename?: 'OnrcResult';
+  caen: Array<OnrcCaen>;
+  cui: Maybe<Scalars['String']['output']>;
+  /** The entity page of the CUI; null for a registration with no valid CUI. */
+  entity: Maybe<Entity>;
+  legalForm: Maybe<Scalars['String']['output']>;
+  /** Why it matched: every field that holds a query word, strongest first (CUI, registration number, name, an earlier name, CAEN). Empty without a text query. */
+  matched: Array<OnrcMatchedField>;
+  /** ONRC's legal name as the newest snapshot lists it. */
+  name: Scalars['String']['output'];
+  registrationDate: Maybe<Scalars['Date']['output']>;
+  registrationNumber: Scalars['String']['output'];
+  /** The CUI is an authority or a winner of a loaded SEAP Record. */
+  seapCounterparty: Scalars['Boolean']['output'];
+  seat: OnrcSeat;
+  /** The statuses the newest snapshot shows. */
+  statuses: Array<OnrcCurrentStatus>;
+};
+
+export type OnrcResultPage = {
+  __typename?: 'OnrcResultPage';
+  count: Scalars['Int']['output'];
+  rows: Array<OnrcResult>;
+};
+
+export type OnrcResultTab =
+  | 'ORGANISATIONS';
+
+export type OnrcSearch = {
+  __typename?: 'OnrcSearch';
+  /** The match count: registrations matching the filter, sole traders' left out. */
+  count: Scalars['Int']['output'];
+  /** The results tab that opens first. Organisations only: ONRC search never lists people. */
+  defaultTab: OnrcResultTab;
+  /** Echo of the filter as the server understood it. */
+  filter: OnrcFilterEcho;
+  /** The count lens: registrations matching the filter, by the seat's county, for the same filter as the count (every chip narrows it, `county` included, as in SEAP's Money lens). */
+  map: OnrcCountMap;
+  /** The Organisations tab: ranked by text relevance, then newest registration first (a registration with no date last), then ONRC's registration number. Offset/limit paging; the server caps limit at 200. */
+  organisations: OnrcResultPage;
+};
+
+
+export type OnrcSearchOrganisationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type OnrcSeat = {
@@ -648,6 +789,7 @@ export type Query = {
   coverage: Coverage;
   /** An entity by its URL key: a CUI, `vat-<id>` or `name-<slug>` (name-only suppliers). */
   entity: Maybe<Entity>;
+  onrc: OnrcQuery;
   /** The Reference sources held beside the explorable ones (AMEPIP's public enterprises, AEP's one-off 2025 file, MF's financial statements, BaniPartide's firm donations), each with its data-through date; for the methodology page. */
   referenceSources: Array<ReferenceSource>;
   seap: SeapQuery;
@@ -1289,6 +1431,7 @@ export type ResolversTypes = {
   CountyCoverage: ResolverTypeWrapper<CountyCoverage>;
   CountySide: CountySide;
   Coverage: ResolverTypeWrapper<Coverage>;
+  CoverageDenominator: CoverageDenominator;
   CoverageStatus: CoverageStatus;
   Cpv: ResolverTypeWrapper<Cpv>;
   DataThrough: ResolverTypeWrapper<DataThrough>;
@@ -1330,8 +1473,20 @@ export type ResolversTypes = {
   MonthTotal: ResolverTypeWrapper<MonthTotal>;
   NoPublicationNumbers: ResolverTypeWrapper<NoPublicationNumbers>;
   OnrcAlias: ResolverTypeWrapper<OnrcAlias>;
+  OnrcAreaCount: ResolverTypeWrapper<OnrcAreaCount>;
   OnrcCaen: ResolverTypeWrapper<OnrcCaen>;
-  OnrcRegistration: ResolverTypeWrapper<OnrcRegistration>;
+  OnrcCountMap: ResolverTypeWrapper<OnrcCountMap>;
+  OnrcCurrentStatus: ResolverTypeWrapper<OnrcCurrentStatus>;
+  OnrcFilter: OnrcFilter;
+  OnrcFilterEcho: ResolverTypeWrapper<OnrcFilterEcho>;
+  OnrcMatchableField: OnrcMatchableField;
+  OnrcMatchedField: ResolverTypeWrapper<OnrcMatchedField>;
+  OnrcQuery: ResolverTypeWrapper<Omit<OnrcQuery, 'search'> & { search: ResolversTypes['OnrcSearch'] }>;
+  OnrcRegistration: ResolverTypeWrapper<Omit<OnrcRegistration, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  OnrcResult: ResolverTypeWrapper<Omit<OnrcResult, 'entity'> & { entity?: Maybe<ResolversTypes['Entity']> }>;
+  OnrcResultPage: ResolverTypeWrapper<Omit<OnrcResultPage, 'rows'> & { rows: Array<ResolversTypes['OnrcResult']> }>;
+  OnrcResultTab: OnrcResultTab;
+  OnrcSearch: ResolverTypeWrapper<Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversTypes['OnrcFilterEcho'], organisations: ResolversTypes['OnrcResultPage'] }>;
   OnrcSeat: ResolverTypeWrapper<OnrcSeat>;
   OnrcStatus: ResolverTypeWrapper<OnrcStatus>;
   OverCapNumbers: ResolverTypeWrapper<OverCapNumbers>;
@@ -1427,8 +1582,18 @@ export type ResolversParentTypes = {
   MonthTotal: MonthTotal;
   NoPublicationNumbers: NoPublicationNumbers;
   OnrcAlias: OnrcAlias;
+  OnrcAreaCount: OnrcAreaCount;
   OnrcCaen: OnrcCaen;
-  OnrcRegistration: OnrcRegistration;
+  OnrcCountMap: OnrcCountMap;
+  OnrcCurrentStatus: OnrcCurrentStatus;
+  OnrcFilter: OnrcFilter;
+  OnrcFilterEcho: OnrcFilterEcho;
+  OnrcMatchedField: OnrcMatchedField;
+  OnrcQuery: Omit<OnrcQuery, 'search'> & { search: ResolversParentTypes['OnrcSearch'] };
+  OnrcRegistration: Omit<OnrcRegistration, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  OnrcResult: Omit<OnrcResult, 'entity'> & { entity?: Maybe<ResolversParentTypes['Entity']> };
+  OnrcResultPage: Omit<OnrcResultPage, 'rows'> & { rows: Array<ResolversParentTypes['OnrcResult']> };
+  OnrcSearch: Omit<OnrcSearch, 'filter' | 'organisations'> & { filter: ResolversParentTypes['OnrcFilterEcho'], organisations: ResolversParentTypes['OnrcResultPage'] };
   OnrcSeat: OnrcSeat;
   OnrcStatus: OnrcStatus;
   OverCapNumbers: OverCapNumbers;
@@ -1531,6 +1696,7 @@ export type CountyCoverageResolvers<ContextType = any, ParentType extends Resolv
 
 export type CoverageResolvers<ContextType = any, ParentType extends ResolversParentTypes['Coverage'] = ResolversParentTypes['Coverage']> = {
   counties?: Resolver<Array<ResolversTypes['CountyCoverage']>, ParentType, ContextType>;
+  denominator?: Resolver<ResolversTypes['CoverageDenominator'], ParentType, ContextType>;
   grid?: Resolver<Array<ResolversTypes['GapCell']>, ParentType, ContextType>;
   referenceSnapshot?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   source?: Resolver<ResolversTypes['Source'], ParentType, ContextType>;
@@ -1747,21 +1913,82 @@ export type OnrcAliasResolvers<ContextType = any, ParentType extends ResolversPa
   sinceAtLeast?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
 };
 
+export type OnrcAreaCountResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcAreaCount'] = ResolversParentTypes['OnrcAreaCount']> = {
+  area?: Resolver<ResolversTypes['MapArea'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
 export type OnrcCaenResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCaen'] = ResolversParentTypes['OnrcCaen']> = {
   code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   version?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
 };
 
+export type OnrcCountMapResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCountMap'] = ResolversParentTypes['OnrcCountMap']> = {
+  counties?: Resolver<Array<ResolversTypes['OnrcAreaCount']>, ParentType, ContextType>;
+  unplacedRegistrations?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type OnrcCurrentStatusResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcCurrentStatus'] = ResolversParentTypes['OnrcCurrentStatus']> = {
+  code?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcFilterEchoResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcFilterEcho'] = ResolversParentTypes['OnrcFilterEcho']> = {
+  qFolded?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type OnrcMatchedFieldResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcMatchedField'] = ResolversParentTypes['OnrcMatchedField']> = {
+  field?: Resolver<ResolversTypes['OnrcMatchableField'], ParentType, ContextType>;
+  highlights?: Resolver<Array<Array<ResolversTypes['Int']>>, ParentType, ContextType>;
+  text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type OnrcQueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcQuery'] = ResolversParentTypes['OnrcQuery']> = {
+  record?: Resolver<Maybe<ResolversTypes['OnrcRegistration']>, ParentType, ContextType, RequireFields<OnrcQueryRecordArgs, 'registrationNumber'>>;
+  search?: Resolver<ResolversTypes['OnrcSearch'], ParentType, ContextType, RequireFields<OnrcQuerySearchArgs, 'filter'>>;
+};
+
 export type OnrcRegistrationResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcRegistration'] = ResolversParentTypes['OnrcRegistration']> = {
   aliases?: Resolver<Array<ResolversTypes['OnrcAlias']>, ParentType, ContextType>;
   caen?: Resolver<Array<ResolversTypes['OnrcCaen']>, ParentType, ContextType>;
+  cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType>;
   legalForm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   provenance?: Resolver<ResolversTypes['Provenance'], ParentType, ContextType>;
   registrationDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   registrationNumber?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   seat?: Resolver<ResolversTypes['OnrcSeat'], ParentType, ContextType>;
   snapshot?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   statuses?: Resolver<Array<ResolversTypes['OnrcStatus']>, ParentType, ContextType>;
+};
+
+export type OnrcResultResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcResult'] = ResolversParentTypes['OnrcResult']> = {
+  caen?: Resolver<Array<ResolversTypes['OnrcCaen']>, ParentType, ContextType>;
+  cui?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType>;
+  legalForm?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  matched?: Resolver<Array<ResolversTypes['OnrcMatchedField']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registrationDate?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  registrationNumber?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  seapCounterparty?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  seat?: Resolver<ResolversTypes['OnrcSeat'], ParentType, ContextType>;
+  statuses?: Resolver<Array<ResolversTypes['OnrcCurrentStatus']>, ParentType, ContextType>;
+};
+
+export type OnrcResultPageResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcResultPage'] = ResolversParentTypes['OnrcResultPage']> = {
+  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  rows?: Resolver<Array<ResolversTypes['OnrcResult']>, ParentType, ContextType>;
+};
+
+export type OnrcSearchResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcSearch'] = ResolversParentTypes['OnrcSearch']> = {
+  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  defaultTab?: Resolver<ResolversTypes['OnrcResultTab'], ParentType, ContextType>;
+  filter?: Resolver<ResolversTypes['OnrcFilterEcho'], ParentType, ContextType>;
+  map?: Resolver<ResolversTypes['OnrcCountMap'], ParentType, ContextType>;
+  organisations?: Resolver<ResolversTypes['OnrcResultPage'], ParentType, ContextType, RequireFields<OnrcSearchOrganisationsArgs, 'limit' | 'offset'>>;
 };
 
 export type OnrcSeatResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnrcSeat'] = ResolversParentTypes['OnrcSeat']> = {
@@ -1830,6 +2057,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   counties?: Resolver<Array<ResolversTypes['County']>, ParentType, ContextType>;
   coverage?: Resolver<ResolversTypes['Coverage'], ParentType, ContextType, RequireFields<QueryCoverageArgs, 'source'>>;
   entity?: Resolver<Maybe<ResolversTypes['Entity']>, ParentType, ContextType, RequireFields<QueryEntityArgs, 'key'>>;
+  onrc?: Resolver<ResolversTypes['OnrcQuery'], ParentType, ContextType>;
   referenceSources?: Resolver<Array<ResolversTypes['ReferenceSource']>, ParentType, ContextType>;
   seap?: Resolver<ResolversTypes['SeapQuery'], ParentType, ContextType>;
   signalRules?: Resolver<Array<ResolversTypes['SignalRule']>, ParentType, ContextType>;
@@ -2078,8 +2306,17 @@ export type Resolvers<ContextType = any> = {
   MonthTotal?: MonthTotalResolvers<ContextType>;
   NoPublicationNumbers?: NoPublicationNumbersResolvers<ContextType>;
   OnrcAlias?: OnrcAliasResolvers<ContextType>;
+  OnrcAreaCount?: OnrcAreaCountResolvers<ContextType>;
   OnrcCaen?: OnrcCaenResolvers<ContextType>;
+  OnrcCountMap?: OnrcCountMapResolvers<ContextType>;
+  OnrcCurrentStatus?: OnrcCurrentStatusResolvers<ContextType>;
+  OnrcFilterEcho?: OnrcFilterEchoResolvers<ContextType>;
+  OnrcMatchedField?: OnrcMatchedFieldResolvers<ContextType>;
+  OnrcQuery?: OnrcQueryResolvers<ContextType>;
   OnrcRegistration?: OnrcRegistrationResolvers<ContextType>;
+  OnrcResult?: OnrcResultResolvers<ContextType>;
+  OnrcResultPage?: OnrcResultPageResolvers<ContextType>;
+  OnrcSearch?: OnrcSearchResolvers<ContextType>;
   OnrcSeat?: OnrcSeatResolvers<ContextType>;
   OnrcStatus?: OnrcStatusResolvers<ContextType>;
   OverCapNumbers?: OverCapNumbersResolvers<ContextType>;

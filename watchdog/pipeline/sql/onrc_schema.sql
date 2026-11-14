@@ -73,3 +73,36 @@ CREATE TABLE onrc.name_span (
     since_at_least boolean NOT NULL,
     PRIMARY KEY (reg_no, name, first_seen)
 );
+
+-- The search table (#176): one row per registration of the newest snapshot that may be searched by name, the way `seap.search` has one per Record x
+-- winner. `pg_search` (BM25) indexes it (`onrc.search_bm25`, created by `pipeline/onrc/search.py` in the rebuild's transaction, followed by VACUUM ANALYZE
+-- after the commit). `doc` is the one folded text (pipeline/fold.py) of the registration's name, every earlier name (aliases), its CUI, its registration
+-- number and its authorised CAEN codes; the columns the filters and the count lens read are all in the index.
+-- A sole trader's registration (PFA, II, IF: `pipeline/sole_trader.py`) is never a row: it is named after a natural person, and publishing such names is
+-- an open question (ADR 0009), so ONRC search must not make them findable by name. The match count and the count lens leave them out for the same reason.
+CREATE TABLE onrc.search (
+    id                bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,  -- the index's key field
+    reg_no            text NOT NULL UNIQUE REFERENCES onrc.registration(reg_no),
+    cui               text,                         -- as on the registration (null: no valid CUI, so no entity)
+    registration_date date,                         -- null in the legacy layout: such a registration ranks after every dated one
+    area              text NOT NULL,                -- the count lens's area, never null: 'RO-CJ' (the seat's county) or 'UNPLACED' (no county)
+    statuses          text[] NOT NULL DEFAULT '{}', -- ONRC status codes the newest snapshot shows (the `status` filter reads this)
+    caen              text[] NOT NULL DEFAULT '{}', -- authorised CAEN codes (the `caen` filter: a code or a prefix)
+    seap_counterparty boolean NOT NULL,             -- the CUI is an authority or a winner of a loaded SEAP Record
+    aliases           text[] NOT NULL DEFAULT '{}', -- the earlier names the document holds (never one that looks like a sole trader's): the only ones a highlight may show
+    doc               text NOT NULL                 -- folded text, see above
+);
+
+-- Coverage (#176): the grid of ONRC's snapshots, filled by `pipeline/onrc/build.py` from the held snapshots. A cell is one snapshot (period = its date)
+-- or one calendar month since March 2026 with no held snapshot (period = `YYYY-MM`, a known gap). `kind` is the contract's record kind: REGISTRATION
+-- today, ROLE once ticket #177 loads the people files.
+CREATE TABLE onrc.coverage_cell (
+    period       text NOT NULL,                      -- `2026-05-06` (a held snapshot) or `2026-04` (a month with none)
+    period_start date NOT NULL,
+    period_end   date NOT NULL,
+    kind         text NOT NULL CHECK (kind IN ('REGISTRATION', 'ROLE')),
+    state        text NOT NULL CHECK (state IN ('LOADED', 'KNOWN_GAP')),
+    records      integer NOT NULL,                   -- registrations the snapshot lists (0 for a gap)
+    data_through date,                               -- the snapshot date (null for a gap)
+    PRIMARY KEY (period, kind)
+);

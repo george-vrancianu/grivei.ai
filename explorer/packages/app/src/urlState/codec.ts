@@ -1,4 +1,4 @@
-import { RECORD_FILTER_URL, URL_ONLY_KEYS, type RecordFilter, type RecordOrder, type SignalOrder, type UrlEncoding, type UrlKeySpec } from "@grivei/contract";
+import { ONRC_FILTER_URL, RECORD_FILTER_URL, URL_ONLY_KEYS, type OnrcFilter, type RecordFilter, type RecordOrder, type SignalOrder, type UrlEncoding, type UrlKeySpec } from "@grivei/contract";
 
 /**
  * The URL search state: the `RecordFilter` plus what shapes the view without changing the matching set.
@@ -40,6 +40,7 @@ const PATTERNS: Record<Exclude<UrlEncoding, "boolean" | "enum" | "text">, RegExp
   prefix: /^\d+$/,
   "map-area": /^[A-Z][A-Z0-9_-]*$/,
   siruta: /^\d+$/,
+  int: /^\d+$/,
 };
 
 /** DIRECT_PURCHASE -> direct-purchase */
@@ -48,7 +49,7 @@ export const enumToUrl = (value: string): string => value.toLowerCase().replaceA
 export const enumFromUrl = (text: string): string | null => (SLUG.test(text) ? text.toUpperCase().replaceAll("-", "_") : null);
 
 /** One URL value into the filter's value, or null when it is malformed (a malformed value is ignored, never sent to the API). */
-function decodeValue(encoding: UrlEncoding, text: string): string | boolean | null {
+function decodeValue(encoding: UrlEncoding, text: string): string | number | boolean | null {
   switch (encoding) {
     case "text":
       return text === "" ? null : text;
@@ -62,6 +63,8 @@ function decodeValue(encoding: UrlEncoding, text: string): string | boolean | nu
     case "map-area":
     case "siruta":
       return PATTERNS[encoding].test(text) ? text : null;
+    case "int":
+      return PATTERNS.int.test(text) ? Number(text) : null;
   }
 }
 
@@ -71,31 +74,65 @@ function encodeValue(encoding: UrlEncoding, value: string | number | boolean): s
 
 const FIELDS = Object.entries(RECORD_FILTER_URL) as [keyof RecordFilter, UrlKeySpec][];
 
-/** The filter's fields of already-split query parameters (the same reading for the URL and for a carried search). */
-function decodeFilter(params: URLSearchParams): RecordFilter {
+/** Fields of already-split query parameters (the same reading for the URL, for a carried search and for ONRC's filter). */
+function decodeFields<F>(params: URLSearchParams, fields: readonly [string, UrlKeySpec][]): F {
   const filter: Record<string, unknown> = {};
-  for (const [field, spec] of FIELDS) {
+  for (const [field, spec] of fields) {
     const values = params
       .getAll(spec.key)
       .map((text) => decodeValue(spec.encoding, text))
-      .filter((v): v is string | boolean => v !== null);
+      .filter((v): v is string | number | boolean => v !== null);
     if (values.length === 0) continue;
     filter[field] = spec.repeatable ? values : values[0];
   }
-  return filter as RecordFilter;
+  return filter as F;
 }
 
-/** The filter's parameters, in the contract's order; unset fields and the default `countySide` are left out. */
-function appendFilter(params: URLSearchParams, filter: RecordFilter): void {
-  for (const [field, spec] of FIELDS) {
-    const raw = filter[field];
+/** The fields' parameters, in the contract's order; unset fields and the defaults are left out. */
+function appendFields(params: URLSearchParams, filter: object, fields: readonly [string, UrlKeySpec][], defaults: Record<string, string> = {}): void {
+  for (const [field, spec] of fields) {
+    const raw = (filter as Record<string, unknown>)[field];
     if (raw === undefined || raw === null) continue;
     const list = (Array.isArray(raw) ? raw : [raw]) as (string | number | boolean)[];
     for (const value of list) {
-      if (DEFAULTS[field] === value || value === "") continue;
+      if (defaults[field] === value || value === "") continue;
       params.append(spec.key, encodeValue(spec.encoding, value));
     }
   }
+}
+
+const decodeFilter = (params: URLSearchParams): RecordFilter => decodeFields<RecordFilter>(params, FIELDS);
+const appendFilter = (params: URLSearchParams, filter: RecordFilter): void => appendFields(params, filter, FIELDS, DEFAULTS);
+
+/**
+ * ONRC's URL search state (#176): its filter chips, the tab and the page. Same canonical form as `UrlState` (`encode(decode(q)) === q` for every canonical
+ * query string); the keys are `ONRC_FILTER_URL`'s, then `tab`, then `page`. The ONRC screens (#178) read and write it.
+ */
+export interface OnrcUrlState {
+  filter: OnrcFilter;
+  tab?: string;
+  page?: number;
+}
+
+const ONRC_FIELDS = Object.entries(ONRC_FILTER_URL) as [keyof OnrcFilter, UrlKeySpec][];
+
+export function decodeOnrcUrlState(search: string): OnrcUrlState {
+  const params = new URLSearchParams(search);
+  const state: OnrcUrlState = { filter: decodeFields<OnrcFilter>(params, ONRC_FIELDS) };
+  const tab = params.get(URL_ONLY_KEYS.tab);
+  if (tab !== null && SLUG.test(tab)) state.tab = tab;
+  const page = params.get(URL_ONLY_KEYS.page);
+  if (page !== null && /^[1-9]\d*$/.test(page) && Number(page) > 1) state.page = Number(page);
+  return state;
+}
+
+export function encodeOnrcUrlState(state: OnrcUrlState): string {
+  const params = new URLSearchParams();
+  appendFields(params, state.filter, ONRC_FIELDS);
+  if (state.tab) params.set(URL_ONLY_KEYS.tab, state.tab);
+  if (state.page !== undefined && state.page > 1) params.set(URL_ONLY_KEYS.page, String(state.page));
+  const text = params.toString();
+  return text === "" ? "" : `?${text}`;
 }
 
 /** The query string (with or without a leading `?`) into URL state. Unknown keys and malformed values are ignored. */
