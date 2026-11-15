@@ -5,7 +5,8 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { layout } from "../../../theme/tokens.ts";
 import { MapPanel } from "./components/MapPanel/index.ts";
 import { useMapLens } from "./hooks/useMapLens.ts";
-import { MAP_LENSES, type MapLens } from "./mainScreenLayout.utils.ts";
+import { BUSY_OPACITY } from "../../utils/busy.ts";
+import { MAP_LENSES, type BusyRegions, type MapLens } from "./mainScreenLayout.utils.ts";
 
 export interface MainScreenLayoutCopy {
   /** The lens toggle: its accessible name and the name of each lens. */
@@ -33,6 +34,8 @@ interface MainScreenLayoutBase {
   mapNote?: ReactNode;
   /** The results column: it brings its own panel (the result tabs), so a Go-to card or a note can sit above it. */
   results: ReactNode;
+  /** Optional: the regions showing their last answer while the next loads. Each is dimmed to 60% with `aria-busy="true"`; the map's header strip (the lens toggle) stays at full strength. The results are not here: `ResultTabs` takes its own `busy`. */
+  busy?: BusyRegions;
   copy: MainScreenLayoutCopy;
 }
 
@@ -48,7 +51,7 @@ export type LensControl = { lens: MapLens; onLensChange: (lens: MapLens) => void
  * From the md breakpoint (900 px, so laptops of 1024 to 1280 px get two columns) the results take the slightly wider column; below it the
  * panels stack and nothing is wider than the page. It fetches nothing and knows no router; the page fills the slots.
  */
-export function MainScreenLayout({ title, search, filters, maps, summary, mapBack, mapNote, results, lens, onLensChange, copy }: MainScreenLayoutProps) {
+export function MainScreenLayout({ title, search, filters, maps, summary, mapBack, mapNote, results, lens, onLensChange, busy, copy }: MainScreenLayoutProps) {
   const [shown, select] = useMapLens(lens, onLensChange);
   return (
     <Stack component="main" spacing={3} sx={{ pt: 3.5, pb: 5, px: layout.gutter, maxWidth: layout.maxWidth, width: "100%", boxSizing: "border-box", mx: "auto" }}>
@@ -60,9 +63,13 @@ export function MainScreenLayout({ title, search, filters, maps, summary, mapBac
         </Box>
         {filters}
       </Card>
-      {summary && <Card sx={{ px: 2.5, py: 2.25, minWidth: 0 }}>{summary}</Card>}
+      {summary && (
+        <Card aria-busy={busy?.summary || undefined} sx={{ px: 2.5, py: 2.25, minWidth: 0, ...(busy?.summary && { opacity: BUSY_OPACITY }) }}>
+          {summary}
+        </Card>
+      )}
       <Box sx={{ display: "grid", gap: 2.5, gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1fr) minmax(0, 1.15fr)" }, alignItems: "start" }}>
-        <MapPanel label={copy.regions.map} lens={{ options: MAP_LENSES, value: shown, onChange: select, labels: copy.lens, label: copy.lens.label }} back={mapBack} note={mapNote}>
+        <MapPanel label={copy.regions.map} lens={{ options: MAP_LENSES, value: shown, onChange: select, labels: copy.lens, label: copy.lens.label }} back={mapBack} note={mapNote} busy={busy?.map}>
           {maps[shown]}
         </MapPanel>
         <Stack component="section" aria-label={copy.regions.results} spacing={2} sx={{ minWidth: 0 }}>

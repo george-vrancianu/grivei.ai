@@ -13,6 +13,7 @@ export * from "./ToggleChip/index.ts";
 export * from "./ChipGroup/index.ts";
 export * from "./SearchBar/index.ts";
 export * from "./SourceEyebrow/index.ts";
+export * from "./LoadingStatus/index.ts";
 export * from "./StateNote/index.ts";
 export * from "./SignalLinkChip/index.ts";
 export * from "./SignalBadge/index.ts";

@@ -5,6 +5,7 @@ import { Well } from "../../../../../atoms/Well/index.ts";
 import { radius } from "../../../../../theme/tokens.ts";
 import { OptionToggle } from "../../../../molecules/OptionToggle/index.ts";
 import type { MapLens } from "../../mainScreenLayout.utils.ts";
+import { BUSY_OPACITY } from "../../../../utils/busy.ts";
 
 export interface MapPanelProps {
   /** The panel's accessible name. */
@@ -17,10 +18,12 @@ export interface MapPanelProps {
   children: ReactNode;
   /** Optional: the foot, behind a hairline (the "data through" lines). */
   note?: ReactNode;
+  /** Optional: the map shows its last answer while the next loads: its content (not the header strip or the foot) is dimmed to 60% with `aria-busy="true"`. */
+  busy?: boolean;
 }
 
 /** The map panel: a header strip (the lens toggle on a well track, the back link at the other end), the map, and the foot. */
-export function MapPanel({ label, lens, back, children, note }: MapPanelProps) {
+export function MapPanel({ label, lens, back, children, note, busy }: MapPanelProps) {
   return (
     <Card component="section" aria-label={label} sx={{ p: 0, minWidth: 0, display: "flex", flexDirection: "column" }}>
       <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px 16px", px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
@@ -29,7 +32,9 @@ export function MapPanel({ label, lens, back, children, note }: MapPanelProps) {
         </Well>
         {back}
       </Box>
-      <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>{children}</Box>
+      <Box aria-busy={busy || undefined} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, minWidth: 0, ...(busy && { opacity: BUSY_OPACITY }) }}>
+        {children}
+      </Box>
       {note && <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: "divider" }}>{note}</Box>}
     </Card>
   );

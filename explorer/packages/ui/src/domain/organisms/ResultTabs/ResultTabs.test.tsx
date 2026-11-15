@@ -158,6 +158,20 @@ describe("ResultTabs", () => {
     expect(button.closest(".MuiCard-root")).not.toBeNull();
   });
 
+  it("dims the rows and the pinned card when busy, and leaves the header with the tabs and the status line at full strength", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.goTo)} busy status={<span role="status">Loading</span>} />);
+    const rows = screen.getByRole("tabpanel");
+    expect(rows.closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
+    expect(getComputedStyle(rows.closest("[aria-busy]")!).opacity).toBe("0.6");
+    expect(screen.getByRole("status").closest("[aria-busy]")).toBeNull();
+    expect(screen.getByRole("tablist").closest("[aria-busy]")).toBeNull();
+  });
+
+  it("is not busy by default", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.typical)} />);
+    expect(document.querySelector("[aria-busy]")).toBeNull();
+  });
+
   it("makes the tabs the panel's header, with a room on its right for a status", () => {
     renderInUi(<ResultTabs {...base(resultSamples.typical)} status={<span role="status">Loading</span>} />);
     const header = screen.getByRole("tablist").closest(".MuiCard-root")!;

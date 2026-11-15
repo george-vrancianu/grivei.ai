@@ -7,6 +7,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { pick } from "../../../workbench/index.ts";
 import { FilterChips } from "../../molecules/FilterChips/index.ts";
+import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { TotalFigure } from "../../molecules/TotalFigure/index.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "../../organisms/MoneyLensMap/index.ts";
 import { ResultTabs } from "../../organisms/ResultTabs/index.ts";
@@ -18,7 +19,7 @@ import { countyUatsTopology } from "../../samples/geo/countyUats.topo.ts";
 import { authoritySide, supplierSide } from "../../samples/moneyMaps.ts";
 import { typicalCounty } from "../../samples/uatMaps.ts";
 import type { Siruta } from "../../types.ts";
-import { MainScreenLayout, type MapLens } from "./index.ts";
+import { MainScreenLayout, type BusyRegions, type MapLens } from "./index.ts";
 
 const meta = { title: "Domain/MainScreenLayout", component: MainScreenLayout, parameters: { layout: "fullscreen" } } satisfies Meta<Record<string, unknown>>;
 export default meta;
@@ -63,9 +64,9 @@ const placeholders = (locale: unknown): { [slot in "title" | "search" | "filters
 };
 
 /** The lens lives in the URL in the app; the stories keep it in state so the toggle works. */
-function Screen({ locale, initial = "money", slots, back }: { locale: Locale; initial?: MapLens; slots: ReturnType<typeof placeholders>; back?: ReactNode }) {
+function Screen({ locale, initial = "money", slots, back, busy }: { locale: Locale; initial?: MapLens; slots: ReturnType<typeof placeholders>; back?: ReactNode; busy?: BusyRegions }) {
   const [lens, setLens] = useState<MapLens>(initial);
-  return <MainScreenLayout {...slots} mapBack={back} mapNote={<DataThrough locale={locale} />} lens={lens} onLensChange={setLens} copy={sampleCopy.mainScreenLayout(locale)} />;
+  return <MainScreenLayout {...slots} mapBack={back} busy={busy} mapNote={<DataThrough locale={locale} />} lens={lens} onLensChange={setLens} copy={sampleCopy.mainScreenLayout(locale)} />;
 }
 
 /** The foot of the map panel: the "data through" dates as a two-column list. */
@@ -122,7 +123,7 @@ function RealMoney({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
   );
 }
 
-function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
+function Real({ locale, zoomed, refreshing = false }: { locale: Locale; zoomed: boolean; refreshing?: boolean }) {
   const [filter, setFilter] = useState<RecordFilter>(ACTIVE);
   const label = names(locale);
   const copy = sampleCopy.total(locale);
@@ -147,6 +148,8 @@ function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
         recordHref={(record) => `/explore/record/${record.code}`}
         locale={locale}
         copy={sampleCopy.resultTabs(locale)}
+        status={refreshing && <LoadingStatus label={pick(locale, { en: "Loading…", ro: "Se încarcă…" })} />}
+        busy={refreshing}
       />
     ),
     maps: {
@@ -155,15 +158,19 @@ function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
     },
   };
   const back = zoomed ? <Button size="small" color="inherit">{pick(locale, { en: "Back to Romania", ro: "Înapoi la România" })}</Button> : undefined;
-  return <Screen locale={locale} slots={slots} back={back} />;
+  return <Screen locale={locale} slots={slots} back={back} busy={refreshing ? { summary: true, map: true } : undefined} />;
 }
 
-const real = (zoomed: boolean): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} /> });
+const real = (zoomed: boolean, refreshing = false): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} refreshing={refreshing} /> });
 
 /** Filter chips, the Money lens map (authority side, with its tiles and side toggle) and the result tabs from the samples. */
 export const RealOrganisms: Story = real(false);
 /** The county zoom in the money slot. */
 export const ZoomedCounty: Story = real(true);
+/** A filter changed: the previous Total, map and rows stay at 60% with `aria-busy="true"` (the lens toggle and the filters stay at full strength), and the results header says Loading… until the new answer lands. */
+export const Refreshing: Story = real(false, true);
+/** The same for a zoomed county. */
+export const RefreshingZoomedCounty: Story = real(true, true);
 
 /** Below the md breakpoint (900 px) the panels stack and the results sit under the map; the tablet viewport is 834 px wide. */
 export const NarrowViewport: Story = { ...real(false), globals: { viewport: { value: "tablet", isRotated: false } } };
