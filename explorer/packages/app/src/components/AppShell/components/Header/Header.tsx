@@ -20,7 +20,23 @@ const NAV: readonly NavItem[] = ["explore", "search", "coverage", "methodology"]
 /** The header of every page: the logo and brand (home), the main navigation with the current page marked, then the EN/RO switch. */
 export function Header({ copy, switchTo, links, current }: HeaderProps) {
   return (
-    <Box component="header" sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "background.default" }}>
+    <Box
+      component="header"
+      sx={(theme) => ({
+        borderBottom: 1,
+        borderColor: "divider",
+        bgcolor: "background.default",
+        // From md up the header stays on screen, translucent over a blur, above open menus; below md it scrolls away (its nav wraps to several rows there).
+        [theme.breakpoints.up("md")]: {
+          position: "sticky",
+          top: 0,
+          zIndex: theme.zIndex.modal + 1,
+          bgcolor: theme.graf.headerFill,
+          backdropFilter: "blur(10px)",
+          boxShadow: theme.graf.shadow.header,
+        },
+      })}
+    >
       <Box
         sx={(theme) => ({
           maxWidth: theme.graf.layout.maxWidth,
@@ -35,7 +51,7 @@ export function Header({ copy, switchTo, links, current }: HeaderProps) {
         })}
       >
         <AppLink href={links.explore} underline="none" sx={(theme) => ({ display: "flex", alignItems: "center", gap: 1.5, color: theme.palette.text.primary, "&:hover": { color: theme.palette.text.primary } })}>
-          <Box component="img" src={logoUrl} alt="" sx={(theme) => ({ display: "block", width: theme.graf.size.logo, height: theme.graf.size.logo })} />
+          <Box component="img" src={logoUrl} alt="" sx={(theme) => ({ display: "block", width: theme.graf.size.logo, height: theme.graf.size.logo, borderRadius: "50%", boxShadow: theme.graf.logoShadow })} />
           <Typography variant="button" component="span" sx={{ color: "inherit" }}>
             {copy.brand}
           </Typography>

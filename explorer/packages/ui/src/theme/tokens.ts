@@ -20,6 +20,15 @@ export const radius = tokensJson.radius;
 /** Control and mark sizes in px: badgeChip 32, toggle 36, filterChip 40, primaryAction 44, tab 48, searchInput 56 and others. */
 export const size = tokensJson.size;
 
+/** Shadows: panel (cards), raised (outlined buttons), overlay (menus, popovers, tooltips), well (inset areas) and header (the sticky header). */
+export const shadow = tokensJson.shadow;
+
+/** The shadow of the logo disc in the header. */
+export const logoShadow = tokensJson.logoShadow;
+
+/** The translucent fill of the sticky header and the footer: `bg` at 86%, seen through a blur. */
+export const headerFill = tokensJson.headerFill;
+
 /** The type scale entries (font, size, weight, line height, letter spacing) the typography variants are built from. */
 export const type = tokensJson.type;
 

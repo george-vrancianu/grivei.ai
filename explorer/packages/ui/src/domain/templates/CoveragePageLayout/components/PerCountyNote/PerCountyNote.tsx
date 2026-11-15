@@ -1,8 +1,8 @@
 import { useId } from "react";
-import { Box } from "../../../../../atoms/Box/index.ts";
+import { Card } from "../../../../../atoms/Card/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { layout, radius } from "../../../../../theme/tokens.ts";
+import { layout } from "../../../../../theme/tokens.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 import type { CoveragePageLayoutCopy } from "../../coveragePageLayout.types.ts";
 
@@ -22,7 +22,7 @@ export function PerCountyNote({ lensHref, onNavigate, source, since, copy }: Per
   const id = useId();
   const { perCounty } = copy;
   return (
-    <Box component="section" aria-labelledby={id} sx={{ p: 2.25, display: "flex", flexDirection: "column", gap: 1, bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: `${radius.card}px` }}>
+    <Card component="section" aria-labelledby={id} sx={{ p: 2.25, display: "flex", flexDirection: "column", gap: 1 }}>
       <Typography id={id} variant="label" component="h2" color="primary.main" sx={{ fontWeight: 500 }}>
         {perCounty.heading}
       </Typography>
@@ -30,6 +30,6 @@ export function PerCountyNote({ lensHref, onNavigate, source, since, copy }: Per
       <Link href={lensHref} onClick={followLink(lensHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
         {perCounty.lensLink}
       </Link>
-    </Box>
+    </Card>
   );
 }

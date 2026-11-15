@@ -61,6 +61,10 @@ Create `hooks/`, `components/` and the utils file only when they have something 
 - **Lint.** `npm run lint` (part of `check`) rejects `@mui/*` and `@emotion/*` imports outside `packages/ui`; `tooling/lint-boundary.test.ts` proves it.
 
 
+## Amber
+
+Amber (`accent`) marks only three things: Signals, set filters and the Total. The Total is the only large amber figure. Do not use amber to decorate or to emphasise anything else.
+
 ## Component reference
 
 Props, layout and per-component rules (maps, entity page, Record page, rows, Source picker, ONRC screens) are in `explorer/packages/ui/COMPONENTS.md`, one section per component or group. Read the section of the component you change, and update it in the same change. When a section and the component's file disagree, the file wins: fix the section.

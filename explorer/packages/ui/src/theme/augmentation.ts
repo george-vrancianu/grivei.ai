@@ -1,11 +1,16 @@
 import type { CSSProperties } from "react";
-import type { ColorName, font as fontTokens, layout as layoutTokens, radius as radiusTokens, size as sizeTokens } from "./tokens.ts";
+import type { ColorName, font as fontTokens, layout as layoutTokens, radius as radiusTokens, shadow as shadowTokens, headerFill as headerFillTokens, logoShadow as logoShadowTokens, size as sizeTokens } from "./tokens.ts";
 import type { GrafStates } from "./states.ts";
 
 /** What the theme adds to MUI's: the token colours, radii, control heights, font stacks and shared state treatments. */
 export interface GrafTheme {
   radius: typeof radiusTokens;
   size: typeof sizeTokens;
+  shadow: typeof shadowTokens;
+  /** The translucent fill of the header and the footer. */
+  /** The logo disc's shadow. */
+  logoShadow: typeof logoShadowTokens;
+  headerFill: typeof headerFillTokens;
   font: typeof fontTokens;
   layout: typeof layoutTokens;
   states: GrafStates;

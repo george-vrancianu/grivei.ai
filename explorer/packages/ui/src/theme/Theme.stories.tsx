@@ -34,6 +34,31 @@ function Swatches() {
 /** Every colour token, by name. `idle` is for marks and dashed lines only. */
 export const Colours: Story = { render: () => <Swatches /> };
 
+/** The shadow group on the surface that takes each: panel (a Card), raised (an outlined button), overlay (menus, popovers, tooltips), well (inset areas), header (the sticky header). */
+export const Shadows: Story = {
+  render: (_args, { globals }) => {
+    const names = ["panel", "raised", "overlay", "well", "header"] as const;
+    const surface = { panel: "panel", raised: "raised", overlay: "overlay", well: "bg", header: "bg" } as const;
+    return <ShadowSamples locale={globals["locale"]} names={names} surface={surface} />;
+  },
+};
+
+function ShadowSamples({ names, surface, locale }: { names: readonly ("panel" | "raised" | "overlay" | "well" | "header")[]; surface: Record<"panel" | "raised" | "overlay" | "well" | "header", "panel" | "raised" | "overlay" | "bg">; locale: unknown }) {
+  const { graf, palette: { graf: palette } } = useTheme();
+  return (
+    <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", gap: 3, p: 2 }}>
+      {names.map((name) => (
+        <Stack key={name} sx={{ width: 180, gap: 1 }}>
+          <Box aria-hidden sx={{ height: 80, bgcolor: palette[surface[name]!], border: 1, borderColor: "divider", borderRadius: `${graf.radius.card}px`, boxShadow: graf.shadow[name] }} />
+          <Typography variant="label">{name}</Typography>
+          <Typography variant="meta" sx={{ overflowWrap: "anywhere" }}>{graf.shadow[name]}</Typography>
+        </Stack>
+      ))}
+      <Typography variant="meta">{pick(locale, { en: "Logo disc shadow: ", ro: "Umbra discului logo: " })}{graf.logoShadow}</Typography>
+    </Stack>
+  );
+}
+
 /** Every type variant, in its own face. */
 export const Typographic: Story = {
   render: (_args, { globals }) => (
