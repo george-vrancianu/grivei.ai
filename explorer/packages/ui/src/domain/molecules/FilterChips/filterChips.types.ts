@@ -12,6 +12,8 @@ export interface FilterChipsCopy {
     /** The select's "no year" choice. */
     any: string;
   };
+  /** A filter menu's button while nothing is chosen: "Any". */
+  menuAny: string;
   channel: { group: string; options: Record<Channel, string> };
   valueBucket: { group: string; options: Record<ValueBucket, string> };
   signals: {

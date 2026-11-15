@@ -1,5 +1,5 @@
 import type { RecordFilter } from "@grivei/contract";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
@@ -33,7 +33,9 @@ describe("FilterChips: what the reader sees", () => {
     setup({ from: "2023-01-01", to: "2024-12-31", channel: "CONTRACT", valueBucket: "UP_TO_900K", hasSignals: true, procedure: ["Licitație deschisă"], badges: ["NO_VALUE"] });
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    for (const name of ["Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value 270,120–900,400 RON");
+    for (const name of ["Has Signals", "Licitație deschisă", "No value"]) {
       expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
     }
     for (const name of ["From 2023", "Until 2024", "Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
@@ -58,18 +60,20 @@ describe("FilterChips: what the reader sees", () => {
     expect(screen.getByRole("button", { name: "Procedură simplificată", pressed: true })).toBeVisible();
   });
 
-  it("offers every value bucket and every badge", () => {
+  it("offers every value bucket and every badge", async () => {
     setup();
-    expect(within(screen.getByRole("group", { name: "Value" })).getAllByRole("button")).toHaveLength(7);
     expect(within(screen.getByRole("group", { name: "Record badges" })).getAllByRole("button")).toHaveLength(RECORD_BADGES.length);
+    await userEvent.click(screen.getByRole("button", { name: /^Value/ }));
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(7);
   });
 
   it("is reachable by keyboard", async () => {
     const onChange = setup();
     await userEvent.tab(); // from-year select
     await userEvent.tab(); // to-year select
-    await userEvent.tab(); // first channel chip
+    await userEvent.tab(); // the Channel menu button
     await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard("{Enter}"); // the first item takes focus
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ channel: "DIRECT_PURCHASE" });
   });
 });
@@ -124,32 +128,50 @@ describe("FilterChips: each chip emits the whole next filter", () => {
     expect(Array.from(select.options).map((o) => o.text)).toEqual(["Any", "2023", "2024"]);
   });
 
-  it.each([["Direct purchase", "DIRECT_PURCHASE"], ["Contract", "CONTRACT"]])("the %s chip sets the channel, and clicking it again unsets it", async (name, channel) => {
+  const openMenu = (group: string) => userEvent.click(screen.getByRole("button", { name: new RegExp(`^${group}`) }));
+
+  it("shows Any on the Channel and Value buttons, and the chosen value once set", () => {
+    setup();
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Any");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Any");
+    cleanup();
+    setup({ channel: "CONTRACT", valueBucket: "OVER_1B" });
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Over 1 bn RON");
+  });
+
+  it.each([["Direct purchase", "DIRECT_PURCHASE"], ["Contract", "CONTRACT"]])("the %s item sets the channel", async (name, channel) => {
     const onChange = setup(OTHERS);
-    await userEvent.click(screen.getByRole("button", { name }));
+    await openMenu("Channel");
+    await userEvent.click(screen.getByRole("menuitemradio", { name }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, channel });
   });
 
-  it("the active channel chip toggles off, and the other one replaces it", async () => {
+  it("choosing the active channel again unsets it, and the other one replaces it", async () => {
     const onChange = setup({ ...OTHERS, channel: "CONTRACT" });
-    await userEvent.click(within(screen.getByRole("group", { name: "Channel" })).getByRole("button", { name: "Contract" }));
+    await openMenu("Channel");
+    expect(screen.getByRole("menuitemradio", { name: "Contract", checked: true })).toBeVisible();
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Contract" }));
     expect(onChange).toHaveBeenLastCalledWith(OTHERS);
-    await userEvent.click(screen.getByRole("button", { name: "Direct purchase" }));
+    await openMenu("Channel");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Direct purchase" }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, channel: "DIRECT_PURCHASE" });
   });
 
   it.each([
     ["Up to 10,000 RON", "UP_TO_10K"], ["10,000–135,060 RON", "UP_TO_135K"], ["135,060–270,120 RON", "UP_TO_270K"], ["270,120–900,400 RON", "UP_TO_900K"],
     ["900,400–9,004,000 RON", "UP_TO_9M"], ["9,004,000 RON–1 bn RON", "UP_TO_1B"], ["Over 1 bn RON", "OVER_1B"],
-  ])("the %s chip sets valueBucket %s", async (name, bucket) => {
+  ])("the %s item sets valueBucket %s", async (name, bucket) => {
     const onChange = setup(OTHERS);
-    await userEvent.click(screen.getByRole("button", { name }));
+    await openMenu("Value");
+    await userEvent.click(screen.getByRole("menuitemradio", { name }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, valueBucket: bucket });
   });
 
   it("choosing the active value bucket again unsets it", async () => {
     const onChange = setup({ ...OTHERS, valueBucket: "UP_TO_9M" });
-    await userEvent.click(within(screen.getByRole("group", { name: "Value" })).getByRole("button", { name: "900,400–9,004,000 RON" }));
+    await openMenu("Value");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "900,400–9,004,000 RON", checked: true }));
     expect(onChange).toHaveBeenLastCalledWith(OTHERS);
   });
 

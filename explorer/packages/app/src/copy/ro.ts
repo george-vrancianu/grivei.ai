@@ -245,6 +245,7 @@ export const ro: Copy = {
   },
   filterChips: {
     label: "Filtre",
+    menuAny: "Oricare",
     year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
     channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
     valueBucket: {

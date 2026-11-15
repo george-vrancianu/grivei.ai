@@ -182,7 +182,26 @@ export const components: Components<Theme> = {
       arrow: { color: color.overlay, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
     },
   },
-  MuiMenu: { styleOverrides: { paper: overlaySurface } },
+  // The menu sits 8 px below its anchor, with 6 px of padding and 2 px between items.
+  MuiMenu: { styleOverrides: { paper: { ...overlaySurface, marginTop: 8 }, list: { padding: 6, display: "flex", flexDirection: "column", gap: 2 } } },
+  // An item is 40 px tall with a 4 px radius: text2 unchosen, text when chosen (its check mark is the owner's, amber).
+  MuiMenuItem: {
+    styleOverrides: {
+      root: {
+        minHeight: size.menuItem,
+        borderRadius: radius.control,
+        padding: "0 10px",
+        gap: 16,
+        justifyContent: "space-between",
+        whiteSpace: "nowrap",
+        color: color.text2,
+        "&:hover": hover,
+        "&:active": pressed,
+        "&.Mui-focusVisible": { ...hover, ...focusRing },
+        "&[aria-checked='true'], &.Mui-selected": { backgroundColor: "transparent", color: color.text, "&:hover": hover, "&.Mui-focusVisible": { ...hover, ...focusRing } },
+      },
+    },
+  },
   MuiPopover: { styleOverrides: { paper: overlaySurface } },
   MuiTypography: {
     defaultProps: { variantMapping: { lead: "p", total: "p", stat: "p", money: "span", label: "span", meta: "span" } },

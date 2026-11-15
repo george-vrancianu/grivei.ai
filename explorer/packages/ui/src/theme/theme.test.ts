@@ -164,6 +164,16 @@ describe("depth", () => {
     expect(root("MuiPopover", "paper")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay, borderRadius: radius.card });
   });
 
+  it("sizes menu items 40 px with the control radius, and sets the menu 8 px below its button", () => {
+    const item = (components.MuiMenuItem?.styleOverrides as Record<string, Record<string, unknown>>)["root"];
+    expect(item).toMatchObject({ minHeight: size.menuItem, borderRadius: radius.control, color: color.text2 });
+    expect(item?.["&[aria-checked='true'], &.Mui-selected"]).toMatchObject({ color: color.text });
+    expect(size.menuItem).toBe(40);
+    expect(radius.menuButton).toBe(22);
+    expect(root("MuiMenu", "paper")).toMatchObject({ marginTop: 8 });
+    expect(root("MuiMenu", "list")).toMatchObject({ padding: 6 });
+  });
+
   it("keeps anchored targets clear of the sticky header from md up", () => {
     const overrides = components.MuiCssBaseline?.styleOverrides;
     expect(typeof overrides).toBe("function");
