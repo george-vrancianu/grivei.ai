@@ -7,9 +7,9 @@ export interface GrafTheme {
   radius: typeof radiusTokens;
   size: typeof sizeTokens;
   shadow: typeof shadowTokens;
-  /** The translucent fill of the header and the footer. */
   /** The logo disc's shadow. */
   logoShadow: typeof logoShadowTokens;
+  /** The translucent fill of the header and the footer. */
   headerFill: typeof headerFillTokens;
   font: typeof fontTokens;
   layout: typeof layoutTokens;

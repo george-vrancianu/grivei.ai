@@ -3,6 +3,7 @@ import type { Copy } from "../../../../copy/index.ts";
 import logoUrl from "../../../../assets/logo-disc.svg";
 import { AppLink } from "../../../AppLink/index.ts";
 import { LanguageSwitch } from "../../../LanguageSwitch/index.ts";
+import { headerSx } from "./header.utils.ts";
 
 export type NavItem = "explore" | "search" | "coverage" | "methodology";
 
@@ -22,20 +23,7 @@ export function Header({ copy, switchTo, links, current }: HeaderProps) {
   return (
     <Box
       component="header"
-      sx={(theme) => ({
-        borderBottom: 1,
-        borderColor: "divider",
-        bgcolor: "background.default",
-        // From md up the header stays on screen, translucent over a blur, above open menus; below md it scrolls away (its nav wraps to several rows there).
-        [theme.breakpoints.up("md")]: {
-          position: "sticky",
-          top: 0,
-          zIndex: theme.zIndex.modal + 1,
-          bgcolor: theme.graf.headerFill,
-          backdropFilter: "blur(10px)",
-          boxShadow: theme.graf.shadow.header,
-        },
-      })}
+      sx={headerSx}
     >
       <Box
         sx={(theme) => ({

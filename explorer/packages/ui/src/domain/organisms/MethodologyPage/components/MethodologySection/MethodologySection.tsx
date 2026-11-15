@@ -26,7 +26,6 @@ export interface MethodologySectionProps {
 }
 
 const longText = { fontSize: typeScale.bodyLong.size, lineHeight: typeScale.bodyLong.lineHeight } as const;
-const cardSx = { p: 2.5 } as const;
 
 /** One section of the page: a heading that carries the anchor, its paragraphs and list, and anything the caller adds. */
 export function MethodologySection({ id, level = 2, locale, copy, children }: MethodologySectionProps) {
@@ -53,7 +52,7 @@ export function MethodologySection({ id, level = 2, locale, copy, children }: Me
     </>
   );
   return level === 3 ? (
-    <Card component="section" aria-labelledby={id} sx={cardSx}>
+    <Card component="section" aria-labelledby={id} sx={{ p: 2.5 }}>
       {content}
     </Card>
   ) : (

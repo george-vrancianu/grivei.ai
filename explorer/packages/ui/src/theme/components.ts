@@ -1,6 +1,6 @@
 import type { Components, Theme } from "@mui/material/styles";
 import { focusRing, hover, pressed, selected } from "./states.ts";
-import { color, font, radius, shadow, size, type } from "./tokens.ts";
+import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
@@ -23,15 +23,16 @@ const overlaySurface = {
  */
 export const components: Components<Theme> = {
   MuiCssBaseline: {
-    styleOverrides: {
-      html: { colorScheme: "dark" },
+    styleOverrides: (theme) => ({
+      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (one header row plus room for a wrapped nav and a gap).
+      html: { colorScheme: "dark", [theme.breakpoints.up("md")]: { scrollPaddingTop: layout.headerScrollPadding } },
       body: {
         backgroundColor: color.bg,
         backgroundImage: `radial-gradient(${color.bgDot} 1px, transparent 1px)`,
         backgroundSize: `${size.dotGrid}px ${size.dotGrid}px`,
       },
       "::selection": { backgroundColor: color.accent, color: color.onAccent },
-    },
+    }),
   },
   MuiButtonBase: {
     styleOverrides: { root: { "&.Mui-focusVisible": focusRing } },
@@ -52,7 +53,7 @@ export const components: Components<Theme> = {
         },
       },
       sizeSmall: { minHeight: size.toggle, padding: "0 12px" },
-      outlined: { borderColor: color.lineStrong, backgroundColor: color.raised, boxShadow: shadow.raised },
+      outlined: { borderColor: color.lineStrong, backgroundColor: color.raised, boxShadow: shadow.raised, "&.Mui-disabled": { boxShadow: "none" } },
     },
   },
   MuiIconButton: {

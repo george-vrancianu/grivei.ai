@@ -164,6 +164,17 @@ describe("depth", () => {
     expect(root("MuiPopover", "paper")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay, borderRadius: radius.card });
   });
 
+  it("keeps anchored targets clear of the sticky header from md up", () => {
+    const overrides = components.MuiCssBaseline?.styleOverrides;
+    expect(typeof overrides).toBe("function");
+    const html = (overrides as (t: typeof theme) => Record<string, Record<string, unknown>>)(theme)["html"] ?? {};
+    expect(html[theme.breakpoints.up("md")]).toMatchObject({ scrollPaddingTop: layout.headerScrollPadding });
+  });
+
+  it("does not lift a disabled outlined button", () => {
+    expect(root("MuiButton", "outlined")["&.Mui-disabled"]).toMatchObject({ boxShadow: "none" });
+  });
+
   it("leaves the selected and focus treatments as they were", () => {
     expect(theme.graf.states.selected).toEqual({ backgroundColor: color.line, color: color.text, boxShadow: `inset 0 0 0 1px ${color.accent}` });
     expect(theme.graf.states.focusRing).toEqual({ outline: `2px solid ${color.text}`, outlineOffset: 2 });

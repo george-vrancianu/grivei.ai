@@ -11,6 +11,7 @@ import { ToggleButton } from "../atoms/ToggleButton/index.ts";
 import { ToggleButtonGroup } from "../atoms/ToggleButtonGroup/index.ts";
 import { Typography } from "../atoms/Typography/index.ts";
 import { pick } from "../workbench/index.ts";
+import type { ColorName, shadow as grafShadow } from "./tokens.ts";
 
 const meta: Meta = { title: "Theme/A · Graf" };
 export default meta;
@@ -34,22 +35,17 @@ function Swatches() {
 /** Every colour token, by name. `idle` is for marks and dashed lines only. */
 export const Colours: Story = { render: () => <Swatches /> };
 
-/** The shadow group on the surface that takes each: panel (a Card), raised (an outlined button), overlay (menus, popovers, tooltips), well (inset areas), header (the sticky header). */
-export const Shadows: Story = {
-  render: (_args, { globals }) => {
-    const names = ["panel", "raised", "overlay", "well", "header"] as const;
-    const surface = { panel: "panel", raised: "raised", overlay: "overlay", well: "bg", header: "bg" } as const;
-    return <ShadowSamples locale={globals["locale"]} names={names} surface={surface} />;
-  },
-};
+const SHADOW_NAMES = ["panel", "raised", "overlay", "well", "header"] as const satisfies readonly (keyof typeof grafShadow)[];
+/** The colour each shadow is drawn on: the surface that takes it. */
+const SHADOW_SURFACE = { panel: "panel", raised: "raised", overlay: "overlay", well: "bg", header: "bg" } as const satisfies Record<(typeof SHADOW_NAMES)[number], ColorName>;
 
-function ShadowSamples({ names, surface, locale }: { names: readonly ("panel" | "raised" | "overlay" | "well" | "header")[]; surface: Record<"panel" | "raised" | "overlay" | "well" | "header", "panel" | "raised" | "overlay" | "bg">; locale: unknown }) {
+function ShadowSamples({ locale }: { locale: unknown }) {
   const { graf, palette: { graf: palette } } = useTheme();
   return (
     <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", gap: 3, p: 2 }}>
-      {names.map((name) => (
+      {SHADOW_NAMES.map((name) => (
         <Stack key={name} sx={{ width: 180, gap: 1 }}>
-          <Box aria-hidden sx={{ height: 80, bgcolor: palette[surface[name]!], border: 1, borderColor: "divider", borderRadius: `${graf.radius.card}px`, boxShadow: graf.shadow[name] }} />
+          <Box aria-hidden sx={{ height: 80, bgcolor: palette[SHADOW_SURFACE[name]], border: 1, borderColor: "divider", borderRadius: `${graf.radius.card}px`, boxShadow: graf.shadow[name] }} />
           <Typography variant="label">{name}</Typography>
           <Typography variant="meta" sx={{ overflowWrap: "anywhere" }}>{graf.shadow[name]}</Typography>
         </Stack>
@@ -58,6 +54,9 @@ function ShadowSamples({ names, surface, locale }: { names: readonly ("panel" | 
     </Stack>
   );
 }
+
+/** The shadow group on the surface that takes each: panel (a Card), raised (an outlined button), overlay (menus, popovers, tooltips), well (inset areas), header (the sticky header). */
+export const Shadows: Story = { render: (_args, { globals }) => <ShadowSamples locale={globals["locale"]} /> };
 
 /** Every type variant, in its own face. */
 export const Typographic: Story = {
