@@ -3,12 +3,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Button } from "../../../atoms/Button/index.ts";
-import { CircularProgress } from "../../../atoms/CircularProgress/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { pick } from "../../../workbench/index.ts";
 import { FilterChips } from "../../molecules/FilterChips/index.ts";
+import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { TotalFigure } from "../../molecules/TotalFigure/index.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "../../organisms/MoneyLensMap/index.ts";
 import { ResultTabs } from "../../organisms/ResultTabs/index.ts";
@@ -149,14 +148,8 @@ function Real({ locale, zoomed, refreshing = false }: { locale: Locale; zoomed: 
         recordHref={(record) => `/explore/record/${record.code}`}
         locale={locale}
         copy={sampleCopy.resultTabs(locale)}
-        status={
-          refreshing && (
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-              <CircularProgress size={14} aria-hidden="true" />
-              <Typography variant="caption" role="status">{pick(locale, { en: "Loading…", ro: "Se încarcă…" })}</Typography>
-            </Stack>
-          )
-        }
+        status={refreshing && <LoadingStatus label={pick(locale, { en: "Loading…", ro: "Se încarcă…" })} />}
+        busy={refreshing}
       />
     ),
     maps: {
@@ -165,7 +158,7 @@ function Real({ locale, zoomed, refreshing = false }: { locale: Locale; zoomed: 
     },
   };
   const back = zoomed ? <Button size="small" color="inherit">{pick(locale, { en: "Back to Romania", ro: "Înapoi la România" })}</Button> : undefined;
-  return <Screen locale={locale} slots={slots} back={back} busy={refreshing ? { summary: true, map: true, results: true } : undefined} />;
+  return <Screen locale={locale} slots={slots} back={back} busy={refreshing ? { summary: true, map: true } : undefined} />;
 }
 
 const real = (zoomed: boolean, refreshing = false): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} refreshing={refreshing} /> });

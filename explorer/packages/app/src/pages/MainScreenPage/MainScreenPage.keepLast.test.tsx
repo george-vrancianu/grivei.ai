@@ -47,8 +47,10 @@ describe.each([
   const region = (name: string) => screen.getByRole("region", { name });
   const results = () => region(t.mainScreenLayout.regions.results);
   const mapPanel = () => region(t.mainScreenLayout.regions.map);
+  /** The results' rows (the tab panel's wrapper): dimmed and busy; the header with the tabs and the status line is not. */
+  const rows = () => within(results()).getByRole("tabpanel").closest("[aria-busy]");
   const totalPanel = () => screen.getByTestId("main-total").closest(".MuiCard-root")!;
-  const readyTotal = () => screen.findByTestId("main-total").then(() => readTotal());
+  const readyTotal = () => screen.findByTestId("main-total", {}, { timeout: 5000 }).then(() => readTotal());
 
   it("keeps the Total and the rows dimmed and aria-busy after a filter change, with a Loading line, then swaps", async () => {
     const { client, release } = heldClient("MainScreen");
@@ -63,16 +65,17 @@ describe.each([
     expect(readTotal()).toEqual(before); // the previous Total stays
     expect(totalPanel()).toHaveAttribute("aria-busy", "true");
     expect(totalPanel()).toHaveStyle({ opacity: "0.6" });
-    expect(results()).toHaveAttribute("aria-busy", "true");
-    expect(results()).toHaveStyle({ opacity: "0.6" });
+    expect(rows()).toHaveAttribute("aria-busy", "true");
+    expect(rows()).toHaveStyle({ opacity: "0.6" });
     expect(within(results()).getAllByRole("link").map((a) => a.textContent)).toEqual(rowsBefore);
     expect(within(results()).getByRole("status")).toHaveTextContent(t.status.loading);
+    expect(within(results()).getByRole("status").closest("[aria-busy]")).toBeNull(); // the line is outside the busy region, at full strength, so it is announced
     expect(screen.getByRole("search")).not.toHaveAttribute("aria-busy", "true"); // a filter, not typing: the search field does not spin
 
     release();
     await waitFor(() => expect(readTotal()).not.toEqual(before));
     expect(totalPanel()).not.toHaveAttribute("aria-busy");
-    expect(results()).not.toHaveAttribute("aria-busy");
+    expect(rows()).toBeNull();
     expect(within(results()).queryByRole("status")).toBeNull();
   });
 
@@ -97,7 +100,7 @@ describe.each([
     await waitFor(() => expect(window.location.search).toContain("tab=authorities"));
     expect(asked()).toBe(before);
     expect(within(results()).queryByRole("status")).toBeNull();
-    expect(results()).not.toHaveAttribute("aria-busy");
+    expect(rows()).toBeNull();
     expect(totalPanel()).not.toHaveAttribute("aria-busy");
   });
 
@@ -141,5 +144,29 @@ describe.each([
     expect(busy(within(mapPanel()).getByRole("group", { name: t.mainScreenLayout.lens.label }))).toBeUndefined();
     release();
     await waitFor(() => expect(busy(national())).toBeUndefined());
+  });
+
+  it("keeps the Loading line while only the zoomed county's request is in flight", async () => {
+    const { client, release } = heldClient("ZoomedCounty");
+    open(`${base}?county=RO-BV`, client);
+    await screen.findByRole("heading", { name: t.zoomedCounty.title("Brașov", false) });
+    await readyTotal();
+    act(() => navigate(`${base}?county=RO-BV&q=comuna`, "replace"));
+    await waitFor(() => expect(totalPanel()).not.toHaveAttribute("aria-busy")); // the main query has answered
+    expect(within(results()).getByRole("status")).toHaveTextContent(t.status.loading);
+    release();
+    await waitFor(() => expect(within(results()).queryByRole("status")).toBeNull());
+  });
+
+  it("keeps the Loading line while only the Coverage lens request is in flight", async () => {
+    const { client, release } = heldClient("CoverageLens");
+    open(`${base}?county=RO-CJ&lens=coverage`, client);
+    await waitFor(() => expect(within(mapPanel()).getByRole("button", { name: new RegExp(`^${t.coverageLensMap.tiles.national}`) })).toBeVisible());
+    await waitFor(() => expect(within(results()).getAllByRole("link").length).toBeGreaterThan(0));
+    act(() => navigate(`${base}?county=RO-CJ&from=2023-01-01&to=2023-12-31&lens=coverage`, "replace"));
+    await waitFor(() => expect(results().querySelector("[aria-busy]")).toBeNull()); // the main query has answered
+    expect(within(results()).getByRole("status")).toHaveTextContent(t.status.loading);
+    release();
+    await waitFor(() => expect(within(results()).queryByRole("status")).toBeNull());
   });
 });

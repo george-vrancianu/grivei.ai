@@ -8,9 +8,6 @@ export function toMapLens(value: string | null | undefined): MapLens {
   return MAP_LENSES.find((lens) => lens === value) ?? DEFAULT_MAP_LENS;
 }
 
-/** The opacity of a region that shows its last answer while the next one loads (design handoff, "Refetch"). */
-export const BUSY_OPACITY = 0.6;
-
-/** The regions that can show a held answer: the Total panel, the map's content (not its header strip) and the results. */
-export type BusyRegions = Partial<Record<"summary" | "map" | "results", boolean>>;
+/** The regions that can show a held answer: the Total panel and the map's content (not its header strip). The results dim themselves (`ResultTabs` `busy`), so the status line in their header stays at full strength. */
+export type BusyRegions = Partial<Record<"summary" | "map", boolean>>;
 

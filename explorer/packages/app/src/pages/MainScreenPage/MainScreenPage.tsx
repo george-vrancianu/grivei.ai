@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, chipFieldsOf, CircularProgress, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
+  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -54,16 +54,17 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const search = state.status === "ready" ? state.data.seap.search : null;
   // A held answer (`stale`) is on screen while the next request is in flight.
   const refreshing = state.status === "ready" && state.stale;
-  const inFlight = state.status === "loading" || refreshing;
   // The search spinner is for a typed query: it shows while a request is in flight for a query other than the one last answered (a filter click leaves the query alone).
   const [answeredQ, setAnsweredQ] = useState(filter.q);
-  if (state.status === "ready" && !state.stale && answeredQ !== filter.q) setAnsweredQ(filter.q);
-  const typing = inFlight && filter.q !== answeredQ;
+  if ((state.status === "error" || (state.status === "ready" && !state.stale)) && answeredQ !== filter.q) setAnsweredQ(filter.q); // an error ends the typed query's spinner too
+  const typing = (state.status === "loading" || refreshing) && filter.q !== answeredQ;
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   // The Coverage lens asks only while it is shown: the date chip's window for the map, and the whole grid (highlighted by the same window) for the compact grid.
   const coverageShown = mapLens === "coverage";
   const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
   const coverageGrid = useCoveragePage(coverageShown ? {} : null);
+  // Any request in flight, for the results header's status line: the main query, the zoomed county's and the Coverage lens's (each only while it is asked).
+  const inFlight = state.status === "loading" || refreshing || (zoomed !== null && (zoom.status === "loading" || (zoom.status === "ready" && zoom.stale))) || (coverageShown && (coverage.status === "loading" || (coverage.status === "ready" && coverage.stale)));
   const side: CountySide = filter.countySide ?? "AUTHORITY";
   // The eyebrow and the data-through note keep the last Sources they received while a new query loads, so neither drops back to the id or leaves the map panel's foot.
   const [lastSources, setLastSources] = useState<MainScreenSources>([]);
@@ -161,7 +162,6 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       busy={{
         summary: refreshing,
         map: coverageShown ? coverage.status === "ready" && coverage.stale : zoomed !== null ? zoom.status === "ready" && zoom.stale : refreshing,
-        results: refreshing,
       }}
       summary={
         search && state.status === "ready" && (
@@ -199,16 +199,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               onNavigate={(href) => navigate(href, "push")}
               locale={locale}
               copy={t.results}
-              status={
-                inFlight && (
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                    <CircularProgress size={14} aria-hidden="true" />
-                    <Typography variant="caption" role="status">
-                      {t.status.loading}
-                    </Typography>
-                  </Stack>
-                )
-              }
+              status={inFlight && <LoadingStatus label={t.status.loading} />}
+              busy={refreshing}
             />
           )}
         </>

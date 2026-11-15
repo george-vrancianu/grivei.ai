@@ -4,7 +4,8 @@ import { Card } from "../../../../../atoms/Card/index.ts";
 import { Well } from "../../../../../atoms/Well/index.ts";
 import { radius } from "../../../../../theme/tokens.ts";
 import { OptionToggle } from "../../../../molecules/OptionToggle/index.ts";
-import { BUSY_OPACITY, type MapLens } from "../../mainScreenLayout.utils.ts";
+import type { MapLens } from "../../mainScreenLayout.utils.ts";
+import { BUSY_OPACITY } from "../../../../utils/busy.ts";
 
 export interface MapPanelProps {
   /** The panel's accessible name. */

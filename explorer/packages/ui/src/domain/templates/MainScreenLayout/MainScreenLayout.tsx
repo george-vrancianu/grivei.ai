@@ -5,7 +5,8 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { layout } from "../../../theme/tokens.ts";
 import { MapPanel } from "./components/MapPanel/index.ts";
 import { useMapLens } from "./hooks/useMapLens.ts";
-import { BUSY_OPACITY, MAP_LENSES, type BusyRegions, type MapLens } from "./mainScreenLayout.utils.ts";
+import { BUSY_OPACITY } from "../../utils/busy.ts";
+import { MAP_LENSES, type BusyRegions, type MapLens } from "./mainScreenLayout.utils.ts";
 
 export interface MainScreenLayoutCopy {
   /** The lens toggle: its accessible name and the name of each lens. */
@@ -33,7 +34,7 @@ interface MainScreenLayoutBase {
   mapNote?: ReactNode;
   /** The results column: it brings its own panel (the result tabs), so a Go-to card or a note can sit above it. */
   results: ReactNode;
-  /** Optional: the regions showing their last answer while the next loads. Each is dimmed to 60% with `aria-busy="true"`; the map's header strip (the lens toggle) stays at full strength. */
+  /** Optional: the regions showing their last answer while the next loads. Each is dimmed to 60% with `aria-busy="true"`; the map's header strip (the lens toggle) stays at full strength. The results are not here: `ResultTabs` takes its own `busy`. */
   busy?: BusyRegions;
   copy: MainScreenLayoutCopy;
 }
@@ -71,7 +72,7 @@ export function MainScreenLayout({ title, search, filters, maps, summary, mapBac
         <MapPanel label={copy.regions.map} lens={{ options: MAP_LENSES, value: shown, onChange: select, labels: copy.lens, label: copy.lens.label }} back={mapBack} note={mapNote} busy={busy?.map}>
           {maps[shown]}
         </MapPanel>
-        <Stack component="section" aria-label={copy.regions.results} aria-busy={busy?.results || undefined} spacing={2} sx={{ minWidth: 0, ...(busy?.results && { opacity: BUSY_OPACITY }) }}>
+        <Stack component="section" aria-label={copy.regions.results} spacing={2} sx={{ minWidth: 0 }}>
           {results}
         </Stack>
       </Box>

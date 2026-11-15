@@ -4,7 +4,7 @@ import type { Operation } from "../../../graphql/operations.ts";
 
 /**
  * What a main-screen query tells the page. `loading` only when there is no answer to show; while the next request is in flight the previous answer
- * stays as `ready` with `stale: true`. `error` carries `retry`, which asks the current request again.
+ * stays as `ready` with `stale: true`. `error` carries `retry`, which asks the current request again (and, if a held answer was kept behind the failure, shows it again as stale meanwhile).
  */
 export type QueryState<Data> = { status: "loading" } | { status: "ready"; data: Data; stale: boolean } | { status: "error"; retry: () => void };
 
