@@ -60,7 +60,7 @@ export function ZoomedCountySection({ county, data, loading, failed, topology, u
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {data && (
-        <Typography variant="h6" component="h2">
+        <Typography variant="h3" component="h2">
           {copy.title(countyName, county === BUCHAREST)}
         </Typography>
       )}

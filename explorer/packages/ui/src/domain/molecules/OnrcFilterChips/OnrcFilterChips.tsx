@@ -8,6 +8,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { ChipGroup } from "../ChipGroup/index.ts";
+import { FilterStrip } from "../FilterStrip/index.ts";
 import { ToggleChip } from "../ToggleChip/index.ts";
 import type { OnrcFilterChipsCopy } from "./onrcFilterChips.types.ts";
 import { activeOnrcChips, ONRC_STATUS_CHOICES, toggleStatus, withOnrcFields } from "./onrcFilterChips.utils.ts";
@@ -40,7 +41,9 @@ export function OnrcFilterChips({ filter, onChange, locale, copy }: OnrcFilterCh
     else if (CAEN.test(value) && value !== filter.caen) onChange(withOnrcFields(filter, { caen: value }));
   };
   return (
-    <Stack component="section" aria-label={copy.label} spacing={1.5}>
+    <Box component="section" aria-label={copy.label}>
+      <FilterStrip>
+        <Stack spacing={1.5}>
       <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
         <ChipGroup label={copy.status.group}>
           {statuses.map((code) => (
@@ -93,6 +96,8 @@ export function OnrcFilterChips({ filter, onChange, locale, copy }: OnrcFilterCh
           </>
         )}
       </ChipGroup>
-    </Stack>
+        </Stack>
+      </FilterStrip>
+    </Box>
   );
 }

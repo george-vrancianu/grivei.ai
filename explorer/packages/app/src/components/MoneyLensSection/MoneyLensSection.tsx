@@ -29,7 +29,7 @@ export function MoneyLensSection({ map, loading, topology, county, side, onChang
   if (map === null) return null;
   return (
     <Stack spacing={1.75}>
-      <Typography variant="h6" component="h2">
+      <Typography variant="h3" component="h2">
         {title}
       </Typography>
       <MoneyLensMap

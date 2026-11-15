@@ -2,7 +2,7 @@ import { VALUE_BUCKETS, type Channel, type RecordBadge, type RecordFilter, type 
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color } from "../../../theme/tokens.ts";
+import { FilterStrip } from "../FilterStrip/index.ts";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
 import { ActiveChips } from "./components/ActiveChips/index.ts";
 import { BadgeChips } from "./components/BadgeChips/index.ts";
@@ -42,9 +42,6 @@ export interface FilterChipsProps {
 const badgeLabels = (badges: FilterChipsCopy["badges"]["badges"]) =>
   Object.fromEntries(RECORD_BADGES.map((badge) => [badge, badges[badge].label])) as Record<RecordBadge, string>;
 
-/** A strip inside the panel: the ground colour at 35% over the panel, between hairlines, edge to edge. */
-const stripSx = { px: 2.5, py: 1.5, borderTop: 1, borderColor: color.line, backgroundColor: "rgba(13, 16, 20, 0.35)" } as const;
-
 const CHANNELS = ["DIRECT_PURCHASE", "CONTRACT"] as const satisfies readonly Channel[];
 const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[];
 
@@ -69,7 +66,8 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
   );
   return (
     <Box component="section" aria-label={copy.label}>
-      <Stack spacing={1.5} sx={stripSx}>
+      <FilterStrip>
+        <Stack spacing={1.5}>
         <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
           <YearRange
             filter={filter}
@@ -103,11 +101,13 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
           <PartyChips parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} />
         )}
         <BadgeChips label={copy.badges.group} selected={filter.badges} onToggle={(badge) => onChange(toggleBadge(filter, badge))} copy={copy.badges.badges} />
-      </Stack>
+        </Stack>
+      </FilterStrip>
+      {/* Guard here, not in ActiveChips: an empty list must drop the strip too. */}
       {active.length > 0 && (
-        <Box sx={stripSx}>
+        <FilterStrip>
           <ActiveChips chips={active} onRemove={(chip) => onChange(chip.remove(filter))} onClearAll={() => onChange(clearChips(filter))} copy={copy.active} />
-        </Box>
+        </FilterStrip>
       )}
     </Box>
   );

@@ -39,6 +39,8 @@ describe.each([
     const tabs = screen.getByRole("tablist");
     await waitFor(() => expect(within(screen.getByRole("region", { name: t.mainScreenLayout.regions.results })).getAllByRole("link").length).toBeGreaterThan(0));
     expect(panel(tabs)).not.toBeNull();
-    for (const show of screen.queryAllByRole("link", { name: /^(Show all|Arată toate)/ })) expect(panel(show)).toBe(panel(tabs));
+    const shows = screen.queryAllByRole("link", { name: /^(Show all|Arată toate)/ });
+    expect(shows.length).toBeGreaterThan(0);
+    for (const show of shows) expect(panel(show)).toBe(panel(tabs));
   });
 });
