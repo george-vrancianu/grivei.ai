@@ -136,6 +136,10 @@ _Avoid_: split, portion
 An awarded value flagged by a published rule as likely a data-entry error (a direct purchase at ten times its cap or more, a contract of 1 bn RON or more at a hundred times its estimated value or more, or above 50 bn RON with no estimate); the record stays shown and searchable but is left out of sums. The source value is never edited. A blank or zero value is not suspect: it is "no value in SEAP", counted as a record and adding nothing.
 _Avoid_: outlier, error, corrected value
 
+**Record badge**:
+A fixed label on a Record saying how it is counted or how its parties were identified (framework ceiling, suspect value, no value, CUI mismatch, provisional…); a fact about the Record's data, never a Signal and never a judgement.
+_Avoid_: flag, tag, warning
+
 **Signal**:
 A set of one or more records matched by a published rule, worth verifying in the source documents; never a conclusion or an accusation. It belongs to its records, and through them shows on every entity page they touch; Signals are counted, never scored.
 _Avoid_: finding, red flag, evidence, risk score
