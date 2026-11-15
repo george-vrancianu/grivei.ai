@@ -1,6 +1,6 @@
 import type { Locale } from "../../../../../theme/index.ts";
-import { radius } from "../../../../../theme/tokens.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
+import { Card } from "../../../../../atoms/Card/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import { DataThroughDate } from "../../../../atoms/DataThroughDate/index.ts";
 import type { SourceInfo } from "../../../../types.ts";
@@ -16,10 +16,6 @@ export interface DataThroughListProps {
 /** A card per record kind: the kind and "data through" as a mono line, the date big under it (the wording is one sentence in the markup). */
 const dataThroughCardSx = {
   p: 2,
-  bgcolor: "background.paper",
-  border: 1,
-  borderColor: "divider",
-  borderRadius: `${radius.card}px`,
   "& > span": { typography: "meta", display: "block" },
   "& time": { display: "block", mt: 0.5, typography: "h3", color: "text.primary" },
 } as const;
@@ -36,9 +32,9 @@ export function DataThroughList({ sources, locale, copy }: DataThroughListProps)
         harvested.map((source) => (
           <Box component="ul" key={source.id} aria-label={source.name} sx={{ listStyle: "none", m: 0, p: 0, display: "grid", gap: 1.5, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))" }}>
             {source.dataThrough.map((entry) => (
-              <Box component="li" key={entry.kind} sx={dataThroughCardSx}>
+              <Card component="li" key={entry.kind} sx={dataThroughCardSx}>
                 <DataThroughDate dataThrough={entry} locale={locale} copy={copy.dataThrough.copy} kindLabel={kindLabel(entry.kind, copy.grid)} />
-              </Box>
+              </Card>
             ))}
           </Box>
         ))

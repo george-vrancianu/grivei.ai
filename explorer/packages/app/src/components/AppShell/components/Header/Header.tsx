@@ -3,6 +3,7 @@ import type { Copy } from "../../../../copy/index.ts";
 import logoUrl from "../../../../assets/logo-disc.svg";
 import { AppLink } from "../../../AppLink/index.ts";
 import { LanguageSwitch } from "../../../LanguageSwitch/index.ts";
+import { headerSx } from "./header.utils.ts";
 
 export type NavItem = "explore" | "search" | "coverage" | "methodology";
 
@@ -20,7 +21,10 @@ const NAV: readonly NavItem[] = ["explore", "search", "coverage", "methodology"]
 /** The header of every page: the logo and brand (home), the main navigation with the current page marked, then the EN/RO switch. */
 export function Header({ copy, switchTo, links, current }: HeaderProps) {
   return (
-    <Box component="header" sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "background.default" }}>
+    <Box
+      component="header"
+      sx={headerSx}
+    >
       <Box
         sx={(theme) => ({
           maxWidth: theme.graf.layout.maxWidth,
@@ -35,7 +39,7 @@ export function Header({ copy, switchTo, links, current }: HeaderProps) {
         })}
       >
         <AppLink href={links.explore} underline="none" sx={(theme) => ({ display: "flex", alignItems: "center", gap: 1.5, color: theme.palette.text.primary, "&:hover": { color: theme.palette.text.primary } })}>
-          <Box component="img" src={logoUrl} alt="" sx={(theme) => ({ display: "block", width: theme.graf.size.logo, height: theme.graf.size.logo })} />
+          <Box component="img" src={logoUrl} alt="" sx={(theme) => ({ display: "block", width: theme.graf.size.logo, height: theme.graf.size.logo, borderRadius: "50%", boxShadow: theme.graf.logoShadow })} />
           <Typography variant="button" component="span" sx={{ color: "inherit" }}>
             {copy.brand}
           </Typography>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createGriveiTheme } from "./index.ts";
-import { color, font, layout, radius, size } from "./tokens.ts";
+import { color, font, headerFill, layout, logoShadow, map, radius, shadow, size } from "./tokens.ts";
 
 /** WCAG 2.x relative luminance and contrast ratio of two #rrggbb colours. */
 function luminance(hex: string): number {
@@ -38,6 +38,19 @@ describe("the theme is built from the tokens", () => {
       expect(theme.palette.graf[name]).toBe(color[name]);
     }
     expect(Object.keys(theme.palette.graf).sort()).toEqual(Object.keys(color).sort());
+  });
+
+  it("has raised and overlay surfaces, named apart from bgDot and the map's none class but of the same values", () => {
+    expect(theme.palette.graf.raised).toBe(color.bgDot);
+    expect(theme.palette.graf.overlay).toBe(map.none);
+    expect(Object.keys(theme.palette.graf)).toEqual(expect.arrayContaining(["raised", "overlay"]));
+  });
+
+  it("has the shadow group: panel, raised, overlay, well and header", () => {
+    expect(Object.keys(theme.graf.shadow).sort()).toEqual(["header", "overlay", "panel", "raised", "well"]);
+    expect(theme.graf.shadow).toEqual(shadow);
+    expect(theme.graf.logoShadow).toBe(logoShadow);
+    expect(theme.graf.headerFill).toBe(headerFill);
   });
 
   it("exposes the radii, control heights and font stacks of the tokens", () => {
@@ -128,5 +141,42 @@ describe("the chips on the main screen", () => {
   });
   it("gives a badge chip a hit area 44 px tall, beyond its 32 px", () => {
     expect(chip["sizeSmall"]?.["&::after"]).toMatchObject({ height: 44, position: "absolute" });
+  });
+});
+
+describe("depth", () => {
+  const components = theme.components ?? {};
+  const root = (name: "MuiCard" | "MuiButton" | "MuiMenu" | "MuiPopover" | "MuiTooltip", slot: string) =>
+    ((components[name]?.styleOverrides as Record<string, Record<string, unknown>> | undefined)?.[slot] ?? {}) as Record<string, unknown>;
+
+  it("gives every Card the panel fill, a hairline border, the card radius and the panel shadow", () => {
+    expect(root("MuiCard", "root")).toMatchObject({ backgroundColor: color.panel, borderColor: color.line, borderRadius: radius.card, boxShadow: shadow.panel });
+  });
+
+  it("gives outlined buttons the raised surface and shadow", () => {
+    expect(root("MuiButton", "outlined")).toMatchObject({ backgroundColor: color.raised, boxShadow: shadow.raised });
+  });
+
+  it("gives tooltips, menus and popovers the overlay surface and shadow", () => {
+    expect(root("MuiTooltip", "tooltip")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay });
+    expect(root("MuiTooltip", "arrow")).toMatchObject({ color: color.overlay });
+    expect(root("MuiMenu", "paper")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay, borderRadius: radius.card });
+    expect(root("MuiPopover", "paper")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay, borderRadius: radius.card });
+  });
+
+  it("keeps anchored targets clear of the sticky header from md up", () => {
+    const overrides = components.MuiCssBaseline?.styleOverrides;
+    expect(typeof overrides).toBe("function");
+    const html = (overrides as (t: typeof theme) => Record<string, Record<string, unknown>>)(theme)["html"] ?? {};
+    expect(html[theme.breakpoints.up("md")]).toMatchObject({ scrollPaddingTop: layout.headerScrollPadding });
+  });
+
+  it("does not lift a disabled outlined button", () => {
+    expect(root("MuiButton", "outlined")["&.Mui-disabled"]).toMatchObject({ boxShadow: "none" });
+  });
+
+  it("leaves the selected and focus treatments as they were", () => {
+    expect(theme.graf.states.selected).toEqual({ backgroundColor: color.line, color: color.text, boxShadow: `inset 0 0 0 1px ${color.accent}` });
+    expect(theme.graf.states.focusRing).toEqual({ outline: `2px solid ${color.text}`, outlineOffset: 2 });
   });
 });

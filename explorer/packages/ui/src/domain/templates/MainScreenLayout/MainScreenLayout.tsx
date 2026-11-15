@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
+import { Card } from "../../../atoms/Card/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
-import { layout, radius } from "../../../theme/tokens.ts";
+import { layout } from "../../../theme/tokens.ts";
 import { OptionToggle } from "../../molecules/OptionToggle/index.ts";
 import { useMapLens } from "./hooks/useMapLens.ts";
 import { MAP_LENSES, type MapLens } from "./mainScreenLayout.utils.ts";
@@ -56,11 +57,11 @@ export function MainScreenLayout({ search, filters, maps, summary, mapNote, resu
       </Stack>
       {summary && <Box sx={{ py: 2.25, borderTop: 1, borderBottom: 1, borderColor: "divider" }}>{summary}</Box>}
       <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1fr) minmax(0, 1.15fr)" }, alignItems: "start" }}>
-        <Stack component="section" aria-label={copy.regions.map} spacing={2} sx={{ p: 2, minWidth: 0, bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: `${radius.card}px` }}>
+        <Card component="section" aria-label={copy.regions.map} sx={{ p: 2, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
           <OptionToggle options={MAP_LENSES} value={shown} onChange={select} labels={copy.lens} label={copy.lens.label} />
           {maps[shown]}
           {mapNote}
-        </Stack>
+        </Card>
         <Stack component="section" aria-label={copy.regions.results} spacing={2} sx={{ minWidth: 0 }}>
           {results}
         </Stack>

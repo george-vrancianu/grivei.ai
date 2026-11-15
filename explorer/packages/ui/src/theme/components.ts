@@ -1,6 +1,6 @@
 import type { Components, Theme } from "@mui/material/styles";
 import { focusRing, hover, pressed, selected } from "./states.ts";
-import { color, font, radius, size, type } from "./tokens.ts";
+import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
@@ -8,21 +8,31 @@ const touchTarget = { position: "relative", "&::after": { content: '""', positio
 /** The selected treatment, for every control that is "on": a pressed toggle, a selected tab or toggle segment. */
 const selectedState = "&[aria-pressed='true'], &.Mui-selected, &[aria-current='true']";
 
+/** What floats over the page (menus, popovers; tooltips take the same in their own slot): the overlay fill, a strong hairline, the card radius and the overlay shadow. */
+const overlaySurface = {
+  backgroundColor: color.overlay,
+  backgroundImage: "none",
+  border: `1px solid ${color.lineStrong}`,
+  borderRadius: radius.card,
+  boxShadow: shadow.overlay,
+} as const;
+
 /**
  * Component defaults: every control carries the shared state treatments (focus ring, hover, pressed, selected) and the token
  * radii and heights, so a call site passes its props and nothing else. The fragments live in `states.ts` for components outside MUI.
  */
 export const components: Components<Theme> = {
   MuiCssBaseline: {
-    styleOverrides: {
-      html: { colorScheme: "dark" },
+    styleOverrides: (theme) => ({
+      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (one header row plus room for a wrapped nav and a gap).
+      html: { colorScheme: "dark", [theme.breakpoints.up("md")]: { scrollPaddingTop: layout.headerScrollPadding } },
       body: {
         backgroundColor: color.bg,
         backgroundImage: `radial-gradient(${color.bgDot} 1px, transparent 1px)`,
         backgroundSize: `${size.dotGrid}px ${size.dotGrid}px`,
       },
       "::selection": { backgroundColor: color.accent, color: color.onAccent },
-    },
+    }),
   },
   MuiButtonBase: {
     styleOverrides: { root: { "&.Mui-focusVisible": focusRing } },
@@ -43,7 +53,7 @@ export const components: Components<Theme> = {
         },
       },
       sizeSmall: { minHeight: size.toggle, padding: "0 12px" },
-      outlined: { borderColor: color.lineStrong },
+      outlined: { borderColor: color.lineStrong, backgroundColor: color.raised, boxShadow: shadow.raised, "&.Mui-disabled": { boxShadow: "none" } },
     },
   },
   MuiIconButton: {
@@ -136,7 +146,7 @@ export const components: Components<Theme> = {
   },
   MuiCard: {
     defaultProps: { variant: "outlined" },
-    styleOverrides: { root: { backgroundColor: color.panel, backgroundImage: "none", borderColor: color.line, borderRadius: radius.card } },
+    styleOverrides: { root: { backgroundColor: color.panel, backgroundImage: "none", borderColor: color.line, borderRadius: radius.card, boxShadow: shadow.panel } },
   },
   MuiPaper: {
     defaultProps: { elevation: 0 },
@@ -168,10 +178,12 @@ export const components: Components<Theme> = {
   MuiTooltip: {
     defaultProps: { arrow: true },
     styleOverrides: {
-      tooltip: { backgroundColor: color.bg, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.meta.lineHeight, color: color.text2 },
-      arrow: { color: color.bg, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
+      tooltip: { backgroundColor: color.overlay, boxShadow: shadow.overlay, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.meta.lineHeight, color: color.text2 },
+      arrow: { color: color.overlay, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
     },
   },
+  MuiMenu: { styleOverrides: { paper: overlaySurface } },
+  MuiPopover: { styleOverrides: { paper: overlaySurface } },
   MuiTypography: {
     defaultProps: { variantMapping: { lead: "p", total: "p", stat: "p", money: "span", label: "span", meta: "span" } },
   },
