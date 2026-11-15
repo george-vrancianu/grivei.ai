@@ -10,7 +10,7 @@ const button = () => screen.getByRole("button", { name: /Procedure/, hidden: tru
 describe("FilterMenu", () => {
   it("shows the group name and the unset label, with the menu closed", () => {
     renderInUi(<FilterMenu label="Procedure" value={undefined} unsetLabel="Any">{null}</FilterMenu>);
-    expect(button()).toHaveTextContent("ProcedureAny");
+    expect(button()).toHaveTextContent("Procedure Any");
     expect(button()).toHaveAttribute("aria-haspopup", "menu");
     expect(button()).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("menu")).toBeNull();
@@ -18,7 +18,15 @@ describe("FilterMenu", () => {
 
   it("shows the value when set", () => {
     renderInUi(<FilterMenu label="Procedure" value="Open tender" unsetLabel="Any">{null}</FilterMenu>);
-    expect(button()).toHaveTextContent("ProcedureOpen tender");
+    expect(button()).toHaveTextContent("Procedure Open tender");
+  });
+
+  it("outlines a set, closed button in the accent without the open fill, and keeps the raised shadow", () => {
+    renderInUi(<><FilterMenu label="Procedure" value="Open tender" unsetLabel="Any">{null}</FilterMenu><FilterMenu label="Other" value={undefined} unsetLabel="Any">{null}</FilterMenu></>);
+    const style = getComputedStyle(button());
+    expect(style.boxShadow).toContain("rgb(242, 179, 61) 0px 0px 0px 1px inset");
+    expect(style.boxShadow).toContain("rgba(0, 0, 0, 0.5) 0px 1px 2px");
+    expect(style.backgroundColor).toBe(getComputedStyle(screen.getByRole("button", { name: /Other/ })).backgroundColor);
   });
 
   it("starts open on request, with aria-expanded true", () => {

@@ -15,13 +15,13 @@ const button = () => screen.getByRole("button", { name: /Channel/, hidden: true 
 describe("ChoiceMenu", () => {
   it("shows the group name and Any when nothing is chosen", () => {
     setup(undefined);
-    expect(button()).toHaveTextContent("ChannelAny");
+    expect(button()).toHaveTextContent("Channel Any");
     expect(button()).toHaveAttribute("aria-expanded", "false");
   });
 
   it("shows the chosen value on the button", () => {
     setup("CONTRACT");
-    expect(button()).toHaveTextContent("ChannelContract");
+    expect(button()).toHaveTextContent("Channel Contract");
   });
 
   it("opens a menu of radio items with the chosen one checked", async () => {

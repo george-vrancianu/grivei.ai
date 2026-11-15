@@ -2,8 +2,7 @@ import { useId, type ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Button } from "../../../../../atoms/Button/index.ts";
 import { Menu } from "../../../../../atoms/Menu/index.ts";
-import { selected } from "../../../../../theme/states.ts";
-import { color, radius } from "../../../../../theme/tokens.ts";
+import { color, radius, shadow } from "../../../../../theme/tokens.ts";
 import { useMenuAnchor } from "./hooks/useMenuAnchor.ts";
 
 export interface FilterMenuApi {
@@ -49,11 +48,12 @@ export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, chil
           fontWeight: 400,
           textTransform: "none",
           whiteSpace: "nowrap",
-          ...(set && selected),
+          ...(set && { boxShadow: `inset 0 0 0 1px ${color.accent}, ${shadow.raised}` }),
           "&[aria-expanded='true']": { backgroundColor: color.line },
         }}
       >
         <Box component="span" sx={{ color: color.muted }}>{label}</Box>
+        {" "}
         <Box component="span" sx={{ color: set ? color.text : color.text2 }}>{value ?? unsetLabel}</Box>
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
           <path d="M6 9l6 6 6-6" />

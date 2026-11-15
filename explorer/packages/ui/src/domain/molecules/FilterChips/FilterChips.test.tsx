@@ -33,8 +33,8 @@ describe("FilterChips: what the reader sees", () => {
     setup({ from: "2023-01-01", to: "2024-12-31", channel: "CONTRACT", valueBucket: "UP_TO_900K", hasSignals: true, procedure: ["Licitație deschisă"], badges: ["NO_VALUE"] });
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("ChannelContract");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value270,120–900,400 RON");
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value 270,120–900,400 RON");
     for (const name of ["Has Signals", "Licitație deschisă", "No value"]) {
       expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
     }
@@ -132,12 +132,12 @@ describe("FilterChips: each chip emits the whole next filter", () => {
 
   it("shows Any on the Channel and Value buttons, and the chosen value once set", () => {
     setup();
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("ChannelAny");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("ValueAny");
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Any");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Any");
     cleanup();
     setup({ channel: "CONTRACT", valueBucket: "OVER_1B" });
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("ChannelContract");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("ValueOver 1 bn RON");
+    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
+    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Over 1 bn RON");
   });
 
   it.each([["Direct purchase", "DIRECT_PURCHASE"], ["Contract", "CONTRACT"]])("the %s item sets the channel", async (name, channel) => {

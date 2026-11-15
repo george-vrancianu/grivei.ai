@@ -34,8 +34,8 @@ describe("the filter chips on the main screen", () => {
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
     // Channel and Value are menus: their buttons show the choice, and the menu checks it
-    expect(within(chips()).getByRole("button", { name: /^Channel/ })).toHaveTextContent("ChannelDirect purchase");
-    expect(within(chips()).getByRole("button", { name: /^Value/ })).toHaveTextContent("Value135,060–270,120 RON");
+    expect(within(chips()).getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Direct purchase");
+    expect(within(chips()).getByRole("button", { name: /^Value/ })).toHaveTextContent("Value 135,060–270,120 RON");
     for (const name of ["Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
       expect(within(chips()).getByRole("button", { name, pressed: true })).toBeVisible();
     }
@@ -51,8 +51,8 @@ describe("the filter chips on the main screen", () => {
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
     const channel = within(bar).getByRole("button", { name: /^Canal/ });
-    expect(channel).toHaveTextContent("CanalContract");
-    expect(within(bar).getByRole("button", { name: /^Valoare ?Oricare$/ })).toHaveTextContent("ValoareOricare");
+    expect(channel).toHaveTextContent("Canal Contract");
+    expect(within(bar).getByRole("button", { name: /^Valoare ?Oricare$/ })).toHaveTextContent("Valoare Oricare");
     await userEvent.setup().click(channel);
     expect(screen.getByRole("menuitemradio", { name: "Contract", checked: true })).toBeVisible();
     await userEvent.setup().keyboard("{Escape}");
@@ -90,7 +90,7 @@ describe("the filter chips on the main screen", () => {
     await waitFor(() => expect(queryOf().getAll(key)).toEqual([value]));
     expect(window.history.length).toBe(before);
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    expect(button).toHaveTextContent(`${group}${shown}`);
+    expect(button).toHaveTextContent(`${group} ${shown}`);
     // picking the chosen item again clears it
     await user.click(button);
     await user.click(screen.getByRole("menuitemradio", { name: item, checked: true }));

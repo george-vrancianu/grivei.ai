@@ -44,7 +44,7 @@ function MultiDemo({ locale }: { locale: unknown }) {
 /** Multi-select: `menuitemcheckbox` items; the menu stays open on a pick. */
 export const OpenMultiSelect: Story = { render: (_args, { globals }) => <MultiDemo locale={globals["locale"]} /> };
 
-/** Any content goes in: here two columns of plain lines, as the year menu will. */
+/** The options are plain children of the menu; a filter with a longer list (a year range, say) puts its own items in the same way. */
 export const OpenWithOtherContent: Story = {
   render: (_args, { globals }) => (
     <FilterMenu label={pick(globals["locale"], { en: "Award year", ro: "Anul atribuirii" })} value="2023–2025" unsetLabel={any(globals["locale"])} defaultOpen>
