@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
+  Box, chipFieldsOf, CircularProgress, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -52,6 +52,13 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const zoom = useZoomedCounty(zoomed === null ? null : zoomVariables(filter, zoomed));
   const uatTopology = useUatTopology(zoomed);
   const search = state.status === "ready" ? state.data.seap.search : null;
+  // A held answer (`stale`) is on screen while the next request is in flight.
+  const refreshing = state.status === "ready" && state.stale;
+  const inFlight = state.status === "loading" || refreshing;
+  // The search spinner is for a typed query: it shows while a request is in flight for a query other than the one last answered (a filter click leaves the query alone).
+  const [answeredQ, setAnsweredQ] = useState(filter.q);
+  if (state.status === "ready" && !state.stale && answeredQ !== filter.q) setAnsweredQ(filter.q);
+  const typing = inFlight && filter.q !== answeredQ;
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   // The Coverage lens asks only while it is shown: the date chip's window for the map, and the whole grid (highlighted by the same window) for the compact grid.
   const coverageShown = mapLens === "coverage";
@@ -82,7 +89,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
             <SourcePicker options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={typing} />
             </Box>
           </Stack>
         </>
@@ -151,6 +158,11 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           />
         ),
       }}
+      busy={{
+        summary: refreshing,
+        map: coverageShown ? coverage.status === "ready" && coverage.stale : zoomed !== null ? zoom.status === "ready" && zoom.stale : refreshing,
+        results: refreshing,
+      }}
       summary={
         search && state.status === "ready" && (
           <MainTotal
@@ -187,6 +199,16 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               onNavigate={(href) => navigate(href, "push")}
               locale={locale}
               copy={t.results}
+              status={
+                inFlight && (
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                    <CircularProgress size={14} aria-hidden="true" />
+                    <Typography variant="caption" role="status">
+                      {t.status.loading}
+                    </Typography>
+                  </Stack>
+                )
+              }
             />
           )}
         </>

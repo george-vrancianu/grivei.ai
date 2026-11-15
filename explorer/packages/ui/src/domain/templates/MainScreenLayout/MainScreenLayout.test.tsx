@@ -34,6 +34,26 @@ describe("MainScreenLayout", () => {
     expect(within(results).getByText("the results")).toBeVisible();
   });
 
+  it.each(["en", "ro"] as const)("dims a busy region to 60% with aria-busy and leaves the lens toggle at full strength (%s)", (locale) => {
+    const { rerender } = renderInUi(<MainScreenLayout {...props(locale)} />);
+    const copy = sampleCopy.mainScreenLayout(locale);
+    const toggle = () => screen.getByRole("group", { name: copy.lens.label });
+    expect(document.querySelector("[aria-busy]")).toBeNull();
+
+    rerender(<MainScreenLayout {...props(locale)} busy={{ summary: true, map: true, results: true }} />);
+    for (const text of ["the total", "the money map", "the results"]) {
+      const region = screen.getByText(text).closest("[aria-busy]")!;
+      expect(region).toHaveAttribute("aria-busy", "true");
+      expect(getComputedStyle(region).opacity).toBe("0.6");
+    }
+    expect(toggle().closest("[aria-busy]")).toBeNull();
+    expect(screen.getByRole("region", { name: copy.regions.results })).toHaveAttribute("aria-busy", "true");
+
+    rerender(<MainScreenLayout {...props(locale)} busy={{ map: true }} />);
+    expect(screen.getByText("the total").closest("[aria-busy]")).toBeNull();
+    expect(screen.getByText("the results").closest("[aria-busy]")).toBeNull();
+  });
+
   it("puts the title above every panel, and the search, filters and Total in panels of their own", () => {
     renderInUi(<MainScreenLayout {...props()} title={<h1>The title</h1>} />);
     const title = screen.getByRole("heading", { level: 1, name: "The title" });

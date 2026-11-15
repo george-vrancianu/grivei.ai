@@ -52,7 +52,7 @@ export interface ResultTabsProps {
   emptyHref?: string;
   /** A plain click on any link in the results (the pinned card, Record titles, entity names, the "n Signals" chip, the "show all" and empty-state links) goes here instead of loading the page; leave it out and the browser follows the links. */
   onNavigate?: (href: string) => void;
-  /** Optional: a line at the right end of the panel's header, beside the tabs (a loading status, later). */
+  /** Optional: a line at the right end of the panel's header, beside the tabs (the main screen puts its Loading… status line here while a request is in flight). */
   status?: ReactNode;
   locale: Locale;
   copy: ResultTabsCopy;
