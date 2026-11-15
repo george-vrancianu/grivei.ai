@@ -27,8 +27,8 @@ const area = (name: string) => screen.getByRole("button", { name: new RegExp(`^$
 const asked = (sent: { operation: string; variables: unknown }[], operation: string) => sent.filter((s) => s.operation === operation).map((s) => JSON.stringify(s.variables));
 
 describe.each([
-  { locale: "en", prefix: "", records: "8 Records", uatRecords: "2 Records", uatAwarded: "RON 2,000", grey: "Bran: No authority bought anything" },
-  { locale: "ro", prefix: "/ro", records: "8 înregistrări", uatRecords: "2 înregistrări", uatAwarded: "2.000 RON", grey: "Bran: Nicio autoritate nu a cumpărat" },
+  { locale: "en", prefix: "", records: "Records 8", uatRecords: "Records 2", uatAwarded: "RON 2,000", grey: "Bran: No authority bought anything" },
+  { locale: "ro", prefix: "/ro", records: "Înregistrări 8", uatRecords: "Înregistrări 2", uatAwarded: "2.000 RON", grey: "Bran: Nicio autoritate nu a cumpărat" },
 ] as const)("the zoomed county at $prefix/explore/", ({ locale, prefix, records, uatRecords, uatAwarded, grey }) => {
   const t = catalogue[locale];
   const base = `${prefix}/explore/`;
@@ -41,7 +41,11 @@ describe.each([
     await user.click(area("Brașov"));
     await waitFor(() => expect(here()).toBe(`${base}?county=RO-BV`));
 
-    expect(await screen.findByRole("button", { name: t.zoomedCounty.back })).toBeVisible();
+    const back = await screen.findByRole("button", { name: t.zoomedCounty.back });
+    // the back link is in the map panel's header strip, beside the lens toggle, ahead of the map and its title
+    const map = within(screen.getByRole("region", { name: t.mainScreenLayout.regions.map }));
+    expect(map.getByRole("button", { name: t.zoomedCounty.back })).toBe(back);
+    expect(back.parentElement).toContainElement(map.getByRole("group", { name: t.mainScreenLayout.lens.label }));
     expect(await screen.findByRole("heading", { name: t.zoomedCounty.title("Brașov", false) })).toBeVisible();
     for (const uat of ["Brașov", "Sânpetru", "Râșnov", "Ucea", "Șinca Nouă"]) expect(area(uat)).toBeVisible();
     expect(plain(area("Bran").getAttribute("aria-label"))).toBe(grey); // in the outlines, absent from the answer: grey
@@ -135,7 +139,7 @@ describe("the zoomed county where the county's outlines are missing or it is the
   it("keeps the results working when the outlines of a recorded county cannot be fetched", async () => {
     open("/explore/?county=RO-BV", async () => Promise.reject(new Error("HTTP 404")));
     expect(await screen.findByText(catalogue.en.main.mapUnavailable)).toBeVisible();
-    await waitFor(() => expect(total().records).toBe("8 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 8"));
     expect(within(screen.getByRole("tabpanel")).getAllByRole("listitem").length).toBeGreaterThan(0);
     await userEvent.setup().click(screen.getByRole("button", { name: catalogue.en.zoomedCounty.back }));
     await waitFor(() => expect(here()).toBe("/explore/"));
@@ -143,7 +147,7 @@ describe("the zoomed county where the county's outlines are missing or it is the
 
   it("does not zoom on the supplier side: the county stays on the county map and no UAT is asked for", async () => {
     const { sent } = open("/explore/?county=RO-BV&countySide=supplier");
-    await waitFor(() => expect(total().records).toBe("16 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 16"));
     expect(area("Brașov")).toHaveAttribute("aria-pressed", "true");
     expect(asked(sent, "ZoomedCounty")).toEqual([]);
   });

@@ -25,7 +25,7 @@ describe("the has-Signals chip on the main screen", () => {
     expect(within(chips("Filters")).getByRole("button", { name: "Has Signals", pressed: true })).toBeVisible();
     expect(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: "Remove Has Signals" })).toBeVisible();
     await waitFor(() => expect(tabNames()).toEqual(["Authorities 3", "Suppliers 4", "Records 14"]));
-    expect(screen.getByText("14 Records", { selector: "*" })).toBeVisible();
+    expect(within(screen.getByTestId("main-total")).getByText("Records").closest("p")).toHaveTextContent("Records 14");
   });
 
   it("asks for the Records outside every Signal when the chip is set to without Signals", async () => {

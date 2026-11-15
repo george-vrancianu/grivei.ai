@@ -9,7 +9,7 @@ import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
 import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
-import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
+import type { InsetTotalCopy } from "../molecules/TotalFigure/index.ts";
 import type { PartyCoverageCopy } from "../molecules/PartyCoverage/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
@@ -454,7 +454,6 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
       active: {
         group: "Filtre active",
-        none: "Niciun filtru activ.",
         from: (when) => `Din ${when}`,
         to: (when) => `Până în ${when}`,
         party: (list) => `Partid: ${list}`,
@@ -484,7 +483,6 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       badges: { group: "Record badges", badges: BADGES },
       active: {
         group: "Active filters",
-        none: "No filters on.",
         from: (when) => `From ${when}`,
         to: (when) => `Until ${when}`,
         party: (list) => `Party: ${list}`,
@@ -1360,7 +1358,7 @@ export const sampleCopy = {
           unattributedNote: "Central government, schools, municipal companies, ADIs and gaps in the mandates carry no Party.",
           methodology: "How a Party is attributed",
         },
-  total: (locale: Locale): TotalFigureCopy =>
+  total: (locale: Locale): InsetTotalCopy =>
     locale === "ro"
       ? {
           records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
@@ -1368,6 +1366,7 @@ export const sampleCopy = {
           noValue: (n, f) => `${f} ${plural(n, "înregistrare fără valoare", "înregistrări fără valoare")}`,
           frameworkCeilings: (amount) => `Plafoane de acorduri-cadru nenumărate: ${amount}`,
           methodology: "Cum se calculează acest total",
+          figures: { records: "Înregistrări", suspect: "Valori suspecte excluse", noValue: "Înregistrări fără valoare", ceilings: "Plafoane de acorduri-cadru neincluse" },
         }
       : {
           records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
@@ -1375,6 +1374,7 @@ export const sampleCopy = {
           noValue: (n, f) => `${f} ${plural(n, "Record with no value", "Records with no value")}`,
           frameworkCeilings: (amount) => `Framework ceilings not counted: ${amount}`,
           methodology: "How this total is counted",
+          figures: { records: "Records", suspect: "Suspect values left out", noValue: "Records with no value", ceilings: "Framework ceilings not counted" },
         },
 };
 

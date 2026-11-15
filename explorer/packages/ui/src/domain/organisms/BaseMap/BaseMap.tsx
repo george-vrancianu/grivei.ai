@@ -1,6 +1,7 @@
 import { useId, useMemo, type ReactNode } from "react";
 import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
+import { Well } from "../../../atoms/Well/index.ts";
 import { withNodes } from "../../utils/withNodes.tsx";
 import type { AreaInfo, BaseMapCopy, ColorScaleKind, MapOverlayContext, ProjectionKind } from "./baseMap.types.ts";
 import { createColorScale, NO_DATA_COLOR, type AreaReader, type AreaValues } from "./baseMap.utils.ts";
@@ -111,30 +112,33 @@ export function BaseMap({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box sx={{ minWidth: 0 }}>
-        <Box sx={{ position: "relative" }}>
-          <MapCanvas
-            features={features}
-            paths={paths}
-            width={width}
-            height={height}
-            label={copy.mapLabel}
-            fillOf={(code) => (colorOf ? (colorOf(code) ?? NO_DATA_COLOR) : scale.color(valueOf(code)))}
-            labelOf={(area) => copy.areaLabel(area.properties.name, textOf(area.properties.code, area.properties.name))}
-            selected={selected}
-            activeCode={activeCode}
-            tooltipId={tooltipId}
-            onSelect={onSelect}
-            onActivate={setActiveCode}
-            overlay={renderOverlay?.({ centroids, project, width, height })}
-          />
-          {active && anchor && (
-            <MapTooltip id={tooltipId} left={(anchor[0] / width) * 100} top={(anchor[1] / height) * 100}>
-              {renderTooltip
-                ? renderTooltip({ code: active.properties.code, name: active.properties.name, value: valueOf(active.properties.code) })
-                : defaultTooltip(active.properties.code, active.properties.name)}
-            </MapTooltip>
-          )}
-        </Box>
+        {/* The map sits in a well; the tooltip's anchor box inside it is the canvas alone, so the tooltip's percentages stay true to the map. */}
+        <Well sx={{ p: 1.5 }}>
+          <Box sx={{ position: "relative" }}>
+            <MapCanvas
+              features={features}
+              paths={paths}
+              width={width}
+              height={height}
+              label={copy.mapLabel}
+              fillOf={(code) => (colorOf ? (colorOf(code) ?? NO_DATA_COLOR) : scale.color(valueOf(code)))}
+              labelOf={(area) => copy.areaLabel(area.properties.name, textOf(area.properties.code, area.properties.name))}
+              selected={selected}
+              activeCode={activeCode}
+              tooltipId={tooltipId}
+              onSelect={onSelect}
+              onActivate={setActiveCode}
+              overlay={renderOverlay?.({ centroids, project, width, height })}
+            />
+            {active && anchor && (
+              <MapTooltip id={tooltipId} left={(anchor[0] / width) * 100} top={(anchor[1] / height) * 100}>
+                {renderTooltip
+                  ? renderTooltip({ code: active.properties.code, name: active.properties.name, value: valueOf(active.properties.code) })
+                  : defaultTooltip(active.properties.code, active.properties.name)}
+              </MapTooltip>
+            )}
+          </Box>
+        </Well>
         {legend ?? <Legend title={copy.legendTitle} noDataLabel={copy.noData} scale={scale} formatValue={legendValue} atMost={copy.atMost} />}
       </Box>
       {/* The tiles sit under the legend, so the map reads top to bottom. */}

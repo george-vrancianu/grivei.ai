@@ -123,7 +123,7 @@ export const en: Copy = {
   },
   language: { groupLabel: "Language", current: "EN", switchTo: "RO", switchLabel: "Romanian version of this page" },
   status: { loading: "Loading…", failed: "The data could not be loaded." },
-  main: { title: "Explore public spending", total: "Total awarded", mapUnavailable: "The map could not be loaded." },
+  main: { title: "Explore public spending", total: "Total awarded", mapUnavailable: "The map could not be loaded.", mapTitle: "Awarded value by county" },
   sourceEyebrow: { search: "search", scope: "national", period: "2021 onward" },
   searchBar: { label: "Search", placeholder: "Search in Romanian, e.g. deszăpezire", hint: "The data is in Romanian. Try deszăpezire, a company name, a CUI with or without RO, or a CPV prefix such as 45. Diacritics, case and legal forms (SRL, SA) are ignored.", clear: "Clear search", loading: "Searching", minLengthHint: "Type at least 2 characters to search." },
   results: {
@@ -260,7 +260,6 @@ export const en: Copy = {
     badges: { group: "Record badges", badges: badges },
     active: {
       group: "Active filters",
-      none: "No filters on.",
       from: (when) => `From ${when}`,
       to: (when) => `Until ${when}`,
       party: (list) => `Party: ${list}`,
@@ -293,6 +292,7 @@ export const en: Copy = {
     noValue: (n, f) => `${f} ${plural(n, "Record with no value", "Records with no value")}`,
     frameworkCeilings: (amount) => `Framework ceilings not counted: ${amount}`,
     methodology: "How this total is counted",
+    figures: { records: "Records", suspect: "Suspect values left out", noValue: "Records with no value", ceilings: "Framework ceilings not counted" },
   },
   recordPage: {
     notFound: { title: "Record not found", body: (code) => `No Record is published under the code ${code}.` },

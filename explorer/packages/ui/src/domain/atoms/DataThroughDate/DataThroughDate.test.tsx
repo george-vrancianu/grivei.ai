@@ -23,4 +23,9 @@ describe("DataThroughDate", () => {
     expect(screen.getByText(/^Contracts: through/)).toBeVisible();
     expect(screen.queryByText(/CONTRACT:/)).toBeNull();
   });
+  it("can leave the kind out, for a caller that sets it in its own term", () => {
+    render(<DataThroughDate dataThrough={entry} locale="en" copy={{ through: "data through" }} withoutKind />);
+    expect(screen.queryByText(/CONTRACT/)).toBeNull();
+    expect(screen.getByText(/^data through/)).toBeVisible();
+  });
 });

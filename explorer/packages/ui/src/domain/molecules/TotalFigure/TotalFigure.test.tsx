@@ -73,3 +73,43 @@ describe("TotalFigure accent", () => {
     expect(accent(screen.getByRole("link", { name: /suspect/ }))).toBe(false);
   });
 });
+
+describe("TotalFigure, inset layout", () => {
+  const inset = { heading: <h2>Total awarded</h2> };
+  const figures = (locale: "en" | "ro" = "en") => ({ ...base, locale, copy: sampleCopy.total(locale), inset });
+
+  it("shows each part that is not zero as a figure, label then value, and the suspect figure keeps its link", () => {
+    renderInUi(<TotalFigure total={totalWithLeftOut} {...figures()} />);
+    expect(screen.getByText("Records").closest("p")).toHaveTextContent("Records 11");
+    expect(screen.getByText("Records with no value").closest("p")).toHaveTextContent("Records with no value 1");
+    expect(screen.getByText("Framework ceilings not counted").closest("p")).toHaveTextContent(/^Framework ceilings not counted\s+RON\s100,000,000$/);
+    expect(screen.getByRole("link", { name: "Suspect values left out 1" })).toHaveAttribute("href", base.suspectHref);
+    expect(screen.getByRole("heading", { name: "Total awarded" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "How this total is counted" })).toHaveAttribute("href", "/methodology/");
+  });
+  it("leaves out every part that is zero, Records included", () => {
+    renderInUi(<TotalFigure total={{ ...empty, awarded: "100" }} {...figures()} />);
+    for (const label of ["Records", "Suspect values left out", "Records with no value", "Framework ceilings not counted"]) expect(screen.queryByText(label)).toBeNull();
+    expect(screen.getByText(/^RON\s1$/)).toBeVisible();
+  });
+  it("reads in Romanian and marks an estimated count", () => {
+    renderInUi(<TotalFigure total={{ ...totalExtreme, estimated: true }} {...figures("ro")} />, "ro");
+    expect(screen.getByText("Înregistrări").closest("p")).toHaveTextContent(/^Înregistrări ≈\s2\.400\.000$/);
+  });
+  it("keeps the amber for the headline amount alone", () => {
+    renderInUi(<TotalFigure total={totalWithLeftOut} {...figures()} />);
+    const hex = (value: string) => [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16)).join();
+    const accent = (el: Element) => getComputedStyle(el).color.match(/\d+/g)?.slice(0, 3).join() === hex(color.accent);
+    expect(accent(document.querySelector("p.MuiTypography-total")!)).toBe(true);
+    expect(accent(screen.getByRole("link", { name: /Suspect values/ }))).toBe(false);
+  });
+  it("wraps the figures under the amount: the row wraps and the amount column measures its own width", () => {
+    renderInUi(<TotalFigure total={totalWithLeftOut} {...figures()} />);
+    const rulesOf = (el: Element) =>
+      [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules]).filter((rule) => [...el.classList].some((c) => (rule as CSSStyleRule).selectorText?.includes(`.${c}`))).map((rule) => rule.cssText).join("\n");
+    const amount = document.querySelector("p.MuiTypography-total")!;
+    const column = amount.parentElement!.parentElement!;
+    expect(rulesOf(column)).toMatch(/container-type:\s*inline-size/);
+    expect(rulesOf(column.parentElement!)).toMatch(/flex-wrap:\s*wrap/);
+  });
+});

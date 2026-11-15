@@ -23,6 +23,8 @@ describe("the filter chips on the main screen", () => {
     // the hand-written `records-variety` fixture: the recorded runs have no procedure facet (the API serves it for one entity's set only)
     await opened("/explore/?q=contract");
     expect(within(chips()).queryAllByRole("button", { pressed: true })).toHaveLength(0);
+    // nothing is set, so there is no active strip at all
+    expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
     expect(await within(chips()).findByRole("button", { name: "Licitație deschisă", pressed: false })).toBeVisible();
     expect(within(chips()).getByRole("button", { name: "Achiziție directă" })).toBeVisible();
   });

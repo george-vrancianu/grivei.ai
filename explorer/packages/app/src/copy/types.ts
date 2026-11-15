@@ -1,5 +1,5 @@
 import type {
-  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, TotalFigureCopy,
+  FinancialStatementsSectionCopy, FirmDonationsSectionCopy, PublicEnterpriseSectionCopy, LeadershipSectionCopy, BadgeCopy, CoverageLensMapCopy, DataThroughDateCopy, EntityHeaderCopy, EntityOverviewCopy, OnrcSectionCopy, PeopleSectionCopy, PersonDetailCopy, EntityLinkCopy, EntityPageLayoutCopy, FilterChipsCopy, FullResultsCopy, PageNavCopy, CoveragePageLayoutCopy, MainScreenLayoutCopy, MethodologyPageCopy, MoneyLensMapCopy, PartyNameCopy, PartyCoverageCopy, RecordDetailCopy, RecordsTabCopy, FlowLensMapCopy, RelationshipsTabCopy, ResultTabsCopy, SearchBarCopy, SourceEyebrowCopy, SignalCardCopy, SignalOrderToggleCopy, InsetTotalCopy,
 } from "@grivei/ui";
 import type { OnrcCountMapCopy, OnrcFilterChipsCopy, OnrcResultsCopy, SnapshotCoverageCopy, SourcePickerCopy } from "@grivei/ui";
 import type { ZoomedCountySectionCopy } from "../components/ZoomedCountySection/index.ts";
@@ -32,7 +32,7 @@ export interface Copy {
     switchLabel: string;
   };
   status: { loading: string; failed: string };
-  main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string };
+  main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string; /** The title of the national map in the Money lens (a zoomed county has its own, `zoomedCounty.title`). */ mapTitle: string };
   /** The Source eyebrow above the search bar: the words around the Source's name, which comes from the API. */
   sourceEyebrow: SourceEyebrowCopy;
   /** The search bar on the main screen and the full-results view. */
@@ -50,7 +50,7 @@ export interface Copy {
   /** The Coverage lens map (#51), wired by #90: status words, the N of M sentence, the Source marks; its off-map tiles carry the same wording as the Money lens's (kept as separate keys so the two can diverge). */
   coverageLensMap: CoverageLensMapCopy;
   /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
-  zoomedCounty: ZoomedCountySectionCopy;
+  zoomedCounty: ZoomedCountySectionCopy & { /** The back link in the map panel's header strip: the way out of the zoom. */ back: string };
   /** The titles of the pages that carry no data of their own (the page not found, the search page); the others have their own keys. */
   pages: {
     notFound: { title: string; back: string };
@@ -61,7 +61,7 @@ export interface Copy {
   entityLink: EntityLinkCopy;
   party: PartyNameCopy;
   dataThrough: DataThroughDateCopy;
-  total: TotalFigureCopy;
+  total: InsetTotalCopy;
   /** What a Party-filtered Total covers (#181): shown under the main screen's Total. */
   partyCoverage: PartyCoverageCopy;
   /** The Record page: every string of the Record display. The badge, party and row copy come from the catalogue's own `badges`, `party` and `results`. */

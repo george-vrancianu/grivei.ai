@@ -24,6 +24,7 @@ function render(props: Partial<MoneyLensSectionProps>): NonNullable<Story["rende
         onChange={() => undefined}
         locale={locale}
         copy={catalogue[locale].moneyLensMap}
+        title={catalogue[locale].main.mapTitle}
         status={{ unavailable: catalogue[locale].main.mapUnavailable, loading: catalogue[locale].status.loading }}
         {...props}
       />

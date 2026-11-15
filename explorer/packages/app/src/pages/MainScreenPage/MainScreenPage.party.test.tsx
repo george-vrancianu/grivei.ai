@@ -67,7 +67,7 @@ describe("the Party filter on the main screen", () => {
   it("states the coverage beside the Total: direct and subordinate, what the filter leaves out and the unattributed share", async () => {
     await opened(`/explore/?${CHANNEL}&party=${encodeURIComponent(PNL)}`);
     const coverage = await screen.findByTestId("party-coverage");
-    await waitFor(() => expect(readTotal().records).toBe("7 Records"));
+    await waitFor(() => expect(readTotal().records).toBe("Records 7"));
     expect(readTotal().awarded).toBe("RON 7,000"); // direct + subordinate: 6,000 + 1,000
     const lines = within(coverage).getAllByRole("listitem").map((li) => plain(li.textContent));
     expect(lines).toEqual([

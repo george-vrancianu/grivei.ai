@@ -22,11 +22,11 @@ const bar = () => screen.getByRole("region", { name: "Filters" });
 const active = () => within(screen.getByRole("group", { name: "Active filters" }));
 
 describe("FilterChips: what the reader sees", () => {
-  it("shows no chip on, and says so, for an empty filter", () => {
+  it("shows no chip on, and no active strip, for an empty filter", () => {
     setup();
     expect(bar()).toBeVisible();
     expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
-    expect(active().getByText("No filters on.")).toBeVisible();
+    expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
   });
 
   it("reflects a filter: pressed toggles, years, and one removable chip per value", () => {

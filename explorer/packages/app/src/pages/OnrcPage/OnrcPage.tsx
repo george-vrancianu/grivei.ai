@@ -48,11 +48,13 @@ export function OnrcPage({ locale }: { locale: Locale }) {
   );
   return (
     <MainScreenLayout
+      title={
+        <Typography variant="h2" component="h1">
+          {s.onrc.title}
+        </Typography>
+      }
       search={
         <>
-          <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
-            {s.onrc.title}
-          </Typography>
           <SourceEyebrow id={eyebrowId} sources={[]} selected="ONRC" copy={s.onrc.eyebrow} />
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
             <SourcePicker

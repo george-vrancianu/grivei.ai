@@ -1,5 +1,5 @@
 import type { DataThroughFieldsFragment } from "@grivei/contract";
-import { DataThroughDate, Stack, Typography, type DataThroughDateCopy, type Locale } from "@grivei/ui";
+import { Box, DataThroughDate, Typography, type DataThroughDateCopy, type Locale } from "@grivei/ui";
 
 export interface MainDataThroughProps {
   /** The Sources' "data through" dates; only a harvested Source has any. */
@@ -8,17 +8,22 @@ export interface MainDataThroughProps {
   locale: Locale;
 }
 
-/** How recent the data is, one line per record kind: the note at the foot of the map panel, as in the design. Renders nothing without dates. */
+/** How recent the data is, as a two-column definition list at the foot of the map panel: each record kind, then its date. Renders nothing without dates. */
 export function MainDataThrough({ sources, copy, locale }: MainDataThroughProps) {
   const dates = sources.flatMap((source) => source.dataThrough);
   if (dates.length === 0) return null;
   return (
-    <Stack spacing={0.5} data-testid="main-data-through">
+    <Box component="dl" data-testid="main-data-through" sx={{ m: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px 16px" }}>
       {dates.map((dataThrough) => (
-        <Typography key={dataThrough.kind} variant="caption" color="text.secondary" component="p">
-          <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} kindLabel={copy.kinds[dataThrough.kind] ?? dataThrough.kind} />
-        </Typography>
+        <Box key={dataThrough.kind} sx={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+          <Typography variant="caption" component="dt" sx={{ overflowWrap: "anywhere" }}>
+            {copy.kinds[dataThrough.kind] ?? dataThrough.kind}
+          </Typography>
+          <Typography variant="caption" component="dd" color="text.secondary" sx={{ m: 0 }}>
+            <DataThroughDate dataThrough={dataThrough} locale={locale} copy={copy.dataThrough} withoutKind />
+          </Typography>
+        </Box>
       ))}
-    </Stack>
+    </Box>
   );
 }

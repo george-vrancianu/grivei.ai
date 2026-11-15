@@ -26,7 +26,6 @@ function render(props: Partial<ZoomedCountySectionProps>): NonNullable<Story["re
         uat={undefined}
         onSelectUat={() => undefined}
         onClearUat={() => undefined}
-        onBack={() => undefined}
         locale={locale}
         copy={t.zoomedCounty}
         status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
