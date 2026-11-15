@@ -27,7 +27,6 @@ export interface FilterChipsCopy {
   badges: { group: string; badges: BadgeCopy };
   active: {
     group: string;
-    none: string;
     /** "From 2023" / "From 15 Mar 2024": `when` is a year, or a date when the filter's date is not a year edge. */
     from: (when: string) => string;
     to: (when: string) => string;

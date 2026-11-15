@@ -2,6 +2,7 @@ import type { RecordFilter } from "@grivei/contract";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
+import { Button } from "../../../atoms/Button/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { pick } from "../../../workbench/index.ts";
@@ -11,7 +12,7 @@ import { MoneyLensMap, type CountySide, type MapArea } from "../../organisms/Mon
 import { ResultTabs } from "../../organisms/ResultTabs/index.ts";
 import { ZoomedCountyMap } from "../../organisms/ZoomedCountyMap/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { resultSamples, totalTypical } from "../../samples/fixtureData.ts";
+import { resultSamples, totalWithLeftOut } from "../../samples/fixtureData.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { countyUatsTopology } from "../../samples/geo/countyUats.topo.ts";
 import { authoritySide, supplierSide } from "../../samples/moneyMaps.ts";
@@ -43,9 +44,16 @@ const names = (locale: unknown) =>
     ro: { search: "Câmp de căutare", filters: "Filtre", summary: "Total", results: "Filele de rezultate", money: "Harta lentilei Bani", coverage: "Harta lentilei Acoperire" },
   });
 
-const placeholders = (locale: unknown): { [slot in "search" | "filters" | "summary" | "results"]: ReactNode } & { maps: Record<MapLens, ReactNode> } => {
+const titleOf = (locale: unknown) => (
+  <Typography variant="h2" component="h1">
+    {pick(locale, { en: "Explore public spending", ro: "Explorează cheltuielile publice" })}
+  </Typography>
+);
+
+const placeholders = (locale: unknown): { [slot in "title" | "search" | "filters" | "summary" | "results"]: ReactNode } & { maps: Record<MapLens, ReactNode> } => {
   const label = names(locale);
   return {
+    title: titleOf(locale),
     search: <Placeholder name={label.search} height={48} />,
     filters: <Placeholder name={label.filters} height={40} />,
     summary: <Placeholder name={label.summary} height={64} />,
@@ -55,9 +63,27 @@ const placeholders = (locale: unknown): { [slot in "search" | "filters" | "summa
 };
 
 /** The lens lives in the URL in the app; the stories keep it in state so the toggle works. */
-function Screen({ locale, initial = "money", slots }: { locale: Locale; initial?: MapLens; slots: ReturnType<typeof placeholders> }) {
+function Screen({ locale, initial = "money", slots, back }: { locale: Locale; initial?: MapLens; slots: ReturnType<typeof placeholders>; back?: ReactNode }) {
   const [lens, setLens] = useState<MapLens>(initial);
-  return <MainScreenLayout {...slots} lens={lens} onLensChange={setLens} copy={sampleCopy.mainScreenLayout(locale)} />;
+  return <MainScreenLayout {...slots} mapBack={back} mapNote={<DataThrough locale={locale} />} lens={lens} onLensChange={setLens} copy={sampleCopy.mainScreenLayout(locale)} />;
+}
+
+/** The foot of the map panel: the "data through" dates as a two-column list. */
+function DataThrough({ locale }: { locale: Locale }) {
+  const rows = pick(locale, {
+    en: [["Award notices", "data through 12 November 2026"], ["Contracts", "data through 12 November 2026"], ["Direct purchases", "data through 30 September 2026"], ["Direct purchase award notifications", "data through 30 September 2026"]],
+    ro: [["Anunțuri de atribuire", "date până la 12 noiembrie 2026"], ["Contracte", "date până la 12 noiembrie 2026"], ["Achiziții directe", "date până la 30 septembrie 2026"], ["Notificări de atribuire a cumpărării directe", "date până la 30 septembrie 2026"]],
+  });
+  return (
+    <Box component="dl" sx={{ m: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px 16px" }}>
+      {rows.map(([kind, date]) => (
+        <Box key={kind}>
+          <Typography variant="caption" component="dt">{kind}</Typography>
+          <Typography variant="caption" component="dd" color="text.secondary" sx={{ m: 0 }}>{date}</Typography>
+        </Box>
+      ))}
+    </Box>
+  );
 }
 
 const placeholderStory = (initial?: MapLens): Story => ({
@@ -99,11 +125,20 @@ function RealMoney({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
 function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
   const [filter, setFilter] = useState<RecordFilter>(ACTIVE);
   const label = names(locale);
+  const copy = sampleCopy.total(locale);
   const slots = {
+    title: titleOf(locale),
     search: <Placeholder name={label.search} height={48} />,
     filters: <FilterChips filter={filter} onChange={setFilter} procedureOptions={PROCEDURES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />,
     summary: (
-      <TotalFigure total={totalTypical} locale={locale} copy={sampleCopy.total(locale)} methodologyHref="/methodology/" suspectHref="/explore/?badge=SUSPECT_VALUE" />
+      <TotalFigure
+        total={totalWithLeftOut}
+        locale={locale}
+        copy={copy}
+        methodologyHref="/methodology/"
+        suspectHref="/explore/?badge=SUSPECT_VALUE"
+        inset={{ heading: <Typography variant="meta" component="h2">{pick(locale, { en: "Total awarded", ro: "Total atribuit" })}</Typography> }}
+      />
     ),
     results: (
       <ResultTabs
@@ -119,7 +154,8 @@ function Real({ locale, zoomed }: { locale: Locale; zoomed: boolean }) {
       coverage: <Placeholder name={label.coverage} height={420} />,
     },
   };
-  return <Screen locale={locale} slots={slots} />;
+  const back = zoomed ? <Button size="small" color="inherit">{pick(locale, { en: "Back to Romania", ro: "Înapoi la România" })}</Button> : undefined;
+  return <Screen locale={locale} slots={slots} back={back} />;
 }
 
 const real = (zoomed: boolean): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} /> });
@@ -129,5 +165,7 @@ export const RealOrganisms: Story = real(false);
 /** The county zoom in the money slot. */
 export const ZoomedCounty: Story = real(true);
 
-/** Below the md breakpoint (900 px) the results stack under the map; the tablet viewport is 834 px wide. */
+/** Below the md breakpoint (900 px) the panels stack and the results sit under the map; the tablet viewport is 834 px wide. */
 export const NarrowViewport: Story = { ...real(false), globals: { viewport: { value: "tablet", isRotated: false } } };
+/** A phone: one column, the Total's figures wrap under the amount, and the page never scrolls sideways (check by hand: no horizontal scrollbar). */
+export const PhoneViewport: Story = { ...real(true), globals: { viewport: { value: "mobile2", isRotated: false } } };

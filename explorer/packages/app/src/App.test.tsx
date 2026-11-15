@@ -17,7 +17,7 @@ describe("the main screen for the empty filter", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explore public spending" })).toBeInTheDocument();
     await screen.findByTestId("main-total");
-    expect(readTotal()).toEqual({ awarded: "RON 21,300", records: "18 Records" });
+    expect(readTotal()).toEqual({ awarded: "RON 21,300", records: "Records 18" });
 
     // Suppliers is the tab that opens when the URL names none
     expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");
@@ -38,7 +38,7 @@ describe("the main screen for the empty filter", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Explorează cheltuielile publice" })).toBeInTheDocument();
     await screen.findByTestId("main-total");
-    expect(readTotal()).toEqual({ awarded: "21.300 RON", records: "18 înregistrări" });
+    expect(readTotal()).toEqual({ awarded: "21.300 RON", records: "Înregistrări 18" });
 
     expect(screen.getByRole("tab", { name: /^Furnizori/ })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("tabpanel", { name: /^Furnizori/ });

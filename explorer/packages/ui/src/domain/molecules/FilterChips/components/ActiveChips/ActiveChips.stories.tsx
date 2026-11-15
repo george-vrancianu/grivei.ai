@@ -10,7 +10,6 @@ type Story = StoryObj<Record<string, unknown>>;
 const chip = (label: string): ActiveChip => ({ id: label, label, remove: (f) => f });
 const copyOf = (globals: Record<string, unknown>) => sampleCopy.filterChips(localeOf(globals["locale"])).active;
 
-export const None: Story = { render: (_a, { globals }) => <ActiveChips chips={[]} onRemove={() => {}} onClearAll={() => {}} copy={copyOf(globals)} /> };
 export const Several: Story = {
   render: (_a, { globals }) => (
     <ActiveChips

@@ -6,8 +6,6 @@ import { BUCHAREST } from "./zoomedCountySection.utils.ts";
 /** The strings the section adds around the map. */
 export interface ZoomedCountySectionCopy {
   map: ZoomedCountyMapCopy;
-  /** "Back to Romania": the way out of the zoom (clears the county and the UAT). */
-  back: string;
   /** Heading of a zoomed county; Bucharest (`sectors`) shows its six sectors. */
   title: (countyName: string, sectors: boolean) => string;
   /** "Results for Sânpetru": which UAT the results are narrowed to, with the way to take it back. */
@@ -27,7 +25,6 @@ export interface ZoomedCountySectionProps {
   uat: string | undefined;
   onSelectUat: (siruta: string) => void;
   onClearUat: () => void;
-  onBack: () => void;
   locale: Locale;
   copy: ZoomedCountySectionCopy;
   /** What to say while things load, when the outlines cannot be loaded and when the query failed. */
@@ -36,9 +33,9 @@ export interface ZoomedCountySectionProps {
 
 /**
  * The Money lens zoomed into one county: the UAT choropleth (Bucharest by its sectors) for one search, with the UAT as a filter
- * value and a way back to the country. A missing outlines file or a failed query says so here and leaves the results working.
+ * value and a way back to the country (the back link is the map panel's, in its header strip). A missing outlines file or a failed query says so here and leaves the results working.
  */
-export function ZoomedCountySection({ county, data, loading, failed, topology, uat, onSelectUat, onClearUat, onBack, locale, copy, status }: ZoomedCountySectionProps) {
+export function ZoomedCountySection({ county, data, loading, failed, topology, uat, onSelectUat, onClearUat, locale, copy, status }: ZoomedCountySectionProps) {
   const countyName = data?.uats[0]?.county.name ?? county;
   const selectedName = uat === undefined ? undefined : (data?.uats.find((u) => u.siruta === uat)?.name ?? uat);
   const map = data?.seap.search.uatMap ?? null;
@@ -62,16 +59,11 @@ export function ZoomedCountySection({ county, data, loading, failed, topology, u
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-        <Button variant="outlined" size="small" onClick={onBack}>
-          {copy.back}
-        </Button>
-        {data && (
-          <Typography variant="h6" component="h2">
-            {copy.title(countyName, county === BUCHAREST)}
-          </Typography>
-        )}
-      </Box>
+      {data && (
+        <Typography variant="h3" component="h2">
+          {copy.title(countyName, county === BUCHAREST)}
+        </Typography>
+      )}
       {selectedName !== undefined && (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography>{copy.selectedUat(selectedName)}</Typography>

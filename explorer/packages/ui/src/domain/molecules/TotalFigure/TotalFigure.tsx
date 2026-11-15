@@ -1,15 +1,8 @@
-import { Link } from "../../../atoms/Link/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
+import type { ReactNode } from "react";
 import type { Locale } from "../../../theme/index.ts";
-import { type } from "../../../theme/tokens.ts";
-import { formatCount } from "../../atoms/ApproxCount/index.ts";
-import { fitSize } from "../../utils/fitSize.ts";
-import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
-import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
-import { withNodes } from "../../utils/withNodes.tsx";
 import type { Total } from "../../types.ts";
-import { leftOut } from "./totalFigure.utils.ts";
+import { InsetTotal } from "./components/InsetTotal/index.ts";
+import { StackedTotal } from "./components/StackedTotal/index.ts";
 
 /** Copy that depends on a count: gets the number (for plural rules) and its locale-formatted text. */
 export type CountCopy = (count: number, formatted: string) => string;
@@ -27,10 +20,20 @@ export interface TotalFigureCopy {
   methodology: string;
 }
 
-export interface TotalFigureProps {
+/** The labels of the inset figures (the value is the count or the amount): fixed text, so a count of one reads the same as many. */
+export interface InsetFigureLabels {
+  records: string;
+  suspect: string;
+  noValue: string;
+  ceilings: string;
+}
+
+/** The copy of a Total that can take the inset layout. */
+export type InsetTotalCopy = TotalFigureCopy & { figures: InsetFigureLabels };
+
+interface TotalFigureBase {
   total: Total;
   locale: Locale;
-  copy: TotalFigureCopy;
   /** The methodology page; the ⓘ links here. */
   methodologyHref: string;
   /** Where the suspect Records are listed; required, so a Total can never leave them out without a way to see them. */
@@ -38,45 +41,20 @@ export interface TotalFigureProps {
 }
 
 /**
- * A Total: the awarded value and what it left out. A Total always says what it left out,
- * so the parts that are zero are the ones that stay silent.
+ * Two layouts. Stacked (the default, the entity page, the Records tab and the Money lens): the amount, then one line of what it left out.
+ * Inset (the main screen, which opts in): the amount on the left, each part that is not zero as an inset figure beside it, wrapping under it on a narrow screen.
  */
-export function TotalFigure({ total, locale, copy, methodologyHref, suspectHref }: TotalFigureProps) {
-  const parts = leftOut(total);
-  const count = (n: number) => formatCount(n, false, locale);
-  return (
-    <Stack spacing={0.75} sx={{ containerType: "inline-size" }}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap", columnGap: 1.5 }} useFlexGap>
-        {/* The one accent-coloured number on the screen: the `total` variant. */}
-        <Typography variant="total" component="p" sx={{ fontSize: fitSize(type.total.size), overflowWrap: "anywhere" }}>
-          <MoneyAmount bani={total.awarded} locale={locale} />
-        </Typography>
-        <Link href={methodologyHref} aria-label={copy.methodology} underline="none" sx={neutralLinkSx}>
-          ⓘ
-        </Link>
-      </Stack>
-      <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", columnGap: 3.5, rowGap: 0.5, alignItems: "baseline" }}>
-        <Typography variant="label" component="p" color="text.secondary">
-          {copy.records(total.records, formatCount(total.records, total.estimated, locale))}
-        </Typography>
-        {parts.suspect > 0 && (
-          <Typography variant="label" component="p">
-            <Link href={suspectHref} sx={neutralLinkSx}>
-              {copy.suspectLeftOut(parts.suspect, count(parts.suspect))}
-            </Link>
-          </Typography>
-        )}
-        {parts.noValue > 0 && (
-          <Typography variant="label" component="p" color="text.secondary">
-            {copy.noValue(parts.noValue, count(parts.noValue))}
-          </Typography>
-        )}
-        {parts.hasCeilings && (
-          <Typography variant="label" component="p" color="text.secondary">
-            {withNodes(copy.frameworkCeilings, [<MoneyAmount bani={total.frameworkCeilings} locale={locale} />])}
-          </Typography>
-        )}
-      </Stack>
-    </Stack>
-  );
+export type TotalFigureProps = TotalFigureBase &
+  ({ copy: TotalFigureCopy; inset?: undefined } | { copy: InsetTotalCopy; inset: { /** Shown above the amount, in the amount's column. */ heading?: ReactNode } });
+
+/**
+ * A Total: the awarded value and what it left out. A Total always says what it left out,
+ * so the parts that are zero are the ones that stay silent (the Records count is the one line a Total always has).
+ */
+export function TotalFigure(props: TotalFigureProps) {
+  const { total, locale, methodologyHref, suspectHref } = props;
+  if (props.inset) {
+    return <InsetTotal total={total} locale={locale} copy={props.copy} methodologyHref={methodologyHref} suspectHref={suspectHref} heading={props.inset.heading} />;
+  }
+  return <StackedTotal total={total} locale={locale} copy={props.copy} methodologyHref={methodologyHref} suspectHref={suspectHref} />;
 }

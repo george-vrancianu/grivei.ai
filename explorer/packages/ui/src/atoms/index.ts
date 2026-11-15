@@ -25,3 +25,4 @@ export * from "./ToggleButton/index.ts";
 export * from "./ToggleButtonGroup/index.ts";
 export * from "./Tooltip/index.ts";
 export * from "./Typography/index.ts";
+export * from "./Well/index.ts";

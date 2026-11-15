@@ -13,6 +13,18 @@ function setup(filter: OnrcFilter = {}, locale: "en" | "ro" = "en") {
 }
 
 describe("OnrcFilterChips", () => {
+  it("keeps its chips and fields off the panel edge: they sit in a padded strip", () => {
+    setup({ status: [1048] });
+    let node: HTMLElement | null = screen.getByRole("button", { name: "In operation" });
+    let padded = false;
+    while (node && node !== document.body) {
+      const style = getComputedStyle(node);
+      if (style.paddingLeft === "20px" && style.paddingRight === "20px" && style.paddingBottom === "12px") padded = true;
+      node = node.parentElement;
+    }
+    expect(padded).toBe(true);
+  });
+
   it("toggles a status code on and off, several at a time", async () => {
     const onChange = setup({ status: [1048] });
     expect(screen.getByRole("button", { name: "In operation", pressed: true })).toBeVisible();

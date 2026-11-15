@@ -9,11 +9,10 @@ const { active } = sampleCopy.filterChips("en");
 const chip = (id: string, label: string): ActiveChip => ({ id, label, remove: (f) => f });
 
 describe("ActiveChips", () => {
-  it("says so when no chip is on, with no clear action", () => {
-    render(<ActiveChips chips={[]} onRemove={() => {}} onClearAll={() => {}} copy={active} />);
-    expect(screen.getByRole("group", { name: "Active filters" })).toBeVisible();
-    expect(screen.getByText("No filters on.")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Clear all" })).not.toBeInTheDocument();
+  it("is absent when no chip is on: no group, no sentence, no clear action", () => {
+    const { container } = render(<ActiveChips chips={[]} onRemove={() => {}} onClearAll={() => {}} copy={active} />);
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole("group", { name: "Active filters" })).not.toBeInTheDocument();
   });
 
   it("gives every chip a remove action named after it and reports the chip", async () => {

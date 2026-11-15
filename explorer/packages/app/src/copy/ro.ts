@@ -128,7 +128,7 @@ export const ro: Copy = {
   },
   language: { groupLabel: "Limba", current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
   status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
-  main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată." },
+  main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată.", mapTitle: "Valoare atribuită pe județe" },
   sourceEyebrow: { search: "caută", scope: "național", period: "din 2021" },
   searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
   results: {
@@ -265,7 +265,6 @@ export const ro: Copy = {
     badges: { group: "Insigne ale înregistrărilor", badges: badges },
     active: {
       group: "Filtre active",
-      none: "Niciun filtru activ.",
       from: (when) => `Din ${when}`,
       to: (when) => `Până în ${when}`,
       party: (list) => `Partid: ${list}`,
@@ -298,6 +297,7 @@ export const ro: Copy = {
     noValue: (n, f) => roCount(n, f, "înregistrare fără valoare", "înregistrări fără valoare"),
     frameworkCeilings: (amount) => `Plafoane de acorduri-cadru neincluse: ${amount}`,
     methodology: "Cum se calculează acest total",
+    figures: { records: "Înregistrări", suspect: "Valori suspecte excluse", noValue: "Înregistrări fără valoare", ceilings: "Plafoane de acorduri-cadru neincluse" },
   },
   recordPage: {
     notFound: { title: "Înregistrarea nu a fost găsită", body: (code) => `Nicio înregistrare nu este publicată sub codul ${code}.` },

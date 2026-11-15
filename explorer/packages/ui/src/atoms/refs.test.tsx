@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderInUi } from "../testing/render.tsx";
 import {
   Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Grid, IconButton, LinearProgress, Link, Stack, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+  TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Well,
 } from "./index.ts";
 
 // A wrapper that dropped `ref` would still pass every prop test; this proves each one forwards it.
@@ -45,6 +45,7 @@ const cases: Case[] = [
   ["ToggleButtonGroup", (ref) => <ToggleButtonGroup ref={ref} />, tag("DIV")],
   ["Tooltip", (ref) => <Tooltip ref={ref} title="t"><button>x</button></Tooltip>, tag("BUTTON")],
   ["Tooltip on a disabled child", (ref) => <Tooltip ref={ref} title="t"><button disabled>x</button></Tooltip>, tag("SPAN")],
+  ["Well", (ref) => <Well ref={ref}>x</Well>, tag("DIV")],
   ["Typography", (ref) => <Typography ref={ref}>x</Typography>, tag("P")],
 ];
 

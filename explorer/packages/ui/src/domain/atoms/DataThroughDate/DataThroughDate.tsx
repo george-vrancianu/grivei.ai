@@ -14,14 +14,17 @@ export interface DataThroughDateProps {
   copy: DataThroughDateCopy;
   /** What to show for the kind. Kinds are the Source's own vocabulary, so the code as published is the default. */
   kindLabel?: string;
+  /** Leave the kind out and show "data through <date>" alone, for a caller that sets the kind in its own term (a definition list). */
+  withoutKind?: boolean;
 }
 
 /** "CONTRACT: data through 30 September 2024", the date in a `<time>` element. English uses day-month-year (en-GB) like Romanian. */
-export function DataThroughDate({ dataThrough, locale, copy, kindLabel }: DataThroughDateProps) {
+export function DataThroughDate({ dataThrough, locale, copy, kindLabel, withoutKind = false }: DataThroughDateProps) {
   const date = formatDate(dataThrough.date, locale, "long");
   return (
     <span>
-      {kindLabel ?? dataThrough.kind}: {copy.through} <time dateTime={dataThrough.date}>{date}</time>
+      {!withoutKind && <>{kindLabel ?? dataThrough.kind}: </>}
+      {copy.through} <time dateTime={dataThrough.date}>{date}</time>
     </span>
   );
 }

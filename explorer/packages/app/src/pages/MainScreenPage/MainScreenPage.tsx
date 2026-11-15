@@ -8,6 +8,7 @@ import { CoverageLensSection, coverageLensVariables } from "../../components/Cov
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
 import { MainDataThrough } from "../../components/MainDataThrough/index.ts";
+import { MapBackLink } from "../../components/MapBackLink/index.ts";
 import { MainTotal } from "../../components/MainTotal/index.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -70,11 +71,13 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
 
   return (
     <MainScreenLayout
+      title={
+        <Typography variant="h2" component="h1">
+          {t.main.title}
+        </Typography>
+      }
       search={
         <>
-          <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
-            {t.main.title}
-          </Typography>
           <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
             <SourcePicker options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />
@@ -107,7 +110,6 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               uat={filter.uat ?? undefined}
               onSelectUat={(siruta) => setFilter({ uat: uatAfterClick(filter.uat ?? undefined, siruta) })}
               onClearUat={() => setFilter({ uat: undefined })}
-              onBack={() => setFilter({ county: undefined, uat: undefined })}
               locale={locale}
               copy={t.zoomedCounty}
               status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
@@ -123,6 +125,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               onChange={({ county, side: nextSide }) => setFilter({ county, uat: undefined, ...(nextSide ? { countySide: nextSide === "AUTHORITY" ? undefined : nextSide } : {}) })}
               locale={locale}
               copy={t.moneyLensMap}
+              title={t.main.mapTitle}
               status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
             />
           )
@@ -160,6 +163,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           />
         )
       }
+      mapBack={zoomed !== null && mapLens === "money" ? <MapBackLink onClick={() => setFilter({ county: undefined, uat: undefined })}>{t.zoomedCounty.back}</MapBackLink> : undefined}
       mapNote={<MainDataThrough sources={lastSources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>

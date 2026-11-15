@@ -3,7 +3,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { CircularProgress } from "../../../atoms/CircularProgress/index.ts";
 import { IconButton } from "../../../atoms/IconButton/index.ts";
 import { TextField } from "../../../atoms/TextField/index.ts";
-import { size, type } from "../../../theme/tokens.ts";
+import { color, shadow, size, type } from "../../../theme/tokens.ts";
 import { useDebouncedQuery } from "./hooks/useDebouncedQuery.ts";
 import type { SearchBarCopy } from "./searchBar.types.ts";
 import { DEFAULT_DEBOUNCE_MS, DEFAULT_MIN_LENGTH, isTooShort } from "./searchBar.utils.ts";
@@ -36,7 +36,7 @@ function SearchIcon() {
   );
 }
 
-/** The free-text search box. Presentational: it emits the query; the page fetches. */
+/** The free-text search box, an input in a well (ground fill, strong edge, inset shadow). Presentational: it emits the query; the page fetches. */
 export function SearchBar({ value, onQueryChange, describedBy, loading = false, debounceMs = DEFAULT_DEBOUNCE_MS, minLength = DEFAULT_MIN_LENGTH, copy }: SearchBarProps) {
   const { text, setText, clear } = useDebouncedQuery({ value, onQueryChange, debounceMs, minLength });
   const input = useRef<HTMLInputElement>(null);
@@ -64,7 +64,7 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
         }}
         helperText={tooShort ? copy.minLengthHint : copy.hint}
         fullWidth
-        sx={{ "& .MuiOutlinedInput-root": { minHeight: size.searchInput, fontSize: type.search.size, pl: 2.25 }, "& .MuiFormHelperText-root": { mx: 0, color: "text.secondary" } }}
+        sx={{ "& .MuiOutlinedInput-root": { minHeight: size.searchInput, fontSize: type.search.size, pl: 2.25, backgroundColor: color.bg, boxShadow: shadow.well }, "& .MuiFormHelperText-root": { mx: 0, color: "text.secondary" } }}
         inputRef={input}
         slotProps={{
           htmlInput: { enterKeyHint: "search", "aria-describedby": describedBy ? `${helperId} ${describedBy}` : helperId },

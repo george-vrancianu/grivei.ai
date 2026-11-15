@@ -1,5 +1,5 @@
 import type { MoneyMapFieldsFragment } from "@grivei/contract";
-import { MoneyLensMap, Typography, type CountySide, type Locale, type MoneyLensMapCopy } from "@grivei/ui";
+import { MoneyLensMap, Typography, Stack, type CountySide, type Locale, type MoneyLensMapCopy } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
 import { countyAfterClick, countyAfterSideChange } from "./moneyLensSection.utils.ts";
 
@@ -16,25 +16,32 @@ export interface MoneyLensSectionProps {
   onChange: (next: { county: string | undefined; side?: CountySide }) => void;
   locale: Locale;
   copy: MoneyLensMapCopy;
+  /** The map's title, above it (the national map's; a zoomed county has its own). */
+  title: string;
   /** What to say when the outlines cannot be loaded, and while they load. */
   status: { unavailable: string; loading: string };
 }
 
 /** The Money lens of the main screen: the county map and its tiles for one search, with the county and side as filter values. */
-export function MoneyLensSection({ map, loading, topology, county, side, onChange, locale, copy, status }: MoneyLensSectionProps) {
+export function MoneyLensSection({ map, loading, topology, county, side, onChange, locale, copy, title, status }: MoneyLensSectionProps) {
   if (topology.status === "error") return <Typography role="alert">{status.unavailable}</Typography>;
   if (topology.status === "loading" || (map === null && loading)) return <Typography aria-busy="true">{status.loading}</Typography>;
   if (map === null) return null;
   return (
-    <MoneyLensMap
-      map={map}
-      topology={topology.topology}
-      {...(county !== undefined ? { selected: county } : {})}
-      onSelect={(area) => onChange({ county: countyAfterClick(county, area) })}
-      side={side}
-      onSideChange={(next) => onChange({ county: countyAfterSideChange(county, next), side: next })}
-      locale={locale}
-      copy={copy}
-    />
+    <Stack spacing={1.75}>
+      <Typography variant="h3" component="h2">
+        {title}
+      </Typography>
+      <MoneyLensMap
+        map={map}
+        topology={topology.topology}
+        {...(county !== undefined ? { selected: county } : {})}
+        onSelect={(area) => onChange({ county: countyAfterClick(county, area) })}
+        side={side}
+        onSideChange={(next) => onChange({ county: countyAfterSideChange(county, next), side: next })}
+        locale={locale}
+        copy={copy}
+      />
+    </Stack>
   );
 }
