@@ -6,7 +6,7 @@ import { FilterStrip } from "../FilterStrip/index.ts";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
 import { ActiveChips } from "./components/ActiveChips/index.ts";
 import { BadgeChips } from "./components/BadgeChips/index.ts";
-import { ChoiceChips } from "./components/ChoiceChips/index.ts";
+import { ChoiceMenu } from "./components/ChoiceMenu/index.ts";
 import { PartyChips } from "./components/PartyChips/index.ts";
 import { ProcedureChips } from "./components/ProcedureChips/index.ts";
 import { HasSignalsChip } from "./components/HasSignalsChip/index.ts";
@@ -77,16 +77,18 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
             onToYear={(year) => onChange(setToYear(filter, year))}
             copy={copy.year}
           />
-          <ChoiceChips
+          <ChoiceMenu
             label={copy.channel.group}
+            unsetLabel={copy.menuAny}
             options={CHANNELS.map((value) => ({ value, label: copy.channel.options[value] }))}
             selected={filter.channel}
             onChoose={(channel) => onChange(toggleChannel(filter, channel))}
           />
           <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
         </Stack>
-        <ChoiceChips
+        <ChoiceMenu
           label={copy.valueBucket.group}
+          unsetLabel={copy.menuAny}
           options={BUCKETS.map((value) => ({ value, label: copy.valueBucket.options[value] }))}
           selected={filter.valueBucket}
           onChoose={(bucket) => onChange(toggleValueBucket(filter, bucket))}

@@ -240,6 +240,7 @@ export const en: Copy = {
   },
   filterChips: {
     label: "Filters",
+    menuAny: "Any",
     year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
     channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
     valueBucket: {

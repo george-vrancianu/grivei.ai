@@ -2,7 +2,7 @@ import { createRef, type ReactElement, type Ref } from "react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../testing/render.tsx";
 import {
-  Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Grid, IconButton, LinearProgress, Link, Stack, Tab, Table,
+  Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Grid, IconButton, LinearProgress, Link, Menu, MenuItem, Stack, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tabs, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Well,
 } from "./index.ts";
 
@@ -24,6 +24,8 @@ const cases: Case[] = [
   ["IconButton as link", (ref) => <IconButton ref={ref} aria-label="x" href="/x" />, tag("A")],
   ["LinearProgress", (ref) => <LinearProgress ref={ref} variant="determinate" value={10} />, tag("SPAN")],
   ["Link", (ref) => <Link ref={ref} href="/x">x</Link>, tag("A")],
+  ["Menu", (ref) => <Menu ref={ref} open anchorEl={document.body}><MenuItem>x</MenuItem></Menu>, tag("DIV")],
+  ["MenuItem", (ref) => <Menu open anchorEl={document.body}><MenuItem ref={ref}>x</MenuItem></Menu>, tag("LI")],
   ["Stack", (ref) => <Stack ref={ref}>x</Stack>, tag("DIV")],
   ["Tab", (ref) => <Tabs value="a"><Tab ref={ref} value="a" label="x" /></Tabs>, tag("BUTTON")],
   ["Table", (ref) => <Table ref={ref} />, tag("TABLE")],

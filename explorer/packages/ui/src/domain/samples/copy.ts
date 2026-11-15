@@ -434,6 +434,7 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
   return locale === "ro"
     ? {
       label: "Filtre",
+      menuAny: "Oricare",
       year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
       channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
       valueBucket: {
@@ -463,6 +464,7 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     }
     : {
       label: "Filters",
+      menuAny: "Any",
       year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
       channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
       valueBucket: {

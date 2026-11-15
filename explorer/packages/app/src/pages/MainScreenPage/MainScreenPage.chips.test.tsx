@@ -33,26 +33,36 @@ describe("the filter chips on the main screen", () => {
     await opened("/explore/?from=2023-01-01&to=2024-12-31&channel=direct-purchase&valueBucket=up-to-270k&hasSignals=true&procedure=Achizi%C8%9Bie%20direct%C4%83&badges=no-value&badges=suspect-value");
     expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
     expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    for (const name of ["Direct purchase", "135,060–270,120 RON", "Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
+    // Channel and Value are menus: their buttons show the choice, and the menu checks it
+    expect(within(chips()).getByRole("button", { name: /^Channel/ })).toHaveTextContent("ChannelDirect purchase");
+    expect(within(chips()).getByRole("button", { name: /^Value/ })).toHaveTextContent("Value135,060–270,120 RON");
+    for (const name of ["Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
       expect(within(chips()).getByRole("button", { name, pressed: true })).toBeVisible();
     }
     const active = within(screen.getByRole("group", { name: "Active filters" }));
     expect(active.getAllByRole("button")).toHaveLength(9); // 8 chips + Clear all
     expect(active.getByRole("button", { name: "Remove From 2023" })).toBeVisible();
+    await userEvent.setup().click(within(chips()).getByRole("button", { name: /^Channel/ }));
+    expect(screen.getByRole("menuitemradio", { name: "Direct purchase", checked: true })).toBeVisible();
   });
 
   it("shows the chips in Romanian at /ro/explore/", async () => {
     openAt("/ro/explore/?channel=contract&hasSignals=false");
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
-    expect(within(bar).getByRole("button", { name: "Contract", pressed: true })).toBeVisible();
+    const channel = within(bar).getByRole("button", { name: /^Canal/ });
+    expect(channel).toHaveTextContent("CanalContract");
+    expect(within(bar).getByRole("button", { name: /^Valoare ?Oricare$/ })).toHaveTextContent("ValoareOricare");
+    await userEvent.setup().click(channel);
+    expect(screen.getByRole("menuitemradio", { name: "Contract", checked: true })).toBeVisible();
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(channel).toHaveFocus();
+    expect(channel).toHaveAttribute("aria-expanded", "false");
     expect(within(bar).getByRole("button", { name: "Elimină Fără Semnale" })).toBeVisible();
   });
 
   it.each([
-    ["the Contract chip", { name: "Contract" }, "channel", "contract"],
-    ["the Direct purchase chip", { name: "Direct purchase" }, "channel", "direct-purchase"],
-    ["a value bucket", { name: "Over 1 bn RON" }, "valueBucket", "over-1b"],
     ["has Signals", { name: "Has Signals" }, "hasSignals", "true"],
     ["a badge", { name: "Consortium share" }, "badges", "consortium-share"],
   ])("clicking %s writes it to the URL, replacing the history entry", async (_label, button, key, value) => {
@@ -62,6 +72,29 @@ describe("the filter chips on the main screen", () => {
     await waitFor(() => expect(queryOf().getAll(key)).toEqual([value]));
     expect(window.history.length).toBe(before);
     expect(within(chips()).getByRole("button", { ...button, pressed: true })).toBeVisible();
+  });
+
+  it.each([
+    ["Contract", "Channel", "contract", "Contract", "channel"],
+    ["Direct purchase", "Channel", "direct-purchase", "Direct purchase", "channel"],
+    ["Over 1 bn RON", "Value", "over-1b", "Over 1 bn RON", "valueBucket"],
+  ])("picking %s in the %s menu writes it to the URL, replacing the history entry, and shows it on the button", async (item, group, value, shown, key) => {
+    await opened("/explore/");
+    const before = window.history.length;
+    const user = userEvent.setup();
+    const button = within(chips()).getByRole("button", { name: new RegExp(`^${group}`) });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    await user.click(screen.getByRole("menuitemradio", { name: item }));
+    await waitFor(() => expect(queryOf().getAll(key)).toEqual([value]));
+    expect(window.history.length).toBe(before);
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(button).toHaveTextContent(`${group}${shown}`);
+    // picking the chosen item again clears it
+    await user.click(button);
+    await user.click(screen.getByRole("menuitemradio", { name: item, checked: true }));
+    await waitFor(() => expect(queryOf().has(key)).toBe(false));
   });
 
   it("writes years as Jan 1 and Dec 31, and procedures as published", async () => {
@@ -78,7 +111,9 @@ describe("the filter chips on the main screen", () => {
   it("round-trips every chip field: URL -> chips -> URL", async () => {
     await opened("/explore/?channel=contract&county=RO-BV&q=pod");
     const user = userEvent.setup();
-    await user.click(within(chips()).getByRole("button", { name: "900,400–9,004,000 RON" }));
+    await user.click(within(chips()).getByRole("button", { name: /^Value/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "900,400–9,004,000 RON" }));
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     await user.click(within(chips()).getByRole("button", { name: "No value" }));
     await waitFor(() => expect(filterInUrl()).toEqual({ channel: "CONTRACT", county: "RO-BV", q: "pod", valueBucket: "UP_TO_9M", badges: ["NO_VALUE"] }));
   });
@@ -101,7 +136,9 @@ describe("the filter chips on the main screen", () => {
 
   it("changing a chip resets the page", async () => {
     await opened("/explore/?tab=records&page=3");
-    await userEvent.setup().click(within(chips()).getByRole("button", { name: "Contract" }));
+    const user = userEvent.setup();
+    await user.click(within(chips()).getByRole("button", { name: /^Channel/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Contract" }));
     await waitFor(() => expect(queryOf().has("channel")).toBe(true));
     expect(queryOf().has("page")).toBe(false);
     expect(queryOf().get("tab")).toBe("records");
