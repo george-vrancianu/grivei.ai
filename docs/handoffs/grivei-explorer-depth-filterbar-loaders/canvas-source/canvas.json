@@ -1,0 +1,23 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-14T16:20:00Z" },
+  "title": "Grivei Explorer — depth, filter bar and loaders",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1560, "title": "Main screen · loaded (Signals on, Brașov)", "expand": "fill", "is_interactive": true },
+    "MenuOpen.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1560, "title": "Filter bar · Value menu open", "expand": "fill", "is_interactive": true },
+    "Loading.dc.html": { "x": 0, "y": 1680, "w": 1440, "h": 1560, "title": "First load · skeletons", "expand": "fill", "is_interactive": true },
+    "Refreshing.dc.html": { "x": 1520, "y": 1680, "w": 1440, "h": 1560, "title": "Refetch · previous results dimmed", "expand": "fill", "is_interactive": true },
+    "Mobile.dc.html": { "x": 3040, "y": 0, "w": 390, "h": 3400, "title": "Main screen · 390 px", "expand": "fill", "is_interactive": true }
+  },
+  "order": ["Main.dc.html", "MenuOpen.dc.html", "Loading.dc.html", "Refreshing.dc.html", "Mobile.dc.html"],
+  "notes": {
+    "title": { "x": 0, "y": -300, "text": "Explorer · depth, filter bar, loaders", "kind": "title1", "maxW": 2960 },
+    "depth": { "x": 3520, "y": 0, "w": 440, "fill": "orange", "text": "DEPTH\nNo new colours. Three surfaces from values already in tokens.json: panel #141920, raised #1A212A (controls, row hover), overlay #1E2630 (menus, status chips). Panels get a 1 px top highlight and a soft drop shadow; inputs, the map and the secondary figures sit in inset wells of the page colour. The header is sticky, translucent and blurred. Search, filters, Total, map and results are each one panel, so the page reads as layers instead of text on a grid." },
+    "filters": { "x": 3520, "y": 640, "w": 440, "fill": "orange", "text": "FILTER BAR\nOne row inside the search panel. The Signals switch comes first, larger and amber when on. Award year, channel, value, procedure and badges are menus; a set menu shows its value and an amber outline. Active filters sit in one row below with Clear all, and now include the county picked on the map. The filter block goes from about 365 px tall to about 110 px, so the Total is visible without scrolling. In Play: the switch, menus, chips and tabs work." },
+    "loaders": { "x": 3520, "y": 1280, "w": 440, "fill": "orange", "text": "LOADERS\nAny request in flight: a 2 px amber bar under the header and a status line in the results header. First load: skeletons for the Total, the two figures, tab counts and rows; the map shows its outlines greyed and pulsing with a status chip. Refetch (filter, tab): the previous results stay, dimmed to 60% opacity, until the new ones arrive. Motion stops under prefers-reduced-motion." },
+    "data": { "x": 3520, "y": 1920, "w": 440, "fill": "gray", "text": "REAL VS PLACEHOLDER\nReal, read from localhost:8080 on 14 Nov 2026 (hasSignals, county RO-BV): the Total, counts, rows on all three tabs, data-through dates, all Romanian copy. Placeholder: the map shading (the Q3 2026 Brașov asset from the first handoff), the two procedure options (the ones seen in the Records rows). Figures do not change when a filter is picked in Play. New copy to add to the catalogue: 'Județ: Brașov' chip, 'Insigne' as the menu label, 'n alese', the 'RON potrivit' column head." }
+  },
+  "designSystems": []
+}

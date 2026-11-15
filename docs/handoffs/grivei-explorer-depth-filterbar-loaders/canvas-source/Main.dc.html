@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Grivei Explorer: ecranul principal, cu adâncime, bară de filtre și stări de încărcare</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#F2B33D}a:hover{color:#FFD27A}
+@keyframes gv-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes gv-bar{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}
+@keyframes gv-spin{to{transform:rotate(360deg)}}
+@keyframes gv-pulse{0%,100%{opacity:.3}50%{opacity:.55}}
+.gv-sk{background:linear-gradient(90deg,#1A212A 25%,#27303B 50%,#1A212A 75%);background-size:200% 100%;animation:gv-shimmer 1.6s linear infinite}
+.gv-bar{animation:gv-bar 1.3s cubic-bezier(.4,0,.2,1) infinite}
+.gv-spin{animation:gv-spin .8s linear infinite}
+.gv-pulse{animation:gv-pulse 1.8s ease-in-out infinite}
+.gv-row:hover{background:#1A212A}
+.gv-opt:hover{background:#27303B}
+.gv-pill:hover{border-color:#9BA5B1}
+@media (prefers-reduced-motion:reduce){.gv-sk,.gv-bar,.gv-spin,.gv-pulse{animation:none}}
+</style>
+</helmet>
+<div style="min-height: 1560px; box-sizing: border-box; display: flex; flex-direction: column; background-color: #0D1014; background-image: radial-gradient(#1A212A 1px, transparent 1px); background-size: 24px 24px; color: #E8EBEF; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<header style="position: sticky; top: 0; z-index: 40; border-bottom: 1px solid #27303B; background: rgba(13, 16, 20, 0.86); backdrop-filter: blur(10px); box-shadow: 0 10px 24px -18px rgba(0, 0, 0, 0.9)">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 12px clamp(16px, 3vw, 40px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; color: #E8EBEF; text-decoration: none">
+<img src="/_blob/f871672d94d56086f3151d7d253c6e1f" alt="Sigla Grivei: un doberman cu un dosar în bot" style="display: block; width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6)">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600">Grivei.ai</span>
+</a>
+<nav aria-label="Explorer" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px">
+<a href="Main.dc.html" aria-current="page" style="padding: 12px 0; color: #F2B33D; text-decoration: none">Explorează</a>
+<a href="#cautare" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">Căutare</a>
+<a href="#acoperire" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">Acoperire</a>
+<a href="#cifre" style="padding: 12px 0; color: #B8C0CA; text-decoration: none">Despre cifre</a>
+<span style="display: flex; gap: 2px; padding: 2px; border: 1px solid #3A4552; border-radius: 4px; background: #141920">
+<a href="#ro" aria-current="true" style="padding: 9px 12px; border-radius: 3px; background: #27303B; box-shadow: inset 0 0 0 1px #F2B33D; color: #E8EBEF; text-decoration: none">RO</a>
+<a href="#en" style="padding: 9px 12px; border-radius: 3px; color: #B8C0CA; text-decoration: none">EN</a>
+</span>
+</nav>
+</div>
+<sc-if value="{{isBusy}}" hint-placeholder-val="{{false}}">
+<div role="progressbar" aria-label="Se încarcă" style="position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; overflow: hidden; background: #27303B">
+<div class="gv-bar" style="width: 28%; height: 100%; background: #F2B33D"></div>
+</div>
+</sc-if>
+</header>
+
+<main style="box-sizing: border-box; width: 100%; max-width: 1400px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 20px">
+
+<h1 style="margin: 0; font-family: 'Space Grotesk', Inter, system-ui, sans-serif; font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em">Explorează cheltuielile publice</h1>
+
+<section aria-label="Căutare și filtre" style="position: relative; z-index: 20; display: flex; flex-direction: column; background: #141920; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px -18px rgba(0, 0, 0, 0.8)">
+
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 20px 16px">
+<label for="q-main" style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #F2B33D">caută SEAP · național · din 2021</label>
+<div style="box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 6px 0 18px; background: #0D1014; border: 1px solid #3A4552; border-radius: 6px; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55)">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9BA5B1" stroke-width="2" stroke-linecap="round" style="flex: none"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input id="q-main" type="search" placeholder="Caută în română, de ex. deszăpezire" style="flex: 1; min-width: 0; height: 56px; padding: 0; background: transparent; border: 0; outline: 0; color: #E8EBEF; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 20px">
+</div>
+<p style="margin: 0; font-size: 13px; color: #9BA5B1; text-wrap: pretty">Datele sunt în română. Încearcă <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #B8C0CA">deszăpezire</span>, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #B8C0CA">45</span>. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.</p>
+</div>
+
+<div role="group" aria-label="Filtre" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid #27303B; background: rgba(13, 16, 20, 0.35); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+
+<button type="button" aria-pressed="{{sigPressed}}" onClick="{{toggleSignals}}" style="font: inherit; cursor: pointer; box-sizing: border-box; min-height: 44px; padding: 0 8px 0 14px; display: flex; align-items: center; gap: 10px; background: {{sigBg}}; border: 1px solid {{sigBorder}}; border-radius: 22px; box-shadow: {{sigShadow}}; color: {{sigInk}}; font-weight: 600">
+<span aria-hidden="true" style="flex: none; box-sizing: border-box; width: 12px; height: 12px; border-radius: 50%; border: 3px solid #F2B33D"></span>
+<span>Are Semnale</span>
+<span aria-hidden="true" style="flex: none; position: relative; width: 34px; height: 20px; border-radius: 10px; background: {{trackBg}}">
+<span style="position: absolute; top: 3px; left: {{knobLeft}}; width: 14px; height: 14px; border-radius: 50%; background: {{knobBg}}; transition: left 120ms ease"></span>
+</span>
+</button>
+
+<span aria-hidden="true" style="flex: none; width: 1px; height: 28px; margin: 0 4px; background: #3A4552"></span>
+
+<sc-for list="{{menus}}" as="m" hint-placeholder-count="5">
+<div style="position: relative">
+<button type="button" class="gv-pill" aria-haspopup="true" aria-expanded="{{m.expanded}}" onClick="{{m.toggle}}" style="font: inherit; cursor: pointer; box-sizing: border-box; min-height: 44px; padding: 0 12px 0 14px; display: flex; align-items: center; gap: 8px; background: {{m.bg}}; border: 1px solid #3A4552; border-radius: 22px; box-shadow: {{m.ring}}; color: #E8EBEF">
+<span style="color: #9BA5B1">{{m.label}}</span>
+<span style="color: {{m.valueInk}}">{{m.valueText}}</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9BA5B1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{m.open}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="{{m.label}}" style="position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; box-sizing: border-box; min-width: 260px; max-width: calc(100vw - 48px); display: flex; gap: 4px; padding: 6px; background: #1E2630; border: 1px solid #3A4552; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 8px rgba(0, 0, 0, 0.4), 0 20px 44px -10px rgba(0, 0, 0, 0.85)">
+<sc-for list="{{m.groups}}" as="g" hint-placeholder-count="1">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-if value="{{g.hasTitle}}" hint-placeholder-val="{{false}}">
+<span style="padding: 6px 10px 4px; font-size: 12px; color: #9BA5B1">{{g.title}}</span>
+</sc-if>
+<sc-for list="{{g.options}}" as="o" hint-placeholder-count="4">
+<button type="button" class="gv-opt" role="menuitemcheckbox" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="font: inherit; cursor: pointer; box-sizing: border-box; width: 100%; min-height: 40px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: transparent; border: 0; border-radius: 4px; color: {{o.ink}}; text-align: left; white-space: nowrap">
+<span>{{o.label}}</span>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2B33D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex: none; opacity: {{o.checkOpacity}}"><path d="M5 12l5 5 9-10"></path></svg>
+</button>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+<sc-if value="{{hasActive}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 20px 12px; border-top: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<span style="color: #9BA5B1; margin-right: 4px">Filtre active</span>
+<sc-for list="{{active}}" as="c" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 2px; min-height: 30px; padding: 0 2px 0 12px; background: #F2B33D; border-radius: 15px; color: #0D1014; font-weight: 600">
+<span>{{c.label}}</span>
+<button type="button" aria-label="{{c.removeLabel}}" onClick="{{c.remove}}" style="font: inherit; cursor: pointer; flex: none; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; border-radius: 50%; color: #0D1014"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</span>
+</sc-for>
+<button type="button" onClick="{{clearAll}}" style="font: inherit; cursor: pointer; min-height: 30px; padding: 0 8px; background: transparent; border: 0; color: #F2B33D; font-weight: 600; text-decoration: underline; text-underline-offset: 0.2em">Șterge tot</button>
+</div>
+</sc-if>
+</section>
+
+<section aria-label="Total" style="display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px 20px; padding: 18px 20px; background: #141920; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px -18px rgba(0, 0, 0, 0.8)">
+<div style="flex: 2 1 360px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Total atribuit</span>
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; opacity: {{dataOpacity}}; transition: opacity 150ms ease">
+<span style="font-family: 'Space Grotesk', Inter, system-ui, sans-serif; font-size: clamp(26px, 7vw, 40px); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: #F2B33D; font-variant-numeric: tabular-nums">1.366.457.613 RON</span>
+<a href="#cifre" aria-label="Cum se numără totalul" style="flex: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #9BA5B1"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></a>
+</div>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<span class="gv-sk" style="display: block; width: min(360px, 90%); height: 40px; border-radius: 4px"></span>
+</sc-if>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px 16px; background: #0D1014; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5)">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Înregistrări</span>
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; opacity: {{dataOpacity}}">2.558</span>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<span class="gv-sk" style="display: block; width: 72px; height: 22px; border-radius: 4px; margin: 2px 0"></span>
+</sc-if>
+</div>
+<div style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px 16px; background: #0D1014; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5)">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">Plafoane de acorduri-cadru neincluse</span>
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; opacity: {{dataOpacity}}">280.199.631 RON</span>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<span class="gv-sk" style="display: block; width: 168px; height: 22px; border-radius: 4px; margin: 2px 0"></span>
+</sc-if>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px">
+
+<section aria-label="Harta" style="flex: 1 1 480px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; background: #141920; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px -18px rgba(0, 0, 0, 0.8)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px">
+<div role="group" aria-label="Lentila hărții" style="display: flex; gap: 2px; padding: 2px; background: #0D1014; border: 1px solid #3A4552; border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5)">
+<button type="button" aria-pressed="true" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 14px; background: #27303B; border: 0; border-radius: 3px; box-shadow: inset 0 0 0 1px #F2B33D; color: #E8EBEF">Bani</button>
+<button type="button" aria-pressed="false" style="font: inherit; cursor: pointer; min-height: 36px; padding: 0 14px; background: transparent; border: 0; border-radius: 3px; color: #B8C0CA">Acoperire</button>
+</div>
+<a href="#romania" style="display: flex; align-items: center; gap: 6px; min-height: 36px; font-weight: 600; text-underline-offset: 0.2em"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>Înapoi la România</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px">
+<h2 style="margin: 0; font-family: 'Space Grotesk', Inter, system-ui, sans-serif; font-size: 19px; font-weight: 600; line-height: 1.2">Brașov: UAT-uri</h2>
+<div style="position: relative; background: #0D1014; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.55); padding: 12px">
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<img src="/_blob/95b56071e56f6eda9477dc411e81bb40" alt="Harta UAT-urilor județului Brașov, colorată după valoarea atribuită" style="display: block; width: 100%; height: auto; opacity: {{dataOpacity}}; transition: opacity 150ms ease">
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<img class="gv-pulse" src="/_blob/95b56071e56f6eda9477dc411e81bb40" alt="" style="display: block; width: 100%; height: auto; filter: grayscale(1) brightness(0.9)">
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<span role="status" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #1E2630; border: 1px solid #3A4552; border-radius: 6px; box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.85); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; color: #E8EBEF; white-space: nowrap">
+<span class="gv-spin" style="box-sizing: border-box; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #3A4552; border-top-color: #F2B33D"></span>
+Se încarcă…
+</span>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span style="color: #B8C0CA">Valoare atribuită</span>
+<span style="display: flex; align-items: center; gap: 6px">
+<span>mai puțin</span>
+<span aria-hidden="true" style="display: flex; gap: 2px">
+<span style="width: 22px; height: 10px; border-radius: 2px; background: #33290F"></span>
+<span style="width: 22px; height: 10px; border-radius: 2px; background: #5C4716"></span>
+<span style="width: 22px; height: 10px; border-radius: 2px; background: #8A6A1E"></span>
+<span style="width: 22px; height: 10px; border-radius: 2px; background: #BE8E2B"></span>
+<span style="width: 22px; height: 10px; border-radius: 2px; background: #F2B33D"></span>
+</span>
+<span>mai mult</span>
+</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 22px; height: 10px; border-radius: 2px; background: #1E2630; border: 1px solid #3A4552; box-sizing: border-box"></span>Nicio autoritate nu a cumpărat</span>
+</div>
+</div>
+<dl style="margin: 0; padding: 12px 16px 14px; border-top: 1px solid #27303B; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px"><dt style="color: #9BA5B1">Anunțuri de atribuire</dt><dd style="margin: 0; color: #B8C0CA">date până la 12 noiembrie 2026</dd></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><dt style="color: #9BA5B1">Contracte</dt><dd style="margin: 0; color: #B8C0CA">date până la 12 noiembrie 2026</dd></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><dt style="color: #9BA5B1">Achiziții directe</dt><dd style="margin: 0; color: #B8C0CA">date până la 30 septembrie 2026</dd></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><dt style="color: #9BA5B1">Notificări de atribuire a cumpărării directe</dt><dd style="margin: 0; color: #B8C0CA">date până la 30 septembrie 2026</dd></div>
+</dl>
+</section>
+
+<section aria-label="Rezultate" style="flex: 1.15 1 520px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; background: #141920; border: 1px solid #27303B; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px -18px rgba(0, 0, 0, 0.8)">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 16px; padding: 0 20px; border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px">
+<div role="tablist" aria-label="Rezultate" style="display: flex; flex-wrap: wrap; gap: 0 28px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="font: inherit; cursor: pointer; min-height: 52px; padding: 0 2px; display: flex; align-items: center; gap: 8px; background: transparent; border: 0; border-bottom: 2px solid {{t.line}}; margin-bottom: -1px; color: {{t.ink}}; font-weight: {{t.weight}}">
+<span>{{t.label}}</span>
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<span style="padding: 1px 7px; background: #0D1014; border: 1px solid #27303B; border-radius: 10px; font-size: 12px; font-weight: 400; color: #9BA5B1; font-variant-numeric: tabular-nums">{{t.count}}</span>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<span class="gv-sk" style="display: block; width: 34px; height: 18px; border-radius: 10px"></span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{isBusy}}" hint-placeholder-val="{{false}}">
+<span role="status" style="display: flex; align-items: center; gap: 8px; min-height: 52px; font-size: 12px; color: #9BA5B1">
+<span class="gv-spin" style="box-sizing: border-box; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #3A4552; border-top-color: #F2B33D"></span>
+Se încarcă…
+</span>
+</sc-if>
+</div>
+
+<sc-if value="{{showEntityHead}}" hint-placeholder-val="{{true}}">
+<div aria-hidden="true" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 10px 20px; background: rgba(13, 16, 20, 0.35); border-bottom: 1px solid #27303B; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>{{entityHead}}</span>
+<span style="display: flex; gap: 16px"><span style="width: 136px">Semnale</span><span style="width: 150px; text-align: right">RON potrivit</span></span>
+</div>
+</sc-if>
+
+<sc-if value="{{showEntities}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; opacity: {{dataOpacity}}; transition: opacity 150ms ease">
+<sc-for list="{{entities}}" as="e" hint-placeholder-count="8">
+<li class="gv-row" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 20px; border-bottom: 1px solid #27303B">
+<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<a href="#entitate" style="font-size: 15px; font-weight: 600; text-underline-offset: 0.2em; overflow-wrap: anywhere">{{e.name}}</a>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{e.meta}}</span>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 16px">
+<span style="width: 136px; display: flex">
+<a href="#semnale" style="display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px; background: #1A212A; border: 1px solid #5C4716; border-radius: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #E8EBEF; text-decoration: none; white-space: nowrap"><span aria-hidden="true" style="flex: none; box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #F2B33D"></span>{{e.signals}}</a>
+</span>
+<span style="width: 150px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap">{{e.ron}}</span>
+</div>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+
+<sc-if value="{{showRecords}}" hint-placeholder-val="{{false}}">
+<ul style="list-style: none; margin: 0; padding: 0; opacity: {{dataOpacity}}; transition: opacity 150ms ease">
+<sc-for list="{{records}}" as="r" hint-placeholder-count="4">
+<li class="gv-row" style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 20px; padding: 14px 20px; border-bottom: 1px solid #27303B">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span style="padding: 1px 7px; background: #0D1014; border: 1px solid #3A4552; border-radius: 3px; color: #B8C0CA">Contract</span>
+<span>{{r.code}}</span><span>{{r.date}}</span><span>{{r.procedure}}</span>
+</span>
+<a href="#inregistrare" style="font-size: 15px; font-weight: 600; text-underline-offset: 0.2em; text-wrap: pretty; overflow-wrap: anywhere">{{r.title}}</a>
+<span style="font-size: 13px; color: #B8C0CA; overflow-wrap: anywhere">{{r.parties}}</span>
+<sc-if value="{{r.hasBadges}}" hint-placeholder-val="{{true}}">
+<span style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px">
+<sc-for list="{{r.badges}}" as="b" hint-placeholder-count="2">
+<span style="padding: 2px 8px; background: #1A212A; border: 1px solid #27303B; border-radius: 3px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #B8C0CA">{{b.t}}</span>
+</sc-for>
+</span>
+</sc-if>
+</div>
+<div style="flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap">{{r.ron}}</span>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">{{r.kind}}</span>
+</div>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<ul aria-hidden="true" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{ghosts}}" as="s" hint-placeholder-count="8">
+<li style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 20px; border-bottom: 1px solid #27303B; opacity: {{s.fade}}">
+<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 9px; padding: 3px 0">
+<span class="gv-sk" style="display: block; width: {{s.w1}}; height: 16px; border-radius: 4px"></span>
+<span class="gv-sk" style="display: block; width: {{s.w2}}; height: 12px; border-radius: 4px"></span>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 16px">
+<span style="width: 136px; display: flex"><span class="gv-sk" style="display: block; width: 104px; height: 28px; border-radius: 14px"></span></span>
+<span style="width: 150px; display: flex; justify-content: flex-end"><span class="gv-sk" style="display: block; width: 124px; height: 16px; border-radius: 4px"></span></span>
+</div>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+
+<sc-if value="{{showData}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; justify-content: center; padding: 14px 20px">
+<a href="#rezultate" style="display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; background: #1A212A; border: 1px solid #3A4552; border-radius: 4px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.5); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600; color: #E8EBEF; text-decoration: none">{{showAll}}</a>
+</div>
+</sc-if>
+</section>
+
+</div>
+</main>
+
+<footer style="margin-top: auto; border-top: 1px solid #27303B; background: rgba(13, 16, 20, 0.86)">
+<div style="box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px); display: flex; flex-direction: column; gap: 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9BA5B1">
+<span>sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și colectarea de pe e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă</span>
+<span>Semnalele sunt numărate, niciodată notate cu un scor</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["loaded","menu","loading","refreshing"],"default":"loaded"},"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+componentWillUnmount() {
+if (this.timer) clearTimeout(this.timer);
+}
+renderVals() {
+const st = this.state || {};
+const view0 = this.props.view ?? 'loaded';
+const phase = st.phase ?? (view0 === 'loading' ? 'loading' : view0 === 'refreshing' ? 'refreshing' : 'loaded');
+const open = st.open !== undefined ? st.open : (view0 === 'menu' ? 'value' : null);
+const signals = st.signals ?? true;
+const county = st.county ?? true;
+const sel = st.sel || { from: null, to: null, channel: null, value: null, procedure: null, badges: [] };
+const tab = st.tab || 'suppliers';
+const on = '#F2B33D', ink = '#E8EBEF', dim = '#9BA5B1';
+
+const refresh = (next) => {
+if (this.timer) clearTimeout(this.timer);
+this.setState({ ...next, phase: 'refreshing' });
+this.timer = setTimeout(() => this.setState({ phase: 'loaded' }), 1400);
+};
+const setSel = (patch, keepOpen) => refresh({ sel: { ...sel, ...patch }, open: keepOpen ? open : null });
+const single = (key, values) => values.map((label) => ({
+label, checked: sel[key] === label ? 'true' : 'false', ink: sel[key] === label ? ink : '#B8C0CA', checkOpacity: sel[key] === label ? 1 : 0,
+pick: () => setSel({ [key]: sel[key] === label ? null : label })
+}));
+const years = (key) => ['Oricare', '2021', '2022', '2023', '2024', '2025', '2026'].map((label) => {
+const value = label === 'Oricare' ? null : label;
+const isOn = sel[key] === value;
+return { label, checked: isOn ? 'true' : 'false', ink: isOn ? ink : '#B8C0CA', checkOpacity: isOn ? 1 : 0, pick: () => setSel({ [key]: value }, true) };
+});
+const BADGES = ['Plafon acord-cadru', 'Contract subsecvent', 'Parte din asociere', 'Valoare suspectă', 'Fără valoare', 'CUI neconcordant', 'Denumire diferită de ANAF', 'Identitate verificată manual', 'Provizoriu', 'Absent din datele în masă'];
+const badgeOptions = BADGES.map((label) => {
+const isOn = sel.badges.includes(label);
+return { label, checked: isOn ? 'true' : 'false', ink: isOn ? ink : '#B8C0CA', checkOpacity: isOn ? 1 : 0, pick: () => setSel({ badges: isOn ? sel.badges.filter((b) => b !== label) : [...sel.badges, label] }, true) };
+});
+const yearText = sel.from && sel.to ? (sel.from === sel.to ? sel.from : sel.from + '–' + sel.to) : sel.from ? 'din ' + sel.from : sel.to ? 'până în ' + sel.to : null;
+const menuDefs = [
+{ id: 'year', label: 'Anul atribuirii', value: yearText, groups: [{ title: 'Din anul', hasTitle: true, options: years('from') }, { title: 'Până în anul', hasTitle: true, options: years('to') }] },
+{ id: 'channel', label: 'Canal', value: sel.channel, groups: [{ title: '', hasTitle: false, options: single('channel', ['Achiziție directă', 'Contract']) }] },
+{ id: 'value', label: 'Valoare', value: sel.value, groups: [{ title: '', hasTitle: false, options: single('value', ['Până la 10.000 RON', '10.000–135.060 RON', '135.060–270.120 RON', '270.120–900.400 RON', '900.400–9.004.000 RON', '9.004.000 RON–1 mld. RON', 'Peste 1 mld. RON']) }] },
+{ id: 'procedure', label: 'Procedură', value: sel.procedure, groups: [{ title: '', hasTitle: false, options: single('procedure', ['Licitatie deschisa', 'Negociere fara publicare prealabila']) }] },
+{ id: 'badges', label: 'Insigne', value: sel.badges.length ? String(sel.badges.length) + (sel.badges.length === 1 ? ' aleasă' : ' alese') : null, groups: [{ title: '', hasTitle: false, options: badgeOptions }] }
+];
+const menus = menuDefs.map((m) => {
+const isOpen = open === m.id;
+const isSet = m.value !== null;
+return {
+id: m.id, label: m.label, valueText: isSet ? m.value : 'Oricare', valueInk: isSet ? ink : '#B8C0CA',
+bg: isOpen ? '#27303B' : '#1A212A',
+ring: isSet ? 'inset 0 0 0 1px ' + on + ', 0 1px 2px rgba(0,0,0,0.5)' : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5)',
+open: isOpen, expanded: isOpen ? 'true' : 'false', groups: m.groups,
+toggle: () => this.setState({ open: isOpen ? null : m.id })
+};
+});
+
+const chip = (label, patch) => ({ label, removeLabel: 'Elimină filtrul ' + label, remove: () => refresh({ ...patch, open: null }) });
+const active = [];
+if (signals) active.push(chip('Are Semnale', { signals: false }));
+if (county) active.push(chip('Județ: Brașov', { county: false }));
+if (sel.from) active.push(chip('Din ' + sel.from, { sel: { ...sel, from: null } }));
+if (sel.to) active.push(chip('Până în ' + sel.to, { sel: { ...sel, to: null } }));
+if (sel.channel) active.push(chip(sel.channel, { sel: { ...sel, channel: null } }));
+if (sel.value) active.push(chip(sel.value, { sel: { ...sel, value: null } }));
+if (sel.procedure) active.push(chip(sel.procedure, { sel: { ...sel, procedure: null } }));
+sel.badges.forEach((b) => active.push(chip(b, { sel: { ...sel, badges: sel.badges.filter((x) => x !== b) } })));
+
+const ent = (rows) => rows.map(([name, meta, signals, ron]) => ({ name, meta, signals, ron }));
+const A = ent([
+['MUNICIPIUL BRASOV', '203 înregistrări · Brașov · CUI 4384206', '100 de Semnale', '646.526.086 RON'],
+['JUDETUL BRASOV', '17 înregistrări · Brașov · CUI 4384150', '7 Semnale', '178.272.982 RON'],
+['SPITALUL CLINIC DE OBSTETRICA-GINECOLOGIE DR. IOAN AUREL SBARCEA BRASOV', '122 de înregistrări · Brașov · CUI 4443183', '12 Semnale', '74.360.239 RON'],
+['RATBV S.A.', '49 de înregistrări · Brașov · CUI 1102556', '11 Semnale', '52.601.255 RON'],
+['SOCIETATEA DE REPARATII LOCOMOTIVE C.F.R.- S.C.R.L. BRASOV S.A.', '45 de înregistrări · Brașov · CUI 14257595', '8 Semnale', '50.728.159 RON'],
+['COMPANIA APA BRASOV SA', '26 de înregistrări · Brașov · CUI 1096128', '5 Semnale', '47.771.651 RON'],
+['SPITALUL CLINIC DE PSIHIATRIE SI NEUROLOGIE BRAȘOV', '583 de înregistrări · Brașov · CUI 4317770', '41 de Semnale', '29.953.843 RON'],
+['UNIVERSITATEA TRANSILVANIA DIN BRASOV', '182 de înregistrări · Brașov · CUI 4317754', '22 de Semnale', '28.484.685 RON'],
+['MUNICIPIUL FAGARAS', '23 de înregistrări · Brașov · CUI 4384419', '12 Semnale', '27.857.193 RON'],
+['SPITALUL CLINIC JUDETEAN DE URGENTA BRASOV', '82 de înregistrări · Brașov · CUI 4384117', '29 de Semnale', '21.005.451 RON']
+]);
+const S = ent([
+['COMPREST SA', '13 înregistrări · Brașov · CUI 1095130', '11 Semnale', '253.337.058 RON'],
+['R.S. ACTIV SRL', '20 de înregistrări · Brașov · CUI 17296459', '11 Semnale', '92.839.643 RON'],
+['BRAI-CATA SRL', '2 înregistrări · București · CUI 13627967', '2 Semnale', '76.184.947 RON'],
+['ENGIE ROMANIA S.A.', '9 înregistrări · București · CUI 13093222', '7 Semnale', '68.760.507 RON'],
+['GEIGER BRAȘOV S.R.L.', '9 înregistrări · Brașov · CUI 14873188', '3 Semnale', '52.731.796 RON'],
+['DIFERIT AG S.R.L.', '7 înregistrări · Cluj · CUI 25113978', '2 Semnale', '52.210.971 RON'],
+['ROMPETROL DOWNSTREAM SRL', '9 înregistrări · București · CUI 12751583', '4 Semnale', '48.975.595 RON'],
+['GETICA 95 COM SRL', '7 înregistrări · Buzău · CUI 7562758', '4 Semnale', '45.448.622 RON'],
+['MVM ENERGIE ROMANIA S.R.L.', '2 înregistrări · Harghita · CUI 21226982', '1 Semnal', '42.684.502 RON'],
+['FLASH LIGHTING SERVICES SA', '7 înregistrări · București · CUI 13845929', '8 Semnale', '33.846.298 RON']
+]);
+const neg = 'Negociere fara publicare prealabila';
+const R = [
+{ code: 'CAN1064396~561/26128', date: '14 oct. 2021', procedure: 'Licitatie deschisa', title: 'Lucrari de intretinere a drumurilor (Rev.2)', parties: 'Autoritate: JUDETUL BRASOV · Câștigători: GEIGER BRAȘOV S.R.L., DIFERIT AG S.R.L. (asociere)', badges: ['Plafon acord-cadru', 'Parte din asociere', 'Denumire diferită de ANAF'], ron: '121.956.139 RON', kind: 'plafon, neadunat' },
+{ code: 'CAN1059459', date: '1 iul. 2019', procedure: neg, title: 'Delegarea prin concesiune a srev. de colectare, transp si eliminare a deseurilor de la pers. fizice si juridice din Mun Brasov - sector 1 Noua, Astra, Sriictorilor, Racadau, Centru, Schei, Poiana Bv', parties: 'Autoritate: MUNICIPIUL BRASOV · Câștigători: BRAI-CATA SRL', badges: ['Absent din datele în masă'], ron: '72.954.600 RON', kind: 'valoare atribuită' },
+{ code: 'CAN1059458', date: '1 iul. 2019', procedure: neg, title: 'Delegarea prin concesiune a Serviciului de colectare, transport si eliminare a deseurilor de la persoanele fizice si juridice din Mun. Brasov - Sector 2 Timis Triaj, Craiter, Garii, Tractoru, Bartolom', parties: 'Autoritate: MUNICIPIUL BRASOV · Câștigători: COMPREST SA', badges: ['Absent din datele în masă'], ron: '67.644.632 RON', kind: 'valoare atribuită' },
+{ code: 'CAN1067165', date: '27 oct. 2021', procedure: neg, title: 'Furnizare de gaze naturale pentru Municipiul Brașov, pentru cele 78 de instituții cu personalitate juridică cu 195 de puncte de consum, aflate sub autoritatea Consiliului Local Brașov', parties: 'Autoritate: MUNICIPIUL BRASOV · Câștigători: ENGIE ROMANIA S.A.', badges: ['Absent din datele în masă'], ron: '58.758.588 RON', kind: 'valoare atribuită' },
+{ code: 'CAN1164837', date: '23 dec. 2024', procedure: neg, title: 'Servicii de salubrizare si deszapezire a cailor publice din Mun. Brasov-Lot 1+Lot 2', parties: 'Autoritate: MUNICIPIUL BRASOV · Câștigători: COMPREST SA', badges: [], ron: '49.079.067 RON', kind: 'valoare atribuită' }
+].map((r) => ({ ...r, hasBadges: r.badges.length > 0, badges: r.badges.map((t) => ({ t })) }));
+
+const isLoading = phase === 'loading';
+const isRefreshing = phase === 'refreshing';
+const showData = !isLoading;
+const tabDefs = [['authorities', 'Autorități', '104'], ['suppliers', 'Furnizori', '524'], ['records', 'Înregistrări', '2.558']];
+const tabs = tabDefs.map(([id, label, count]) => ({
+label, count, selected: tab === id ? 'true' : 'false', line: tab === id ? on : 'transparent', ink: tab === id ? ink : dim, weight: tab === id ? 600 : 400,
+pick: () => refresh({ tab: id, open: null })
+}));
+const widths = [['46%', '58%'], ['34%', '62%'], ['40%', '54%'], ['52%', '60%'], ['38%', '50%'], ['44%', '64%'], ['30%', '56%'], ['48%', '52%']];
+
+return {
+isBusy: isLoading || isRefreshing, isLoading, showData, dataOpacity: isRefreshing ? 0.6 : 1,
+sigPressed: signals ? 'true' : 'false',
+sigBg: signals ? 'rgba(242, 179, 61, 0.14)' : '#1A212A',
+sigBorder: signals ? on : '#5C4716',
+sigShadow: signals ? '0 0 0 3px rgba(242, 179, 61, 0.12), 0 1px 2px rgba(0, 0, 0, 0.5)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.5)',
+sigInk: ink, trackBg: signals ? on : '#3A4552', knobLeft: signals ? '17px' : '3px', knobBg: signals ? '#0D1014' : '#B8C0CA',
+toggleSignals: () => refresh({ signals: !signals, open: null }),
+menus, active, hasActive: active.length > 0,
+clearAll: () => refresh({ signals: false, county: false, sel: { from: null, to: null, channel: null, value: null, procedure: null, badges: [] }, open: null }),
+tabs,
+showEntityHead: tab !== 'records',
+entityHead: tab === 'authorities' ? 'Autoritate' : 'Furnizor',
+showEntities: showData && tab !== 'records', entities: tab === 'authorities' ? A : S,
+showRecords: showData && tab === 'records', records: R,
+ghosts: widths.map(([w1, w2], i) => ({ w1, w2, fade: 1 - i * 0.09 })),
+showAll: 'Arată toate cele ' + (tab === 'authorities' ? '104' : tab === 'suppliers' ? '524' : '2.558')
+};
+}
+}
+</script>
+</body>
+</html>
