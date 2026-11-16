@@ -188,6 +188,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           {state.status === "loading" && (
             <ResultsSkeleton
               copy={t.results}
+              head={t.results.entityRow.head}
               tab={toResultTab(tab)}
               onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
               status={<LoadingStatus label={t.status.loading} />}

@@ -12,7 +12,7 @@ type Story = StoryObj;
 export const FirstLoad: Story = {
   render: (_args, { globals }) => {
     const { label, tabs } = sampleCopy.resultTabs(localeOf(globals["locale"]));
-    return <ResultsSkeleton copy={{ label, tabs }} status={<LoadingStatus label={pick(globals["locale"], { en: "Loading…", ro: "Se încarcă…" })} />} />;
+    return <ResultsSkeleton copy={{ label, tabs }} head={sampleCopy.entityRow(localeOf(globals["locale"])).head} status={<LoadingStatus label={pick(globals["locale"], { en: "Loading…", ro: "Se încarcă…" })} />} />;
   },
 };
 

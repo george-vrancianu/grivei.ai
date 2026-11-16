@@ -1,5 +1,5 @@
-import { renderInUi } from "../../../../../testing/render.tsx";
-import { sampleCopy } from "../../../../samples/copy.ts";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sampleCopy } from "../../samples/copy.ts";
 import { ColumnHead } from "./index.ts";
 
 describe("ColumnHead", () => {

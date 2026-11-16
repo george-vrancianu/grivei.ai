@@ -175,7 +175,7 @@ function FirstLoad({ locale, outlines }: { locale: Locale; outlines: boolean }) 
     search: <Placeholder name={label.search} height={48} />,
     filters: <FilterChips filter={ACTIVE} onChange={() => undefined} procedureOptions={PROCEDURES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />,
     summary: <TotalSkeleton labels={copy.figures} heading={<Typography variant="meta" component="h2">{pick(locale, { en: "Total awarded", ro: "Total atribuit" })}</Typography>} />,
-    results: <ResultsSkeleton copy={resultTabs} status={<LoadingStatus label={loading} />} />,
+    results: <ResultsSkeleton copy={resultTabs} head={sampleCopy.entityRow(locale).head} status={<LoadingStatus label={loading} />} />,
     maps: { money: <MapSkeleton label={loading} topology={outlines ? countiesTopology : undefined} />, coverage: <Placeholder name={label.coverage} height={420} /> },
   };
   return <Screen locale={locale} slots={slots} />;

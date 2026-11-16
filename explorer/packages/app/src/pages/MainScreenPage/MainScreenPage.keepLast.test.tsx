@@ -127,6 +127,8 @@ describe.each([
     act(() => navigate(`${base}?county=RO-CJ`, "replace"));
     expect(screen.queryByRole("heading", { name: old })).toBeNull(); // county B's map is never titled with A's name
     expect(within(mapPanel()).getByText(t.status.loading)).toBeVisible();
+    expect(mapPanel().querySelector(".MuiSkeleton-root, svg[aria-hidden] path")).not.toBeNull(); // a skeleton, as on a first load
+    expect(mapPanel().querySelector('[aria-busy="true"]')).toBeNull(); // not county A's answer, dimmed
     expect(readTotal()).toEqual(before); // the main query holds across a county change
     expect(totalPanel()).toHaveAttribute("aria-busy", "true");
     release();

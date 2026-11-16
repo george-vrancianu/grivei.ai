@@ -2,7 +2,7 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { EntityResultRow, type EntityResultRowCopy } from "../EntityResultRow/index.ts";
 import type { EntityRef, EntityResult, EntityRole } from "../../types.ts";
-import { ColumnHead } from "./components/ColumnHead/index.ts";
+import { ColumnHead } from "../ColumnHead/index.ts";
 import { listSx } from "../../utils/listSx.ts";
 
 export interface EntityResultListProps {

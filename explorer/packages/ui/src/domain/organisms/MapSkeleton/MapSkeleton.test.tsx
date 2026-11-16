@@ -1,6 +1,5 @@
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
-import { map } from "../../../theme/tokens.ts";
 import { countiesTopology } from "../../samples/geo/counties.topo.ts";
 import { MapSkeleton } from "./index.ts";
 
@@ -11,7 +10,7 @@ describe("MapSkeleton", () => {
     expect(svg).toHaveAttribute("aria-hidden", "true");
     const areas = svg?.querySelectorAll("path") ?? [];
     expect(areas.length).toBeGreaterThan(1);
-    expect(getComputedStyle(svg as Element).fill).not.toBe(map.none);
+    for (const area of areas) expect(area).not.toHaveAttribute("fill");
     expect(screen.getByRole("status")).toHaveTextContent("Loading…");
   });
 

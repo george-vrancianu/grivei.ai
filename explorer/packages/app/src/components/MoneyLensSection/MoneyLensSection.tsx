@@ -25,7 +25,15 @@ export interface MoneyLensSectionProps {
 /** The Money lens of the main screen: the county map and its tiles for one search, with the county and side as filter values. */
 export function MoneyLensSection({ map, loading, topology, county, side, onChange, locale, copy, title, status }: MoneyLensSectionProps) {
   if (topology.status === "error") return <Typography role="alert">{status.unavailable}</Typography>;
-  if (topology.status === "loading" || (map === null && loading)) return <MapSkeleton label={status.loading} topology={topology.status === "ready" ? topology.topology : undefined} />;
+  if (topology.status === "loading" || (map === null && loading))
+    return (
+      <Stack spacing={1.75}>
+        <Typography variant="h3" component="h2">
+          {title}
+        </Typography>
+        <MapSkeleton label={status.loading} topology={topology.status === "ready" ? topology.topology : undefined} />
+      </Stack>
+    );
   if (map === null) return null;
   return (
     <Stack spacing={1.75}>

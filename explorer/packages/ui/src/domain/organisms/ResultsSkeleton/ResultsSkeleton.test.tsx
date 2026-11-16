@@ -8,8 +8,9 @@ import { ROW_COUNT, rowOpacity } from "./resultsSkeleton.utils.ts";
 
 describe.each(["en", "ro"] as const)("ResultsSkeleton (%s)", (locale) => {
   const { label, tabs } = sampleCopy.resultTabs(locale);
-  const setup = (props: Pick<ResultsSkeletonProps, "onTabChange"> = {}) =>
-    renderInUi(<ResultsSkeleton copy={{ label, tabs }} status={<LoadingStatus label="Loading" />} {...props} />, locale);
+  const { head } = sampleCopy.entityRow(locale);
+  const setup = (props: Pick<ResultsSkeletonProps, "onTabChange" | "tab"> = {}) =>
+    renderInUi(<ResultsSkeleton copy={{ label, tabs }} head={head} status={<LoadingStatus label="Loading" />} {...props} />, locale);
 
   it("keeps the real tab names, with a hidden block in place of each count", () => {
     setup();
@@ -24,6 +25,18 @@ describe.each(["en", "ro"] as const)("ResultsSkeleton (%s)", (locale) => {
     expect(screen.getByRole("tab", { name: new RegExp(tabs.suppliers) })).toHaveAttribute("aria-selected", "true");
     await userEvent.click(screen.getByRole("tab", { name: new RegExp(tabs.records) }));
     expect(onTabChange).toHaveBeenCalledWith("records");
+  });
+
+  it("holds the column head above the rows on Suppliers and Authorities, and not on Records", () => {
+    const { unmount } = setup();
+    expect(screen.getByText(head.supplier)).toBeInTheDocument();
+    expect(screen.getByText(head.signals)).toBeInTheDocument();
+    unmount();
+    const authorities = setup({ tab: "authorities" });
+    expect(screen.getByText(head.authority)).toBeInTheDocument();
+    authorities.unmount();
+    setup({ tab: "records" });
+    expect(screen.queryByText(head.signals)).toBeNull();
   });
 
   it("draws eight hidden rows, fading down the list, and keeps the status line", () => {

@@ -1,12 +1,11 @@
-import { keyframes, type Components, type Theme } from "@mui/material/styles";
+import { type Components, type Theme } from "@mui/material/styles";
+import { shimmer } from "./motion.ts";
 import { focusRing, hover, pressed, selected } from "./states.ts";
 import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
 
-/** The skeleton's shimmer: a `line` band sweeping across the `raised` block (the design's 1.6 s linear loop). */
-const shimmer = keyframes({ from: { transform: "translateX(-100%)" }, to: { transform: "translateX(100%)" } });
 
 /** The selected treatment, for every control that is "on": a pressed toggle, a selected tab or toggle segment. */
 const selectedState = "&[aria-pressed='true'], &.Mui-selected, &[aria-current='true']";

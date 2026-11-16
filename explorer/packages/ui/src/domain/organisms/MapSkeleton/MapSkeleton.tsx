@@ -1,10 +1,10 @@
-import { keyframes } from "@mui/material/styles";
 import type { Topology } from "topojson-specification";
 import { Box } from "../../../atoms/Box/index.ts";
 import { CircularProgress } from "../../../atoms/CircularProgress/index.ts";
 import { Skeleton } from "../../../atoms/Skeleton/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { Well } from "../../../atoms/Well/index.ts";
+import { pulse } from "../../../theme/motion.ts";
 import { color, map, radius, shadow } from "../../../theme/tokens.ts";
 import { useBaseMapGeometry } from "../BaseMap/index.ts";
 
@@ -18,8 +18,6 @@ export interface MapSkeletonProps {
 /** The `BaseMap` coordinate space (its defaults), so the skeleton takes the room the map will. */
 const WIDTH = 640;
 const HEIGHT = 420;
-
-const pulse = keyframes({ "0%, 100%": { opacity: 0.3 }, "50%": { opacity: 0.55 } });
 
 /** The areas of the outlines, no figures yet: the same geometry as the map, a neutral fill that pulses (1.8 s; still at mid-strength under reduced motion). */
 function PendingAreas({ topology }: { topology: Topology }) {
