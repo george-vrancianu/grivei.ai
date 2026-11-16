@@ -5,7 +5,7 @@ import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { TotalFigure, type TotalFigureCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityOverviewData } from "../../../../types.ts";
 import { formatPercent } from "../../../../utils/formatPercent.ts";
-import { Figure } from "./components/Figure/index.ts";
+import { HeadlineFigure } from "../HeadlineFigure/index.ts";
 
 export interface HeadlineNumbersCopy {
   /** The group's accessible name ("Headline numbers"). */
@@ -42,22 +42,22 @@ export function HeadlineNumbers({ overview, locale, copy, methodologyHref, suspe
       aria-label={copy.label}
       sx={{ display: "grid", gap: 1.5, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", m: 0, p: 0 }}
     >
-      <Figure label={copy.total}>
+      <HeadlineFigure label={copy.total}>
         <TotalFigure total={total} locale={locale} copy={copy.totalFigure} methodologyHref={methodologyHref} suspectHref={suspectHref} />
-      </Figure>
-      <Figure label={copy.counterparties}>
+      </HeadlineFigure>
+      <HeadlineFigure label={copy.counterparties}>
         {figure(formatCount(counterparties.count, false, locale))}
         {counterparties.topShare !== null && (
           <Typography variant="body2" color="text.secondary">
             {copy.topShare(formatPercent(counterparties.topShare, locale))}
           </Typography>
         )}
-      </Figure>
-      <Figure label={copy.directPurchase}>
+      </HeadlineFigure>
+      <HeadlineFigure label={copy.directPurchase}>
         {/* a share of the money: with none awarded (no Records, or none with a value) there is no share to tell */}
         {figure(BigInt(total.awarded) > 0n ? formatPercent(directPurchaseShare, locale) : "–")}
-      </Figure>
-      <Figure label={copy.signals}>{figure(formatCount(signals.count, false, locale))}</Figure>
+      </HeadlineFigure>
+      <HeadlineFigure label={copy.signals}>{figure(formatCount(signals.count, false, locale))}</HeadlineFigure>
     </Box>
   );
 }

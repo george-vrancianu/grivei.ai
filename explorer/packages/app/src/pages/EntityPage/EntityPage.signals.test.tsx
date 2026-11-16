@@ -216,3 +216,19 @@ describe("the Overview's Signal pages", () => {
     expect(sent[0]!.variables).toMatchObject({ signalOffset: 40 });
   });
 });
+
+describe("the Overview's Signals line and panel metas", () => {
+  it("says which Signals are shown beside the cards, in English", async () => {
+    await opened(overviewUrl(overviewNamed("authority-with-signals").variables), "Signals (8)");
+    expect(within(signalsRegion()).getByText("Signals 1–8 of 8")).toBeVisible();
+    expect(screen.getByText("share of the total awarded")).toBeVisible();
+    expect(screen.getByText("as SEAP publishes them")).toBeVisible();
+  });
+
+  it("says it in Romanian", async () => {
+    await opened(overviewUrl(overviewNamed("authority-with-signals").variables, "ro"), "Semnale (8)");
+    expect(within(signalsRegion()).getByText("Semnalele 1–8 din 8")).toBeVisible();
+    expect(screen.getByText("pondere din totalul atribuit")).toBeVisible();
+    expect(screen.getByText("așa cum le publică SEAP")).toBeVisible();
+  });
+});

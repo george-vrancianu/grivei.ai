@@ -1,16 +1,27 @@
-import { Card } from "../../../../../atoms/Card/index.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
-import { withNodes } from "../../../../utils/withNodes.tsx";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { ShareBar } from "../../../../atoms/ShareBar/index.ts";
+import { InsetFigure } from "../../../../molecules/InsetFigure/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { OverviewFrameworks } from "../../../../types.ts";
+import { formatPercent } from "../../../../utils/formatPercent.ts";
+import { ratioOf, shareOfTotal } from "../../entityOverview.utils.ts";
 
 export interface FrameworkLineCopy {
   heading: string;
-  /** "4 framework agreements, ceilings RON 100,000,000, reported subsequent contracts RON 112,400,000", given the count (for plural rules) and the formatted amounts. */
-  line: (count: number, formattedCount: string, ceilings: string, subsequentReported: string) => string;
+  /** The first figure's label: how many framework agreements. */
+  agreements: string;
+  /** The second figure's label: the ceilings. */
+  ceilings: string;
+  /** The ceilings' note: they are never summed (into the total, or with each other as money awarded). */
+  notSummed: string;
+  /** The third figure's label: the subsequent contracts reported. */
+  subsequent: string;
+  /** The third figure's note, given the formatted share of the ceilings ("18.2% of the ceilings"). */
+  ofCeilings: (percent: string) => string;
   /** The sentence when there are none. */
   none: string;
   /** Ceilings are never summed into the total. */
@@ -23,26 +34,33 @@ export interface FrameworkLineProps {
   copy: FrameworkLineCopy;
 }
 
-/** The framework line: how many framework agreements, their ceilings and what subsequent contracts reported so far. Ceilings are shown beside the total, never in it. */
+/**
+ * The framework agreements: three inset figures (how many; their ceilings, "not summed"; what subsequent contracts reported, with its share of the ceilings), the share as a bar and the note.
+ * Ceilings are shown beside the total, never in it. The share in the text is the real ratio (it can pass 100%); the bar stops at full.
+ */
 export function FrameworkLine({ frameworks, locale, copy }: FrameworkLineProps) {
+  const ratio = ratioOf(frameworks.subsequentReported, frameworks.ceilings);
   return (
-    <Card component="section" aria-label={copy.heading} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 0.75 }}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel heading={copy.heading} level="h2">
       {frameworks.count === 0 ? (
         <Typography color="text.secondary">{copy.none}</Typography>
       ) : (
         <>
-          <Typography>
-            {withNodes((ceilings, reported) => copy.line(frameworks.count, formatCount(frameworks.count, false, locale), ceilings, reported), [
-              <MoneyAmount key="ceilings" bani={frameworks.ceilings} locale={locale} />,
-              <MoneyAmount key="reported" bani={frameworks.subsequentReported} locale={locale} />,
-            ])}
-          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+            <InsetFigure label={copy.agreements}>{formatCount(frameworks.count, false, locale)}</InsetFigure>
+            <InsetFigure label={copy.ceilings} note={copy.notSummed}>
+              <MoneyAmount bani={frameworks.ceilings} locale={locale} />
+            </InsetFigure>
+            <InsetFigure label={copy.subsequent} note={ratio === null ? undefined : copy.ofCeilings(formatPercent(ratio, locale))}>
+              <MoneyAmount bani={frameworks.subsequentReported} locale={locale} />
+            </InsetFigure>
+          </Box>
+          <ShareBar share={shareOfTotal(frameworks.subsequentReported, frameworks.ceilings)} />
           <Typography variant="body2" color="text.secondary">
             {copy.note}
           </Typography>
         </>
       )}
-    </Card>
+    </Panel>
   );
 }

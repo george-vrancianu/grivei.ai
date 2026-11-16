@@ -15,9 +15,11 @@ describe("LeadershipSection", () => {
     show(leadership);
     const region = within(screen.getByRole("region", { name: "Leadership list" }));
     expect(region.getByText(/may have switched party since/)).toBeVisible();
-    const items = region.getAllByRole("listitem");
-    expect(items[0]).toHaveTextContent("POPESCU ION · PARTIDUL SOCIAL DEMOCRAT27 October 2020 – 27 September 2024AEP final minutes, election of 27 September 2020");
-    expect(items[1]).toHaveTextContent("POPESCU ION · PARTIDUL NAȚIONAL LIBERAL27 October 2024 – in forceAEP final minutes, election of 9 June 2024");
+    const table = within(region.getByRole("table", { name: "Mandates" }));
+    expect(table.getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Leader", "List (as registered)", "Period", "Basis"]);
+    const rows = table.getAllByRole("row").slice(1);
+    expect(within(rows[0]!).getAllByRole("cell").map((c) => c.textContent)).toEqual(["POPESCU ION", "PARTIDUL SOCIAL DEMOCRAT", "27 October 2020 – 27 September 2024", "AEP final minutes, election of 27 September 2020"]);
+    expect(within(rows[1]!).getAllByRole("cell").map((c) => c.textContent)).toEqual(["POPESCU ION", "PARTIDUL NAȚIONAL LIBERAL", "27 October 2024 – in force", "AEP final minutes, election of 9 June 2024"]);
     expect(region.queryByRole("link")).toBeNull(); // leaders are never linked
   });
 
@@ -28,6 +30,8 @@ describe("LeadershipSection", () => {
     expect(region.getByText(/Independent \(not a party\) · AEP final minutes/)).toBeVisible();
     expect(region.getByText(/partial counts from a one-off file.*data through 9 December 2025/)).toBeVisible();
     expect(region.getByText("Gaps (no Mandate, never guessed)")).toBeVisible();
+    // the gaps are the panel's foot, after the table
+    expect(region.getByRole("table", { name: "Mandates" }).compareDocumentPosition(region.getByText("Gaps (no Mandate, never guessed)")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(region.getByText(/Handover window: the previous mandates ended and/)).toBeVisible();
     expect(region.getByText(/Interim leader after a vacancy/)).toBeVisible();
     expect(region.getByText(/Mandate without results/)).toBeVisible();

@@ -1,1 +1,1 @@
-export { SignalsSection, type SignalsSectionProps, type SignalsSectionCopy } from "./SignalsSection.tsx";
+export { SignalsSection, type SignalsSectionProps, type SignalsSectionCopy, type SignalsPaging } from "./SignalsSection.tsx";

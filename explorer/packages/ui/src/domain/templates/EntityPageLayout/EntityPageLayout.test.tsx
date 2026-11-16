@@ -14,7 +14,13 @@ const tabHrefs = {
 function show(view: EntityPageView, locale: Locale = "en", onNavigate?: (href: string) => void, extra: { tabCounts?: Partial<Record<EntityPageView, string>>; citeUrl?: string } = {}) {
   return renderInUi(
     <EntityPageLayout
-      header={<h1>Name</h1>}
+      header={({ tabs, address }) => (
+        <header>
+          <h1>Name</h1>
+          {tabs}
+          {address}
+        </header>
+      )}
       view={view}
       tabHrefs={tabHrefs}
       onNavigate={onNavigate}
@@ -85,7 +91,7 @@ describe("EntityPageLayout", () => {
     expect(screen.getByRole("link", { name: "Relationships" })).toBeVisible();
   });
 
-  it("shows the citable address under the tabs, named for assistive technology, in both languages", () => {
+  it("shows the citable address in the header beside the tabs, named for assistive technology, in both languages", () => {
     const { unmount } = show("records", "en", undefined, { citeUrl: "https://grivei.ai/explore/authority/4384206/records?signal=no-publication" });
     expect(screen.getByText(/Address of this view:/).parentElement).toHaveTextContent("grivei.ai/explore/authority/4384206/records?signal=no-publication");
     unmount();
@@ -96,5 +102,32 @@ describe("EntityPageLayout", () => {
   it("shows no address line when none is given", () => {
     show("overview");
     expect(screen.queryByText(/Address of this view/)).toBeNull();
+  });
+});
+
+describe("EntityPageLayout header slots", () => {
+  it("draws the tabs and the address inside the header the caller builds, not under it", () => {
+    renderInUi(
+      <EntityPageLayout
+        header={({ tabs, address }) => (
+          <header aria-label="the header">
+            <h1>Name</h1>
+            {tabs}
+            {address}
+          </header>
+        )}
+        view="overview"
+        tabHrefs={tabHrefs}
+        citeUrl="https://grivei.ai/explore/authority/1"
+        copy={sampleCopy.entityPageLayout("en")}
+      >
+        <p>the body</p>
+      </EntityPageLayout>,
+      "en",
+    );
+    const header = within(screen.getByRole("banner", { name: "the header" }));
+    expect(header.getByRole("navigation", { name: "Sections of this page" })).toBeVisible();
+    expect(header.getByText(/Address of this view:/)).toBeVisible();
+    expect(within(screen.getByText("the body").closest("section")!).queryByRole("navigation")).toBeNull();
   });
 });

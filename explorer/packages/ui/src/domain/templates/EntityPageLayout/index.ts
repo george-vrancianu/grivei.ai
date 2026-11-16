@@ -1,1 +1,1 @@
-export { EntityPageLayout, type EntityPageLayoutProps, type EntityPageLayoutCopy } from "./EntityPageLayout.tsx";
+export { EntityPageLayout, type EntityPageLayoutProps, type EntityHeaderSlots, type EntityPageLayoutCopy } from "./EntityPageLayout.tsx";

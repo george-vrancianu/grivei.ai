@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RECORD_BADGES } from "../../../../atoms/BadgeChip/index.ts";
@@ -45,10 +45,12 @@ describe("BadgeMenu", () => {
   it("shows a badge's explanation in the tooltip when its item takes keyboard focus, as the item's description", async () => {
     setup();
     await userEvent.click(button());
+    // Opening the menu focuses its first item, and that focus (with its tooltip) lands after the click returns: let it settle, or it would take the focus back.
+    await waitFor(() => expect(screen.getAllByRole("menuitemcheckbox")[0]).toHaveFocus());
     const item = screen.getByRole("menuitemcheckbox", { name: badges.badges.NO_VALUE.label });
     act(() => item.focus());
-    const tip = await screen.findByRole("tooltip");
-    expect(tip).toHaveTextContent(badges.badges.NO_VALUE.explanation);
+    // The first item's tooltip closes as the focus leaves it, so wait until only this item's is left.
+    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent(badges.badges.NO_VALUE.explanation));
     expect(item).toHaveAccessibleDescription(badges.badges.NO_VALUE.explanation);
   });
 
