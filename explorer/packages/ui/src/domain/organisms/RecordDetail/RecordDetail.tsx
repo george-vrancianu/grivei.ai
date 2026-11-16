@@ -47,6 +47,12 @@ export interface RecordDetailProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   /** The entity page of the authority a subordinate body's Party is inherited through. */
   authorityHref?: ((key: string) => string) | undefined;
+  /** The authority's Records tab narrowed to the subsequent contracts of the framework: where the list cut at the fetch limit goes on. Absent, no link. */
+  subsequentMoreHref?: string | undefined;
+  /** The Record is the last answer, shown while the next loads: every panel's body is dimmed with `aria-busy="true"`, the header strips and the foot stay at full strength. */
+  busy?: boolean | undefined;
+  /** The value panel's header strip, right end: the page's `LoadingStatus` while a request is in flight (outside the dimmed bodies). */
+  status?: ReactNode;
   /** A Record page's URL, for the framework agreement, the subsequent contracts and a Signal's Records. */
   recordHref: (code: string) => string;
   methodologyHref: string;
@@ -60,13 +66,13 @@ export interface RecordDetailProps {
 
 /**
  * A Record page (A · Graf): over the title the channel, code and caveat badges; under it the primary "Check in SEAP" button and the citable URL
- * with its copy button. Then the main column (the value card with the framework line and its bar, the subsequent contracts, the winners with
+ * with its copy button. Then the main column (the value panel with the framework line and its bar, the subsequent contracts panel, the winners panel with
  * consortium shares labelled as a convention) beside a column of panels (the Record's facts, every badge explained, its Signals, where it came from)
  * that stacks under the main column below the medium breakpoint. The page owns its width and gutter. Presentational: it fetches nothing and knows no router.
  */
-export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recordHref, methodologyHref, onNavigate, locale, copy, renderSignalCard }: RecordDetailProps) {
+export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recordHref, methodologyHref, onNavigate, locale, copy, renderSignalCard, subsequentMoreHref, busy, status }: RecordDetailProps) {
   const valueCard = (
-    <ValueFacts record={record} locale={locale} copy={{ ...copy.value, ceilingCaption: copy.recordRow.valueCaption.ceiling }}>
+    <ValueFacts record={record} locale={locale} status={status} busy={busy} copy={{ ...copy.value, ceilingCaption: copy.recordRow.valueCaption.ceiling }}>
       {record.framework && <FrameworkLine framework={record.framework} recordHref={recordHref} onNavigate={onNavigate} locale={locale} copy={copy.framework} />}
     </ValueFacts>
   );
@@ -85,15 +91,15 @@ export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recor
       >
         <Stack spacing={3} sx={{ minWidth: 0 }}>
           {record.framework ? (
-            <FrameworkSection framework={record.framework} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={{ ...copy.framework, recordRow: copy.recordRow }}>
+            <FrameworkSection framework={record.framework} entityHref={entityHref} recordHref={recordHref} moreHref={subsequentMoreHref} onNavigate={onNavigate} busy={busy} locale={locale} copy={{ ...copy.framework, recordRow: copy.recordRow }}>
               {valueCard}
             </FrameworkSection>
           ) : (
             valueCard
           )}
-          {record.suspect && <SuspectNote suspect={record.suspect} methodologyHref={methodologyHref} onNavigate={onNavigate} locale={locale} copy={copy.suspect} />}
-          {record.party && <PartySection party={record.party} authorityHref={authorityHref} onNavigate={onNavigate} locale={locale} copy={copy.party} />}
-          <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} onNavigate={onNavigate} />
+          {record.suspect && <SuspectNote suspect={record.suspect} methodologyHref={methodologyHref} onNavigate={onNavigate} locale={locale} copy={copy.suspect} busy={busy} />}
+          {record.party && <PartySection party={record.party} authorityHref={authorityHref} onNavigate={onNavigate} locale={locale} copy={copy.party} busy={busy} />}
+          <WinnersSection record={record} entityHref={entityHref} locale={locale} copy={{ ...copy.parties, party: copy.recordRow.party }} onNavigate={onNavigate} busy={busy} />
         </Stack>
         <Stack spacing={3} sx={{ minWidth: 0 }}>
           <RecordFacts
@@ -102,10 +108,11 @@ export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recor
             locale={locale}
             copy={{ heading: copy.heading.panel, kinds: copy.heading.kinds, facets: copy.heading.facets, authority: copy.parties.authority, entityLink: copy.recordRow.party.entityLink }}
             onNavigate={onNavigate}
+            busy={busy}
           />
-          <BadgeExplanations badges={record.badges} copy={{ ...copy.badges, badges: copy.recordRow.badges }} />
-          <SignalsSection signals={record.signals} recordHref={recordHref} onNavigate={onNavigate} renderCard={renderSignalCard} locale={locale} copy={copy.signals} />
-          <ProvenanceSection provenance={record.provenance} locale={locale} copy={copy.provenance} />
+          <BadgeExplanations badges={record.badges} copy={{ ...copy.badges, badges: copy.recordRow.badges }} busy={busy} />
+          <SignalsSection signals={record.signals} recordHref={recordHref} onNavigate={onNavigate} renderCard={renderSignalCard} locale={locale} copy={copy.signals} busy={busy} />
+          <ProvenanceSection provenance={record.provenance} locale={locale} copy={copy.provenance} busy={busy} />
         </Stack>
       </Box>
     </Stack>

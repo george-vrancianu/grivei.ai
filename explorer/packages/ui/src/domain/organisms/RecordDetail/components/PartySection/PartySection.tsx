@@ -20,13 +20,14 @@ export interface PartySectionProps {
   authorityHref?: ((key: string) => string) | undefined;
   onNavigate?: ((href: string) => void) | undefined;
   locale: Locale;
-  copy: PartySectionCopy;
+  copy: PartySectionCopy;  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /** The Party of a Record: the list of the mandate in force on its award date at its authority (or, for a subordinate body, at its principal credit holder), with its basis. Never the leader's name, never a winner's. */
-export function PartySection({ party, authorityHref, onNavigate, locale, copy }: PartySectionProps) {
+export function PartySection({ party, authorityHref, onNavigate, locale, copy, busy }: PartySectionProps) {
   return (
-    <Panel heading={copy.heading} level="h2">
+    <Panel heading={copy.heading} level="h2" busy={busy}>
       <Typography variant="body1">{party.list}</Typography>
       <MandateBasisLine mandate={party} locale={locale} copy={copy.mandateBasis} />
       <Typography variant="caption" color="text.secondary">{copy.note}</Typography>

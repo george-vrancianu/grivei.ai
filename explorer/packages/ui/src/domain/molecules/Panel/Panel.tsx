@@ -4,6 +4,7 @@ import { Card } from "../../../atoms/Card/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 import { STRIP_BASE } from "../../../theme/stripFill.ts";
+import { BUSY_OPACITY } from "../../utils/busy.ts";
 import { PanelFoot } from "./components/PanelFoot/index.ts";
 
 interface PanelBaseProps {
@@ -17,6 +18,8 @@ interface PanelBaseProps {
   level?: "h2" | "h3";
   /** The element id, for a link to the panel (`#onrc`). */
   id?: string;
+  /** The panel shows its last answer while the next loads: the body is dimmed to `BUSY_OPACITY` with `aria-busy="true"`; the header strip and the foot stay at full strength. */
+  busy?: boolean | undefined;
   children: ReactNode;
 }
 
@@ -44,7 +47,7 @@ const stripSx = STRIP_BASE;
  * the body is padded (16 px, 12 px gap) or `flush` for a list or table; the optional `foot` strip sits under it. Used on tabs (under the tab's own `h2`), the Record page and the entity page.
  * The strips use the theme's strip fill (`FilterStrip`'s) and `line` hairlines only; the panel adds no colour, shadow or amber of its own.
  */
-export function Panel({ heading, label, level = "h3", id, aside, foot, flush = false, children }: PanelProps) {
+export function Panel({ heading, label, level = "h3", id, busy, aside, foot, flush = false, children }: PanelProps) {
   return (
     <Card
       component="section"
@@ -71,7 +74,7 @@ export function Panel({ heading, label, level = "h3", id, aside, foot, flush = f
           )}
         </Box>
       </Box>
-      <Box data-panel-part="body" sx={flush ? { minWidth: 0, ...(foot == null && { overflow: "hidden", borderBottomLeftRadius: "inherit", borderBottomRightRadius: "inherit" }) } : { p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
+      <Box data-panel-part="body" aria-busy={busy || undefined} sx={[flush ? { minWidth: 0, ...(foot == null && { overflow: "hidden", borderBottomLeftRadius: "inherit", borderBottomRightRadius: "inherit" }) } : { p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }, busy === true && { opacity: BUSY_OPACITY }]}>
         {children}
       </Box>
       {foot != null && <PanelFoot>{foot}</PanelFoot>}

@@ -109,9 +109,11 @@ describe("RecordDetail actions and value card", () => {
     expect(screen.queryByText("ceiling, not summed")).toBeNull();
   });
 
-  it("names a consortium's size in the winners heading", () => {
+  it("names a consortium's size in the Winners panel's header", () => {
     show(consortiumPage);
-    expect(screen.getByRole("heading", { level: 2, name: "Winners · consortium of 2" })).toBeVisible();
+    const winners = section("Winners");
+    expect(winners.getByRole("heading", { level: 2, name: "Winners" })).toBeVisible();
+    expect(winners.getByText("consortium of 2")).toBeVisible();
   });
 });
 
@@ -151,32 +153,35 @@ describe("RecordDetail", () => {
 
   it("shows the value as published and the counted value", () => {
     show(contractRecord);
-    expect(screen.getByText("Value as published").nextElementSibling).toHaveTextContent("RON 289,637.00");
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 289,637.00");
+    const value = section("Value");
+    expect(value.getByRole("heading", { level: 2, name: "Value" })).toBeVisible();
+    expect(value.getByText("Value as published").nextElementSibling).toHaveTextContent("RON 289,637.00");
+    expect(value.getByText("Counted value").parentElement).toHaveTextContent("RON 289,637.00");
   });
 
   it("links the authority and the winner to their entity pages", () => {
     show(contractRecord);
     // the subsequent contracts listed below repeat the names: look in the parties' own blocks
-    const authority = within(screen.getByText("Contracting authority").nextElementSibling as HTMLElement);
+    const authority = section("The Record");
     expect(authority.getByRole("link", { name: contractRecord.authority.displayName })).toHaveAttribute("href", `/explore/authority/${contractRecord.authority.key}`);
     const winner = contractRecord.winners[0]!.entity!;
-    const winners = within(screen.getByText("Winners").nextElementSibling as HTMLElement);
+    const winners = section("Winners");
     expect(winners.getByRole("link", { name: winner.displayName })).toHaveAttribute("href", `/explore/supplier/${winner.key}`);
   });
 
   it("says 'no value in SEAP' for a null value, with nothing to count", () => {
     show(noValuePage);
-    expect(screen.getByText("Value as published").nextElementSibling).toHaveTextContent("No value in SEAP");
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("Nothing to count");
+    const value = section("Value");
+    expect(value.getByText("Value as published").nextElementSibling).toHaveTextContent("No value in SEAP");
+    expect(value.getByText("Counted value").parentElement).toHaveTextContent("Nothing to count: SEAP publishes no value");
   });
 
   it("explains an empty counted value: a suspect value and a framework ceiling", () => {
     const { unmount } = show(suspectDirectPage);
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("breaks a counting rule");
+    expect(section("Value").getByText("Counted value").parentElement).toHaveTextContent("breaks a counting rule");
     unmount();
     show(frameworkPage);
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("a framework ceiling is not money awarded");
+    expect(section("Value").getByText("Counted value").parentElement).toHaveTextContent("a framework ceiling is not money awarded");
   });
 
   it.each([
@@ -193,7 +198,7 @@ describe("RecordDetail", () => {
 
   it("shows a consortium's full value, every member and each equal share labelled as a convention", () => {
     show(consortiumPage);
-    expect(screen.getByText("Counted value").nextElementSibling).toHaveTextContent("RON 98,800.00");
+    expect(section("Value").getByText("Counted value").parentElement).toHaveTextContent("RON 98,800.00");
     const members = screen.getAllByRole("listitem").filter((li) => /\(equal share/.test(li.textContent ?? ""));
     expect(members).toHaveLength(2);
     for (const member of members) expect(member).toHaveTextContent("equal share RON 49,400.00");
@@ -212,7 +217,7 @@ describe("RecordDetail", () => {
   it("never names or links a natural-person winner", () => {
     const { container } = show(naturalPersonPage);
     expect(screen.getByText("Persoană fizică")).toBeVisible();
-    expect(within(screen.getByText("Winners").nextElementSibling as HTMLElement).queryAllByRole("link")).toEqual([]);
+    expect(section("Winners").queryAllByRole("link")).toEqual([]);
     for (const party of naturalPersonPage.winners) if (party.publishedName) expect(container).not.toHaveTextContent(party.publishedName);
   });
 
@@ -220,7 +225,9 @@ describe("RecordDetail", () => {
     show(frameworkPage);
     const framework = section("Framework agreement");
     expect(framework.getByText(sentence("Ceiling RON 10,000,000.00; subsequent contracts reported so far RON 5,000,000.00 (50%)"))).toBeVisible();
-    expect(framework.getByRole("heading", { name: "Subsequent contracts" })).toBeVisible();
+    const subsequent = section("Subsequent contracts");
+    expect(subsequent.getByRole("heading", { level: 2, name: "Subsequent contracts" })).toBeVisible();
+    expect(subsequent.getByText(sentence("2 contracts · RON 5,000,000"))).toBeVisible();
     for (const sub of frameworkPage.framework!.subsequent) expect(framework.getByRole("link", { name: sub.title })).toHaveAttribute("href", `/explore/record/${sub.code}`);
     expect(frameworkPage.framework!.subsequent).toHaveLength(2);
   });

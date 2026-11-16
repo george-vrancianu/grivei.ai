@@ -23,14 +23,15 @@ export interface SuspectNoteProps {
   methodologyHref: string;
   onNavigate?: (href: string) => void;
   locale: Locale;
-  copy: SuspectNoteCopy;
+  copy: SuspectNoteCopy;  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /** Which rule flagged the value and its threshold, from the published catalogue, with the methodology link. */
-export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy }: SuspectNoteProps) {
+export function SuspectNote({ suspect, methodologyHref, onNavigate, locale, copy, busy }: SuspectNoteProps) {
   const { threshold } = suspect;
   return (
-    <Panel heading={copy.heading} level="h2">
+    <Panel heading={copy.heading} level="h2" busy={busy}>
       <Typography>{withNodes((amount) => copy.rules[suspect.rule](threshold === null ? null : amount), [threshold === null ? null : <MoneyAmount bani={threshold} locale={locale} showBani />])}</Typography>
       <Typography variant="body2" color="text.secondary">
         {copy.leftOut}{" "}

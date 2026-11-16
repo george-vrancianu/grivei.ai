@@ -1,11 +1,11 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { Well } from "../../../../../atoms/Well/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
-import { color, type } from "../../../../../theme/tokens.ts";
+import { type } from "../../../../../theme/tokens.ts";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import { withNodes } from "../../../../utils/withNodes.tsx";
 import type { EntityRef, EntityRole, RecordPageData } from "../../../../types.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
@@ -28,26 +28,19 @@ export interface WinnersSectionProps {
   locale: Locale;
   copy: WinnersSectionCopy;
   onNavigate?: ((href: string) => void) | undefined;
+  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /**
- * Every winner, in a grid of two columns that stacks on a phone. A natural person is never named or linked (ADR 0003, `PartyName`);
- * a winner with no Entity shows its published name unlinked. A consortium lists each member with its equal share and says the share is a convention.
+ * The Winners panel: every winner in a well, two to a row from `md` and stacked below it. A natural person is never named or linked (ADR 0003, `PartyName`);
+ * a winner with no Entity shows its published name unlinked. A consortium says how many members it has in the header and lists each member with its equal share;
+ * the note under the wells says the share is a convention.
  */
-export function WinnersSection({ record, entityHref, locale, copy, onNavigate }: WinnersSectionProps) {
+export function WinnersSection({ record, entityHref, locale, copy, onNavigate, busy }: WinnersSectionProps) {
   const consortium = isConsortium(record);
   return (
-    <Stack spacing={1.5}>
-      <SectionHeading component="h2">
-        {copy.winners}
-        {consortium && " "}
-        {consortium && (
-          <Box component="span" sx={{ color: color.text2 }}>
-            {"· "}
-            {copy.consortiumOf(record.winners.length, formatCount(record.winners.length, false, locale))}
-          </Box>
-        )}
-      </SectionHeading>
+    <Panel heading={copy.winners} level="h2" busy={busy} aside={consortium ? copy.consortiumOf(record.winners.length, formatCount(record.winners.length, false, locale)) : undefined}>
       <Box
         component="ul"
         sx={{
@@ -55,12 +48,12 @@ export function WinnersSection({ record, entityHref, locale, copy, onNavigate }:
           m: 0,
           p: 0,
           display: "grid",
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
-          columnGap: 4,
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
+          gap: 1.5,
         }}
       >
         {record.winners.map((party, index) => (
-          <Box component="li" key={index} sx={{ py: 1.5, borderTop: `1px solid ${color.line}`, overflowWrap: "anywhere" }}>
+          <Well component="li" key={index} sx={{ px: 2, py: 1.5, overflowWrap: "anywhere" }}>
             <Typography component="span" sx={{ fontWeight: type.rowTitle.weight }}>
               <PartyName party={party} entityHref={(entity) => entityHref(entity, "supplier")} copy={copy.party} onNavigate={onNavigate} />
             </Typography>
@@ -70,7 +63,7 @@ export function WinnersSection({ record, entityHref, locale, copy, onNavigate }:
                 ({withNodes(copy.share, [<MoneyAmount bani={party.share} locale={locale} showBani />])})
               </Typography>
             )}
-          </Box>
+          </Well>
         ))}
       </Box>
       {consortium && (
@@ -78,6 +71,6 @@ export function WinnersSection({ record, entityHref, locale, copy, onNavigate }:
           {copy.convention}
         </Typography>
       )}
-    </Stack>
+    </Panel>
   );
 }

@@ -26,14 +26,15 @@ export interface ProvenanceSectionCopy {
 export interface ProvenanceSectionProps {
   provenance: Provenance;
   locale: Locale;
-  copy: ProvenanceSectionCopy;
+  copy: ProvenanceSectionCopy;  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /** Where the Record came from: the Source, the file or notice exactly as it titles it, how we got it and when; and the link to check it there. */
-export function ProvenanceSection({ provenance, locale, copy }: ProvenanceSectionProps) {
+export function ProvenanceSection({ provenance, locale, copy, busy }: ProvenanceSectionProps) {
   const { source, url, via, kind, fetchedAt } = provenance;
   return (
-    <Panel heading={copy.heading} level="h2">
+    <Panel heading={copy.heading} level="h2" busy={busy}>
       <Box component="dl" sx={factsSx}>
         <dt>{copy.source}</dt>
         <dd>{source}</dd>

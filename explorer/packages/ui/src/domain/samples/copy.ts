@@ -60,6 +60,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       panel: "The Record",
     },
     value: {
+      heading: "Value",
       published: "Value as published",
       counted: "Counted value",
       noValue: "No value in SEAP",
@@ -93,6 +94,12 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       lineBlankCeiling: (reported) => `Ceiling not published; subsequent contracts reported so far ${reported}`,
       agreement: "Awarded under the framework agreement",
       subsequentHeading: "Subsequent contracts",
+      subsequentAside: (n, f, sum) => `${f} ${plural(n, "contract", "contracts")} · ${sum}`,
+      shown: (shown, total) => `${shown} of ${total} shown, by value`,
+      showAll: (_n, f) => `Show all ${f}`,
+      showFirst: (_n, f) => `Show the first ${f}`,
+      showFewer: "Show fewer",
+      moreLink: "Subsequent contracts of this framework, in Records",
     },
     badges: { heading: "Badges and what they mean" },
     signals: {
@@ -120,6 +127,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       panel: "Înregistrarea",
     },
     value: {
+      heading: "Valoare",
       published: "Valoare publicată",
       counted: "Valoare luată în calcul",
       noValue: "Nicio valoare în SEAP",
@@ -153,6 +161,12 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       lineBlankCeiling: (reported) => `Plafon nepublicat; contracte subsecvente raportate până acum ${reported}`,
       agreement: "Atribuit în baza acordului-cadru",
       subsequentHeading: "Contracte subsecvente",
+      subsequentAside: (n, f, sum) => `${roCount(n, f, "contract", "contracte")} · ${sum}`,
+      shown: (shown, total) => `${shown} din ${total} afișate, după valoare`,
+      showAll: (_n, f) => `Arată toate cele ${f}`,
+      showFirst: (_n, f) => `Arată primele ${f}`,
+      showFewer: "Arată mai puține",
+      moreLink: "Contractele subsecvente ale acestui acord-cadru, în Înregistrări",
     },
     badges: { heading: "Insigne și semnificația lor" },
     signals: {

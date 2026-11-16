@@ -26,6 +26,25 @@ describe("Panel", () => {
     expect(part(container, "body")).not.toHaveTextContent("3 sources");
   });
 
+  it("shows a held answer: the body dimmed with aria-busy, the header strip and the foot at full strength", () => {
+    const { container } = renderInUi(
+      <Panel heading="Provenance" aside="3 sources" foot="foot" busy>
+        body
+      </Panel>,
+    );
+    expect(part(container, "body")).toHaveAttribute("aria-busy", "true");
+    expect(part(container, "body")).toHaveStyle({ opacity: "0.6" });
+    for (const name of ["header", "foot"]) {
+      expect(part(container, name)).not.toHaveAttribute("aria-busy");
+      expect(part(container, name)).toHaveStyle({ opacity: "1" });
+    }
+  });
+
+  it("is not busy by default", () => {
+    const { container } = renderInUi(<Panel heading="Provenance">body</Panel>);
+    expect(part(container, "body")).not.toHaveAttribute("aria-busy");
+  });
+
   it("takes header content beyond text, named by `label`", () => {
     renderInUi(
       <Panel heading={<><span data-testid="ring" />Rule one</>} label="Rule one">
