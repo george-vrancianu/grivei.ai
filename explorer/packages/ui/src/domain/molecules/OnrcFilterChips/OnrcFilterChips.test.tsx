@@ -77,7 +77,7 @@ describe("OnrcFilterChips", () => {
     const onChange = setup({ seapCounterparty: false });
     expect(menuButton("In SEAP")).toHaveTextContent("In SEAP Not in SEAP");
     await userEvent.click(menuButton("In SEAP"));
-    await userEvent.click(screen.getByRole("menuitemradio", { name: "SEAP counterparties only" }));
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "SEAP counterparty" }));
     expect(onChange).toHaveBeenLastCalledWith({ seapCounterparty: true });
     await userEvent.click(menuButton("In SEAP"));
     await userEvent.click(screen.getByRole("menuitemradio", { name: "Not in SEAP" }));

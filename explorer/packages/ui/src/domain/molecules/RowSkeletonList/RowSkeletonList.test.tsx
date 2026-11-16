@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { RowSkeletonList } from "./index.ts";
-import { ROW_COUNT, rowOpacity } from "./rowSkeletonList.utils.ts";
+import { ROW_COUNT, rowOpacity } from "../../utils/resultsSkeleton.ts";
 
 describe("RowSkeletonList", () => {
   it("is eight rows of blocks, all hidden from assistive technology", () => {

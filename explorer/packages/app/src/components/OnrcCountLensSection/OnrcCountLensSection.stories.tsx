@@ -23,6 +23,7 @@ function render(props: Partial<OnrcCountLensSectionProps>): NonNullable<Story["r
         onSelect={() => undefined}
         locale={locale}
         copy={catalogue[locale].sources.onrc.countMap}
+        title={catalogue[locale].sources.onrc.mapTitle}
         status={{ unavailable: catalogue[locale].main.mapUnavailable, loading: catalogue[locale].status.loading }}
         {...props}
       />

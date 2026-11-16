@@ -1,7 +1,7 @@
 import { Box } from "../../../atoms/Box/index.ts";
 import { listSx } from "../../utils/listSx.ts";
 import { RowSkeleton } from "./components/RowSkeleton/index.ts";
-import { ROW_COUNT, ROW_SHAPES, rowOpacity } from "./rowSkeletonList.utils.ts";
+import { ROW_COUNT, ROW_SHAPES, rowOpacity } from "../../utils/resultsSkeleton.ts";
 
 /** Eight placeholder entity rows (a name over a meta line, a chip, an amount) fading down the list, `aria-hidden`: what a results panel shows on first load, in the rows' place. */
 export function RowSkeletonList() {

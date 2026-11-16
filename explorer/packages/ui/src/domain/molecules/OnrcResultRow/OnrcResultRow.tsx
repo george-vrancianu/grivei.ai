@@ -1,14 +1,15 @@
 import type { OnrcMatchableField } from "@grivei/contract";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Chip } from "../../../atoms/Chip/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { HighlightedText } from "../../atoms/HighlightedText/index.ts";
+import { Tag } from "../../atoms/Tag/index.ts";
 import type { OnrcResultData } from "../../types.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { formatDate } from "../../utils/formatDate.ts";
+import { listRowSx } from "../../utils/listSx.ts";
 
 export interface OnrcResultRowCopy {
   /** The label before the registration number in the meta line: "Reg. no.". */
@@ -21,7 +22,7 @@ export interface OnrcResultRowCopy {
   registrationDateUnknown: string;
   /** The registration has no county (it is in the Unplaced tile). */
   noCounty: string;
-  /** The chip on an organisation that is an authority or supplier of a loaded SEAP Record. */
+  /** The tag on an organisation that is an authority or supplier of a loaded SEAP Record. */
   seapCounterparty: string;
   /** The label before the CAEN codes. */
   caen: string;
@@ -43,7 +44,7 @@ export interface OnrcResultRowProps {
 
 /**
  * A row of ONRC's Organisations tab: the registered name (linked to the entity page when there is one), a mono meta line (registration number, CUI, legal
- * form, registration date, seat), ONRC's statuses (as published, a registration can carry several), the authorised CAEN codes, a chip for a SEAP counterparty and
+ * form, registration date, seat), ONRC's statuses (tags, as published, a registration can carry several), the authorised CAEN codes, a tag for a SEAP counterparty and
  * the matched text of each field the query hit. ONRC's words are source data and stay as published.
  */
 export function OnrcResultRow({ row, href, locale, copy, onNavigate }: OnrcResultRowProps) {
@@ -53,7 +54,7 @@ export function OnrcResultRow({ row, href, locale, copy, onNavigate }: OnrcResul
   const date = row.registrationDate ? copy.registered(formatDate(row.registrationDate, locale, "long")) : copy.registrationDateUnknown;
   const meta = [`${copy.registrationNumber} ${row.registrationNumber}`, ...(row.cui ? [`${copy.cui} ${row.cui}`] : []), ...(row.legalForm ? [row.legalForm] : []), date, seat];
   return (
-    <Box component="li" sx={{ py: 1.5 }}>
+    <Box component="li" sx={listRowSx}>
       <Stack spacing={0.5}>
         <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", alignItems: "center", columnGap: 1.5, rowGap: 0.5 }}>
           <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -65,17 +66,21 @@ export function OnrcResultRow({ row, href, locale, copy, onNavigate }: OnrcResul
               name
             )}
           </Typography>
-          {row.seapCounterparty && <Chip size="small" variant="outlined" label={copy.seapCounterparty} />}
+          {row.seapCounterparty && (
+            <Typography component="span" variant="caption">
+              <Tag>{copy.seapCounterparty}</Tag>
+            </Typography>
+          )}
         </Stack>
         <Typography component="div" variant="caption">
           {meta.join(" · ")}
         </Typography>
         {row.statuses.length > 0 && (
-          <Stack direction="row" useFlexGap spacing={0.5} sx={{ flexWrap: "wrap" }}>
+          <Typography component="div" variant="caption" sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
             {row.statuses.map((status) => (
-              <Chip key={status.code} size="small" label={status.name ?? copy.statusUnnamed(status.code)} />
+              <Tag key={status.code}>{status.name ?? copy.statusUnnamed(status.code)}</Tag>
             ))}
-          </Stack>
+          </Typography>
         )}
         {row.caen.length > 0 && (
           <Typography component="div" variant="caption">

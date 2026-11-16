@@ -30,11 +30,11 @@ const pagination: Record<Locale, PageNavCopy> = {
 
 const results: Record<Locale, OnrcResultsCopy> = {
   en: {
-    heading: (n, f) => `${f} ${plural(n, "registration", "registrations")}`, showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
+    title: "Registrations", heading: (n, f) => `${f} ${plural(n, "registration", "registrations")}`, showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
     empty: "No registration matches. Sole traders (PFA, II, IF) are not listed.", emptyLink: "Check which ONRC snapshots are held", row: row.en, pagination: pagination.en,
   },
   ro: {
-    heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"), showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
+    title: "Înmatriculări", heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"), showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
     empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.", emptyLink: "Verifică ce instantanee ONRC deținem", row: row.ro, pagination: pagination.ro,
   },
 };
@@ -44,7 +44,7 @@ const filterChips: Record<Locale, OnrcFilterChipsCopy> = {
     label: "Filters",
     status: { group: "Status", options: { 1048: "In operation", 1107: "Insolvency", 1084: "Struck off", 1074: "Temporarily suspended" }, other: (code) => `Status ${code}`, picked: (n) => `${n} picked` },
     any: "Any",
-    seapCounterparty: { group: "In SEAP", yes: "SEAP counterparties only", no: "Not in SEAP" },
+    seapCounterparty: { group: "In SEAP", yes: "SEAP counterparty", no: "Not in SEAP" },
     caen: { label: "CAEN", hint: "4211 or 42" },
     registered: { group: "Registered", from: "From", to: "To" },
     active: {
@@ -56,7 +56,7 @@ const filterChips: Record<Locale, OnrcFilterChipsCopy> = {
     label: "Filtre",
     status: { group: "Stare", options: { 1048: "În funcțiune", 1107: "Insolvență", 1084: "Radiată", 1074: "Întrerupere temporară" }, other: (code) => `Starea ${code}`, picked: (n) => `${n} alese` },
     any: "Oricare",
-    seapCounterparty: { group: "În SEAP", yes: "Doar părți în SEAP", no: "Nu în SEAP" },
+    seapCounterparty: { group: "În SEAP", yes: "Parte în SEAP", no: "Nu în SEAP" },
     caen: { label: "CAEN", hint: "4211 sau 42" },
     registered: { group: "Înmatriculată", from: "De la", to: "Până la" },
     active: {
