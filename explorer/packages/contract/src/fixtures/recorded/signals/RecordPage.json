@@ -151,6 +151,7 @@
           "framework": {
             "ceiling": "100000000",
             "subsequentReported": "125000000",
+            "subsequentCount": 4,
             "ratio": 1.25,
             "agreement": null,
             "subsequent": [
@@ -470,6 +471,7 @@
           "framework": {
             "ceiling": "100000000",
             "subsequentReported": "125000000",
+            "subsequentCount": 4,
             "ratio": 1.25,
             "agreement": {
               "code": "CAN9700001~1",
@@ -716,6 +718,7 @@
           "framework": {
             "ceiling": "100000000",
             "subsequentReported": "120000000",
+            "subsequentCount": 2,
             "ratio": 1.2,
             "agreement": null,
             "subsequent": [
@@ -964,6 +967,7 @@
           "framework": {
             "ceiling": "100000000",
             "subsequentReported": "120000000",
+            "subsequentCount": 1,
             "ratio": 1.2,
             "agreement": null,
             "subsequent": [
