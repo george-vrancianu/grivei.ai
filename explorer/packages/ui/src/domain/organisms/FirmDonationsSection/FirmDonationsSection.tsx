@@ -3,6 +3,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Table } from "../../../atoms/Table/index.ts";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../atoms/NumericCell/index.ts";
 import { TableContainer } from "../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../atoms/TableRow/index.ts";
@@ -61,7 +62,7 @@ export function FirmDonationsSection({ donations, supplier, locale, copy }: Firm
               <TableCell>{columns.date}</TableCell>
               <TableCell>{columns.party}</TableCell>
               <TableCell>{columns.kind}</TableCell>
-              <TableCell align="right">{columns.amount}</TableCell>
+              <NumericCell>{columns.amount}</NumericCell>
               <TableCell>{columns.source}</TableCell>
             </TableRow>
           </TableHead>

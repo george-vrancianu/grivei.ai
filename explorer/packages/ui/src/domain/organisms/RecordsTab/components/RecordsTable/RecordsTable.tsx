@@ -2,6 +2,7 @@ import { Link } from "../../../../../atoms/Link/index.ts";
 import { Table } from "../../../../../atoms/Table/index.ts";
 import { TableBody } from "../../../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableContainer } from "../../../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
@@ -49,9 +50,9 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
             <TableCell sx={{ width: 150 }}>{copy.columns.record}</TableCell>
             <TableCell>{copy.columns.title}</TableCell>
             <TableCell sx={{ width: 230 }}>{role === "authority" ? row.winners : row.authority}</TableCell>
-            <TableCell align="right" sx={{ width: 140 }}>
+            <NumericCell sx={{ width: 140 }}>
               {copy.columns.value}
-            </TableCell>
+            </NumericCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -94,9 +95,9 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
                     <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={row.party.entityLink} />
                   )}
                 </TableCell>
-                <TableCell align="right">
+                <NumericCell>
                   <RecordValue record={record} locale={locale} copy={row} />
-                </TableCell>
+                </NumericCell>
               </TableRow>
             );
           })}

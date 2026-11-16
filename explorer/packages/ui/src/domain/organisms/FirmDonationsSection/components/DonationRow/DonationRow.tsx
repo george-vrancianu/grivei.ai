@@ -1,5 +1,6 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { TableCell } from "../../../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
@@ -34,7 +35,7 @@ export function DonationRow({ donation, source, locale, copy }: DonationRowProps
       {/* the party as BaniPartide publishes it (source data): never translated or normalised */}
       <TableCell>{donation.party}</TableCell>
       <TableCell>{copy.kind[donation.kind]}</TableCell>
-      <TableCell align="right"><MoneyAmount bani={donation.amount} locale={locale} showBani={BigInt(donation.amount) % 100n !== 0n} /></TableCell>
+      <NumericCell><MoneyAmount bani={donation.amount} locale={locale} showBani={BigInt(donation.amount) % 100n !== 0n} /></NumericCell>
       <TableCell>
         {source.datasetUrl ? <Link href={source.datasetUrl} target="_blank">{copy.source(donation.sourceRow)}</Link> : copy.source(donation.sourceRow)}
         <Typography component="div" variant="meta" color="text.secondary">

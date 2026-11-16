@@ -1,0 +1,59 @@
+import { screen } from "@testing-library/react";
+import { renderInUi } from "../../../testing/render.tsx";
+import { sxProbe, sxProbeStyle } from "../../../testing/sx.ts";
+import { color } from "../../../theme/tokens.ts";
+import { STRIP_FILL } from "../../../theme/stripFill.ts";
+import { TableBody } from "../../../atoms/TableBody/index.ts";
+import { TableCell } from "../../../atoms/TableCell/index.ts";
+import { TableHead } from "../../../atoms/TableHead/index.ts";
+import { TableRow } from "../../../atoms/TableRow/index.ts";
+import { NumericCell } from "../../atoms/NumericCell/index.ts";
+import { Panel } from "../Panel/index.ts";
+import { PanelTable } from "./index.ts";
+
+const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+
+const table = (props: Partial<React.ComponentProps<typeof PanelTable>> = {}) =>
+  renderInUi(
+    <Panel heading="Înregistrări" flush>
+      <PanelTable label="Tabel" {...props}>
+        <TableHead><TableRow><TableCell>Titlu</TableCell><NumericCell>Valoare</NumericCell></TableRow></TableHead>
+        <TableBody><TableRow hover><TableCell>Achiziție</TableCell><NumericCell>1.234,50</NumericCell></TableRow></TableBody>
+      </PanelTable>
+    </Panel>,
+  );
+
+describe("PanelTable", () => {
+  it("is a named, focusable region that scrolls sideways by itself and never grows past its panel", () => {
+    table();
+    const box = screen.getByRole("region", { name: "Tabel" });
+    expect(box).toHaveAttribute("tabindex", "0");
+    expect(box).toHaveStyle({ overflowX: "auto", maxWidth: "100%", minWidth: "0" });
+  });
+  it("gives the table a minimum width, so a wide one scrolls instead of squeezing", () => {
+    table({ minWidth: 720 });
+    expect(screen.getByRole("table")).toHaveStyle({ minWidth: "720px" });
+  });
+  it("styles the head row as a strip: fill, mono 12 muted, a hairline below, 12 px 14 px cells", () => {
+    table();
+    const head = getComputedStyle(screen.getByRole("columnheader", { name: "Titlu" }));
+    expect(head.backgroundColor).toBe(STRIP_FILL);
+    expect(head.fontSize).toBe("12px");
+    expect(head.color).toBe(rgb(color.muted));
+    expect(head.borderBottomColor).toBe(rgb(color.line));
+    expect(head.borderBottomWidth).toBe("1px");
+    expect(head.padding).toBe("12px 14px");
+    expect(getComputedStyle(screen.getByRole("cell", { name: "Achiziție" })).padding).toBe("12px 14px");
+  });
+  it("fills a hovered row with raised through the theme's rule", () => {
+    table();
+    const row = screen.getByRole("cell", { name: "Achiziție" }).closest("tr")!;
+    expect(row).toHaveClass("MuiTableRow-hover");
+    const rules = [...document.querySelectorAll("style")].map((s) => s.textContent ?? "").join("");
+    expect(rules).toContain(`.MuiTableRow-hover:hover{background-color:${color.raised};}`);
+  });
+  it("passes Table props and sx through", () => {
+    table({ sx: sxProbe, size: "medium" });
+    expect(screen.getByRole("table")).toHaveStyle(sxProbeStyle);
+  });
+});

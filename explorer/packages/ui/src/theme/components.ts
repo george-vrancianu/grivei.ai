@@ -1,6 +1,7 @@
 import { type Components, type Theme } from "@mui/material/styles";
 import { shimmer } from "./motion.ts";
 import { focusRing, hover, pressed, selected } from "./states.ts";
+import { STRIP_FILL } from "./stripFill.ts";
 import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
@@ -157,12 +158,12 @@ export const components: Components<Theme> = {
   MuiTable: { defaultProps: { size: "small" } },
   MuiTableCell: {
     styleOverrides: {
-      root: { borderBottomColor: color.line, fontSize: type.small.max },
-      head: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.muted, backgroundColor: "transparent" },
+      root: { borderBottomColor: color.line, fontSize: type.small.max, padding: "12px 14px" },
+      head: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.muted, backgroundColor: STRIP_FILL },
     },
   },
   MuiTableRow: {
-    styleOverrides: { root: { "&.MuiTableRow-hover:hover": { backgroundColor: color.line }, "&.Mui-selected, &.Mui-selected:hover": { backgroundColor: color.line } } },
+    styleOverrides: { root: { "&.MuiTableRow-hover:hover": { backgroundColor: color.raised }, "&.Mui-selected, &.Mui-selected:hover": { backgroundColor: color.line } } },
   },
   MuiTextField: { defaultProps: { size: "small", variant: "outlined" } },
   MuiOutlinedInput: {

@@ -1,5 +1,6 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { TableCell } from "../../../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
@@ -38,13 +39,13 @@ export function FinancialYearRow({ year, locale, copy }: FinancialYearRowProps) 
         <Typography component="span" variant="body2">{year.fiscalYear}</Typography>
         <Typography component="div" variant="meta" color="text.secondary">{release}</Typography>
       </TableCell>
-      <TableCell align="right">{money(year.turnover)}</TableCell>
-      <TableCell align="right">{money(year.profitOrLoss)}</TableCell>
-      <TableCell align="right">{money(year.debts)}</TableCell>
-      <TableCell align="right">{money(year.equity)}</TableCell>
-      <TableCell align="right">{year.averageEmployees === null ? blank : new Intl.NumberFormat(locale).format(year.averageEmployees)}</TableCell>
-      <TableCell align="right">{<MoneyAmount bani={year.awardedInYear} locale={locale} />}</TableCell>
-      <TableCell align="right">{share}</TableCell>
+      <NumericCell>{money(year.turnover)}</NumericCell>
+      <NumericCell>{money(year.profitOrLoss)}</NumericCell>
+      <NumericCell>{money(year.debts)}</NumericCell>
+      <NumericCell>{money(year.equity)}</NumericCell>
+      <NumericCell>{year.averageEmployees === null ? blank : new Intl.NumberFormat(locale).format(year.averageEmployees)}</NumericCell>
+      <NumericCell>{<MoneyAmount bani={year.awardedInYear} locale={locale} />}</NumericCell>
+      <NumericCell>{share}</NumericCell>
       <TableCell>
         {/* The file is the exact citation; its dataset on data.gov.ro stays one click away. */}
         {year.source.fileUrl ? <Link href={year.source.fileUrl} target="_blank">{copy.source(year.source.file)}</Link> : copy.source(year.source.file)}

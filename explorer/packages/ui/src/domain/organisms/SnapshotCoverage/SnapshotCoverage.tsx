@@ -2,6 +2,7 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Table } from "../../../atoms/Table/index.ts";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../atoms/NumericCell/index.ts";
 import { TableContainer } from "../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../atoms/TableRow/index.ts";
@@ -68,7 +69,7 @@ export function SnapshotCoverage({ cells, dataThrough, locale, copy }: SnapshotC
               <TableRow>
                 <TableCell>{copy.columns.period}</TableCell>
                 <TableCell>{copy.columns.state}</TableCell>
-                <TableCell align="right">{copy.columns.records}</TableCell>
+                <NumericCell>{copy.columns.records}</NumericCell>
                 <TableCell>{copy.columns.reason}</TableCell>
               </TableRow>
             </TableHead>
@@ -77,7 +78,7 @@ export function SnapshotCoverage({ cells, dataThrough, locale, copy }: SnapshotC
                 <TableRow key={cell.quarter} data-state={cell.state}>
                   <TableCell>{MONTH.test(cell.quarter) ? copy.month(formatMonth(cell.quarter, locale)) : copy.snapshot(formatDate(cell.quarter, locale, "long"))}</TableCell>
                   <TableCell>{copy.states[cell.state]}</TableCell>
-                  <TableCell align="right">{cell.state === "LOADED" ? formatCellCount(cell.records, locale) : ""}</TableCell>
+                  <NumericCell>{cell.state === "LOADED" ? formatCellCount(cell.records, locale) : ""}</NumericCell>
                   <TableCell>{reasonOf(cell, copy)}</TableCell>
                 </TableRow>
               ))}
