@@ -156,6 +156,14 @@ export const frameworkPage = recordPage("framework-agreement");
 export const subsequentPage = recordPage("subsequent-contract");
 /** A subsequent contract of a framework with a blank ceiling: no ratio (recorded). */
 export const blankCeilingPage = recordPage("framework-blank-ceiling");
+/** A framework with 51 subsequent contracts, 50 fetched by value (recorded from archive-framework-count): the list is cut at the fetch limit. */
+export const frameworkOver50Page = recordPage("framework-count-over-50");
+/** A framework with exactly 50 subsequent contracts: every one fetched (recorded). */
+export const framework50Page = recordPage("framework-count-50");
+/** A framework with 49 subsequent contracts (recorded). */
+export const framework49Page = recordPage("framework-count-49");
+/** A subsequent contract of the 51-contract framework: the same list from the other side (recorded). */
+export const frameworkOver50SubsequentPage = recordPage("framework-count-over-50-subsequent");
 /** A suspect value under each rule (recorded). */
 export const suspectDirectPage = recordPage("direct-purchase-suspect");
 export const suspectOverEstimatePage = recordPage("contract-suspect-over-estimate");

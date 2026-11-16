@@ -25,7 +25,7 @@ import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
 import { anyInFlight, busyPanels, countyChipName } from "./mainScreenPage.utils.ts";
-import { isInFlight, isStale } from "./hooks/useHeldQuery.ts";
+import { isInFlight, isStale } from "../../graphql/useHeldQuery.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";

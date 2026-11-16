@@ -23,13 +23,15 @@ export interface RecordFactsProps {
   locale: Locale;
   copy: RecordFactsCopy;
   onNavigate?: ((href: string) => void) | undefined;
+  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /** The side panel of the Record's own facts: kind, date, contracting authority (linked), procedure, contract type and CPV, the last three as published. A fact the Record does not have is left out. */
-export function RecordFacts({ record, entityHref, locale, copy, onNavigate }: RecordFactsProps) {
+export function RecordFacts({ record, entityHref, locale, copy, onNavigate, busy }: RecordFactsProps) {
   const { facets } = copy;
   return (
-    <Panel heading={copy.heading} level="h2">
+    <Panel heading={copy.heading} level="h2" busy={busy}>
       <Box component="dl" sx={factsSx}>
         <dt>{facets.kind}</dt>
         <dd>{copy.kinds[record.kind]}</dd>

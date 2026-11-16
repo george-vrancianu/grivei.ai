@@ -423,6 +423,28 @@ describe("Coverage grid (#79)", () => {
   });
 });
 
+describe("Framework subsequent count (#254)", () => {
+  it("serves the framework's total subsequent count, whatever the subsequent limit, and no count on a non-framework Record (#254)", async () => {
+    const framework = { noticeCode: "CAN1", agreement: null, ceiling: "1000", subsequentReported: "300", ratio: 0.3, subsequentCount: 120 };
+    const subsequentRows = [row({ code: "C~2" }), row({ code: "C~3" })];
+    const custom: Store = {
+      ...store,
+      record: async (code) => ({ ...row({ code }), frameworkRole: code === "DA1" ? null : "CEILING", contractType: null, cpv: null }),
+      framework: async () => framework,
+      subsequent: async (_n, { limit }) => subsequentRows.slice(0, limit),
+    };
+    const ask = (code: string, limit: number) => graphql({
+      schema, rootValue: rootValue(custom), variableValues: { code, limit },
+      source: "query($code: ID!, $limit: Int) { seap { record(code: $code) { framework { subsequentCount subsequent(limit: $limit) { code } } } } }",
+    });
+    const limited = await ask("CAN1~1", 1);
+    expect(limited.errors).toBeUndefined();
+    expect(limited.data).toEqual({ seap: { record: { framework: { subsequentCount: 120, subsequent: [{ code: "C~2" }] } } } });
+    expect(((await ask("CAN1~1", 0)).data as { seap: { record: { framework: { subsequentCount: number } } } }).seap.record.framework.subsequentCount).toBe(120);
+    expect((await ask("DA1", 1)).data).toEqual({ seap: { record: { framework: null } } });
+  });
+});
+
 describe("Coverage status (#80): derived from the grid cells of the window", () => {
   const cells = (...states: string[]) => states.map((state) => ({ state }));
   const awaiting = { state: "NOT_YET_LOADED", rule: "AWAITING_BULK_FILE" };

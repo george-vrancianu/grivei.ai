@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useClient } from "../../../graphql/ClientContext.tsx";
-import type { Operation } from "../../../graphql/operations.ts";
+import { useClient } from "./ClientContext.tsx";
+import type { Operation } from "./operations.ts";
 
 /**
  * What a main-screen query tells the page. `loading` only when there is no answer to show; while the next request is in flight the previous answer

@@ -18,7 +18,12 @@ function open(url: string) {
 }
 /** The path of a Record's page: the code is one URL segment, so `/` and the like are encoded. */
 const pathOf = (code: string, prefix = "/explore") => `${prefix}/record/${encodeURIComponent(code)}`;
-const valueOf = (label: string) => screen.getByText(label).nextElementSibling;
+/** What a labelled figure reads: a fact's `dd`, or the inset figure the label sits in. */
+const valueOf = (label: string) => {
+  const el = screen.getByText(label);
+  return el.tagName === "DT" ? el.nextElementSibling : el.parentElement;
+};
+const winnersPanel = () => screen.getByRole("region", { name: "Winners" });
 const region = (name: string) => within(screen.getByRole("region", { name }));
 const text = (el: Element | null) => (el?.textContent ?? "").replace(/\s/g, " ");
 const recorded = (name: string) => {
@@ -78,7 +83,7 @@ describe("a Record page", () => {
     expect(valueOf("Value as published")).toHaveTextContent("RON 150.00");
     expect(valueOf("Counted value")).toHaveTextContent("RON 150.00");
     expect(screen.getByText("Contracting authority").nextElementSibling).toHaveTextContent("SPITALUL EXEMPLU");
-    expect(within(screen.getByText("Winners").nextElementSibling as HTMLElement).getAllByRole("link")).toHaveLength(1);
+    expect(within(winnersPanel()).getAllByRole("link")).toHaveLength(1);
     expect(record.badges).toEqual([]);
   });
 
@@ -114,7 +119,7 @@ describe("a Record page", () => {
     expect(valueOf("Counted value")).toHaveTextContent("RON 1,000.00");
     expect(screen.getAllByText(sentence(/equal share RON 333.3[34]/))).toHaveLength(3);
     expect(screen.getByText(/counting convention, not a figure SEAP publishes/)).toBeInTheDocument();
-    const winners = within(screen.getByText("Winners").nextElementSibling as HTMLElement);
+    const winners = within(winnersPanel());
     expect(winners.getByText(/Persoană fizică/)).toBeInTheDocument();
     expect(winners.getAllByRole("link").map((l) => l.textContent)).toEqual(["ALFA DEMO SRL", "BALKAN TRADING OOD"]);
   });
@@ -122,7 +127,7 @@ describe("a Record page", () => {
   it("marks a member known by a foreign VAT id as identified by name only, and still never names the natural person", async () => {
     await openRecorded("consortium-name-only-members");
     expect(screen.getAllByText("name only")).toHaveLength(1);
-    const winners = screen.getByText("Winners").nextElementSibling as HTMLElement;
+    const winners = winnersPanel();
     expect(winners).toHaveTextContent("Persoană fizică");
     expect(within(winners).getAllByRole("link")).toHaveLength(2);
   });
@@ -194,7 +199,7 @@ describe("a Record page", () => {
 
   it("never names or links a natural-person winner", async () => {
     await openRecorded("natural-person-winner");
-    const winners = screen.getByText("Winners").nextElementSibling as HTMLElement;
+    const winners = winnersPanel();
     expect(winners).toHaveTextContent("Persoană fizică");
     expect(within(winners).queryByRole("link")).toBeNull();
     expect(document.body).not.toHaveTextContent(/\b\d{13}\b/); // no CNP either
@@ -253,7 +258,7 @@ describe("a Record page", () => {
   it("lists an over-cap Signal whose only winner is a natural person without naming them", async () => {
     await openRecorded("signal-natural-person");
     expect(region("Signals this Record belongs to").getByRole("heading", { name: "Over cap" })).toBeInTheDocument();
-    expect(screen.getByText("Winners").nextElementSibling).toHaveTextContent("Persoană fizică");
+    expect(winnersPanel()).toHaveTextContent("Persoană fizică");
   });
 
   it("says there is no stable public page when the Record has no URL (hand fixture: the redirect cannot resolve an RFQA code)", async () => {
@@ -309,7 +314,7 @@ describe("the Record page in Romanian, under /ro/", () => {
 
   it("shows a natural person as 'Persoană fizică', unnamed and unlinked", async () => {
     await openRecorded("natural-person-winner", "/ro/explore");
-    const winners = screen.getByText("Câștigători").nextElementSibling as HTMLElement;
+    const winners = screen.getByRole("region", { name: "Câștigători" });
     expect(winners).toHaveTextContent("Persoană fizică");
     expect(within(winners).queryByRole("link")).toBeNull();
   });

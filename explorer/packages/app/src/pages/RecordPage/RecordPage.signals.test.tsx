@@ -64,7 +64,7 @@ describe("the Signals on a Record page", () => {
     const section = signals(SIGNALS_EN);
     expect(section.getByText("Contracting authority")).toBeVisible();
     expect(section.queryByText("Suppliers")).toBeNull();
-    expect(screen.getByText("Winners").nextElementSibling).toHaveTextContent("Persoană fizică");
+    expect(screen.getByRole("region", { name: "Winners" })).toHaveTextContent("Persoană fizică");
   });
 
   it("shows a splitting and a no-publication Signal as cards too, with their numbers", async () => {

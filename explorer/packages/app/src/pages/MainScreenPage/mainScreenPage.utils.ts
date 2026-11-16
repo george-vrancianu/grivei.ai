@@ -1,7 +1,7 @@
 import { OFF_MAP_TILE_AREAS } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
-import type { QueryState } from "./hooks/useHeldQuery.ts";
-import { isInFlight, isStale } from "./hooks/useHeldQuery.ts";
+import type { QueryState } from "../../graphql/useHeldQuery.ts";
+import { isInFlight, isStale } from "../../graphql/useHeldQuery.ts";
 import type { Copy } from "../../copy/types.ts";
 
 /**

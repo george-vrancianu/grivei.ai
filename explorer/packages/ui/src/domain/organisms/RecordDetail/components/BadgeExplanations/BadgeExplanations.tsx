@@ -12,16 +12,18 @@ export interface BadgeExplanationsCopy {
 export interface BadgeExplanationsProps {
   badges: readonly RecordBadge[];
   copy: BadgeExplanationsCopy & { badges: BadgeCopy };
+  /** The panel shows a held answer while the next loads. */
+  busy?: boolean | undefined;
 }
 
 /**
  * Every badge of the Record as a chip with its explanation written out beside it. The chip's own tooltip needs hover or focus,
  * which a phone or a reader skimming the page does not have, so on this page the explanation is always visible text.
  */
-export function BadgeExplanations({ badges, copy }: BadgeExplanationsProps) {
+export function BadgeExplanations({ badges, copy, busy }: BadgeExplanationsProps) {
   if (badges.length === 0) return null;
   return (
-    <Panel heading={copy.heading} level="h2">
+    <Panel heading={copy.heading} level="h2" busy={busy}>
       <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", rowGap: 1 }}>
         {badges.map((badge) => (
           <Stack key={badge} component="li" direction="row" useFlexGap sx={{ alignItems: "baseline", flexWrap: "wrap", columnGap: 1.5, rowGap: 0.5 }}>

@@ -68,6 +68,7 @@ const onrcSignalsArchive = join(watchdog, "tests/fixtures/archive-onrc-signals")
 const onrcSignalsRevisedArchive = join(watchdog, "tests/fixtures/archive-onrc-signals-revised"); // FY2024's revised release alone: copied over the one above it makes the newest fiscal year evaluable (#184)
 const signalsArchive = join(watchdog, "tests/fixtures/archive-signals"); // over-cap and no-publication, positive, boundary and negative, a backfilled and a crawled award notice (#74)
 const splittingArchive = join(watchdog, "tests/fixtures/archive-splitting"); // the splitting rule: a trigger, a 31-day near miss, merging windows, a cap change, left-out cases (#75)
+const frameworkCountArchive = join(watchdog, "tests/fixtures/archive-framework-count"); // one authority, three frameworks with 51, 50 and 49 subsequent contracts: the count beside the 50 listed (#254)
 const frameworkOverrunArchive = join(watchdog, "tests/fixtures/archive-framework-overrun"); // the framework-overrun rule: a crossing, exactly 110%, 90%, a blank ceiling, a pre-2021 framework, summed ceilings (#76)
 const moneyMapArchive = join(watchdog, "tests/fixtures/archive-moneymap"); // the placement fixture plus consortia across counties, a foreign winner (#71)
 const python = process.env.PIPELINE_PYTHON ?? join(watchdog, ".venv/bin/python");
@@ -165,6 +166,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     cpSync(onrcSignalsRevisedArchive, join(scratch, "archive-onrc-signals-revised"), { recursive: true });
     cpSync(splittingArchive, join(scratch, "archive-splitting"), { recursive: true });
     cpSync(frameworkOverrunArchive, join(scratch, "archive-framework-overrun"), { recursive: true });
+    cpSync(frameworkCountArchive, join(scratch, "archive-framework-count"), { recursive: true });
     execFileSync("docker", [
       "run", "-d", "--name", container, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
       "-e", "POSTGRES_PASSWORD=seam1", "-p", "127.0.0.1::5432", image,
@@ -3365,7 +3367,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
-  describe("recorded fixtures (#85): seven small archives -> rebuild -> the recorded RecordPage", () => {
+  describe("recorded fixtures (#85): eight small archives -> rebuild -> the recorded RecordPage", () => {
     // The app's seam 3 renders the Record page against these answers, so the two seams stay in step: this block fails when an answer
     // drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";
@@ -3378,6 +3380,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       crawl: { db: "record_crawl", dir: "archive-crawl", extra: [] as string[] },
       signals: { db: "record_signals", dir: "archive-signals", extra: [] as string[] },
       splitting: { db: "record_splitting", dir: "archive-splitting", extra: [] as string[] },
+      frameworkCount: { db: "record_framework_count", dir: "archive-framework-count", extra: [] as string[] },
       party: { db: "record_party", dir: "archive-party", get extra() { return ["--placement-data", join(scratch, "mf-data"), "--geo-dir", join(scratch, "geo-record-party"), "--today", "2026-11-20", "--known-gaps", mfGaps]; } },  // scratch is set in beforeAll
     };
 
@@ -3408,6 +3411,19 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(JSON.parse(JSON.stringify(recorded))).toEqual(JSON.parse(readFileSync(file, "utf8")));
     });
 
+    it("a free-text q equal to a framework's notice code finds that framework's subsequent contracts through their public codes (#254)", async () => {
+      const authority = recordOf("framework-count-over-50").authority.key;
+      const query = `query($f: RecordFilter!) { seap { search(filter: $f) { records(limit: 200, offset: 0, order: VALUE_DESC) { count rows { record { code } } } } } }`;
+      const codes = async (q: string) => {
+        const data = await adhocRecords(ARCHIVES.frameworkCount.db, query, { f: { authority, badges: ["SUBSEQUENT_CONTRACT"], q } });
+        return (data.seap.search.records.rows as { record: { code: string } }[]).map((r) => r.record.code).sort();
+      };
+      const subsequent = (notice: string, n: number) => Array.from({ length: n }, (_, i) => `${notice}~${i + 2}`).sort();
+      expect(await codes("CAN9830001")).toEqual(subsequent("CAN9830001", 51));
+      expect(await codes("CAN9830002")).toEqual(subsequent("CAN9830002", 50));
+      expect(await codes("")).toHaveLength(150); // without q: the authority's three frameworks
+    });
+
     it("asks no two cases the same question, so the app's fixture client can tell them apart (it matches on variables)", () => {
       const asked = RECORDED_RECORD_CASES.map((c) => c.variables.code);
       expect(new Set(asked).size).toBe(asked.length);
@@ -3433,6 +3449,23 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
       expect(framework.framework!.subsequent.map((s) => s.code)).toEqual(["CAN9800001~2", "CAN9800001~3"]);
       expect(recordOf("subsequent-contract")).toMatchObject({ counted: R(4_000_000), badges: ["SUBSEQUENT_CONTRACT"], framework: { agreement: { code: "CAN9800001~1" }, ratio: 0.5 } });
       expect(recordOf("framework-blank-ceiling").framework).toMatchObject({ ceiling: null, subsequentReported: R(500_000), ratio: null });
+      // the true count of subsequent contracts beside the (at most 50) listed, largest value first (#254)
+      const values = (name: string) => recordOf(name).framework!.subsequent.map((s) => Number(s.counted));
+      for (const [name, count] of [["framework-agreement", 2], ["framework-blank-ceiling", 1], ["contract-code-with-slash", 2], ["framework-consortium", 0], ["framework-count-49", 49], ["framework-count-50", 50]] as const) {
+        expect(recordOf(name).framework!.subsequentCount, name).toBe(count);
+        expect(recordOf(name).framework!.subsequent, name).toHaveLength(count);
+      }
+      expect(recordOf("subsequent-contract").framework).toMatchObject({ subsequentCount: 2 });
+      const big = recordOf("framework-count-over-50").framework!;
+      expect(big.subsequentCount).toBe(51);
+      expect(big.subsequent).toHaveLength(50); // the list stops at 50 whatever the count
+      expect(values("framework-count-over-50")).toEqual([...values("framework-count-over-50")].sort((a, b) => b - a)); // largest value first
+      expect(new Set(values("framework-count-over-50")).size).toBe(50);
+      expect(big.subsequent.map((s) => s.code)).not.toContain("CAN9830001~51"); // the smallest of the 51 (10,000 RON) is the one left out
+      expect(recordOf("framework-count-over-50-subsequent").framework).toMatchObject({ subsequentCount: 51, agreement: { code: "CAN9830001~1" } });
+      expect(recordOf("direct-purchase-counted").framework).toBeNull(); // not a framework Record: no count
+      expect(recordOf("direct-purchase-suspect").framework).toBeNull();
+      expect(recordOf("contract-single-winner").framework).toBeNull();
       // a consortium: the full value once, equal shares summing back to it; a natural person among the members is unnamed and unlinked
       const trio = recordOf("consortium-with-natural-person");
       expect(trio).toMatchObject({ value: "100000", counted: "100000", badges: ["CONSORTIUM_SHARE"] });

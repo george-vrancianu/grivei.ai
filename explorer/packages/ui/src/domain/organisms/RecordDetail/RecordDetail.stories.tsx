@@ -3,6 +3,7 @@ import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
   blankCeilingPage, consortiumNameOnlyPage, consortiumPage, contractRecord, directPurchaseRecord, everyBadgePage, frameworkPage, naturalPersonPage,
   noValuePage, provisionalPage, crawlOnlyPage, cuiMismatchPage, curatedPage, frameworkOverrunPage, nameDiffersPage, noPublicPage, splittingPage, subsequentPage, suspectDirectPage, suspectNoEstimatePage, suspectOverEstimatePage,
+  framework49Page, framework50Page, frameworkOver50Page, frameworkOver50SubsequentPage,
 } from "../../samples/fixtureData.ts";
 import type { RecordPageData } from "../../types.ts";
 import { SignalCard } from "../SignalCard/index.ts";
@@ -14,7 +15,7 @@ export default meta;
 type Story = StoryObj;
 
 const detail =
-  (record: RecordPageData, withCards = false): Story["render"] =>
+  (record: RecordPageData, withCards = false, extra: { busy?: boolean; moreHref?: string } = {}): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
     return (
@@ -24,6 +25,8 @@ const detail =
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(code) => `/explore/record/${code}`}
         methodologyHref="/explore/methodology"
+        subsequentMoreHref={extra.moreHref}
+        busy={extra.busy}
         locale={locale}
         copy={sampleCopy.recordDetail(locale)}
         renderSignalCard={
@@ -91,3 +94,13 @@ export const NameDiffersFromAnaf: Story = { render: detail(nameDiffersPage) };
 export const IdentityCurated: Story = { render: detail(curatedPage) };
 /** Every badge, each with its explanation. */
 export const EveryBadge: Story = { render: detail(everyBadgePage) };
+/** A framework with 49 subsequent contracts: five by value, "5 of 49 shown, by value" and "Show all 49" in the foot, which expands the list in place. */
+export const FrameworkFortyNineSubsequent: Story = { render: detail(framework49Page) };
+/** Exactly 50 subsequent contracts: every one is fetched, so the expanded foot reads "50 of 50 shown" and has no link to the Records tab. */
+export const FrameworkFiftySubsequent: Story = { render: detail(framework50Page) };
+/** 51 subsequent contracts, 50 fetched: the foot says "5 of 51 shown, by value" (50 once expanded) and links to the authority's Records tab, narrowed to the framework's subsequent contracts. */
+export const FrameworkOverFiftySubsequent: Story = { render: detail(frameworkOver50Page, false, { moreHref: "/explore/authority/1000025/records?badges=subsequent-contract&q=CAN9830001" }) };
+/** A subsequent contract of that framework: the same list, from the other side. */
+export const SubsequentOfOverFifty: Story = { render: detail(frameworkOver50SubsequentPage, false, { moreHref: "/explore/authority/1000025/records?badges=subsequent-contract&q=CAN9830001" }) };
+/** A refetch (a retry, a click to another Record): the last Record stays, every panel's body dimmed to 60% with `aria-busy="true"`; header strips and foots at full strength. */
+export const Refetching: Story = { render: detail(frameworkOver50Page, true, { busy: true }) };

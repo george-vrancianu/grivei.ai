@@ -151,3 +151,12 @@ export const LongHeader: Story = {
     </Box>
   ),
 };
+
+/** A held answer while the next loads: the body is dimmed to 60% with `aria-busy="true"`; the header strip (with its status line) and the foot stay at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => (
+    <Panel heading={pick(globals["locale"], { en: "Provenance", ro: "Proveniență" })} aside={pick(globals["locale"], { en: "Loading…", ro: "Se încarcă…" })} foot={pick(globals["locale"], { en: "5 of 11 shown, by value", ro: "5 din 11 afișate, după valoare" })} busy>
+      <Typography>{sentence(globals["locale"])}</Typography>
+    </Panel>
+  ),
+};

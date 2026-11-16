@@ -1052,6 +1052,8 @@ type FrameworkLink {
   subsequentReported: Bani!
   "subsequentReported / ceiling; null when the ceiling is blank."
   ratio: Float
+  "The total number of the framework's subsequent contracts, all of them (not capped by the `subsequent` limit)."
+  subsequentCount: Int!
   subsequent(limit: Int = 50, offset: Int = 0): [SeapRecord!]!
 }
 

@@ -9,6 +9,7 @@ import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { SignalList } from "../../../SignalList/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
+import { busyProps } from "../../../../utils/busy.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
 export interface SignalsSectionCopy {
@@ -29,16 +30,18 @@ export interface SignalsSectionProps {
   renderCard?: ((signal: RecordSignal) => ReactNode) | undefined;
   locale: Locale;
   copy: SignalsSectionCopy;
+  /** The section shows a held answer while the next loads: dimmed, `aria-busy`. */
+  busy?: boolean | undefined;
 }
 
 /**
  * The Signals this Record belongs to, as a minimal neutral entry each: the rule's label, its date, how many Records it consists of
  * and links to those Records. The full Signal card (numbers, lawful explanations, wording) is the Signal card organism's, not this one's.
  */
-export function SignalsSection({ signals, recordHref, onNavigate, renderCard, locale, copy }: SignalsSectionProps) {
+export function SignalsSection({ signals, recordHref, onNavigate, renderCard, locale, copy, busy }: SignalsSectionProps) {
   if (signals.length === 0) return null;
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
+    <Stack component="section" spacing={1} aria-label={copy.heading} {...busyProps(busy)}>
       <SectionHeading>{copy.heading}</SectionHeading>
       <SignalList
         signals={signals}
