@@ -82,3 +82,17 @@ export const LongNote: Story = {
     </Card>
   ),
 };
+
+/** A toggle: the ONRC count map's Unplaced tile, unselected and selected. */
+export const AsToggle: Story = {
+  render: (_args, { globals }) => (
+    <Card sx={{ p: 2, maxWidth: 480, display: "flex", gap: 2, flexWrap: "wrap" }}>
+      <InsetFigure label={pick(globals["locale"], { en: "No county", ro: "Fără județ" })} onSelect={() => {}}>
+        {pick(globals["locale"], { en: "3 registrations", ro: "3 înmatriculări" })}
+      </InsetFigure>
+      <InsetFigure label={pick(globals["locale"], { en: "No county", ro: "Fără județ" })} onSelect={() => {}} selected>
+        {pick(globals["locale"], { en: "3 registrations", ro: "3 înmatriculări" })}
+      </InsetFigure>
+    </Card>
+  ),
+};

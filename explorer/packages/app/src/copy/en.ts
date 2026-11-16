@@ -718,6 +718,7 @@ export const en: Copy = {
         minLengthHint: "Type at least 2 characters to search.",
       },
       results: {
+        title: "Registrations",
         heading: (n, f) => `${f} ${plural(n, "registration", "registrations")}`,
         showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
         empty: "No registration matches. Sole traders (PFA, II, IF) are not listed.",
@@ -745,7 +746,7 @@ export const en: Copy = {
           picked: (n) => `${n} picked`,
         },
         any: "Any",
-        seapCounterparty: { group: "In SEAP", yes: "SEAP counterparties only", no: "Not in SEAP" },
+        seapCounterparty: { group: "In SEAP", yes: "SEAP counterparty", no: "Not in SEAP" },
         caen: { label: "CAEN", hint: "4211 or 42" },
         registered: { group: "Registered", from: "From", to: "To" },
         active: {
@@ -760,6 +761,7 @@ export const en: Copy = {
           clearAll: "Clear all",
         },
       },
+      mapTitle: "Registrations by county",
       countMap: {
         map: { mapLabel: "Map of counties by registrations", legendTitle: "Registrations", noData: "No registrations", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },
         unplaced: "No county",

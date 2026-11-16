@@ -58,7 +58,7 @@ describe.each([
 
   it("says no ONRC snapshot is held when there is none", async () => {
     open(`${base}/coverage?source=onrc`, { extra: [{ operation: "OnrcCoverage", variables: {}, data: { sources: [], coverage: { window: { from: null, to: null }, denominator: "NONE", counties: [], grid: [] } } }] });
-    expect(await screen.findByRole("status")).toHaveTextContent(s.onrc.coverage.snapshots.empty);
+    expect(await screen.findByText(s.onrc.coverage.snapshots.empty)).toBeVisible();
   });
 
   it("settles on a message when ONRC's coverage cannot be loaded", async () => {
