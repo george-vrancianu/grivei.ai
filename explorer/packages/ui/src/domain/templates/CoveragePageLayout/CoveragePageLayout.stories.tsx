@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { pick } from "../../../workbench/index.ts";
+import { SourcePicker } from "../../molecules/SourcePicker/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { fixturePageContent, samplePageContent } from "../../samples/coverageGrid.ts";
 import { CoveragePageLayout, type CoveragePageContent } from "./index.ts";
@@ -7,10 +9,26 @@ const meta = { title: "Domain/CoveragePageLayout", parameters: { layout: "fullsc
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
-const page = (status: "loading" | "error" | "ready", content?: CoveragePageContent): Story["render"] =>
+const selector = (locale: "en" | "ro") => (
+  <SourcePicker options={[{ id: "SEAP", label: "SEAP" }, { id: "ONRC", label: "ONRC" }]} selected="SEAP" onSelect={() => {}} copy={{ label: pick(locale, { en: "Coverage of", ro: "Acoperirea pentru" }) }} />
+);
+
+const page = (status: "loading" | "error" | "ready", content?: CoveragePageContent, extra: { busy?: boolean; retry?: boolean } = {}): Story["render"] =>
   (_args, { globals }) => {
     const locale = localeOf(globals["locale"]);
-    return <CoveragePageLayout status={status} content={content} locale={locale} methodologyHref={locale === "ro" ? "/ro/explore/methodology" : "/explore/methodology"} lensHref={locale === "ro" ? "/ro/explore/?lens=coverage" : "/explore/?lens=coverage"} copy={sampleCopy.coveragePageLayout(locale)} />;
+    return (
+      <CoveragePageLayout
+        status={status}
+        content={content}
+        locale={locale}
+        methodologyHref={locale === "ro" ? "/ro/explore/methodology" : "/explore/methodology"}
+        lensHref={locale === "ro" ? "/ro/explore/?lens=coverage" : "/explore/?lens=coverage"}
+        sourceSelector={selector(locale)}
+        busy={extra.busy}
+        retry={extra.retry ? { label: pick(locale, { en: "Try again", ro: "Reîncearcă" }), onRetry: () => {} } : undefined}
+        copy={sampleCopy.coveragePageLayout(locale)}
+      />
+    );
   };
 
 /** The whole page on the sample grid: all six states, 2023-24 highlighted among the 19 quarters, data-through per kind, crawl-only counts, known gaps with reasons, rules, MF snapshot date. */
@@ -33,8 +51,14 @@ export const NoGaps: Story = {
   render: page("ready", { ...samplePageContent(), cells: samplePageContent().cells.filter((c) => c.state === "LOADED") }),
 };
 
+/** First load: every panel keeps its title over skeleton blocks; the loading status sits beside the selector in the grid panel; the rules are real. */
 export const Loading: Story = { render: page("loading") };
-export const LoadFailed: Story = { render: page("error") };
+
+/** A failed request: the note and its retry in the grid panel, the rules stay, the data panels are left out. */
+export const LoadFailed: Story = { render: page("error", undefined, { retry: true }) };
+
+/** The last answer on screen while the next loads: the data panels dim (aria-busy), the header strips stay at full strength. */
+export const Refetching: Story = { render: page("ready", samplePageContent(), { busy: true }) };
 
 /** No quarter of the Source is loaded: the grid is replaced by a sentence. */
 export const EmptyGrid: Story = { render: page("ready", fixturePageContent("empty-window")) };
