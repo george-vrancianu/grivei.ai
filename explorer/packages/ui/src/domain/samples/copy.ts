@@ -310,6 +310,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
+        head: { supplier: "Furnizor", authority: "Autoritate", signals: "Semnale", amount: "RON potrivit" },
         cui: "CUI",
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
@@ -319,6 +320,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
       }
     : {
         matched: "matched",
+        head: { supplier: "Supplier", authority: "Authority", signals: "Signals", amount: "RON matched" },
         cui: "CUI",
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
         national: "national",

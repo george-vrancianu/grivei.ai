@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { CoverageLensQuery } from "@grivei/contract";
-import { Box, CoverageGridCompact, CoverageLensMap, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
+import { Box, Button, CoverageGridCompact, CoverageLensMap, StateNote, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
 import { countyAfterClick } from "../MoneyLensSection/index.ts";
 
@@ -25,17 +25,24 @@ export interface CoverageLensSectionProps {
   locale: Locale;
   copy: { map: CoverageLensMapCopy; grid: CoverageGridCopy };
   /** What to say while things load, when the outlines cannot be loaded and when the query failed. */
-  status: { loading: string; unavailable: string; failed: string };
+  status: { loading: string; unavailable: string; failed: string; retry: string };
+  /** Asks the failed lens query again; absent = no button. */
+  onRetry?: () => void;
 }
 
 /**
  * The Coverage lens of the main screen: the county map coloured by coverage status for the date chip's window, and under it the compact
  * Coverage grid with that window highlighted and the link to the Coverage page. A county click is the Money lens's: it filters the results.
  */
-export function CoverageLensSection({ lens, loading, failed, topology, cells, dateWindow, pageHref, onNavigate, sourceSelector, county, onSelect, locale, copy, status }: CoverageLensSectionProps) {
+export function CoverageLensSection({ lens, loading, failed, topology, cells, dateWindow, pageHref, onNavigate, sourceSelector, county, onSelect, locale, copy, status, onRetry }: CoverageLensSectionProps) {
   let map;
   if (topology.status === "error") map = <Typography role="alert">{status.unavailable}</Typography>;
-  else if (failed) map = <Typography role="alert">{status.failed}</Typography>;
+  else if (failed)
+    map = (
+      <StateNote kind="error" action={onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}>
+        {status.failed}
+      </StateNote>
+    );
   else if (topology.status === "loading" || lens === null || loading) map = <Typography aria-busy="true">{status.loading}</Typography>;
   else
     map = (

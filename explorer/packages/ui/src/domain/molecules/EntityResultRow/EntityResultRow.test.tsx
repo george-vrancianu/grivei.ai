@@ -21,7 +21,12 @@ describe("EntityResultRow", () => {
     expect(screen.getByRole("link", { name: "HACHI INVEST S.R.L." })).toHaveAttribute("href", "/explore/supplier/30000001");
     expect(container).toHaveTextContent("6 Records · Brașov · CUI 30000001");
     expect(screen.getByText("RON 1,420,000")).toBeVisible();
-    expect(screen.getByText("matched")).toBeVisible();
+    // From 600 px up the caption is visually hidden, below it shows; either way it stays in the row's text.
+    expect(screen.getByText("matched")).toBeInTheDocument();
+  });
+  it("keeps the amount, the Signals column and the caption in a row's text when the entity has no Signals", () => {
+    const { container } = renderInUi(<EntityResultRow row={row(county)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
+    expect(container.querySelector("li")).toHaveTextContent("HACHI INVEST S.R.L.6 Records · Brașov · CUI 30000001RON 1,420,000matched");
   });
   it("uses the singular for one Record", () => {
     const { container } = renderInUi(<EntityResultRow row={row(county, 1)} href="/x" locale="en" copy={sampleCopy.entityRow("en")} />);
@@ -31,7 +36,7 @@ describe("EntityResultRow", () => {
     const { container } = renderInUi(<EntityResultRow row={row(county, 25)} href="/x" locale="ro" copy={sampleCopy.entityRow("ro")} />, "ro");
     expect(container).toHaveTextContent("25 de înregistrări · Brașov · CUI 30000001");
     expect(container).toHaveTextContent("1.420.000 RON");
-    expect(screen.getByText("potrivit")).toBeVisible();
+    expect(screen.getByText("potrivit")).toBeInTheDocument();
   });
   it("shows an 'n Signals' chip linking to the Overview's Signals section only when the entity has Signals", () => {
     const withSignals = renderInUi(<EntityResultRow row={{ ...row(county), signalCount: 3 }} href="/explore/supplier/30000001" locale="en" copy={sampleCopy.entityRow("en")} />);
