@@ -52,6 +52,16 @@ describe("PanelTable", () => {
     const rules = [...document.querySelectorAll("style")].map((s) => s.textContent ?? "").join("");
     expect(rules).toContain(`.MuiTableRow-hover:hover{background-color:${color.raised};}`);
   });
+  it("lets the table carry its own name beside the box's", () => {
+    table({ "aria-label": "Achiziții" });
+    expect(screen.getByRole("table", { name: "Achiziții" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tabel" })).toBeInTheDocument();
+  });
+  it("leaves the denser cell paddings alone", () => {
+    renderInUi(<table><tbody><tr><TableCell padding="none">a</TableCell><TableCell padding="checkbox">b</TableCell></tr></tbody></table>);
+    expect(getComputedStyle(screen.getByText("a")).padding).toBe("0px");
+    expect(getComputedStyle(screen.getByText("b")).padding).toBe("0px 0px 0px 4px");
+  });
   it("passes Table props and sx through", () => {
     table({ sx: sxProbe, size: "medium" });
     expect(screen.getByRole("table")).toHaveStyle(sxProbeStyle);

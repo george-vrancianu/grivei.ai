@@ -44,7 +44,7 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
   const row = copy.recordRow;
   return (
     <TableContainer>
-      <Table aria-label={copy.label} sx={{ minWidth: 760, "& td": { verticalAlign: "top", py: 1.5 } }}>
+      <Table aria-label={copy.label} sx={{ minWidth: 760, "& td": { verticalAlign: "top" } }}>
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: 150 }}>{copy.columns.record}</TableCell>

@@ -159,6 +159,9 @@ export const components: Components<Theme> = {
   MuiTableCell: {
     styleOverrides: {
       root: { borderBottomColor: color.line, fontSize: type.small.max, padding: "12px 14px" },
+      // The denser paddings keep their own (the root padding would otherwise reach them: overrides apply after MUI's variants).
+      paddingNone: { padding: 0 },
+      paddingCheckbox: { padding: "0 0 0 4px" },
       head: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.muted, backgroundColor: STRIP_FILL },
     },
   },
