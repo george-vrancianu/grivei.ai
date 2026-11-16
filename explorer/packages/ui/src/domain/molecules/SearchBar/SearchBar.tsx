@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { CircularProgress } from "../../../atoms/CircularProgress/index.ts";
 import { IconButton } from "../../../atoms/IconButton/index.ts";
@@ -23,8 +23,13 @@ export interface SearchBarProps {
   debounceMs?: number;
   /** Shorter queries are not searched. */
   minLength?: number;
+  /** A control shown inside the field at its end, after the clear button (the Source picker). */
+  endSlot?: ReactNode;
   copy: SearchBarCopy;
 }
+
+/** A non-breaking space: with no hint the helper line still holds its height, so the minimum-length hint appearing does not shift what is below. */
+const RESERVED_LINE = "\u00a0";
 
 /** The magnifier at the start of the field: decorative, so hidden from assistive technology. */
 function SearchIcon() {
@@ -37,7 +42,7 @@ function SearchIcon() {
 }
 
 /** The free-text search box, an input in a well (ground fill, strong edge, inset shadow). Presentational: it emits the query; the page fetches. */
-export function SearchBar({ value, onQueryChange, describedBy, loading = false, debounceMs = DEFAULT_DEBOUNCE_MS, minLength = DEFAULT_MIN_LENGTH, copy }: SearchBarProps) {
+export function SearchBar({ value, onQueryChange, describedBy, loading = false, debounceMs = DEFAULT_DEBOUNCE_MS, minLength = DEFAULT_MIN_LENGTH, endSlot, copy }: SearchBarProps) {
   const { text, setText, clear } = useDebouncedQuery({ value, onQueryChange, debounceMs, minLength });
   const input = useRef<HTMLInputElement>(null);
   const clearAndFocus = () => {
@@ -47,6 +52,8 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
   const tooShort = isTooShort(text, minLength);
   const id = useId();
   const helperId = `${id}-helper`;
+  const helper = tooShort ? copy.minLengthHint : copy.hint;
+  const describedByIds = [helper ? helperId : undefined, describedBy].filter(Boolean).join(" ") || undefined;
   return (
     <Box role="search" aria-busy={loading}>
       <TextField
@@ -62,12 +69,12 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
             clearAndFocus();
           }
         }}
-        helperText={tooShort ? copy.minLengthHint : copy.hint}
+        helperText={helper ?? (copy.minLengthHint ? RESERVED_LINE : undefined)}
         fullWidth
         sx={{ "& .MuiOutlinedInput-root": { minHeight: size.searchInput, fontSize: type.search.size, pl: 2.25, backgroundColor: color.bg, boxShadow: shadow.well }, "& .MuiFormHelperText-root": { mx: 0, color: "text.secondary" } }}
         inputRef={input}
         slotProps={{
-          htmlInput: { enterKeyHint: "search", "aria-describedby": describedBy ? `${helperId} ${describedBy}` : helperId },
+          htmlInput: { enterKeyHint: "search", "aria-describedby": describedByIds },
           formHelperText: { id: helperId },
           input: {
             startAdornment: <SearchIcon />,
@@ -75,10 +82,11 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
               <>
                 {loading && <CircularProgress size={16} aria-label={copy.loading} />}
                 {text !== "" && (
-                  <IconButton aria-label={copy.clear} size="small" onClick={clearAndFocus} edge="end">
+                  <IconButton aria-label={copy.clear} size="small" onClick={clearAndFocus} edge={endSlot === undefined ? "end" : false}>
                     <span aria-hidden="true">×</span>
                   </IconButton>
                 )}
+                {endSlot !== undefined && <Box sx={{ ml: 1, flex: "none", display: "flex", alignItems: "center" }}>{endSlot}</Box>}
               </>
             ),
           },

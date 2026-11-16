@@ -1,5 +1,5 @@
-import { MenuItem } from "../../../../../atoms/MenuItem/index.ts";
-import { pickedText } from "../../filterChips.utils.ts";
+import { MenuItem } from "../../../atoms/MenuItem/index.ts";
+import { pickedText } from "../FilterChips/filterChips.utils.ts";
 import { FilterMenu, MenuOption } from "../FilterMenu/index.ts";
 
 export interface MultiChoiceOption<T extends string> {

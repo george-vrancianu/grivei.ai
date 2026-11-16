@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { renderInUi } from "../../../../../testing/render.tsx";
+import { renderInUi } from "../../../testing/render.tsx";
 import { FilterMenu, MenuOption } from "./index.ts";
 
 // While the menu is open the rest of the page is aria-hidden, the button included.

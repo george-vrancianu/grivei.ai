@@ -1,24 +1,18 @@
 import { ToggleButton } from "../../../atoms/ToggleButton/index.ts";
 import { ToggleButtonGroup } from "../../../atoms/ToggleButtonGroup/index.ts";
+import { SourceSelect } from "./components/SourceSelect/index.ts";
+import { useNarrowScreen } from "../../../theme/useNarrowScreen.ts";
+import type { SourcePickerCopy, SourcePickerOption } from "./sourcePicker.types.ts";
+import { optionText } from "./sourcePicker.utils.ts";
 
-export interface SourcePickerOption {
-  /** The Source's id (`SEAP`, `ONRC`). */
-  id: string;
-  /** The Source's name, from the API. */
-  label: string;
-  /** What the Source has for the current query, already worded and formatted ("1,204 Records"); absent = none shown (no query, still loading, or failed). */
-  count?: string | undefined;
-}
-
-export interface SourcePickerCopy {
-  /** The group's accessible name ("Source"). */
-  label: string;
-}
+export type { SourcePickerCopy, SourcePickerOption } from "./sourcePicker.types.ts";
 
 export interface SourcePickerProps {
   options: readonly SourcePickerOption[];
   selected: string;
   onSelect: (id: string) => void;
+  /** Sits inside the search box (its `endSlot`): small segments, and a dropdown on a narrow screen. */
+  inline?: boolean;
   copy: SourcePickerCopy;
 }
 
@@ -27,12 +21,21 @@ export interface SourcePickerProps {
  * for the query: the counts sit side by side and are never summed, ranked or merged. The same control is the Source switch of the Records tab
  * and the Source selector of the Coverage lens and page (without counts there).
  */
-export function SourcePicker({ options, selected, onSelect, copy }: SourcePickerProps) {
+export function SourcePicker({ options, selected, onSelect, inline = false, copy }: SourcePickerProps) {
+  const narrow = useNarrowScreen();
+  if (inline && narrow) return <SourceSelect options={options} selected={selected} onSelect={onSelect} label={copy.label} />;
   return (
-    <ToggleButtonGroup exclusive aria-label={copy.label} value={selected} onChange={(_event, next: string | null) => next !== null && onSelect(next)}>
+    <ToggleButtonGroup
+      exclusive
+      size={inline ? "small" : "medium"}
+      aria-label={copy.label}
+      value={selected}
+      onChange={(_event, next: string | null) => next !== null && onSelect(next)}
+      sx={inline ? { "& .MuiToggleButton-root": { py: 0.5, whiteSpace: "nowrap" } } : undefined}
+    >
       {options.map((option) => (
         <ToggleButton key={option.id} value={option.id}>
-          {option.count === undefined ? option.label : `${option.label} · ${option.count}`}
+          {optionText(option)}
         </ToggleButton>
       ))}
     </ToggleButtonGroup>

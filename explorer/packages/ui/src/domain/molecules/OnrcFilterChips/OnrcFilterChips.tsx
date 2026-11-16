@@ -1,17 +1,17 @@
 import type { OnrcFilter } from "@grivei/contract";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Button } from "../../../atoms/Button/index.ts";
-import { Chip } from "../../../atoms/Chip/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
-import { TextField } from "../../../atoms/TextField/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
-import { ChipGroup } from "../ChipGroup/index.ts";
+import { ChoiceMenu } from "../ChoiceMenu/index.ts";
+import { FilterBarDivider } from "../FilterBarDivider/index.ts";
+import { FilterBarRow } from "../FilterBarRow/index.ts";
 import { FilterStrip } from "../FilterStrip/index.ts";
-import { ToggleChip } from "../ToggleChip/index.ts";
+import { MultiChoiceMenu } from "../MultiChoiceMenu/index.ts";
+import { OnrcActiveChips } from "./components/OnrcActiveChips/index.ts";
+import { CaenField } from "./components/CaenField/index.ts";
+import { RegisteredMenu } from "./components/RegisteredMenu/index.ts";
 import type { OnrcFilterChipsCopy } from "./onrcFilterChips.types.ts";
-import { activeOnrcChips, ONRC_STATUS_CHOICES, toggleStatus, withOnrcFields } from "./onrcFilterChips.utils.ts";
+import { activeOnrcChips, clearOnrcChips, offeredStatuses, toggleSeapCounterparty, toggleStatus, withOnrcFields } from "./onrcFilterChips.utils.ts";
 
 export type { OnrcFilterChipsCopy } from "./onrcFilterChips.types.ts";
 
@@ -28,76 +28,56 @@ export interface OnrcFilterChipsProps {
 const CAEN = /^\d+$/;
 
 /**
- * The chips that narrow ONRC's matching set: status (several can be on; a registration matches when it shows any), SEAP counterparty or not, a CAEN code or prefix,
- * the registration-date range, with the active ones listed below, each removable. The county is chosen on the count lens and shows here as an active chip.
- * Controlled: it reflects `filter` and reports the next one.
+ * ONRC's filter bar, laid out as the main screen's: one row with SEAP counterparty or not, a divider, the status menu (none ticked is Any; a registration
+ * matches when it shows any ticked), the CAEN code or prefix and the registration-date menu; then, only when something is set, a strip of the active ones, each removable.
+ * The county is chosen on the count lens and shows there as an active chip. Controlled: it reflects `filter` and reports the next one.
  */
 export function OnrcFilterChips({ filter, onChange, locale, copy }: OnrcFilterChipsProps) {
   const active = activeOnrcChips(filter, copy, (iso) => formatDate(iso, locale, "long"));
-  const statuses = [...ONRC_STATUS_CHOICES, ...(filter.status ?? []).filter((code) => !ONRC_STATUS_CHOICES.includes(code))];
   const setCaen = (text: string) => {
     const value = text.trim();
-    if (value === "") onChange(withOnrcFields(filter, { caen: undefined }));
+    if (value === "") {
+      if (filter.caen) onChange(withOnrcFields(filter, { caen: undefined }));
+    }
     else if (CAEN.test(value) && value !== filter.caen) onChange(withOnrcFields(filter, { caen: value }));
   };
   return (
     <Box component="section" aria-label={copy.label}>
       <FilterStrip>
-        <Stack spacing={1.5}>
-      <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
-        <ChipGroup label={copy.status.group}>
-          {statuses.map((code) => (
-            <ToggleChip key={code} label={copy.status.options[code] ?? copy.status.other(code)} pressed={filter.status?.includes(code) ?? false} onToggle={() => onChange(toggleStatus(filter, code))} />
-          ))}
-        </ChipGroup>
-        <ChipGroup label={copy.seapCounterparty.group}>
-          <ToggleChip label={copy.seapCounterparty.yes} pressed={filter.seapCounterparty === true} onToggle={() => onChange(withOnrcFields(filter, { seapCounterparty: filter.seapCounterparty === true ? undefined : true }))} />
-          <ToggleChip label={copy.seapCounterparty.no} pressed={filter.seapCounterparty === false} onToggle={() => onChange(withOnrcFields(filter, { seapCounterparty: filter.seapCounterparty === false ? undefined : false }))} />
-        </ChipGroup>
-      </Stack>
-      <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap", alignItems: "flex-end" }}>
-        <ChipGroup label={copy.caen.label}>
-          <TextField
-            key={filter.caen ?? ""}
-            size="small"
-            label={copy.caen.label}
-            defaultValue={filter.caen ?? ""}
-            helperText={copy.caen.hint}
-            slotProps={{ htmlInput: { inputMode: "numeric", "aria-label": copy.caen.label }, inputLabel: { shrink: true } }}
-            onBlur={(event) => setCaen(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") setCaen((event.target as HTMLInputElement).value);
-            }}
-            sx={{ minWidth: 160 }}
+        <FilterBarRow>
+          <ChoiceMenu
+            label={copy.seapCounterparty.group}
+            unsetLabel={copy.any}
+            options={[{ value: "yes", label: copy.seapCounterparty.yes }, { value: "no", label: copy.seapCounterparty.no }]}
+            selected={filter.seapCounterparty === true ? "yes" : filter.seapCounterparty === false ? "no" : undefined}
+            onChoose={(choice) => onChange(withOnrcFields(filter, { seapCounterparty: toggleSeapCounterparty(filter, choice === "yes") }))}
           />
-        </ChipGroup>
-        <ChipGroup label={copy.registered.group}>
-          <Stack direction="row" spacing={1}>
-            <TextField type="date" size="small" label={copy.registered.from} value={filter.registeredFrom ?? ""} slotProps={{ inputLabel: { shrink: true } }} onChange={(event) => onChange(withOnrcFields(filter, { registeredFrom: event.target.value || undefined }))} />
-            <TextField type="date" size="small" label={copy.registered.to} value={filter.registeredTo ?? ""} slotProps={{ inputLabel: { shrink: true } }} onChange={(event) => onChange(withOnrcFields(filter, { registeredTo: event.target.value || undefined }))} />
-          </Stack>
-        </ChipGroup>
-      </Stack>
-      <ChipGroup label={copy.active.group}>
-        {active.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            {copy.active.none}
-          </Typography>
-        ) : (
-          <>
-            {active.map((chip) => (
-              <Chip key={chip.id} color="primary" label={chip.label} aria-label={copy.active.remove(chip.label)} onClick={() => onChange(chip.remove(filter))} onDelete={() => onChange(chip.remove(filter))} />
-            ))}
-            <Box>
-              <Button size="small" onClick={() => onChange(withOnrcFields(filter, { status: undefined, caen: undefined, county: undefined, registeredFrom: undefined, registeredTo: undefined, seapCounterparty: undefined }))}>
-                {copy.active.clearAll}
-              </Button>
-            </Box>
-          </>
-        )}
-      </ChipGroup>
-        </Stack>
+          <FilterBarDivider />
+          <MultiChoiceMenu
+            label={copy.status.group}
+            unsetLabel={copy.any}
+            options={offeredStatuses(filter).map((code) => ({ value: String(code), label: copy.status.options[code] ?? copy.status.other(code) }))}
+            selected={filter.status?.map(String)}
+            onToggle={(code) => onChange(toggleStatus(filter, Number(code)))}
+            picked={copy.status.picked}
+          />
+          <CaenField value={filter.caen ?? undefined} onCommit={setCaen} isValid={(text) => text.trim() === "" || CAEN.test(text.trim())} copy={copy.caen} />
+          <RegisteredMenu
+            from={filter.registeredFrom}
+            to={filter.registeredTo}
+            onFrom={(registeredFrom) => onChange(withOnrcFields(filter, { registeredFrom }))}
+            onTo={(registeredTo) => onChange(withOnrcFields(filter, { registeredTo }))}
+            formatDate={(iso) => formatDate(iso, locale)}
+            copy={copy.registered}
+            unsetLabel={copy.any}
+          />
+        </FilterBarRow>
       </FilterStrip>
+      {active.length > 0 && (
+        <FilterStrip>
+          <OnrcActiveChips chips={active} onRemove={(chip) => onChange(chip.remove(filter))} onClearAll={() => onChange(clearOnrcChips(filter))} copy={copy.active} />
+        </FilterStrip>
+      )}
     </Box>
   );
 }

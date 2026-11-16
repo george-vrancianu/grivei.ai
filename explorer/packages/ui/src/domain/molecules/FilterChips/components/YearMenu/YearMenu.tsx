@@ -1,7 +1,7 @@
 import type { RecordFilter } from "@grivei/contract";
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
 import { yearOf, yearOptions, yearRangeText } from "../../filterChips.utils.ts";
-import { FilterMenu, MenuHeading, MenuOption } from "../FilterMenu/index.ts";
+import { FilterMenu, MenuHeading, MenuOption } from "../../../FilterMenu/index.ts";
 
 export interface YearMenuProps {
   filter: RecordFilter;

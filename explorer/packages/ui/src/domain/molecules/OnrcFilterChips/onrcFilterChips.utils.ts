@@ -15,6 +15,16 @@ export function withOnrcFields(filter: OnrcFilter, patch: OnrcFilter): OnrcFilte
   return next as OnrcFilter;
 }
 
+/** The status codes offered: ONRC's four, then any other code the filter holds (it came in through the URL). */
+export const offeredStatuses = (filter: OnrcFilter): number[] => [...ONRC_STATUS_CHOICES, ...(filter.status ?? []).filter((code) => !ONRC_STATUS_CHOICES.includes(code))];
+
+/** The SEAP-counterparty value after picking `value` in its menu: picking the chosen one again unsets it. */
+export const toggleSeapCounterparty = (filter: OnrcFilter, value: boolean): boolean | undefined => (filter.seapCounterparty === value ? undefined : value);
+
+/** `filter` with every field the bar owns unset (the query stays). */
+export const clearOnrcChips = (filter: OnrcFilter): OnrcFilter =>
+  withOnrcFields(filter, { status: undefined, caen: undefined, county: undefined, registeredFrom: undefined, registeredTo: undefined, seapCounterparty: undefined });
+
 export const toggleStatus = (filter: OnrcFilter, code: number): OnrcFilter => withOnrcFields(filter, { status: toggleItem(filter.status, code) });
 
 export interface ActiveOnrcChip {

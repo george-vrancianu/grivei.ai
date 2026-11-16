@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, Button, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
+  Button, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -89,12 +89,14 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       search={
         <>
           <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
-            <SourcePicker options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={typing} />
-            </Box>
-          </Stack>
+          <SearchBar
+            describedBy={eyebrowId}
+            copy={t.searchBar}
+            value={filter.q ?? ""}
+            onQueryChange={(q) => setFilter({ q: q || undefined })}
+            loading={typing}
+            endSlot={<SourcePicker inline options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />}
+          />
         </>
       }
       filters={

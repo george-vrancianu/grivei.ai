@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Tooltip } from "../../../../../../../atoms/Tooltip/index.ts";
-import { MenuItem } from "../../../../../../../atoms/MenuItem/index.ts";
-import { color } from "../../../../../../../theme/tokens.ts";
+import { Tooltip } from "../../../../../atoms/Tooltip/index.ts";
+import { MenuItem } from "../../../../../atoms/MenuItem/index.ts";
+import { color } from "../../../../../theme/tokens.ts";
 
 export interface MenuOptionProps {
   /** `menuitemradio` for a single choice, `menuitemcheckbox` for a multi-select. */

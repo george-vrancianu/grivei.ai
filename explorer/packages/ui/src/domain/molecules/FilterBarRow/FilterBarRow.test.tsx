@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderInUi } from "../../../../../testing/render.tsx";
+import { renderInUi } from "../../../testing/render.tsx";
 import { FilterBarRow } from "./index.ts";
 
 /** The CSS emotion generated for the element's classes: every rule that mentions one of them, media queries included. */
