@@ -64,6 +64,7 @@ describe("the main screen for the empty filter", () => {
     const before = window.history.length;
     const { client } = fixtureClient();
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByTestId("main-total"); // the tabs show as skeletons before the answer: wait for the real ones
     await userEvent.setup().click(await screen.findByRole("tab", { name: /^Autorități/ }));
     await waitFor(() => expect(window.location.search).toBe("?tab=authorities"));
     expect(window.history.length).toBe(before);
@@ -90,6 +91,7 @@ describe("the main screen for the empty filter", () => {
     openAt("/explore/?tab=records");
     const { client } = fixtureClient();
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByTestId("main-total"); // the tabs show as skeletons before the answer: wait for the real ones
     await userEvent.setup().click(await screen.findByRole("tab", { name: /^Suppliers/ }));
     await waitFor(() => expect(window.location.search).toBe(""));
     expect(screen.getByRole("tab", { name: /^Suppliers/ })).toHaveAttribute("aria-selected", "true");

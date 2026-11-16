@@ -1,9 +1,12 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { keyframes, type Components, type Theme } from "@mui/material/styles";
 import { focusRing, hover, pressed, selected } from "./states.ts";
 import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
+
+/** The skeleton's shimmer: a `line` band sweeping across the `raised` block (the design's 1.6 s linear loop). */
+const shimmer = keyframes({ from: { transform: "translateX(-100%)" }, to: { transform: "translateX(100%)" } });
 
 /** The selected treatment, for every control that is "on": a pressed toggle, a selected tab or toggle segment. */
 const selectedState = "&[aria-pressed='true'], &.Mui-selected, &[aria-current='true']";
@@ -203,6 +206,16 @@ export const components: Components<Theme> = {
     },
   },
   MuiPopover: { styleOverrides: { paper: overlaySurface } },
+  // A placeholder block: the `raised` fill with a `line` band sweeping across it. Both the sweep and MUI's own motion stop under reduced motion.
+  MuiSkeleton: {
+    defaultProps: { animation: "wave" },
+    styleOverrides: {
+      root: { backgroundColor: color.raised },
+      wave: {
+        "&::after": { background: `linear-gradient(90deg, transparent, ${color.line}, transparent)`, animation: `${shimmer} 1.6s linear infinite`, "@media (prefers-reduced-motion: reduce)": { animation: "none" } },
+      },
+    },
+  },
   MuiTypography: {
     defaultProps: { variantMapping: { lead: "p", total: "p", stat: "p", money: "span", label: "span", meta: "span" } },
   },

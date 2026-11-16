@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { CoverageLensQuery } from "@grivei/contract";
-import { Box, CoverageGridCompact, CoverageLensMap, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
+import { Box, CoverageGridCompact, CoverageLensMap, MapSkeleton, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
 import { countyAfterClick } from "../MoneyLensSection/index.ts";
 
@@ -36,7 +36,7 @@ export function CoverageLensSection({ lens, loading, failed, topology, cells, da
   let map;
   if (topology.status === "error") map = <Typography role="alert">{status.unavailable}</Typography>;
   else if (failed) map = <Typography role="alert">{status.failed}</Typography>;
-  else if (topology.status === "loading" || lens === null || loading) map = <Typography aria-busy="true">{status.loading}</Typography>;
+  else if (topology.status === "loading" || lens === null || loading) map = <MapSkeleton label={status.loading} topology={topology.status === "ready" ? topology.topology : undefined} />;
   else
     map = (
       <CoverageLensMap

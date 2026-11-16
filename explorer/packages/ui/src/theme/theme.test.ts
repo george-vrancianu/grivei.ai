@@ -168,6 +168,15 @@ describe("depth", () => {
     expect(root("MuiPopover", "paper")).toMatchObject({ backgroundColor: color.overlay, boxShadow: shadow.overlay, borderRadius: radius.card });
   });
 
+  it("gives every Skeleton the raised fill, a line shimmer and no motion under reduced motion", () => {
+    const sk = components.MuiSkeleton;
+    expect(sk?.defaultProps).toMatchObject({ animation: "wave" });
+    const styles = sk?.styleOverrides as Record<string, Record<string, Record<string, unknown>>>;
+    expect(styles["root"]).toMatchObject({ backgroundColor: color.raised });
+    expect(styles["wave"]?.["&::after"]?.["background"]).toContain(color.line);
+    expect(styles["wave"]?.["&::after"]?.["@media (prefers-reduced-motion: reduce)"]).toEqual({ animation: "none" });
+  });
+
   it("sizes menu items 40 px with the control radius, and sets the menu 8 px below its button", () => {
     const item = (components.MuiMenuItem?.styleOverrides as Record<string, Record<string, unknown>>)["root"];
     expect(item).toMatchObject({ minHeight: size.menuItem, borderRadius: radius.control, color: color.text2 });

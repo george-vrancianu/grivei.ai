@@ -12,6 +12,7 @@ export * from "./LinearProgress/index.ts";
 export * from "./Link/index.ts";
 export * from "./Menu/index.ts";
 export * from "./MenuItem/index.ts";
+export * from "./Skeleton/index.ts";
 export * from "./Stack/index.ts";
 export * from "./Tab/index.ts";
 export * from "./Table/index.ts";

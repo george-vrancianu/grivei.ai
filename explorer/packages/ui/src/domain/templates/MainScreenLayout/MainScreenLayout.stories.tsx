@@ -9,7 +9,10 @@ import { pick } from "../../../workbench/index.ts";
 import { FilterChips } from "../../molecules/FilterChips/index.ts";
 import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { TotalFigure } from "../../molecules/TotalFigure/index.ts";
+import { TotalSkeleton } from "../../molecules/TotalSkeleton/index.ts";
+import { MapSkeleton } from "../../organisms/MapSkeleton/index.ts";
 import { MoneyLensMap, type CountySide, type MapArea } from "../../organisms/MoneyLensMap/index.ts";
+import { ResultsSkeleton } from "../../organisms/ResultsSkeleton/index.ts";
 import { ResultTabs } from "../../organisms/ResultTabs/index.ts";
 import { ZoomedCountyMap } from "../../organisms/ZoomedCountyMap/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
@@ -160,6 +163,34 @@ function Real({ locale, zoomed, refreshing = false }: { locale: Locale; zoomed: 
   const back = zoomed ? <Button size="small" color="inherit">{pick(locale, { en: "Back to Romania", ro: "Înapoi la România" })}</Button> : undefined;
   return <Screen locale={locale} slots={slots} back={back} busy={refreshing ? { summary: true, map: true } : undefined} />;
 }
+
+/** First load, no answer yet: skeletons shaped like the content, and no dimmed answer. `outlines` is whether the map's outlines have loaded (the areas pulse) or not (a map-sized block). */
+function FirstLoad({ locale, outlines }: { locale: Locale; outlines: boolean }) {
+  const label = names(locale);
+  const copy = sampleCopy.total(locale);
+  const resultTabs = sampleCopy.resultTabs(locale);
+  const loading = pick(locale, { en: "Loading…", ro: "Se încarcă…" });
+  const slots = {
+    title: titleOf(locale),
+    search: <Placeholder name={label.search} height={48} />,
+    filters: <FilterChips filter={ACTIVE} onChange={() => undefined} procedureOptions={PROCEDURES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />,
+    summary: <TotalSkeleton labels={copy.figures} heading={<Typography variant="meta" component="h2">{pick(locale, { en: "Total awarded", ro: "Total atribuit" })}</Typography>} />,
+    results: <ResultsSkeleton copy={resultTabs} status={<LoadingStatus label={loading} />} />,
+    maps: { money: <MapSkeleton label={loading} topology={outlines ? countiesTopology : undefined} />, coverage: <Placeholder name={label.coverage} height={420} /> },
+  };
+  return <Screen locale={locale} slots={slots} />;
+}
+
+const firstLoad = (outlines: boolean): Story => ({ render: (_args, { globals }) => <FirstLoad locale={localeOf(globals["locale"])} outlines={outlines} /> });
+
+/** First load, outlines in: the Total, tab counts and rows are blocks (the labels are real), the map's areas pulse in a neutral fill under a "Loading…" chip. */
+export const FirstLoadWide: Story = firstLoad(true);
+/** First load before the outlines arrive: a map-sized block under the same chip. */
+export const FirstLoadOutlinesPending: Story = firstLoad(false);
+/** First load below the md breakpoint (tablet, 834 px). */
+export const FirstLoadNarrow: Story = { ...firstLoad(true), globals: { viewport: { value: "tablet", isRotated: false } } };
+/** First load on a phone: the row's chip and amount wrap under the name. */
+export const FirstLoadPhone: Story = { ...firstLoad(true), globals: { viewport: { value: "mobile2", isRotated: false } } };
 
 const real = (zoomed: boolean, refreshing = false): Story => ({ render: (_args, { globals }) => <Real locale={localeOf(globals["locale"])} zoomed={zoomed} refreshing={refreshing} /> });
 

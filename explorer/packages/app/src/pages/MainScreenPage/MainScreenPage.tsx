@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
+  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -164,22 +164,33 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
         map: coverageShown ? coverage.status === "ready" && coverage.stale : zoomed !== null ? zoom.status === "ready" && zoom.stale : refreshing,
       }}
       summary={
-        search && state.status === "ready" && (
-          <MainTotal
-            total={search.total}
-            copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
-            locale={locale}
-            methodologyHref={methodologyHref(locale, "awardedValue")}
-            partyHref={methodologyHref(locale, "partyAndLeadership")}
-            suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
-          />
+        state.status === "loading" ? (
+          <TotalSkeleton labels={t.total.figures} heading={<Typography variant="meta" component="h2">{t.main.total}</Typography>} />
+        ) : (
+          search && state.status === "ready" && (
+            <MainTotal
+              total={search.total}
+              copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
+              locale={locale}
+              methodologyHref={methodologyHref(locale, "awardedValue")}
+              partyHref={methodologyHref(locale, "partyAndLeadership")}
+              suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
+            />
+          )
         )
       }
       mapBack={zoomed !== null && mapLens === "money" ? <MapBackLink onClick={() => setFilter({ county: undefined, uat: undefined })}>{t.zoomedCounty.back}</MapBackLink> : undefined}
       mapNote={<MainDataThrough sources={lastSources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>
-          {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}
+          {state.status === "loading" && (
+            <ResultsSkeleton
+              copy={t.results}
+              tab={toResultTab(tab)}
+              onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
+              status={<LoadingStatus label={t.status.loading} />}
+            />
+          )}
           {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
           {search && (
             <ResultTabs

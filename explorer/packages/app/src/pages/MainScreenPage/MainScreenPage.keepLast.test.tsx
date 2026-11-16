@@ -63,6 +63,7 @@ describe.each([
 
     act(() => navigate(`${base}?${PSD}`, "replace"));
     expect(readTotal()).toEqual(before); // the previous Total stays
+    expect(document.querySelector(".MuiSkeleton-root")).toBeNull(); // a refetch dims the answer; it never shows skeletons
     expect(totalPanel()).toHaveAttribute("aria-busy", "true");
     expect(totalPanel()).toHaveStyle({ opacity: "0.6" });
     expect(rows()).toHaveAttribute("aria-busy", "true");
