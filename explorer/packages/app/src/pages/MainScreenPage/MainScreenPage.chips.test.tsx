@@ -17,6 +17,8 @@ const opened = async (url: string) => {
   return screen.findByRole("region", { name: /^(Filters|Filtre)$/ });
 };
 const chips = () => screen.getByRole("region", { name: "Filters" });
+// While a menu is open the rest of the page is aria-hidden, the buttons included.
+const menuButton = (group: string) => screen.getByRole("button", { name: new RegExp(`^${group}`), hidden: true });
 
 describe("the filter chips on the main screen", () => {
   it("shows no chip on for the plain URL, and offers the procedures the API listed", async () => {
@@ -25,34 +27,45 @@ describe("the filter chips on the main screen", () => {
     expect(within(chips()).queryAllByRole("button", { pressed: true })).toHaveLength(0);
     // nothing is set, so there is no active strip at all
     expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
-    expect(await within(chips()).findByRole("button", { name: "Licitație deschisă", pressed: false })).toBeVisible();
-    expect(within(chips()).getByRole("button", { name: "Achiziție directă" })).toBeVisible();
+    // the procedures are items of the Procedure menu
+    await userEvent.setup().click(await screen.findByRole("button", { name: /^Procedure/ }));
+    expect(await screen.findByRole("menuitemcheckbox", { name: "Licitație deschisă", checked: false })).toBeVisible();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Achiziție directă", checked: false })).toBeVisible();
   });
 
   it("opens with the chips a URL names switched on, and lists them as active", async () => {
     await opened("/explore/?from=2023-01-01&to=2024-12-31&channel=direct-purchase&valueBucket=up-to-270k&hasSignals=true&procedure=Achizi%C8%9Bie%20direct%C4%83&badges=no-value&badges=suspect-value");
-    expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
-    expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
+    expect(menuButton("Award year")).toHaveTextContent("Award year 2023–2024");
     // Channel and Value are menus: their buttons show the choice, and the menu checks it
     expect(within(chips()).getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Direct purchase");
     expect(within(chips()).getByRole("button", { name: /^Value/ })).toHaveTextContent("Value 135,060–270,120 RON");
-    for (const name of ["Has Signals", "Achiziție directă", "No value", "Suspect value"]) {
-      expect(within(chips()).getByRole("button", { name, pressed: true })).toBeVisible();
-    }
+    expect(within(chips()).getByRole("button", { name: "Has Signals", pressed: true })).toBeVisible();
+    expect(menuButton("Procedure")).toHaveTextContent("Procedure Achiziție directă");
+    expect(menuButton("Badges")).toHaveTextContent("Badges 2 picked");
     const active = within(screen.getByRole("group", { name: "Active filters" }));
     expect(active.getAllByRole("button")).toHaveLength(9); // 8 chips + Clear all
     expect(active.getByRole("button", { name: "Remove From 2023" })).toBeVisible();
-    await userEvent.setup().click(within(chips()).getByRole("button", { name: /^Channel/ }));
+    const user = userEvent.setup();
+    await user.click(within(chips()).getByRole("button", { name: /^Channel/ }));
     expect(screen.getByRole("menuitemradio", { name: "Direct purchase", checked: true })).toBeVisible();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    await user.click(menuButton("Badges"));
+    expect(screen.getByRole("menuitemcheckbox", { name: "No value", checked: true })).toBeVisible();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Suspect value", checked: true })).toBeVisible();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Consortium share", checked: false })).toBeVisible();
   });
 
   it("shows the chips in Romanian at /ro/explore/", async () => {
-    openAt("/ro/explore/?channel=contract&hasSignals=false");
+    openAt("/ro/explore/?channel=contract&hasSignals=false&from=2023-01-01&badges=no-value&badges=suspect-value");
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
     const channel = within(bar).getByRole("button", { name: /^Canal/ });
     expect(channel).toHaveTextContent("Canal Contract");
     expect(within(bar).getByRole("button", { name: /^Valoare ?Oricare$/ })).toHaveTextContent("Valoare Oricare");
+    expect(within(bar).getByRole("button", { name: /^Anul atribuirii/ })).toHaveTextContent("Anul atribuirii din 2023");
+    expect(within(bar).getByRole("button", { name: /^Insigne/ })).toHaveTextContent("Insigne 2 alese");
+    expect(within(bar).getByRole("button", { name: /^Procedură/ })).toHaveTextContent("Procedură Oricare");
     await userEvent.setup().click(channel);
     expect(screen.getByRole("menuitemradio", { name: "Contract", checked: true })).toBeVisible();
     await userEvent.setup().keyboard("{Escape}");
@@ -64,7 +77,6 @@ describe("the filter chips on the main screen", () => {
 
   it.each([
     ["has Signals", { name: "Has Signals" }, "hasSignals", "true"],
-    ["a badge", { name: "Consortium share" }, "badges", "consortium-share"],
   ])("clicking %s writes it to the URL, replacing the history entry", async (_label, button, key, value) => {
     await opened("/explore/");
     const before = window.history.length;
@@ -72,6 +84,24 @@ describe("the filter chips on the main screen", () => {
     await waitFor(() => expect(queryOf().getAll(key)).toEqual([value]));
     expect(window.history.length).toBe(before);
     expect(within(chips()).getByRole("button", { ...button, pressed: true })).toBeVisible();
+  });
+
+  it("picking a badge in the Badges menu writes it to the URL, keeps the menu open, and shows the pick on the button", async () => {
+    await opened("/explore/");
+    const before = window.history.length;
+    const user = userEvent.setup();
+    await user.click(within(chips()).getByRole("button", { name: /^Badges/ }));
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Consortium share" }));
+    await waitFor(() => expect(queryOf().getAll("badges")).toEqual(["consortium-share"]));
+    expect(window.history.length).toBe(before);
+    expect(screen.getByRole("menu")).toBeVisible();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Consortium share", checked: true })).toBeVisible();
+    expect(menuButton("Badges")).toHaveTextContent("Badges Consortium share");
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "No value" }));
+    await waitFor(() => expect(queryOf().getAll("badges")).toEqual(["consortium-share", "no-value"]));
+    expect(menuButton("Badges")).toHaveTextContent("Badges 2 picked");
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Consortium share", checked: true }));
+    await waitFor(() => expect(queryOf().getAll("badges")).toEqual(["no-value"]));
   });
 
   it.each([
@@ -100,9 +130,14 @@ describe("the filter chips on the main screen", () => {
   it("writes years as Jan 1 and Dec 31, and procedures as published", async () => {
     await opened("/explore/?q=contract"); // see above: the hand-written fixture that lists procedures
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByRole("combobox", { name: "From year" }), "2022");
-    await user.selectOptions(screen.getByRole("combobox", { name: "To year" }), "2024");
-    await user.click(await within(chips()).findByRole("button", { name: "Negociere fără publicare prealabilă" }));
+    await user.click(screen.getByRole("button", { name: /^Award year/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "From year 2022" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "To year 2024" }));
+    expect(screen.getByRole("menu")).toBeVisible(); // the year menu stays open while picking
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    await user.click(await screen.findByRole("button", { name: /^Procedure/ }));
+    await user.click(await screen.findByRole("menuitemcheckbox", { name: "Negociere fără publicare prealabilă" }));
     await waitFor(() =>
       expect(filterInUrl()).toEqual({ q: "contract", from: "2022-01-01", to: "2024-12-31", procedure: ["Negociere fără publicare prealabilă"] }),
     );
@@ -114,7 +149,8 @@ describe("the filter chips on the main screen", () => {
     await user.click(within(chips()).getByRole("button", { name: /^Value/ }));
     await user.click(screen.getByRole("menuitemradio", { name: "900,400–9,004,000 RON" }));
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    await user.click(within(chips()).getByRole("button", { name: "No value" }));
+    await user.click(within(chips()).getByRole("button", { name: /^Badges/ }));
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "No value" }));
     await waitFor(() => expect(filterInUrl()).toEqual({ channel: "CONTRACT", county: "RO-BV", q: "pod", valueBucket: "UP_TO_9M", badges: ["NO_VALUE"] }));
   });
 

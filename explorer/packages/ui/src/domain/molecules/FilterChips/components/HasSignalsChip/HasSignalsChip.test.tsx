@@ -9,7 +9,6 @@ const { signals } = sampleCopy.filterChips("en");
 describe("HasSignalsChip", () => {
   it.each([[true, true], [undefined, false], [false, false]] as const)("hasSignals %s shows pressed %s", (hasSignals, pressed) => {
     render(<HasSignalsChip hasSignals={hasSignals} onToggle={() => {}} copy={signals} />);
-    expect(screen.getByRole("group", { name: "Signals" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Has Signals", pressed })).toBeVisible();
   });
 

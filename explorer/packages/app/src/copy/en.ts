@@ -241,7 +241,8 @@ export const en: Copy = {
   filterChips: {
     label: "Filters",
     menuAny: "Any",
-    year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
+    year: { group: "Award year", from: "From year", to: "To year", any: "Any", range: { from: (year) => `from ${year}`, until: (year) => `until ${year}`, between: (from, to) => `${from}–${to}` } },
+    picked: (n) => `${n} picked`,
     channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
     valueBucket: {
       group: "Value",
@@ -257,8 +258,8 @@ export const en: Copy = {
     },
     signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
     procedure: { group: "Procedure", empty: "No procedures to choose from." },
-    party: { group: "Party", select: "List as registered", any: "Any party" },
-    badges: { group: "Record badges", badges: badges },
+    party: { group: "Party" },
+    badges: { menu: "Badges", badges: badges },
     active: {
       group: "Active filters",
       from: (when) => `From ${when}`,

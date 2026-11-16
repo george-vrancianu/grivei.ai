@@ -22,39 +22,45 @@ const opened = async (url: string, options: Parameters<typeof fixtureClient>[0] 
   await screen.findByRole("region", { name: /^(Filters|Filtre)$/ });
   return sent;
 };
-const select = () => screen.findByRole("combobox", { name: "List as registered" });
+// The Party filter is a single-choice menu. While it is open the rest of the page is aria-hidden, its button included.
+const button = (name = /^Party/) => screen.findByRole("button", { name, hidden: true });
+const pick = async (user: ReturnType<typeof userEvent.setup>, list: string, checked = false) => {
+  await user.click(await button());
+  await user.click(await screen.findByRole("menuitemradio", { name: list, checked }));
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+};
 
 describe("the Party filter on the main screen", () => {
   it("offers the lists the API names, as registered, and writes the one picked to the URL, replacing the history entry", async () => {
     await opened(`/explore/?${CHANNEL}`);
     const before = window.history.length;
-    const picker = await select();
-    expect(within(picker).getAllByRole("option").map((o) => o.textContent)).toEqual([
-      "Any party", PNL, PSD, "ALIANȚA USR PLUS",
-    ]);
-    await userEvent.setup().selectOptions(picker, PSD);
+    const user = userEvent.setup();
+    await user.click(await button());
+    expect((await screen.findAllByRole("menuitemradio")).map((o) => o.textContent)).toEqual([PNL, PSD, "ALIANȚA USR PLUS"]);
+    await user.click(screen.getByRole("menuitemradio", { name: PSD }));
     await waitFor(() => expect(filterInUrl()).toEqual({ channel: "DIRECT_PURCHASE", party: PSD }));
     expect(window.location.search).toBe("?channel=direct-purchase&party=PARTIDUL+SOCIAL+DEMOCRAT");
     expect(window.history.length).toBe(before);
-    expect(await select()).toHaveValue(PSD);
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(await button()).toHaveTextContent(`Party ${PSD}`);
   });
 
   it("opens with the list a URL names chosen, and lists it as an active chip", async () => {
     await opened(`/explore/?${CHANNEL}&party=${encodeURIComponent(PSD)}`);
-    expect(await select()).toHaveValue(PSD);
+    expect(await button()).toHaveTextContent(`Party ${PSD}`);
     expect(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: `Remove Party: ${PSD}` })).toBeVisible();
   });
 
-  it("removing the chip, or choosing Any, drops only the party from the URL", async () => {
+  it("removing the chip, or choosing the list again, drops only the party from the URL", async () => {
     await opened(`/explore/?${CHANNEL}`);
     const user = userEvent.setup();
-    await user.selectOptions(await select(), PSD);
+    await pick(user, PSD);
     await waitFor(() => expect(filterInUrl().party).toBe(PSD));
     await user.click(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: `Remove Party: ${PSD}` }));
     await waitFor(() => expect(window.location.search).toBe(`?${CHANNEL}`));
-    await user.selectOptions(await select(), PSD);
+    await pick(user, PSD);
     await waitFor(() => expect(filterInUrl().party).toBe(PSD));
-    await user.selectOptions(await select(), "Any party");
+    await pick(user, PSD, true);
     await waitFor(() => expect(window.location.search).toBe(`?${CHANNEL}`));
   });
 
@@ -91,7 +97,7 @@ describe("the Party filter on the main screen", () => {
     openAt(`/ro/explore/?${CHANNEL}&party=${encodeURIComponent(PSD)}`);
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     const bar = await screen.findByRole("region", { name: "Filtre" });
-    expect(await within(bar).findByRole("combobox", { name: "Lista, așa cum a fost înregistrată" })).toHaveValue(PSD);
+    expect(await within(bar).findByRole("button", { name: /^Partid/ })).toHaveTextContent(`Partid ${PSD}`);
     expect(within(bar).getByRole("button", { name: `Elimină Partid: ${PSD}` })).toBeVisible();
     const coverage = await screen.findByTestId("party-coverage");
     expect(within(coverage).getByRole("heading", { name: `Acoperire pe partide: ${PSD}` })).toBeVisible();
@@ -104,13 +110,13 @@ describe("the Party filter on the main screen", () => {
   it("shows no Party chip when the graph offers no list (no AEP: a recorded answer has none), and the rest of the screen works", async () => {
     await opened("/explore/");
     await waitFor(() => expect(readTotal().records).not.toBe(""));
-    expect(screen.queryByRole("combobox", { name: "List as registered" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Party/ })).toBeNull();
   });
 
   it("keeps offering the lists while the next answer loads, so the chip does not blink out on a keystroke", async () => {
     await opened(`/explore/?${CHANNEL}`);
-    await select();
+    await button();
     await userEvent.setup().type(screen.getByRole("searchbox"), "x");
-    expect(screen.getByRole("combobox", { name: "List as registered" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Party/ })).toBeVisible();
   });
 });

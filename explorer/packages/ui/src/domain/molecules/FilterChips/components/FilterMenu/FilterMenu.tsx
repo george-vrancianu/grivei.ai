@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Box } from "../../../../../atoms/Box/index.ts";
+import { Box, type BoxProps } from "../../../../../atoms/Box/index.ts";
 import { Button } from "../../../../../atoms/Button/index.ts";
 import { Menu } from "../../../../../atoms/Menu/index.ts";
 import { color, radius, shadow } from "../../../../../theme/tokens.ts";
@@ -24,10 +24,15 @@ export interface FilterMenuProps {
    * multi-select: `menuitemcheckbox`, stay open), or any other content, such as a two-column year picker. A function gets `close`.
    */
   children: ReactNode | ((menu: FilterMenuApi) => ReactNode);
+  /**
+   * Styles for the list the children sit in (a CSS grid for two columns, say). Keep the items direct children in reading order:
+   * the arrow keys step through them in DOM order, so a grid that flows by column carries them down one column and into the next.
+   */
+  listSx?: BoxProps["sx"];
 }
 
 /** A filter's button (group name, value, chevron) with its portalled overlay menu 8 px below, left-aligned. The owner holds the filter; this holds only open or closed. */
-export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, children }: FilterMenuProps) {
+export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, children, listSx }: FilterMenuProps) {
   const id = useId();
   const { anchor, setAnchor, open, toggle, close } = useMenuAnchor(defaultOpen);
   const set = value !== undefined;
@@ -66,7 +71,7 @@ export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, chil
         onClose={close}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ list: { "aria-labelledby": id } }}
+        slotProps={{ list: { "aria-labelledby": id, sx: listSx } }}
       >
         {typeof children === "function" ? children({ close }) : children}
       </Menu>

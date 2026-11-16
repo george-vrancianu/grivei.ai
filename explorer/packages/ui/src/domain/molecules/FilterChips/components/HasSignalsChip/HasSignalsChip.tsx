@@ -1,5 +1,4 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { ChipGroup } from "../../../ChipGroup/index.ts";
 import { ToggleChip } from "../../../ToggleChip/index.ts";
 
 export interface HasSignalsChipProps {
@@ -12,8 +11,6 @@ export interface HasSignalsChipProps {
 /** "Has Signals": on (`true`) or unset. */
 export function HasSignalsChip({ hasSignals, onToggle, copy }: HasSignalsChipProps) {
   return (
-    <ChipGroup label={copy.group}>
-      <ToggleChip label={copy.has} pressed={hasSignals === true} onToggle={onToggle} />
-    </ChipGroup>
+    <ToggleChip label={copy.has} pressed={hasSignals === true} onToggle={onToggle} />
   );
 }

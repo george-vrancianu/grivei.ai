@@ -435,7 +435,11 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     ? {
       label: "Filtre",
       menuAny: "Oricare",
-      year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
+      year: {
+        group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare",
+        range: { from: (year) => `din ${year}`, until: (year) => `până în ${year}`, between: (from, to) => `${from}–${to}` },
+      },
+      picked: (n) => (n === 1 ? "1 aleasă" : `${n} alese`),
       channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
       valueBucket: {
         group: "Valoare",
@@ -451,8 +455,8 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
       procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
-      party: { group: "Partid", select: "Lista, așa cum a fost înregistrată", any: "Orice partid" },
-      badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
+      party: { group: "Partid" },
+      badges: { menu: "Insigne", badges: BADGES },
       active: {
         group: "Filtre active",
         from: (when) => `Din ${when}`,
@@ -465,7 +469,11 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     : {
       label: "Filters",
       menuAny: "Any",
-      year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
+      year: {
+        group: "Award year", from: "From year", to: "To year", any: "Any",
+        range: { from: (year) => `from ${year}`, until: (year) => `until ${year}`, between: (from, to) => `${from}–${to}` },
+      },
+      picked: (n) => `${n} picked`,
       channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
       valueBucket: {
         group: "Value",
@@ -481,8 +489,8 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
       },
       signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
       procedure: { group: "Procedure", empty: "No procedures to choose from." },
-      party: { group: "Party", select: "List as registered", any: "Any party" },
-      badges: { group: "Record badges", badges: BADGES },
+      party: { group: "Party" },
+      badges: { menu: "Badges", badges: BADGES },
       active: {
         group: "Active filters",
         from: (when) => `From ${when}`,

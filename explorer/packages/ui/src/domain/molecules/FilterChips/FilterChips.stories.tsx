@@ -49,3 +49,12 @@ export const EveryBadge: Story = {
 };
 /** Dates that are not year edges show as dates; "without Signals" shows as an active chip. */
 export const OddDatesAndWithoutSignals: Story = { render: demo({ from: "2024-03-15", to: "2024-09-30", hasSignals: false }) };
+
+/** Below `md` the bar is one row that scrolls sideways inside its strip (here 390 px wide), Signals first, with a fade on the right edge. */
+export const PhoneStrip: Story = {
+  render: (_args, { globals }) => (
+    <div style={{ width: 390, border: "1px dashed #3A4552" }}>
+      <Demo initial={{ from: "2023-01-01", channel: "CONTRACT" }} locale={localeOf(globals["locale"])} />
+    </div>
+  ),
+};
