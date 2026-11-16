@@ -5,14 +5,16 @@ import type { Locale } from "../../../../../theme/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { Bani, OverviewProcedure } from "../../../../types.ts";
 import { shareOfTotal } from "../../entityOverview.utils.ts";
 import { ShareBar } from "../../../../atoms/ShareBar/index.ts";
-import { listSx } from "../../../../utils/listSx.ts";
+import { listRowSx, listSx } from "../../../../utils/listSx.ts";
 
 export interface ProcedureTypesCopy {
   heading: string;
+  /** The panel's header meta ("as SEAP publishes them"). */
+  meta: string;
   /** "41 Records" */
   records: CountCopy;
   empty: string;
@@ -29,14 +31,13 @@ export interface ProcedureTypesProps {
 /** The procedure types the Records were awarded by (the procedure's name as SEAP publishes it), each with its Total. */
 export function ProcedureTypes({ procedures, total, locale, copy }: ProcedureTypesProps) {
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel heading={copy.heading} level="h2" aside={copy.meta} flush={procedures.length > 0}>
       {procedures.length === 0 ? (
         <Typography color="text.secondary">{copy.empty}</Typography>
       ) : (
         <Stack component="ul" sx={listSx}>
           {procedures.map(({ value, total: amount }) => (
-            <Stack key={value} component="li" spacing={0.75} sx={{ py: 1.25 }}>
+            <Stack key={value} component="li" spacing={0.75} sx={listRowSx}>
               <Box sx={{ display: "flex", rowGap: 0.25, columnGap: 1.75, flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between" }}>
                 <Typography>{value}</Typography>
                 <Typography variant="label" component="span" sx={{ fontVariantNumeric: "tabular-nums" }}>
@@ -51,6 +52,6 @@ export function ProcedureTypes({ procedures, total, locale, copy }: ProcedureTyp
           ))}
         </Stack>
       )}
-    </Stack>
+    </Panel>
   );
 }

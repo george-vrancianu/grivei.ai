@@ -8,7 +8,7 @@ import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityAliases } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 import { listSx } from "../../../../utils/listSx.ts";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 
 export interface AppearsInSeapAsCopy {
   heading: string;
@@ -34,8 +34,7 @@ export interface AppearsInSeapAsProps {
 export function AppearsInSeapAs({ aliases, locale, copy }: AppearsInSeapAsProps) {
   if (aliases.length === 0) return null;
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel heading={copy.heading} level="h2">
       <Typography variant="body2" color="text.secondary">
         {copy.intro}
       </Typography>
@@ -55,6 +54,6 @@ export function AppearsInSeapAs({ aliases, locale, copy }: AppearsInSeapAsProps)
           </Stack>
         ))}
       </Stack>
-    </Stack>
+    </Panel>
   );
 }

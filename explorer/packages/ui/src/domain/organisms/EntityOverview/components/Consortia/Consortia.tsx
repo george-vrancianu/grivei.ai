@@ -8,12 +8,12 @@ import { withNodes } from "../../../../utils/withNodes.tsx";
 import { PartyName, type PartyNameCopy } from "../../../../atoms/PartyName/index.ts";
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityRef, EntityRole, OverviewConsortium } from "../../../../types.ts";
-import { listSx } from "../../../../utils/listSx.ts";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { listRowSx, listSx } from "../../../../utils/listSx.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 
 export interface ConsortiaCopy {
   heading: string;
-  /** The note under the list: each member's share is an equal-share convention, not a published figure. */
+  /** The foot: each member's share is an equal-share convention, not a published figure. */
   convention: string;
   /** "equal share RON 500,000", given the formatted amount. */
   share: (amount: string) => string;
@@ -34,11 +34,10 @@ export interface ConsortiaProps {
 export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProps) {
   if (consortia.length === 0) return null;
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel heading={copy.heading} level="h2" flush foot={copy.convention}>
       <Stack component="ul" sx={listSx}>
         {consortia.map((consortium, index) => (
-          <Box key={index} component="li" sx={{ py: 1.25, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", rowGap: 0.5, columnGap: 1.75 }}>
+          <Box key={index} component="li" sx={{ ...listRowSx, display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", rowGap: 0.5, columnGap: 1.75 }}>
             <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
               {consortium.members.map((member, i) => (
                 <Box key={member.entity?.key ?? `person-${i}`} component="span">
@@ -62,9 +61,6 @@ export function Consortia({ consortia, entityHref, locale, copy }: ConsortiaProp
           </Box>
         ))}
       </Stack>
-      <Typography variant="body2" color="text.secondary">
-        {copy.convention}
-      </Typography>
-    </Stack>
+    </Panel>
   );
 }

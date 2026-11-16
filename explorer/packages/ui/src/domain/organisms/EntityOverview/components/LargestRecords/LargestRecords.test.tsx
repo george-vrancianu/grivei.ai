@@ -16,6 +16,8 @@ const show = (records: typeof recordRows) =>
     />,
   );
 
+const recordsCounted = () => recordRows.filter((r) => r.counted !== null);
+
 describe("LargestRecords", () => {
   it("lists only counted Records, even when the API sends suspect and ceiling Records", () => {
     const uncounted = recordRows.filter((r) => r.counted === null);
@@ -26,6 +28,11 @@ describe("LargestRecords", () => {
     expect(items).toHaveLength(counted.length);
     for (const record of uncounted) expect(screen.queryByRole("link", { name: record.title })).toBeNull();
     for (const record of counted) expect(screen.getByRole("link", { name: record.title })).toHaveAttribute("href", `/explore/record/${record.code}`);
+  });
+
+  it("says in its foot that only counted Records are listed", () => {
+    show(recordsCounted());
+    expect(within(screen.getByRole("region", { name: "Largest Records" })).getByText(/^Counted Records only/)).toBeVisible();
   });
 
   it("shows the empty sentence when no Record is counted", () => {

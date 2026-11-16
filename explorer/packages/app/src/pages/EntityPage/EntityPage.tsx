@@ -1,4 +1,4 @@
-import { EntityHeader, EntityOverview, Box, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, Box, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
@@ -60,11 +60,53 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   // a link to `#signals` (the "n Signals" chip of an entity row) lands on the Overview's Signals section once it has rendered
   useScrollToHash(view === "overview" && state.status === "ready" && state.overview !== null);
 
+  // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
+  const onNavigate = (href: string) => navigate(href, "push");
+  const retryNote = (retry: () => void) => (
+    <StateNote
+      kind="error"
+      action={
+        <Button size="small" onClick={retry}>
+          {t.status.retry}
+        </Button>
+      }
+    >
+      {t.status.failed}
+    </StateNote>
+  );
+  // The header the layout draws: the entity's own (held from before when the page is reloading or failed), or its skeleton on a first load
+  const headerOf = (held: EntityHeaderData | null) => (slots: EntityHeaderSlots) =>
+    held ? (
+      <EntityHeader
+        entity={held}
+        role={role}
+        homeHref={pathFor(locale, { name: "main" })}
+        roleHref={(r) => roleHref(locale, held.key, view, r)}
+        onNavigate={onNavigate}
+        locale={locale}
+        copy={t.entityPage.header}
+        {...slots}
+      />
+    ) : (
+      <EntityHeaderSkeleton role={role} homeHref={pathFor(locale, { name: "main" })} onNavigate={onNavigate} copy={t.entityPage.header} {...slots} />
+    );
+  const layoutProps = {
+    view,
+    tabHrefs: tabHrefs(locale, routeRole, state.entity?.key ?? entityKey, filter, carried),
+    tabCounts,
+    citeUrl: currentUrl(),
+    onNavigate,
+    copy: t.entityPage.layout,
+  };
   if (state.status === "error") {
-    return (
-      <PageShell>
-        <StateNote kind="error">{t.status.failed}</StateNote>
-      </PageShell>
+    // A failed request: the page around it stays when the entity's header is known from before (with its tabs and address), the note and its retry take the body.
+    // A first load that failed has no header to show: the note stands alone.
+    return state.entity ? (
+      <EntityPageLayout header={headerOf(state.entity)} {...layoutProps}>
+        {retryNote(state.retry)}
+      </EntityPageLayout>
+    ) : (
+      <PageShell>{retryNote(state.retry)}</PageShell>
     );
   }
   if (state.status === "ready" && state.entity === null) {
@@ -97,8 +139,6 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
   // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
   const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} />;
-  // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
-  const onNavigate = (href: string) => navigate(href, "push");
   // The Records tab has a Source switch when both Sources have something for the entity; a Source with nothing is not offered and shows nothing.
   const switches = t.sources.recordsSwitch;
   const seapHasRecords = state.records !== null;
@@ -119,27 +159,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
     />
   );
   return (
-    <EntityPageLayout
-      header={
-        entity && (
-          <EntityHeader
-            entity={entity}
-            role={role}
-            homeHref={pathFor(locale, { name: "main" })}
-            roleHref={(r) => roleHref(locale, entity.key, view, r)}
-            onNavigate={onNavigate}
-            locale={locale}
-            copy={t.entityPage.header}
-          />
-        )
-      }
-      view={view}
-      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter, carried)}
-      tabCounts={tabCounts}
-      citeUrl={currentUrl()}
-      onNavigate={onNavigate}
-      copy={t.entityPage.layout}
-    >
+    <EntityPageLayout header={headerOf(entity)} {...layoutProps}>
       {view === "records" ? (
         showOnrcRecords && registrations.status === "ready" ? (
           <Stack spacing={2}>
@@ -171,9 +191,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         )
       ) : view === "overview" ? (
         state.overview && entity ? (
-          // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
-          <Stack spacing={3} aria-busy={loading}>
+          // The last Overview of this entity stays on screen, dimmed, while a new filter, Signals order or page loads (the toggle keeps its focus).
+          <Stack spacing={3}>
             <EntityOverview overview={state.overview} aliases={entity.aliases}
+              busy={loading}
+              status={<LoadingStatus label={t.status.loading} />}
               signalsToolbar={
                 <SignalOrderToggle
                   value={signalOrder ?? "DATE_DESC"}
@@ -187,16 +209,19 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                   signals={state.overview.signals.rows}
                   locale={locale}
                   renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
-                  pagination={{
-                    page: page ?? 1,
-                    pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
-                    // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
-                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
-                    onNavigate: (href) => navigate(href, "replace"),
-                    copy: t.entityPage.signalPages,
-                  }}
                 />
-              } {...overviewTab} />
+              }
+              signalsPaging={{
+                page: page ?? 1,
+                pageSize: SIGNALS_PAGE_SIZE,
+                shown: state.overview.signals.rows.length,
+                // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
+                pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
+                onNavigate: (href) => navigate(href, "replace"),
+                copy: t.entityPage.signalPages,
+              }}
+              graphHref={layoutProps.tabHrefs.relationships}
+              {...overviewTab} />
             {/* the Reference sources' panels come after the SEAP Overview (headline numbers and Signals), so a large entity's page does not open on up to six panels of other sources */}
             {onrcSection}
             {peopleSection}
@@ -206,7 +231,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             {donationsSection}
           </Stack>
         ) : loading ? (
-          <StateNote kind="loading">{t.status.loading}</StateNote>
+          // a first load (or a different entity or role): the Overview's shape with real labels
+          <OverviewSkeleton copy={overviewTab.copy} status={<LoadingStatus label={t.status.loading} />} />
         ) : (
           // ready, but the entity has nothing in this role: its ONRC section (an organisation that exists only in ONRC) still shows
           <Stack spacing={3}>

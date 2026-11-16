@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderInUi } from "../../../../../testing/render.tsx";
 import { sampleCopy } from "../../../../samples/copy.ts";
@@ -16,6 +16,7 @@ describe("Consortia", () => {
     expect(screen.getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/explore/supplier/30000002");
     expect(screen.getAllByText(sentence(/\(equal share RON 15,000,000\)/))).toHaveLength(2);
     expect(screen.getByText(/counting convention/)).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Consortia" })).getByText(/counting convention/)).toBeVisible();
   });
 
   it("never names or links a natural person member", () => {

@@ -14,7 +14,7 @@ import { manyAliasesOverview } from "../../samples/fixtureData.ts";
 import type { EntityHeaderData, EntityPageRole, EntityPageView } from "../../types.ts";
 import { CiteLine } from "../../molecules/CiteLine/index.ts";
 import { EntityTabNav } from "../../templates/EntityPageLayout/components/EntityTabNav/index.ts";
-import { EntityHeader } from "./index.ts";
+import { EntityHeader, EntityHeaderSkeleton } from "./index.ts";
 
 const meta = {
   title: "Domain/EntityHeader",
@@ -116,6 +116,24 @@ export const WithTabsOnly: Story = {
         locale={locale}
         copy={sampleCopy.entityHeader(locale)}
         tabs={<EntityTabNav view="overview" hrefs={tabHrefs(supplierHeader, "SUPPLIER")} copy={sampleCopy.entityPageLayout(locale)} />}
+      />
+    );
+  },
+};
+
+/** The first load: the breadcrumb, the tabs and the address are real; blocks stand where the name and the facts will be. */
+export const Loading: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    const layout = sampleCopy.entityPageLayout(locale);
+    const hrefs = { overview: "/explore/authority/1", records: "/explore/authority/1/records", relationships: "/explore/authority/1/relationships" };
+    return (
+      <EntityHeaderSkeleton
+        role="AUTHORITY"
+        homeHref="/explore/"
+        copy={sampleCopy.entityHeader(locale)}
+        tabs={<EntityTabNav view="overview" hrefs={hrefs} copy={layout} />}
+        address={<CiteLine url="https://grivei.ai/explore/authority/1" copy={layout.cite} />}
       />
     );
   },

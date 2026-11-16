@@ -5,7 +5,7 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { type as typeScale } from "../../../theme/tokens.ts";
-import { PanelFoot } from "../../molecules/Panel/index.ts";
+
 import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 import { AnafStatusBadge, type AnafStatusBadgeCopy } from "./components/AnafStatusBadge/index.ts";
 import { IdentityMarkers, type IdentityMarkersCopy } from "./components/IdentityMarkers/index.ts";
@@ -13,6 +13,7 @@ import { PlacementLine, type PlacementLineCopy } from "./components/PlacementLin
 import { SeapNamesLine, type SeapNamesLineCopy } from "./components/SeapNamesLine/index.ts";
 import { Breadcrumb, type BreadcrumbCopy } from "./components/Breadcrumb/index.ts";
 import { RoleSwitch, type RoleSwitchCopy } from "./components/RoleSwitch/index.ts";
+import { HeaderFoot } from "./components/HeaderFoot/index.ts";
 import { SourceLine, type SourceLineCopy } from "./components/SourceLine/index.ts";
 
 export interface EntityHeaderCopy {
@@ -67,12 +68,7 @@ export function EntityHeader({ entity, role, homeHref, roleHref, onNavigate, tab
         </Box>
         <SourceLine entity={entity} locale={locale} copy={copy.source} />
       </Stack>
-      {(tabs != null || address != null) && (
-        <PanelFoot>
-          {tabs}
-          {address != null && <Box sx={{ minWidth: 0, flexBasis: { xs: "100%", md: "auto" }, ml: { md: "auto" } }}>{address}</Box>}
-        </PanelFoot>
-      )}
+      <HeaderFoot tabs={tabs} address={address} />
     </Card>
   );
 }

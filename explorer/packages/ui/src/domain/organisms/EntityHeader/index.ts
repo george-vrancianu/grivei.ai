@@ -5,3 +5,4 @@ export type { PlacementLineCopy } from "./components/PlacementLine/index.ts";
 export type { SourceLineCopy } from "./components/SourceLine/index.ts";
 export type { RoleSwitchCopy } from "./components/RoleSwitch/index.ts";
 export type { BreadcrumbCopy } from "./components/Breadcrumb/index.ts";
+export { EntityHeaderSkeleton, type EntityHeaderSkeletonProps } from "./components/EntityHeaderSkeleton/index.ts";
