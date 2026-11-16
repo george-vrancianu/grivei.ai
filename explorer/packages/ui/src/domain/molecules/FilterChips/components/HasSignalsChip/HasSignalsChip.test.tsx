@@ -56,7 +56,7 @@ describe("HasSignalsChip", () => {
     expect(off.borderColor.toLowerCase()).toBe(hex(color.signalLine));
     cleanup();
     const on = getComputedStyle(switchFor(true));
-    expect(on.backgroundColor.replace(/\s/g, "")).toBe("rgba(242,179,61,0.14)");
+    expect(on.backgroundColor.replace(/\s/g, "")).toBe(color.accentTint.replace(/\s/g, "").replace(",.", ",0."));
     expect(on.borderColor.toLowerCase()).toBe(hex(color.accent));
     expect(on.boxShadow).not.toContain("inset 0 0 0 1px");
     expect(on.boxShadow).not.toContain("3px");

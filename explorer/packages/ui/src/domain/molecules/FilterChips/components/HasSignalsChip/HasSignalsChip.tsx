@@ -11,6 +11,9 @@ export interface HasSignalsChipProps {
   copy: FilterChipsCopy["signals"];
 }
 
+/** The raised shadow without its inset top highlight, as the drawing's on state has it. */
+const ON_SHADOW = shadow.raised.split(", ").slice(1).join(", ");
+
 /**
  * The Signals switch, first in the filter bar: "Has Signals" with the amber ring and a switch track, on (`true`) or unset.
  * Still a toggle button with `aria-pressed`. Off: raised fill, Signal-line border. On: amber tint and accent border, no halo.
@@ -35,7 +38,7 @@ export function HasSignalsChip({ hasSignals, onToggle, copy }: HasSignalsChipPro
         "&.MuiButton-root[aria-pressed='true'], &.MuiButton-root[aria-pressed='true']:hover": {
           backgroundColor: color.accentTint,
           borderColor: color.accent,
-          boxShadow: shadow.raised,
+          boxShadow: ON_SHADOW,
           color: color.text,
         },
       }}

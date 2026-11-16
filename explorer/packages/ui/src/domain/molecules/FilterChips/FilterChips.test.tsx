@@ -33,7 +33,7 @@ describe("FilterChips: what the reader sees", () => {
     expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
   });
 
-  it("reflects a filter: pressed toggles, years, and one removable chip per value", () => {
+  it("reflects a filter: pressed switch, years, and one removable chip per value", () => {
     setup({ from: "2023-01-01", to: "2024-12-31", channel: "CONTRACT", valueBucket: "UP_TO_900K", hasSignals: true, procedure: ["Licitație deschisă"], badges: ["NO_VALUE"] });
     expect(menuButton("Award year")).toHaveTextContent("Award year 2023–2024");
     expect(menuButton("Channel")).toHaveTextContent("Channel Contract");
@@ -46,7 +46,7 @@ describe("FilterChips: what the reader sees", () => {
     }
   });
 
-  it("shows a given hasSignals=false as an active 'Without Signals' chip, with the toggle off", () => {
+  it("shows a given hasSignals=false as an active 'Without Signals' chip, with the switch off", () => {
     setup({ hasSignals: false });
     expect(screen.getByRole("button", { name: "Has Signals", pressed: false })).toBeVisible();
     expect(active().getByRole("button", { name: "Remove Without Signals" })).toBeVisible();
@@ -75,7 +75,7 @@ describe("FilterChips: what the reader sees", () => {
     expect(screen.getAllByRole("menuitemradio")).toHaveLength(7);
   });
 
-  it("puts the Signals toggle first, ahead of the menus", () => {
+  it("puts the Signals switch first, ahead of the menus", () => {
     setup();
     const [first, second] = within(screen.getByTestId("filter-bar-scroller")).getAllByRole("button");
     expect(first).toHaveTextContent("Has Signals");
@@ -93,7 +93,7 @@ describe("FilterChips: what the reader sees", () => {
 
   it("is reachable by keyboard", async () => {
     const onChange = setup();
-    await userEvent.tab(); // the Signals toggle
+    await userEvent.tab(); // the Signals switch
     await userEvent.tab(); // the Award year menu button
     await userEvent.tab(); // the Channel menu button
     await userEvent.keyboard("{Enter}");
