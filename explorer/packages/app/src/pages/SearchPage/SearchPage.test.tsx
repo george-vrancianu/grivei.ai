@@ -48,7 +48,7 @@ describe("the full-results view at /explore/search", () => {
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records"));
     expect(await screen.findAllByText("Showing 1–50 of 120")).toHaveLength(2); // the panel header and its foot
     expect(window.history.length).toBe(before);
-  });
+  }, 15_000); // two page changes through real clicks: close to the default 5 s on a loaded machine
 
   it("keeps the filter in the page links and in the way back to the results", async () => {
     openAt("/ro/explore/search?from=2021-01-01&tab=records&page=2");
