@@ -15,3 +15,6 @@ export const STRIP_FILL_SOLID = `rgb(${channels(color.bg)
 
 /** `STRIP_FILL_SOLID` at zero opacity, the fade's transparent end. */
 export const STRIP_FILL_CLEAR = STRIP_FILL_SOLID.replace("rgb(", "rgba(").replace(")", ", 0)");
+
+/** The strip's base look: the strip fill and a `line` hairline style (width 0; a strip sets the edge it draws). Panel's header and foot strips spread it. */
+export const STRIP_BASE = { backgroundColor: STRIP_FILL, borderColor: color.line, borderStyle: "solid", borderWidth: 0 } as const;

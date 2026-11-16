@@ -10,7 +10,7 @@ const show = (aliases: typeof manyAliasesOverview.aliases, locale: "en" | "ro" =
 describe("SeapNamesLine", () => {
   it("names three spellings, counts the others, and gives the Records and the dates", () => {
     show(manyAliasesOverview.aliases);
-    const line = screen.getByText(/^Appears in SEAP as/);
+    const line = screen.getByText("Appears in SEAP as").parentElement;
     expect(line).toHaveTextContent("and 5 more");
     expect(line).toHaveTextContent(manyAliasesOverview.aliases[0]!.name);
     expect(line).not.toHaveTextContent(manyAliasesOverview.aliases[3]!.name);
@@ -18,7 +18,7 @@ describe("SeapNamesLine", () => {
 
   it("says it in Romanian", () => {
     show(manyAliasesOverview.aliases, "ro");
-    expect(screen.getByText(/^Apare în SEAP ca/)).toHaveTextContent("și încă 5");
+    expect(screen.getByText("Apare în SEAP ca").parentElement).toHaveTextContent("și încă 5");
   });
 
   it("renders nothing without a spelling", () => {

@@ -1,5 +1,6 @@
-import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { Fact } from "../../../../molecules/Fact/index.ts";
 import type { CountCopy } from "../../../../molecules/TotalFigure/index.ts";
 import type { EntityHeaderData } from "../../../../types.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
@@ -23,19 +24,19 @@ export interface SeapNamesLineProps {
   copy: SeapNamesLineCopy;
 }
 
-/** "Appears in SEAP as" under the name: the main spellings SEAP published, how many Records carry them and from when to when. The Overview lists every spelling. */
+/** "Appears in SEAP as", as a fact of the header's row: the main spellings SEAP published, how many Records carry them and from when to when. The Overview lists every spelling. */
 export function SeapNamesLine({ aliases, locale, copy }: SeapNamesLineProps) {
   const summary = seapNamesSummary(aliases);
   if (!summary) return null;
   return (
-    <Typography variant="body2" color="text.disabled" sx={{ textWrap: "pretty" }}>
-      {copy.label}{" "}
-      <Typography component="span" variant="body2" color="text.secondary">
+    // grows to the room left on the row and drops to a row of its own when under 20rem is left
+    <Box sx={{ flex: "1 1 20rem", minWidth: 0, textWrap: "pretty" }}>
+      <Fact label={copy.label}>
         {summary.names.join(", ")}
-      </Typography>
-      {summary.more > 0 && <> · {copy.more(summary.more, formatCount(summary.more, false, locale))}</>}
-      {" · "}
-      {copy.records(summary.records, formatCount(summary.records, false, locale))} · {copy.range(formatDate(summary.first, locale), formatDate(summary.last, locale))}
-    </Typography>
+        {summary.more > 0 && <> · {copy.more(summary.more, formatCount(summary.more, false, locale))}</>}
+        {" · "}
+        {copy.records(summary.records, formatCount(summary.records, false, locale))} · {copy.range(formatDate(summary.first, locale), formatDate(summary.last, locale))}
+      </Fact>
+    </Box>
   );
 }

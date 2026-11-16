@@ -36,3 +36,4 @@ export * from "./OnrcResultRow/index.ts";
 export * from "./OnrcFilterChips/index.ts";
 export * from "./TotalSkeleton/index.ts";
 export * from "./PanelTable/index.ts";
+export * from "./Fact/index.ts";

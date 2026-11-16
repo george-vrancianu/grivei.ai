@@ -1,8 +1,7 @@
 import { Chip } from "../../../../../atoms/Chip/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Tooltip } from "../../../../../atoms/Tooltip/index.ts";
-import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { MarkerText } from "../../../../atoms/EntityLink/index.ts";
+import { Fact } from "../../../../molecules/Fact/index.ts";
 import type { EntityHeaderData } from "../../../../types.ts";
 
 export interface IdentityMarkersCopy {
@@ -29,23 +28,18 @@ function Marker({ label, explanation }: MarkerText) {
   );
 }
 
-/** How the entity is identified: its CUI, a foreign VAT id, "identified by name only", the curated-identity marker and the "CUI in ONRC only" badge (ANAF does not know the CUI). */
+/**
+ * How the entity is identified, as facts of the header's row: its CUI or foreign VAT id (label over value), then the markers: "identified by name only",
+ * the curated-identity marker and the "CUI in ONRC only" badge (ANAF does not know the CUI), each with its explanation in a tooltip.
+ */
 export function IdentityMarkers({ entity, copy }: IdentityMarkersProps) {
   return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
-      {entity.cui && (
-        <Typography variant="meta" component="span" color="text.secondary">
-          {copy.cui} <strong>{entity.cui}</strong>
-        </Typography>
-      )}
-      {entity.foreignVatId && (
-        <Typography variant="meta" component="span" color="text.secondary">
-          {copy.foreignVatId} <strong>{entity.foreignVatId}</strong>
-        </Typography>
-      )}
+    <>
+      {entity.cui && <Fact label={copy.cui}>{entity.cui}</Fact>}
+      {entity.foreignVatId && <Fact label={copy.foreignVatId}>{entity.foreignVatId}</Fact>}
       {entity.identity === "NAME_ONLY" && <Marker {...copy.nameOnly} />}
       {entity.identityCurated && <Marker {...copy.identityCurated} />}
       {entity.provenance.some((p) => p.source === "ONRC") && <Marker {...copy.onrcOnly} />}
-    </Stack>
+    </>
   );
 }

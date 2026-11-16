@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderInUi } from "../../../testing/render.tsx";
@@ -16,15 +17,17 @@ import type { Locale } from "../../../theme/index.ts";
 import { EntityHeader } from "./index.ts";
 
 const roleHref = (role: EntityPageRole) => `/explore/${role.toLowerCase()}/x`;
-function show(entity: EntityHeaderData, role: EntityPageRole, locale: Locale = "en", onNavigate?: (href: string) => void) {
+function show(entity: EntityHeaderData, role: EntityPageRole, locale: Locale = "en", onNavigate?: (href: string) => void, foot: { tabs?: ReactNode; address?: ReactNode } = {}) {
   return renderInUi(
     <EntityHeader
       entity={entity}
       role={role}
+      homeHref="/explore/"
       roleHref={roleHref}
       onNavigate={onNavigate}
       locale={locale}
       copy={sampleCopy.entityHeader(locale)}
+      {...foot}
     />,
     locale,
   );
@@ -37,7 +40,40 @@ describe("EntityHeader", () => {
     expect(screen.getByText("51000005")).toBeVisible();
     expect(screen.getByText("Sânpetru, Brașov")).toBeVisible();
     expect(screen.getByText("(placed by ANAF)")).toBeVisible();
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Roles of this entity" })).not.toBeInTheDocument();
+  });
+
+  it("shows each fact as a label over its value", () => {
+    show(authorityHeader, "AUTHORITY");
+    for (const [label, value] of [["CUI", "51000005"], ["Location", "Sânpetru, Brașov"]] as const) {
+      const caption = screen.getByText(label);
+      expect(caption.compareDocumentPosition(screen.getByText(value)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(caption.parentElement).toHaveTextContent(value);
+    }
+  });
+
+  it("puts the breadcrumb above the heading: explore links home, the role is plain text", () => {
+    show(authorityHeader, "AUTHORITY");
+    const crumb = screen.getByRole("navigation", { name: "You are here" });
+    expect(crumb).toHaveTextContent("explore / contracting authority");
+    expect(screen.getByRole("link", { name: "explore" })).toHaveAttribute("href", "/explore/");
+    expect(crumb.compareDocumentPosition(screen.getByRole("heading", { level: 1 })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("has no foot strip without tabs or an address, and draws one with either", () => {
+    const { container, rerender } = show(authorityHeader, "AUTHORITY");
+    expect(container.querySelector('[data-panel-part="foot"]')).toBeNull();
+    rerender(<EntityHeader entity={authorityHeader} role="AUTHORITY" homeHref="/explore/" roleHref={roleHref} locale="en" copy={sampleCopy.entityHeader("en")} tabs={<span>the tabs</span>} />);
+    expect(container.querySelector('[data-panel-part="foot"]')).toHaveTextContent("the tabs");
+  });
+
+  it("puts the tabs and then the address in the foot strip, after the facts", () => {
+    const { container } = show(bothRolesHeader, "AUTHORITY", "en", undefined, { tabs: <span>the tabs</span>, address: <span>the address</span> });
+    const foot = container.querySelector<HTMLElement>('[data-panel-part="foot"]')!;
+    expect(foot).toHaveTextContent("the tabsthe address");
+    expect(container.querySelector('[data-panel-part="body"]')!.compareDocumentPosition(foot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(foot).toHaveStyle({ display: "flex" });
+    expect(getComputedStyle(foot).flexWrap).toBe("wrap");
   });
 
   it("says a name-only supplier is identified by name only and shows its foreign VAT id, never a CUI", () => {
@@ -57,10 +93,11 @@ describe("EntityHeader", () => {
 
   it("badges an ANAF status that is not active, and a CUI supplier in good standing gets no badge", () => {
     const { unmount } = show(deregisteredHeader, "SUPPLIER");
-    expect(screen.getByText("ANAF status: RADIERE")).toBeVisible();
+    expect(screen.getByText("ANAF status")).toBeVisible();
+    expect(screen.getByText("RADIERE")).toBeVisible();
     unmount();
     show(supplierHeader, "SUPPLIER");
-    expect(screen.queryByText(/ANAF status/)).not.toBeInTheDocument();
+    expect(screen.queryByText("RADIERE")).not.toBeInTheDocument();
   });
 
   it("marks a curated identity", () => {
@@ -111,8 +148,9 @@ describe("EntityHeader", () => {
 
   it("says which names SEAP publishes the entity under, with the Records and the dates", () => {
     show(bothRolesHeader, "AUTHORITY");
-    const line = screen.getByText(/^Appears in SEAP as/);
-    expect(line).toBeVisible();
+    const label = screen.getByText("Appears in SEAP as");
+    expect(label).toBeVisible();
+    const line = label.parentElement!;
     for (const alias of bothRolesHeader.aliases) expect(line).toHaveTextContent(alias.name);
     expect(line).toHaveTextContent(/Records? · .+ to /);
   });
