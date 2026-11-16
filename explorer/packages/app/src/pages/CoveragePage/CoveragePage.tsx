@@ -1,4 +1,6 @@
-import { CoveragePageLayout, SourcePicker, Stack, Typography, type Locale } from "@grivei/ui";
+import { CoveragePageLayout, Panel, SourcePicker, Typography, type Locale } from "@grivei/ui";
+import { CoveragePage as CoveragePageOperation } from "../../graphql/operations.ts";
+import { useHeldQuery } from "../../graphql/useHeldQuery.ts";
 import { OnrcCoverageSection } from "../../components/OnrcCoverageSection/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -10,7 +12,6 @@ import { coverageSourceHref } from "../../sources/sourceLinks.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow } from "./coveragePage.utils.ts";
-import { useCoveragePage } from "./hooks/useCoveragePage.ts";
 import { useOnrcCoverage } from "./hooks/useOnrcCoverage.ts";
 import type { CoveragePageVariables } from "./coveragePage.types.ts";
 
@@ -30,7 +31,7 @@ export function CoveragePage({ locale }: CoveragePageProps) {
   const t = useCopy();
   const { filter, source = "SEAP" } = useUrlState();
   const onrc = source === "ONRC";
-  const state = useCoveragePage(onrc ? null : WHOLE_GRID);
+  const state = useHeldQuery(CoveragePageOperation, onrc ? null : WHOLE_GRID);
   const onrcState = useOnrcCoverage(onrc);
   const sourceSelector = (
     <SourcePicker options={pickerOptions(t.sources, NO_COUNTS, locale)} selected={source} onSelect={(id) => navigate(coverageSourceHref(locale, asSource(id), filter), "push")} copy={t.sources.coverageSwitch} />
@@ -46,11 +47,7 @@ export function CoveragePage({ locale }: CoveragePageProps) {
           {copy.title}
         </Typography>
         <Typography variant="lead">{copy.intro}</Typography>
-        {sourceSelector}
-        <Stack component="section" aria-label={copy.heading} spacing={1.5}>
-          <Typography variant="h2" component="h2">
-            {copy.heading}
-          </Typography>
+        <Panel heading={copy.heading} level="h2" aside={sourceSelector}>
           <OnrcCoverageSection
             coverage={onrcState.status === "ready" ? onrcState.data : null}
             loading={onrcState.status === "loading"}
@@ -59,13 +56,15 @@ export function CoveragePage({ locale }: CoveragePageProps) {
             copy={{ ...copy.snapshots, states: t.coverage.grid.states }}
             status={{ loading: t.status.loading, failed: t.status.failed }}
           />
-        </Stack>
+        </Panel>
       </PageShell>
     );
   }
   return (
     <CoveragePageLayout
       status={state.status}
+      busy={state.status === "ready" && state.stale}
+      retry={state.status === "error" ? { label: t.status.retry, onRetry: state.retry } : undefined}
       content={
         state.status === "ready"
           ? {

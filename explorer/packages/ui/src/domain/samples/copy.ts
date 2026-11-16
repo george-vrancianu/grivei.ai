@@ -1242,6 +1242,8 @@ export const sampleCopy = {
           heading: "Lacune cunoscute",
           intro: "Fiecare celulă care este lacună cunoscută, posibil incompletă sau nevizibilă în sursă, cu motivul sau regula ei.",
           empty: "Nicio lacună cunoscută în datele afișate.",
+          tableLabel: "Lacunele cunoscute pe trimestre și tipuri de înregistrare",
+          count: (n) => roCount(n, String(n), "celulă", "celule"),
           columns: { quarter: "Trimestru", kind: "Tip de înregistrare", state: "Stare", reason: "Motiv sau regulă", records: "Înregistrări" },
         },
         rules: {
@@ -1327,6 +1329,8 @@ export const sampleCopy = {
           heading: "Known gaps",
           intro: "Every cell that is a known gap, possibly incomplete or not visible in the source, with its reason or its rule.",
           empty: "No known gaps in the data shown.",
+          tableLabel: "Known gaps by quarter and record kind",
+          count: (n) => `${n} ${plural(n, "cell", "cells")}`,
           columns: { quarter: "Quarter", kind: "Record kind", state: "State", reason: "Reason or rule", records: "Records" },
         },
         rules: {

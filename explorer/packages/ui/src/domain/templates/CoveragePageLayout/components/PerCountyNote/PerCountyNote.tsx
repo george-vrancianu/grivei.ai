@@ -1,5 +1,3 @@
-import { useId } from "react";
-import { Card } from "../../../../../atoms/Card/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import { layout } from "../../../../../theme/tokens.ts";
@@ -17,19 +15,15 @@ export interface PerCountyNoteProps {
   copy: CoveragePageLayoutCopy;
 }
 
-/** The "N of M" block: how each county reads on the Coverage lens, why it is never a percentage, and the link to the lens. */
+/** The body of the "N of M" panel: how each county reads on the Coverage lens, why it is never a percentage, and the link to the lens. */
 export function PerCountyNote({ lensHref, onNavigate, source, since, copy }: PerCountyNoteProps) {
-  const id = useId();
   const { perCounty } = copy;
   return (
-    <Card component="section" aria-labelledby={id} sx={{ p: 2.25, display: "flex", flexDirection: "column", gap: 1 }}>
-      <Typography id={id} variant="label" component="h2" color="primary.main" sx={{ fontWeight: 500 }}>
-        {perCounty.heading}
-      </Typography>
+    <>
       <Typography sx={{ maxWidth: layout.titleMaxWidth }}>{perCounty.body(source, since)}</Typography>
       <Link href={lensHref} onClick={followLink(lensHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
         {perCounty.lensLink}
       </Link>
-    </Card>
+    </>
   );
 }
