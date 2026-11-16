@@ -31,18 +31,19 @@ export function ResultTabPanel({ id, tabId, selected, children, shown, count, em
     <div role="tabpanel" id={id} aria-labelledby={tabId} hidden={!selected}>
       {selected && (
         <>
-          <Box sx={{ px: 2.5, py: 1 }}>
-            {shown === 0 ? (
+          {shown === 0 ? (
+            <Box sx={{ px: 2.5, py: 1 }}>
               <StateNote
                 kind="empty"
                 action={emptyLink && <Link href={emptyLink.href} onClick={followLink(emptyLink.href, onNavigate)} sx={{ alignSelf: "flex-start" }}>{emptyLink.text}</Link>}
               >
                 {emptyText}
               </StateNote>
-            ) : (
-              children
-            )}
-          </Box>
+            </Box>
+          ) : (
+            // The lists run flush to the panel (`inset`): the column head sits under the tab header and the row fills reach both edges.
+            <Box sx={{ pb: 1 }}>{children}</Box>
+          )}
           {showAll && count > shown && (
             <Box sx={{ py: 2, borderTop: 1, borderColor: "divider", display: "flex", justifyContent: "center" }}>
               {/* A raised button that is still a link (it has an href); in the body colour, since amber is for the headline Total alone. */}

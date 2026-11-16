@@ -2,5 +2,5 @@
 export const SIGNALS_COLUMN = 136;
 /** The amount column's width in px, from 600 px up (right-aligned). */
 export const AMOUNT_COLUMN = 150;
-/** The row's own side padding (theme spacing units), bled out by the same negative margin so a hover fill reaches past the text. */
-export const ROW_BLEED = 1.5;
+/** The row's and head's side padding (theme spacing units, 20 px) when the list sits flush in a panel (`inset`), so their fills reach the panel's edges while the text stays at 20 px. */
+export const ROW_INSET = 2.5;

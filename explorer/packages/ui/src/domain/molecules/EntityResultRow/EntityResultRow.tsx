@@ -9,7 +9,7 @@ import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import { SIGNALS_ANCHOR } from "../../utils/signalsAnchor.ts";
 import type { EntityResult } from "../../types.ts";
 import { SignalCountChip, type SignalCountChipCopy } from "../SignalCountChip/index.ts";
-import { AMOUNT_COLUMN, ROW_BLEED, SIGNALS_COLUMN } from "./entityResultRow.columns.ts";
+import { AMOUNT_COLUMN, ROW_INSET, SIGNALS_COLUMN } from "../../utils/resultRowColumns.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { placeLabel } from "./entityResultRow.utils.ts";
 
@@ -38,20 +38,22 @@ export interface EntityResultRowProps {
   copy: EntityResultRowCopy;
   /** A plain click on the entity link or the Signals chip goes here instead of loading the page. */
   onNavigate?: ((href: string) => void) | undefined;
+  /** The list runs flush to a panel's edges: the row carries the 20 px side padding itself, so its hover fill spans the panel. */
+  inset?: boolean | undefined;
 }
 
 /**
  * A row of the Authorities or Suppliers tab. Left: the entity's name (linked) over a mono meta line, "n Records · county · CUI n" (the CUI only for an entity identified by one). Right, a fixed pair of columns under the list's column head: Signals (136 px, the "n Signals" chip left-aligned, empty when `signalCount` is 0; `SignalCountChip` links to the entity page's Signals section, `href` + `#signals`) and the matched amount (150 px, right-aligned). The row itself is not a link, so the chip is not nested in one.
  * Below 600 px the head is hidden and the pair wraps under the name, left-aligned, with the "matched" caption under the amount; from 600 px up the caption is visually hidden but stays in the accessible text.
  */
-export function EntityResultRow({ row, href, locale, copy, onNavigate }: EntityResultRowProps) {
+export function EntityResultRow({ row, href, locale, copy, onNavigate, inset = false }: EntityResultRowProps) {
   const { entity, matched, signalCount } = row;
   const count = formatCount(matched.records, false, locale);
   const meta = [copy.records(matched.records, count), placeLabel(entity.placement, copy), ...(entity.identity === "CUI" ? [`${copy.cui} ${entity.key}`] : [])];
   return (
     <Box
       component="li"
-      sx={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 2, py: 1.5, mx: -ROW_BLEED, px: ROW_BLEED, "&:hover": { backgroundColor: color.raised } }}
+      sx={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 2, py: 1.5, px: inset ? ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}
     >
       <Stack spacing={0.25} sx={{ flex: { xs: "1 1 100%", sm: "1 1 240px" }, minWidth: 0 }}>
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -61,7 +63,7 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate }: EntityR
           {meta.join(" · ")}
         </Typography>
       </Stack>
-      <Box sx={{ display: "flex", alignItems: "center", columnGap: { xs: signalCount > 0 ? 2 : 0, sm: 2 }, flex: "none" }}>
+      <Box sx={{ display: "flex", alignItems: "center", columnGap: { xs: signalCount > 0 ? 2 : 0, sm: 2 }, flex: "none", ml: { sm: "auto" } }}>
         <Box sx={{ width: { xs: "auto", sm: SIGNALS_COLUMN }, flex: "none" }}>
           {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} onNavigate={onNavigate} />}
         </Box>
@@ -69,7 +71,7 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate }: EntityR
           <Typography component="span" variant="body1" sx={{ fontWeight: 600 }}>
             <MoneyAmount bani={matched.awarded} locale={locale} />
           </Typography>
-          <Typography component="span" variant="caption" sx={{ ...visuallyHidden, position: { xs: "static", sm: "absolute" }, width: { xs: "auto", sm: "1px" }, height: { xs: "auto", sm: "1px" }, overflow: { xs: "visible", sm: "hidden" }, clip: { xs: "auto", sm: "rect(0 0 0 0)" }, whiteSpace: { xs: "normal", sm: "nowrap" } }}>
+          <Typography component="span" variant="caption" sx={(theme) => ({ [theme.breakpoints.up("sm")]: visuallyHidden })}>
             {copy.matched}
           </Typography>
         </Stack>

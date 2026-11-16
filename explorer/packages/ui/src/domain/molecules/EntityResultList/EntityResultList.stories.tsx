@@ -23,3 +23,15 @@ export const AuthoritiesWithSignals: Story = {
 };
 /** Below 600 px the head is gone and each amount carries its caption. */
 export const Phone: Story = { ...Suppliers, globals: { viewport: { value: "mobile2", isRotated: false } } };
+
+/** Between 600 px and about 1200 px the main screen's results column is narrower than a row (558 px): the pair wraps under the name but stays right-aligned under the head's columns. */
+export const NarrowColumn: Story = {
+  render: (_a, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return (
+      <div style={{ maxWidth: 460 }}>
+        <EntityResultList rows={signalRowSamples.authorities.rows} role="authority" entityHref={(e, role) => `/explore/${role}/${e.key}`} locale={locale} copy={sampleCopy.entityRow(locale)} />
+      </div>
+    );
+  },
+};
