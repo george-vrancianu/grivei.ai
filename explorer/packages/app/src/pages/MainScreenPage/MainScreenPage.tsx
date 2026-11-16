@@ -168,7 +168,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       summary={
         (search || state.status === "error") && (
           <MainTotal
-            total={search && state.status === "ready" ? search.total : null}
+            total={search ? search.total : null}
             copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
             locale={locale}
             methodologyHref={methodologyHref(locale, "awardedValue")}

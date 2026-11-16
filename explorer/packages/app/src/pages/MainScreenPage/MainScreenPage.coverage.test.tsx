@@ -146,7 +146,7 @@ describe.each([
 describe("the Coverage lens' states", () => {
   it("says so when the Coverage answer cannot be loaded, and leaves the results working", async () => {
     open("/explore/?lens=coverage", ["CoverageLens"]);
-    expect((await screen.findAllByRole("alert")).map((a) => a.textContent)).toContain(catalogue.en.status.failed);
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes(catalogue.en.status.failed))).toBe(true);
     expect(await screen.findByTestId("main-total")).toBeVisible();
   });
 

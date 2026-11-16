@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { CoverageLensQuery } from "@grivei/contract";
-import { Box, Button, CoverageGridCompact, CoverageLensMap, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
+import { Box, Button, CoverageGridCompact, CoverageLensMap, StateNote, Typography, type CoverageGridCopy, type CoverageLensMapCopy, type GapCellData, type GridWindow, type Locale } from "@grivei/ui";
 import type { CountyTopologyState } from "../../geo/index.ts";
 import { countyAfterClick } from "../MoneyLensSection/index.ts";
 
@@ -39,10 +39,9 @@ export function CoverageLensSection({ lens, loading, failed, topology, cells, da
   if (topology.status === "error") map = <Typography role="alert">{status.unavailable}</Typography>;
   else if (failed)
     map = (
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-        <Typography role="alert">{status.failed}</Typography>
-        {onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}
-      </Box>
+      <StateNote kind="error" action={onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}>
+        {status.failed}
+      </StateNote>
     );
   else if (topology.status === "loading" || lens === null || loading) map = <Typography aria-busy="true">{status.loading}</Typography>;
   else

@@ -78,14 +78,14 @@ describe.each([
     const alert = await within(mapPanel()).findByRole("alert");
     expect(alert).toHaveTextContent(t.status.failed);
     const button = within(mapPanel()).getByRole("button", retry);
-    expect(alert).not.toContainElement(button);
     expect(within(results()).queryByRole("button", retry)).toBeNull();
     expect(within(results()).queryByRole("alert")).toBeNull();
     expect(await screen.findByTestId("main-total")).toHaveTextContent(/RON/);
     expect(screen.getAllByRole("button", retry)).toHaveLength(1);
 
     await user.click(button);
-    await waitFor(() => expect(within(mapPanel()).queryByRole("alert")).toBeNull(), { timeout: 5000 });
+    expect(await within(mapPanel()).findByRole("button", { name: /^Brașov: / }, { timeout: 5000 })).toBeVisible();
+    expect(within(mapPanel()).queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("button", retry)).toBeNull();
     expect(answered("CoverageLens")).toEqual(failed);
   });
@@ -97,13 +97,13 @@ describe.each([
     const alert = await within(mapPanel()).findByRole("alert");
     expect(alert).toHaveTextContent(t.status.failed);
     const button = within(mapPanel()).getByRole("button", retry);
-    expect(alert).not.toContainElement(button);
     expect(within(results()).queryByRole("button", retry)).toBeNull();
     expect(await screen.findByTestId("main-total")).toHaveTextContent(/RON/);
     await waitFor(() => expect(within(results()).getAllByRole("link").length).toBeGreaterThan(0));
 
     await user.click(button);
-    await waitFor(() => expect(within(mapPanel()).queryByRole("alert")).toBeNull(), { timeout: 5000 });
+    expect(await within(mapPanel()).findByRole("heading", { name: t.zoomedCounty.title("Brașov", false) }, { timeout: 5000 })).toBeVisible();
+    expect(within(mapPanel()).queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("button", retry)).toBeNull();
     expect(answered("ZoomedCounty")).toEqual(failed);
   });

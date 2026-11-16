@@ -1,5 +1,5 @@
 import type { ZoomedCountyQuery } from "@grivei/contract";
-import { Box, Button, Typography, ZoomedCountyMap, type Locale, type ZoomedCountyMapCopy } from "@grivei/ui";
+import { Box, Button, StateNote, Typography, ZoomedCountyMap, type Locale, type ZoomedCountyMapCopy } from "@grivei/ui";
 import type { UatTopologyState } from "../../geo/index.ts";
 import { BUCHAREST } from "./zoomedCountySection.utils.ts";
 
@@ -46,10 +46,9 @@ export function ZoomedCountySection({ county, data, loading, failed, topology, u
   if (topology.status === "error") body = <Typography role="alert">{status.unavailable}</Typography>;
   else if (failed)
     body = (
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-        <Typography role="alert">{status.failed}</Typography>
-        {onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}
-      </Box>
+      <StateNote kind="error" action={onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}>
+        {status.failed}
+      </StateNote>
     );
   else if (topology.status === "loading" || map === null || loading) body = <Typography aria-busy="true">{status.loading}</Typography>;
   else
