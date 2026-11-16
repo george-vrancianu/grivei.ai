@@ -9,7 +9,7 @@ import { listSx } from "../../utils/listSx.ts";
 import { DEFAULT_RESULT_TAB, RESULT_TABS, type ResultTab } from "../ResultTabs/index.ts";
 import { PillSkeleton } from "./components/PillSkeleton/index.ts";
 import { RowSkeleton } from "./components/RowSkeleton/index.ts";
-import { ROW_COUNT, ROW_SHAPES, rowOpacity } from "./resultsSkeleton.utils.ts";
+import { ROW_COUNT, ROW_SHAPES, rowOpacity } from "../../utils/resultsSkeleton.ts";
 
 export interface ResultsSkeletonProps {
   /** The tab list's accessible name and each tab's real name (`ResultTabsCopy.label` and `.tabs`). */

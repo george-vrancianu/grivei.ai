@@ -1,26 +1,15 @@
-import { useEffect, useState } from "react";
-import type { OnrcCoverageQuery } from "@grivei/contract";
-import { useClient } from "../../../graphql/ClientContext.tsx";
+import { useHeldQuery, type QueryState } from "../../../graphql/useHeldQuery.ts";
 import { OnrcCoverage } from "../../../graphql/operations.ts";
+import type { OnrcCoverageQuery } from "@grivei/contract";
 
-export type OnrcCoverageState = { status: "loading" } | { status: "error" } | { status: "ready"; data: OnrcCoverageQuery };
-type Settled = Exclude<OnrcCoverageState, { status: "loading" }>;
+export type OnrcCoverageState = QueryState<OnrcCoverageQuery>;
+
+const WHOLE_SET = {};
 
 /**
  * ONRC's Coverage (one cell per snapshot, the data-through date): the whole of what is held, no window (ONRC has no date chip for it).
- * `asked` false = the lens is not shown and nothing is asked. Same pattern as `useCoveragePage`: a superseded request is cancelled.
+ * `asked` false = the lens is not shown and nothing is asked. A held query: the last answer stays while a request is repeated, and a failure carries `retry`.
  */
 export function useOnrcCoverage(asked: boolean): OnrcCoverageState {
-  const client = useClient();
-  const [settled, setSettled] = useState<Settled | null>(null);
-  useEffect(() => {
-    if (!asked) return;
-    const controller = new AbortController();
-    client
-      .query(OnrcCoverage, {}, { signal: controller.signal })
-      .then((data) => !controller.signal.aborted && setSettled({ status: "ready", data }))
-      .catch(() => !controller.signal.aborted && setSettled({ status: "error" }));
-    return () => controller.abort();
-  }, [client, asked]);
-  return asked && settled ? settled : { status: "loading" };
+  return useHeldQuery(OnrcCoverage, asked ? WHOLE_SET : null);
 }

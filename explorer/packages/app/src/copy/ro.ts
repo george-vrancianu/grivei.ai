@@ -725,6 +725,7 @@ export const ro: Copy = {
         minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta.",
       },
       results: {
+        title: "Înmatriculări",
         heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"),
         showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
         empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.",
@@ -752,7 +753,7 @@ export const ro: Copy = {
           picked: (n) => roCount(n, String(n), "aleasă", "alese"),
         },
         any: "Oricare",
-        seapCounterparty: { group: "În SEAP", yes: "Doar părți în SEAP", no: "Nu în SEAP" },
+        seapCounterparty: { group: "În SEAP", yes: "Parte în SEAP", no: "Nu în SEAP" },
         caen: { label: "CAEN", hint: "4211 sau 42" },
         registered: { group: "Înmatriculată", from: "De la", to: "Până la" },
         active: {
@@ -767,6 +768,7 @@ export const ro: Copy = {
           clearAll: "Șterge toate",
         },
       },
+      mapTitle: "Înmatriculări pe județe",
       countMap: {
         map: { mapLabel: "Harta județelor după înmatriculări", legendTitle: "Înmatriculări", noData: "Fără înmatriculări", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
         unplaced: "Fără județ",
