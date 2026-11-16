@@ -47,6 +47,8 @@ export const EveryBadge: Story = {
     ],
   }),
 };
+/** A filter that says `hasSignals: false`: the Signals switch is off and "Without Signals" is the active chip. */
+export const WithoutSignals: Story = { render: demo({ hasSignals: false }) };
 /** Dates that are not year edges show as dates; "without Signals" shows as an active chip. */
 export const OddDatesAndWithoutSignals: Story = { render: demo({ from: "2024-03-15", to: "2024-09-30", hasSignals: false }) };
 
