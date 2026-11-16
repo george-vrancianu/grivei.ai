@@ -5,7 +5,7 @@
  * ask for exactly these variables, so a case here is also a page a test can open. Same convention as `recordedCases.ts` (#83) and
  * `recordedEntityCases.ts` (#86), in its own file.
  *
- * Seven small existing archives, each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
+ * Seven small existing archives and `frameworkCount` (one authority, three frameworks with 51, 50 and 49 subsequent contracts, #254), each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
  * framework agreement and its subsequent contracts, a consortium with a natural person), `contracts` (contracts and award notices as
  * the Contracte files publish them, with the odd codes), `bulk` (DA and DAN files), `identity` (every identity case, the override
  * file), `crawl` (crawled Records beside the bulk), `signals` (Records inside over-cap and no-publication Signals) and `splitting` (a Record inside a splitting Signal). A code is asked in ONE archive only:
@@ -13,7 +13,7 @@
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";
 
-export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals" | "splitting" | "party";
+export type RecordedRecordArchive = "counting" | "contracts" | "bulk" | "identity" | "crawl" | "signals" | "splitting" | "party" | "frameworkCount";
 
 export interface RecordedRecordCase {
   operation: "RecordPage";
@@ -70,6 +70,11 @@ export const RECORDED_RECORD_CASES: readonly RecordedRecordCase[] = [
   c("party", "empty", "party-handover-window", "DA95000001", "a town hall's Record in the 2024 handover window: no Party, never the nearest leader's"),
   c("party", "empty", "party-school-two-principals", "DA95000004", "a school whose principals are the town hall and a ministry: no Party"),
   c("party", "empty", "party-contradicted-tie", "DA95000005", "a roads directorate whose newest snapshot names Brasov but an older one names Rasnov: a contradicted tie inherits no Party"),
+  // frameworkCount (archive-framework-count, #254)
+  c("frameworkCount", "extreme", "framework-count-over-50", "CAN9830001~1", "a framework agreement with 51 subsequent contracts: the true count is 51, the list stops at the 50 largest by value"),
+  c("frameworkCount", "extreme", "framework-count-50", "CAN9830002~1", "a framework agreement with exactly 50 subsequent contracts: the count is 50 and all 50 are listed"),
+  c("frameworkCount", "typical", "framework-count-49", "CAN9830003~1", "a framework agreement with 49 subsequent contracts: the count is 49 and all 49 are listed"),
+  c("frameworkCount", "typical", "framework-count-over-50-subsequent", "CAN9830001~2", "a subsequent contract of the framework with 51: the same count, the list of 50, the agreement"),
   c("splitting", "typical", "splitting-signal", "DA97000005", "a direct purchase inside a splitting Signal (three purchases, each under the cap, together over it): the Signal's numbers and its three Records"),
   c("signals", "typical", "no-publication-signal", "CAN9400001", "a backfilled award notice negotiated without prior publication: the no-publication Signal, crawl-only badge and provenance"),
 ];
