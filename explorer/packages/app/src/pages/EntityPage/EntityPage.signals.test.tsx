@@ -128,10 +128,10 @@ describe("the Overview's Signals (Romanian, under /ro/)", () => {
 describe("the Records tab's Signal facet and row badges", () => {
   const RECORDS = "/explore/authority/1000017/records?from=2023-01-10&to=2023-01-10&signal=over-cap";
 
-  it("lists the Signal facet by the rule's one name and puts a compact badge on each Record in a Signal, linking to the Signal's Records", async () => {
+  it("shows the Signal chip by the rule's one name and puts a compact badge on each Record in a Signal, linking to the Signal's Records", async () => {
     await opened(RECORDS, /^(Filter by facet|Filtre pe fațete)$/).catch(() => undefined);
-    const panel = await screen.findByRole("complementary", { name: "Filter by facet" });
-    expect(within(panel).getByRole("button", { name: /^Over cap/, pressed: true })).toBeVisible();
+    const panel = await screen.findByRole("region", { name: "Filter by facet" });
+    expect(within(panel).getByRole("button", { name: "Remove Signal: Over cap" })).toBeVisible();
     const badges = await screen.findAllByRole("link", { name: "Over cap, 10 Jan 2023" });
     expect(badges).toHaveLength(2); // one per Record of the Signal
     for (const badge of badges) expect(badge).toHaveAttribute("href", "/explore/authority/1000017/records?from=2023-01-10&to=2023-01-10&signal=over-cap");
@@ -141,7 +141,7 @@ describe("the Records tab's Signal facet and row badges", () => {
     openAt("/explore/authority/1000017/records?order=value-desc");
     const { client } = fixtureClient();
     render(<App client={client} />);
-    await screen.findByRole("complementary", { name: "Filter by facet" });
+    await screen.findByRole("region", { name: "Filter by facet" });
     const rows = (await screen.findAllByRole("row")).slice(1); // the table's head row is not a Record
     const recorded = fixtures.EntityRecords.find((f) => f.name === "authority-with-signals")!.data.entity!.seap.role!.records.records.rows;
     const withSignals = recorded.filter((r) => r.record.signals.length > 0).length;
@@ -156,7 +156,7 @@ describe("the Records tab's Signal facet and row badges", () => {
     const { client } = fixtureClient();
     render(<App client={client} />);
     expect(await screen.findAllByRole("link", { name: "Peste plafon, 10 ian. 2023" })).toHaveLength(2);
-    expect(within(screen.getByRole("complementary", { name: "Filtre pe fațete" })).getByRole("button", { name: /^Peste plafon/, pressed: true })).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Filtre pe fațete" })).getByRole("button", { name: "Elimină Semnal: Peste plafon" })).toBeVisible();
   });
 });
 

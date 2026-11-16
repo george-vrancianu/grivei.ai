@@ -22,7 +22,7 @@ import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { SearchBarCopy } from "../molecules/SearchBar/index.ts";
-import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
+import type { RecordsFilterBarCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageGridCopy } from "../organisms/CoverageGrid/index.ts";
 import type { CoveragePageLayoutCopy } from "../templates/CoveragePageLayout/index.ts";
@@ -522,7 +522,7 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     };
 };
 
-const recordsFacets = (locale: Locale): FacetPanelCopy =>
+const recordsFacets = (locale: Locale): RecordsFilterBarCopy =>
   locale === "ro"
     ? {
         label: "Filtre pe fațete",
@@ -535,6 +535,12 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
         channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         badges: badges.ro,
+        any: "Oricare",
+        picked: (n) => `${n} alese`,
+        active: {
+          group: "Filtre active", remove: (chip) => `Elimină ${chip}`, clearAll: "Șterge filtrele", from: (when) => `Din ${when}`, to: (when) => `Până în ${when}`,
+          between: (from, to) => `${from} – ${to}`, signal: (rule) => `Semnal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `doar înregistrările care se potrivesc cu „${q}”`,
+        },
       }
     : {
         label: "Filter by facet",
@@ -547,11 +553,20 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
         channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         badges: badges.en,
+        any: "Any",
+        picked: (n) => `${n} picked`,
+        active: {
+          group: "Active filters", remove: (chip) => `Remove ${chip}`, clearAll: "Clear filters", from: (when) => `From ${when}`, to: (when) => `Until ${when}`,
+          between: (from, to) => `${from} – ${to}`, signal: (rule) => `Signal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `only Records matching “${q}”`,
+        },
       };
 
 const recordsTab = (locale: Locale): RecordsTabCopy => ({
   heading: locale === "ro" ? "Înregistrări" : "Records",
+  totalHeading: locale === "ro" ? "Total atribuit" : "Total awarded",
   facets: recordsFacets(locale),
+  order: orderSelect(locale),
+  showing: fullResults(locale).showing,
   empty: locale === "ro" ? { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" } : { text: "No Records match these filters.", clear: "Clear filters" },
   total: sampleCopy.total(locale),
   recordRow: recordRow(locale),

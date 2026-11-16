@@ -3,7 +3,7 @@
 // filter), drops the parameter, and the totals follow. Both languages; both result screens.
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { createClient } from "../../graphql/client.ts";
@@ -12,6 +12,9 @@ import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 import { decodeUrlState } from "../../urlState/codec.ts";
+
+// each case loads the main screen, then an entity page with its Records tab: slow when the machine is busy
+vi.setConfig({ testTimeout: 20_000 });
 
 afterEach(() => window.history.replaceState(null, "", "/"));
 
@@ -43,7 +46,13 @@ describe.each([
   const t = catalogue[locale];
   const only = t.entityPage.recordsTab.onlyMatching;
   const recordsTab = () => screen.getAllByRole("link").find((l) => (l.getAttribute("href") ?? "").includes("/records"))!;
-  const total = (n: number) => screen.findByText(t.total.records(n, String(n)));
+  // the Total panel's inset layout: the count is the value of its "Records" figure
+  const total = (n: number) =>
+    waitFor(() => {
+      const found = within(screen.getByRole("region", { name: t.entityPage.recordsTab.totalHeading })).getAllByText(String(n))[0]!;
+      expect(found).toBeVisible();
+      return found;
+    });
 
   it("from the main screen with a query: the row opens the unfiltered page, the Records tab offers the link, following it filters and updates the totals", async () => {
     const { view } = open(`${prefix}/explore/?q=comuna&tab=suppliers`);
@@ -143,10 +152,12 @@ function withGoTo(data: unknown, goTo: unknown): unknown {
   return answer;
 }
 
+const t = catalogue.en;
+
 describe("the Records tab's suspect-value link keeps the carried search", () => {
-  it("the '1 suspect value left out' link carries the search on", async () => {
+  it("the suspect-values link carries the search on", async () => {
     const { view } = open("/explore/authority/1000017/records?search=q%3Dcomuna");
-    const suspect = await screen.findByRole("link", { name: "1 suspect value left out" });
+    const suspect = await screen.findByRole("link", { name: new RegExp(t.total.figures.suspect) });
     expect(decodeUrlState(suspect.getAttribute("href")!.split("?")[1] ?? "")).toMatchObject({ filter: { badges: ["SUSPECT_VALUE"] }, carried: { q: "comuna" } });
     view.unmount();
   });

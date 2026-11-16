@@ -25,8 +25,8 @@ export interface EntityPageRequest {
 export type EntityPageState =
   /** `entity` is the header of the same entity (same key and role) from the tab before, so the page can keep it on screen. Null on a first load. */
   | { status: "loading"; entity: EntityHeaderData | null; records: RecordsTabData | null; overview: EntityOverviewData | null; onrc: OnrcRegistrationData | null; publicEnterprise: PublicEnterpriseData | null; financials: FinancialStatementsData | null; leadership: LeadershipData | null; donations: FirmDonationsData | null; people: OrganisationPeopleData | null; onrcListed: boolean; relationships: null }
-  /** The request failed. `entity` is the header of the same entity from before (null when the first load failed), so the page keeps it and its tabs on screen; `retry` asks again. */
-  | { status: "error"; entity: EntityHeaderData | null; retry: () => void }
+  /** The request failed. `entity` is the header of the same entity from before (null when the first load failed), so the page keeps it and its tabs on screen; `records` is the last Records of that entity (the Records tab keeps its filter bar around its failed panel); `retry` asks again. */
+  | { status: "error"; entity: EntityHeaderData | null; records: RecordsTabData | null; onrcListed: boolean; retry: () => void }
   /**
    * `onrcListed` is whether ONRC lists a registration under the entity's CUI (the Records tab's question for its Source switch; false on the other tabs).
    * `onrc` is the Overview's ONRC section (null on the other tabs, or when ONRC lists no registration under the entity's CUI).
@@ -99,7 +99,7 @@ export function useEntityPage(request: EntityPageRequest): EntityPageState {
   }, [client, key, subject, overviewOpen, attempt]);
 
   const same = last?.subject === subject ? last : null;
-  if (failed?.key === key && failed.attempt === attempt) return { status: "error", entity: same?.entity ?? null, retry };
+  if (failed?.key === key && failed.attempt === attempt) return { status: "error", entity: same?.entity ?? null, records: same?.records ?? null, onrcListed: same?.onrcListed ?? false, retry };
   if (settled?.key === key) return settled.state;
   return { status: "loading", entity: same?.entity ?? null, records: same?.records ?? null, overview: overviewOpen ? (same?.overview ?? null) : null, onrc: overviewOpen ? (same?.onrc ?? null) : null, publicEnterprise: overviewOpen ? (same?.publicEnterprise ?? null) : null, financials: overviewOpen ? (same?.financials ?? null) : null, leadership: overviewOpen ? (same?.leadership ?? null) : null, donations: overviewOpen ? (same?.donations ?? null) : null, people: overviewOpen ? (same?.people ?? null) : null, onrcListed: same?.onrcListed ?? false, relationships: null };
 }

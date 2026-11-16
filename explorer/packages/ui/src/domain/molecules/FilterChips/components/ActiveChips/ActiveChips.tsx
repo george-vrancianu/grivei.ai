@@ -9,7 +9,7 @@ export interface ActiveChipsProps {
   chips: readonly ActiveChip[];
   onRemove: (chip: ActiveChip) => void;
   onClearAll: () => void;
-  copy: FilterChipsCopy["active"];
+  copy: Pick<FilterChipsCopy["active"], "group" | "remove" | "clearAll">;
 }
 
 /** The chips that are on, each with a remove action ("Remove <chip>"), and one action that clears them all. With none on, the strip is absent. */

@@ -597,6 +597,7 @@ export const en: Copy = {
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",
+      totalHeading: "Total awarded",
       table: { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
       facets: {
         label: "Filter by facet",
@@ -608,6 +609,7 @@ export const en: Copy = {
         counterpartyKey: (key) => `Counterparty ${key}`,
         signals: ruleLabels(signalCard.rules),
       },
+      chips: { between: (from, to) => `${from} – ${to}`, signal: (rule) => `Signal: ${rule}`, cpv: (code) => `CPV: ${code}` },
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
       onlyMatching: { query: (q) => `only Records matching “${q}”`, filters: "only Records matching the search's filters" },
     },

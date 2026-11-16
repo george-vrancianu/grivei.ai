@@ -1,12 +1,25 @@
 import type { Channel, RecordBadge, RecordFilter, SignalRuleSlug } from "@grivei/contract";
 import type { BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
+import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordFacetData, EntityRole } from "../../../../types.ts";
-import type { FacetOptionData } from "../FacetGroup/index.ts";
-import { toggleBadge, toggleChannel, toggleProcedure } from "../../../../molecules/FilterChips/index.ts";
+import { endsYear, startsYear, toggleBadge, toggleChannel, toggleProcedure, withFields, yearOf, type ActiveChip } from "../../../../molecules/FilterChips/index.ts";
+import { formatDate } from "../../../../utils/formatDate.ts";
 import { selectedYear, toggleCounterparty, toggleSignal, toggleYear, counterpartyField } from "../../recordsTab.utils.ts";
 
-export interface FacetPanelCopy {
-  /** The panel's accessible name. */
+export interface FacetOptionData {
+  /** Unique in its group: the facet's value (a year, a channel, a procedure, an entity key ...). */
+  id: string;
+  label: string;
+  /** The facet's Record count; absent for an active value the facets did not list. */
+  count?: { records: number; estimated: boolean };
+  pressed: boolean;
+  /** A tooltip (a badge's caveat). */
+  description?: string;
+  onToggle: () => void;
+}
+
+export interface RecordsFilterBarCopy {
+  /** The bar's accessible name. */
   label: string;
   groups: { signal: string; channel: string; procedure: string; year: string; counterpartyOfAuthority: string; counterpartyOfSupplier: string; badge: string };
   /** "Direct purchase (12)": a value and its count, the count already in the locale's number format. */
@@ -17,6 +30,27 @@ export interface FacetPanelCopy {
   channels: Record<Channel, string>;
   /** The badge catalogue the Record rows use: each chip's label, and its explanation as the tooltip. */
   badges: BadgeCopy;
+  /** A menu's button while nothing is chosen: "Any". */
+  any: string;
+  /** A multi-choice menu's button once more than one value is chosen: "3 picked". */
+  picked: (n: number) => string;
+  /** The active row: one chip per parameter that is set. */
+  active: {
+    group: string;
+    remove: (chip: string) => string;
+    clearAll: string;
+    /** "From 2023" / "From 15 Mar 2024": `when` is a year, or a date when the filter's date is not a year edge. */
+    from: (when: string) => string;
+    to: (when: string) => string;
+    /** "2023 – 15 Mar 2024": both ends of a date range as one chip. */
+    between: (from: string, to: string) => string;
+    /** "Signal: No publication". */
+    signal: (rule: string) => string;
+    /** "CPV: 45210000". */
+    cpv: (code: string) => string;
+    /** The search text the filter holds: "only Records matching “x”". */
+    query: (text: string) => string;
+  };
 }
 
 export interface FacetGroupData {
@@ -41,7 +75,7 @@ export function facetGroups(
   facets: RecordFacetData,
   filter: RecordFilter,
   role: EntityRole,
-  copy: FacetPanelCopy,
+  copy: RecordsFilterBarCopy,
   onChange: (next: RecordFilter) => void,
 ): FacetGroupData[] {
   const field = counterpartyField(role);
@@ -123,4 +157,57 @@ export function facetGroups(
     },
   ];
   return groups.filter((group) => group.options.length > 0);
+}
+
+/** The `RecordFilter` fields the active row shows, one chip each (the date range, `from` and `to`, is one chip): the filter's Records parameters. */
+const CHIP_PARAMS = ["signal", "supplier", "authority", "from", "to", "cpv", "channel", "procedure", "badges", "q"] as const satisfies readonly (keyof RecordFilter)[];
+
+const isSet = (value: unknown) => (Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "");
+
+/** True when the filter holds a parameter the active row shows: there is something to clear. */
+export const hasRecordFilters = (filter: RecordFilter): boolean => CHIP_PARAMS.some((field) => isSet(filter[field]));
+
+/** The filter with every parameter the active row shows removed (the row's Clear filters); the rest of the filter (map, value bucket, ...) stays. */
+export function clearRecordFilters(filter: RecordFilter): RecordFilter {
+  const patch: Record<string, undefined> = {};
+  for (const field of CHIP_PARAMS) patch[field] = undefined;
+  return withFields(filter, patch as RecordFilter);
+}
+
+/**
+ * One chip per parameter that is set, each removing only its own parameter (the date range is one chip and removes both ends): the Signal, the supplier or authority
+ * (by name when the facets list it, else by key), the date range, the CPV code, the channel, each procedure, each badge and the search text.
+ */
+export function recordChips(filter: RecordFilter, role: EntityRole, facets: RecordFacetData, copy: RecordsFilterBarCopy, locale: Locale): ActiveChip[] {
+  const chips: ActiveChip[] = [];
+  const text = copy.active;
+  if (filter.signal) chips.push({ id: "signal", label: text.signal(copy.signals[filter.signal] ?? filter.signal), remove: (f) => withFields(f, { signal: undefined }) });
+  for (const field of ["supplier", "authority"] as const) {
+    const value = filter[field];
+    if (value === undefined || value === null) continue;
+    const key = String(value);
+    const known = field === counterpartyField(role) ? facets.counterparty.find((f) => f.entity.key === key)?.entity.displayName : undefined;
+    chips.push({ id: field, label: known ?? copy.counterpartyKey(key), remove: (f) => withFields(f, { [field]: undefined }) });
+  }
+  const when = (date: string, aligned: boolean) => (aligned ? String(yearOf(date)) : yearOf(date) === undefined ? date : formatDate(date, locale));
+  const { from, to } = filter;
+  if (from || to) {
+    const label =
+      from && to
+        ? selectedYear(filter) !== undefined
+          ? String(selectedYear(filter))
+          : text.between(when(from, startsYear(from)), when(to, endsYear(to)))
+        : from
+          ? text.from(when(from, startsYear(from)))
+          : text.to(when(to!, endsYear(to!)));
+    chips.push({ id: "dates", label, remove: (f) => withFields(f, { from: undefined, to: undefined }) });
+  }
+  if (filter.cpv) chips.push({ id: "cpv", label: text.cpv(filter.cpv), remove: (f) => withFields(f, { cpv: undefined }) });
+  if (filter.channel) chips.push({ id: "channel", label: copy.channels[filter.channel] ?? filter.channel, remove: (f) => withFields(f, { channel: undefined }) });
+  for (const name of filter.procedure ?? [])
+    chips.push({ id: `procedure:${name}`, label: name, remove: (f) => withFields(f, { procedure: (f.procedure ?? []).filter((p) => p !== name) }) });
+  for (const badge of filter.badges ?? [])
+    chips.push({ id: `badge:${badge}`, label: copy.badges[badge].label, remove: (f) => withFields(f, { badges: (f.badges ?? []).filter((b) => b !== badge) }) });
+  if (filter.q) chips.push({ id: "q", label: text.query(filter.q), remove: (f) => withFields(f, { q: undefined }) });
+  return chips;
 }
