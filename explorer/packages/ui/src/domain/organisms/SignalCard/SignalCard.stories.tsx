@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, ruleSlug, splittingSignal } from "../../samples/signals.ts";
+import { authorityOnlySignal, frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, ruleSlug, splittingSignal } from "../../samples/signals.ts";
 import type { SignalData } from "../../types.ts";
 import { SignalCard } from "./index.ts";
 
@@ -35,3 +35,7 @@ export const FrameworkOverrun: Story = { render: card(frameworkOverrunSignal) };
 export const NoPublication: Story = { render: card(noPublicationSignal, "/source/seap/DA12399999") };
 /** Eleven suppliers and a long procedure name: five are named, the rest are counted. */
 export const ManySuppliersLongNames: Story = { render: card(manySuppliersSignal) };
+/** A Signal that names no supplier (natural persons are left out): the definition list shows the authority only. */
+export const AuthorityOnly: Story = { render: card(authorityOnlySignal, "/source/seap/DA12388888") };
+/** Thirteen Records and no single SEAP page: the foot says "Check each Record in SEAP" instead of a link. */
+export const NoSeapLink: Story = { render: card(frameworkOverrunSignal, null) };

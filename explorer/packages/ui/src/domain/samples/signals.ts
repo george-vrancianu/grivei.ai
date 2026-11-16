@@ -98,6 +98,9 @@ export const manySuppliersSignal: SignalData = {
   reproduce: { authority: "4000002", supplier: null, signal: "NO_PUBLICATION", cpv: null, from: "2023-12-14", to: "2023-12-14" },
 };
 
+/** A Signal whose suppliers are all natural persons, which the API leaves out: the card names the authority only. */
+export const authorityOnlySignal: SignalData = { ...overCapSignal, suppliers: [] };
+
 /** The URL slug of a rule, as the app writes it (`over-cap`, `framework-overrun`): for the stories' links. */
 export const ruleSlug = (rule: SignalRule): string => rule.toLowerCase().replaceAll("_", "-");
 

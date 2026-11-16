@@ -29,7 +29,8 @@ function signalsClient() {
   return { client, sent };
 }
 
-const cards = () => screen.getAllByRole("article");
+const signalsRegion = () => screen.getByRole("region", { name: /^(Signals|Semnale) \(/ });
+const cards = () => within(signalsRegion()).getAllByRole("region");
 const headings = () => cards().map((c) => within(c).getByRole("heading").textContent);
 
 const words = {
