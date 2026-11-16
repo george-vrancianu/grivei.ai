@@ -16,3 +16,4 @@ const sample =
 export const FirstPage: Story = { render: sample(1, 5) };
 export const MiddlePage: Story = { render: sample(3, 5) };
 export const ManyPages: Story = { render: sample(12, 40) };
+export const LastPage: Story = { render: sample(5, 5) };

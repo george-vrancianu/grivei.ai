@@ -41,7 +41,8 @@ describe("the full-results view at /explore/search", () => {
     await user.click(within(await waitForPages()).getByRole("link", { name: "Page 3" }));
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records&page=3"));
     expect(await screen.findByText("Showing 101–120 of 120")).toBeVisible(); // the last page is partial
-    expect(within(pages()).queryByRole("link", { name: "Next" })).not.toBeInTheDocument();
+    expect(within(pages()).getByRole("link", { name: "Page 3" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages()).getByRole("link", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
 
     await user.click(within(pages()).getByRole("link", { name: "Page 1" }));
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records"));
@@ -57,6 +58,17 @@ describe("the full-results view at /explore/search", () => {
     expect(await screen.findByText("Se afișează 51–100 din 120")).toBeVisible();
     expect(within(pages()).getByRole("link", { name: "Pagina 3" })).toHaveAttribute("href", "/ro/explore/search?from=2021-01-01&tab=records&page=3");
     expect(screen.getByRole("link", { name: "Înapoi la rezultate" })).toHaveAttribute("href", "/ro/explore/?from=2021-01-01&tab=records");
+  });
+
+  it("marks the current page and the disabled step in Romanian too", async () => {
+    openAt("/ro/explore/search?from=2021-01-01&tab=records&page=3");
+    const { client } = fixtureClient();
+    render(<App client={client} />);
+
+    await screen.findByText("Se afișează 101–120 din 120");
+    expect(within(pages()).getByRole("link", { name: "Pagina 3" })).toHaveAttribute("aria-current", "page");
+    expect(within(pages()).getByRole("link", { name: "Următoarea" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(pages()).getByRole("link", { name: "Anterioara" })).not.toHaveAttribute("aria-disabled");
   });
 
   it("Back to results adds a history entry, so the browser's back button returns to this page", async () => {
