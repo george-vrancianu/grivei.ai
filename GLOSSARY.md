@@ -108,6 +108,14 @@ _Avoid_: variant, AKA, old name
 A reviewed, reasoned correction to which supplier a record is attached, which CUI an organisation name is attached to, or which records are one person (a split, or a merge on a cited document); the page shows it as curated. It never splits a joint venture into its members.
 _Avoid_: manual merge, fix, mapping
 
+**Counterparty**:
+For an entity in one role, an entity on the other side of at least one of its Records: a Supplier for a Contracting authority, and a Contracting authority for a Supplier.
+_Avoid_: partner, client
+
+**SEAP counterparty**:
+An ONRC registration whose CUI belongs to a Supplier or Contracting authority with at least one Record in SEAP.
+_Avoid_: SEAP match, in SEAP (as a noun)
+
 **Record**:
 One Source document entry in the graph: for SEAP a direct purchase, a contract with its lots and winners, or an award notice; for ONRC a registration. Each has its own page and source link. A contract's awarded value is counted once, however many lots or winners it has. A search matches records; what it shows are results.
 _Avoid_: transaction, entry, hit

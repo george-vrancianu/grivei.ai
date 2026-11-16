@@ -1,0 +1,274 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T16:20:00Z"
+  },
+  "title": "Grivei Explorer — depth, filter bar and loaders",
+  "launch": {
+    "view": "canvas",
+    "page": "pages"
+  },
+  "pages": [
+    {
+      "id": "main",
+      "name": "Main screen"
+    },
+    {
+      "id": "pages",
+      "name": "Other pages"
+    }
+  ],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1560,
+      "title": "Main screen · loaded (Signals on, Brașov)",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "MenuOpen.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1560,
+      "title": "Filter bar · Value menu open",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Loading.dc.html": {
+      "x": 0,
+      "y": 1680,
+      "w": 1440,
+      "h": 1560,
+      "title": "First load · skeletons",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Refreshing.dc.html": {
+      "x": 1520,
+      "y": 1680,
+      "w": 1440,
+      "h": 1560,
+      "title": "Refetch · previous results dimmed",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Mobile.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 390,
+      "h": 3400,
+      "title": "Main screen · 390 px",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Search.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1297,
+      "title": "Search · full results (Records)",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "Onrc.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1245,
+      "title": "ONRC screen · filter bar, count lens, registrations",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "Record.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 1766,
+      "title": "Record · framework ceiling, consortium, a Signal",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "EntityOverview.dc.html": {
+      "x": 0,
+      "y": 1906,
+      "w": 1440,
+      "h": 2528,
+      "title": "Entity · Overview (contracting authority)",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "EntitySupplier.dc.html": {
+      "x": 1520,
+      "y": 1906,
+      "w": 1440,
+      "h": 2181,
+      "title": "Entity · Overview (supplier: ONRC, people, MF, donations)",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "EntityRecords.dc.html": {
+      "x": 3040,
+      "y": 1906,
+      "w": 1440,
+      "h": 1577,
+      "title": "Entity · Records (a Signal's reproducing filter)",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "EntityRelationships.dc.html": {
+      "x": 0,
+      "y": 4574,
+      "w": 1440,
+      "h": 1616,
+      "title": "Entity · Relationships (graph, picked counterparty, month bars)",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "EntityFlow.dc.html": {
+      "x": 1520,
+      "y": 4574,
+      "w": 1440,
+      "h": 1210,
+      "title": "Entity · Relationships, Money flow",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "Coverage.dc.html": {
+      "x": 3040,
+      "y": 4574,
+      "w": 1440,
+      "h": 1388,
+      "title": "Coverage · grid, gaps with reasons, data through",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "Methodology.dc.html": {
+      "x": 0,
+      "y": 6330,
+      "w": 1440,
+      "h": 1844,
+      "title": "About the numbers · contents rail, sections, a Signal rule",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "Person.dc.html": {
+      "x": 1520,
+      "y": 6330,
+      "w": 1440,
+      "h": 895,
+      "title": "Person · private view",
+      "expand": "fill",
+      "page": "pages"
+    },
+    "NotFound.dc.html": {
+      "x": 3040,
+      "y": 6330,
+      "w": 1440,
+      "h": 512,
+      "title": "Not found",
+      "expand": "fill",
+      "page": "pages"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "MenuOpen.dc.html",
+    "Loading.dc.html",
+    "Refreshing.dc.html",
+    "Mobile.dc.html",
+    "Search.dc.html",
+    "Onrc.dc.html",
+    "Record.dc.html",
+    "EntityOverview.dc.html",
+    "EntitySupplier.dc.html",
+    "EntityRecords.dc.html",
+    "EntityRelationships.dc.html",
+    "EntityFlow.dc.html",
+    "Coverage.dc.html",
+    "Methodology.dc.html",
+    "Person.dc.html",
+    "NotFound.dc.html"
+  ],
+  "notes": {
+    "title": {
+      "x": 0,
+      "y": -300,
+      "text": "Explorer · depth, filter bar, loaders",
+      "kind": "title1",
+      "maxW": 2960
+    },
+    "depth": {
+      "x": 3520,
+      "y": 0,
+      "w": 440,
+      "fill": "orange",
+      "text": "DEPTH\nNo new colours. Three surfaces from values already in tokens.json: panel #141920, raised #1A212A (controls, row hover), overlay #1E2630 (menus, status chips). Panels get a 1 px top highlight and a soft drop shadow; inputs, the map and the secondary figures sit in inset wells of the page colour. The header is sticky, translucent and blurred. Search, filters, Total, map and results are each one panel, so the page reads as layers instead of text on a grid."
+    },
+    "filters": {
+      "x": 3520,
+      "y": 640,
+      "w": 440,
+      "fill": "orange",
+      "text": "FILTER BAR\nOne row inside the search panel. The Signals switch comes first, larger and amber when on. Award year, channel, value, procedure and badges are menus; a set menu shows its value and an amber outline. Active filters sit in one row below with Clear all, and now include the county picked on the map. The filter block goes from about 365 px tall to about 110 px, so the Total is visible without scrolling. In Play: the switch, menus, chips and tabs work."
+    },
+    "loaders": {
+      "x": 3520,
+      "y": 1280,
+      "w": 440,
+      "fill": "orange",
+      "text": "LOADERS\nAny request in flight: a 2 px amber bar under the header and a status line in the results header. First load: skeletons for the Total, the two figures, tab counts and rows; the map shows its outlines greyed and pulsing with a status chip. Refetch (filter, tab): the previous results stay, dimmed to 60% opacity, until the new ones arrive. Motion stops under prefers-reduced-motion."
+    },
+    "data": {
+      "x": 3520,
+      "y": 1920,
+      "w": 440,
+      "fill": "gray",
+      "text": "REAL VS PLACEHOLDER\nReal, read from localhost:8080 on 14 Nov 2026 (hasSignals, county RO-BV): the Total, counts, rows on all three tabs, data-through dates, all Romanian copy. Placeholder: the map shading (the Q3 2026 Brașov asset from the first handoff), the two procedure options (the ones seen in the Records rows). Figures do not change when a filter is picked in Play. New copy to add to the catalogue: 'Județ: Brașov' chip, 'Insigne' as the menu label, 'n alese', the 'RON potrivit' column head."
+    },
+    "p2title": {
+      "x": 0,
+      "y": -300,
+      "text": "Explorer · the other pages, in the new surfaces",
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "pages"
+    },
+    "p2what": {
+      "x": 4640,
+      "y": 0,
+      "w": 460,
+      "fill": "orange",
+      "page": "pages",
+      "text": "WHAT CARRIES OVER\nSame four surfaces and five shadows as the main screen; no new colour. Every titled block is a panel with a header strip (amber mono label, a meta or a control on the right) and, where it helps, a foot strip for counts, notes and paging. Figures that support a headline sit in inset wells. Tables scroll sideways inside their own panel. Every page reflows to one column; all twelve were rendered at 1440 and 390 px."
+    },
+    "p2pages": {
+      "x": 4640,
+      "y": 620,
+      "w": 460,
+      "fill": "orange",
+      "page": "pages",
+      "text": "PAGE BY PAGE\nEntity: name, roles, identity facts and tabs are one header panel, with the page address in the tab strip. Overview: four headline panels, Signals as cards with their own header and link strip, share bars in Counterparties and Procedure types. Records: facet menus in the same filter bar as the main screen. Relationships: the Show toggle is page-level, so Graph and Money flow are two boards. Record: Value panel with the counted value as an inset figure; facts, badges, Signals and provenance in the side column. Search and ONRC reuse the main screen's search panel; ONRC's chips become the filter bar (its In SEAP toggle is neutral, amber stays for Signals). Coverage: the grid in a well, then the app's Known gaps table and Data through as panels. About the numbers: contents rail and one reading column; each Signal rule is a card with its window and base rate as figures."
+    },
+    "p2data": {
+      "x": 4640,
+      "y": 1500,
+      "w": 460,
+      "fill": "gray",
+      "page": "pages",
+      "text": "REAL VS SAMPLE\nReal, read from localhost:8080 on 16 Nov 2026: the Record page (CAN1064396~561/26128), the Search rows for 'deszapezire', About the numbers text, and the app's own English copy wherever a string exists; the Coverage grid states and data-through dates (read 14 Nov). Municipiul Brașov's figures come from the first handoff's prototype data. Sample: the supplier ALFA NOU SRL, the ONRC rows and the person page are the UI library's fixture data, not real firms or people. [Brackets] mark values that were not available: leaders and lists, parties, gap reasons, some counts. Map shading and the month bars are placeholders. The entity, Coverage and main screens could not be read live: their API query returned an internal error."
+    },
+    "p2new": {
+      "x": 4640,
+      "y": 2300,
+      "w": 460,
+      "fill": "gray",
+      "page": "pages",
+      "text": "CHANGED BEHAVIOUR, CONFIRMED BY THE OWNER ON 16 NOV\n1. Page address moves into the entity tab strip. 2. Record: 'Show all 11' under subsequent contracts when more than five. 3. Not found: one sentence of new copy and a Search button. 4. ONRC: Status and Registered become menus, CAEN an inline field. 5. Relationships: counts as inset figures in the picked-counterparty panel. Coverage keeps the app's own sections (grid, Known gaps, Data through and the ones not drawn); only their surfaces change. Loading, refetch and error states follow the main screen's rules and are not drawn."
+    }
+  },
+  "designSystems": []
+}
