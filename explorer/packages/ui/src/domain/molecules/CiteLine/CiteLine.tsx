@@ -1,5 +1,6 @@
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
+import { STRIP_BASE } from "../../../theme/stripFill.ts";
 import { color, radius } from "../../../theme/tokens.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { CopyLinkButton, type CopyLinkButtonCopy } from "../CopyLinkButton/index.ts";
@@ -17,10 +18,12 @@ export interface CiteLineProps {
   copy: CiteLineCopy;
   /** A bordered bar with the label visible (the full-results view); unframed, the label is for screen readers only (beside the Record's title). */
   framed?: boolean;
+  /** A strip across a panel's flush body (the full-results view): the label visible, the theme's strip fill and a hairline under it, no box of its own. Wins over `framed`. */
+  strip?: boolean;
 }
 
 /** The citable address of a view, with a button that copies it. */
-export function CiteLine({ url, copy, framed = false }: CiteLineProps) {
+export function CiteLine({ url, copy, framed = false, strip = false }: CiteLineProps) {
   return (
     <Box
       sx={{
@@ -29,12 +32,12 @@ export function CiteLine({ url, copy, framed = false }: CiteLineProps) {
         gap: 1.5,
         flexWrap: "wrap",
         minWidth: 0,
-        ...(framed ? { p: 1.5, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` } : {}),
+        ...(strip ? { ...STRIP_BASE, borderBottomWidth: 1, px: 2, py: 1 } : framed ? { p: 1.5, bgcolor: color.panel, border: `1px solid ${color.line}`, borderRadius: `${radius.card}px` } : {}),
       }}
     >
-      <Typography variant="meta" component="span" sx={framed ? undefined : visuallyHidden}>
+      <Typography variant="meta" component="span" sx={framed || strip ? undefined : visuallyHidden}>
         {copy.label}
-        {framed ? null : ": "}
+        {framed || strip ? null : ": "}
       </Typography>
       <Typography variant="meta" component="span" sx={{ flex: "1 1 12rem", minWidth: 0, overflowWrap: "anywhere", color: color.text2 }}>
         {withoutScheme(url)}

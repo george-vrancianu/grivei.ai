@@ -26,3 +26,9 @@ export const LongAddress: Story = {
     />
   ),
 };
+/** Inside the full-results panel: a strip under the header, the label visible, a hairline under it. */
+export const Strip: Story = {
+  render: (_args, { globals }) => (
+    <CiteLine strip url="https://grivei.ai/explore/search?q=strazi&tab=records&order=value&page=1" copy={sampleCopy.citeThisView(localeOf(globals["locale"]))} />
+  ),
+};

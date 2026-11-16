@@ -24,6 +24,8 @@ type Settled<Data> = { key: string; state: { status: "ready"; data: Data } | { s
 export function useHeldQuery<Data, Variables>(op: Operation<Data, Variables>, variables: Variables | null, holdKey = ""): QueryState<Data> {
   const client = useClient();
   const key = JSON.stringify(variables);
+  // An answer settles for its request and its hold key together: the same variables under another key (a tab that sends the same variables) are a new request.
+  const settledKey = JSON.stringify([holdKey, variables]);
   const [settled, setSettled] = useState<Settled<Data> | null>(null);
   const [held, setHeld] = useState<{ holdKey: string; data: Data } | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -40,14 +42,14 @@ export function useHeldQuery<Data, Variables>(op: Operation<Data, Variables>, va
       .query(op, JSON.parse(key) as Variables, { signal: controller.signal })
       .then((data) => {
         if (controller.signal.aborted) return; // a stale answer never lands
-        setSettled({ key, state: { status: "ready", data } });
+        setSettled({ key: settledKey, state: { status: "ready", data } });
         setHeld({ holdKey, data });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setSettled({ key, state: { status: "error" } });
+        if (!controller.signal.aborted) setSettled({ key: settledKey, state: { status: "error" } });
       });
     return () => controller.abort(); // a superseded request is cancelled
-  }, [client, op, key, holdKey, attempt]);
+  }, [client, op, key, settledKey, holdKey, attempt]);
 
   const retry = useCallback(() => {
     setSettled(null);
@@ -55,7 +57,7 @@ export function useHeldQuery<Data, Variables>(op: Operation<Data, Variables>, va
   }, []);
 
   if (variables === null) return { status: "loading" };
-  if (settled?.key === key) return settled.state.status === "ready" ? { status: "ready", data: settled.state.data, stale: false } : { status: "error", retry };
+  if (settled?.key === settledKey) return settled.state.status === "ready" ? { status: "ready", data: settled.state.data, stale: false } : { status: "error", retry };
   if (held?.holdKey === holdKey) return { status: "ready", data: held.data, stale: true };
   return { status: "loading" };
 }
