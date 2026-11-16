@@ -31,12 +31,12 @@ function show(results: FullResultsData, page: number, props: Partial<FullResults
 const nav = () => screen.getByRole("navigation", { name: "Result pages" });
 
 describe("FullResults", () => {
-  it("first page: heading with the count, the range, no Previous link, page 1 current", () => {
+  it("first page: heading with the count, the range, Previous disabled, page 1 current", () => {
     show(authorities(8), 1);
     expect(screen.getByRole("heading", { name: /Authorities 8/ })).toBeInTheDocument();
     expect(screen.getByText("Showing 1–3 of 8")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    expect(within(nav()).queryByRole("link", { name: "Previous" })).not.toBeInTheDocument();
+    expect(within(nav()).getByRole("link", { name: "Previous" })).toHaveAttribute("aria-disabled", "true");
     expect(within(nav()).getByRole("link", { name: "Page 1" })).toHaveAttribute("aria-current", "page");
     expect(within(nav()).getByRole("link", { name: "Next" })).toHaveAttribute("href", "/explore/search?tab=records&page=2");
   });
@@ -54,7 +54,7 @@ describe("FullResults", () => {
     show(authorities(8, fullResultsAuthorityRows.slice(0, 2)), 3);
     expect(screen.getByText("Showing 7–8 of 8")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(within(nav()).queryByRole("link", { name: "Next" })).not.toBeInTheDocument();
+    expect(within(nav()).getByRole("link", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
     expect(within(nav()).getByRole("link", { name: "Page 3" })).toHaveAttribute("aria-current", "page");
   });
 

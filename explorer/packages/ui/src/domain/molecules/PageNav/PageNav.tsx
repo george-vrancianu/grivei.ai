@@ -2,26 +2,34 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { color, font, radius, size, type } from "../../../theme/tokens.ts";
+import { hover, pressed, selected } from "../../../theme/states.ts";
+import { color, font, radius, shadow, size, type } from "../../../theme/tokens.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { pageItems } from "./pageNav.utils.ts";
 
-/** A page link or step as a bordered box (the drawing's pager); the current page is filled with the accent. */
+/** A page link or step: a 44 px mono cell, raised like an outlined button; the current page takes the shared selected state. */
 const boxSx = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  minHeight: size.toggle,
-  minWidth: size.toggle,
+  minHeight: size.primaryAction,
+  minWidth: size.primaryAction,
   px: 1.5,
   border: `1px solid ${color.lineStrong}`,
   borderRadius: `${radius.control}px`,
+  backgroundColor: color.raised,
+  boxShadow: shadow.raised,
   fontFamily: font.mono,
   fontSize: type.label.size,
   color: color.text,
+  "&:hover": hover,
+  "&:active": pressed,
 } as const;
-const currentSx = { bgcolor: color.accent, borderColor: color.accent, color: color.onAccent, fontWeight: type.button.weight, "&:hover": { color: color.onAccent } } as const;
+/** The current page: the shared selected fragment (line fill, inset accent outline), no amber fill. */
+const currentSx = { ...boxSx, ...selected, "&:hover": selected } as const;
+/** A step with nothing to follow: dashed, no fill, muted. */
+const disabledSx = { ...boxSx, backgroundColor: "transparent", boxShadow: "none", border: `1px dashed ${color.lineStrong}`, color: color.muted, cursor: "default" } as const;
 
 export interface PageNavCopy {
   /** The navigation landmark's accessible name. */
@@ -51,14 +59,14 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
         {text}
       </Link>
     ) : (
-      // Nothing to follow: the edge is clear from the page links, so no stray "Previous" for a screen reader.
-      <Typography component="span" variant="label" aria-hidden="true" sx={{ ...boxSx, color: color.muted, borderColor: color.line }}>
+      // Visible but inert: a link that is aria-disabled keeps its name for a screen reader and shows where the list ends.
+      <Typography component="span" variant="label" role="link" aria-disabled="true" sx={{ ...disabledSx, "&:hover": disabledSx, "&:active": disabledSx }}>
         {text}
       </Typography>
     );
   return (
     <nav aria-label={copy.label}>
-      <Stack direction="row" useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+      <Stack direction="row" useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.75 }}>
         {step(page - 1, copy.previous, page > 1)}
         {pageItems(page, pages).map((item, i) =>
           item === "gap" ? (
@@ -73,7 +81,7 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
               aria-label={copy.page(format(item))}
               aria-current={item === page ? "page" : undefined}
               underline="none"
-              sx={item === page ? { ...boxSx, ...currentSx } : boxSx}
+              sx={item === page ? currentSx : boxSx}
             >
               {format(item)}
             </Link>
