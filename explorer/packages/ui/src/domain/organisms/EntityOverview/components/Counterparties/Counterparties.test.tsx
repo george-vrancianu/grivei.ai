@@ -7,15 +7,16 @@ import { Counterparties } from "./index.ts";
 
 const { counterparties, total } = authorityManyCounterpartiesOverview.overview;
 
-function show(rows = counterparties) {
+function show(rows = counterparties, graphHref: string | null = "/explore/authority/1/relationships", locale: "en" | "ro" = "en") {
   renderInUi(
     <Counterparties
       counterparties={rows}
       total={total.awarded}
       role="authority"
       entityHref={(e, r) => `/explore/${r}/${e.key}`}
-      locale="en"
-      copy={sampleCopy.entityOverview("en").counterparties}
+      graphHref={graphHref ?? undefined}
+      locale={locale}
+      copy={sampleCopy.entityOverview(locale).counterparties}
     />,
   );
 }
@@ -46,8 +47,29 @@ describe("Counterparties", () => {
     expect(screen.getByText("and 216 more")).toBeVisible();
   });
 
+  it("names what the shares are of in the header, and puts 'and n more' and the graph link in the foot", () => {
+    show();
+    const panel = within(screen.getByRole("region", { name: "Counterparties" }));
+    expect(panel.getByText("share of the total awarded")).toBeVisible();
+    expect(panel.getByText("and 216 more")).toBeVisible();
+    expect(panel.getByRole("link", { name: "All 220, as a graph" })).toHaveAttribute("href", "/explore/authority/1/relationships");
+  });
+
+  it("says it in Romanian", () => {
+    show(counterparties, undefined, "ro");
+    const panel = within(screen.getByRole("region", { name: "Contraparți" }));
+    expect(panel.getByText("pondere din totalul atribuit")).toBeVisible();
+    expect(panel.getByText("și încă 216")).toBeVisible();
+  });
+
+  it("offers no graph link when it has none to give", () => {
+    show(counterparties, null);
+    expect(screen.queryByRole("link", { name: /graph/ })).toBeNull();
+  });
+
   it("says nothing about more when every counterparty is listed", () => {
     show({ ...counterparties, count: 4 });
     expect(screen.queryByText(/more/)).toBeNull();
+    expect(screen.queryByRole("link", { name: /graph/ })).toBeNull();
   });
 });

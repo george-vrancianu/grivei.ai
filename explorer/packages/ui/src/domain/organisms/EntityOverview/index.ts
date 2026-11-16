@@ -1,6 +1,7 @@
 export { EntityOverview, type EntityOverviewProps, type EntityOverviewCopy } from "./EntityOverview.tsx";
 export type { HeadlineNumbersCopy } from "./components/HeadlineNumbers/index.ts";
-export type { SignalsSectionCopy } from "./components/SignalsSection/index.ts";
+export { OverviewSkeleton, type OverviewSkeletonProps } from "./components/OverviewSkeleton/index.ts";
+export type { SignalsSectionCopy, SignalsPaging } from "./components/SignalsSection/index.ts";
 export type { CounterpartiesCopy } from "./components/Counterparties/index.ts";
 export type { ProcedureTypesCopy } from "./components/ProcedureTypes/index.ts";
 export type { ConsortiaCopy } from "./components/Consortia/index.ts";

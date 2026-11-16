@@ -727,19 +727,19 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
           label: "Cifre principale", total: "Total atribuit", counterparties: "Contraparți", topShare: (p) => `Cea mai mare deține ${p} din total`,
           directPurchase: "Pondere prin achiziție directă", signals: "Semnale", totalFigure: sampleCopy.total(locale),
         },
-        signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate." },
+        signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate.", range: (from, to, total) => `Semnalele ${from}–${to} din ${total}` },
         counterparties: {
-          heading: "Contraparți", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`,
+          heading: "Contraparți", meta: "pondere din totalul atribuit", graph: (_n, f) => `Toate cele ${f}, ca graf`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`,
           empty: "Nicio contraparte în această selecție.", party,
         },
-        procedures: { heading: "Tipuri de procedură", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
+        procedures: { heading: "Tipuri de procedură", meta: "așa cum le publică SEAP", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
         consortia: {
           heading: "Asocieri", convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP.",
           share: (amount) => `parte egală ${amount}`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), party,
         },
         frameworks: {
           heading: "Acorduri-cadru",
-          line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+          agreements: "Acorduri", ceilings: "Plafoane", notSummed: "neadunate", subsequent: "Contracte subsecvente", ofCeilings: (p) => `${p} din plafoane`,
           none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
         },
         largest: {
@@ -756,19 +756,19 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
           label: "Headline numbers", total: "Total awarded", counterparties: "Counterparties", topShare: (p) => `The largest holds ${p} of the total`,
           directPurchase: "Share via direct purchase", signals: "Signals", totalFigure: sampleCopy.total(locale),
         },
-        signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity." },
+        signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity.", range: (from, to, total) => `Signals ${from}–${to} of ${total}` },
         counterparties: {
-          heading: "Counterparties", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`,
+          heading: "Counterparties", meta: "share of the total awarded", graph: (_n, f) => `All ${f}, as a graph`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`,
           empty: "No counterparties in this selection.", party,
         },
-        procedures: { heading: "Procedure types", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
+        procedures: { heading: "Procedure types", meta: "as SEAP publishes them", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
         consortia: {
           heading: "Consortia", convention: "Each member's equal share is a counting convention, not a figure SEAP publishes.",
           share: (amount) => `equal share ${amount}`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, party,
         },
         frameworks: {
           heading: "Framework agreements",
-          line: (n, f, ceilings, reported) => `${f} ${plural(n, "framework agreement", "framework agreements")}, ceilings ${ceilings}, reported subsequent contracts ${reported}`,
+          agreements: "Agreements", ceilings: "Ceilings", notSummed: "not summed", subsequent: "Subsequent contracts", ofCeilings: (p) => `${p} of the ceilings`,
           none: "No framework agreements.", note: "Ceilings are not money awarded and are not in the total.",
         },
         largest: {

@@ -1,15 +1,14 @@
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { RecordResultList } from "../../../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityRole, RecordResult, RecordRow } from "../../../../types.ts";
-import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
+import { Panel } from "../../../../molecules/Panel/index.ts";
 import { countedRecords } from "../../entityOverview.utils.ts";
 
 export interface LargestRecordsCopy {
   heading: string;
-  /** Says what the list leaves out: suspect values and framework ceilings do not count, so they never rank here. */
+  /** The panel's foot; says what the list leaves out: suspect values and framework ceilings do not count, so they never rank here. */
   note: string;
   empty: string;
   recordRow: RecordResultRowCopy;
@@ -27,18 +26,12 @@ export interface LargestRecordsProps {
 export function LargestRecords({ records, entityHref, recordHref, locale, copy }: LargestRecordsProps) {
   const rows = countedRecords(records).map((record) => ({ record, matchedField: null, areaShare: null }));
   return (
-    <Stack component="section" spacing={1} aria-label={copy.heading}>
-      <SectionHeading>{copy.heading}</SectionHeading>
+    <Panel heading={copy.heading} level="h2" flush={rows.length > 0} foot={rows.length > 0 ? copy.note : undefined}>
       {rows.length === 0 ? (
         <Typography color="text.secondary">{copy.empty}</Typography>
       ) : (
-        <>
-          <Typography variant="body2" color="text.secondary">
-            {copy.note}
-          </Typography>
-          <RecordResultList rows={rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} />
-        </>
+        <RecordResultList rows={rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} inset />
       )}
-    </Stack>
+    </Panel>
   );
 }

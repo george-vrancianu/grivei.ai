@@ -14,7 +14,7 @@ import {
 } from "../../samples/fixtureData.ts";
 import type { EntityHeaderData, EntityPageRole } from "../../types.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { EntityHeader } from "./index.ts";
+import { EntityHeader, EntityHeaderSkeleton } from "./index.ts";
 
 const roleHref = (role: EntityPageRole) => `/explore/${role.toLowerCase()}/x`;
 function show(entity: EntityHeaderData, role: EntityPageRole, locale: Locale = "en", onNavigate?: (href: string) => void, foot: { tabs?: ReactNode; address?: ReactNode } = {}) {
@@ -153,5 +153,28 @@ describe("EntityHeader", () => {
     const line = label.parentElement!;
     for (const alias of bothRolesHeader.aliases) expect(line).toHaveTextContent(alias.name);
     expect(line).toHaveTextContent(/Records? · .+ to /);
+  });
+});
+
+describe("EntityHeaderSkeleton", () => {
+  it.each([
+    ["en", "contracting authority", "Overview", "Records"],
+    ["ro", "autoritate contractantă", "Prezentare generală", "Înregistrări"],
+  ] as const)("keeps the breadcrumb, the tabs and the address real while the entity loads (%s)", (locale, role, overview, records) => {
+    renderInUi(
+      <EntityHeaderSkeleton
+        role="AUTHORITY"
+        homeHref="/explore/"
+        copy={sampleCopy.entityHeader(locale)}
+        tabs={<nav aria-label="tabs"><a href="/o">{overview}</a><a href="/r">{records}</a></nav>}
+        address={<span>the address</span>}
+      />,
+      locale,
+    );
+    expect(screen.getByText(role)).toBeVisible();
+    expect(screen.getByRole("link", { name: overview })).toBeVisible();
+    expect(screen.getByRole("link", { name: records })).toBeVisible();
+    expect(screen.getByText("the address")).toBeVisible();
+    expect(screen.queryByRole("heading")).toBeNull();
   });
 });

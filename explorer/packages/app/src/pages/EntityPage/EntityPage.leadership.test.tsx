@@ -17,9 +17,9 @@ describe("the Leadership list", () => {
     await opened("/explore/authority/51000501");
     const section = within(await screen.findByRole("region", { name: "Leadership list" }));
     expect(section.getByText(/may have switched party since/)).toBeVisible();
-    const items = section.getAllByRole("listitem");
-    expect(items[0]).toHaveTextContent("POPESCU ION · PARTIDUL SOCIAL DEMOCRAT27 October 2020 – 27 September 2024AEP final minutes, election of 27 September 2020");
-    expect(items[1]).toHaveTextContent("POPESCU ION · PARTIDUL NAȚIONAL LIBERAL27 October 2024 – in forceAEP final minutes, election of 9 June 2024");
+    const rows = section.getAllByRole("row").slice(1);
+    expect(rows[0]).toHaveTextContent("POPESCU IONPARTIDUL SOCIAL DEMOCRAT27 October 2020 – 27 September 2024AEP final minutes, election of 27 September 2020");
+    expect(rows[1]).toHaveTextContent("POPESCU IONPARTIDUL NAȚIONAL LIBERAL27 October 2024 – in forceAEP final minutes, election of 9 June 2024");
     expect(section.getByText(/Handover window: the previous mandates ended and/)).toBeVisible();
     expect(section.queryByRole("link")).toBeNull(); // leaders are never linked
   });
@@ -65,9 +65,9 @@ describe("the Leadership list", () => {
   it("shows an alliance with its member parties and an independent as no party", async () => {
     await opened("/explore/authority/51000005?signalOrder=value-desc");
     const section = within(await screen.findByRole("region", { name: "Leadership list" }));
-    const items = section.getAllByRole("listitem");
-    expect(items[0]).toHaveTextContent("ALIANȚA USR PLUS");
-    expect(items[0]).toHaveTextContent("alliance; member parties: PARTIDUL USR, PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE");
-    expect(items[1]).toHaveTextContent("Independent (not a party)");
+    const rows = section.getAllByRole("row").slice(1);
+    expect(rows[0]).toHaveTextContent("ALIANȚA USR PLUS");
+    expect(rows[0]).toHaveTextContent("alliance; member parties: PARTIDUL USR, PARTIDUL LIBERTATE UNITATE SI SOLIDARITATE");
+    expect(rows[1]).toHaveTextContent("Independent (not a party)");
   });
 });
