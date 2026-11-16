@@ -262,7 +262,7 @@ export const ro: Copy = {
         OVER_1B: "Peste 1 mld. RON",
       },
     },
-    signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
+    signals: { has: "Are Semnale", without: "Fără Semnale" },
     procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
     party: { group: "Partid" },
     badges: { menu: "Insigne", badges: badges },
