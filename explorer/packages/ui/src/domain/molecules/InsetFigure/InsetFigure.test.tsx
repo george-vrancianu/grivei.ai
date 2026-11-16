@@ -22,7 +22,7 @@ describe("InsetFigure", () => {
         <InsetFigure label="Suspect" href="/x" note="not counted">3</InsetFigure>
       </>,
     );
-    expect(screen.getByText("Records").closest("p")).toHaveTextContent("Records 2,558over 12 months");
+    expect(screen.getByText("Records").closest("p")).toHaveTextContent("Records 2,558 over 12 months");
     expect(screen.getByRole("link", { name: "Suspect 3 not counted" })).toBeVisible();
   });
 });

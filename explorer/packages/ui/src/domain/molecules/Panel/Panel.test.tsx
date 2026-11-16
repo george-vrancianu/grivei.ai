@@ -36,6 +36,12 @@ describe("Panel", () => {
     expect(screen.getByRole("heading", { level: 3 })).toContainElement(screen.getByTestId("ring"));
   });
 
+  it("rejects a node heading without `label` at compile time", () => {
+    // @ts-expect-error a heading that is not plain text needs `label`
+    const bare = <Panel heading={<span>Rule</span>}>body</Panel>;
+    expect(bare).toBeTruthy();
+  });
+
   it("has no foot unless given one, and puts it after the body", () => {
     const { container, rerender } = renderInUi(<Panel heading="Records">rows</Panel>);
     expect(part(container, "foot")).toBeNull();

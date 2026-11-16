@@ -30,7 +30,7 @@ export type PanelProps = PanelBaseProps &
         label?: string;
       }
     | {
-        /** Header content beyond plain text (the Signal card's ring beside its rule label): it sits inside the heading element, in the header strip's left. */
+        /** Header content beyond plain text (the Signal card's ring beside its rule label): rendered as given inside the heading element (a flex row, `h3` type, the text colour: no mono, no accent), in the header strip's left. */
         heading: ReactNode;
         /** Accessible name of the region; required because the heading is not plain text. */
         label: string;
@@ -57,7 +57,13 @@ export function Panel({ heading, label, level = "h3", id, aside, foot, flush = f
         sx={{ ...stripSx, borderBottomWidth: 1, borderTopLeftRadius: "inherit", borderTopRightRadius: "inherit", px: 2, py: "9px" }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 2, rowGap: 0.5, minHeight: 28 }}>
-          <SectionHeading component={level}>{heading}</SectionHeading>
+          {typeof heading === "string" ? (
+            <SectionHeading component={level}>{heading}</SectionHeading>
+          ) : (
+            <Typography variant="h3" component={level} sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              {heading}
+            </Typography>
+          )}
           {aside != null && (
             <Typography variant="meta" component="div" sx={{ display: "flex", alignItems: "center", minWidth: 0, ml: "auto" }}>
               {aside}
@@ -65,7 +71,7 @@ export function Panel({ heading, label, level = "h3", id, aside, foot, flush = f
           )}
         </Box>
       </Box>
-      <Box data-panel-part="body" sx={flush ? { minWidth: 0 } : { p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
+      <Box data-panel-part="body" sx={flush ? { minWidth: 0, ...(foot == null && { overflow: "hidden", borderBottomLeftRadius: "inherit", borderBottomRightRadius: "inherit" }) } : { p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
         {children}
       </Box>
       {foot != null && (

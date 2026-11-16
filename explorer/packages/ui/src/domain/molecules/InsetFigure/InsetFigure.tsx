@@ -27,9 +27,12 @@ export function InsetFigure({ label, children, href, note }: InsetFigureProps) {
         {children}
       </Typography>
       {note != null && (
-        <Typography variant="meta" component="span">
-          {note}
-        </Typography>
+        <>
+          {" "}
+          <Typography variant="meta" component="span">
+            {note}
+          </Typography>
+        </>
       )}
     </>
   );

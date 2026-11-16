@@ -2,10 +2,8 @@
 export const SIGNALS_COLUMN = 136;
 /** The amount column's width in px, from 600 px up (right-aligned). */
 export const AMOUNT_COLUMN = 150;
-/** The full-width Record row's side padding (theme spacing units, 20 px; its vertical padding is 14 px) when the list sits flush in a panel (`inset`), so its hover fill reaches the panel's edges. */
+/** The main screen's rows' and head's side padding (theme spacing units, 20 px) when the list sits flush in a panel (`inset`), so their fills reach the panel's edges while the text stays at 20 px. */
 export const ROW_INSET = 2.5;
-/** The other list rows' and the column head's side padding (theme spacing units, 16 px; the rows' vertical padding is 12 px) when the list sits flush in a panel (`inset`). */
-export const LIST_ROW_INSET = 2;
 
 /** The row's layout, shared by `EntityResultRow` and its skeleton so the skeleton keeps the real row's shape: the name column on the left, the Signals and amount pair on the right (wrapping under the name below 600 px). */
 export const rowLayoutSx = { display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 2, py: 1.5 } as const;

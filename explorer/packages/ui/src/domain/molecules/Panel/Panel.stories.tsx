@@ -1,14 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Box } from "../../../atoms/Box/index.ts";
+import { Link } from "../../../atoms/Link/index.ts";
 import { Button } from "../../../atoms/Button/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { pick } from "../../../workbench/index.ts";
 import { SignalMark } from "../../atoms/SignalMark/index.ts";
-import { ColumnHead } from "../ColumnHead/index.ts";
-import { EntityResultRow } from "../EntityResultRow/index.ts";
-import { listSx } from "../../utils/listSx.ts";
-import { localeOf, sampleCopy } from "../../samples/copy.ts";
-import { resultSamples } from "../../samples/fixtureData.ts";
+import { listRowSx, listSx } from "../../utils/listSx.ts";
 import { Panel } from "./index.ts";
 
 const meta = { title: "Domain/Panel", component: Panel } satisfies Meta<Record<string, unknown>>;
@@ -55,7 +52,7 @@ export const WithFoot: Story = {
       foot={
         <>
           <span>{pick(globals["locale"], { en: "5 of 11 shown, by value", ro: "5 din 11 afișate, după valoare" })}</span>
-          <a href="#all">{pick(globals["locale"], { en: "Show all", ro: "Arată tot" })}</a>
+          <Link href="#all">{pick(globals["locale"], { en: "Show all", ro: "Arată tot" })}</Link>
         </>
       }
     >
@@ -76,11 +73,14 @@ export const FootCaveat: Story = {
   ),
 };
 
-/** A flush body for a list: the column head and the rows bring their own padding (12 px 16 px), a hairline between rows and a `raised` hover; the foot closes it. */
+/** A flush body for a list on a page other than the main screen: a `listSx` list whose rows take `listRowSx` (12 px 16 px, `raised` hover, a hairline between); the foot closes it. */
 export const FlushList: Story = {
   render: (_args, { globals }) => {
-    const locale = localeOf(globals["locale"]);
-    const rows = resultSamples.typical.suppliers.rows;
+    const rows = [
+      { name: pick(globals["locale"], { en: "Alpha Construct SRL", ro: "Alpha Construct SRL" }), meta: pick(globals["locale"], { en: "12 Records · Brașov", ro: "12 Înregistrări · Brașov" }) },
+      { name: pick(globals["locale"], { en: "Municipality of Cluj-Napoca", ro: "Municipiul Cluj-Napoca" }), meta: pick(globals["locale"], { en: "7 Records · Cluj", ro: "7 Înregistrări · Cluj" }) },
+      { name: pick(globals["locale"], { en: "Beta Servicii SA", ro: "Beta Servicii SA" }), meta: pick(globals["locale"], { en: "3 Records · Iași", ro: "3 Înregistrări · Iași" }) },
+    ];
     return (
       <Panel
         flush
@@ -88,10 +88,12 @@ export const FlushList: Story = {
         aside={pick(globals["locale"], { en: `${rows.length} shown`, ro: `${rows.length} afișați` })}
         foot={pick(globals["locale"], { en: `Showing 1–${rows.length} of 54`, ro: `Se afișează 1–${rows.length} din 54` })}
       >
-        <ColumnHead role="supplier" copy={sampleCopy.entityRow(locale).head} inset />
         <Box component="ul" sx={listSx}>
           {rows.map((row) => (
-            <EntityResultRow key={row.entity.key} row={row} href={`/explore/supplier/${encodeURIComponent(row.entity.key)}`} locale={locale} copy={sampleCopy.entityRow(locale)} inset />
+            <Box key={row.name} component="li" sx={listRowSx}>
+              <Typography sx={{ fontWeight: 600 }}>{row.name}</Typography>
+              <Typography variant="meta">{row.meta}</Typography>
+            </Box>
           ))}
         </Box>
       </Panel>
@@ -99,19 +101,34 @@ export const FlushList: Story = {
   },
 };
 
-/** Header content beyond a plain title: the Signal card's amber ring beside its rule label. The region's name comes from `label`. */
+/** A flush list with no foot: the last row's hover fill is clipped to the card's bottom corners. */
+export const FlushListNoFoot: Story = {
+  render: (_args, { globals }) => (
+    <Panel flush heading={pick(globals["locale"], { en: "Suppliers", ro: "Furnizori" })}>
+      <Box component="ul" sx={listSx}>
+        {["Alpha Construct SRL", "Beta Servicii SA"].map((name) => (
+          <Box key={name} component="li" sx={listRowSx}>
+            <Typography>{name}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Panel>
+  ),
+};
+
+/** Header content beyond a plain title, as the Signal card needs it: the ring, then the rule label in the card-title type and the text colour, with the meta line in `aside`. The region's name comes from `label`. */
 export const HeaderWithRing: Story = {
   render: (_args, { globals }) => {
     const rule = pick(globals["locale"], { en: "Few bidders, same winner", ro: "Puțini ofertanți, același câștigător" });
     return (
       <Panel
         label={rule}
-        aside={pick(globals["locale"], { en: "since 2021", ro: "din 2021" })}
+        aside={pick(globals["locale"], { en: "Latest Record: 3 Mar 2026 · 4 Records", ro: "Cea mai recentă înregistrare: 3 mar. 2026 · 4 Înregistrări" })}
         heading={
-          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+          <>
             <SignalMark />
             {rule}
-          </Box>
+          </>
         }
       >
         <Typography>{sentence(globals["locale"])}</Typography>
