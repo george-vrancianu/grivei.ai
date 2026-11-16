@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { pick } from "../../../workbench/index.ts";
+import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { fullResultsAuthorityRows, fullResultsEstimatedAuthorities, fullResultsRecords } from "../../samples/fixtureData.ts";
 import { FullResults, type FullResultsData, type FullResultsProps } from "./index.ts";
@@ -68,3 +70,16 @@ export const Empty: Story = { render: sample({ tab: "suppliers", page: { count: 
 export const EstimatedCountOvershoots: Story = {
   render: sample({ tab: "authorities", page: { ...fullResultsEstimatedAuthorities, rows: [] } }, 5, { pageSize: 50 }),
 };
+/** A refetch (another page, order or filter): the last answer stays, dimmed and `aria-busy`, with the Loading line in the header; the header and the foot stay at full strength. */
+export const Refetching: Story = {
+  render: (args, context) =>
+    sample(records(fullResultsRecords.rows.slice(0, 4)), 1, {
+      pageSize: 4,
+      order: "VALUE_DESC",
+      onOrderChange: () => {},
+      busy: true,
+      status: <LoadingStatus label={pick(context.globals["locale"], { en: "Loading…", ro: "Se încarcă…" })} />,
+    })!(args, context),
+};
+/** Many Records on a long page: long titles wrap inside the rows and the foot's page links wrap under the Showing line (resize to 390 px). */
+export const Phone: Story = { ...RecordsFirstPage, globals: { viewport: { value: "mobile2", isRotated: false } } };

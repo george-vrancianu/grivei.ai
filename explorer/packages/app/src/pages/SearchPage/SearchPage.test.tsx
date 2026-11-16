@@ -14,7 +14,7 @@ describe("the full-results view at /explore/search", () => {
     const { client, sent } = fixtureClient();
     render(<App client={client} />);
 
-    expect(await screen.findByText("Showing 51–100 of 120")).toBeVisible();
+    expect(await screen.findAllByText("Showing 51–100 of 120")).toHaveLength(2); // the panel header and its foot
     expect(screen.getByRole("heading", { name: "Records 120" })).toBeVisible();
     expect(within(pages()).getByRole("link", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
     expect(sent.at(-1)).toMatchObject({ operation: "FullResultsRecords", variables: { filter: { from: "2021-01-01" }, limit: 50, offset: 50 } });
@@ -40,13 +40,13 @@ describe("the full-results view at /explore/search", () => {
 
     await user.click(within(await waitForPages()).getByRole("link", { name: "Page 3" }));
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records&page=3"));
-    expect(await screen.findByText("Showing 101–120 of 120")).toBeVisible(); // the last page is partial
+    expect(await screen.findAllByText("Showing 101–120 of 120")).toHaveLength(2); // the panel header and its foot; the last page is partial
     expect(within(pages()).getByRole("link", { name: "Page 3" })).toHaveAttribute("aria-current", "page");
     expect(within(pages()).getByRole("link", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
 
     await user.click(within(pages()).getByRole("link", { name: "Page 1" }));
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records"));
-    expect(await screen.findByText("Showing 1–50 of 120")).toBeVisible();
+    expect(await screen.findAllByText("Showing 1–50 of 120")).toHaveLength(2); // the panel header and its foot
     expect(window.history.length).toBe(before);
   });
 
@@ -55,7 +55,7 @@ describe("the full-results view at /explore/search", () => {
     const { client } = fixtureClient();
     render(<App client={client} />);
 
-    expect(await screen.findByText("Se afișează 51–100 din 120")).toBeVisible();
+    expect(await screen.findAllByText("Se afișează 51–100 din 120")).toHaveLength(2); // the panel header and its foot
     expect(within(pages()).getByRole("link", { name: "Pagina 3" })).toHaveAttribute("href", "/ro/explore/search?from=2021-01-01&tab=records&page=3");
     expect(screen.getByRole("link", { name: "Înapoi la rezultate" })).toHaveAttribute("href", "/ro/explore/?from=2021-01-01&tab=records");
   });
@@ -65,7 +65,7 @@ describe("the full-results view at /explore/search", () => {
     const { client } = fixtureClient();
     render(<App client={client} />);
 
-    await screen.findByText("Se afișează 101–120 din 120");
+    await screen.findAllByText("Se afișează 101–120 din 120");
     expect(within(pages()).getByRole("link", { name: "Pagina 3" })).toHaveAttribute("aria-current", "page");
     expect(within(pages()).getByRole("link", { name: "Următoarea" })).toHaveAttribute("aria-disabled", "true");
     expect(within(pages()).getByRole("link", { name: "Anterioara" })).not.toHaveAttribute("aria-disabled");
@@ -100,7 +100,7 @@ describe("the full-results view at /explore/search", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("link", { name: "Go to page 1" }));
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records"));
-    expect(await screen.findByText("Showing 1–50 of 120")).toBeVisible();
+    expect(await screen.findAllByText("Showing 1–50 of 120")).toHaveLength(2); // the panel header and its foot
   });
 });
 
@@ -175,7 +175,7 @@ describe("the full-results view's order and citable address", () => {
 
     await user.selectOptions(await screen.findByRole("combobox", { name: "order" }), "date, newest first");
     await waitFor(() => expect(window.location.search).toBe("?from=2021-01-01&tab=records&order=date-desc"));
-    expect(await screen.findByText(/^Showing 1–/)).toBeVisible();
+    expect(await screen.findAllByText(/^Showing 1–/)).toHaveLength(2); // the panel header and its foot
     expect(sent.at(-1)).toMatchObject({ operation: "FullResultsRecords", variables: { order: "DATE_DESC", offset: 0 } });
     expect(screen.getByRole("combobox", { name: "order" })).toHaveValue("DATE_DESC");
     expect(within(pages()).getByRole("link", { name: "Page 2" })).toHaveAttribute("href", "/explore/search?from=2021-01-01&tab=records&page=2&order=date-desc");
@@ -198,6 +198,6 @@ describe("the full-results view's order and citable address", () => {
 });
 
 const waitForPages = async () => {
-  await screen.findByText(/^Showing/);
+  await screen.findAllByText(/^Showing/);
   return pages();
 };

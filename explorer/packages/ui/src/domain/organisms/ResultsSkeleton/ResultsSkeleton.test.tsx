@@ -4,7 +4,7 @@ import { renderInUi } from "../../../testing/render.tsx";
 import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { sampleCopy } from "../../samples/copy.ts";
 import { ResultsSkeleton, type ResultsSkeletonProps } from "./index.ts";
-import { ROW_COUNT, rowOpacity } from "./resultsSkeleton.utils.ts";
+import { ROW_COUNT, rowOpacity } from "../../molecules/RowSkeletonList/rowSkeletonList.utils.ts";
 
 describe.each(["en", "ro"] as const)("ResultsSkeleton (%s)", (locale) => {
   const { label, tabs } = sampleCopy.resultTabs(locale);
