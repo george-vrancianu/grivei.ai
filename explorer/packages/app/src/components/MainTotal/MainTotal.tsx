@@ -2,8 +2,8 @@ import type { MainScreenQuery } from "@grivei/contract";
 import { PartyCoverage, Stack, TotalFigure, Typography, type Locale, type InsetTotalCopy, type PartyCoverageCopy } from "@grivei/ui";
 
 export interface MainTotalProps {
-  /** The search's Total; a Party-filtered search carries its coverage. */
-  total: MainScreenQuery["seap"]["search"]["total"];
+  /** The search's Total; a Party-filtered search carries its coverage. `null` when the query failed: the heading stays, an em dash stands in for the figure. */
+  total: MainScreenQuery["seap"]["search"]["total"] | null;
   copy: { heading: string; total: InsetTotalCopy; partyCoverage: PartyCoverageCopy };
   locale: Locale;
   /** The methodology page the ⓘ links to. */
@@ -20,6 +20,20 @@ export interface MainTotalProps {
  * coverage is a block of its own (a list, not one figure), so it stays under the figures.
  */
 export function MainTotal({ total, copy, locale, methodologyHref, partyHref, suspectHref }: MainTotalProps) {
+  const heading = (
+    <Typography variant="meta" component="h2">
+      {copy.heading}
+    </Typography>
+  );
+  if (total === null)
+    return (
+      <Stack spacing={1} data-testid="main-total">
+        {heading}
+        <Typography variant="total" component="p">
+          —
+        </Typography>
+      </Stack>
+    );
   return (
     <Stack spacing={2} data-testid="main-total">
       <TotalFigure
@@ -28,13 +42,7 @@ export function MainTotal({ total, copy, locale, methodologyHref, partyHref, sus
         copy={copy.total}
         methodologyHref={methodologyHref}
         suspectHref={suspectHref}
-        inset={{
-          heading: (
-            <Typography variant="meta" component="h2">
-              {copy.heading}
-            </Typography>
-          ),
-        }}
+        inset={{ heading }}
       />
       {total.partyCoverage && <PartyCoverage coverage={total.partyCoverage} locale={locale} copy={copy.partyCoverage} methodologyHref={partyHref} />}
     </Stack>

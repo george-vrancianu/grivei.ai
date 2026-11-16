@@ -26,3 +26,9 @@ export const PartyFiltered: Story = {
   ...National,
   args: { ...National.args, total: party.seap.search.total },
 };
+
+/** The main query failed: the heading stays and an em dash stands in for the figure (the retry button is in the results panel). */
+export const Failed: Story = {
+  ...National,
+  args: { ...National.args, total: null },
+};

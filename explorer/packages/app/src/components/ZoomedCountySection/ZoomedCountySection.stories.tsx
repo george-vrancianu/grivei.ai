@@ -28,7 +28,7 @@ function render(props: Partial<ZoomedCountySectionProps>): NonNullable<Story["re
         onClearUat={() => undefined}
         locale={locale}
         copy={t.zoomedCounty}
-        status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+        status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
         {...props}
       />
     );
@@ -52,4 +52,4 @@ export const OutlinesLoading: Story = { render: render({ topology: { status: "lo
 /** The county's outlines file is missing: the page says so, the way back and the results still work. */
 export const OutlinesUnavailable: Story = { render: render({ topology: { status: "error" } }) };
 /** The ZoomedCounty request failed. */
-export const QueryFailed: Story = { render: render({ data: null, failed: true }) };
+export const QueryFailed: Story = { render: render({ data: null, failed: true, onRetry: () => undefined }) };
