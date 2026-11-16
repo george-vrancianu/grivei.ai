@@ -189,10 +189,10 @@ describe("the filter chips on the main screen", () => {
     await waitFor(() => expect(window.location.search).toBe("?q=pod"));
   });
 
-  it("Clear all removes the chips' fields and keeps the rest of the URL", async () => {
+  it("Clear all removes the chips' fields and the county, and keeps the rest of the URL", async () => {
     await opened("/explore/?q=pod&county=RO-BV&channel=contract&from=2023-01-01&hasSignals=false&tab=records");
     await userEvent.setup().click(screen.getByRole("button", { name: "Clear all" }));
-    await waitFor(() => expect(window.location.search).toBe("?q=pod&county=RO-BV&tab=records"));
+    await waitFor(() => expect(window.location.search).toBe("?q=pod&tab=records"));
   });
 
   it("changing a chip resets the page", async () => {

@@ -17,6 +17,7 @@ const text: ActiveChipText = {
   withoutSignals: copy.signals.without,
   badges: Object.fromEntries(Object.entries(copy.badges.badges).map(([b, t]) => [b, t.label])) as ActiveChipText["badges"],
   party: copy.active.party,
+  county: copy.active.county,
 };
 
 describe("filter helpers", () => {
@@ -70,9 +71,9 @@ describe("filter helpers", () => {
     expect(toggleProcedure({ procedure: ["x"] }, "x")).toEqual({});
   });
 
-  it("clears only the chip-owned fields", () => {
+  it("clears the chip-owned fields and the county with its UAT", () => {
     const filter = { q: "a", county: "RO-BV", uat: "1", authority: "k", supplier: "s", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER", channel: "CONTRACT", from: "2024-01-01", badges: ["NO_VALUE"] } as const;
-    expect(clearChips({ ...filter, badges: ["NO_VALUE"] })).toEqual({ q: "a", county: "RO-BV", uat: "1", authority: "k", supplier: "s", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER" });
+    expect(clearChips({ ...filter, badges: ["NO_VALUE"] })).toEqual({ q: "a", authority: "k", supplier: "s", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER" });
   });
 
   it("chipFieldsOf names every chip field, absent ones undefined", () => {
@@ -95,8 +96,17 @@ describe("filter helpers", () => {
 });
 
 describe("activeChips", () => {
-  it("is empty for a filter without chip fields", () => {
-    expect(activeChips({ q: "x", county: "RO-BV" }, text, "en")).toEqual([]);
+  it("is empty for a filter without chip fields or county", () => {
+    expect(activeChips({ q: "x", uat: "1" }, text, "en")).toEqual([]);
+  });
+
+  it("has a county chip, first, named by the caller or else by its code, removing the county and the UAT", () => {
+    const filter: RecordFilter = { q: "x", county: "RO-BV", uat: "1", countySide: "SUPPLIER", channel: "CONTRACT" };
+    const [county, channel] = activeChips(filter, text, "en", "Brașov");
+    expect(county!.label).toBe("County: Brașov");
+    expect(channel!.label).toBe("Contract");
+    expect(county!.remove(filter)).toEqual({ q: "x", countySide: "SUPPLIER", channel: "CONTRACT" });
+    expect(activeChips({ county: "RO-BV" }, text, "en")[0]!.label).toBe("County: RO-BV");
   });
 
   it("labels years for year edges and exact dates otherwise", () => {

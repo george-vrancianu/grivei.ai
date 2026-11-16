@@ -42,6 +42,8 @@ export interface FilterChipsCopy {
     to: (when: string) => string;
     /** The active chip of the Party filter: "Party: PARTIDUL SOCIAL DEMOCRAT"; gets the list as registered. */
     party: (list: string) => string;
+    /** The active chip of the county picked on the map: "County: Brașov"; gets the name the page shows for the area. */
+    county: (area: string) => string;
     /** The accessible name of an active chip's remove action. */
     remove: (chip: string) => string;
     clearAll: string;

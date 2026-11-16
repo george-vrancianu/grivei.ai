@@ -9,12 +9,12 @@ import { FilterChips } from "./index.ts";
 
 const copy = sampleCopy.filterChips("en");
 const PROCEDURES = ["Achiziție directă", "Licitație deschisă"];
-// fields the chips do not own: they must come back untouched
-const OTHERS: RecordFilter = { q: "pod", county: "RO-BV", uat: "12345", authority: "4000001", supplier: "30000001", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER" };
+// fields no chip owns: they must come back untouched (the county and its UAT are the county chip's, so they are not here)
+const OTHERS: RecordFilter = { q: "pod", authority: "4000001", supplier: "30000001", cpv: "301", signal: "SPLITTING", countySide: "SUPPLIER" };
 
 const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "ALIANȚA USR PLUS"];
 
-function setup(filter: RecordFilter = {}, extra: { lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
+function setup(filter: RecordFilter = {}, extra: { countyName?: string; lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
   const onChange = vi.fn();
   renderInUi(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
   return onChange;
@@ -44,6 +44,15 @@ describe("FilterChips: what the reader sees", () => {
     for (const name of ["From 2023", "Until 2024", "Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
       expect(active().getByRole("button", { name: `Remove ${name}` })).toBeVisible();
     }
+  });
+
+  it("shows the map-picked county as the only active chip, by the name given, else by its code", () => {
+    setup({ county: "RO-BV" }, { countyName: "Brașov" });
+    expect(active().getByRole("button", { name: "Remove County: Brașov" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Clear all" })).toBeVisible();
+    cleanup();
+    setup({ county: "RO-BV" });
+    expect(active().getByRole("button", { name: "Remove County: RO-BV" })).toBeVisible();
   });
 
   it("shows a given hasSignals=false as an active 'Without Signals' chip, with the switch off", () => {
@@ -317,6 +326,18 @@ describe("FilterChips: the active chips' remove actions", () => {
     const onChange = setup({ from: "2024-03-15", channel: "CONTRACT" });
     await userEvent.click(active().getByRole("button", { name: "Remove From 15 Mar 2024" }));
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ channel: "CONTRACT" });
+  });
+
+  it("removing the county chip unsets the county and the UAT, and nothing else", async () => {
+    const onChange = setup({ ...FULL, county: "RO-BV", uat: "12345" }, { countyName: "Brașov" });
+    await userEvent.click(active().getByRole("button", { name: "Remove County: Brașov" }));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(FULL);
+  });
+
+  it("Clear all clears the chips' fields and the county with its UAT", async () => {
+    const onChange = setup({ ...FULL, county: "RO-BV", uat: "12345" }, { countyName: "Brașov" });
+    await userEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(OTHERS);
   });
 
   it("Clear all clears only the chips' fields", async () => {
