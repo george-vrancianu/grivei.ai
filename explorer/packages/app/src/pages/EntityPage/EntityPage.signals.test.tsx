@@ -23,7 +23,8 @@ async function opened(url: string, ready: string | RegExp) {
   await screen.findByRole(typeof ready === "string" ? "heading" : "group", { name: ready });
   return sent;
 }
-const cards = () => screen.getAllByRole("article");
+const signalsRegion = () => screen.getByRole("region", { name: /^(Signals|Semnale) \(/ });
+const cards = () => within(signalsRegion()).getAllByRole("region");
 const rulesOf = (name: string) => overviewNamed(name).data.entity!.seap.role!.signals.rows;
 
 describe("the Overview's Signals (English)", () => {
@@ -98,7 +99,7 @@ describe("the Overview's Signals (English)", () => {
   it("says there are none for an entity without Signals", async () => {
     await opened("/explore/authority/1000017", "Signals (0)");
     expect(screen.getByText("No Signals for this entity.")).toBeVisible();
-    expect(screen.queryAllByRole("article")).toHaveLength(0);
+    expect(within(signalsRegion()).queryAllByRole("region")).toHaveLength(0);
   });
 
   // one test per recording: the cost of each is constant however many recordings there are, and a failure names the recording
@@ -106,8 +107,8 @@ describe("the Overview's Signals (English)", () => {
     openAt(overviewUrl(f.variables));
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     await screen.findByRole("heading", { name: /^Signals \(\d+\)$/ });
-    await waitFor(() => expect(screen.getAllByRole("article").length).toBe(Math.min(f.data.entity!.seap.role!.signals.count, 20)));
-    for (const card of screen.getAllByRole("article")) expect(forbiddenWords(card.textContent ?? "", "en")).toEqual([]);
+    await waitFor(() => expect(cards().length).toBe(Math.min(f.data.entity!.seap.role!.signals.count, 20)));
+    for (const card of cards()) expect(forbiddenWords(card.textContent ?? "", "en")).toEqual([]);
   });
 });
 

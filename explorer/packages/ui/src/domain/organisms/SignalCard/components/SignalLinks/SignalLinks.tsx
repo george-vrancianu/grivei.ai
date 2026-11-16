@@ -43,7 +43,7 @@ export function SignalLinks({ recordCount, reproduceHref, methodologyHref, seapH
           {copy.seap.check}
         </Link>
       ) : (
-        <Typography component="span" color="text.secondary">
+        <Typography variant="inherit" component="span" color="text.secondary">
           {copy.seap.checkEach}
         </Typography>
       )}
