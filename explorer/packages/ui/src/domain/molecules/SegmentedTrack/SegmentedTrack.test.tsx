@@ -1,3 +1,4 @@
+import { rgb } from "../../../testing/color.ts";
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
 import { color, radius } from "../../../theme/tokens.ts";
@@ -5,7 +6,6 @@ import { ToggleButton } from "../../../atoms/ToggleButton/index.ts";
 import { ToggleButtonGroup } from "../../../atoms/ToggleButtonGroup/index.ts";
 import { SegmentedTrack } from "./index.ts";
 
-const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
 
 describe("SegmentedTrack", () => {
   it("is a well around the group: ground fill, strong edge, control radius, inset shadow, and no second border", () => {

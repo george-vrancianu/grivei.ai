@@ -1,10 +1,10 @@
+import { rgb } from "../../testing/color.ts";
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../testing/render.tsx";
 import { sxProbe, sxProbeStyle } from "../../testing/sx.ts";
 import { color } from "../../theme/tokens.ts";
 import { Well } from "./index.ts";
 
-const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
 
 describe("Well", () => {
   it("is sunk into its panel: ground fill, a hairline and the inset shadow", () => {

@@ -1,3 +1,4 @@
+import { rgb } from "../../../testing/color.ts";
 import { screen } from "@testing-library/react";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sxProbe, sxProbeStyle } from "../../../testing/sx.ts";
@@ -11,7 +12,6 @@ import { NumericCell } from "../../atoms/NumericCell/index.ts";
 import { Panel } from "../Panel/index.ts";
 import { PanelTable } from "./index.ts";
 
-const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
 
 const table = (props: Partial<React.ComponentProps<typeof PanelTable>> = {}) =>
   renderInUi(

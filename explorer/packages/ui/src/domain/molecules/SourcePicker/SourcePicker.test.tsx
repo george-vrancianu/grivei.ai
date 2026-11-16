@@ -1,10 +1,10 @@
+import { rgb } from "../../../testing/color.ts";
 import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
 import { color } from "../../../theme/tokens.ts";
 import { SourcePicker } from "./index.ts";
 
-const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
 
 const copy = { label: "Source" };
 const options = [{ id: "SEAP", label: "SEAP", count: "120 Records" }, { id: "ONRC", label: "ONRC", count: "40 registrations" }];

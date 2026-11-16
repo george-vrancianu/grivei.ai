@@ -1,3 +1,4 @@
+import { rgb } from "../../../testing/color.ts";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -8,7 +9,6 @@ import { OptionToggle } from "./index.ts";
 const options = ["a", "b", "c"] as const;
 const labels = { a: "Alpha", b: "Beta", c: "Gamma" };
 
-const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
 
 describe("OptionToggle", () => {
   it("shows the value as pressed inside a named group", () => {
