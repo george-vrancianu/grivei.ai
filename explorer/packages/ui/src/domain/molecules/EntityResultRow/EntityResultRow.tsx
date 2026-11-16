@@ -9,7 +9,7 @@ import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import { SIGNALS_ANCHOR } from "../../utils/signalsAnchor.ts";
 import type { EntityResult } from "../../types.ts";
 import { SignalCountChip, type SignalCountChipCopy } from "../SignalCountChip/index.ts";
-import { AMOUNT_COLUMN, ROW_INSET, SIGNALS_COLUMN } from "../../utils/resultRowColumns.ts";
+import { AMOUNT_COLUMN, nameColumnSx, pairSx, ROW_INSET, rowLayoutSx, SIGNALS_COLUMN } from "../../utils/resultRowColumns.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { placeLabel } from "./entityResultRow.utils.ts";
 
@@ -53,9 +53,9 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate, inset = f
   return (
     <Box
       component="li"
-      sx={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", rowGap: 0.75, columnGap: 2, py: 1.5, px: inset ? ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}
+      sx={{ ...rowLayoutSx, position: "relative", px: inset ? ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}
     >
-      <Stack spacing={0.25} sx={{ flex: { xs: "1 1 100%", sm: "1 1 240px" }, minWidth: 0 }}>
+      <Stack spacing={0.25} sx={nameColumnSx}>
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
           <EntityLink entity={entity} href={href} copy={copy.entityLink} onNavigate={onNavigate} />
         </Typography>
@@ -63,7 +63,7 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate, inset = f
           {meta.join(" · ")}
         </Typography>
       </Stack>
-      <Box sx={{ display: "flex", alignItems: "center", columnGap: { xs: signalCount > 0 ? 2 : 0, sm: 2 }, flex: "none", ml: { sm: "auto" } }}>
+      <Box sx={{ ...pairSx, columnGap: { xs: signalCount > 0 ? 2 : 0, sm: 2 } }}>
         <Box sx={{ width: { xs: "auto", sm: SIGNALS_COLUMN }, flex: "none" }}>
           {signalCount > 0 && <SignalCountChip count={signalCount} href={`${href}#${SIGNALS_ANCHOR}`} entityName={entity.displayName} locale={locale} copy={copy.signals} onNavigate={onNavigate} />}
         </Box>
