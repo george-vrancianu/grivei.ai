@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogue } from "../../copy/index.ts";
 import { testCountyTopology } from "../../testing/countyTopology.ts";
-import { countyChipName } from "./countyChipName.ts";
+import { countyChipName } from "./mainScreenPage.utils.ts";
 
 const ready = { status: "ready", topology: testCountyTopology } as const;
 

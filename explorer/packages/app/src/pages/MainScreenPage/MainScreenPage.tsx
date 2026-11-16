@@ -24,7 +24,7 @@ import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
-import { countyChipName } from "./countyChipName.ts";
+import { countyChipName } from "./mainScreenPage.utils.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
