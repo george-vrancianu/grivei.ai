@@ -63,6 +63,10 @@ describe("the theme is built from the tokens", () => {
     expect(theme.graf.size.filterChip).toBe(40);
   });
 
+  it("follows the system's reduced-motion setting, so MUI's animations stop under prefers-reduced-motion", () => {
+    expect(theme.motion.reducedMotion).toBe("system");
+  });
+
   it("uses Space Grotesk for titles and big numbers, Inter for text, Plex Mono for labels, codes and money", () => {
     const { typography } = theme;
     for (const variant of ["h1", "h2", "h3", "total", "stat"] as const) expect(typography[variant].fontFamily).toBe(font.display);

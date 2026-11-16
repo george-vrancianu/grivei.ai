@@ -30,6 +30,7 @@ export function createGriveiTheme(locale: Locale = "en"): Theme {
       },
       shape: { borderRadius: radius.control },
       typography,
+      motion: { reducedMotion: "system" },
       components,
       graf: { radius, size, shadow, logoShadow, headerFill, font, layout, states: grafStates },
     },
