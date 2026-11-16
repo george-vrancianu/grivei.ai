@@ -664,6 +664,8 @@ export const en: Copy = {
       heading: "Known gaps",
       intro: "Every cell that is a known gap, possibly incomplete or not visible in the source, with its reason or its rule.",
       empty: "No known gaps in the data shown.",
+      tableLabel: "Known gaps by quarter and record kind",
+      count: (n) => `${n} ${plural(n, "cell", "cells")}`,
       columns: { quarter: "Quarter", kind: "Record kind", state: "State", reason: "Reason or rule", records: "Records" },
     },
     rules: {

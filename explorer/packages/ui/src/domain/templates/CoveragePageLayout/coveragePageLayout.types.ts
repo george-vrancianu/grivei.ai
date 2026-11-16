@@ -27,6 +27,10 @@ export interface CoveragePageLayoutCopy {
     heading: string;
     intro: string;
     empty: string;
+    /** The table's own scroll region name, which must differ from the panel's (the heading). */
+    tableLabel: string;
+    /** The panel header's count of the rows shown: "7 cells" / "7 celule". */
+    count: (n: number) => string;
     columns: { quarter: string; kind: string; state: string; reason: string; records: string };
   };
   rules: {

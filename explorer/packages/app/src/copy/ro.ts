@@ -669,6 +669,8 @@ export const ro: Copy = {
       heading: "Lacune cunoscute",
       intro: "Fiecare celulă care este lacună cunoscută, posibil incompletă sau nevizibilă în sursă, cu motivul sau regula ei.",
       empty: "Nicio lacună cunoscută în datele afișate.",
+      tableLabel: "Lacunele cunoscute pe trimestre și tipuri de înregistrare",
+      count: (n) => roCount(n, String(n), "celulă", "celule"),
       columns: { quarter: "Trimestru", kind: "Tip de înregistrare", state: "Stare", reason: "Motiv sau regulă", records: "Înregistrări" },
     },
     rules: {
