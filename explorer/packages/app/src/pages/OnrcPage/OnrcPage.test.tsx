@@ -100,6 +100,18 @@ describe.each([
     await waitFor(() => expect(window.location.search).toBe("?q=alfa+beta&status=1107&seapCounterparty=false&source=onrc"));
   });
 
+  it("round-trips the SEAP counterparty option through the URL, and picking it again drops the key", async () => {
+    open(`${base}?q=alfa+beta&source=onrc`);
+    await screen.findByRole("list");
+    const group = s.onrc.filterChips.seapCounterparty.group;
+    await userEvent.click(screen.getByRole("button", { name: new RegExp(`^${group}`) }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: s.onrc.filterChips.seapCounterparty.yes }));
+    await waitFor(() => expect(window.location.search).toBe("?q=alfa+beta&seapCounterparty=true&source=onrc"));
+    await userEvent.click(screen.getByRole("button", { name: new RegExp(`^${group}`) }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: s.onrc.filterChips.seapCounterparty.yes }));
+    await waitFor(() => expect(window.location.search).toBe("?q=alfa+beta&source=onrc"));
+  });
+
   it("makes the Unplaced tile a chip of the filter, in the URL", async () => {
     open(`${base}?q=alfa+beta&source=onrc`);
     await screen.findByRole("list");

@@ -130,7 +130,7 @@ describe.each([
     expect(sent.filter((r) => r.operation === "OnrcCoverage").map((r) => r.variables)).toEqual([failed[0]]);
   });
 
-  it("puts the range line and the paging in the foot of the results panel, and tags a SEAP counterparty and each status", async () => {
+  it("puts the range line in the foot of the results panel and tags a SEAP counterparty", async () => {
     open(`${base}?q=alfa+beta&source=onrc`, controlled({}).client);
     const panel = await screen.findByRole("region", { name: heading });
     const foot = panel.querySelector<HTMLElement>('[data-panel-part="foot"]')!;

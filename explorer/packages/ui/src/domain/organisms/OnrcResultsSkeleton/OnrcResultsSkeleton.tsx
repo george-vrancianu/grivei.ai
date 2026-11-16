@@ -4,7 +4,7 @@ import { Skeleton } from "../../../atoms/Skeleton/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { listRowSx, listSx } from "../../utils/listSx.ts";
-import { ROW_SHAPES, rowOpacity } from "../ResultsSkeleton/resultsSkeleton.utils.ts";
+import { ROW_SHAPES, rowOpacity } from "../../utils/resultsSkeleton.ts";
 
 export interface OnrcResultsSkeletonProps {
   /** The panel's title before any count is known: `OnrcResultsCopy.title` ("Registrations"). */
