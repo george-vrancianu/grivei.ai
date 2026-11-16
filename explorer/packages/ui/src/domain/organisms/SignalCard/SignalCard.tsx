@@ -1,4 +1,3 @@
-import { Box } from "../../../atoms/Box/index.ts";
 import { Well } from "../../../atoms/Well/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
@@ -55,17 +54,15 @@ export function SignalCard({ signal, reproduceHref, methodologyHref, seapHref, e
       label={rule.label}
       aside={`${copy.date(formatDate(signal.date, locale, "long"))} · ${copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}`}
       foot={
-        <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 2, rowGap: 0.5 }}>
-          <SignalLinks
-            recordCount={signal.recordCount}
-            reproduceHref={reproduceHref}
-            methodologyHref={methodologyHref}
-            seapHref={seapHref}
-            onNavigate={onNavigate}
-            locale={locale}
-            copy={copy.links}
-          />
-        </Box>
+        <SignalLinks
+          recordCount={signal.recordCount}
+          reproduceHref={reproduceHref}
+          methodologyHref={methodologyHref}
+          seapHref={seapHref}
+          onNavigate={onNavigate}
+          locale={locale}
+          copy={copy.links}
+        />
       }
     >
       <Typography sx={{ textWrap: "pretty" }}>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>

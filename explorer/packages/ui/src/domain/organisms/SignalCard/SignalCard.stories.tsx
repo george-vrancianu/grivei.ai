@@ -37,5 +37,5 @@ export const NoPublication: Story = { render: card(noPublicationSignal, "/source
 export const ManySuppliersLongNames: Story = { render: card(manySuppliersSignal) };
 /** A Signal that names no supplier (natural persons are left out): the definition list shows the authority only. */
 export const AuthorityOnly: Story = { render: card(authorityOnlySignal, "/source/seap/DA12388888") };
-/** Thirteen Records and no single SEAP page: the foot says "Check each Record in SEAP" instead of a link. */
-export const NoSeapLink: Story = { render: card(frameworkOverrunSignal, null) };
+/** One Record whose Source has no SEAP page (no `seapHref`): the foot says "Check each Record in SEAP" instead of a link. */
+export const NoSeapLink: Story = { render: card(overCapSignal, null) };
