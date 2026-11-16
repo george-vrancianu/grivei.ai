@@ -26,4 +26,11 @@ describe("SignalOrderToggle", () => {
     await userEvent.click(screen.getByRole("button", { name: "by RON" }));
     expect(onChange).toHaveBeenCalledExactlyOnceWith("VALUE_DESC");
   });
+
+  it("sits on the well track and keeps its buttons directly inside the group", () => {
+    renderInUi(<SignalOrderToggle value="DATE_DESC" onChange={() => {}} copy={sampleCopy.signalOrder("en")} />);
+    const group = screen.getByRole("group", { name: "Order Signals" });
+    expect(getComputedStyle(group.parentElement!).boxShadow).toMatch(/\binset\b/);
+    expect(screen.getByRole("button", { name: "by RON" }).parentElement).toBe(group);
+  });
 });
