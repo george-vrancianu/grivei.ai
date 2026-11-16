@@ -25,7 +25,7 @@ export interface CoverageGridProps {
   hideLegend?: boolean;
 }
 
-const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.default", whiteSpace: "nowrap", typography: "meta", color: "text.primary", pr: 2, border: 0 } as const;
+const stickyLabel = { position: "sticky", left: 0, zIndex: 2, backgroundColor: "background.default", whiteSpace: "nowrap", typography: "meta", color: "text.primary", py: "6px", pl: 2, pr: 2, border: 0 } as const;
 
 /**
  * The quarter x record-kind grid of one Source: quarters as columns, kinds as rows. Each cell shows its state by colour, glyph and border,
@@ -45,7 +45,7 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
             <TableRow>
               <TableCell component="th" scope="col" rowSpan={2} sx={{ ...stickyLabel, zIndex: 3, verticalAlign: "bottom" }}>{copy.kindHeader}</TableCell>
               {years.map(({ label, span }, i) => (
-                <TableCell key={`${label}-${i}`} component="th" scope="colgroup" colSpan={span} aria-hidden sx={{ p: 0.5, border: 0, textAlign: "left", typography: "meta", color: "text.secondary" }}>
+                <TableCell key={`${label}-${i}`} component="th" scope="colgroup" colSpan={span} aria-hidden sx={{ p: 0.5, border: 0, backgroundColor: "transparent", textAlign: "left", typography: "meta", color: "text.secondary" }}>
                   {label}
                 </TableCell>
               ))}
@@ -69,6 +69,7 @@ export function CoverageGrid({ cells, dateWindow, locale, copy, hideLegend = fal
                       fontSize: coverage.quarterFontSize,
                       lineHeight: 1.2,
                       border: 0,
+                      backgroundColor: "transparent",
                       borderBottom: 2,
                       borderBottomColor: inRange ? RANGE_COLOR : "transparent",
                       fontWeight: inRange ? 600 : 400,

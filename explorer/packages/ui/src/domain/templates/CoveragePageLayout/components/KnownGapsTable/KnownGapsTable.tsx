@@ -2,6 +2,7 @@ import type { Locale } from "../../../../../theme/index.ts";
 import { Table } from "../../../../../atoms/Table/index.ts";
 import { TableBody } from "../../../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableContainer } from "../../../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
@@ -34,7 +35,7 @@ export function KnownGapsTable({ cells, locale, copy }: KnownGapsTableProps) {
                 <TableCell>{knownGaps.columns.kind}</TableCell>
                 <TableCell>{knownGaps.columns.state}</TableCell>
                 <TableCell>{knownGaps.columns.reason}</TableCell>
-                <TableCell align="right">{knownGaps.columns.records}</TableCell>
+                <NumericCell>{knownGaps.columns.records}</NumericCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -44,7 +45,7 @@ export function KnownGapsTable({ cells, locale, copy }: KnownGapsTableProps) {
                   <TableCell>{kindLabel(cell.kind, grid)}</TableCell>
                   <TableCell>{grid.states[cell.state]}</TableCell>
                   <TableCell>{reasonOf(cell, grid)}</TableCell>
-                  <TableCell align="right">{formatCellCount(cell.records, locale)}</TableCell>
+                  <NumericCell>{formatCellCount(cell.records, locale)}</NumericCell>
                 </TableRow>
               ))}
             </TableBody>

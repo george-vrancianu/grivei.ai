@@ -2,6 +2,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Table } from "../../../atoms/Table/index.ts";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
+import { NumericCell } from "../../atoms/NumericCell/index.ts";
 import { TableContainer } from "../../../atoms/TableContainer/index.ts";
 import { TableHead } from "../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../atoms/TableRow/index.ts";
@@ -50,7 +51,7 @@ export function FinancialStatementsSection({ financials, locale, copy }: Financi
           <TableHead>
             <TableRow>
               <TableCell>{columns.year}</TableCell>
-              {heads.map((head) => <TableCell key={head} align="right">{head}</TableCell>)}
+              {heads.map((head) => <NumericCell key={head}>{head}</NumericCell>)}
               <TableCell>{columns.source}</TableCell>
             </TableRow>
           </TableHead>

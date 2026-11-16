@@ -4,7 +4,7 @@ import { Card } from "../../../atoms/Card/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { color } from "../../../theme/tokens.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
-import { STRIP_FILL } from "../FilterStrip/filterStrip.fill.ts";
+import { STRIP_FILL } from "../../../theme/stripFill.ts";
 
 interface PanelBaseProps {
   /** The header strip's right slot: a short meta line (mono 12, muted) or one control (a toggle, a select, a close button). */

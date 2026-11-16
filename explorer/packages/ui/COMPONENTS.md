@@ -49,7 +49,16 @@ Their form today differs: ONRC statuses are filled `Chip`s (`OnrcResultRow`), "c
 - Every `Panel` takes this look at once; there is no variant. The strips take the card's corner radius (`inherit`), so the Card does not need `overflow: hidden` (a map tooltip is never cut). A flush body with no foot clips its own bottom corners (`overflow: hidden`), so the last row's hover fill follows the card's radius; a padded body never clips.
 - No colour, shadow or amber of its own: the strip fill and `line` are the existing ones.
 
-**List rows in a panel.** On the pages other than the main screen: a `listSx` list (a hairline between rows) whose `li`s take `listRowSx` (`utils/listSx.ts`: 12 px 16 px padding, `raised` hover fill). A full-width Record row (`RecordResultRow`) is 14 px 20 px. The main screen's rows are unchanged at 20 px (`ROW_INSET`, with `inset`).
+**List rows in a panel.** On the pages other than the main screen: a `listSx` list (a hairline between rows) whose `li`s take `listRowSx` (`domain/utils/listSx.ts`: 12 px 16 px padding, `raised` hover fill). A full-width Record row (`RecordResultRow`) is 14 px 20 px. The main screen's rows are unchanged at 20 px (`ROW_INSET`, with `inset`).
+
+## Tables (`theme` table overrides, `domain/molecules/PanelTable`, `domain/atoms/NumericCell`, #245)
+
+The treatment is at two levels, so every table has it and no consumer opts in.
+
+- **The theme** (`MuiTableCell`, `MuiTableRow`): a head cell takes the strip fill (`theme/stripFill.ts`, the one `FilterStrip` and `Panel` use; no new colour), mono 12 `muted`, and the `line` hairline below; every cell is 12 px 14 px (`padding="none"` and `"checkbox"` keep theirs); a row with `hover` fills with `raised` (a `selected` row keeps its `line` fill). The coverage grids (`CoverageGrid`, `CoverageGridCompact`, `CoverageCell`) are heat maps, not data tables: they set their own padding and a transparent head fill, and keep their look.
+- **`PanelTable`** (molecule): the table's own sideways-scroll box around a `Table`, for a `Panel`'s `flush` body. Props: `label` (required: the scroll region's accessible name; the box is a focusable `region`), `minWidth` (px or a CSS length: below it the table scrolls inside the box instead of squeezing its columns; absent, it fits), and every `Table` prop, `sx` and `aria-label` included (`label` names the scroll box; the table's own name is `aria-label` or a `caption` child). The box is `overflow-x: auto`, `max-width: 100%`, `min-width: 0`, so at 390 px the table scrolls in its box and the page does not. Put `hover` on each body `TableRow` for the `raised` hover.
+- **`NumericCell`** (atom): a `TableCell` for a number, in the head or the body: right-aligned, Plex Mono, tabular figures. It takes every `TableCell` prop, `sx` and ref; head or body size and colour come from the theme's cell (via the enclosing `TableHead`). A money amount inside it is still a `MoneyAmount`.
+- Text columns stay `TableCell`s, left-aligned; a column that holds numbers has a `NumericCell` in its head and in every body row.
 
 ## The main screen's panels (#221: `domain/templates/MainScreenLayout`, `atoms/Well`, `molecules/InsetFigure`, `molecules/TotalFigure`, `molecules/FilterStrip`, `organisms/ResultTabs`)
 
