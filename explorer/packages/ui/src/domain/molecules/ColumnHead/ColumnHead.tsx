@@ -4,12 +4,12 @@ import { color } from "../../../theme/tokens.ts";
 import type { EntityRole } from "../../types.ts";
 import { STRIP_FILL } from "../FilterStrip/filterStrip.fill.ts";
 import type { EntityResultRowCopy } from "../EntityResultRow/index.ts";
-import { ROW_INSET, SIGNALS_COLUMN, AMOUNT_COLUMN } from "../../utils/resultRowColumns.ts";
+import { LIST_ROW_INSET, SIGNALS_COLUMN, AMOUNT_COLUMN } from "../../utils/resultRowColumns.ts";
 
 export interface ColumnHeadProps {
   role: EntityRole;
   copy: EntityResultRowCopy["head"];
-  /** Flush in a panel: sits directly under the panel header with 20 px side padding and no top hairline. */
+  /** Flush in a panel: sits directly under the panel header with 16 px side padding and no top hairline. */
   inset?: boolean | undefined;
 }
 
@@ -25,7 +25,7 @@ export function ColumnHead({ role, copy, inset = false }: ColumnHeadProps) {
         display: { xs: "none", sm: "flex" },
         columnGap: 2,
         alignItems: "center",
-        px: inset ? ROW_INSET : 0,
+        px: inset ? LIST_ROW_INSET : 0,
         py: 1.25,
         borderTop: inset ? 0 : 1,
         borderBottom: 1,

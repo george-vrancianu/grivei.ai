@@ -12,10 +12,12 @@ export interface InsetFigureProps {
   children: ReactNode;
   /** Makes the whole figure a link (the suspect Records). The link reads in the body colour: amber is for the headline Total alone. */
   href?: string;
+  /** An optional third line under the value: what the figure rests on, such as a window or a caveat (mono 12 px, muted). With `href` it is part of the link. */
+  note?: ReactNode;
 }
 
-/** A secondary figure sunk into its panel: the label over the value, in a well. It grows from 200 px and wraps under its neighbours on a narrow screen. */
-export function InsetFigure({ label, children, href }: InsetFigureProps) {
+/** A secondary figure sunk into its panel: the label over the value, then an optional `note`, in a well. It grows from 200 px and wraps under its neighbours on a narrow screen. */
+export function InsetFigure({ label, children, href, note }: InsetFigureProps) {
   const text = (
     <>
       <Typography variant="meta" component="span">
@@ -24,6 +26,11 @@ export function InsetFigure({ label, children, href }: InsetFigureProps) {
       <Typography variant="money" component="span" sx={{ fontSize: type.figure.size, color: "text.primary", overflowWrap: "anywhere" }}>
         {children}
       </Typography>
+      {note != null && (
+        <Typography variant="meta" component="span">
+          {note}
+        </Typography>
+      )}
     </>
   );
   return (

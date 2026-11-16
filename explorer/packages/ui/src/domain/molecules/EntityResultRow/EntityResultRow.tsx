@@ -9,7 +9,7 @@ import { MoneyAmount } from "../../atoms/MoneyAmount/index.ts";
 import { SIGNALS_ANCHOR } from "../../utils/signalsAnchor.ts";
 import type { EntityResult } from "../../types.ts";
 import { SignalCountChip, type SignalCountChipCopy } from "../SignalCountChip/index.ts";
-import { AMOUNT_COLUMN, nameColumnSx, pairSx, ROW_INSET, rowLayoutSx, SIGNALS_COLUMN } from "../../utils/resultRowColumns.ts";
+import { AMOUNT_COLUMN, nameColumnSx, pairSx, LIST_ROW_INSET, rowLayoutSx, SIGNALS_COLUMN } from "../../utils/resultRowColumns.ts";
 import { visuallyHidden } from "../../utils/visuallyHidden.ts";
 import { placeLabel } from "./entityResultRow.utils.ts";
 
@@ -38,7 +38,7 @@ export interface EntityResultRowProps {
   copy: EntityResultRowCopy;
   /** A plain click on the entity link or the Signals chip goes here instead of loading the page. */
   onNavigate?: ((href: string) => void) | undefined;
-  /** The list runs flush to a panel's edges: the row carries the 20 px side padding itself, so its hover fill spans the panel. */
+  /** The list runs flush to a panel's edges: the row carries the 16 px side padding itself (12 px above and below), so its hover fill spans the panel. */
   inset?: boolean | undefined;
 }
 
@@ -53,7 +53,7 @@ export function EntityResultRow({ row, href, locale, copy, onNavigate, inset = f
   return (
     <Box
       component="li"
-      sx={{ ...rowLayoutSx, position: "relative", px: inset ? ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}
+      sx={{ ...rowLayoutSx, position: "relative", px: inset ? LIST_ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}
     >
       <Stack spacing={0.25} sx={nameColumnSx}>
         <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600 }}>
