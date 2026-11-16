@@ -31,6 +31,8 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
     heading: "Leadership list",
     caveat: "Each list is the one the leader was elected on, as registered at that election. A leader may have switched party since: this is not current party membership. Leaders are never linked to a person page.",
     inForce: "in force",
+    columns: { leader: "Leader", list: "List (as registered)", period: "Period", basis: "Basis" },
+    tableLabel: "Mandates",
     period: (from, to) => `${from} – ${to}`,
     gapHeading: "Gaps (no Mandate, never guessed)",
     gaps: {
@@ -45,6 +47,8 @@ export const leadershipCopy: Record<Locale, LeadershipSectionCopy> = {
     heading: "Lista conducerii",
     caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
     inForce: "în funcție",
+    columns: { leader: "Lider", list: "Listă (așa cum a fost înscrisă)", period: "Perioadă", basis: "Temei" },
+    tableLabel: "Mandate",
     period: (from, to) => `${from} – ${to}`,
     gapHeading: "Goluri (fără mandat, niciodată presupuse)",
     gaps: {
