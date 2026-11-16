@@ -26,3 +26,18 @@ export const WithCounts: Story = {
 export const NoCounts: Story = {
   render: (_args, { globals }) => <SourcePicker selected="ONRC" onSelect={() => {}} options={[{ id: "SEAP", label: "SEAP" }, { id: "ONRC", label: "ONRC" }]} copy={{ label: label(globals) }} />,
 };
+/** Inside the search box (`inline`): small segments; on a narrow screen (switch the viewport) a dropdown. */
+export const Inline: Story = {
+  render: (_args, { globals }) => (
+    <SourcePicker
+      inline
+      selected="ONRC"
+      onSelect={() => {}}
+      options={[
+        { id: "SEAP", label: "SEAP", count: pick(globals["locale"], { en: "1,204 Records", ro: "1.204 înregistrări" }) },
+        { id: "ONRC", label: "ONRC", count: pick(globals["locale"], { en: "40 registrations", ro: "40 de înmatriculări" }) },
+      ]}
+      copy={{ label: label(globals) }}
+    />
+  ),
+};

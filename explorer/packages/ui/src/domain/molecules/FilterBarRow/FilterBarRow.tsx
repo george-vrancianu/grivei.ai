@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Box } from "../../../../../atoms/Box/index.ts";
-import { STRIP_FILL_CLEAR, STRIP_FILL_SOLID } from "../../../FilterStrip/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { STRIP_FILL_CLEAR, STRIP_FILL_SOLID } from "../FilterStrip/index.ts";
 
 export interface FilterBarRowProps {
   children: ReactNode;

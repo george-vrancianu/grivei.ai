@@ -1,8 +1,8 @@
 import { useId, type ReactNode } from "react";
-import { Box, type BoxProps } from "../../../../../atoms/Box/index.ts";
-import { Button } from "../../../../../atoms/Button/index.ts";
-import { Menu } from "../../../../../atoms/Menu/index.ts";
-import { color, radius, shadow } from "../../../../../theme/tokens.ts";
+import { Box, type BoxProps } from "../../../atoms/Box/index.ts";
+import { Button } from "../../../atoms/Button/index.ts";
+import { Menu } from "../../../atoms/Menu/index.ts";
+import { color, radius, shadow } from "../../../theme/tokens.ts";
 import { useMenuAnchor } from "./hooks/useMenuAnchor.ts";
 
 export interface FilterMenuApi {

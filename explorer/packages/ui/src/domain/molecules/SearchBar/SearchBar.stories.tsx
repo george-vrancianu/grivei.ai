@@ -3,6 +3,7 @@ import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { pick } from "../../../workbench/index.ts";
 import { sampleCopy } from "../../samples/copy.ts";
+import { SourcePicker } from "../SourcePicker/index.ts";
 import { SearchBar, type SearchBarProps } from "./index.ts";
 
 const meta = { title: "Domain/SearchBar", component: SearchBar } satisfies Meta<SearchBarProps>;
@@ -11,11 +12,13 @@ type Story = StoryObj<Partial<SearchBarProps>>;
 
 const localeOf = (global: unknown) => pick(global, { en: "en" as const, ro: "ro" as const });
 
-function Demo({ locale, initial = "", loading = false }: { locale: "en" | "ro"; initial?: string; loading?: boolean }) {
+function Demo({ locale, initial = "", loading = false, withSources = false }: { locale: "en" | "ro"; initial?: string; loading?: boolean; withSources?: boolean }) {
   const [query, setQuery] = useState(initial);
+  const [source, setSource] = useState("SEAP");
+  const picker = <SourcePicker inline selected={source} onSelect={setSource} options={[{ id: "SEAP", label: "SEAP" }, { id: "ONRC", label: "ONRC" }]} copy={{ label: locale === "ro" ? "Sursă" : "Source" }} />;
   return (
-    <div style={{ maxWidth: 560 }}>
-      <SearchBar value={query} onQueryChange={setQuery} loading={loading} copy={sampleCopy.searchBar(locale)} />
+    <div style={{ maxWidth: withSources ? 760 : 560 }}>
+      <SearchBar value={query} onQueryChange={setQuery} loading={loading} copy={sampleCopy.searchBar(locale)} {...(withSources ? { endSlot: picker } : {})} />
       <p data-testid="emitted">{query}</p>
     </div>
   );
@@ -56,3 +59,6 @@ export const Cleared: Story = {
     await expect(canvas.getByRole("searchbox")).toHaveValue("");
   },
 };
+
+/** The Source picker inside the field, at its end (a dropdown on a narrow screen). */
+export const WithSourcePicker: Story = { render: (_a, { globals }) => <Demo locale={localeOf(globals["locale"])} initial="deszăpezire" withSources /> };

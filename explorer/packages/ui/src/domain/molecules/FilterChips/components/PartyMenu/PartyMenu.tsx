@@ -1,5 +1,5 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { ChoiceMenu } from "../ChoiceMenu/index.ts";
+import { ChoiceMenu } from "../../../ChoiceMenu/index.ts";
 
 export interface PartyMenuProps {
   /** The lists to offer, as registered at the election (source data, never translated): parties and alliances under their own names, never "Independent". */

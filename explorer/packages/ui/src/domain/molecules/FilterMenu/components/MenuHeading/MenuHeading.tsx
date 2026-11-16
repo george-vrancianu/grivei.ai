@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Box } from "../../../../../../../atoms/Box/index.ts";
-import { color } from "../../../../../../../theme/tokens.ts";
+import { Box } from "../../../../../atoms/Box/index.ts";
+import { color } from "../../../../../theme/tokens.ts";
 
 export interface MenuHeadingProps {
   children: ReactNode;

@@ -1,6 +1,6 @@
 import { useId } from "react";
 import {
-  Box, DEFAULT_MAP_LENS, MainScreenLayout, OnrcFilterChips, OnrcResults, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, Typography,
+  DEFAULT_MAP_LENS, MainScreenLayout, OnrcFilterChips, OnrcResults, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, Typography,
   type Locale, type MapLens,
 } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
@@ -56,17 +56,22 @@ export function OnrcPage({ locale }: { locale: Locale }) {
       search={
         <>
           <SourceEyebrow id={eyebrowId} sources={[]} selected="ONRC" copy={s.onrc.eyebrow} />
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
-            <SourcePicker
-              options={pickerOptions(s, counts, locale)}
-              selected="ONRC"
-              onSelect={(id) => navigate(searchSourceHref(locale, asSource(id), { q, ...lensState }), "push")}
-              copy={s.picker}
-            />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <SearchBar describedBy={eyebrowId} copy={s.onrc.searchBar} value={filter.q ?? ""} onQueryChange={(next) => setFilter({ q: next || undefined })} loading={state.status === "loading"} />
-            </Box>
-          </Stack>
+          <SearchBar
+            describedBy={eyebrowId}
+            copy={s.onrc.searchBar}
+            value={filter.q ?? ""}
+            onQueryChange={(next) => setFilter({ q: next || undefined })}
+            loading={state.status === "loading"}
+            endSlot={
+              <SourcePicker
+                inline
+                options={pickerOptions(s, counts, locale)}
+                selected="ONRC"
+                onSelect={(id) => navigate(searchSourceHref(locale, asSource(id), { q, ...lensState }), "push")}
+                copy={s.picker}
+              />
+            }
+          />
         </>
       }
       filters={<OnrcFilterChips filter={filter} onChange={(next) => setFilter(patchToOnrc(filter, next))} locale={locale} copy={s.onrc.filterChips} />}

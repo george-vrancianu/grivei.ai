@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { pick } from "../../../../../workbench/index.ts";
-import { localeOf, sampleCopy } from "../../../../samples/copy.ts";
+import { pick } from "../../../workbench/index.ts";
+import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import { FilterMenu, MenuOption } from "./index.ts";
 
-const meta = { title: "Domain/FilterChips/FilterMenu" } satisfies Meta<Record<string, unknown>>;
+const meta = { title: "Domain/FilterMenu" } satisfies Meta<Record<string, unknown>>;
 export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 

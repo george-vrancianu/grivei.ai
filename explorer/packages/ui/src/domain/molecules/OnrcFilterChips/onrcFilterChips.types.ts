@@ -8,13 +8,20 @@ export interface OnrcFilterChipsCopy {
     options: Record<number, string>;
     /** A status code the chips do not name (it came in through the URL). */
     other: (code: number) => string;
+    /** The status menu's value while every status is ticked (no status filter): "All". */
+    all: string;
+    /** The status menu's value once several, but not all, are ticked: "3 picked". */
+    picked: (n: number) => string;
   };
+  /** The value of a menu while it is unset ("Any"). */
+  any: string;
   seapCounterparty: { group: string; yes: string; no: string };
+  /** `label` is shown inside the field ("CAEN"); `hint` is its placeholder. */
   caen: { label: string; hint: string };
+  /** The date menu's name, and its two fields' labels. */
   registered: { group: string; from: string; to: string };
   active: {
     group: string;
-    none: string;
     caen: (code: string) => string;
     county: (area: string) => string;
     /** The Unplaced tile's chip. */

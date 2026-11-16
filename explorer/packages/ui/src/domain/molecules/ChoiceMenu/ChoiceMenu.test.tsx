@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { renderInUi } from "../../../../../testing/render.tsx";
+import { renderInUi } from "../../../testing/render.tsx";
 import { ChoiceMenu } from "./index.ts";
 
 const options = [{ value: "DIRECT_PURCHASE", label: "Direct purchase" }, { value: "CONTRACT", label: "Contract" }] as const;

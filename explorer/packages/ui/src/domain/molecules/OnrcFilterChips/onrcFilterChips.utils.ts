@@ -15,6 +15,33 @@ export function withOnrcFields(filter: OnrcFilter, patch: OnrcFilter): OnrcFilte
   return next as OnrcFilter;
 }
 
+/** The status codes offered: ONRC's four, then any other code the filter holds (it came in through the URL). */
+export const offeredStatuses = (filter: OnrcFilter): number[] => [...ONRC_STATUS_CHOICES, ...(filter.status ?? []).filter((code) => !ONRC_STATUS_CHOICES.includes(code))];
+
+/** The codes ticked in the dropdown: no status filter means every one. */
+export const selectedStatuses = (filter: OnrcFilter): number[] => [...(filter.status ?? offeredStatuses(filter))];
+
+/** `filter` with the ticked codes as its status filter; every offered code ticked is no filter at all. */
+export function withStatuses(filter: OnrcFilter, selected: readonly number[]): OnrcFilter {
+  const all = offeredStatuses(filter).every((code) => selected.includes(code));
+  return withOnrcFields(filter, { status: all ? undefined : [...selected] });
+}
+
+/** Ticks `code` in the status menu, or unticks it; the last ticked status stays ticked (the filter never matches nothing). */
+export function tickStatus(filter: OnrcFilter, code: number): OnrcFilter {
+  const selected = selectedStatuses(filter);
+  if (!selected.includes(code)) return withStatuses(filter, offeredStatuses(filter).filter((c) => c === code || selected.includes(c)));
+  if (selected.length === 1) return filter;
+  return withStatuses(filter, selected.filter((c) => c !== code));
+}
+
+/** The SEAP-counterparty value after picking `value` in its menu: picking the chosen one again unsets it. */
+export const toggleSeapCounterparty = (filter: OnrcFilter, value: boolean): boolean | undefined => (filter.seapCounterparty === value ? undefined : value);
+
+/** `filter` with every field the bar owns unset (the query stays). */
+export const clearOnrcChips = (filter: OnrcFilter): OnrcFilter =>
+  withOnrcFields(filter, { status: undefined, caen: undefined, county: undefined, registeredFrom: undefined, registeredTo: undefined, seapCounterparty: undefined });
+
 export const toggleStatus = (filter: OnrcFilter, code: number): OnrcFilter => withOnrcFields(filter, { status: toggleItem(filter.status, code) });
 
 export interface ActiveOnrcChip {

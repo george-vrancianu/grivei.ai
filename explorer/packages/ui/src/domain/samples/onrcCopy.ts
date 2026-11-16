@@ -42,23 +42,25 @@ const results: Record<Locale, OnrcResultsCopy> = {
 const filterChips: Record<Locale, OnrcFilterChipsCopy> = {
   en: {
     label: "Filters",
-    status: { group: "Status", options: { 1048: "In operation", 1107: "Insolvency", 1084: "Struck off", 1074: "Temporarily suspended" }, other: (code) => `Status ${code}` },
+    status: { group: "Status", options: { 1048: "In operation", 1107: "Insolvency", 1084: "Struck off", 1074: "Temporarily suspended" }, other: (code) => `Status ${code}`, all: "All", picked: (n) => `${n} picked` },
+    any: "Any",
     seapCounterparty: { group: "In SEAP", yes: "SEAP counterparties only", no: "Not in SEAP" },
-    caen: { label: "CAEN code or prefix", hint: "Digits, e.g. 4211 or 42" },
+    caen: { label: "CAEN", hint: "4211 or 42" },
     registered: { group: "Registered", from: "From", to: "To" },
     active: {
-      group: "Active filters", none: "No filters", caen: (code) => `CAEN ${code}`, county: (area) => `County: ${area}`, unplaced: "No county", from: (date) => `Registered from ${date}`, to: (date) => `Registered to ${date}`,
+      group: "Active filters", caen: (code) => `CAEN ${code}`, county: (area) => `County: ${area}`, unplaced: "No county", from: (date) => `Registered from ${date}`, to: (date) => `Registered to ${date}`,
       seapCounterparty: { yes: "SEAP counterparties only", no: "Not in SEAP" }, remove: (chip) => `Remove ${chip}`, clearAll: "Clear all",
     },
   },
   ro: {
     label: "Filtre",
-    status: { group: "Stare", options: { 1048: "În funcțiune", 1107: "Insolvență", 1084: "Radiată", 1074: "Întrerupere temporară" }, other: (code) => `Starea ${code}` },
+    status: { group: "Stare", options: { 1048: "În funcțiune", 1107: "Insolvență", 1084: "Radiată", 1074: "Întrerupere temporară" }, other: (code) => `Starea ${code}`, all: "Toate", picked: (n) => `${n} alese` },
+    any: "Oricare",
     seapCounterparty: { group: "În SEAP", yes: "Doar părți în SEAP", no: "Nu în SEAP" },
-    caen: { label: "Cod CAEN sau prefix", hint: "Cifre, de ex. 4211 sau 42" },
+    caen: { label: "CAEN", hint: "4211 sau 42" },
     registered: { group: "Înmatriculată", from: "De la", to: "Până la" },
     active: {
-      group: "Filtre active", none: "Niciun filtru", caen: (code) => `CAEN ${code}`, county: (area) => `Județ: ${area}`, unplaced: "Fără județ", from: (date) => `Înmatriculată de la ${date}`, to: (date) => `Înmatriculată până la ${date}`,
+      group: "Filtre active", caen: (code) => `CAEN ${code}`, county: (area) => `Județ: ${area}`, unplaced: "Fără județ", from: (date) => `Înmatriculată de la ${date}`, to: (date) => `Înmatriculată până la ${date}`,
       seapCounterparty: { yes: "Doar părți în SEAP", no: "Nu în SEAP" }, remove: (chip) => `Elimină ${chip}`, clearAll: "Șterge toate",
     },
   },

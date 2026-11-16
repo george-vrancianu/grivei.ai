@@ -8,6 +8,7 @@ import { size } from "../../../theme/tokens.ts";
 import { SearchBar } from "./index.ts";
 
 const en = sampleCopy.searchBar("en");
+const hint = en.hint ?? "";
 
 function setup(props: Partial<React.ComponentProps<typeof SearchBar>> = {}) {
   const onQueryChange = vi.fn();
@@ -35,7 +36,7 @@ describe("SearchBar", () => {
     eyebrow.id = "eyebrow";
     eyebrow.textContent = "Source: SEAP";
     document.body.append(eyebrow);
-    expect(box()).toHaveAccessibleDescription(`${en.hint} Source: SEAP`);
+    expect(box()).toHaveAccessibleDescription(`${hint} Source: SEAP`);
   });
 
   it("emits ONE query after a burst of keystrokes, once typing pauses", async () => {
@@ -165,11 +166,23 @@ describe("SearchBar", () => {
 describe("SearchBar look", () => {
   it("is 56 px tall, with a hint line that describes the field and gives way to the length hint", async () => {
     const { user } = setup();
-    expect(screen.getByText(en.hint)).toBeVisible();
-    expect(box()).toHaveAccessibleDescription(en.hint);
+    expect(screen.getByText(hint)).toBeVisible();
+    expect(box()).toHaveAccessibleDescription(hint);
     expect(box().closest(".MuiOutlinedInput-root")).toHaveStyle({ minHeight: `${size.searchInput}px` });
     await user.type(box(), "a");
     expect(box()).toHaveAccessibleDescription(en.minLengthHint);
-    expect(screen.queryByText(en.hint)).toBeNull();
+    expect(screen.queryByText(hint)).toBeNull();
+  });
+
+  it("shows no hint line when the copy has none (the placeholder says it), still the length hint", async () => {
+    const { user } = setup({ copy: { ...en, hint: undefined } });
+    expect(box()).not.toHaveAccessibleDescription();
+    await user.type(box(), "a");
+    expect(box()).toHaveAccessibleDescription(en.minLengthHint);
+  });
+
+  it("holds a control at the end of the field (the Source picker)", () => {
+    setup({ endSlot: <button type="button">ONRC</button> });
+    expect(box().closest(".MuiOutlinedInput-root")).toContainElement(screen.getByRole("button", { name: "ONRC" }));
   });
 });
