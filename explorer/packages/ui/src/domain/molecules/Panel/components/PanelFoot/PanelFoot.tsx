@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { color } from "../../../../../theme/tokens.ts";
-import { STRIP_FILL } from "../../../../../theme/stripFill.ts";
+import { STRIP_BASE } from "../../../../../theme/stripFill.ts";
 
 export interface PanelFootProps {
   /** Several children sit at the left and right ends and wrap when the row is full. */
@@ -19,10 +18,7 @@ export function PanelFoot({ children }: PanelFootProps) {
       component="div"
       data-panel-part="foot"
       sx={{
-        backgroundColor: STRIP_FILL,
-        borderColor: color.line,
-        borderStyle: "solid",
-        borderWidth: 0,
+        ...STRIP_BASE,
         borderTopWidth: 1,
         borderBottomLeftRadius: "inherit",
         borderBottomRightRadius: "inherit",

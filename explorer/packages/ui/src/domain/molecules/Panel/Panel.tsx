@@ -2,9 +2,8 @@ import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Card } from "../../../atoms/Card/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
-import { color } from "../../../theme/tokens.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
-import { STRIP_FILL } from "../../../theme/stripFill.ts";
+import { STRIP_BASE } from "../../../theme/stripFill.ts";
 import { PanelFoot } from "./components/PanelFoot/index.ts";
 
 interface PanelBaseProps {
@@ -38,7 +37,7 @@ export type PanelProps = PanelBaseProps &
       }
   );
 
-const stripSx = { backgroundColor: STRIP_FILL, borderColor: color.line, borderStyle: "solid", borderWidth: 0 } as const;
+const stripSx = STRIP_BASE;
 
 /**
  * The titled panel: a `Card` (the theme's panel fill, hairline and radius) in three parts. The header strip holds the mono accent heading and an optional right slot (`aside`);
