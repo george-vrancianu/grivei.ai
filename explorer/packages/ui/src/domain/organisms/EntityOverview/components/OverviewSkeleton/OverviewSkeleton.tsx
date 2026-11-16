@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { Skeleton } from "../../../../../atoms/Skeleton/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { InsetFigure } from "../../../../molecules/InsetFigure/index.ts";
@@ -8,6 +7,7 @@ import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { EntityOverviewCopy } from "../../EntityOverview.tsx";
 import { HeadlineFigure } from "../HeadlineFigure/index.ts";
 import { OverviewColumns } from "../OverviewColumns/index.ts";
+import { skeletonBlock } from "../../../../utils/skeletonBlock.tsx";
 
 export interface OverviewSkeletonProps {
   /** The Overview's own copy: the labels and headings are the real ones. */
@@ -16,8 +16,6 @@ export interface OverviewSkeletonProps {
   status: ReactNode;
 }
 
-const block = (width: number | string, height: number) => <Skeleton aria-hidden="true" variant="rounded" width={width} height={height} />;
-
 /** Three list rows: a name and an amount, then the share bar, as the list panels draw them. */
 function RowBlocks() {
   return (
@@ -25,10 +23,10 @@ function RowBlocks() {
       {[0, 1, 2].map((row) => (
         <Stack key={row} spacing={0.75} sx={{ py: 1.5, px: 2, "& + &": { borderTop: 1, borderColor: "divider" } }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-            {block("45%", 20)}
-            {block(96, 20)}
+            {skeletonBlock("45%", 20)}
+            {skeletonBlock(96, 20)}
           </Box>
-          {block("100%", 6)}
+          {skeletonBlock("100%", 6)}
         </Stack>
       ))}
     </Stack>
@@ -46,7 +44,7 @@ export function OverviewSkeleton({ copy, status }: OverviewSkeletonProps) {
       <Box component="ul" aria-hidden="true" sx={{ display: "grid", gap: 1.5, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", m: 0, p: 0 }}>
         {[headline.total, headline.counterparties, headline.directPurchase, headline.signals].map((label) => (
           <HeadlineFigure key={label} label={label}>
-            {block(120, 32)}
+            {skeletonBlock(120, 32)}
           </HeadlineFigure>
         ))}
       </Box>
@@ -60,8 +58,8 @@ export function OverviewSkeleton({ copy, status }: OverviewSkeletonProps) {
                 </Box>
                 {status}
               </Box>
-              {block("100%", 168)}
-              {block("100%", 168)}
+              {skeletonBlock("100%", 168)}
+              {skeletonBlock("100%", 168)}
             </Stack>
             <Box aria-hidden="true">
               <Panel heading={copy.largest.heading} level="h2" flush>
@@ -71,9 +69,9 @@ export function OverviewSkeleton({ copy, status }: OverviewSkeletonProps) {
             <Box aria-hidden="true">
               <Panel heading={copy.frameworks.heading} level="h2">
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-                  <InsetFigure label={copy.frameworks.agreements}>{block(48, 22)}</InsetFigure>
-                  <InsetFigure label={copy.frameworks.ceilings}>{block(120, 22)}</InsetFigure>
-                  <InsetFigure label={copy.frameworks.subsequent}>{block(120, 22)}</InsetFigure>
+                  <InsetFigure label={copy.frameworks.agreements}>{skeletonBlock(48, 22)}</InsetFigure>
+                  <InsetFigure label={copy.frameworks.ceilings}>{skeletonBlock(120, 22)}</InsetFigure>
+                  <InsetFigure label={copy.frameworks.subsequent}>{skeletonBlock(120, 22)}</InsetFigure>
                 </Box>
               </Panel>
             </Box>

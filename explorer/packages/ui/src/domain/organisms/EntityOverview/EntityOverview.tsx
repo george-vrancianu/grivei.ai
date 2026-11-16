@@ -48,7 +48,7 @@ export interface EntityOverviewProps {
   graphHref?: string;
   /** Called with the href on a plain click on a link of the Overview's own (the graph link), so the app can change page without a load. */
   onNavigate?: (href: string) => void;
-  /** The last answer is shown while the next one loads: the figures and bodies dim (`BUSY_OPACITY`), the region is `aria-busy`, the headings and strips stay at full strength. */
+  /** The last answer is shown while the next one loads: the figures, bodies and foot strips dim (`BUSY_OPACITY`), the region is `aria-busy`, the headings and header strips stay at full strength. */
   busy?: boolean;
   /** A loading status (`LoadingStatus`), shown at the right end of the Signals heading's line while `busy`. */
   status?: ReactNode;
@@ -60,7 +60,7 @@ export interface EntityOverviewProps {
  */
 export function EntityOverview({ overview, aliases, role, entityHref, recordHref, methodologyHref, suspectHref, locale, copy, signals, signalsToolbar, signalsPaging, graphHref, onNavigate, busy, status }: EntityOverviewProps) {
   return (
-    <Stack spacing={3} aria-busy={busy ? true : undefined} sx={busy ? { "& [data-panel-part='body'], & [data-busy-dim]": { opacity: BUSY_OPACITY } } : undefined}>
+    <Stack spacing={3} aria-busy={busy ? true : undefined} sx={busy ? { "& [data-panel-part='body'], & [data-panel-part='foot'], & [data-busy-dim]": { opacity: BUSY_OPACITY } } : undefined}>
       <HeadlineNumbers overview={overview} locale={locale} copy={copy.headline} methodologyHref={methodologyHref} suspectHref={suspectHref} />
       <OverviewColumns
         left={

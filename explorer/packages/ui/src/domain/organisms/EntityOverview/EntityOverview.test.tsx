@@ -149,6 +149,11 @@ describe("the Overview's Signals section", () => {
     expect(screen.queryByRole("navigation", { name: pageNav.label })).toBeNull();
   });
 
+  it("draws no range line for a page past the last one", () => {
+    renderInUi(<EntityOverview {...overviewProps(withCount(30), "en")} signals={null} signalsPaging={paging(3, 0)} />, "en");
+    expect(screen.queryByText(/Signals \d+–\d+ of/)).toBeNull();
+  });
+
   it("has no range line and no toolbar when there are no Signals", () => {
     renderInUi(<EntityOverview {...overviewProps(authorityOverview, "en")} signalsToolbar={<p>the toggle</p>} signalsPaging={paging(1, 0)} />, "en");
     expect(screen.queryByText(/^Signals \d/)).toBeNull();

@@ -67,8 +67,14 @@ describe("Counterparties", () => {
     expect(screen.queryByRole("link", { name: /graph/ })).toBeNull();
   });
 
-  it("says nothing about more when every counterparty is listed", () => {
+  it("still links to the graph, and says nothing about more, when every counterparty is listed", () => {
     show({ ...counterparties, count: 4 });
+    expect(screen.queryByText(/more/)).toBeNull();
+    expect(screen.getByRole("link", { name: "All 4, as a graph" })).toHaveAttribute("href", "/explore/authority/1/relationships");
+  });
+
+  it("has no foot when every counterparty is listed and there is no graph to link", () => {
+    show({ ...counterparties, count: 4 }, null);
     expect(screen.queryByText(/more/)).toBeNull();
     expect(screen.queryByRole("link", { name: /graph/ })).toBeNull();
   });

@@ -37,7 +37,7 @@ export interface CounterpartiesProps {
   /** The page's role; the counterparties are on the other side. */
   role: EntityRole;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
-  /** The Relationships tab (the graph of every counterparty). Absent, the foot has the "and n more" line only. */
+  /** The Relationships tab (the graph of every counterparty). Absent, the foot has the "and n more" line only (or none). */
   graphHref?: string | undefined;
   onNavigate?: ((href: string) => void) | undefined;
   locale: Locale;
@@ -59,9 +59,9 @@ export function Counterparties({ counterparties, total, role, entityHref, graphH
       aside={copy.meta}
       flush={rows.length > 0}
       foot={
-        hidden > 0 ? (
+        hidden > 0 || (graphHref !== undefined && count > 0) ? (
           <>
-            <span>{copy.more(hidden, formatCount(hidden, false, locale))}</span>
+            {hidden > 0 && <span>{copy.more(hidden, formatCount(hidden, false, locale))}</span>}
             {graphHref !== undefined && (
               <Link href={graphHref} onClick={followLink(graphHref, onNavigate)}>
                 {copy.graph(count, formatCount(count, false, locale))}

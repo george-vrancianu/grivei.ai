@@ -68,9 +68,13 @@ export function SignalsSection({ count, locale, copy, toolbar, status, children,
           {children}
           {paging && (
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 2, rowGap: 1 }}>
-              <Typography variant="meta" component="p">
-                {copy.range(formatCount(from, false, locale), formatCount(Math.min(count, from + paging.shown - 1), false, locale), formatCount(count, false, locale))}
-              </Typography>
+              {paging.shown > 0 ? (
+                <Typography variant="meta" component="p" data-busy-dim>
+                  {copy.range(formatCount(from, false, locale), formatCount(Math.min(count, from + paging.shown - 1), false, locale), formatCount(count, false, locale))}
+                </Typography>
+              ) : (
+                <span />
+              )}
               {pages > 1 && <PageNav locale={locale} page={paging.page} pages={pages} pageHref={paging.pageHref} onNavigate={paging.onNavigate} copy={paging.copy} />}
             </Box>
           )}

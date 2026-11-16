@@ -192,7 +192,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       ) : view === "overview" ? (
         state.overview && entity ? (
           // The last Overview of this entity stays on screen, dimmed, while a new filter, Signals order or page loads (the toggle keeps its focus).
-          <Stack spacing={3} aria-busy={loading}>
+          <Stack spacing={3}>
             <EntityOverview overview={state.overview} aliases={entity.aliases}
               busy={loading}
               status={<LoadingStatus label={t.status.loading} />}
