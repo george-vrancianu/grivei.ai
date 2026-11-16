@@ -1,5 +1,6 @@
 import type { Channel, RecordBadge, RecordFilter, ValueBucket } from "@grivei/contract";
 import type { Locale } from "../../../theme/index.ts";
+import type { FilterChipsCopy } from "./filterChips.types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 
 /** The `RecordFilter` fields the chips own. Everything else (q, county, uat, authority, supplier, cpv, signal, countySide) passes through untouched. */
@@ -56,6 +57,25 @@ export function yearOptions(firstYear: number, lastYear: number, filter: RecordF
   return [...years].sort((a, b) => a - b);
 }
 
+/**
+ * The year menu's button text: "from 2023", "until 2025", "2023–2025", or the bare year when both ends fall in the same one.
+ * `undefined` when neither end is set. A date that is not a year edge counts as its containing year, as the columns reflect it.
+ */
+export function yearRangeText(filter: RecordFilter, range: FilterChipsCopy["year"]["range"]): string | undefined {
+  const from = yearOf(filter.from);
+  const to = yearOf(filter.to);
+  if (from !== undefined && to !== undefined) return from === to ? String(from) : range.between(String(from), String(to));
+  if (from !== undefined) return range.from(String(from));
+  if (to !== undefined) return range.until(String(to));
+  return undefined;
+}
+
+/** A multi-select menu's button text: nothing picked is `undefined`, one pick shows its name, more show the count. */
+export function pickedText(names: readonly string[], picked: (n: number) => string): string | undefined {
+  if (names.length === 0) return undefined;
+  return names.length === 1 ? names[0] : picked(names.length);
+}
+
 /** Add `item` to `list`, or remove it when already there; the order of the list is kept stable (new items go last). */
 export function toggleItem<T>(list: readonly T[] | null | undefined, item: T): T[] {
   const current = list ?? [];
@@ -75,8 +95,11 @@ export const setParty = (filter: RecordFilter, party: string | undefined): Recor
 /** The chip offers `true` or nothing; a given `false` ("without Signals") is replaced by `true`. */
 export const toggleHasSignals = (filter: RecordFilter): RecordFilter => withFields(filter, { hasSignals: filter.hasSignals === true ? undefined : true });
 
-/** The filter with every chip-owned field removed. */
-export const clearChips = (filter: RecordFilter): RecordFilter => withFields(filter, chipFieldsOf({}));
+/** The filter without the map-picked county: `county` and `uat` unset, as the map's back link does (`countySide` stays). */
+export const withoutCounty = (filter: RecordFilter): RecordFilter => withFields(filter, { county: undefined, uat: undefined });
+
+/** The filter with every chip-owned field and the county (with its UAT) removed. */
+export const clearChips = (filter: RecordFilter): RecordFilter => withoutCounty(withFields(filter, chipFieldsOf({})));
 
 /** The procedures to offer: the caller's, then any the filter holds that the caller did not list. */
 export function procedureChoices(options: readonly string[], filter: RecordFilter): string[] {
@@ -100,14 +123,16 @@ export interface ActiveChipText {
   withoutSignals: string;
   badges: Record<RecordBadge, string>;
   party: (list: string) => string;
+  county: (area: string) => string;
 }
 
 /**
- * One entry per active chip, in a stable order: dates, channel, value bucket, Signals, procedures, the Party, badges (in the
+ * One entry per active chip, in a stable order: the county (named by the caller, else its code), dates, channel, value bucket, Signals, procedures, the Party, badges (in the
  * order of the filter's list). A date that is not Jan 1 (from) or Dec 31 (to) is shown as the date, not as its year.
  */
-export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: Locale): ActiveChip[] {
+export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: Locale, countyName?: string): ActiveChip[] {
   const chips: ActiveChip[] = [];
+  if (filter.county) chips.push({ id: "county", label: text.county(countyName ?? filter.county), remove: withoutCounty });
   const when = (date: string, aligned: boolean) => (aligned ? String(yearOf(date)) : formatDateOr(date, locale));
   if (filter.from) {
     const from = filter.from;

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
+import { Button } from "../../../../../atoms/Button/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
-import { neutralLinkSx } from "../../../../utils/neutralLinkSx.ts";
 import { StateNote } from "../../../../molecules/StateNote/index.ts";
 
 export interface ResultTabPanelProps {
@@ -25,25 +25,31 @@ export interface ResultTabPanelProps {
   showAll?: { href: string; text: string } | undefined;
 }
 
-/** One tab's panel: its rows, or one sentence when there are none, then the optional "show all" link. */
+/** One tab's panel: its rows, or one sentence when there are none, then the optional "show all" button, centred at the foot. */
 export function ResultTabPanel({ id, tabId, selected, children, shown, count, emptyText, emptyLink, onNavigate, showAll }: ResultTabPanelProps) {
   return (
     <div role="tabpanel" id={id} aria-labelledby={tabId} hidden={!selected}>
       {selected && (
         <>
           {shown === 0 ? (
-            <StateNote
-              kind="empty"
-              action={emptyLink && <Link href={emptyLink.href} onClick={followLink(emptyLink.href, onNavigate)} sx={{ alignSelf: "flex-start" }}>{emptyLink.text}</Link>}
-            >
-              {emptyText}
-            </StateNote>
+            <Box sx={{ px: 2.5, py: 1 }}>
+              <StateNote
+                kind="empty"
+                action={emptyLink && <Link href={emptyLink.href} onClick={followLink(emptyLink.href, onNavigate)} sx={{ alignSelf: "flex-start" }}>{emptyLink.text}</Link>}
+              >
+                {emptyText}
+              </StateNote>
+            </Box>
           ) : (
-            children
+            // The lists run flush to the panel (`inset`): the column head sits under the tab header and the row fills reach both edges.
+            <Box sx={{ pb: 1 }}>{children}</Box>
           )}
           {showAll && count > shown && (
-            <Box sx={{ pt: 2, borderTop: 1, borderColor: "divider" }}>
-              <Link href={showAll.href} onClick={followLink(showAll.href, onNavigate)} sx={neutralLinkSx}>{showAll.text}</Link>
+            <Box sx={{ py: 2, borderTop: 1, borderColor: "divider", display: "flex", justifyContent: "center" }}>
+              {/* A raised button that is still a link (it has an href); in the body colour, since amber is for the headline Total alone. */}
+              <Button variant="outlined" color="inherit" href={showAll.href} onClick={followLink(showAll.href, onNavigate)}>
+                {showAll.text}
+              </Button>
             </Box>
           )}
         </>

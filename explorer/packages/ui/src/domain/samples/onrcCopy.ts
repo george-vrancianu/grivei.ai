@@ -47,7 +47,7 @@ const filterChips: Record<Locale, OnrcFilterChipsCopy> = {
     caen: { label: "CAEN code or prefix", hint: "Digits, e.g. 4211 or 42" },
     registered: { group: "Registered", from: "From", to: "To" },
     active: {
-      group: "Active filters", none: "No filters", caen: (code) => `CAEN ${code}`, county: (area) => `County ${area}`, unplaced: "No county", from: (date) => `Registered from ${date}`, to: (date) => `Registered to ${date}`,
+      group: "Active filters", none: "No filters", caen: (code) => `CAEN ${code}`, county: (area) => `County: ${area}`, unplaced: "No county", from: (date) => `Registered from ${date}`, to: (date) => `Registered to ${date}`,
       seapCounterparty: { yes: "SEAP counterparties only", no: "Not in SEAP" }, remove: (chip) => `Remove ${chip}`, clearAll: "Clear all",
     },
   },
@@ -58,7 +58,7 @@ const filterChips: Record<Locale, OnrcFilterChipsCopy> = {
     caen: { label: "Cod CAEN sau prefix", hint: "Cifre, de ex. 4211 sau 42" },
     registered: { group: "Înmatriculată", from: "De la", to: "Până la" },
     active: {
-      group: "Filtre active", none: "Niciun filtru", caen: (code) => `CAEN ${code}`, county: (area) => `Județul ${area}`, unplaced: "Fără județ", from: (date) => `Înmatriculată de la ${date}`, to: (date) => `Înmatriculată până la ${date}`,
+      group: "Filtre active", none: "Niciun filtru", caen: (code) => `CAEN ${code}`, county: (area) => `Județ: ${area}`, unplaced: "Fără județ", from: (date) => `Înmatriculată de la ${date}`, to: (date) => `Înmatriculată până la ${date}`,
       seapCounterparty: { yes: "Doar părți în SEAP", no: "Nu în SEAP" }, remove: (chip) => `Elimină ${chip}`, clearAll: "Șterge toate",
     },
   },

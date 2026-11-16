@@ -1,13 +1,14 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, MainScreenLayout, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, Typography,
+  Box, Button, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
 import { MoneyLensSection } from "../../components/MoneyLensSection/index.ts";
 import { uatAfterClick, zoomedCountyOf, zoomVariables, ZoomedCountySection } from "../../components/ZoomedCountySection/index.ts";
 import { MainDataThrough } from "../../components/MainDataThrough/index.ts";
+import { MapBackLink } from "../../components/MapBackLink/index.ts";
 import { MainTotal } from "../../components/MainTotal/index.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -23,6 +24,8 @@ import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
+import { anyInFlight, busyPanels, countyChipName } from "./mainScreenPage.utils.ts";
+import { isInFlight, isStale } from "./hooks/useHeldQuery.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
@@ -51,11 +54,19 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const zoom = useZoomedCounty(zoomed === null ? null : zoomVariables(filter, zoomed));
   const uatTopology = useUatTopology(zoomed);
   const search = state.status === "ready" ? state.data.seap.search : null;
+  // A held answer (`stale`) is on screen while the next request is in flight.
+  const refreshing = isStale(state);
+  // The search spinner is for a typed query: it shows while a request is in flight for a query other than the one last answered (a filter click leaves the query alone).
+  const [answeredQ, setAnsweredQ] = useState(filter.q);
+  if ((state.status === "error" || (state.status === "ready" && !state.stale)) && answeredQ !== filter.q) setAnsweredQ(filter.q); // an error ends the typed query's spinner too
+  const typing = isInFlight(state) && filter.q !== answeredQ;
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   // The Coverage lens asks only while it is shown: the date chip's window for the map, and the whole grid (highlighted by the same window) for the compact grid.
   const coverageShown = mapLens === "coverage";
   const coverage = useCoverageLens(coverageShown ? coverageLensVariables(filter) : null);
   const coverageGrid = useCoveragePage(coverageShown ? {} : null);
+  // Any request in flight, for the results header's status line: the main query, the zoomed county's and the Coverage lens's (each only while it is asked).
+  const inFlight = anyInFlight(state, { asked: zoomed !== null, state: zoom }, { asked: coverageShown, state: coverage });
   const side: CountySide = filter.countySide ?? "AUTHORITY";
   // The eyebrow and the data-through note keep the last Sources they received while a new query loads, so neither drops back to the id or leaves the map panel's foot.
   const [lastSources, setLastSources] = useState<MainScreenSources>([]);
@@ -70,16 +81,18 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
 
   return (
     <MainScreenLayout
+      title={
+        <Typography variant="h2" component="h1">
+          {t.main.title}
+        </Typography>
+      }
       search={
         <>
-          <Typography variant="h4" component="h1" sx={{ mb: 2.5 }}>
-            {t.main.title}
-          </Typography>
           <SourceEyebrow id={eyebrowId} sources={lastSources} selected={SEARCHED_SOURCE} copy={t.sourceEyebrow} />
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
             <SourcePicker options={pickerOptions(t.sources, counts, locale)} selected={SEARCHED_SOURCE} onSelect={goToSource} copy={t.sources.picker} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
+              <SearchBar describedBy={eyebrowId} copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={typing} />
             </Box>
           </Stack>
         </>
@@ -87,10 +100,12 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       filters={
         <FilterChips
           filter={filter}
-          onChange={(next) => setFilter(chipFieldsOf(next))}
+          // The chips' fields plus the county and its UAT (Clear all and the county chip unset them): a key left out of the patch stays in the URL.
+          onChange={(next) => setFilter({ ...chipFieldsOf(next), county: next.county ?? undefined, uat: next.uat ?? undefined })}
           procedureOptions={procedureOptions}
           partyOptions={partyOptions}
           lastYear={new Date().getFullYear()}
+          {...(filter.county ? { countyName: countyChipName(filter.county, topology, t.moneyLensMap.tiles) } : {})}
           locale={locale}
           copy={t.filterChips}
         />
@@ -103,14 +118,14 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               data={zoom.status === "ready" ? zoom.data : null}
               loading={zoom.status === "loading"}
               failed={zoom.status === "error"}
+              onRetry={zoom.status === "error" ? zoom.retry : undefined}
               topology={uatTopology}
               uat={filter.uat ?? undefined}
               onSelectUat={(siruta) => setFilter({ uat: uatAfterClick(filter.uat ?? undefined, siruta) })}
               onClearUat={() => setFilter({ uat: undefined })}
-              onBack={() => setFilter({ county: undefined, uat: undefined })}
               locale={locale}
               copy={t.zoomedCounty}
-              status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+              status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
             />
           ) : (
             <MoneyLensSection
@@ -123,6 +138,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               onChange={({ county, side: nextSide }) => setFilter({ county, uat: undefined, ...(nextSide ? { countySide: nextSide === "AUTHORITY" ? undefined : nextSide } : {}) })}
               locale={locale}
               copy={t.moneyLensMap}
+              title={t.main.mapTitle}
               status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
             />
           )
@@ -132,6 +148,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             lens={coverage.status === "ready" ? coverage.data : null}
             loading={coverage.status === "loading"}
             failed={coverage.status === "error"}
+            onRetry={coverage.status === "error" ? coverage.retry : undefined}
             topology={topology}
             cells={coverageGrid.status === "ready" ? coverageGrid.data.coverage.grid : null}
             dateWindow={highlightWindow(filter)}
@@ -144,27 +161,52 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             onSelect={(county) => setFilter({ county, countySide: undefined, uat: undefined })}
             locale={locale}
             copy={{ map: t.coverageLensMap, grid: t.coverage.grid }}
-            status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+            status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
           />
         ),
       }}
+      busy={busyPanels(state, { coverage: coverageShown, zoomed: zoomed !== null }, zoom, coverage)}
       summary={
-        search && state.status === "ready" && (
-          <MainTotal
-            total={search.total}
-            copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
-            locale={locale}
-            methodologyHref={methodologyHref(locale, "awardedValue")}
-            partyHref={methodologyHref(locale, "partyAndLeadership")}
-            suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
-          />
+        state.status === "loading" ? (
+          <TotalSkeleton labels={t.total.figures} heading={<Typography variant="meta" component="h2">{t.main.total}</Typography>} />
+        ) : (
+          (search || state.status === "error") && (
+            <MainTotal
+              total={search ? search.total : null}
+              copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
+              locale={locale}
+              methodologyHref={methodologyHref(locale, "awardedValue")}
+              partyHref={methodologyHref(locale, "partyAndLeadership")}
+              suspectHref={`${pathFor(locale, { name: "main" })}${encodeUrlState({ filter: withSuspectBadge(filter), tab: "records" })}`}
+            />
+          )
         )
       }
+      mapBack={zoomed !== null && mapLens === "money" ? <MapBackLink onClick={() => setFilter({ county: undefined, uat: undefined })}>{t.zoomedCounty.back}</MapBackLink> : undefined}
       mapNote={<MainDataThrough sources={lastSources} copy={{ dataThrough: t.dataThrough, kinds: t.coverage.grid.kinds }} locale={locale} />}
       results={
         <>
-          {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}
-          {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
+          {state.status === "loading" && (
+            <ResultsSkeleton
+              copy={t.results}
+              head={t.results.entityRow.head}
+              tab={toResultTab(tab)}
+              onTabChange={(next: ResultTab) => update({ tab: next === DEFAULT_RESULT_TAB ? undefined : next })}
+              status={<LoadingStatus label={t.status.loading} />}
+            />
+          )}
+          {state.status === "error" && (
+            <StateNote
+              kind="error"
+              action={
+                <Button size="small" onClick={state.retry}>
+                  {t.status.retry}
+                </Button>
+              }
+            >
+              {t.status.failed}
+            </StateNote>
+          )}
           {search && (
             <ResultTabs
               authorities={search.authorities}
@@ -183,6 +225,8 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               onNavigate={(href) => navigate(href, "push")}
               locale={locale}
               copy={t.results}
+              status={inFlight && <LoadingStatus label={t.status.loading} />}
+              busy={refreshing}
             />
           )}
         </>

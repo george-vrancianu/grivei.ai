@@ -185,4 +185,13 @@ describe.each([
     open(`${path}?q=alfa+beta&source=onrc`);
     expect(await screen.findByRole("heading", { level: 2, name: s.onrc.results.heading(ONRC_TYPICAL_COUNT, String(ONRC_TYPICAL_COUNT)) })).toBeVisible();
   });
+
+  it("words the county chip as \"County: X\" / \"Județ: X\" (#226), and removing it unsets the county", async () => {
+    open(`${base}?county=RO-CJ&source=onrc`);
+    const active = within(await screen.findByRole("group", { name: s.onrc.filterChips.active.group }));
+    const wording = s.onrc.filterChips.active.county("RO-CJ");
+    expect(wording).toBe(c === catalogue.en ? "County: RO-CJ" : "Județ: RO-CJ");
+    await userEvent.click(active.getByRole("button", { name: s.onrc.filterChips.active.remove(wording) }));
+    await waitFor(() => expect(window.location.search).not.toContain("county"));
+  });
 });

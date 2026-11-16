@@ -31,7 +31,7 @@ describe.each([
     nationalSentence: "2 of 3 public entities have SEAP records since 2021",
     unplaced: ["3 authorities without a county", "1 authority without a county"],
     planned: "Not harvested yet: ONRC, ANI, Ministerul Finanțelor, portal.just.ro",
-    fromYear: "From year", toYear: "To year",
+    yearMenu: "Award year", fromYear: "From year", toYear: "To year",
     notHarvested: "Not harvested",
   },
   {
@@ -42,7 +42,7 @@ describe.each([
     nationalSentence: "2 din 3 entități publice au înregistrări SEAP începând cu 2021",
     unplaced: ["3 autorități fără județ", "1 autoritate fără județ"],
     planned: "Necolectate încă: ONRC, ANI, Ministerul Finanțelor, portal.just.ro",
-    fromYear: "Din anul", toYear: "Până în anul",
+    yearMenu: "Anul atribuirii", fromYear: "Din anul", toYear: "Până în anul",
     notHarvested: "Necolectat",
   },
 ] as const)("the Coverage lens at $url", (c) => {
@@ -77,10 +77,14 @@ describe.each([
     await county("Brașov");
     expect(plain((await county("Brașov")).getAttribute("aria-label"))).toContain(`${c.partial}.`);
 
-    await user.selectOptions(screen.getByRole("combobox", { name: c.fromYear }), "2023");
+    // the year menu stays open while both ends are picked
+    await user.click(screen.getByRole("button", { name: new RegExp(`^${c.yearMenu}`) }));
+    await user.click(screen.getByRole("menuitemradio", { name: `${c.fromYear} 2023` }));
     await waitFor(() => expect(here()).toBe(`${c.url}?from=2023-01-01&lens=coverage`));
-    await user.selectOptions(screen.getByRole("combobox", { name: c.toYear }), "2023");
+    await user.click(screen.getByRole("menuitemradio", { name: `${c.toYear} 2023` }));
     await waitFor(() => expect(here()).toBe(`${c.url}?from=2023-01-01&to=2023-12-31&lens=coverage`));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
 
     // the 2023 window is past the quarantined 2022 file: the status changes, the sentence starts at the window's start
     await waitFor(async () => expect(plain((await county("Brașov")).getAttribute("aria-label"))).toBe(`Brașov: ${c.knownGaps}. ${c.year2023Sentence}`));
@@ -142,7 +146,7 @@ describe.each([
 describe("the Coverage lens' states", () => {
   it("says so when the Coverage answer cannot be loaded, and leaves the results working", async () => {
     open("/explore/?lens=coverage", ["CoverageLens"]);
-    expect((await screen.findAllByRole("alert")).map((a) => a.textContent)).toContain(catalogue.en.status.failed);
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes(catalogue.en.status.failed))).toBe(true);
     expect(await screen.findByTestId("main-total")).toBeVisible();
   });
 

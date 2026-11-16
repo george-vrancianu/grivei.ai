@@ -1,12 +1,23 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { type Components, type Theme } from "@mui/material/styles";
+import { shimmer } from "./motion.ts";
 import { focusRing, hover, pressed, selected } from "./states.ts";
-import { color, font, radius, size, type } from "./tokens.ts";
+import { color, font, layout, radius, shadow, size, type } from "./tokens.ts";
 
 /** Taps and clicks under 44 px stay reachable: a transparent pseudo-element grows the hit area to 44 px tall. */
 const touchTarget = { position: "relative", "&::after": { content: '""', position: "absolute", top: "50%", left: 0, right: 0, height: 44, transform: "translateY(-50%)" } } as const;
 
+
 /** The selected treatment, for every control that is "on": a pressed toggle, a selected tab or toggle segment. */
 const selectedState = "&[aria-pressed='true'], &.Mui-selected, &[aria-current='true']";
+
+/** What floats over the page (menus, popovers; tooltips take the same in their own slot): the overlay fill, a strong hairline, the card radius and the overlay shadow. */
+const overlaySurface = {
+  backgroundColor: color.overlay,
+  backgroundImage: "none",
+  border: `1px solid ${color.lineStrong}`,
+  borderRadius: radius.card,
+  boxShadow: shadow.overlay,
+} as const;
 
 /**
  * Component defaults: every control carries the shared state treatments (focus ring, hover, pressed, selected) and the token
@@ -14,15 +25,16 @@ const selectedState = "&[aria-pressed='true'], &.Mui-selected, &[aria-current='t
  */
 export const components: Components<Theme> = {
   MuiCssBaseline: {
-    styleOverrides: {
-      html: { colorScheme: "dark" },
+    styleOverrides: (theme) => ({
+      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (one header row plus room for a wrapped nav and a gap).
+      html: { colorScheme: "dark", [theme.breakpoints.up("md")]: { scrollPaddingTop: layout.headerScrollPadding } },
       body: {
         backgroundColor: color.bg,
         backgroundImage: `radial-gradient(${color.bgDot} 1px, transparent 1px)`,
         backgroundSize: `${size.dotGrid}px ${size.dotGrid}px`,
       },
       "::selection": { backgroundColor: color.accent, color: color.onAccent },
-    },
+    }),
   },
   MuiButtonBase: {
     styleOverrides: { root: { "&.Mui-focusVisible": focusRing } },
@@ -43,7 +55,7 @@ export const components: Components<Theme> = {
         },
       },
       sizeSmall: { minHeight: size.toggle, padding: "0 12px" },
-      outlined: { borderColor: color.lineStrong },
+      outlined: { borderColor: color.lineStrong, backgroundColor: color.raised, boxShadow: shadow.raised, "&.Mui-disabled": { boxShadow: "none" } },
     },
   },
   MuiIconButton: {
@@ -136,7 +148,7 @@ export const components: Components<Theme> = {
   },
   MuiCard: {
     defaultProps: { variant: "outlined" },
-    styleOverrides: { root: { backgroundColor: color.panel, backgroundImage: "none", borderColor: color.line, borderRadius: radius.card } },
+    styleOverrides: { root: { backgroundColor: color.panel, backgroundImage: "none", borderColor: color.line, borderRadius: radius.card, boxShadow: shadow.panel } },
   },
   MuiPaper: {
     defaultProps: { elevation: 0 },
@@ -168,8 +180,39 @@ export const components: Components<Theme> = {
   MuiTooltip: {
     defaultProps: { arrow: true },
     styleOverrides: {
-      tooltip: { backgroundColor: color.bg, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.meta.lineHeight, color: color.text2 },
-      arrow: { color: color.bg, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
+      tooltip: { backgroundColor: color.overlay, boxShadow: shadow.overlay, border: `1px solid ${color.lineStrong}`, borderRadius: radius.control, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.meta.lineHeight, color: color.text2 },
+      arrow: { color: color.overlay, "&::before": { border: `1px solid ${color.lineStrong}`, boxSizing: "border-box" } },
+    },
+  },
+  // The menu sits 8 px below its anchor, with 6 px of padding and 2 px between items.
+  MuiMenu: { styleOverrides: { paper: { ...overlaySurface, marginTop: 8 }, list: { padding: 6, display: "flex", flexDirection: "column", gap: 2 } } },
+  // An item is 40 px tall with a 4 px radius: text2 unchosen, text when chosen (its check mark is the owner's, amber).
+  MuiMenuItem: {
+    styleOverrides: {
+      root: {
+        minHeight: size.menuItem,
+        borderRadius: radius.control,
+        padding: "0 10px",
+        gap: 16,
+        justifyContent: "space-between",
+        whiteSpace: "nowrap",
+        color: color.text2,
+        "&:hover": hover,
+        "&:active": pressed,
+        "&.Mui-focusVisible": { ...hover, ...focusRing },
+        "&[aria-checked='true'], &.Mui-selected": { backgroundColor: "transparent", color: color.text, "&:hover": hover, "&.Mui-focusVisible": { ...hover, ...focusRing } },
+      },
+    },
+  },
+  MuiPopover: { styleOverrides: { paper: overlaySurface } },
+  // A placeholder block: the `raised` fill with a `line` band sweeping across it. Both the sweep and MUI's own motion stop under reduced motion.
+  MuiSkeleton: {
+    defaultProps: { animation: "wave" },
+    styleOverrides: {
+      root: { backgroundColor: color.raised },
+      wave: {
+        "&::after": { background: `linear-gradient(90deg, transparent, ${color.line}, transparent)`, animation: `${shimmer} 1.6s linear infinite`, "@media (prefers-reduced-motion: reduce)": { animation: "none" } },
+      },
     },
   },
   MuiTypography: {

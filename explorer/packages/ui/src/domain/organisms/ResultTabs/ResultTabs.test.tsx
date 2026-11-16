@@ -151,6 +151,41 @@ describe("ResultTabs", () => {
     expect(screen.queryByRole("link", { name: /^Show all/ })).toBeNull();
   });
 
+  it("shows 'show all' as a raised button at the panel's foot, still a link to where it went", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
+    const button = screen.getByRole("link", { name: "Show all 240,000" });
+    expect(button).toHaveClass("MuiButton-outlined");
+    expect(button.closest(".MuiCard-root")).not.toBeNull();
+  });
+
+  it("dims the rows and the pinned card when busy, and leaves the header with the tabs and the status line at full strength", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.goTo)} busy status={<span role="status">Loading</span>} />);
+    const rows = screen.getByRole("tabpanel");
+    expect(rows.closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
+    expect(getComputedStyle(rows.closest("[aria-busy]")!).opacity).toBe("0.6");
+    expect(screen.getByRole("status").closest("[aria-busy]")).toBeNull();
+    expect(screen.getByRole("tablist").closest("[aria-busy]")).toBeNull();
+  });
+
+  it("is not busy by default", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.typical)} />);
+    expect(document.querySelector("[aria-busy]")).toBeNull();
+  });
+
+  it("makes the tabs the panel's header, with a room on its right for a status", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.typical)} status={<span role="status">Loading</span>} />);
+    const header = screen.getByRole("tablist").closest(".MuiCard-root")!;
+    expect(within(header as HTMLElement).getByRole("status")).toHaveTextContent("Loading");
+    expect(screen.getByRole("tablist").compareDocumentPosition(screen.getByRole("status")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("keeps the pinned Go-to card above the panel, outside it", () => {
+    renderInUi(<ResultTabs {...base(resultSamples.goTo)} />);
+    const card = screen.getByRole("region", { name: "Go to page" });
+    expect(card.contains(screen.getByRole("tablist"))).toBe(false);
+    expect(screen.getByRole("tablist").closest(".MuiCard-root")!.contains(card)).toBe(false);
+  });
+
   it("keeps the 'show all' link neutral: amber is for the headline Total alone", () => {
     renderInUi(<ResultTabs {...base(resultSamples.estimated)} showAllHref={(tab) => `/explore/search?tab=${tab}`} />);
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.accent.slice(i, i + 2), 16));

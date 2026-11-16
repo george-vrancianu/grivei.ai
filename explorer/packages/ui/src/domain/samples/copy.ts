@@ -9,7 +9,7 @@ import type { BaseMapCopy } from "../organisms/BaseMap/index.ts";
 import type { EntityHeaderCopy } from "../organisms/EntityHeader/index.ts";
 import type { EntityPageLayoutCopy } from "../templates/EntityPageLayout/index.ts";
 import type { MainScreenLayoutCopy } from "../templates/MainScreenLayout/index.ts";
-import type { TotalFigureCopy } from "../molecules/TotalFigure/index.ts";
+import type { InsetTotalCopy } from "../molecules/TotalFigure/index.ts";
 import type { PartyCoverageCopy } from "../molecules/PartyCoverage/index.ts";
 import type { EntityResultRowCopy } from "../molecules/EntityResultRow/index.ts";
 import type { SourceEyebrowCopy } from "../molecules/SourceEyebrow/index.ts";
@@ -310,6 +310,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
   locale === "ro"
     ? {
         matched: "potrivit",
+        head: { supplier: "Furnizor", authority: "Autoritate", signals: "Semnale", amount: "RON potrivit" },
         cui: "CUI",
         records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
         national: "național",
@@ -319,6 +320,7 @@ const entityRow = (locale: Locale): EntityResultRowCopy =>
       }
     : {
         matched: "matched",
+        head: { supplier: "Supplier", authority: "Authority", signals: "Signals", amount: "RON matched" },
         cui: "CUI",
         records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
         national: "national",
@@ -434,7 +436,12 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
   return locale === "ro"
     ? {
       label: "Filtre",
-      year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
+      menuAny: "Oricare",
+      year: {
+        group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare",
+        range: { from: (year) => `din ${year}`, until: (year) => `până în ${year}`, between: (from, to) => `${from}–${to}` },
+      },
+      picked: (n) => (n === 1 ? "1 aleasă" : `${n} alese`),
       channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
       valueBucket: {
         group: "Valoare",
@@ -448,23 +455,28 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
           OVER_1B: "Peste 1 mld. RON",
         },
       },
-      signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
+      signals: { has: "Are Semnale", without: "Fără Semnale" },
       procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
-      party: { group: "Partid", select: "Lista, așa cum a fost înregistrată", any: "Orice partid" },
-      badges: { group: "Insigne ale înregistrărilor", badges: BADGES },
+      party: { group: "Partid" },
+      badges: { menu: "Insigne", badges: BADGES },
       active: {
         group: "Filtre active",
-        none: "Niciun filtru activ.",
         from: (when) => `Din ${when}`,
         to: (when) => `Până în ${when}`,
         party: (list) => `Partid: ${list}`,
+        county: (area) => `Județ: ${area}`,
         remove: (chip) => `Elimină ${chip}`,
         clearAll: "Șterge tot",
       },
     }
     : {
       label: "Filters",
-      year: { group: "Award year", from: "From year", to: "To year", any: "Any" },
+      menuAny: "Any",
+      year: {
+        group: "Award year", from: "From year", to: "To year", any: "Any",
+        range: { from: (year) => `from ${year}`, until: (year) => `until ${year}`, between: (from, to) => `${from}–${to}` },
+      },
+      picked: (n) => `${n} picked`,
       channel: { group: "Channel", options: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" } },
       valueBucket: {
         group: "Value",
@@ -478,16 +490,16 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
           OVER_1B: "Over 1 bn RON",
         },
       },
-      signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
+      signals: { has: "Has Signals", without: "Without Signals" },
       procedure: { group: "Procedure", empty: "No procedures to choose from." },
-      party: { group: "Party", select: "List as registered", any: "Any party" },
-      badges: { group: "Record badges", badges: BADGES },
+      party: { group: "Party" },
+      badges: { menu: "Badges", badges: BADGES },
       active: {
         group: "Active filters",
-        none: "No filters on.",
         from: (when) => `From ${when}`,
         to: (when) => `Until ${when}`,
         party: (list) => `Party: ${list}`,
+        county: (area) => `County: ${area}`,
         remove: (chip) => `Remove ${chip}`,
         clearAll: "Clear all",
       },
@@ -1360,7 +1372,7 @@ export const sampleCopy = {
           unattributedNote: "Central government, schools, municipal companies, ADIs and gaps in the mandates carry no Party.",
           methodology: "How a Party is attributed",
         },
-  total: (locale: Locale): TotalFigureCopy =>
+  total: (locale: Locale): InsetTotalCopy =>
     locale === "ro"
       ? {
           records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
@@ -1368,6 +1380,7 @@ export const sampleCopy = {
           noValue: (n, f) => `${f} ${plural(n, "înregistrare fără valoare", "înregistrări fără valoare")}`,
           frameworkCeilings: (amount) => `Plafoane de acorduri-cadru nenumărate: ${amount}`,
           methodology: "Cum se calculează acest total",
+          figures: { records: "Înregistrări", suspect: "Valori suspecte excluse", noValue: "Înregistrări fără valoare", ceilings: "Plafoane de acorduri-cadru neincluse" },
         }
       : {
           records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
@@ -1375,6 +1388,7 @@ export const sampleCopy = {
           noValue: (n, f) => `${f} ${plural(n, "Record with no value", "Records with no value")}`,
           frameworkCeilings: (amount) => `Framework ceilings not counted: ${amount}`,
           methodology: "How this total is counted",
+          figures: { records: "Records", suspect: "Suspect values left out", noValue: "Records with no value", ceilings: "Framework ceilings not counted" },
         },
 };
 

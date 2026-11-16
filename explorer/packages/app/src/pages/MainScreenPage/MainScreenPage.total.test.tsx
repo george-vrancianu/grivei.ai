@@ -30,14 +30,17 @@ describe.each([
     const total = await opened(url);
     const note = within(screen.getByTestId("main-data-through"));
     expect(total.queryByText(new RegExp(t.dataThrough.through))).toBeNull();
-    expect(note.getAllByText(new RegExp(`${t.coverage.grid.kinds.CONTRACT}: ${t.dataThrough.through}`)).length).toBeGreaterThan(0);
+    // a two-column list: each record kind is a term, its date the definition
+    expect(note.getByText(t.coverage.grid.kinds["CONTRACT"]!).tagName).toBe("DT");
+    expect(note.getAllByText(new RegExp(`^${t.dataThrough.through}`)).length).toBeGreaterThan(0);
   });
 
   it("says how many suspect Records it left out and links to them, keeping the search", async () => {
     const total = await opened(`${url}?q=contract`); // the hand `records-variety` fixture: one suspect Record, one with no value, a framework ceiling
-    const link = total.getByRole("link", { name: t.total.suspectLeftOut(1, "1") });
+    // each part that is not zero is an inset figure: the label, then the value
+    const link = total.getByRole("link", { name: `${t.total.figures.suspect} 1` });
     expect(link).toHaveAttribute("href", suspect);
-    expect(total.getByText(t.total.noValue(1, "1"))).toBeInTheDocument();
+    expect(total.getByText(t.total.figures.noValue).closest("p")).toHaveTextContent(`${t.total.figures.noValue} 1`);
   });
 
   it("marks an estimated count with ≈", async () => {

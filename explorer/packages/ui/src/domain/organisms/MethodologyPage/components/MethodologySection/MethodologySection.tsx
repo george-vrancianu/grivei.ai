@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import type { Locale } from "../../../../../theme/index.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
+import { Card } from "../../../../../atoms/Card/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { radius, type as typeScale } from "../../../../../theme/tokens.ts";
+import { type as typeScale } from "../../../../../theme/tokens.ts";
 import { plainMethodologyText, renderMethodologyText, type MethodologyText } from "./methodologyText.tsx";
 
 export interface MethodologySectionCopy {
@@ -25,12 +26,11 @@ export interface MethodologySectionProps {
 }
 
 const longText = { fontSize: typeScale.bodyLong.size, lineHeight: typeScale.bodyLong.lineHeight } as const;
-const card = { p: 2.5, bgcolor: "background.paper", border: 1, borderColor: "divider", borderRadius: `${radius.card}px` } as const;
 
 /** One section of the page: a heading that carries the anchor, its paragraphs and list, and anything the caller adds. */
 export function MethodologySection({ id, level = 2, locale, copy, children }: MethodologySectionProps) {
-  return (
-    <Box component="section" aria-labelledby={id} sx={level === 3 ? card : undefined}>
+  const content = (
+    <>
       <Typography id={id} variant={level === 2 ? "h2" : "h3"} component={level === 2 ? "h2" : "h3"} sx={{ scrollMarginTop: 16, mb: 1.5 }}>
         {copy.heading}
       </Typography>
@@ -49,6 +49,15 @@ export function MethodologySection({ id, level = 2, locale, copy, children }: Me
         </Box>
       )}
       {children}
+    </>
+  );
+  return level === 3 ? (
+    <Card component="section" aria-labelledby={id} sx={{ p: 2.5 }}>
+      {content}
+    </Card>
+  ) : (
+    <Box component="section" aria-labelledby={id}>
+      {content}
     </Box>
   );
 }

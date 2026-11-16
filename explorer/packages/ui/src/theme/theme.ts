@@ -3,7 +3,7 @@ import { enUS, roRO } from "@mui/material/locale";
 import "./augmentation.ts";
 import { components } from "./components.ts";
 import { grafStates } from "./states.ts";
-import { color, font, layout, radius, size } from "./tokens.ts";
+import { color, font, headerFill, layout, logoShadow, radius, shadow, size } from "./tokens.ts";
 import { typography } from "./typography.ts";
 
 export type Locale = "en" | "ro";
@@ -30,8 +30,9 @@ export function createGriveiTheme(locale: Locale = "en"): Theme {
       },
       shape: { borderRadius: radius.control },
       typography,
+      motion: { reducedMotion: "system" },
       components,
-      graf: { radius, size, font, layout, states: grafStates },
+      graf: { radius, size, shadow, logoShadow, headerFill, font, layout, states: grafStates },
     },
     muiLocales[locale],
   );

@@ -25,3 +25,5 @@ export * from "./LeadershipSection/index.ts";
 export * from "./OnrcResults/index.ts";
 export * from "./OnrcCountMap/index.ts";
 export * from "./SnapshotCoverage/index.ts";
+export * from "./ResultsSkeleton/index.ts";
+export * from "./MapSkeleton/index.ts";

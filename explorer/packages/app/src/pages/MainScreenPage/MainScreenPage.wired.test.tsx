@@ -25,8 +25,8 @@ const nameOf = (element: HTMLElement) => plain(element.getAttribute("aria-label"
 const asked = (sent: { operation: string; variables: unknown }[]) => sent.filter((s) => s.operation === "MainScreen").map((s) => JSON.stringify((s.variables as { filter: unknown }).filter));
 
 describe.each([
-  { locale: "en", url: "/explore/", records: "18 Records", narrowed: "8 Records", mapName: "Brașov: RON 5,000" },
-  { locale: "ro", url: "/ro/explore/", records: "18 înregistrări", narrowed: "8 înregistrări", mapName: "Brașov: 5.000 RON" },
+  { locale: "en", url: "/explore/", records: "Records 18", narrowed: "Records 8", mapName: "Brașov: RON 5,000" },
+  { locale: "ro", url: "/ro/explore/", records: "Înregistrări 18", narrowed: "Înregistrări 8", mapName: "Brașov: 5.000 RON" },
 ] as const)("typing on the main screen at $url", ({ locale, url, records, narrowed, mapName }) => {
   it("narrows the map, the Total and the tabs together, with one MainScreen query per filter", async () => {
     const { sent } = open(url);
@@ -58,40 +58,40 @@ describe("a county click and the side toggle", () => {
     const before = window.history.length;
     const { sent } = open("/explore/");
     const user = userEvent.setup();
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
 
     await user.click(screen.getByRole("button", { name: "Suppliers" }));
     await waitFor(() => expect(here()).toBe("/explore/?countySide=supplier"));
     await user.click(county("Brașov"));
     await waitFor(() => expect(here()).toBe("/explore/?county=RO-BV&countySide=supplier"));
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "16 Records" }));
+    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "Records 16" }));
     expect(screen.getByRole("button", { name: "Suppliers" })).toHaveAttribute("aria-pressed", "true");
     expect(county("Brașov")).toHaveAttribute("aria-pressed", "true"); // chosen, and no zoom: the UAT map is authority-side only
     expect(screen.queryByRole("button", { name: catalogue.en.zoomedCounty.back })).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Authorities" })); // the county stays: now it is zoomed into
     await waitFor(() => expect(here()).toBe("/explore/?county=RO-BV"));
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 8,000", records: "8 Records" }));
+    await waitFor(() => expect(total()).toEqual({ awarded: "RON 8,000", records: "Records 8" }));
     expect(screen.getByRole("tabpanel")).not.toHaveTextContent("COMUNA I.L. CARAGIALE"); // an authority of Cluj
     expect(await screen.findByRole("button", { name: catalogue.en.zoomedCounty.back })).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: catalogue.en.zoomedCounty.back }));
     await waitFor(() => expect(here()).toBe("/explore/"));
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
     expect(window.history.length).toBe(before); // every change replaced the entry
     expect(asked(sent)).toEqual(['{}', '{"countySide":"SUPPLIER"}', '{"county":"RO-BV","countySide":"SUPPLIER"}', '{"county":"RO-BV"}', '{}']);
   });
 
   it("survive a reload: the URL alone restores the county, the side, the Total and the open tab", async () => {
     const first = open("/explore/?county=RO-BV&countySide=supplier&tab=authorities");
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "16 Records" }));
+    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "Records 16" }));
     first.unmount();
 
     // a new page load at the same URL
     const url = here();
     expect(url).toBe("/explore/?county=RO-BV&countySide=supplier&tab=authorities");
     open(url);
-    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "16 Records" }));
+    await waitFor(() => expect(total()).toEqual({ awarded: "RON 19,500", records: "Records 16" }));
     expect(county("Brașov")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Suppliers" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("tab", { name: /^Authorities/ })).toHaveAttribute("aria-selected", "true");
@@ -100,24 +100,24 @@ describe("a county click and the side toggle", () => {
   it("choose an off-map tile as the county, and the side toggle drops a tile the other side does not have", async () => {
     open("/explore/");
     const user = userEvent.setup();
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
     await user.click(screen.getByRole("button", { name: /^Unplaced authorities/ }));
     await waitFor(() => expect(here()).toBe("/explore/?county=UNPLACED"));
     await user.click(screen.getByRole("button", { name: "Suppliers" }));
     await waitFor(() => expect(here()).toBe("/explore/?countySide=supplier")); // no unplaced authorities on the supplier side
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
     expect(screen.getByRole("button", { name: /^Unknown supplier county/ })).toBeVisible();
   });
 
   it("work in Romanian at /ro/explore/", async () => {
     open("/ro/explore/");
     const user = userEvent.setup();
-    await waitFor(() => expect(total().records).toBe("18 înregistrări"));
+    await waitFor(() => expect(total().records).toBe("Înregistrări 18"));
     await user.click(screen.getByRole("button", { name: "Furnizori" }));
     await waitFor(() => expect(here()).toBe("/ro/explore/?countySide=supplier"));
     await user.click(county("Brașov"));
     await waitFor(() => expect(here()).toBe("/ro/explore/?county=RO-BV&countySide=supplier"));
-    await waitFor(() => expect(total()).toEqual({ awarded: "19.500 RON", records: "16 înregistrări" }));
+    await waitFor(() => expect(total()).toEqual({ awarded: "19.500 RON", records: "Înregistrări 16" }));
   });
 });
 
@@ -125,7 +125,7 @@ describe("the map lens", () => {
   it("is in the URL when it is not Money, and survives a reload", async () => {
     const first = open("/explore/");
     const user = userEvent.setup();
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
     await user.click(screen.getByRole("button", { name: "Coverage" }));
     await waitFor(() => expect(here()).toBe("/explore/?lens=coverage"));
     first.unmount();
@@ -142,6 +142,6 @@ describe("a map that cannot be drawn", () => {
     const { client } = fixtureClient();
     render(<App client={client} loadCountyTopology={async () => Promise.reject(new Error("no outlines"))} />);
     expect(await screen.findByText(catalogue.en.main.mapUnavailable)).toBeVisible();
-    await waitFor(() => expect(total().records).toBe("18 Records"));
+    await waitFor(() => expect(total().records).toBe("Records 18"));
   });
 });

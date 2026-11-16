@@ -34,6 +34,47 @@ describe("MainScreenLayout", () => {
     expect(within(results).getByText("the results")).toBeVisible();
   });
 
+  it.each(["en", "ro"] as const)("dims a busy region to 60% with aria-busy and leaves the lens toggle at full strength (%s)", (locale) => {
+    const { rerender } = renderInUi(<MainScreenLayout {...props(locale)} />);
+    const copy = sampleCopy.mainScreenLayout(locale);
+    const toggle = () => screen.getByRole("group", { name: copy.lens.label });
+    expect(document.querySelector("[aria-busy]")).toBeNull();
+
+    rerender(<MainScreenLayout {...props(locale)} busy={{ summary: true, map: true }} />);
+    for (const text of ["the total", "the money map"]) {
+      const region = screen.getByText(text).closest("[aria-busy]")!;
+      expect(region).toHaveAttribute("aria-busy", "true");
+      expect(getComputedStyle(region).opacity).toBe("0.6");
+    }
+    expect(toggle().closest("[aria-busy]")).toBeNull();
+    expect(screen.getByRole("region", { name: copy.regions.results })).not.toHaveAttribute("aria-busy"); // the results dim themselves (ResultTabs busy)
+
+    rerender(<MainScreenLayout {...props(locale)} busy={{ map: true }} />);
+    expect(screen.getByText("the total").closest("[aria-busy]")).toBeNull();
+  });
+
+  it("puts the title above every panel, and the search, filters and Total in panels of their own", () => {
+    renderInUi(<MainScreenLayout {...props()} title={<h1>The title</h1>} />);
+    const title = screen.getByRole("heading", { level: 1, name: "The title" });
+    for (const text of ["the chips", "the total", "the money map", "the results"]) {
+      expect(title.compareDocumentPosition(screen.getByText(text)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    // the search and the chips share one panel; the Total has another
+    const panel = (el: Element) => el.closest(".MuiCard-root");
+    expect(panel(screen.getByRole("textbox", { name: "the search" }))).toBe(panel(screen.getByText("the chips")));
+    expect(panel(screen.getByText("the total"))).not.toBe(panel(screen.getByText("the chips")));
+    expect(panel(screen.getByText("the total"))).not.toBeNull();
+  });
+
+  it("puts the lens toggle and the back link in the map panel's header strip, before the map", () => {
+    renderInUi(<MainScreenLayout {...props()} mapBack={<button type="button">Back to Romania</button>} />);
+    const map = within(screen.getByRole("region", { name: "Map" }));
+    const toggle = map.getByRole("group", { name: "Map lens" });
+    const back = map.getByRole("button", { name: "Back to Romania" });
+    expect(toggle.parentElement!.parentElement).toBe(back.parentElement);
+    expect(back.compareDocumentPosition(map.getByText("the money map")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("puts the map note at the foot of the map panel", () => {
     renderInUi(<MainScreenLayout {...props()} mapNote={<p>data through</p>} />);
     expect(within(screen.getByRole("region", { name: "Map" })).getByText("data through")).toBeVisible();

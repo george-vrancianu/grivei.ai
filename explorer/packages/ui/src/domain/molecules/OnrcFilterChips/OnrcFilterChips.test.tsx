@@ -13,6 +13,18 @@ function setup(filter: OnrcFilter = {}, locale: "en" | "ro" = "en") {
 }
 
 describe("OnrcFilterChips", () => {
+  it("keeps its chips and fields off the panel edge: they sit in a padded strip", () => {
+    setup({ status: [1048] });
+    let node: HTMLElement | null = screen.getByRole("button", { name: "In operation" });
+    let padded = false;
+    while (node && node !== document.body) {
+      const style = getComputedStyle(node);
+      if (style.paddingLeft === "20px" && style.paddingRight === "20px" && style.paddingBottom === "12px") padded = true;
+      node = node.parentElement;
+    }
+    expect(padded).toBe(true);
+  });
+
   it("toggles a status code on and off, several at a time", async () => {
     const onChange = setup({ status: [1048] });
     expect(screen.getByRole("button", { name: "In operation", pressed: true })).toBeVisible();
@@ -60,9 +72,9 @@ describe("OnrcFilterChips", () => {
     const onChange = setup({ q: "alfa", status: [1048, 2110], caen: "42", county: "RO-CJ", registeredFrom: "2020-01-01", seapCounterparty: true });
     const group = within(screen.getByRole("group", { name: "Active filters" }));
     expect(group.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual([
-      "Remove In operation", "Remove Status 2110", "Remove CAEN 42", "Remove County RO-CJ", "Remove Registered from 1 January 2020", "Remove SEAP counterparties only", "Clear all",
+      "Remove In operation", "Remove Status 2110", "Remove CAEN 42", "Remove County: RO-CJ", "Remove Registered from 1 January 2020", "Remove SEAP counterparties only", "Clear all",
     ]);
-    await userEvent.click(group.getByRole("button", { name: "Remove County RO-CJ" }));
+    await userEvent.click(group.getByRole("button", { name: "Remove County: RO-CJ" }));
     expect(onChange).toHaveBeenLastCalledWith({ q: "alfa", status: [1048, 2110], caen: "42", registeredFrom: "2020-01-01", seapCounterparty: true });
     await userEvent.click(group.getByRole("button", { name: "Clear all" }));
     expect(onChange).toHaveBeenLastCalledWith({ q: "alfa" });

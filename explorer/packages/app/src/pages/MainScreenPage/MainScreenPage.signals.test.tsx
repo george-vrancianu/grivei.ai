@@ -25,7 +25,7 @@ describe("the has-Signals chip on the main screen", () => {
     expect(within(chips("Filters")).getByRole("button", { name: "Has Signals", pressed: true })).toBeVisible();
     expect(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: "Remove Has Signals" })).toBeVisible();
     await waitFor(() => expect(tabNames()).toEqual(["Authorities 3", "Suppliers 4", "Records 14"]));
-    expect(screen.getByText("14 Records", { selector: "*" })).toBeVisible();
+    expect(within(screen.getByTestId("main-total")).getByText("Records").closest("p")).toHaveTextContent("Records 14");
   });
 
   it("asks for the Records outside every Signal when the chip is set to without Signals", async () => {
@@ -35,13 +35,26 @@ describe("the has-Signals chip on the main screen", () => {
     await waitFor(() => expect(tabNames()).toEqual(["Authorities 3", "Suppliers 4", "Records 10"]));
   });
 
-  it("turning the chip on writes hasSignals to the URL and narrows the tabs to the Signals' Records", async () => {
-    await opened("/explore/?q=");
+  it("turning the switch on writes hasSignals to the URL and narrows the tabs to the Signals' Records", async () => {
+    const sent = await opened("/explore/?q=");
     const before = tabNames();
     await userEvent.setup().click(within(chips("Filters")).getByRole("button", { name: "Has Signals" }));
     await waitFor(() => expect(new URLSearchParams(window.location.search).get("hasSignals")).toBe("true"));
     await waitFor(() => expect(tabNames()).toEqual(["Authorities 3", "Suppliers 4", "Records 14"]));
     expect(before).not.toEqual(tabNames());
+    const latest = sent.filter((s) => s.operation === "MainScreen").at(-1)!.variables;
+    expect(latest).toMatchObject({ filter: { hasSignals: true } });
+  });
+
+  it("turning the switch off unsets hasSignals in the URL and in the request", async () => {
+    const sent = await opened("/explore/?hasSignals=true");
+    await userEvent.setup().click(within(chips("Filters")).getByRole("button", { name: "Has Signals", pressed: true }));
+    await waitFor(() => expect(new URLSearchParams(window.location.search).get("hasSignals")).toBeNull());
+    expect(within(chips("Filters")).getByRole("button", { name: "Has Signals", pressed: false })).toBeVisible();
+    await waitFor(() => {
+      const latest = sent.filter((s) => s.operation === "MainScreen").at(-1)!.variables as { filter?: object };
+      expect(latest.filter ?? {}).not.toHaveProperty("hasSignals");
+    });
   });
 
   it("keeps the chip in the full-results view of each tab: the same filter, the same 14 Records, 3 authorities, 4 suppliers", async () => {

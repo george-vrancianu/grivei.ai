@@ -1,14 +1,17 @@
 import { VALUE_BUCKETS, type Channel, type RecordBadge, type RecordFilter, type ValueBucket } from "@grivei/contract";
-import { Stack } from "../../../atoms/Stack/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { FilterStrip } from "../FilterStrip/index.ts";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
 import { ActiveChips } from "./components/ActiveChips/index.ts";
-import { BadgeChips } from "./components/BadgeChips/index.ts";
-import { ChoiceChips } from "./components/ChoiceChips/index.ts";
-import { PartyChips } from "./components/PartyChips/index.ts";
-import { ProcedureChips } from "./components/ProcedureChips/index.ts";
+import { BadgeMenu } from "./components/BadgeMenu/index.ts";
+import { ChoiceMenu } from "./components/ChoiceMenu/index.ts";
+import { PartyMenu } from "./components/PartyMenu/index.ts";
+import { ProcedureMenu } from "./components/ProcedureMenu/index.ts";
+import { FilterBarRow } from "./components/FilterBarRow/index.ts";
+import { FilterBarDivider } from "./components/FilterBarDivider/index.ts";
 import { HasSignalsChip } from "./components/HasSignalsChip/index.ts";
-import { YearRange } from "./components/YearRange/index.ts";
+import { YearMenu } from "./components/YearMenu/index.ts";
 import type { FilterChipsCopy } from "./filterChips.types.ts";
 import {
   activeChips, clearChips, FIRST_YEAR, procedureChoices, setFromYear, setToYear, toggleBadge, toggleChannel, toggleHasSignals,
@@ -33,6 +36,8 @@ export interface FilterChipsProps {
   firstYear?: number;
   /** Last year of the year selects (the current year, or the year the data runs through). */
   lastYear: number;
+  /** The name the page shows for the filter's `county` ("Brașov"); the code is shown when absent. The county chip appears whenever the filter holds a county. */
+  countyName?: string;
   locale: Locale;
   copy: FilterChipsCopy;
 }
@@ -44,10 +49,10 @@ const CHANNELS = ["DIRECT_PURCHASE", "CONTRACT"] as const satisfies readonly Cha
 const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[];
 
 /**
- * The chips that narrow the matching set: award-date years, channel, value bucket, has Signals, procedure and the Record
- * badges, with the active ones listed below, each removable. Controlled: it reflects `filter` and reports the next one.
+ * The filter bar: the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
+ * with the active ones listed below as chips, each removable (the map-picked county among them: removing it unsets `county` and `uat`; Clear all does too). Controlled: it reflects `filter` and reports the next one.
  */
-export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, locale, copy }: FilterChipsProps) {
+export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, countyName, locale, copy }: FilterChipsProps) {
   const active = activeChips(
     filter,
     {
@@ -59,45 +64,67 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
       withoutSignals: copy.signals.without,
       badges: badgeLabels(copy.badges.badges),
       party: copy.active.party,
+      county: copy.active.county,
     },
     locale,
+    countyName,
   );
   return (
-    <Stack component="section" aria-label={copy.label} spacing={1.5}>
-      <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
-        <YearRange
-          filter={filter}
-          firstYear={firstYear}
-          lastYear={lastYear}
-          onFromYear={(year) => onChange(setFromYear(filter, year))}
-          onToYear={(year) => onChange(setToYear(filter, year))}
-          copy={copy.year}
-        />
-        <ChoiceChips
-          label={copy.channel.group}
-          options={CHANNELS.map((value) => ({ value, label: copy.channel.options[value] }))}
-          selected={filter.channel}
-          onChoose={(channel) => onChange(toggleChannel(filter, channel))}
-        />
-        <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
-      </Stack>
-      <ChoiceChips
-        label={copy.valueBucket.group}
-        options={BUCKETS.map((value) => ({ value, label: copy.valueBucket.options[value] }))}
-        selected={filter.valueBucket}
-        onChoose={(bucket) => onChange(toggleValueBucket(filter, bucket))}
-      />
-      <ProcedureChips
-        procedures={procedureChoices(procedureOptions, filter)}
-        selected={filter.procedure}
-        onToggle={(procedure) => onChange(toggleProcedure(filter, procedure))}
-        copy={copy.procedure}
-      />
-      {(partyOptions.length > 0 || filter.party) && (
-        <PartyChips parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} />
+    <Box component="section" aria-label={copy.label}>
+      <FilterStrip>
+        <FilterBarRow>
+          <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
+          <FilterBarDivider />
+          <YearMenu
+            filter={filter}
+            firstYear={firstYear}
+            lastYear={lastYear}
+            onFromYear={(year) => onChange(setFromYear(filter, year))}
+            onToYear={(year) => onChange(setToYear(filter, year))}
+            copy={copy.year}
+            unsetLabel={copy.menuAny}
+          />
+          <ChoiceMenu
+            label={copy.channel.group}
+            unsetLabel={copy.menuAny}
+            options={CHANNELS.map((value) => ({ value, label: copy.channel.options[value] }))}
+            selected={filter.channel}
+            onChoose={(channel) => onChange(toggleChannel(filter, channel))}
+          />
+          <ChoiceMenu
+            label={copy.valueBucket.group}
+            unsetLabel={copy.menuAny}
+            options={BUCKETS.map((value) => ({ value, label: copy.valueBucket.options[value] }))}
+            selected={filter.valueBucket}
+            onChoose={(bucket) => onChange(toggleValueBucket(filter, bucket))}
+          />
+          <ProcedureMenu
+            procedures={procedureChoices(procedureOptions, filter)}
+            selected={filter.procedure}
+            onToggle={(procedure) => onChange(toggleProcedure(filter, procedure))}
+            copy={copy.procedure}
+            unsetLabel={copy.menuAny}
+            picked={copy.picked}
+          />
+          <BadgeMenu
+            label={copy.badges.menu}
+            selected={filter.badges}
+            onToggle={(badge) => onChange(toggleBadge(filter, badge))}
+            copy={copy.badges.badges}
+            unsetLabel={copy.menuAny}
+            picked={copy.picked}
+          />
+          {(partyOptions.length > 0 || filter.party) && (
+            <PartyMenu parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} unsetLabel={copy.menuAny} />
+          )}
+        </FilterBarRow>
+      </FilterStrip>
+      {/* Guard here, not in ActiveChips: an empty list must drop the strip too. */}
+      {active.length > 0 && (
+        <FilterStrip>
+          <ActiveChips chips={active} onRemove={(chip) => onChange(chip.remove(filter))} onClearAll={() => onChange(clearChips(filter))} copy={copy.active} />
+        </FilterStrip>
       )}
-      <BadgeChips label={copy.badges.group} selected={filter.badges} onToggle={(badge) => onChange(toggleBadge(filter, badge))} copy={copy.badges.badges} />
-      <ActiveChips chips={active} onRemove={(chip) => onChange(chip.remove(filter))} onClearAll={() => onChange(clearChips(filter))} copy={copy.active} />
-    </Stack>
+    </Box>
   );
 }

@@ -1,4 +1,7 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
+import { busyProps } from "../../utils/busy.ts";
+import { Box } from "../../../atoms/Box/index.ts";
+import { Card } from "../../../atoms/Card/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Tab } from "../../../atoms/Tab/index.ts";
 import { Tabs } from "../../../atoms/Tabs/index.ts";
@@ -50,13 +53,20 @@ export interface ResultTabsProps {
   emptyHref?: string;
   /** A plain click on any link in the results (the pinned card, Record titles, entity names, the "n Signals" chip, the "show all" and empty-state links) goes here instead of loading the page; leave it out and the browser follows the links. */
   onNavigate?: (href: string) => void;
+  /** Optional: a line at the right end of the panel's header, beside the tabs (the main screen puts its `LoadingStatus` here while a request is in flight). */
+  status?: ReactNode;
+  /** Optional: the rows (and the pinned card) show their last answer while the next loads: dimmed to 60% with `aria-busy="true"`. The header with the tabs and the `status` line stays at full strength, so the line is announced. */
+  busy?: boolean;
   locale: Locale;
   copy: ResultTabsCopy;
 }
 
-/** The results of a search: a pinned "Go to page" card, then Authorities, Suppliers and Records tabs (Suppliers by default). */
+/**
+ * The results of a search: a pinned "Go to page" card, then the results panel: Authorities, Suppliers and Records as its header (Suppliers by default), the
+ * selected tab's rows, and "show all" at its foot. The pinned card sits above the panel, outside it.
+ */
 export function ResultTabs(props: ResultTabsProps) {
-  const { authorities, suppliers, records, goTo, locale, copy, entityHref, goToHref = entityHref, recordHref, showAllHref, emptyHref, onNavigate } = props;
+  const { authorities, suppliers, records, goTo, locale, copy, entityHref, goToHref = entityHref, recordHref, showAllHref, emptyHref, onNavigate, status, busy } = props;
   const [tab, select] = useResultTab(props.tab, props.onTabChange);
   const uid = useId();
   const tabId = (name: ResultTab) => `${uid}-tab-${name}`;
@@ -71,41 +81,52 @@ export function ResultTabs(props: ResultTabsProps) {
     return href === undefined ? undefined : { href, text: copy.showAll(counts[name].count, formatCount(counts[name].count, false, locale)) };
   };
   const rows = {
-    authorities: <EntityResultList rows={authorities.rows} role="authority" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} />,
-    suppliers: <EntityResultList rows={suppliers.rows} role="supplier" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} />,
-    records: <RecordResultList rows={records.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} />,
+    authorities: <EntityResultList rows={authorities.rows} role="authority" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} inset />,
+    suppliers: <EntityResultList rows={suppliers.rows} role="supplier" entityHref={entityHref} locale={locale} copy={copy.entityRow} onNavigate={onNavigate} inset />,
+    records: <RecordResultList rows={records.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} inset />,
   };
 
   return (
     <Stack spacing={2}>
-      {goTo && <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} onNavigate={onNavigate} copy={copy.goTo} />}
-      <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label}>
-        {RESULT_TABS.map((name) => (
-          <Tab
-            key={name}
-            value={name}
-            id={tabId(name)}
-            aria-controls={panelId(name)}
-            label={<TabLabel name={copy.tabs[name]} count={counts[name].count} estimated={counts[name].estimated} locale={locale} />}
-          />
-        ))}
-      </Tabs>
-      {RESULT_TABS.map((name) => (
-        <ResultTabPanel
-          key={name}
-          id={panelId(name)}
-          tabId={tabId(name)}
-          selected={name === tab}
-          shown={counts[name].shown}
-          count={counts[name].count}
-          emptyText={copy.empty[name]}
-          emptyLink={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }}
-          onNavigate={onNavigate}
-          showAll={showAllLink(name)}
-        >
-          {rows[name]}
-        </ResultTabPanel>
-      ))}
+      {goTo && (
+        <Box {...busyProps(busy)}>
+          <GoToCard entity={goTo} href={goToHref(goTo, goToRole(goTo.seap.roles))} onNavigate={onNavigate} copy={copy.goTo} />
+        </Box>
+      )}
+      <Card sx={{ p: 0, minWidth: 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0 16px", px: 2.5, borderBottom: 1, borderColor: "divider" }}>
+          <Tabs value={tab} onChange={(_event, next: ResultTab) => select(next)} aria-label={copy.label} sx={{ flex: "1 1 auto", minWidth: 0, borderBottom: 0 }}>
+            {RESULT_TABS.map((name) => (
+              <Tab
+                key={name}
+                value={name}
+                id={tabId(name)}
+                aria-controls={panelId(name)}
+                label={<TabLabel name={copy.tabs[name]} count={counts[name].count} estimated={counts[name].estimated} locale={locale} />}
+              />
+            ))}
+          </Tabs>
+          {status && <Box sx={{ flex: "none" }}>{status}</Box>}
+        </Box>
+        <Box {...busyProps(busy)}>
+          {RESULT_TABS.map((name) => (
+            <ResultTabPanel
+              key={name}
+              id={panelId(name)}
+              tabId={tabId(name)}
+              selected={name === tab}
+              shown={counts[name].shown}
+              count={counts[name].count}
+              emptyText={copy.empty[name]}
+              emptyLink={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }}
+              onNavigate={onNavigate}
+              showAll={showAllLink(name)}
+            >
+              {rows[name]}
+            </ResultTabPanel>
+          ))}
+        </Box>
+      </Card>
     </Stack>
   );
 }

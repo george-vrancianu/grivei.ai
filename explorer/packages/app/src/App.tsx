@@ -3,7 +3,7 @@ import { UiProvider } from "@grivei/ui";
 import { AppShell, type NavItem } from "./components/AppShell/index.ts";
 import { catalogue } from "./copy/index.ts";
 import { CountyTopologyProvider, UatTopologyProvider, type LoadCountyTopology, type LoadUatTopology } from "./geo/index.ts";
-import { ClientProvider } from "./graphql/ClientContext.tsx";
+import { ClientProvider, useRequestsInFlight } from "./graphql/ClientContext.tsx";
 import type { GraphqlClient } from "./graphql/client.ts";
 import { Routes } from "./Routes.tsx";
 import { LocationProvider, useLocation } from "./routing/location.tsx";
@@ -39,12 +39,14 @@ function Shell() {
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+  const busy = useRequestsInFlight();
   const other = locale === "en" ? "ro" : "en";
   return (
     <UiProvider locale={locale}>
       <AppShell
         copy={catalogue[locale]}
         current={navItemOf(route)}
+        busy={busy}
         switchTo={{ locale: other, href: switchLocalePath(pathname, search, other, hash) }}
         links={{
           explore: pathFor(locale, { name: "main" }),
