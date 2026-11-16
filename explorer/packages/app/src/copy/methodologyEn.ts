@@ -291,8 +291,10 @@ export const methodologyEn: MethodologyPageCopy = {
     rate: (percent, year) => `${percent} of contracting authorities had at least one in ${year}.`,
     none: (year) => `No contracting authority had one in ${year}.`,
     dataThrough: (date) => `Data through ${date}`,
+    dataThroughLabel: "Data through",
     loading: "Loading the window and the national figure…",
     error: "The window and the national figure could not be loaded. The rule above still applies.",
     missing: "There is no national figure for this rule yet.",
   },
+  retry: "Try again",
 };
