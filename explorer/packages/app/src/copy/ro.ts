@@ -383,6 +383,7 @@ export const ro: Copy = {
   entityPage: {
     layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
+      breadcrumb: { label: "Unde te afli", home: "explorare", roles: { AUTHORITY: "autoritate contractantă", SUPPLIER: "furnizor" } },
       identity: {
         cui: "CUI",
         foreignVatId: "Cod TVA străin",

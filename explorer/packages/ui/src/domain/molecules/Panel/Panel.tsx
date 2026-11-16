@@ -5,6 +5,7 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import { color } from "../../../theme/tokens.ts";
 import { SectionHeading } from "../../atoms/SectionHeading/index.ts";
 import { STRIP_FILL } from "../../../theme/stripFill.ts";
+import { PanelFoot } from "./components/PanelFoot/index.ts";
 
 interface PanelBaseProps {
   /** The header strip's right slot: a short meta line (mono 12, muted) or one control (a toggle, a select, a close button). */
@@ -74,16 +75,7 @@ export function Panel({ heading, label, level = "h3", id, aside, foot, flush = f
       <Box data-panel-part="body" sx={flush ? { minWidth: 0, ...(foot == null && { overflow: "hidden", borderBottomLeftRadius: "inherit", borderBottomRightRadius: "inherit" }) } : { p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
         {children}
       </Box>
-      {foot != null && (
-        <Typography
-          variant="meta"
-          component="div"
-          data-panel-part="foot"
-          sx={{ ...stripSx, borderTopWidth: 1, borderBottomLeftRadius: "inherit", borderBottomRightRadius: "inherit", px: 2, py: "10px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", columnGap: 2, rowGap: 0.5 }}
-        >
-          {foot}
-        </Typography>
-      )}
+      {foot != null && <PanelFoot>{foot}</PanelFoot>}
     </Card>
   );
 }

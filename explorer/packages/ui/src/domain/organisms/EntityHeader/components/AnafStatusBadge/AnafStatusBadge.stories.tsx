@@ -10,5 +10,6 @@ const badge = (status: string | null): Story => ({
   render: (_args, { globals }) => <AnafStatusBadge status={status} copy={sampleCopy.entityHeader(localeOf(globals["locale"])).anafStatus} />,
 });
 
+export const Active = badge("ACTIV");
 export const Deregistered = badge("RADIERE");
 export const Merged = badge("FUZIUNE");

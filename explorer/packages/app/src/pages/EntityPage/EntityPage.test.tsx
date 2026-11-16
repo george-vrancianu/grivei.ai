@@ -153,6 +153,14 @@ describe("an entity page", () => {
     expect(await screen.findByRole("list", { name: "Cifre principale" })).toBeInTheDocument();
   });
 
+  it("has a breadcrumb back to the explorer's home, in the page's language", async () => {
+    open("/ro/explore/authority/1000017");
+    expect(await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeInTheDocument();
+    const crumb = screen.getByRole("navigation", { name: "Unde te afli" });
+    expect(crumb).toHaveTextContent("explorare / autoritate contractantă");
+    expect(within(crumb).getByRole("link", { name: "explorare" })).toHaveAttribute("href", "/ro/explore/");
+  });
+
   it("says so when no entity has that key", async () => {
     open("/explore/supplier/name-nobody-has-this-key");
     expect(await screen.findByRole("heading", { level: 1, name: "Entity not found" })).toBeInTheDocument();

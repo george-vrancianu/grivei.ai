@@ -7,7 +7,7 @@ import type { OnrcRegistrationData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { AliasList, type AliasListCopy } from "./components/AliasList/index.ts";
 import { CaenList, type CaenListCopy } from "./components/CaenList/index.ts";
-import { Fact } from "./components/Fact/index.ts";
+import { Fact } from "../../molecules/Fact/index.ts";
 import { StatusList, type StatusListCopy } from "./components/StatusList/index.ts";
 
 export interface OnrcSectionCopy {

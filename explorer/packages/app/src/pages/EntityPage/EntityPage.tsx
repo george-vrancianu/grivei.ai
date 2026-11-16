@@ -125,6 +125,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           <EntityHeader
             entity={entity}
             role={role}
+            homeHref={pathFor(locale, { name: "main" })}
             roleHref={(r) => roleHref(locale, entity.key, view, r)}
             onNavigate={onNavigate}
             locale={locale}
