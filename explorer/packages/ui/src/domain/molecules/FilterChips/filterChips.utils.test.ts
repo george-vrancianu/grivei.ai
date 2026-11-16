@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { sampleCopy } from "../../samples/copy.ts";
 import {
   activeChips, chipFieldsOf, clearChips, procedureChoices, setFromYear, setParty, setToYear, toggleBadge, toggleChannel, toggleHasSignals, toggleItem,
-  toggleProcedure, toggleValueBucket, withFields, yearOf, yearOptions,
+  pickedText, toggleProcedure, toggleValueBucket, withFields, yearOf, yearOptions, yearRangeText,
   type ActiveChipText,
 } from "./filterChips.utils.ts";
 
@@ -123,5 +123,31 @@ describe("activeChips", () => {
     expect(chips[4]!.remove(base).procedure).toEqual(["Achiziție directă"]);
     expect(chips[6]!.remove(base).badges).toEqual(["SUSPECT_VALUE"]);
     expect(chips[6]!.remove({ ...base, badges: ["NO_VALUE"] })).not.toHaveProperty("badges");
+  });
+});
+
+describe("yearRangeText", () => {
+  const range = (filter: RecordFilter, locale: "en" | "ro" = "en") => yearRangeText(filter, sampleCopy.filterChips(locale).year.range);
+  it("words each case of the range, in both languages", () => {
+    expect(range({})).toBeUndefined();
+    expect(range({ from: "2023-01-01" })).toBe("from 2023");
+    expect(range({ to: "2025-12-31" })).toBe("until 2025");
+    expect(range({ from: "2023-01-01", to: "2025-12-31" })).toBe("2023–2025");
+    expect(range({ from: "2024-01-01", to: "2024-12-31" })).toBe("2024");
+    expect(range({ from: "2023-01-01" }, "ro")).toBe("din 2023");
+    expect(range({ to: "2025-12-31" }, "ro")).toBe("până în 2025");
+    expect(range({ from: "2023-01-01", to: "2025-12-31" }, "ro")).toBe("2023–2025");
+  });
+  it("reads a date that is not a year edge as its year", () => {
+    expect(range({ from: "2023-03-15" })).toBe("from 2023");
+  });
+});
+
+describe("pickedText", () => {
+  const picked = sampleCopy.filterChips("en").picked;
+  it("is unset for none, the name for one, the count for more", () => {
+    expect(pickedText([], picked)).toBeUndefined();
+    expect(pickedText(["Open tender"], picked)).toBe("Open tender");
+    expect(pickedText(["a", "b", "c"], picked)).toBe("3 picked");
   });
 });

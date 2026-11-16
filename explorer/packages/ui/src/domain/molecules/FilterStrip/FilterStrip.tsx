@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { color } from "../../../theme/tokens.ts";
+import { STRIP_FILL } from "./filterStrip.fill.ts";
 
 export interface FilterStripProps {
   children: ReactNode;
@@ -11,5 +12,5 @@ export interface FilterStripProps {
  * The main screen's filter slot sits in a panel with no padding, so whatever fills it wraps itself in a strip.
  */
 export function FilterStrip({ children }: FilterStripProps) {
-  return <Box sx={{ px: 2.5, py: 1.5, borderTop: 1, borderColor: color.line, backgroundColor: "rgba(13, 16, 20, 0.35)" }}>{children}</Box>;
+  return <Box sx={{ px: 2.5, py: 1.5, borderTop: 1, borderColor: color.line, backgroundColor: STRIP_FILL }}>{children}</Box>;
 }

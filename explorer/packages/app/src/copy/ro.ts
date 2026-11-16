@@ -246,7 +246,8 @@ export const ro: Copy = {
   filterChips: {
     label: "Filtre",
     menuAny: "Oricare",
-    year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare" },
+    year: { group: "Anul atribuirii", from: "Din anul", to: "Până în anul", any: "Oricare", range: { from: (year) => `din ${year}`, until: (year) => `până în ${year}`, between: (from, to) => `${from}–${to}` } },
+    picked: (n) => roCount(n, String(n), "aleasă", "alese"),
     channel: { group: "Canal", options: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" } },
     valueBucket: {
       group: "Valoare",
@@ -262,8 +263,8 @@ export const ro: Copy = {
     },
     signals: { group: "Semnale", has: "Are Semnale", without: "Fără Semnale" },
     procedure: { group: "Procedură", empty: "Nu există proceduri de ales." },
-    party: { group: "Partid", select: "Lista, așa cum a fost înregistrată", any: "Orice partid" },
-    badges: { group: "Insigne ale înregistrărilor", badges: badges },
+    party: { group: "Partid" },
+    badges: { menu: "Insigne", badges: badges },
     active: {
       group: "Filtre active",
       from: (when) => `Din ${when}`,

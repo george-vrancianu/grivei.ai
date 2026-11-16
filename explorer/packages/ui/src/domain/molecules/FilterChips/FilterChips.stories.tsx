@@ -49,3 +49,9 @@ export const EveryBadge: Story = {
 };
 /** Dates that are not year edges show as dates; "without Signals" shows as an active chip. */
 export const OddDatesAndWithoutSignals: Story = { render: demo({ from: "2024-03-15", to: "2024-09-30", hasSignals: false }) };
+
+/** Below `md` the bar is one row that scrolls sideways inside its strip, Signals first, with a fade on the right edge. The breakpoints follow the viewport, so the story sets Storybook's phone viewport. */
+export const PhoneStrip: Story = {
+  globals: { viewport: { value: "mobile2", isRotated: false } },
+  render: demo({ from: "2023-01-01", channel: "CONTRACT" }),
+};

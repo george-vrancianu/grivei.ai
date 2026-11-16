@@ -1,8 +1,9 @@
 import type { RecordFilter } from "@grivei/contract";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RECORD_BADGES } from "../../atoms/BadgeChip/index.ts";
+import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import { FilterChips } from "./index.ts";
 
@@ -15,10 +16,13 @@ const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "ALIANȚA USR PLUS"];
 
 function setup(filter: RecordFilter = {}, extra: { lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
   const onChange = vi.fn();
-  render(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
+  renderInUi(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
   return onChange;
 }
 const bar = () => screen.getByRole("region", { name: "Filters" });
+// While a menu is open the rest of the page is aria-hidden, the buttons included.
+const menuButton = (group: string) => screen.getByRole("button", { name: new RegExp(`^${group}`), hidden: true });
+const openMenu = (group: string) => userEvent.click(menuButton(group));
 const active = () => within(screen.getByRole("group", { name: "Active filters" }));
 
 describe("FilterChips: what the reader sees", () => {
@@ -31,13 +35,12 @@ describe("FilterChips: what the reader sees", () => {
 
   it("reflects a filter: pressed toggles, years, and one removable chip per value", () => {
     setup({ from: "2023-01-01", to: "2024-12-31", channel: "CONTRACT", valueBucket: "UP_TO_900K", hasSignals: true, procedure: ["Licitație deschisă"], badges: ["NO_VALUE"] });
-    expect(screen.getByRole("combobox", { name: "From year" })).toHaveValue("2023");
-    expect(screen.getByRole("combobox", { name: "To year" })).toHaveValue("2024");
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value 270,120–900,400 RON");
-    for (const name of ["Has Signals", "Licitație deschisă", "No value"]) {
-      expect(screen.getByRole("button", { name, pressed: true })).toBeVisible();
-    }
+    expect(menuButton("Award year")).toHaveTextContent("Award year 2023–2024");
+    expect(menuButton("Channel")).toHaveTextContent("Channel Contract");
+    expect(menuButton("Value")).toHaveTextContent("Value 270,120–900,400 RON");
+    expect(screen.getByRole("button", { name: "Has Signals", pressed: true })).toBeVisible();
+    expect(menuButton("Procedure")).toHaveTextContent("Procedure Licitație deschisă");
+    expect(menuButton("Badges")).toHaveTextContent("Badges No value");
     for (const name of ["From 2023", "Until 2024", "Contract", "270,120–900,400 RON", "Has Signals", "Licitație deschisă", "No value"]) {
       expect(active().getByRole("button", { name: `Remove ${name}` })).toBeVisible();
     }
@@ -55,22 +58,34 @@ describe("FilterChips: what the reader sees", () => {
     expect(active().getByRole("button", { name: /^Remove Until 30 Sep/ })).toBeVisible();
   });
 
-  it("offers a procedure the filter holds even when the caller did not list it", () => {
+  it("offers a procedure the filter holds even when the caller did not list it", async () => {
     setup({ procedure: ["Procedură simplificată"] });
-    expect(screen.getByRole("button", { name: "Procedură simplificată", pressed: true })).toBeVisible();
+    expect(menuButton("Procedure")).toHaveTextContent("Procedure Procedură simplificată");
+    await openMenu("Procedure");
+    expect(screen.getByRole("menuitemcheckbox", { name: "Procedură simplificată", checked: true })).toBeVisible();
   });
 
   it("offers every value bucket and every badge", async () => {
     setup();
-    expect(within(screen.getByRole("group", { name: "Record badges" })).getAllByRole("button")).toHaveLength(RECORD_BADGES.length);
-    await userEvent.click(screen.getByRole("button", { name: /^Value/ }));
+    await openMenu("Badges");
+    expect(screen.getAllByRole("menuitemcheckbox")).toHaveLength(RECORD_BADGES.length);
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    await openMenu("Value");
     expect(screen.getAllByRole("menuitemradio")).toHaveLength(7);
+  });
+
+  it("puts the Signals toggle first, ahead of the menus", () => {
+    setup();
+    const [first, second] = within(screen.getByTestId("filter-bar-scroller")).getAllByRole("button");
+    expect(first).toHaveTextContent("Has Signals");
+    expect(second).toHaveTextContent("Award year");
   });
 
   it("is reachable by keyboard", async () => {
     const onChange = setup();
-    await userEvent.tab(); // from-year select
-    await userEvent.tab(); // to-year select
+    await userEvent.tab(); // the Signals toggle
+    await userEvent.tab(); // the Award year menu button
     await userEvent.tab(); // the Channel menu button
     await userEvent.keyboard("{Enter}");
     await userEvent.keyboard("{Enter}"); // the first item takes focus
@@ -79,65 +94,77 @@ describe("FilterChips: what the reader sees", () => {
 });
 
 describe("FilterChips: the Party filter (#181)", () => {
-  it("offers the lists as registered in a select, none chosen", () => {
+  it("offers the lists as registered in a single-choice menu, none chosen", async () => {
     setup();
-    const select = screen.getByRole("combobox", { name: "List as registered" });
-    expect(select).toHaveValue("");
-    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual(["Any party", ...PARTIES]);
+    expect(menuButton("Party")).toHaveTextContent("Party Any");
+    await openMenu("Party");
+    expect(screen.getAllByRole("menuitemradio").map((o) => o.textContent)).toEqual(PARTIES);
+    expect(screen.queryByRole("menuitemcheckbox")).toBeNull();
   });
 
-  it("picking a list sets only the party; Any unsets it", async () => {
+  it("picking a list sets only the party; picking it again unsets it", async () => {
     const onChange = setup(OTHERS);
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "List as registered" }), "ALIANȚA USR PLUS");
+    await openMenu("Party");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "ALIANȚA USR PLUS" }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, party: "ALIANȚA USR PLUS" });
+    cleanup();
+    const again = setup({ ...OTHERS, party: "ALIANȚA USR PLUS" });
+    await openMenu("Party");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "ALIANȚA USR PLUS", checked: true }));
+    expect(again).toHaveBeenLastCalledWith(OTHERS);
   });
 
-  it("shows the chosen list as an active chip that removes only itself", async () => {
+  it("shows the chosen list on its button and as an active chip that removes only itself", async () => {
     const onChange = setup({ ...OTHERS, party: "PARTIDUL SOCIAL DEMOCRAT" });
-    expect(screen.getByRole("combobox", { name: "List as registered" })).toHaveValue("PARTIDUL SOCIAL DEMOCRAT");
+    expect(menuButton("Party")).toHaveTextContent("Party PARTIDUL SOCIAL DEMOCRAT");
     await userEvent.click(active().getByRole("button", { name: "Remove Party: PARTIDUL SOCIAL DEMOCRAT" }));
     expect(onChange).toHaveBeenLastCalledWith(OTHERS);
   });
 
   it("is absent when the graph offers no list (no AEP), unless the URL holds one", () => {
     setup({}, { partyOptions: [] });
-    expect(screen.queryByRole("combobox", { name: "List as registered" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Party/ })).toBeNull();
+    cleanup();
+    setup({ party: "PARTIDUL UNIC" }, { partyOptions: [] });
+    expect(menuButton("Party")).toHaveTextContent("Party PARTIDUL UNIC");
   });
 });
 
 describe("FilterChips: each chip emits the whole next filter", () => {
   it("picking a from-year sets Jan 1; a to-year sets Dec 31; either end can stand alone", async () => {
     const onChange = setup(OTHERS);
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "From year" }), "2022");
+    await openMenu("Award year");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "From year 2022" }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, from: "2022-01-01" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "To year" }), "2024");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "To year 2024" }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, to: "2024-12-31" });
+    expect(screen.getByRole("menu")).toBeVisible();
   });
 
   it("choosing Any on a year end unsets it and keeps the other end", async () => {
     const onChange = setup({ from: "2022-01-01", to: "2024-12-31" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "From year" }), "Any");
+    await openMenu("Award year");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "From year Any" }));
     expect(onChange).toHaveBeenLastCalledWith({ to: "2024-12-31" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "To year" }), "Any");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "To year Any" }));
     expect(onChange).toHaveBeenLastCalledWith({ from: "2022-01-01" });
   });
 
-  it("honours the year bounds from the caller", () => {
+  it("honours the year bounds from the caller", async () => {
     setup({}, { firstYear: 2023, lastYear: 2024 });
-    const select = screen.getByRole("combobox", { name: "From year" }) as HTMLSelectElement;
-    expect(Array.from(select.options).map((o) => o.text)).toEqual(["Any", "2023", "2024"]);
+    await openMenu("Award year");
+    const items = screen.getAllByRole("menuitemradio").map((o) => o.getAttribute("aria-label"));
+    expect(items).toEqual(["From year Any", "From year 2023", "From year 2024", "To year Any", "To year 2023", "To year 2024"]);
   });
-
-  const openMenu = (group: string) => userEvent.click(screen.getByRole("button", { name: new RegExp(`^${group}`) }));
 
   it("shows Any on the Channel and Value buttons, and the chosen value once set", () => {
     setup();
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Any");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Any");
+    expect(menuButton("Channel")).toHaveTextContent("Channel Any");
+    expect(menuButton("Value")).toHaveTextContent("Value Any");
     cleanup();
     setup({ channel: "CONTRACT", valueBucket: "OVER_1B" });
-    expect(screen.getByRole("button", { name: /^Channel/ })).toHaveTextContent("Channel Contract");
-    expect(screen.getByRole("button", { name: /^Value/ })).toHaveTextContent("Value Over 1 bn RON");
+    expect(menuButton("Channel")).toHaveTextContent("Channel Contract");
+    expect(menuButton("Value")).toHaveTextContent("Value Over 1 bn RON");
   });
 
   it.each([["Direct purchase", "DIRECT_PURCHASE"], ["Contract", "CONTRACT"]])("the %s item sets the channel", async (name, channel) => {
@@ -182,40 +209,57 @@ describe("FilterChips: each chip emits the whole next filter", () => {
   });
   it("Has Signals unsets when on", async () => {
     const onChange = setup({ ...OTHERS, hasSignals: true });
-    await userEvent.click(within(screen.getByRole("group", { name: "Signals" })).getByRole("button", { name: "Has Signals" }));
+    await userEvent.click(screen.getByRole("button", { name: "Has Signals" }));
     expect(onChange).toHaveBeenLastCalledWith(OTHERS);
   });
   it("Has Signals replaces a given false with true", async () => {
     const onChange = setup({ ...OTHERS, hasSignals: false });
-    await userEvent.click(within(screen.getByRole("group", { name: "Signals" })).getByRole("button", { name: "Has Signals" }));
+    await userEvent.click(screen.getByRole("button", { name: "Has Signals" }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, hasSignals: true });
   });
 
-  it.each(PROCEDURES)("the %s chip adds that procedure to the list", async (name) => {
+  it.each(PROCEDURES)("the %s item adds that procedure to the list", async (name) => {
     const onChange = setup({ ...OTHERS, procedure: ["Procedură simplificată"] });
-    await userEvent.click(screen.getByRole("button", { name }));
+    await openMenu("Procedure");
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name }));
     expect(onChange).toHaveBeenLastCalledWith({ ...OTHERS, procedure: ["Procedură simplificată", name] });
   });
 
   it("toggling the only procedure off leaves the field unset, not []", async () => {
     const onChange = setup({ ...OTHERS, procedure: ["Licitație deschisă"] });
-    await userEvent.click(within(screen.getByRole("group", { name: "Procedure" })).getByRole("button", { name: "Licitație deschisă" }));
+    await openMenu("Procedure");
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Licitație deschisă", checked: true }));
     const next = onChange.mock.lastCall![0] as RecordFilter;
     expect(next).toEqual(OTHERS);
     expect("procedure" in next).toBe(false);
   });
 
-  it.each(RECORD_BADGES)("the %s badge chip adds that badge, and removes it when on", async (badge) => {
-    const label = copy.badges.badges[badge].label;
-    const onChange = setup({ ...OTHERS, badges: ["CRAWL_ONLY", "NO_VALUE"].filter((b) => b !== badge) as RecordFilter["badges"] });
-    await userEvent.click(screen.getByRole("button", { name: label }));
-    expect(onChange.mock.lastCall![0].badges).toContain(badge);
-    onChange.mockClear();
+  it("shows the empty Procedure menu's sentence as its only, disabled line", async () => {
+    renderInUi(<FilterChips filter={{}} onChange={() => {}} procedureOptions={[]} lastYear={2025} locale="en" copy={copy} />);
+    await openMenu("Procedure");
+    expect(screen.getByRole("menuitem", { name: "No procedures to choose from." })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getAllByRole("menuitem")).toHaveLength(1);
   });
 
-  it("toggling an active badge chip off removes only that badge", async () => {
+  it("shows the count once several procedures or badges are picked", () => {
+    setup({ procedure: PROCEDURES, badges: ["NO_VALUE", "SUSPECT_VALUE", "CRAWL_ONLY"] });
+    expect(menuButton("Procedure")).toHaveTextContent("Procedure 2 picked");
+    expect(menuButton("Badges")).toHaveTextContent("Badges 3 picked");
+  });
+
+  it.each(RECORD_BADGES)("the %s badge item adds that badge, and removes it when on", async (badge) => {
+    const label = copy.badges.badges[badge].label;
+    const onChange = setup({ ...OTHERS, badges: ["CRAWL_ONLY", "NO_VALUE"].filter((b) => b !== badge) as RecordFilter["badges"] });
+    await openMenu("Badges");
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: label, checked: false }));
+    expect(onChange.mock.lastCall![0].badges).toContain(badge);
+    expect(screen.getByRole("menu")).toBeVisible();
+  });
+
+  it("toggling an active badge item off removes only that badge", async () => {
     const onChange = setup({ badges: ["NO_VALUE", "SUSPECT_VALUE"] });
-    await userEvent.click(within(screen.getByRole("group", { name: "Record badges" })).getByRole("button", { name: "No value" }));
+    await openMenu("Badges");
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "No value", checked: true }));
     expect(onChange).toHaveBeenLastCalledWith({ badges: ["SUSPECT_VALUE"] });
   });
 });

@@ -1,5 +1,6 @@
 import type { Channel, RecordBadge, RecordFilter, ValueBucket } from "@grivei/contract";
 import type { Locale } from "../../../theme/index.ts";
+import type { FilterChipsCopy } from "./filterChips.types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 
 /** The `RecordFilter` fields the chips own. Everything else (q, county, uat, authority, supplier, cpv, signal, countySide) passes through untouched. */
@@ -54,6 +55,25 @@ export function yearOptions(firstYear: number, lastYear: number, filter: RecordF
   for (let year = firstYear; year <= lastYear; year += 1) years.add(year);
   for (const held of [yearOf(filter.from), yearOf(filter.to)]) if (held !== undefined) years.add(held);
   return [...years].sort((a, b) => a - b);
+}
+
+/**
+ * The year menu's button text: "from 2023", "until 2025", "2023–2025", or the bare year when both ends fall in the same one.
+ * `undefined` when neither end is set. A date that is not a year edge counts as its containing year, as the columns reflect it.
+ */
+export function yearRangeText(filter: RecordFilter, range: FilterChipsCopy["year"]["range"]): string | undefined {
+  const from = yearOf(filter.from);
+  const to = yearOf(filter.to);
+  if (from !== undefined && to !== undefined) return from === to ? String(from) : range.between(String(from), String(to));
+  if (from !== undefined) return range.from(String(from));
+  if (to !== undefined) return range.until(String(to));
+  return undefined;
+}
+
+/** A multi-select menu's button text: nothing picked is `undefined`, one pick shows its name, more show the count. */
+export function pickedText(names: readonly string[], picked: (n: number) => string): string | undefined {
+  if (names.length === 0) return undefined;
+  return names.length === 1 ? names[0] : picked(names.length);
 }
 
 /** Add `item` to `list`, or remove it when already there; the order of the list is kept stable (new items go last). */
