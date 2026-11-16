@@ -23,7 +23,8 @@ export interface SuspectNoteProps {
   methodologyHref: string;
   onNavigate?: (href: string) => void;
   locale: Locale;
-  copy: SuspectNoteCopy;  /** The panel shows a held answer while the next loads. */
+  copy: SuspectNoteCopy;
+  /** The panel shows a held answer while the next loads. */
   busy?: boolean | undefined;
 }
 

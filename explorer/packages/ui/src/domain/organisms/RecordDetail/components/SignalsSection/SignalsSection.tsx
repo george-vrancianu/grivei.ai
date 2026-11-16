@@ -1,4 +1,3 @@
-import { busyProps } from "../../../../utils/busy.ts";
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
@@ -10,6 +9,7 @@ import { SectionHeading } from "../../../../atoms/SectionHeading/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { SignalList } from "../../../SignalList/index.ts";
 import { followLink } from "../../../../utils/followLink.ts";
+import { busyProps } from "../../../../utils/busy.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
 export interface SignalsSectionCopy {
@@ -29,7 +29,8 @@ export interface SignalsSectionProps {
   /** The Signal card of a Signal (the app builds it); with it each entry is the card followed by its Records, without it the minimal label and date. */
   renderCard?: ((signal: RecordSignal) => ReactNode) | undefined;
   locale: Locale;
-  copy: SignalsSectionCopy;  /** The section shows a held answer while the next loads: dimmed, `aria-busy`. */
+  copy: SignalsSectionCopy;
+  /** The section shows a held answer while the next loads: dimmed, `aria-busy`. */
   busy?: boolean | undefined;
 }
 

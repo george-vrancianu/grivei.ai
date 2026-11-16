@@ -119,6 +119,13 @@ describe("A held Record (busy)", () => {
     for (const name of ["Value", "Winners", "The Record", "Provenance"]) expect(screen.getByRole("region", { name }).querySelector("[data-panel-part=body]")).toHaveAttribute("aria-busy", "true");
   });
 
+  it("dims the heading block too (title, badges, actions) with aria-busy", () => {
+    show(framework49Page, "en", { busy: true });
+    const block = screen.getByRole("heading", { level: 1 }).closest("header")!;
+    expect(block).toHaveAttribute("aria-busy", "true");
+    expect(block).toHaveStyle({ opacity: "0.6" });
+  });
+
   it("is not busy by default", () => {
     show(framework49Page);
     expect(document.querySelector("[aria-busy]")).toBeNull();

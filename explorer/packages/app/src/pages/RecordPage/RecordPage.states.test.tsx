@@ -103,6 +103,9 @@ describe.each([
     act(() => navigate(path("CAN9800001~2"), "push"));
     // the held Record stays: its title, its panels' bodies dimmed, the header strips and the status line at full strength
     expect(screen.getByRole("heading", { level: 1, name: first.title })).toBeVisible();
+    const headingBlock = screen.getByRole("heading", { level: 1, name: first.title }).closest("header")!;
+    expect(headingBlock).toHaveAttribute("aria-busy", "true");
+    expect(headingBlock).toHaveStyle({ opacity: "0.6" });
     const value = screen.getByRole("region", { name: t.recordPage.value.heading });
     const body = value.querySelector("[data-panel-part=body]")!;
     expect(body).toHaveAttribute("aria-busy", "true");

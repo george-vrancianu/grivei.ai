@@ -1,6 +1,6 @@
 import type { RecordPageData } from "@grivei/ui";
 import { RecordPage } from "../../../graphql/operations.ts";
-import { useHeldQuery } from "../../MainScreenPage/hooks/useHeldQuery.ts";
+import { useHeldQuery } from "../../../graphql/useHeldQuery.ts";
 
 export type RecordPageState =
   | { status: "loading" }

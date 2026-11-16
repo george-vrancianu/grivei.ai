@@ -404,6 +404,26 @@ describe("Coverage grid (#79)", () => {
     expect(seen).toEqual([{ from: null, to: null }, { from: null, to: null }]);
   });
 
+  it("serves the counties with N, M and the other authorities, the unplaced tile and the snapshot date, one status for the window (#80)", async () => {
+    const areas = [{ area: "RO-BV", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { area: "NATIONAL", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }];
+    const total = { awarded: "100000", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };
+    const seen: unknown[] = [];
+    const custom = { ...store, coverageGrid: async () => grid, referenceSnapshot: async () => "2026-11-01", unplacedAuthorities: async (w: unknown) => (seen.push(w), { authorities: 1, total }),
+      coverageAreas: async (w: unknown) => (seen.push(w), areas) };
+    const r = await graphql({
+      schema, rootValue: rootValue(custom), variableValues: { w: { from: "2021-12-31", to: "2022-04-01" } },
+      source: `query($w: DateRange) { coverage(source: SEAP, window: $w) { counties { county status withRecords publicEntities otherAuthorities }
+        unplacedAuthorities { authorities total { awarded records estimated } } referenceSnapshot } }`,
+    });
+    expect(r.errors).toBeUndefined();
+    expect(r.data).toEqual({ coverage: {
+      counties: [{ county: "RO-BV", status: "HARVESTED", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { county: "NATIONAL", status: "HARVESTED", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }],
+      unplacedAuthorities: { authorities: 1, total: { awarded: "100000", records: 1, estimated: false } }, referenceSnapshot: "2026-11-01" } });
+    expect(seen).toEqual([{ from: "2021-12-31", to: "2022-04-01" }, { from: "2021-12-31", to: "2022-04-01" }]); // the window reaches the store as given
+  });
+});
+
+describe("Framework subsequent count (#254)", () => {
   it("serves the framework's total subsequent count, whatever the subsequent limit, and no count on a non-framework Record (#254)", async () => {
     const framework = { noticeCode: "CAN1", agreement: null, ceiling: "1000", subsequentReported: "300", ratio: 0.3, subsequentCount: 120 };
     const subsequentRows = [row({ code: "C~2" }), row({ code: "C~3" })];
@@ -422,24 +442,6 @@ describe("Coverage grid (#79)", () => {
     expect(limited.data).toEqual({ seap: { record: { framework: { subsequentCount: 120, subsequent: [{ code: "C~2" }] } } } });
     expect(((await ask("CAN1~1", 0)).data as { seap: { record: { framework: { subsequentCount: number } } } }).seap.record.framework.subsequentCount).toBe(120);
     expect((await ask("DA1", 1)).data).toEqual({ seap: { record: { framework: null } } });
-  });
-
-  it("serves the counties with N, M and the other authorities, the unplaced tile and the snapshot date, one status for the window (#80)", async () => {
-    const areas = [{ area: "RO-BV", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { area: "NATIONAL", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }];
-    const total = { awarded: "100000", records: 1, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0" };
-    const seen: unknown[] = [];
-    const custom = { ...store, coverageGrid: async () => grid, referenceSnapshot: async () => "2026-11-01", unplacedAuthorities: async (w: unknown) => (seen.push(w), { authorities: 1, total }),
-      coverageAreas: async (w: unknown) => (seen.push(w), areas) };
-    const r = await graphql({
-      schema, rootValue: rootValue(custom), variableValues: { w: { from: "2021-12-31", to: "2022-04-01" } },
-      source: `query($w: DateRange) { coverage(source: SEAP, window: $w) { counties { county status withRecords publicEntities otherAuthorities }
-        unplacedAuthorities { authorities total { awarded records estimated } } referenceSnapshot } }`,
-    });
-    expect(r.errors).toBeUndefined();
-    expect(r.data).toEqual({ coverage: {
-      counties: [{ county: "RO-BV", status: "HARVESTED", withRecords: 4, publicEntities: 6, otherAuthorities: 3 }, { county: "NATIONAL", status: "HARVESTED", withRecords: 2, publicEntities: 3, otherAuthorities: 0 }],
-      unplacedAuthorities: { authorities: 1, total: { awarded: "100000", records: 1, estimated: false } }, referenceSnapshot: "2026-11-01" } });
-    expect(seen).toEqual([{ from: "2021-12-31", to: "2022-04-01" }, { from: "2021-12-31", to: "2022-04-01" }]); // the window reaches the store as given
   });
 });
 

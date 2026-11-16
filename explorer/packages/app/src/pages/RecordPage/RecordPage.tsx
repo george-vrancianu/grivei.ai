@@ -62,6 +62,7 @@ export function RecordPage({ locale, code }: RecordPageProps) {
   }
   return (
     <RecordDetail
+      key={state.record.code}
       record={state.record}
       busy={state.stale}
       status={state.stale ? <LoadingStatus label={t.status.loading} /> : undefined}

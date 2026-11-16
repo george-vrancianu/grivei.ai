@@ -11,7 +11,8 @@ export interface BadgeExplanationsCopy {
 
 export interface BadgeExplanationsProps {
   badges: readonly RecordBadge[];
-  copy: BadgeExplanationsCopy & { badges: BadgeCopy };  /** The panel shows a held answer while the next loads. */
+  copy: BadgeExplanationsCopy & { badges: BadgeCopy };
+  /** The panel shows a held answer while the next loads. */
   busy?: boolean | undefined;
 }
 

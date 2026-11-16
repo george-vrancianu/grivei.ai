@@ -78,7 +78,7 @@ export function RecordDetail({ record, citeUrl, entityHref, authorityHref, recor
   );
   return (
     <Stack component="main" spacing={3} sx={pageSx}>
-      <RecordHeading record={record} copy={{ ...copy.heading, badges: copy.recordRow.badges, channel: copy.recordRow.channel }}>
+      <RecordHeading record={record} copy={{ ...copy.heading, badges: copy.recordRow.badges, channel: copy.recordRow.channel }} busy={busy}>
         <RecordActions provenance={record.provenance} citeUrl={citeUrl} copy={{ checkIn: copy.provenance.checkIn, cite: copy.cite }} />
       </RecordHeading>
       <Box

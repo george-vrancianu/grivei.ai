@@ -20,7 +20,8 @@ export interface PartySectionProps {
   authorityHref?: ((key: string) => string) | undefined;
   onNavigate?: ((href: string) => void) | undefined;
   locale: Locale;
-  copy: PartySectionCopy;  /** The panel shows a held answer while the next loads. */
+  copy: PartySectionCopy;
+  /** The panel shows a held answer while the next loads. */
   busy?: boolean | undefined;
 }
 

@@ -1,6 +1,6 @@
 import type { CoverageLensQuery, CoverageLensQueryVariables } from "@grivei/contract";
 import { CoverageLens } from "../../../graphql/operations.ts";
-import { useHeldQuery, type QueryState } from "./useHeldQuery.ts";
+import { useHeldQuery, type QueryState } from "../../../graphql/useHeldQuery.ts";
 
 export type CoverageLensState = QueryState<CoverageLensQuery>;
 

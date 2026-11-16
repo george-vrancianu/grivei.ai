@@ -26,7 +26,8 @@ export interface ProvenanceSectionCopy {
 export interface ProvenanceSectionProps {
   provenance: Provenance;
   locale: Locale;
-  copy: ProvenanceSectionCopy;  /** The panel shows a held answer while the next loads. */
+  copy: ProvenanceSectionCopy;
+  /** The panel shows a held answer while the next loads. */
   busy?: boolean | undefined;
 }
 

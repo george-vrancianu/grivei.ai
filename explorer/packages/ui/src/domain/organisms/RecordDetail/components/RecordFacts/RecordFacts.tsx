@@ -22,7 +22,8 @@ export interface RecordFactsProps {
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   locale: Locale;
   copy: RecordFactsCopy;
-  onNavigate?: ((href: string) => void) | undefined;  /** The panel shows a held answer while the next loads. */
+  onNavigate?: ((href: string) => void) | undefined;
+  /** The panel shows a held answer while the next loads. */
   busy?: boolean | undefined;
 }
 

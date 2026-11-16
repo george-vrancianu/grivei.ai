@@ -47,7 +47,7 @@ export function ValueFacts({ record, locale, copy, children, status, busy }: Val
   return (
     <Panel heading={copy.heading} level="h2" aside={status} busy={busy}>
       <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: "16px 20px" }}>
-        <Box component="dl" sx={{ m: 0, flex: "2 1 280px", minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", rowGap: 0.5 }}>
+        <Box component="dl" sx={{ m: 0, flex: "2 1 280px", minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", rowGap: 0.5, containerType: "inline-size" }}>
           <Typography variant="meta" component="dt">
             {copy.published}
           </Typography>

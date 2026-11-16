@@ -151,6 +151,12 @@ describe("RecordDetail", () => {
     expect(section("Înregistrarea").getByText("Fel înregistrare").nextElementSibling).toHaveTextContent("Notificare de atribuire a cumpărării directe (DAN)");
   });
 
+  it("sizes the big number from its own box: the published value sits in a size container", () => {
+    show(contractRecord);
+    const dt = screen.getByText("Value as published");
+    expect(dt.parentElement).toHaveStyle({ containerType: "inline-size" });
+  });
+
   it("shows the value as published and the counted value", () => {
     show(contractRecord);
     const value = section("Value");
