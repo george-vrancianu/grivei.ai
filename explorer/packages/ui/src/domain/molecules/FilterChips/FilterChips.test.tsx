@@ -82,6 +82,15 @@ describe("FilterChips: what the reader sees", () => {
     expect(second).toHaveTextContent("Award year");
   });
 
+  it("sets a divider between the Signals switch and the menus", () => {
+    setup();
+    const [first, divider, second] = Array.from(screen.getByTestId("filter-bar-scroller").children);
+    expect(first).toHaveTextContent("Has Signals");
+    expect(divider).toBe(screen.getByTestId("filter-bar-divider"));
+    expect(divider).toHaveAttribute("aria-hidden", "true");
+    expect(second).toHaveTextContent("Award year");
+  });
+
   it("is reachable by keyboard", async () => {
     const onChange = setup();
     await userEvent.tab(); // the Signals toggle

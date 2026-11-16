@@ -256,7 +256,7 @@ export const en: Copy = {
         OVER_1B: "Over 1 bn RON",
       },
     },
-    signals: { group: "Signals", has: "Has Signals", without: "Without Signals" },
+    signals: { has: "Has Signals", without: "Without Signals" },
     procedure: { group: "Procedure", empty: "No procedures to choose from." },
     party: { group: "Party" },
     badges: { menu: "Badges", badges: badges },

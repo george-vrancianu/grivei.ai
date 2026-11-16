@@ -12,3 +12,7 @@ export const Off: Story = {
 export const On: Story = {
   render: (_args, { globals }) => <HasSignalsChip hasSignals onToggle={() => {}} copy={sampleCopy.filterChips(localeOf(globals["locale"])).signals} />,
 };
+/** A filter with `hasSignals: false` shows the switch off; "Without Signals" lives in the active row (see FilterChips). */
+export const WithoutSignals: Story = {
+  render: (_args, { globals }) => <HasSignalsChip hasSignals={false} onToggle={() => {}} copy={sampleCopy.filterChips(localeOf(globals["locale"])).signals} />,
+};

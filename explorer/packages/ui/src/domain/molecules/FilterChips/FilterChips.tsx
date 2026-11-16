@@ -9,6 +9,7 @@ import { ChoiceMenu } from "./components/ChoiceMenu/index.ts";
 import { PartyMenu } from "./components/PartyMenu/index.ts";
 import { ProcedureMenu } from "./components/ProcedureMenu/index.ts";
 import { FilterBarRow } from "./components/FilterBarRow/index.ts";
+import { FilterBarDivider } from "./components/FilterBarDivider/index.ts";
 import { HasSignalsChip } from "./components/HasSignalsChip/index.ts";
 import { YearMenu } from "./components/YearMenu/index.ts";
 import type { FilterChipsCopy } from "./filterChips.types.ts";
@@ -69,6 +70,7 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
       <FilterStrip>
         <FilterBarRow>
           <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
+          <FilterBarDivider />
           <YearMenu
             filter={filter}
             firstYear={firstYear}

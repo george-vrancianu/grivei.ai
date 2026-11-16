@@ -25,7 +25,6 @@ export interface FilterChipsCopy {
   channel: { group: string; options: Record<Channel, string> };
   valueBucket: { group: string; options: Record<ValueBucket, string> };
   signals: {
-    group: string;
     /** The toggle chip: only Records with Signals. */
     has: string;
     /** The active chip for a filter that says `hasSignals: false`. */
