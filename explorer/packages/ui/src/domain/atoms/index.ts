@@ -11,3 +11,4 @@ export * from "./RequestBar/index.ts";
 export * from "./ShareBar/index.ts";
 export * from "./ChannelTag/index.ts";
 export * from "./NumericCell/index.ts";
+export * from "./CountPill/index.ts";

@@ -215,6 +215,7 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
 
 const entityHeader: Record<Locale, EntityHeaderCopy> = {
   en: {
+    breadcrumb: { label: "You are here", home: "explore", roles: { AUTHORITY: "contracting authority", SUPPLIER: "supplier" } },
     identity: {
       cui: "CUI",
       foreignVatId: "Foreign VAT ID",
@@ -244,6 +245,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
     },
   },
   ro: {
+    breadcrumb: { label: "Unde te afli", home: "explorare", roles: { AUTHORITY: "autoritate contractantă", SUPPLIER: "furnizor" } },
     identity: {
       cui: "CUI",
       foreignVatId: "Cod TVA străin",

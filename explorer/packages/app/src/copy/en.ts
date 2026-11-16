@@ -378,6 +378,7 @@ export const en: Copy = {
   entityPage: {
     layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
+      breadcrumb: { label: "You are here", home: "explore", roles: { AUTHORITY: "contracting authority", SUPPLIER: "supplier" } },
       identity: {
         cui: "CUI",
         foreignVatId: "Foreign VAT ID",

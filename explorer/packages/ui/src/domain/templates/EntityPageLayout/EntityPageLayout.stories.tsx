@@ -32,7 +32,7 @@ function page(entity: EntityHeaderData, role: EntityPageRole, view: EntityPageVi
       const roleHref = (r: EntityPageRole) => hrefs(entity, r).overview;
       return (
         <EntityPageLayout
-          header={<EntityHeader entity={entity} role={role} roleHref={roleHref} locale={locale} copy={sampleCopy.entityHeader(locale)} />}
+          header={<EntityHeader entity={entity} role={role} homeHref="/explore/" roleHref={roleHref} locale={locale} copy={sampleCopy.entityHeader(locale)} />}
           view={view}
           tabHrefs={hrefs(entity, role)}
           tabCounts={{ records: "1,817" }}
