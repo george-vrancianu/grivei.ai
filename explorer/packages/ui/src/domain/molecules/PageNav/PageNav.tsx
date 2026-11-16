@@ -8,8 +8,8 @@ import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { pageItems } from "./pageNav.utils.ts";
 
-/** A page link or step: a 44 px mono cell, raised like an outlined button; the current page takes the shared selected state. */
-const boxSx = {
+/** The cell every page link and step shares: a 44 px mono box with a border, and no states. */
+const cellSx = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -18,18 +18,16 @@ const boxSx = {
   px: 1.5,
   border: `1px solid ${color.lineStrong}`,
   borderRadius: `${radius.control}px`,
-  backgroundColor: color.raised,
-  boxShadow: shadow.raised,
   fontFamily: font.mono,
   fontSize: type.label.size,
   color: color.text,
-  "&:hover": hover,
-  "&:active": pressed,
 } as const;
-/** The current page: the shared selected fragment (line fill, inset accent outline), no amber fill. */
-const currentSx = { ...boxSx, ...selected, "&:hover": selected } as const;
-/** A step with nothing to follow: dashed, no fill, muted. */
-const disabledSx = { ...boxSx, backgroundColor: "transparent", boxShadow: "none", border: `1px dashed ${color.lineStrong}`, color: color.muted, cursor: "default" } as const;
+/** A page link: raised like an outlined button, with the shared hover and pressed fills. */
+const boxSx = { ...cellSx, backgroundColor: color.raised, boxShadow: shadow.raised, "&:hover": hover, "&:active": pressed } as const;
+/** The current page: the shared selected fragment (line fill, inset accent outline), no amber fill; it holds that look on hover and press. */
+const currentSx = { ...boxSx, ...selected, "&:hover": selected, "&:active": selected } as const;
+/** A step with nothing to follow: dashed, no fill, muted, and no hover or pressed fill. */
+const disabledSx = { ...cellSx, border: `1px dashed ${color.lineStrong}`, color: color.muted, cursor: "default" } as const;
 
 export interface PageNavCopy {
   /** The navigation landmark's accessible name. */
@@ -60,7 +58,7 @@ export function PageNav({ page, pages, pageHref, onNavigate, locale, copy }: Pag
       </Link>
     ) : (
       // Visible but inert: a link that is aria-disabled keeps its name for a screen reader and shows where the list ends.
-      <Typography component="span" variant="label" role="link" aria-disabled="true" sx={{ ...disabledSx, "&:hover": disabledSx, "&:active": disabledSx }}>
+      <Typography component="span" variant="label" role="link" aria-disabled="true" sx={disabledSx}>
         {text}
       </Typography>
     );

@@ -90,7 +90,7 @@ A·Graf layout (#99): the four headline numbers are cards (`HeadlineNumbers/comp
 
 - `PageNav` is Previous, the numbered page links and Next, all real links (every page can be cited and opened without JavaScript). Props: `page` (1-based), `pages`, `pageHref(page)`, `onNavigate?`, `locale`, `copy: PageNavCopy` (`label`, `previous`, `next`, `page(formatted)`). Page numbers go through `formatCount`; `pageItems` (`pageNav.utils.ts`) puts a gap between distant pages.
 - Cells are 44 px (`size.primaryAction`), 6 px apart, mono 13 (`type.label`); the others look raised like an outlined button (`color.raised`, `shadow.raised`, `lineStrong` border).
-- The current page has `aria-current="page"` and the selected state: it spreads the shared `selected` fragment from `theme/states.ts` (line fill, inset accent outline), no amber. `EntityTabNav` and `RoleSwitch` (#247, #248) reuse the same fragment for the same look.
+- The current page has `aria-current="page"` and the selected state: it spreads the shared `selected` fragment from `theme/states.ts` (line fill, inset accent outline), no amber. #247 and #248 are to reuse the same fragment for the same look.
 - A disabled Previous (first page) or Next (last page) stays visible: dashed `lineStrong` border, no fill, `muted` text, `role="link"` with `aria-disabled="true"` and no `href`, so its name (Previous or Next, EN and RO) is still read. It is neither hidden nor `aria-hidden`.
 - Stories: first, middle and last page and many pages (gaps), in both languages.
 
