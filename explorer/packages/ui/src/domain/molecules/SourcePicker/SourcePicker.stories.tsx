@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { pick } from "../../../workbench/index.ts";
+import { Card } from "../../../atoms/Card/index.ts";
 import { SourcePicker } from "./index.ts";
 
 const meta = { title: "Domain/SourcePicker", component: SourcePicker } satisfies Meta<typeof SourcePicker>;
@@ -39,5 +40,21 @@ export const Inline: Story = {
       ]}
       copy={{ label: label(globals) }}
     />
+  ),
+};
+/** On a panel, as the Records tab and the Coverage page hold it: the well track, the second Source chosen. */
+export const OnPanel: Story = {
+  render: (_args, { globals }) => (
+    <Card sx={{ p: 2 }}>
+      <SourcePicker
+        selected="ONRC"
+        onSelect={() => {}}
+        options={[
+          { id: "SEAP", label: "SEAP", count: pick(globals["locale"], { en: "1,204 Records", ro: "1.204 înregistrări" }) },
+          { id: "ONRC", label: "ONRC", count: pick(globals["locale"], { en: "40 registrations", ro: "40 de înmatriculări" }) },
+        ]}
+        copy={{ label: label(globals) }}
+      />
+    </Card>
   ),
 };
