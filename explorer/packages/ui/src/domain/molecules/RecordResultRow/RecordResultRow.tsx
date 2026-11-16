@@ -3,6 +3,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { color } from "../../../theme/tokens.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { signalKeys } from "../../utils/signalKey.ts";
 import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
@@ -51,7 +52,7 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       ))
     : [];
   return (
-    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75 }}>
+    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75, mx: -1.5, px: 1.5, "&:hover": { backgroundColor: color.raised } }}>
       <Stack spacing={0.75} sx={{ flex: "1 1 320px", minWidth: 0 }}>
         <RecordMetaLine record={record} locale={locale} copy={copy} />
         <Typography component="div" variant="subtitle1">

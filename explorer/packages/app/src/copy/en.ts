@@ -135,6 +135,7 @@ export const en: Copy = {
     goTo: { heading: "Go to page", open: "Open the page", cui: "CUI", nameOnly: "identified by name only" },
     entityRow: {
       matched: "matched",
+      head: { supplier: "Supplier", authority: "Authority", signals: "Signals", amount: "RON matched" },
       cui: "CUI",
       records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
       national: "national",

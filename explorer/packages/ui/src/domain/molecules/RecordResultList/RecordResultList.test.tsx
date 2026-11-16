@@ -11,4 +11,11 @@ describe("RecordResultList", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(rows.length);
     expect(screen.getByRole("link", { name: rows[0]!.record.title })).toHaveAttribute("href", `/explore/record/${rows[0]!.record.code}`);
   });
+
+  it("has no column head and keeps each row's own value caption", () => {
+    const { rows } = resultSamples.variety.records;
+    const { container } = renderInUi(<RecordResultList rows={rows} entityHref={(e, role) => `/explore/${role}/${e.key}`} recordHref={(r) => `/explore/record/${r.code}`} locale="en" copy={sampleCopy.recordRow("en")} />);
+    expect(container.querySelector("[aria-hidden='true']")).toBeNull();
+    expect(screen.getAllByText(/awarded value|ceiling, not summed/).length).toBeGreaterThan(0);
+  });
 });
