@@ -8,6 +8,12 @@ import type { Operation } from "../../../graphql/operations.ts";
  */
 export type QueryState<Data> = { status: "loading" } | { status: "ready"; data: Data; stale: boolean } | { status: "error"; retry: () => void };
 
+/** A held answer is on screen while the next request is in flight. */
+export const isStale = <Data>(state: QueryState<Data>): boolean => state.status === "ready" && state.stale;
+
+/** A request is in flight: nothing to show yet, or a held answer is on screen. */
+export const isInFlight = <Data>(state: QueryState<Data>): boolean => state.status === "loading" || isStale(state);
+
 type Settled<Data> = { key: string; state: { status: "ready"; data: Data } | { status: "error" } };
 
 /**

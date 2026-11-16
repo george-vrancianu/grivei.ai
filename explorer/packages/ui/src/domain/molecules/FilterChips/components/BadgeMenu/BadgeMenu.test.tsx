@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RECORD_BADGES } from "../../../../atoms/BadgeChip/index.ts";
@@ -38,8 +38,18 @@ describe("BadgeMenu", () => {
     expect(items.map((item) => item.textContent)).toEqual(RECORD_BADGES.map((badge) => badges.badges[badge].label));
     for (const badge of RECORD_BADGES) {
       const item = screen.getByRole("menuitemcheckbox", { name: badges.badges[badge].label, checked: badge === "NO_VALUE" });
-      expect(item).toHaveAttribute("title", badges.badges[badge].explanation);
+      expect(item).toBeInTheDocument();
     }
+  });
+
+  it("shows a badge's explanation in the tooltip when its item takes keyboard focus, as the item's description", async () => {
+    setup();
+    await userEvent.click(button());
+    const item = screen.getByRole("menuitemcheckbox", { name: badges.badges.NO_VALUE.label });
+    act(() => item.focus());
+    const tip = await screen.findByRole("tooltip");
+    expect(tip).toHaveTextContent(badges.badges.NO_VALUE.explanation);
+    expect(item).toHaveAccessibleDescription(badges.badges.NO_VALUE.explanation);
   });
 
   it.each(RECORD_BADGES)("reports %s when clicked, and the menu stays open", async (badge) => {

@@ -6,7 +6,7 @@ import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import { InsetFigure } from "../../../InsetFigure/index.ts";
 import type { Total } from "../../../../types.ts";
-import type { InsetTotalCopy } from "../../TotalFigure.tsx";
+import type { InsetTotalCopy } from "../../totalFigure.types.ts";
 import { leftOut } from "../../totalFigure.utils.ts";
 import { TotalAmount } from "../TotalAmount/index.ts";
 

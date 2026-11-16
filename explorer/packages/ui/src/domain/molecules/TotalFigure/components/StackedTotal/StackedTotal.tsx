@@ -7,7 +7,7 @@ import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import { neutralLinkSx } from "../../../../utils/neutralLinkSx.ts";
 import { withNodes } from "../../../../utils/withNodes.tsx";
 import type { Total } from "../../../../types.ts";
-import type { TotalFigureCopy } from "../../TotalFigure.tsx";
+import type { TotalFigureCopy } from "../../totalFigure.types.ts";
 import { leftOut } from "../../totalFigure.utils.ts";
 import { TotalAmount } from "../TotalAmount/index.ts";
 
