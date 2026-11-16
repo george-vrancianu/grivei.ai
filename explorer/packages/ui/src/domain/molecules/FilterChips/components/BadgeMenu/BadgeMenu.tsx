@@ -2,7 +2,7 @@ import type { BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
 import { RECORD_BADGES } from "../../../../atoms/BadgeChip/index.ts";
 import type { RecordBadge } from "../../../../types.ts";
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { MultiChoiceMenu } from "../MultiChoiceMenu/index.ts";
+import { MultiChoiceMenu } from "../../../MultiChoiceMenu/index.ts";
 
 export interface BadgeMenuProps {
   /** The menu's name: "Badges". */

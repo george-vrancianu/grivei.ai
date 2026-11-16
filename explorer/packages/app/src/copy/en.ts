@@ -734,7 +734,6 @@ export const en: Copy = {
           group: "Status",
           options: { 1048: "In operation", 1107: "Insolvency", 1084: "Struck off", 1074: "Temporarily suspended" },
           other: (code) => `Status ${code}`,
-          all: "All",
           picked: (n) => `${n} picked`,
         },
         any: "Any",

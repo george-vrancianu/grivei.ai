@@ -19,7 +19,7 @@ export function SourceSelect({ options, selected, onSelect, label }: SourceSelec
       value={selected}
       onChange={(event) => event.target.value !== selected && onSelect(event.target.value)}
       slotProps={{ select: { native: true }, htmlInput: { "aria-label": label }, input: { disableUnderline: true } }}
-      sx={{ "& .MuiNativeSelect-select": { fontSize: "0.875rem", fontWeight: 600, py: 0.5 } }}
+      sx={{ maxWidth: 120, "& .MuiNativeSelect-select": { fontSize: "0.875rem", fontWeight: 600, py: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }}
     >
       {options.map((option) => (
         <option key={option.id} value={option.id}>

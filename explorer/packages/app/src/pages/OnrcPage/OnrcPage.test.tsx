@@ -23,14 +23,12 @@ function open(url: string, extra = [seapCountFor("alfa beta"), onrcWholeCoverage
   render(<App client={fixture.client} loadCountyTopology={loadTestCountyTopology} />);
   return fixture;
 }
-/** Ticks or unticks statuses in ONRC's status menu, one at a time, opening it for each (a page may redraw the bar while it loads) and closing it after. */
-async function toggleStatuses(group: string, names: readonly string[]) {
-  for (const name of names) {
-    await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${group}`) }));
-    await userEvent.click(await screen.findByRole("menuitemcheckbox", { name }));
-    await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-  }
+/** Picks (or unpicks) one status in ONRC's status menu: opens it, clicks the item, closes it. */
+async function pickStatus(group: string, name: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${group}`) }));
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name }));
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
 }
 const here = () => `${window.location.pathname}${window.location.search}`;
 
@@ -95,7 +93,7 @@ describe.each([
     open(`${base}?q=alfa+beta&source=onrc`);
     await screen.findByRole("list");
     const { status } = s.onrc.filterChips;
-    await toggleStatuses(status.group, [status.options[1048]!, status.options[1084]!, status.options[1074]!]);
+    await pickStatus(status.group, status.options[1107]!);
     await waitFor(() => expect(window.location.search).toBe("?q=alfa+beta&status=1107&source=onrc"));
     await userEvent.click(screen.getByRole("button", { name: new RegExp(`^${s.onrc.filterChips.seapCounterparty.group}`) }));
     await userEvent.click(await screen.findByRole("menuitemradio", { name: s.onrc.filterChips.seapCounterparty.no }));

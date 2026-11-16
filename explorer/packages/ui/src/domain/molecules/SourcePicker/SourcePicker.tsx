@@ -1,7 +1,7 @@
 import { ToggleButton } from "../../../atoms/ToggleButton/index.ts";
 import { ToggleButtonGroup } from "../../../atoms/ToggleButtonGroup/index.ts";
 import { SourceSelect } from "./components/SourceSelect/index.ts";
-import { useNarrowScreen } from "./hooks/useNarrowScreen.ts";
+import { useNarrowScreen } from "../../../theme/useNarrowScreen.ts";
 import type { SourcePickerCopy, SourcePickerOption } from "./sourcePicker.types.ts";
 import { optionText } from "./sourcePicker.utils.ts";
 

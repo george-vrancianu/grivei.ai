@@ -1,5 +1,5 @@
 import type { FilterChipsCopy } from "../../filterChips.types.ts";
-import { MultiChoiceMenu } from "../MultiChoiceMenu/index.ts";
+import { MultiChoiceMenu } from "../../../MultiChoiceMenu/index.ts";
 
 export interface ProcedureMenuProps {
   /** Procedure names as SEAP publishes them (Romanian, in both languages). */

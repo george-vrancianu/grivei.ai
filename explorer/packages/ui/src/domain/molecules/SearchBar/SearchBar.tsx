@@ -28,6 +28,9 @@ export interface SearchBarProps {
   copy: SearchBarCopy;
 }
 
+/** A non-breaking space: with no hint the helper line still holds its height, so the minimum-length hint appearing does not shift what is below. */
+const RESERVED_LINE = "\u00a0";
+
 /** The magnifier at the start of the field: decorative, so hidden from assistive technology. */
 function SearchIcon() {
   return (
@@ -66,7 +69,7 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
             clearAndFocus();
           }
         }}
-        helperText={helper}
+        helperText={helper ?? (copy.minLengthHint ? RESERVED_LINE : undefined)}
         fullWidth
         sx={{ "& .MuiOutlinedInput-root": { minHeight: size.searchInput, fontSize: type.search.size, pl: 2.25, backgroundColor: color.bg, boxShadow: shadow.well }, "& .MuiFormHelperText-root": { mx: 0, color: "text.secondary" } }}
         inputRef={input}
@@ -79,7 +82,7 @@ export function SearchBar({ value, onQueryChange, describedBy, loading = false, 
               <>
                 {loading && <CircularProgress size={16} aria-label={copy.loading} />}
                 {text !== "" && (
-                  <IconButton aria-label={copy.clear} size="small" onClick={clearAndFocus} edge="end">
+                  <IconButton aria-label={copy.clear} size="small" onClick={clearAndFocus} edge={endSlot === undefined ? "end" : false}>
                     <span aria-hidden="true">×</span>
                   </IconButton>
                 )}

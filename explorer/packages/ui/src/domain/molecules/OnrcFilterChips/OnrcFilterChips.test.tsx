@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OnrcFilter } from "@grivei/contract";
 import { vi } from "vitest";
@@ -34,40 +34,43 @@ describe("OnrcFilterChips", () => {
     const inOrder = [
       row.getByRole("button", { name: "In SEAP Any" }),
       row.getByTestId("filter-bar-divider"),
-      row.getByRole("button", { name: "Status All" }),
+      row.getByRole("button", { name: "Status Any" }),
       row.getByRole("textbox", { name: "CAEN" }),
       row.getByRole("button", { name: "Registered Any" }),
     ];
     for (let i = 1; i < inOrder.length; i++) expect(inOrder[i - 1]!.compareDocumentPosition(inOrder[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("ticks every status by default, and filters by the rest when one is unticked", async () => {
+  it("has no status ticked by default (Any), and one pick filters by it", async () => {
     const onChange = setup({});
-    expect(menuButton("Status")).toHaveTextContent("Status All");
+    expect(menuButton("Status")).toHaveTextContent("Status Any");
     await userEvent.click(menuButton("Status"));
-    expect(ticked()).toEqual(["In operation ✓", "Insolvency ✓", "Struck off ✓", "Temporarily suspended ✓"]);
-    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Struck off" }));
-    expect(onChange).toHaveBeenLastCalledWith({ status: [1048, 1107, 1074] });
+    expect(ticked()).toEqual(["In operation", "Insolvency", "Struck off", "Temporarily suspended"]);
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Insolvency" }));
+    expect(onChange).toHaveBeenLastCalledWith({ status: [1107] });
   });
 
-  it("names the one status ticked", () => {
-    setup({ status: [1107] });
+  it("names the one status ticked, and a second pick adds to it", async () => {
+    const onChange = setup({ status: [1107] });
     expect(menuButton("Status")).toHaveTextContent("Status Insolvency");
-  });
-
-  it("counts several ticked statuses, and ticking the last one left drops the filter", async () => {
-    const onChange = setup({ status: [1048, 1107, 1084] });
-    expect(menuButton("Status")).toHaveTextContent("Status 3 picked");
     await userEvent.click(menuButton("Status"));
-    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Temporarily suspended" }));
-    expect(onChange).toHaveBeenLastCalledWith({});
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Struck off" }));
+    expect(onChange).toHaveBeenLastCalledWith({ status: [1107, 1084] });
   });
 
-  it("keeps the last ticked status: the filter never matches nothing", async () => {
+  it("counts several ticked statuses, and unticking the last one drops the filter", async () => {
+    const onChange = setup({ status: [1048, 1107] });
+    expect(menuButton("Status")).toHaveTextContent("Status 2 picked");
+    await userEvent.click(menuButton("Status"));
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "In operation" }));
+    expect(onChange).toHaveBeenLastCalledWith({ status: [1107] });
+  });
+
+  it("unticks the only status to get back to Any", async () => {
     const onChange = setup({ status: [1048] });
     await userEvent.click(menuButton("Status"));
     await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "In operation" }));
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenLastCalledWith({});
   });
 
   it("offers SEAP counterparties only, or not in SEAP; false is a value of its own, and a second pick unsets it", async () => {
@@ -107,6 +110,28 @@ describe("OnrcFilterChips", () => {
     expect(onChange).toHaveBeenLastCalledWith({ registeredFrom: "2020-01-01", registeredTo: "2020-12-31" });
     fireEvent.change(screen.getByLabelText("From"), { target: { value: "" } });
     expect(onChange).toHaveBeenLastCalledWith({});
+  });
+
+  it("marks the CAEN field invalid while its text is not digits, and does not report an unchanged empty field", async () => {
+    const onChange = setup({});
+    const field = screen.getByRole("textbox", { name: "CAEN" });
+    await userEvent.type(field, "ab");
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    await userEvent.clear(field);
+    expect(field).toHaveAttribute("aria-invalid", "false");
+    fireEvent.blur(field);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("closes the date menu on Escape from a date field and returns focus to its button", async () => {
+    setup({});
+    await userEvent.click(menuButton("Registered"));
+    const from = screen.getByLabelText("From");
+    from.focus();
+    expect(from).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(menuButton("Registered")).toHaveFocus();
   });
 
   it("lists every active chip in a strip of its own, each removable, and clears them all; the query is not a chip", async () => {

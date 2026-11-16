@@ -29,10 +29,12 @@ export interface FilterMenuProps {
    * the arrow keys step through them in DOM order, so a grid that flows by column carries them down one column and into the next.
    */
   listSx?: BoxProps["sx"];
+  /** What the overlay is: a `menu` of items (default), or a `dialog` when it holds form fields (text inputs are not menu items). */
+  popup?: "menu" | "dialog";
 }
 
 /** A filter's button (group name, value, chevron) with its portalled overlay menu 8 px below, left-aligned. The owner holds the filter; this holds only open or closed. */
-export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, children, listSx }: FilterMenuProps) {
+export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, children, listSx, popup = "menu" }: FilterMenuProps) {
   const id = useId();
   const { anchor, setAnchor, open, toggle, close } = useMenuAnchor(defaultOpen);
   const set = value !== undefined;
@@ -42,7 +44,7 @@ export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, chil
         id={id}
         ref={setAnchor}
         variant="outlined"
-        aria-haspopup="menu"
+        aria-haspopup={popup}
         aria-expanded={open}
         aria-controls={open ? `${id}-menu` : undefined}
         onClick={toggle}
@@ -71,7 +73,7 @@ export function FilterMenu({ label, value, unsetLabel, defaultOpen = false, chil
         onClose={close}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ list: { "aria-labelledby": id, sx: listSx } }}
+        slotProps={{ list: { "aria-labelledby": id, sx: listSx, ...(popup === "dialog" && { role: "dialog" }) } }}
       >
         {typeof children === "function" ? children({ close }) : children}
       </Menu>

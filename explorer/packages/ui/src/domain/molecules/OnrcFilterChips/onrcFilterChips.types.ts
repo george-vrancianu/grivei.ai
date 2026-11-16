@@ -8,8 +8,6 @@ export interface OnrcFilterChipsCopy {
     options: Record<number, string>;
     /** A status code the chips do not name (it came in through the URL). */
     other: (code: number) => string;
-    /** The status menu's value while every status is ticked (no status filter): "All". */
-    all: string;
     /** The status menu's value once several, but not all, are ticked: "3 picked". */
     picked: (n: number) => string;
   };

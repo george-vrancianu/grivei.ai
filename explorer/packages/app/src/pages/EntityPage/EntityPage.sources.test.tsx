@@ -26,22 +26,15 @@ const withOnrc: ExtraFixture[] = [
   { ...ask({}), data: answer([registration, lookalike]) },
   { ...ask({ status: [1107] }), data: answer([registration]) },
   { ...ask({ status: [1084] }), data: answer([]) },
-  // the dropdown's steps on the way there: unticking the others one by one, then ticking one more
-  { ...ask({ status: [1107, 1084, 1074] }), data: answer([registration]) },
-  { ...ask({ status: [1107, 1074] }), data: answer([registration]) },
-  { ...ask({ status: [1107, 1084] }), data: answer([registration]) },
 ];
 
-/** Ticks or unticks statuses in ONRC's status menu, one at a time, opening it for each (a page may redraw the bar while it loads) and closing it after. */
-async function toggleStatuses(group: string, names: readonly string[]) {
-  for (const name of names) {
-    await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${group}`) }));
-    await userEvent.click(await screen.findByRole("menuitemcheckbox", { name }));
-    await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-  }
+/** Picks (or unpicks) one status in ONRC's status menu: opens it, clicks the item, closes it. */
+async function pickStatus(group: string, name: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${group}`) }));
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name }));
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
 }
-
 
 /** The Records tab's answer says ONRC lists the entity (`entity.onrc`), as the API sends it for a CUI ONRC holds; `listed` false leaves the recorded answer (no registration). */
 const listedIn = (listed: boolean) => (operation: string, data: unknown) =>
@@ -91,18 +84,19 @@ describe.each([
     expect(screen.queryByText("ALTA FIRMA SRL")).toBeNull();
     expect(facets()).toBeNull(); // SEAP's facet panel is not ONRC's
     expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.ONRC, pressed: true })).toBeVisible();
-    expect(screen.getByRole("button", { name: new RegExp(`^${s.onrc.filterChips.status.group}`) })).toHaveTextContent(s.onrc.filterChips.status.all);
+    expect(screen.getByRole("button", { name: new RegExp(`^${s.onrc.filterChips.status.group}`) })).toHaveTextContent(s.onrc.filterChips.any);
   });
 
   it("keeps ONRC's filter in the URL and applies it, and a filter that leaves nothing says so", async () => {
     open(`${URL}?source=onrc`);
     await screen.findByRole("heading", { level: 2, name: s.onrc.results.heading(1, "1") });
     const { status } = s.onrc.filterChips;
-    await toggleStatuses(status.group, [status.options[1048]!, status.options[1084]!, status.options[1074]!]);
+    await pickStatus(status.group, status.options[1107]!);
     await waitFor(() => expect(window.location.search).toBe("?status=1107&source=onrc"));
     expect(decodeOnrcScreen(window.location.search).filter).toEqual({ status: [1107] });
     expect(await screen.findByRole("heading", { level: 2, name: s.onrc.results.heading(1, "1") })).toBeVisible();
-    await toggleStatuses(status.group, [status.options[1084]!, status.options[1107]!]);
+    await pickStatus(status.group, status.options[1107]!);
+    await pickStatus(status.group, status.options[1084]!);
     await waitFor(() => expect(window.location.search).toBe("?status=1084&source=onrc"));
     expect(await screen.findByText(s.onrc.registrations.noMatch)).toBeVisible();
     // the Source still has something for the entity: the switch is still offered

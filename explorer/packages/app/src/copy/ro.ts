@@ -739,7 +739,6 @@ export const ro: Copy = {
           group: "Stare",
           options: { 1048: "În funcțiune", 1107: "Insolvență", 1084: "Radiată", 1074: "Întrerupere temporară" },
           other: (code) => `Starea ${code}`,
-          all: "Toate",
           picked: (n) => roCount(n, String(n), "aleasă", "alese"),
         },
         any: "Oricare",
