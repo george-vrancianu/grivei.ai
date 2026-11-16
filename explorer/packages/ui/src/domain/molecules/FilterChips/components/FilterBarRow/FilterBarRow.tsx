@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../../../atoms/Box/index.ts";
+import { STRIP_FILL_CLEAR, STRIP_FILL_SOLID } from "../../../FilterStrip/index.ts";
 
 export interface FilterBarRowProps {
   children: ReactNode;
 }
-
-/** The filter strip's fill (35% ground over the panel) as one solid colour, for the fade to end in. */
-const STRIP_FILL = "rgb(18, 22, 28)";
 
 /**
  * The row the filter controls sit in, 8 px apart. From `md` up it wraps. Below `md` it is one row that scrolls sideways inside the strip,
@@ -44,7 +42,7 @@ export function FilterBarRow({ children }: FilterBarRowProps) {
           bottom: 0,
           width: 32,
           pointerEvents: "none",
-          background: `linear-gradient(to right, rgba(18, 22, 28, 0), ${STRIP_FILL})`,
+          background: `linear-gradient(to right, ${STRIP_FILL_CLEAR}, ${STRIP_FILL_SOLID})`,
         }}
       />
     </Box>

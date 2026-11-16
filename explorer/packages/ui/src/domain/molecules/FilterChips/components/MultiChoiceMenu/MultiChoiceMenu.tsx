@@ -15,7 +15,7 @@ export interface MultiChoiceMenuProps<T extends string> {
   /** "Any" / "Oricare", shown while nothing is chosen. */
   unsetLabel: string;
   /** In display order. */
-  options: readonly { value: T; label: string; hint?: string }[];
+  options: readonly MultiChoiceOption<T>[];
   selected: readonly T[] | null | undefined;
   /** Called with the option clicked; the owner adds it or, when already chosen, removes it. The menu stays open. */
   onToggle: (value: T) => void;

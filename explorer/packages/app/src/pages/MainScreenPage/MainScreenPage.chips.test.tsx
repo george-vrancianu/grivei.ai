@@ -75,6 +75,31 @@ describe("the filter chips on the main screen", () => {
     expect(within(bar).getByRole("button", { name: "Elimină Fără Semnale" })).toBeVisible();
   });
 
+  it("opens the Badges menu in Romanian at /ro/explore/", async () => {
+    openAt("/ro/explore/?q=contract&badges=no-value&badges=suspect-value");
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    const bar = await screen.findByRole("region", { name: "Filtre" });
+    const user = userEvent.setup();
+    await user.click(within(bar).getByRole("button", { name: /^Insigne/ }));
+    expect(screen.getByRole("menuitemcheckbox", { name: "Fără valoare", checked: true })).toBeVisible();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Valoare suspectă", checked: true })).toBeVisible();
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Fără valoare" }));
+    await waitFor(() => expect(queryOf().getAll("badges")).toEqual(["suspect-value"]));
+    expect(menuButton("Insigne")).toHaveTextContent("Insigne Valoare suspectă");
+  });
+
+  it("opens the Procedure menu in Romanian at /ro/explore/, the procedure names as published", async () => {
+    openAt("/ro/explore/?q=contract");
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    const bar = await screen.findByRole("region", { name: "Filtre" });
+    const user = userEvent.setup();
+    await user.click(await within(bar).findByRole("button", { name: /^Procedură/ }));
+    expect(await screen.findByRole("menuitemcheckbox", { name: "Licitație deschisă", checked: false })).toBeVisible();
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Licitație deschisă" }));
+    await waitFor(() => expect(queryOf().getAll("procedure")).toEqual(["Licitație deschisă"]));
+    expect(menuButton("Procedură")).toHaveTextContent("Procedură Licitație deschisă");
+  });
+
   it.each([
     ["has Signals", { name: "Has Signals" }, "hasSignals", "true"],
   ])("clicking %s writes it to the URL, replacing the history entry", async (_label, button, key, value) => {

@@ -99,6 +99,11 @@ describe("the Party filter on the main screen", () => {
     const bar = await screen.findByRole("region", { name: "Filtre" });
     expect(await within(bar).findByRole("button", { name: /^Partid/ })).toHaveTextContent(`Partid ${PSD}`);
     expect(within(bar).getByRole("button", { name: `Elimină Partid: ${PSD}` })).toBeVisible();
+    await userEvent.setup().click(within(bar).getByRole("button", { name: /^Partid/ }));
+    expect(screen.getByRole("menuitemradio", { name: PSD, checked: true })).toBeVisible();
+    expect(screen.getByRole("menuitemradio", { name: PNL, checked: false })).toBeVisible();
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     const coverage = await screen.findByTestId("party-coverage");
     expect(within(coverage).getByRole("heading", { name: `Acoperire pe partide: ${PSD}` })).toBeVisible();
     expect(within(coverage).getAllByRole("listitem").map((li) => plain(li.textContent).split(":")[0])).toEqual([
