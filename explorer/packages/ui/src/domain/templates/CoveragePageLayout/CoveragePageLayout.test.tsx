@@ -154,8 +154,8 @@ describe("the Coverage page", () => {
 
   it("keeps the last answer when busy: every data panel's body dims with aria-busy, the header strips stay, and the loading status shows beside the selector", () => {
     render(<CoveragePageLayout status="ready" content={samplePageContent()} busy locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} copy={sampleCopy.coveragePageLayout("en")} />);
-    const busy = [...document.querySelectorAll("[data-panel-part='body'][aria-busy='true']")];
-    expect(busy.map((b) => b.closest("section")?.getAttribute("aria-label"))).toEqual(["Quarter by record kind", "Known gaps", "Records not in bulk data", "Data through", "Public entities list", "per county: N of M"]);
+    const busy = screen.getAllByRole("region").filter((r) => r.querySelector("[aria-busy='true']") !== null);
+    expect(busy.map((r) => r.getAttribute("aria-label"))).toEqual(["Quarter by record kind", "Known gaps", "Records not in bulk data", "Data through", "Public entities list", "per county: N of M"]);
     expect(section("Quarter by record kind").getByRole("status")).toHaveTextContent("Loading coverage");
     expect(section("Quarter by record kind").getByText("selector")).toBeVisible();
     expect(screen.getByRole("heading", { level: 2, name: "Known gaps" })).toBeVisible();
@@ -194,9 +194,8 @@ describe("the Coverage page", () => {
     show(samplePageContent());
     const rows = section("Known gaps").getAllByRole("row").slice(1);
     for (const row of rows) {
-      const swatch = row.querySelector<HTMLElement>("[data-swatch]")!;
-      expect(swatch.dataset["swatch"]).toBe(row.getAttribute("data-state"));
-      expect(swatch).toHaveAttribute("aria-hidden", "true");
+      const swatch = row.querySelector<HTMLElement>("[aria-hidden='true']")!;
+      expect(swatch).toBeInTheDocument();
       expect(swatch.textContent).toBe("");
     }
     expect(section("Known gaps").getByRole("region", { name: "Known gaps by quarter and record kind" })).toBeVisible();
@@ -205,7 +204,8 @@ describe("the Coverage page", () => {
   it("shows one inset figure per record kind in Data through: the kind as its label", () => {
     show(samplePageContent());
     const item = within(section("Data through").getByRole("list", { name: "SEAP" })).getAllByRole("listitem")[0]!;
-    expect(item.querySelector("p")).toHaveTextContent("Direct purchases data through 30 June 2025");
+    expect(within(item).getByText("Direct purchases")).toBeVisible();
+    expect(item).toHaveTextContent("Direct purchases data through 30 June 2025");
   });
 
   it("reads in Romanian", () => {

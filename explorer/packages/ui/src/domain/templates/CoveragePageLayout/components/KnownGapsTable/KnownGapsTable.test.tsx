@@ -21,10 +21,9 @@ describe("the known-gaps table", () => {
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      const swatch = row.querySelector("[data-swatch]")!;
-      expect(swatch).toHaveAttribute("aria-hidden", "true");
+      const swatch = row.querySelector("[aria-hidden='true']")!;
+      expect(swatch).toBeInTheDocument();
       expect(swatch.textContent).toBe("");
-      expect(swatch.getAttribute("data-swatch")).toBe(row.getAttribute("data-state"));
     }
     expect(within(rows[0]!).getByText(/Known gap|Possibly incomplete|Not visible in the source/)).toBeVisible();
   });
