@@ -3,6 +3,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Card } from "../../../atoms/Card/index.ts";
 import { Tab } from "../../../atoms/Tab/index.ts";
 import { Tabs } from "../../../atoms/Tabs/index.ts";
+import { listSx } from "../../utils/listSx.ts";
 import { DEFAULT_RESULT_TAB, RESULT_TABS, type ResultTab } from "../ResultTabs/index.ts";
 import { PillSkeleton } from "./components/PillSkeleton/index.ts";
 import { RowSkeleton } from "./components/RowSkeleton/index.ts";
@@ -42,7 +43,7 @@ export function ResultsSkeleton({ copy, tab = DEFAULT_RESULT_TAB, onTabChange, s
         </Tabs>
         <Box sx={{ flex: "none" }}>{status}</Box>
       </Box>
-      <Box component="ul" aria-hidden="true" sx={{ listStyle: "none", m: 0, p: 0 }}>
+      <Box component="ul" aria-hidden="true" sx={listSx}>
         {ROW_SHAPES.slice(0, ROW_COUNT).map((shape, index) => (
           <RowSkeleton key={index} shape={shape} opacity={rowOpacity(index)} />
         ))}

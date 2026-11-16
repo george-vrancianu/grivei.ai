@@ -30,7 +30,7 @@ function render(props: Partial<CoverageLensSectionProps>): NonNullable<Story["re
         onSelect={() => undefined}
         locale={locale}
         copy={{ map: t.coverageLensMap, grid: t.coverage.grid }}
-        status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+        status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
         {...props}
       />
     );
@@ -54,4 +54,4 @@ export const GridLoading: Story = { render: render({ cells: null }) };
 /** The outlines could not be fetched. */
 export const OutlinesUnavailable: Story = { render: render({ topology: { status: "error" } }) };
 /** The Coverage query failed. */
-export const Failed: Story = { render: render({ lens: null, failed: true }) };
+export const Failed: Story = { render: render({ lens: null, failed: true, onRetry: () => undefined }) };

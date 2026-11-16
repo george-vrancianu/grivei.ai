@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "../../../atoms/Button/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { pick } from "../../../workbench/index.ts";
 import { StateNote } from "./index.ts";
@@ -24,3 +25,12 @@ export const Loading = story("loading");
 export const Failed = story("error");
 export const Empty = story("empty");
 export const EmptyWithAction = story("empty", true);
+/** A failed query: the error sentence and its Try again button. */
+export const FailedWithRetry: Story = {
+  args: { kind: "error", children: null },
+  render: (args, { globals }) => (
+    <StateNote {...args} action={<Button size="small">{pick(globals["locale"], { en: "Try again", ro: "Reîncearcă" })}</Button>}>
+      {pick(globals["locale"], words.error)}
+    </StateNote>
+  ),
+};

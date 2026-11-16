@@ -127,7 +127,7 @@ export const ro: Copy = {
     signals: "Semnalele sunt numărate, niciodată notate cu un scor",
   },
   language: { groupLabel: "Limba", current: "RO", switchTo: "EN", switchLabel: "Versiunea în engleză a acestei pagini" },
-  status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate." },
+  status: { loading: "Se încarcă…", failed: "Datele nu au putut fi încărcate.", retry: "Reîncearcă" },
   main: { title: "Explorează cheltuielile publice", total: "Total atribuit", mapUnavailable: "Harta nu a putut fi încărcată.", mapTitle: "Valoare atribuită pe județe" },
   sourceEyebrow: { search: "caută", scope: "național", period: "din 2021" },
   searchBar: { label: "Căutare", placeholder: "Caută în română, de ex. deszăpezire", hint: "Datele sunt în română. Încearcă deszăpezire, numele unei firme, un CUI cu sau fără RO sau un prefix CPV, de exemplu 45. Diacriticele, majusculele și formele juridice (SRL, SA) sunt ignorate.", clear: "Șterge căutarea", loading: "Se caută", minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta." },
@@ -140,6 +140,7 @@ export const ro: Copy = {
     goTo: { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" },
     entityRow: {
       matched: "potrivit",
+      head: { supplier: "Furnizor", authority: "Autoritate", signals: "Semnale", amount: "RON potrivit" },
       cui: "CUI",
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
       national: "național",

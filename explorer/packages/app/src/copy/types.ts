@@ -31,7 +31,7 @@ export interface Copy {
     /** The link's accessible name. */
     switchLabel: string;
   };
-  status: { loading: string; failed: string };
+  status: { loading: string; failed: string; retry: string };
   main: { title: string; total: string; /** Shown in the map's place when the county outlines cannot be loaded. */ mapUnavailable: string; /** The title of the national map in the Money lens (a zoomed county has its own, `zoomedCounty.title`). */ mapTitle: string };
   /** The Source eyebrow above the search bar: the words around the Source's name, which comes from the API. */
   sourceEyebrow: SourceEyebrowCopy;

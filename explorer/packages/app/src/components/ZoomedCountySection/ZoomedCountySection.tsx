@@ -1,5 +1,5 @@
 import type { ZoomedCountyQuery } from "@grivei/contract";
-import { Box, Button, MapSkeleton, Typography, ZoomedCountyMap, type Locale, type ZoomedCountyMapCopy } from "@grivei/ui";
+import { Box, Button, MapSkeleton, StateNote, Typography, ZoomedCountyMap, type Locale, type ZoomedCountyMapCopy } from "@grivei/ui";
 import type { UatTopologyState } from "../../geo/index.ts";
 import { BUCHAREST } from "./zoomedCountySection.utils.ts";
 
@@ -28,21 +28,28 @@ export interface ZoomedCountySectionProps {
   locale: Locale;
   copy: ZoomedCountySectionCopy;
   /** What to say while things load, when the outlines cannot be loaded and when the query failed. */
-  status: { loading: string; unavailable: string; failed: string };
+  status: { loading: string; unavailable: string; failed: string; retry: string };
+  /** Asks the failed query again; absent = no button. */
+  onRetry?: () => void;
 }
 
 /**
  * The Money lens zoomed into one county: the UAT choropleth (Bucharest by its sectors) for one search, with the UAT as a filter
  * value and a way back to the country (the back link is the map panel's, in its header strip). A missing outlines file or a failed query says so here and leaves the results working.
  */
-export function ZoomedCountySection({ county, data, loading, failed, topology, uat, onSelectUat, onClearUat, locale, copy, status }: ZoomedCountySectionProps) {
+export function ZoomedCountySection({ county, data, loading, failed, topology, uat, onSelectUat, onClearUat, locale, copy, status, onRetry }: ZoomedCountySectionProps) {
   const countyName = data?.uats[0]?.county.name ?? county;
   const selectedName = uat === undefined ? undefined : (data?.uats.find((u) => u.siruta === uat)?.name ?? uat);
   const map = data?.seap.search.uatMap ?? null;
 
   let body;
   if (topology.status === "error") body = <Typography role="alert">{status.unavailable}</Typography>;
-  else if (failed) body = <Typography role="alert">{status.failed}</Typography>;
+  else if (failed)
+    body = (
+      <StateNote kind="error" action={onRetry && <Button size="small" onClick={onRetry}>{status.retry}</Button>}>
+        {status.failed}
+      </StateNote>
+    );
   else if (topology.status === "loading" || map === null || loading) body = <MapSkeleton label={status.loading} topology={topology.status === "ready" ? topology.topology : undefined} />;
   else
     body = (

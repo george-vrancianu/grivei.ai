@@ -1,7 +1,7 @@
 import type { MainScreenQuery } from "@grivei/contract";
 import { useId, useState } from "react";
 import {
-  Box, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
+  Box, Button, chipFieldsOf, DEFAULT_MAP_LENS, DEFAULT_RESULT_TAB, FilterChips, LoadingStatus, MainScreenLayout, ResultsSkeleton, ResultTabs, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, toResultTab, TotalSkeleton, Typography,
   type CountySide, type Locale, type MapLens, type ResultTab,
 } from "@grivei/ui";
 import { CoverageLensSection, coverageLensVariables } from "../../components/CoverageLensSection/index.ts";
@@ -114,13 +114,14 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               data={zoom.status === "ready" ? zoom.data : null}
               loading={zoom.status === "loading"}
               failed={zoom.status === "error"}
+              onRetry={zoom.status === "error" ? zoom.retry : undefined}
               topology={uatTopology}
               uat={filter.uat ?? undefined}
               onSelectUat={(siruta) => setFilter({ uat: uatAfterClick(filter.uat ?? undefined, siruta) })}
               onClearUat={() => setFilter({ uat: undefined })}
               locale={locale}
               copy={t.zoomedCounty}
-              status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+              status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
             />
           ) : (
             <MoneyLensSection
@@ -143,6 +144,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             lens={coverage.status === "ready" ? coverage.data : null}
             loading={coverage.status === "loading"}
             failed={coverage.status === "error"}
+            onRetry={coverage.status === "error" ? coverage.retry : undefined}
             topology={topology}
             cells={coverageGrid.status === "ready" ? coverageGrid.data.coverage.grid : null}
             dateWindow={highlightWindow(filter)}
@@ -155,7 +157,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
             onSelect={(county) => setFilter({ county, countySide: undefined, uat: undefined })}
             locale={locale}
             copy={{ map: t.coverageLensMap, grid: t.coverage.grid }}
-            status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed }}
+            status={{ loading: t.status.loading, unavailable: t.main.mapUnavailable, failed: t.status.failed, retry: t.status.retry }}
           />
         ),
       }}
@@ -167,9 +169,9 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
         state.status === "loading" ? (
           <TotalSkeleton labels={t.total.figures} heading={<Typography variant="meta" component="h2">{t.main.total}</Typography>} />
         ) : (
-          search && state.status === "ready" && (
+          (search || state.status === "error") && (
             <MainTotal
-              total={search.total}
+              total={search ? search.total : null}
               copy={{ heading: t.main.total, total: t.total, partyCoverage: t.partyCoverage }}
               locale={locale}
               methodologyHref={methodologyHref(locale, "awardedValue")}
@@ -191,7 +193,18 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
               status={<LoadingStatus label={t.status.loading} />}
             />
           )}
-          {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
+          {state.status === "error" && (
+            <StateNote
+              kind="error"
+              action={
+                <Button size="small" onClick={state.retry}>
+                  {t.status.retry}
+                </Button>
+              }
+            >
+              {t.status.failed}
+            </StateNote>
+          )}
           {search && (
             <ResultTabs
               authorities={search.authorities}
