@@ -72,9 +72,9 @@ describe("OnrcFilterChips", () => {
     const onChange = setup({ q: "alfa", status: [1048, 2110], caen: "42", county: "RO-CJ", registeredFrom: "2020-01-01", seapCounterparty: true });
     const group = within(screen.getByRole("group", { name: "Active filters" }));
     expect(group.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual([
-      "Remove In operation", "Remove Status 2110", "Remove CAEN 42", "Remove County RO-CJ", "Remove Registered from 1 January 2020", "Remove SEAP counterparties only", "Clear all",
+      "Remove In operation", "Remove Status 2110", "Remove CAEN 42", "Remove County: RO-CJ", "Remove Registered from 1 January 2020", "Remove SEAP counterparties only", "Clear all",
     ]);
-    await userEvent.click(group.getByRole("button", { name: "Remove County RO-CJ" }));
+    await userEvent.click(group.getByRole("button", { name: "Remove County: RO-CJ" }));
     expect(onChange).toHaveBeenLastCalledWith({ q: "alfa", status: [1048, 2110], caen: "42", registeredFrom: "2020-01-01", seapCounterparty: true });
     await userEvent.click(group.getByRole("button", { name: "Clear all" }));
     expect(onChange).toHaveBeenLastCalledWith({ q: "alfa" });

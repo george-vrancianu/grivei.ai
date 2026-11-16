@@ -36,6 +36,8 @@ export interface FilterChipsProps {
   firstYear?: number;
   /** Last year of the year selects (the current year, or the year the data runs through). */
   lastYear: number;
+  /** The name the page shows for the filter's `county` ("Brașov"); the code is shown when absent. The county chip appears whenever the filter holds a county. */
+  countyName?: string;
   locale: Locale;
   copy: FilterChipsCopy;
 }
@@ -48,9 +50,9 @@ const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[]
 
 /**
  * The filter bar: the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
- * with the active ones listed below as chips, each removable. Controlled: it reflects `filter` and reports the next one.
+ * with the active ones listed below as chips, each removable (the map-picked county among them: removing it unsets `county` and `uat`; Clear all does too). Controlled: it reflects `filter` and reports the next one.
  */
-export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, locale, copy }: FilterChipsProps) {
+export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, countyName, locale, copy }: FilterChipsProps) {
   const active = activeChips(
     filter,
     {
@@ -62,8 +64,10 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
       withoutSignals: copy.signals.without,
       badges: badgeLabels(copy.badges.badges),
       party: copy.active.party,
+      county: copy.active.county,
     },
     locale,
+    countyName,
   );
   return (
     <Box component="section" aria-label={copy.label}>

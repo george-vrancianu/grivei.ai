@@ -14,12 +14,15 @@ const PROCEDURES = ["Achiziție directă", "Licitație deschisă", "Negociere f�
 // Party lists are source data as registered: Romanian in both languages.
 const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "PARTIDUL NAȚIONAL LIBERAL", "ALIANȚA USR PLUS"];
 
+// County names as the page shows them (map topology); a code with no name is shown as the code.
+const COUNTY_NAMES: Record<string, string> = { "RO-BV": "Brașov" };
+
 /** The chips are controlled; in the workbench a little state stands in for the URL. */
 function Demo({ initial, locale }: { initial: RecordFilter; locale: "en" | "ro" }) {
   const [filter, setFilter] = useState<RecordFilter>(initial);
   return (
     <>
-      <FilterChips filter={filter} onChange={setFilter} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
+      <FilterChips filter={filter} countyName={filter.county ? COUNTY_NAMES[filter.county] : undefined} onChange={setFilter} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
       <Typography variant="caption" component="pre" sx={{ mt: 2 }}>
         {JSON.stringify(filter)}
       </Typography>
@@ -36,6 +39,8 @@ export const SeveralActive: Story = {
     procedure: ["Achiziție directă"], badges: ["SUSPECT_VALUE", "NO_VALUE"], q: "deszăpezire", county: "RO-BV",
   }),
 };
+/** Only a county picked on the map: the active row appears with its chip; removing it (or Clear all) unsets the county. */
+export const CountyOnly: Story = { render: demo({ county: "RO-BV" }) };
 /** The Party filter on one list, with its active chip (#181). */
 export const PartyChosen: Story = { render: demo({ party: "ALIANȚA USR PLUS", from: "2024-01-01" }) };
 /** Every badge chip on at once. */

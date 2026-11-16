@@ -24,6 +24,7 @@ import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
+import { countyChipName } from "./countyChipName.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
@@ -98,10 +99,12 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
       filters={
         <FilterChips
           filter={filter}
-          onChange={(next) => setFilter(chipFieldsOf(next))}
+          // The chips' fields plus the county and its UAT (Clear all and the county chip unset them): a key left out of the patch stays in the URL.
+          onChange={(next) => setFilter({ ...chipFieldsOf(next), county: next.county ?? undefined, uat: next.uat ?? undefined })}
           procedureOptions={procedureOptions}
           partyOptions={partyOptions}
           lastYear={new Date().getFullYear()}
+          {...(filter.county ? { countyName: countyChipName(filter.county, topology, t.moneyLensMap.tiles) } : {})}
           locale={locale}
           copy={t.filterChips}
         />

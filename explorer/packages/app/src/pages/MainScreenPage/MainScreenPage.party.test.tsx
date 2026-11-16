@@ -67,7 +67,7 @@ describe("the Party filter on the main screen", () => {
   it("Clear all removes the party with the other chips and keeps the rest of the URL", async () => {
     await opened(`/explore/?q=pod&county=RO-BV&party=${encodeURIComponent(PSD)}&channel=contract&tab=records`);
     await userEvent.setup().click(screen.getByRole("button", { name: "Clear all" }));
-    await waitFor(() => expect(window.location.search).toBe("?q=pod&county=RO-BV&tab=records"));
+    await waitFor(() => expect(window.location.search).toBe("?q=pod&tab=records"));
   });
 
   it("states the coverage beside the Total: direct and subordinate, what the filter leaves out and the unattributed share", async () => {
