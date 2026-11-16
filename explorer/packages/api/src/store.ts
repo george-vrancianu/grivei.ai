@@ -323,6 +323,8 @@ export interface FrameworkRow {
   subsequentReported: string;
   /** subsequentReported / ceiling; null when the ceiling is blank. */
   ratio: number | null;
+  /** How many subsequent contracts the notice has in all, whatever page of them is asked for. */
+  subsequentCount: number;
 }
 
 /** One row of an entity tab: the entity and what it matched (consortium shares summed on the supplier side). */
@@ -1015,7 +1017,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
     },
     async framework(code) {
       const { rows } = await pool.query(
-        `SELECT r.framework_role, f.notice_code, f.agreement_code, f.ceiling_bani::text AS ceiling, f.subsequent_bani::text AS subsequent, f.ratio
+        `SELECT r.framework_role, f.notice_code, f.agreement_code, f.ceiling_bani::text AS ceiling, f.subsequent_bani::text AS subsequent, f.subsequent_count, f.ratio
            FROM seap.record r JOIN seap.framework f ON f.notice_code = r.notice_code
           WHERE r.code = $1 AND r.framework_role IS NOT NULL`,
         [code],
@@ -1028,7 +1030,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
         const found = await pool.query(`SELECT ${RECORD_COLUMNS} FROM seap.record WHERE code = $1`, [f.agreement_code]);
         agreement = (await rowsOf(found.rows as RawRecord[]))[0] ?? null;
       }
-      return { noticeCode: f.notice_code, agreement, ceiling: f.ceiling, subsequentReported: f.subsequent, ratio: f.ratio };
+      return { noticeCode: f.notice_code, agreement, ceiling: f.ceiling, subsequentReported: f.subsequent, ratio: f.ratio, subsequentCount: f.subsequent_count };
     },
     async subsequent(noticeCode, { limit, offset }) {
       const { rows } = await pool.query(

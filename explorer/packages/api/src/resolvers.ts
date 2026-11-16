@@ -64,6 +64,7 @@ function recordPage(r: RecordDetail, recordRow: (r: RecordRow) => object, store:
             ceiling: f.ceiling,
             subsequentReported: f.subsequentReported,
             ratio: f.ratio,
+            subsequentCount: f.subsequentCount,
             subsequent: async ({ limit, offset }: { limit: number; offset: number }) =>
               (await store.subsequent(f.noticeCode, { limit: Math.min(Math.max(limit, 0), MAX_SUBSEQUENT), offset: Math.max(offset, 0) })).map(recordRow),
           };
