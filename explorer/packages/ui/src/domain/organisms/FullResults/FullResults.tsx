@@ -1,20 +1,20 @@
+import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Link } from "../../../atoms/Link/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { Typography } from "../../../atoms/Typography/index.ts";
+import { ApproxCount, formatCount } from "../../atoms/ApproxCount/index.ts";
+import { CountPill } from "../../atoms/CountPill/index.ts";
 import { EntityResultList } from "../../molecules/EntityResultList/index.ts";
 import type { EntityResultRowCopy } from "../../molecules/EntityResultRow/index.ts";
 import { RecordResultList } from "../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityResultPage, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
-import { followLink } from "../../utils/followLink.ts";
 import type { ResultTab } from "../ResultTabs/index.ts";
 import { CiteLine, type CiteLineCopy } from "../../molecules/CiteLine/index.ts";
 import { DEFAULT_RECORD_ORDER, OrderSelect, type OrderSelectCopy, type RecordOrder } from "../../molecules/OrderSelect/index.ts";
 import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import { PageNotice } from "./components/PageNotice/index.ts";
-import { ResultsSummary } from "./components/ResultsSummary/index.ts";
 import { DEFAULT_PAGE_SIZE, pageCount, pageRange } from "./fullResults.utils.ts";
 
 export interface FullResultsCopy {
@@ -63,20 +63,23 @@ export interface FullResultsProps {
   onOrderChange?: (order: RecordOrder) => void;
   /** Where the empty result's link (`copy.emptyLink`) goes (the Coverage lens, built by the caller); absent = no link. */
   emptyHref?: string;
-  /** Where "back to results" goes (the main screen with the same filter and tab); the link shows only with it. */
-  backHref?: string;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   recordHref: (record: RecordResult["record"]) => string;
+  /** The panel's header strip, right end, before the order control: the page's `LoadingStatus` while a request is in flight. */
+  status?: ReactNode;
+  /** The panel shows its last answer while the next loads: the body is dimmed with `aria-busy="true"`; the header strip and the foot stay at full strength. */
+  busy?: boolean;
   locale: Locale;
   copy: FullResultsCopy;
 }
 
 /**
- * "Show all" (A · Graf): one tab's rows for one page, with its count, the order control (Records only), the citable address of the view and links to the other pages.
- * The page owns its width and gutter; this is the content.
+ * "Show all": one tab's rows for one page, in one panel. The header strip holds the kind, its count pill and the "Showing a–b of n" line on the left and the status and the order
+ * control (Records only) on the right; the citable address is a strip under it, the rows are flush, and the foot holds the "Showing" line and the page links.
+ * "Back to results" is a link on the ground above the panel. The page owns its width and gutter; this is the content.
  */
 export function FullResults({
-  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, backHref, emptyHref, entityHref, recordHref, locale, copy,
+  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, emptyHref, entityHref, recordHref, status, busy, locale, copy,
 }: FullResultsProps) {
   const { tab } = results;
   const { count } = results.page;
@@ -87,9 +90,13 @@ export function FullResults({
   const pastTheEnd = count > 0 && (page > pages || shown === 0);
   const range = shown > 0 && !pastTheEnd ? { ...pageRange(page, pageSize, shown), text: copy.showing } : undefined;
 
+  const showing = range ? range.text(formatCount(range.from, false, locale), formatCount(range.to, false, locale), formatCount(count, estimated, locale)) : undefined;
+  const showPageNav = pages > 1 && !pastTheEnd;
+  const ordered = tab === "records" && onOrderChange !== undefined;
+
   const rows =
     results.tab === "records" ? (
-      <RecordResultList rows={results.page.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} />
+      <RecordResultList rows={results.page.rows} entityHref={entityHref} recordHref={recordHref} locale={locale} copy={copy.recordRow} onNavigate={onNavigate} inset />
     ) : (
       <EntityResultList
         rows={results.page.rows}
@@ -98,31 +105,63 @@ export function FullResults({
         locale={locale}
         copy={copy.entityRow}
         onNavigate={onNavigate}
+        inset
       />
     );
 
   return (
-    <Stack spacing={2.5}>
-      {backHref && (
-        <Link href={backHref} onClick={followLink(backHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
-          {copy.back}
-        </Link>
+    <Panel
+      level="h2"
+      label={copy.heading[tab]}
+      busy={busy}
+      flush
+      heading={
+        <>
+          {copy.heading[tab]}
+          <CountPill>
+            <ApproxCount count={count} estimated={estimated} locale={locale} />
+          </CountPill>
+          {/* The foot says it again for assistive technology; here it only sits beside the kind. */}
+          {showing && (
+            <Typography variant="meta" component="span" aria-hidden="true" sx={{ fontWeight: 400 }}>
+              {showing}
+            </Typography>
+          )}
+        </>
+      }
+      aside={
+        status || ordered ? (
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: 2 }}>
+            {status}
+            {ordered && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
+          </Box>
+        ) : undefined
+      }
+      foot={
+        showing || showPageNav
+          ? [
+              showing && <span key="showing">{showing}</span>,
+              showPageNav && <PageNav key="pages" page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />,
+            ]
+          : undefined
+      }
+    >
+      {citeUrl && <CiteLine strip url={citeUrl} copy={copy.cite} />}
+      {count === 0 && (
+        <Box sx={{ p: 2 }}>
+          <PageNotice text={copy.empty[tab]} link={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }} onNavigate={onNavigate} />
+        </Box>
       )}
-      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 2 }}>
-        <ResultsSummary heading={copy.heading[tab]} count={count} estimated={estimated} range={range} locale={locale} />
-        {tab === "records" && onOrderChange && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
-      </Box>
-      {citeUrl && <CiteLine framed url={citeUrl} copy={copy.cite} />}
-      {count === 0 && <PageNotice text={copy.empty[tab]} link={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }} onNavigate={onNavigate} />}
       {pastTheEnd && (
-        <PageNotice
-          text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}
-          link={{ href: pageHref(1), text: copy.firstPage }}
-          onNavigate={onNavigate}
-        />
+        <Box sx={{ p: 2 }}>
+          <PageNotice
+            text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}
+            link={{ href: pageHref(1), text: copy.firstPage }}
+            onNavigate={onNavigate}
+          />
+        </Box>
       )}
       {range && rows}
-      {pages > 1 && !pastTheEnd && <PageNav page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />}
-    </Stack>
+    </Panel>
   );
 }

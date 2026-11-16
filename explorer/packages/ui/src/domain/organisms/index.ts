@@ -30,3 +30,4 @@ export * from "./OnrcCountMap/index.ts";
 export * from "./SnapshotCoverage/index.ts";
 export * from "./ResultsSkeleton/index.ts";
 export * from "./MapSkeleton/index.ts";
+export * from "./FullResultsSkeleton/index.ts";
