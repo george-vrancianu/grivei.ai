@@ -144,6 +144,8 @@ export interface SourcesCopy {
     /** The eyebrow above the search bar on the ONRC screen. */
     eyebrow: { search: string; scope: string; period: string };
     title: string;
+    /** The count map's title, above the map (the main screen's is "Awarded value by county"). */
+    mapTitle: string;
     searchBar: SearchBarCopy;
     results: OnrcResultsCopy;
     filterChips: OnrcFilterChipsCopy;

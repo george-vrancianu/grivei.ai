@@ -1,7 +1,7 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Skeleton } from "../../../../../atoms/Skeleton/index.ts";
 import { AMOUNT_COLUMN, nameColumnSx, pairSx, ROW_INSET, rowLayoutSx, SIGNALS_COLUMN } from "../../../../utils/resultRowColumns.ts";
-import type { RowShape } from "../../resultsSkeleton.utils.ts";
+import type { RowShape } from "../../../../utils/resultsSkeleton.ts";
 
 export interface RowSkeletonProps {
   shape: RowShape;

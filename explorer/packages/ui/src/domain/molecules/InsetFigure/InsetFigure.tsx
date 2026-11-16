@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { Box } from "../../../atoms/Box/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { Well } from "../../../atoms/Well/index.ts";
-import { type } from "../../../theme/tokens.ts";
+import { color, type } from "../../../theme/tokens.ts";
 import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
 
 export interface InsetFigureProps {
@@ -14,10 +15,13 @@ export interface InsetFigureProps {
   href?: string;
   /** An optional third line under the value: what the figure rests on, such as a window or a caveat (mono 12 px, muted). With `href` it is part of the link. */
   note?: ReactNode;
+  /** Makes the figure a toggle (the ONRC count map's Unplaced tile): a button with `aria-pressed` that calls `onSelect` on a click. `selected` is its pressed state, drawn with a stronger border and the `raised` fill. Not with `href`. */
+  onSelect?: () => void;
+  selected?: boolean;
 }
 
 /** A secondary figure sunk into its panel: the label over the value, then an optional `note`, in a well. It grows from 200 px and wraps under its neighbours on a narrow screen. */
-export function InsetFigure({ label, children, href, note }: InsetFigureProps) {
+export function InsetFigure({ label, children, href, note, onSelect, selected = false }: InsetFigureProps) {
   const text = (
     <>
       <Typography variant="meta" component="span">
@@ -36,9 +40,24 @@ export function InsetFigure({ label, children, href, note }: InsetFigureProps) {
       )}
     </>
   );
+  const toggle = onSelect !== undefined && href === undefined;
   return (
-    <Well component="p" sx={{ flex: "1 1 200px", minWidth: 0, m: 0, px: 2, py: 1.5, display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.5 }}>
-      {href === undefined ? (
+    <Well
+      component="p"
+      edge={selected ? "lineStrong" : "line"}
+      sx={{ flex: "1 1 200px", minWidth: 0, m: 0, px: 2, py: 1.5, display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.5, ...(selected && { backgroundColor: color.raised }) }}
+    >
+      {toggle ? (
+        <Box
+          component="button"
+          type="button"
+          aria-pressed={selected}
+          onClick={onSelect}
+          sx={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", gap: 0.5, minWidth: 0, color: "text.primary", "&:focus-visible": { outline: "2px solid currentColor", outlineOffset: 4 } }}
+        >
+          {text}
+        </Box>
+      ) : href === undefined ? (
         text
       ) : (
         <Link href={href} underline="hover" sx={{ ...neutralLinkSx, display: "flex", flexDirection: "column", gap: 0.5 }}>

@@ -1,11 +1,13 @@
 import { useId } from "react";
 import {
-  DEFAULT_MAP_LENS, MainScreenLayout, OnrcFilterChips, OnrcResults, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, Typography,
+  Button, DEFAULT_MAP_LENS, LoadingStatus, MainScreenLayout, OnrcFilterChips, OnrcResults, OnrcResultsSkeleton, Panel, SearchBar, SourceEyebrow, SourcePicker, Stack, StateNote, toMapLens, Typography,
   type Locale, type MapLens,
 } from "@grivei/ui";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { OnrcCountLensSection } from "../../components/OnrcCountLensSection/index.ts";
 import { OnrcCoverageSection } from "../../components/OnrcCoverageSection/index.ts";
+import { OnrcSearch } from "../../graphql/operations.ts";
+import { isInFlight, isStale, useHeldQuery } from "../../graphql/useHeldQuery.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useCountyTopology } from "../../geo/index.ts";
 import { navigate } from "../../routing/location.tsx";
@@ -15,7 +17,6 @@ import { coverageSourceHref, searchSourceHref } from "../../sources/sourceLinks.
 import { ONRC_PAGE_SIZE, useSourceCounts } from "../../sources/useSourceCounts.ts";
 import { encodeOnrcScreen, patchToOnrc, useOnrcUrlState } from "../../urlState/onrcScreen.ts";
 import { useOnrcCoverage } from "../CoveragePage/index.ts";
-import { useOnrcSearch } from "./hooks/useOnrcSearch.ts";
 
 /**
  * `/explore/?source=onrc` (and `/explore/search?source=onrc`): ONRC's screen for the filter in the URL, laid out like the main screen. One `OnrcSearch` query per filter
@@ -27,13 +28,19 @@ export function OnrcPage({ locale }: { locale: Locale }) {
   const s = t.sources;
   const { filter, page = 1, lens, setFilter, update } = useOnrcUrlState();
   const mapLens = toMapLens(lens);
-  const state = useOnrcSearch(filter, page);
+  // A held answer (`stale`) stays on screen, dimmed, while the next request is in flight; the first load shows skeletons.
+  const state = useHeldQuery(OnrcSearch, { filter, limit: ONRC_PAGE_SIZE, offset: (page - 1) * ONRC_PAGE_SIZE });
   const topology = useCountyTopology();
   const search = state.status === "ready" ? state.data.onrc.search : null;
   // Each Source's match count: this screen's own answer for ONRC, SEAP's for the query text alone (what a switch shows)
   const counts = useSourceCounts(filter.q ?? undefined, "ONRC", search ? { n: search.count, estimated: false } : null);
   const coverageShown = mapLens === "coverage";
   const coverage = useOnrcCoverage(coverageShown);
+  const retryButton = (retry: () => void) => (
+    <Button size="small" onClick={retry}>
+      {t.status.retry}
+    </Button>
+  );
   const eyebrowId = useId();
   const here = pathFor(locale, { name: "main" });
   const q = filter.q ?? undefined;
@@ -61,7 +68,7 @@ export function OnrcPage({ locale }: { locale: Locale }) {
             copy={s.onrc.searchBar}
             value={filter.q ?? ""}
             onQueryChange={(next) => setFilter({ q: next || undefined })}
-            loading={state.status === "loading"}
+            loading={isInFlight(state)}
             endSlot={
               <SourcePicker
                 inline
@@ -85,6 +92,7 @@ export function OnrcPage({ locale }: { locale: Locale }) {
             onSelect={(county) => setFilter({ county })}
             locale={locale}
             copy={s.onrc.countMap}
+            title={s.onrc.mapTitle}
             status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
           />
         ),
@@ -95,9 +103,10 @@ export function OnrcPage({ locale }: { locale: Locale }) {
               coverage={coverage.status === "ready" ? coverage.data : null}
               loading={coverage.status === "loading"}
               failed={coverage.status === "error"}
+              onRetry={coverage.status === "error" ? coverage.retry : undefined}
               locale={locale}
               copy={{ ...s.onrc.coverage.snapshots, states: t.coverage.grid.states }}
-              status={{ loading: t.status.loading, failed: t.status.failed }}
+              status={{ loading: t.status.loading, failed: t.status.failed, retry: t.status.retry }}
             />
             <AppLink href={coverageSourceHref(locale, "ONRC")}>{t.coverage.grid.seePage}</AppLink>
           </Stack>
@@ -105,8 +114,14 @@ export function OnrcPage({ locale }: { locale: Locale }) {
       }}
       results={
         <>
-          {state.status === "loading" && <StateNote kind="loading">{t.status.loading}</StateNote>}
-          {state.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
+          {state.status === "loading" && <OnrcResultsSkeleton title={s.onrc.results.title} status={<LoadingStatus label={t.status.loading} />} />}
+          {state.status === "error" && (
+            <Panel heading={s.onrc.results.title} level="h2">
+              <StateNote kind="error" action={retryButton(state.retry)}>
+                {t.status.failed}
+              </StateNote>
+            </Panel>
+          )}
           {search && (
             <OnrcResults
               count={search.organisations.count}
@@ -119,10 +134,13 @@ export function OnrcPage({ locale }: { locale: Locale }) {
               emptyHref={coverageSourceHref(locale, "ONRC")}
               locale={locale}
               copy={s.onrc.results}
+              status={isInFlight(state) ? <LoadingStatus label={t.status.loading} /> : undefined}
+              busy={isStale(state)}
             />
           )}
         </>
       }
+      busy={{ map: coverageShown ? isStale(coverage) : isStale(state) }}
       lens={mapLens}
       onLensChange={(next: MapLens) => update({ lens: next === DEFAULT_MAP_LENS ? undefined : next })}
       copy={s.onrc.layout}

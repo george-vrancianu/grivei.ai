@@ -19,10 +19,28 @@ describe("OnrcResults", () => {
     renderInUi(<OnrcResults {...base()} />);
     const region = screen.getByRole("region", { name: "2 registrations" });
     expect(within(region).getByRole("heading", { name: "2 registrations" })).toBeVisible();
-    expect(within(region).getByText("Showing 1–2 of 2")).toBeVisible();
+    const foot = region.querySelector<HTMLElement>('[data-panel-part="foot"]')!;
+    expect(within(foot).getByText("Showing 1–2 of 2")).toBeVisible();
     expect(within(region).getAllByRole("listitem")).toHaveLength(2);
     expect(within(region).getByRole("link", { name: /ALFA ONRC SRL/ })).toHaveAttribute("href", "/explore/supplier/3100020");
     expect(screen.queryByRole("navigation")).toBeNull();
+  });
+
+  it("puts the paging in the foot beside the range line, and shows no foot for an empty result", () => {
+    const { unmount } = renderInUi(<OnrcResults {...base({ count: 120 })} />);
+    const foot = screen.getByRole("region").querySelector<HTMLElement>('[data-panel-part="foot"]')!;
+    expect(within(foot).getByRole("navigation", { name: "Result pages" })).toBeVisible();
+    unmount();
+    renderInUi(<OnrcResults {...base({ count: 0, rows: [] })} />);
+    expect(screen.getByRole("region").querySelector('[data-panel-part="foot"]')).toBeNull();
+  });
+
+  it("dims the list with aria-busy while a held answer is on screen, and keeps the header's status at full strength", () => {
+    renderInUi(<OnrcResults {...base({ busy: true, status: <span role="status">Loading</span> })} />);
+    const region = screen.getByRole("region");
+    expect(region.querySelector('[data-panel-part="body"]')).toHaveAttribute("aria-busy", "true");
+    expect(region.querySelector('[data-panel-part="header"]')).not.toHaveAttribute("aria-busy");
+    expect(within(region).getByRole("status")).toHaveTextContent("Loading");
   });
 
   it("pages with real links when the count is over a page, and keeps the page's offset in the range line", () => {

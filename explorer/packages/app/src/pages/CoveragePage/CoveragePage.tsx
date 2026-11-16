@@ -52,9 +52,10 @@ export function CoveragePage({ locale }: CoveragePageProps) {
             coverage={onrcState.status === "ready" ? onrcState.data : null}
             loading={onrcState.status === "loading"}
             failed={onrcState.status === "error"}
+            onRetry={onrcState.status === "error" ? onrcState.retry : undefined}
             locale={locale}
             copy={{ ...copy.snapshots, states: t.coverage.grid.states }}
-            status={{ loading: t.status.loading, failed: t.status.failed }}
+            status={{ loading: t.status.loading, failed: t.status.failed, retry: t.status.retry }}
           />
         </Panel>
       </PageShell>
