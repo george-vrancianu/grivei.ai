@@ -6,7 +6,7 @@ import { AppShell } from "./index.ts";
 const meta: Meta<Record<string, unknown>> = { title: "App/AppShell" };
 export default meta;
 
-export const Shell: StoryObj = {
+const shell = (busy: boolean): StoryObj => ({
   render: (_args, { globals }) => {
     const locale = globals["locale"] === "ro" ? "ro" : "en";
     const base = locale === "ro" ? "/ro/explore" : "/explore";
@@ -16,10 +16,15 @@ export const Shell: StoryObj = {
         copy={catalogue[locale]}
         switchTo={{ locale: other, href: other === "ro" ? "/ro/explore/" : "/explore/" }}
         current="explore"
+        busy={busy}
         links={{ explore: `${base}/`, search: `${base}/search`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
       >
         <Typography sx={{ p: 3 }}>{catalogue[locale].main.title}</Typography>
       </AppShell>
     );
   },
-};
+});
+
+export const Shell = shell(false);
+/** A request in flight: the progress bar on the header edge. */
+export const Busy = shell(true);

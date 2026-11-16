@@ -11,14 +11,16 @@ export interface AppShellProps {
   links: Record<NavItem, string>;
   /** The nav item of the page shown, if it has one. */
   current: NavItem | null;
+  /** Whether any request is in flight: the header shows the progress bar. */
+  busy?: boolean;
   children: ReactNode;
 }
 
 /** The frame every page sits in, on the dot grid: header (logo, navigation, EN/RO), the page, then the footer. */
-export function AppShell({ copy, switchTo, links, current, children }: AppShellProps) {
+export function AppShell({ copy, switchTo, links, current, busy = false, children }: AppShellProps) {
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header copy={copy} switchTo={switchTo} links={links} current={current} />
+      <Header copy={copy} switchTo={switchTo} links={links} current={current} busy={busy} />
       <Box sx={{ flex: "1 0 auto" }}>{children}</Box>
       <Footer copy={copy.footer} />
     </Box>

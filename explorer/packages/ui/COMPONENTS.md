@@ -103,6 +103,10 @@ In the app: pages pass `onQueryChange={(q) => setFilter({ q: q || undefined })}`
 
 `LoadingStatus` is a 14 px spinner (decoration, `aria-hidden`) and a `role="status"` caption: one prop, `label` ("Loading…" / "Se încarcă…" from the catalogue). It is the results header's `status` slot content on the main screen while any request is in flight; it must sit outside any `aria-busy` region.
 
+## The request progress bar (`domain/atoms/RequestBar`)
+
+`RequestBar` is the 2 px indeterminate bar for requests in flight (accent on a `line` track): one prop, `busy` (it draws nothing when false). It wraps `atoms/LinearProgress` in MUI's own indeterminate animation (2.1 s, two bars; the design drew one 1.3 s bar). Decoration only: `aria-hidden`, no label; the status lines carry the meaning. Placement is its own: from `md` up it is `absolute` at the bottom edge of its positioned parent (the app puts it inside the sticky `Header`, `bottom: -2px`); below `md`, where the header scrolls away, it is `fixed` at the top of the viewport. The app drives `busy` from its data client's in-flight count (`useRequestsInFlight`, the GraphQL requests only; the county and UAT outline fetches are not counted). The theme sets `motion.reducedMotion: "system"`, so under `prefers-reduced-motion: reduce` the bar and the spinners and skeletons stop animating.
+
 ## The Source eyebrow and the state note (`domain/molecules/SourceEyebrow`, `domain/molecules/StateNote`)
 
 `SourceEyebrow` is the line above the search bar, "search SEAP · national · 2021 onward". Props: `sources` (the API's `sources`: `{ id, name }`), `selected` (a Source id), `copy: SourceEyebrowCopy` (`search`, `scope`, `period`). The Source's name is the API's; the rest is the catalogue's. It is the Source picker of ADR 0005 in its read-only, one-option state: a later Release adds the choice (an `onSelect`, a menu) here without changing callers. `SourceEyebrow` also takes `id`: the page passes it to `SearchBar`'s `describedBy`, so the search box is described by the eyebrow. `MainScreenLayout` has an optional `mapNote` slot at the foot of the map panel (the app puts `MainDataThrough` there).
