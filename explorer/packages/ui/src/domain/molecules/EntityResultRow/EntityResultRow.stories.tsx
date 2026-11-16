@@ -35,3 +35,5 @@ export const WithAndWithoutSignals: Story = {
 };
 /** A supplier whose Records carry a Signal: the chip on the Suppliers tab (the plural forms are the SignalCountChip's Counts story). */
 export const SupplierWithSignal: Story = { render: (_a, { globals }) => list(signalRowSamples.suppliers.rows, localeOf(globals["locale"])) };
+/** Below 600 px the Signals and amount pair wraps under the name and each amount carries its "matched" caption; the story sets Storybook's phone viewport (the others are wide, caption visually hidden). */
+export const Phone: Story = { ...WithAndWithoutSignals, globals: { viewport: { value: "mobile2", isRotated: false } } };

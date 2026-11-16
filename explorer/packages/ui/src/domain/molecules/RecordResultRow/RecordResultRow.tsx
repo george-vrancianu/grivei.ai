@@ -3,6 +3,8 @@ import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
+import { ROW_INSET } from "../../utils/resultRowColumns.ts";
+import { color } from "../../../theme/tokens.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { signalKeys } from "../../utils/signalKey.ts";
 import type { EntityRef, EntityRole, RecordResult } from "../../types.ts";
@@ -35,6 +37,8 @@ export interface RecordResultRowProps {
   signalBadges?: RecordSignalBadges | undefined;
   /** A plain click on the title or an entity link goes here instead of loading the page. */
   onNavigate?: ((href: string) => void) | undefined;
+  /** The list runs flush to a panel's edges: the row carries the 20 px side padding itself, so its hover fill spans the panel. */
+  inset?: boolean | undefined;
 }
 
 /**
@@ -42,7 +46,7 @@ export interface RecordResultRowProps {
  * authority and winners, then the badges and Signal badges. Right: the full value over its caption (`RecordValue`; it takes children,
  * the slot under the caption). After a supplier-county click a multi-winner Record has `areaShare`: its in-county share is the second line, labelled with the consortium-share convention's name (#103). The right column wraps under the left one on a narrow screen.
  */
-export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges, onNavigate }: RecordResultRowProps) {
+export function RecordResultRow({ row, recordHref, entityHref, locale, copy, signalBadges, onNavigate, inset = false }: RecordResultRowProps) {
   const { record, matchedField } = row;
   const keys = signalKeys(record.signals);
   const signals = signalBadges
@@ -51,7 +55,7 @@ export function RecordResultRow({ row, recordHref, entityHref, locale, copy, sig
       ))
     : [];
   return (
-    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75 }}>
+    <Box component="li" sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", rowGap: 1, columnGap: 2.5, py: 1.75, px: inset ? ROW_INSET : 0, "&:hover": { backgroundColor: color.raised } }}>
       <Stack spacing={0.75} sx={{ flex: "1 1 320px", minWidth: 0 }}>
         <RecordMetaLine record={record} locale={locale} copy={copy} />
         <Typography component="div" variant="subtitle1">

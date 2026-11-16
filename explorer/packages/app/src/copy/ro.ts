@@ -140,6 +140,7 @@ export const ro: Copy = {
     goTo: { heading: "Mergi la pagină", open: "Deschide pagina", cui: "CUI", nameOnly: "identificat doar după denumire" },
     entityRow: {
       matched: "potrivit",
+      head: { supplier: "Furnizor", authority: "Autoritate", signals: "Semnale", amount: "RON potrivit" },
       cui: "CUI",
       records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
       national: "național",

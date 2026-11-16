@@ -19,4 +19,18 @@ describe("EntityResultList", () => {
     expect(chips).toHaveLength(rows.filter((r) => r.signalCount > 0).length);
     expect(chips[0]).toHaveAttribute("href", `/explore/authority/${rows[0]!.entity.key}#signals`);
   });
+
+  it("puts a column head over the rows, hidden from assistive tech and outside the list", () => {
+    const { rows } = resultSamples.variety.suppliers;
+    const { container } = renderInUi(<EntityResultList rows={rows} role="supplier" entityHref={(e, role) => `/explore/${role}/${e.key}`} locale="en" copy={sampleCopy.entityRow("en")} />);
+    const head = container.querySelector("[aria-hidden='true']");
+    expect(head).toHaveTextContent("SupplierSignalsRON matched");
+    expect(head?.closest("ul")).toBeNull();
+  });
+
+  it("names the first column Autoritate for authorities in Romanian", () => {
+    const { rows } = resultSamples.variety.authorities;
+    const { container } = renderInUi(<EntityResultList rows={rows} role="authority" entityHref={(e, role) => `/explore/${role}/${e.key}`} locale="ro" copy={sampleCopy.entityRow("ro")} />, "ro");
+    expect(container.querySelector("[aria-hidden='true']")).toHaveTextContent("AutoritateSemnaleRON potrivit");
+  });
 });
