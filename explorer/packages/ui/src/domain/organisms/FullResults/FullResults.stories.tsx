@@ -19,7 +19,6 @@ const sample =
         page={page}
         pageSize={3}
         pageHref={(n) => `/explore/search?tab=${results.tab}${n > 1 ? `&page=${n}` : ""}`}
-        backHref="/explore/"
         citeUrl={`https://grivei.ai/explore/search?tab=${results.tab}${page > 1 ? `&page=${page}` : ""}`}
         entityHref={(entity, role) => `/explore/${role}/${entity.key}`}
         recordHref={(record) => `/explore/record/${record.code}`}

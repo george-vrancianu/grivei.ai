@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Link } from "../../../atoms/Link/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { ApproxCount, formatCount } from "../../atoms/ApproxCount/index.ts";
@@ -11,7 +9,6 @@ import type { EntityResultRowCopy } from "../../molecules/EntityResultRow/index.
 import { RecordResultList } from "../../molecules/RecordResultList/index.ts";
 import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
 import type { EntityRef, EntityResultPage, EntityRole, RecordResult, RecordResultPage } from "../../types.ts";
-import { followLink } from "../../utils/followLink.ts";
 import type { ResultTab } from "../ResultTabs/index.ts";
 import { CiteLine, type CiteLineCopy } from "../../molecules/CiteLine/index.ts";
 import { DEFAULT_RECORD_ORDER, OrderSelect, type OrderSelectCopy, type RecordOrder } from "../../molecules/OrderSelect/index.ts";
@@ -66,8 +63,6 @@ export interface FullResultsProps {
   onOrderChange?: (order: RecordOrder) => void;
   /** Where the empty result's link (`copy.emptyLink`) goes (the Coverage lens, built by the caller); absent = no link. */
   emptyHref?: string;
-  /** Where "back to results" goes (the main screen with the same filter and tab); the link shows only with it. */
-  backHref?: string;
   entityHref: (entity: EntityRef, role: EntityRole) => string;
   recordHref: (record: RecordResult["record"]) => string;
   /** The panel's header strip, right end, before the order control: the page's `LoadingStatus` while a request is in flight. */
@@ -84,7 +79,7 @@ export interface FullResultsProps {
  * "Back to results" is a link on the ground above the panel. The page owns its width and gutter; this is the content.
  */
 export function FullResults({
-  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, backHref, emptyHref, entityHref, recordHref, status, busy, locale, copy,
+  results, page, pageSize = DEFAULT_PAGE_SIZE, pageHref, onNavigate, citeUrl, order = DEFAULT_RECORD_ORDER, onOrderChange, emptyHref, entityHref, recordHref, status, busy, locale, copy,
 }: FullResultsProps) {
   const { tab } = results;
   const { count } = results.page;
@@ -115,65 +110,58 @@ export function FullResults({
     );
 
   return (
-    <Stack spacing={2.5}>
-      {backHref && (
-        <Link href={backHref} onClick={followLink(backHref, onNavigate)} sx={{ alignSelf: "flex-start" }}>
-          {copy.back}
-        </Link>
+    <Panel
+      level="h2"
+      label={copy.heading[tab]}
+      busy={busy}
+      flush
+      heading={
+        <>
+          {copy.heading[tab]}
+          <CountPill>
+            <ApproxCount count={count} estimated={estimated} locale={locale} />
+          </CountPill>
+          {/* The foot says it again for assistive technology; here it only sits beside the kind. */}
+          {showing && (
+            <Typography variant="meta" component="span" aria-hidden="true" sx={{ fontWeight: 400 }}>
+              {showing}
+            </Typography>
+          )}
+        </>
+      }
+      aside={
+        status || ordered ? (
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: 2 }}>
+            {status}
+            {ordered && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
+          </Box>
+        ) : undefined
+      }
+      foot={
+        showing || showPageNav
+          ? [
+              showing && <span key="showing">{showing}</span>,
+              showPageNav && <PageNav key="pages" page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />,
+            ]
+          : undefined
+      }
+    >
+      {citeUrl && <CiteLine strip url={citeUrl} copy={copy.cite} />}
+      {count === 0 && (
+        <Box sx={{ p: 2 }}>
+          <PageNotice text={copy.empty[tab]} link={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }} onNavigate={onNavigate} />
+        </Box>
       )}
-      <Panel
-        level="h2"
-        label={copy.heading[tab]}
-        busy={busy}
-        flush
-        heading={
-          <>
-            {copy.heading[tab]}
-            <CountPill>
-              <ApproxCount count={count} estimated={estimated} locale={locale} />
-            </CountPill>
-            {/* The foot says it again for assistive technology; here it only sits beside the kind. */}
-            {showing && (
-              <Typography variant="meta" component="span" aria-hidden="true" sx={{ fontWeight: 400 }}>
-                {showing}
-              </Typography>
-            )}
-          </>
-        }
-        aside={
-          status || ordered ? (
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", gap: 2 }}>
-              {status}
-              {ordered && <OrderSelect value={order} onChange={onOrderChange} copy={copy.order} />}
-            </Box>
-          ) : undefined
-        }
-        foot={
-          showing || showPageNav
-            ? [
-                showing && <span key="showing">{showing}</span>,
-                showPageNav && <PageNav key="pages" page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />,
-              ]
-            : undefined
-        }
-      >
-        {citeUrl && <CiteLine strip url={citeUrl} copy={copy.cite} />}
-        {count === 0 && (
-          <Box sx={{ p: 2 }}>
-            <PageNotice text={copy.empty[tab]} link={emptyHref === undefined ? undefined : { href: emptyHref, text: copy.emptyLink }} onNavigate={onNavigate} />
-          </Box>
-        )}
-        {pastTheEnd && (
-          <Box sx={{ p: 2 }}>
-            <PageNotice
-              text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}
-              link={{ href: pageHref(1), text: copy.firstPage }}
-              onNavigate={onNavigate}
-            />
-          </Box>
-        )}
-        {range && rows}
-      </Panel>
-    </Stack>
+      {pastTheEnd && (
+        <Box sx={{ p: 2 }}>
+          <PageNotice
+            text={page > pages ? copy.outOfRange(pages, formatCount(pages, false, locale)) : copy.noRowsHere}
+            link={{ href: pageHref(1), text: copy.firstPage }}
+            onNavigate={onNavigate}
+          />
+        </Box>
+      )}
+      {range && rows}
+    </Panel>
   );
 }

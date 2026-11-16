@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { Skeleton } from "../../../atoms/Skeleton/index.ts";
 import { PillSkeleton } from "../../atoms/PillSkeleton/index.ts";
 import { ColumnHead } from "../../molecules/ColumnHead/index.ts";
 import type { EntityResultRowCopy } from "../../molecules/EntityResultRow/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { RowSkeletonList } from "../../molecules/RowSkeletonList/index.ts";
+import { skeletonBlock } from "../../utils/skeletonBlock.tsx";
 import type { ResultTab } from "../ResultTabs/index.ts";
 
 export interface FullResultsSkeletonCopy {
@@ -40,7 +40,7 @@ export function FullResultsSkeleton({ copy, tab, status }: FullResultsSkeletonPr
         </>
       }
       aside={status}
-      foot={<Skeleton aria-hidden="true" variant="rounded" width={132} height={14} />}
+      foot={skeletonBlock(132, 14)}
     >
       {tab !== "records" && <ColumnHead role={tab === "authorities" ? "authority" : "supplier"} copy={copy.head} inset />}
       <RowSkeletonList />

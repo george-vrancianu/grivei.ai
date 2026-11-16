@@ -25,7 +25,8 @@ import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
 import { anyInFlight, busyPanels, countyChipName } from "./mainScreenPage.utils.ts";
-import { isInFlight, isStale } from "../../graphql/useHeldQuery.ts";
+import { isStale } from "../../graphql/useHeldQuery.ts";
+import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
 import { useMainScreen } from "./hooks/useMainScreen.ts";
 import { useProcedureOptions } from "./hooks/useProcedureOptions.ts";
@@ -56,10 +57,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const search = state.status === "ready" ? state.data.seap.search : null;
   // A held answer (`stale`) is on screen while the next request is in flight.
   const refreshing = isStale(state);
-  // The search spinner is for a typed query: it shows while a request is in flight for a query other than the one last answered (a filter click leaves the query alone).
-  const [answeredQ, setAnsweredQ] = useState(filter.q);
-  if ((state.status === "error" || (state.status === "ready" && !state.stale)) && answeredQ !== filter.q) setAnsweredQ(filter.q); // an error ends the typed query's spinner too
-  const typing = isInFlight(state) && filter.q !== answeredQ;
+  const typing = useTypedQuerySpinner(filter.q, state);
   const procedureOptions = useProcedureOptions(search ? search.facets.procedure.map((facet) => facet.value) : null, filter.procedure);
   // The Coverage lens asks only while it is shown: the date chip's window for the map, and the whole grid (highlighted by the same window) for the compact grid.
   const coverageShown = mapLens === "coverage";

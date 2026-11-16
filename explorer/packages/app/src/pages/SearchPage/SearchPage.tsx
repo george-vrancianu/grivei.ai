@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button, DEFAULT_RESULT_TAB, FullResults, FullResultsSkeleton, LoadingStatus, Panel, SearchBar, SearchPanel, StateNote, toResultTab, Typography } from "@grivei/ui";
+import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
@@ -19,10 +19,7 @@ export function SearchPage() {
   const { filter, tab: tabParam, page = 1, order, setFilter, update } = useUrlState();
   const tab = toResultTab(tabParam);
   const state = useFullResults({ tab, filter, page, order });
-  // The search spinner is for a typed query: it shows while a request is in flight for a query other than the one last answered (a page or order change leaves the query alone).
-  const [answeredQ, setAnsweredQ] = useState(filter.q);
-  if ((state.status === "error" || (state.status === "ready" && !state.stale)) && answeredQ !== filter.q) setAnsweredQ(filter.q); // an error ends the typed query's spinner too
-  const typing = (state.status === "loading" || (state.status === "ready" && state.stale)) && filter.q !== answeredQ;
+  const typing = useTypedQuerySpinner(filter.q, state);
   const here = pathFor(locale, { name: "search" });
   // The page links keep the whole URL state and change only `page`; page 1 is the default and drops out of the URL.
   // The tab is the canonical one, so a spelling the page falls back from never makes a second URL for the same view.
@@ -61,7 +58,7 @@ export function SearchPage() {
       {state.status === "ready" && (
         <FullResults
           results={state.results}
-          page={page}
+          page={state.page}
           pageSize={FULL_RESULTS_PAGE_SIZE}
           pageHref={pageHref}
           // Page links change state within this page (replace); leaving it, as "Back to results" does, is a step of its own (push).

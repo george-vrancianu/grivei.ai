@@ -142,11 +142,6 @@ describe("FullResults", () => {
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it("links back to the main screen when given where", () => {
-    show(authorities(8), 1, { backHref: "/explore/?tab=authorities" });
-    expect(screen.getByRole("link", { name: "Back to results" })).toHaveAttribute("href", "/explore/?tab=authorities");
-  });
-
   it("numbers pages in the Romanian format", () => {
     renderInUi(
       <FullResults
@@ -253,11 +248,5 @@ describe("FullResults, in a panel", () => {
   it("has no busy mark at rest", () => {
     show(some, 1, { pageSize: 4 });
     expect(document.querySelector("[aria-busy]")).toBeNull();
-  });
-
-  it("the Back link stays on the ground, outside the panel", () => {
-    show(some, 1, { pageSize: 4, backHref: "/explore/" });
-    expect(panel().queryByRole("link", { name: "Back to results" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Back to results" })).toBeVisible();
   });
 });

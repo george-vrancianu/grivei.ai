@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { FullResultsAuthoritiesQuery, FullResultsRecordsQuery, FullResultsSuppliersQuery, RecordFilter, RecordOrder } from "@grivei/contract";
 import type { FullResultsData, ResultTab } from "@grivei/ui";
 import { FullResultsAuthorities, FullResultsRecords, FullResultsSuppliers, type Operation } from "../../../graphql/operations.ts";
@@ -19,7 +20,7 @@ export interface FullResultsRequest {
 export type FullResultsState =
   | { status: "loading" }
   | { status: "error"; retry: () => void }
-  | { status: "ready"; results: FullResultsData; stale: boolean };
+  | { status: "ready"; results: FullResultsData; stale: boolean; /** The page the rows on screen are for: the requested `page`, except while a held answer is shown (then the page that answer was fetched for). */ page: number };
 
 type Answer = FullResultsAuthoritiesQuery | FullResultsSuppliersQuery | FullResultsRecordsQuery;
 type Variables = { filter: RecordFilter; limit: number; offset: number; order?: RecordOrder | undefined };
@@ -47,6 +48,9 @@ function toResults(tab: ResultTab, answer: Answer): FullResultsData {
 export function useFullResults({ tab, filter, page, order }: FullResultsRequest): FullResultsState {
   const variables: Variables = { filter, limit: FULL_RESULTS_PAGE_SIZE, offset: (page - 1) * FULL_RESULTS_PAGE_SIZE, ...(tab === "records" ? { order } : {}) };
   const query = useHeldQuery(OPERATIONS[tab], variables, tab);
+  // The page the shown answer is for: it moves with each answer that lands, and a held answer keeps the page it was fetched for.
+  const [answeredPage, setAnsweredPage] = useState(page);
+  if (query.status === "ready" && !query.stale && answeredPage !== page) setAnsweredPage(page);
   if (query.status !== "ready") return query;
-  return { status: "ready", results: toResults(tab, query.data), stale: query.stale };
+  return { status: "ready", results: toResults(tab, query.data), stale: query.stale, page: query.stale ? answeredPage : page };
 }

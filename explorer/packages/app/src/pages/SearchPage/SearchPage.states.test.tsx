@@ -87,6 +87,8 @@ describe.each([
     act(() => navigate(`${url}&page=2`, "replace"));
     expect(page().querySelector(".MuiSkeleton-root")).toBeNull(); // a refetch never shows the skeleton
     expect(panel().getAllByRole("link").map((a) => a.textContent)).toEqual(rowsBefore);
+    expect(screen.getAllByText(showing)).toHaveLength(2); // the Showing line describes the rows on screen (page 1), not the requested page 2
+    expect(screen.queryByText(t.fullResults.showing("51", "100", "120"))).toBeNull();
     const body = panel().getAllByRole("listitem")[0]!.closest("[aria-busy]");
     expect(body).toHaveAttribute("aria-busy", "true");
     const status = panel().getByText(t.status.loading);
