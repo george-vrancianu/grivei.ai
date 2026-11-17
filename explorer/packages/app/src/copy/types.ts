@@ -110,9 +110,11 @@ export interface Copy {
     signalPages: PageNavCopy;
     /** The toggle above the Overview's Signals: by date or by RON. */
     signalOrder: SignalOrderToggleCopy;
-    /** The Records tab: the heading, the facet panel's strings and the empty result. The badge, channel, row, total and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
-    recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets"> & {
-      facets: Omit<RecordsTabCopy["facets"], "badges" | "channels">;
+    /** The Records tab: the headings, the filter bar's strings and the empty result. The badge, channel, menu, row, total, order, "Showing" and page-link copy come from the catalogue's own `badges`, `filterChips`, `results`, `total` and `fullResults`. */
+    recordsTab: Omit<RecordsTabCopy, "total" | "recordRow" | "pagination" | "facets" | "order" | "showing"> & {
+      facets: Omit<RecordsTabCopy["facets"], "badges" | "channels" | "any" | "picked" | "active">;
+      /** The active row's chips that only this tab has; the rest (group, remove, clear, from, to, county, party, value bucket, Signals) come from `filterChips.active`, the search text from `onlyMatching.query`. */
+      chips: Pick<RecordsTabCopy["facets"]["active"], "between" | "signal" | "cpv">;
       /** The link offered when the entity was opened from a search (#106): with a query it names it, with chips only it says "the search's filters". */
       onlyMatching: OnlyMatchingCopy;
     };

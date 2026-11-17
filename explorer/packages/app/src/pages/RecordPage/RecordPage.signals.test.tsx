@@ -77,7 +77,7 @@ describe("the Signals on a Record page", () => {
   it("opens the Signal's Records tab from the card with exactly the Signal's Records", async () => {
     await open("framework-overrun-ceiling");
     await userEvent.setup().click(signals(SIGNALS_EN).getByRole("link", { name: "See the 4 Records" }));
-    await screen.findByRole("complementary", { name: "Filter by facet" });
+    await screen.findByRole("region", { name: "Filter by facet" });
     expect(window.location.pathname).toBe("/explore/authority/1000017/records");
     await waitFor(() =>
       expect(screen.getAllByRole("link").map((a) => a.getAttribute("href")).filter((h) => h?.startsWith("/explore/record/")).sort()).toEqual(
