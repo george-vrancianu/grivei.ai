@@ -277,7 +277,12 @@ export const ro: Copy = {
     },
   },
   pages: {
-    notFound: { title: "Pagina nu a fost găsită", back: "Înapoi la ecranul principal" },
+    notFound: {
+      title: "Pagina nu a fost găsită",
+      body: "La această adresă nu se află nimic în explorer. Verifică dacă este scrisă corect sau pornește din nou de la ecranul principal.",
+      back: "Înapoi la ecranul principal",
+      search: "Căutare",
+    },
     search: { title: "Căutare" },
   },
   badges,

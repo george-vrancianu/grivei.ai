@@ -1,6 +1,6 @@
-import { Button, LoadingStatus, Panel, RecordDetail, RecordSkeleton, SignalCard, StateNote, Typography, type Locale } from "@grivei/ui";
-import { AppLink } from "../../components/AppLink/index.ts";
+import { Button, LoadingStatus, Panel, RecordDetail, RecordSkeleton, SignalCard, StateNote, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
+import { NotFoundPage } from "../NotFoundPage/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
 import { navigate } from "../../routing/location.tsx";
@@ -51,13 +51,7 @@ export function RecordPage({ locale, code }: RecordPageProps) {
   }
   if (state.record === null) {
     return (
-      <PageShell>
-        <Typography variant="h4" component="h1">
-          {t.recordPage.notFound.title}
-        </Typography>
-        <Typography>{t.recordPage.notFound.body(code)}</Typography>
-        <AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>
-      </PageShell>
+      <NotFoundPage locale={locale} title={t.recordPage.notFound.title} body={t.recordPage.notFound.body(code)} />
     );
   }
   return (

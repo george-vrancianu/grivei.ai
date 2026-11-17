@@ -1,7 +1,7 @@
-import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
-import { AppLink } from "../../components/AppLink/index.ts";
+import { NotFoundPage } from "../NotFoundPage/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
@@ -137,14 +137,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   }
   if (state.status === "ready" && state.entity === null) {
     return (
-      <PageShell>
-        <Typography variant="h1" component="h1">
-          {t.entityPage.notFound.title}
-        </Typography>
-        <StateNote kind="empty" action={<AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>}>
-          {t.entityPage.notFound.body}
-        </StateNote>
-      </PageShell>
+      <NotFoundPage locale={locale} title={t.entityPage.notFound.title} body={t.entityPage.notFound.body} />
     );
   }
   const loading = state.status === "loading";
