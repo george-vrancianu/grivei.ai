@@ -29,6 +29,7 @@ export function FlowLensSection({ flow, role, topology, home, locale, copy, stat
   if (topology.status === "error") {
     return (
       <MoneyFlowPanel role={role} copy={copy.panel}>
+        {failure}
         <StateNote kind="error" action={topology.retry ? <Button size="small" onClick={topology.retry}>{status.retry}</Button> : undefined}>
           {status.unavailable}
         </StateNote>
@@ -38,6 +39,7 @@ export function FlowLensSection({ flow, role, topology, home, locale, copy, stat
   if (topology.status === "loading") {
     return (
       <MoneyFlowPanel role={role} copy={copy.panel}>
+        {failure}
         <MapSkeleton label={status.loading} />
       </MoneyFlowPanel>
     );

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
+import { StateNote } from "../../molecules/StateNote/index.ts";
 import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
@@ -45,3 +46,17 @@ export const EmptyAuthority: Story = story(emptyAuthorityFlow, "authority", auth
 export const EmptySupplier: Story = story(emptySupplierFlow, "supplier", supplierHome);
 /** A refetch (a filter changed): the last map and list stay, dimmed with aria-busy, the loading status in the header. */
 export const Refetching: Story = story(authorityNationwideFlow, "authority", authorityHome, undefined, true);
+/** A reload failed while the map is held: the note sits in the panel above the held map and list. */
+export const FailedWithHeldMap: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return (
+      <Box sx={{ maxWidth: 820 }}>
+        <FlowLensMap
+          flow={authorityNationwideFlow} role="authority" home={authorityHome} topology={countiesTopology} onSelect={() => undefined} locale={locale} copy={sampleCopy.flowLensMap(locale)}
+          failure={<StateNote kind="error">{locale === "ro" ? "Datele nu au putut fi încărcate." : "The data could not be loaded."}</StateNote>}
+        />
+      </Box>
+    );
+  },
+};

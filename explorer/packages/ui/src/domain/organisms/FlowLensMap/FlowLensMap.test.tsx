@@ -284,3 +284,13 @@ describe("FlowLensMap empty state", () => {
     expect(screen.getByText("Niciun flux de bani pentru filtrul curent.")).toBeVisible();
   });
 });
+
+describe("FlowLensMap with a failed reload", () => {
+  it("shows the failure inside the Money flow panel, the held map and county list still there", () => {
+    setup({ ...authority, failure: <p role="alert">It failed</p> });
+    const panel = screen.getByRole("region", { name: "Money flow" });
+    expect(within(panel).getByRole("alert")).toHaveTextContent("It failed");
+    expect(within(panel).getByRole("list", { name: "Money by county" })).toBeVisible();
+    expect(Object.keys(radii()).length).toBeGreaterThan(0);
+  });
+});

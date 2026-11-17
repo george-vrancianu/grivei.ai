@@ -132,8 +132,8 @@ describe("the picked counterparty's links", () => {
   });
 
   it.each([
-    ["en", AUTHORITY, /^Has Signals$|^Signals$/],
-    ["ro", `/ro${AUTHORITY}`, /Semnale/],
+    ["en", AUTHORITY, /^Has Signals$/],
+    ["ro", `/ro${AUTHORITY}`, /^Are Semnale$/],
   ])("lead from the Signals chip to the Records carrying Signals (%s)", async (_locale, base, name) => {
     // ALFA carries Signals in the 2023 answer; the picked months and Records are the unfiltered ones under that filter
     const filter = { from: "2023-01-01", to: "2023-12-31" };
