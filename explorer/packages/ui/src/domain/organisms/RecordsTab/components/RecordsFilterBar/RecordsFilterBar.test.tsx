@@ -127,14 +127,14 @@ describe("the Records filter bar", () => {
       expect(onChange).toHaveBeenLastCalledWith({ signal: "NO_PUBLICATION", supplier: "2000007", cpv: "45210000" });
     });
 
-    it("clears the filters from the row, keeping fields it does not show", async () => {
-      const onChange = show(authorityRecords.facets, "authority", { ...reproduction, valueBucket: "UP_TO_900K" });
+    it("clears every filter the row shows, the carried value bucket and county included", async () => {
+      const onChange = show(authorityRecords.facets, "authority", { ...reproduction, valueBucket: "UP_TO_900K", county: "RO-BV" });
       await userEvent.setup().click(screen.getByRole("button", { name: "Clear filters" }));
-      expect(onChange).toHaveBeenCalledWith({ valueBucket: "UP_TO_900K" });
+      expect(onChange).toHaveBeenCalledWith({});
     });
 
     it("is absent when no filter is on", () => {
-      show(authorityRecords.facets, "authority", { county: "RO-BV" });
+      show(authorityRecords.facets, "authority", { countySide: "SUPPLIER" });
       expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
     });
   });

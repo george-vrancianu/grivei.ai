@@ -7,10 +7,13 @@ import userEvent from "@testing-library/user-event";
 import type { SignalRule } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { App } from "../App.tsx";
+import { fixtures } from "@grivei/contract/fixtures";
 import { fixtureClient } from "../testing/fixtureClient.ts";
 import { openAt } from "../testing/openAt.ts";
 import { overviewsWithSignals, overviewUrl, recordedSignals, recordsOfSignal, type OverviewSignal } from "../testing/signalRecordings.ts";
 import { decodeUrlState } from "../urlState/codec.ts";
+import { catalogue } from "../copy/index.ts";
+import { recordsHref } from "../pages/EntityPage/entityPage.utils.ts";
 import { reproduceFilter, signalReproduceHref } from "./reproduceHref.ts";
 
 const FACETS = /^(Filter by facet|Filtre pe fațete)$/;
@@ -129,25 +132,75 @@ describe("a Signal's reproducing filter shows one active chip per parameter, eac
     expect(names[3]).toBe(`${remove} ${cpvChip}${signal.reproduce.cpv}`);
   });
 
-  it("clearing the CPV chip removes only the CPV code from the URL; the list follows the shorter filter", async () => {
-    await followReproduceLink("en", signal);
-    await userEvent.setup().click(screen.getByRole("button", { name: `Remove CPV: ${signal.reproduce.cpv}` }));
-    await waitFor(() => expect(urlFilter()).toEqual(without(filter, "cpv")));
-  });
+  describe.each(["en", "ro"] as const)("clearing a chip (%s)", (locale) => {
+    const request = (sent: { operation: string; variables?: unknown }[]) => (sent.filter((s) => s.operation === "EntityRecords").at(-1)?.variables as { filter: RecordFilter }).filter;
 
-  it("clearing the date-range chip removes from and to together and nothing else", async () => {
-    await followReproduceLink("en", signal);
-    const dates = chips()[2]!;
-    await userEvent.setup().click(dates);
-    await waitFor(() => expect(urlFilter()).toEqual(without(filter, "from", "to")));
-  });
+    it("clearing the CPV chip removes only the CPV code from the URL; the list is asked for the shorter filter", async () => {
+      const { sent } = await followReproduceLink(locale, signal);
+      const cpv = chips()[3]!;
+      expect(cpv.getAttribute("aria-label")).toContain(signal.reproduce.cpv!);
+      await userEvent.setup().click(cpv);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "cpv")));
+      await waitFor(() => expect(request(sent)).toEqual(without(filter, "cpv")));
+    });
 
-  it("clearing the Signal chip and the supplier chip each removes only its own parameter", async () => {
-    await followReproduceLink("en", signal);
+    it("clearing the date-range chip removes from and to together and nothing else", async () => {
+      await followReproduceLink(locale, signal);
+      await userEvent.setup().click(chips()[2]!);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "from", "to")));
+    });
+
+    it("clearing the Signal chip and the supplier chip each removes only its own parameter", async () => {
+      await followReproduceLink(locale, signal);
+      const user = userEvent.setup();
+      await user.click(chips()[0]!);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal")));
+      await user.click(chips()[0]!); // the supplier chip is the first one now
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal", "supplier")));
+    });
+  });
+});
+
+describe.each(["en", "ro"] as const)("a carried main-screen filter's Records parameters show as chips too (%s)", (locale) => {
+  const carried: RecordFilter = { hasSignals: true, valueBucket: "UP_TO_10K", county: "RO-BV", party: "ALIANȚA USR PLUS" };
+  const t = catalogue[locale];
+  const group = () => screen.getByRole("group", { name: t.filterChips.active.group });
+  const urlFilter = () => decodeUrlState(window.location.search).filter;
+
+  async function open() {
+    openAt(recordsHref(locale, "authority", "1000017", { filter: carried }));
+    // the contract recorded no answer for these filters: serve the authority's unfiltered Records answer for each step of the clearing
+    const recorded = fixtures.EntityRecords.find((f) => (f.variables as { key?: string; filter?: object }).key === "1000017" && Object.keys((f.variables as { filter: object }).filter).length === 0)!;
+    const steps: RecordFilter[] = [carried, ...["hasSignals", "valueBucket", "party", "county"].map((_, i, all) => Object.fromEntries(Object.entries(carried).filter(([k]) => !all.slice(0, i + 1).includes(k))))];
+    const extra = [...steps, {}].map((filter) => ({ operation: "EntityRecords", variables: { ...(recorded.variables as object), filter }, data: recorded.data }));
+    const { client } = fixtureClient({ extra });
+    render(<App client={client} />);
+    await screen.findByRole("region", { name: FACETS });
+  }
+
+  it("has a chip for each, and each clears only its own parameter", async () => {
+    await open();
     const user = userEvent.setup();
-    await user.click(chips()[0]!);
-    await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal")));
-    await user.click(chips()[0]!); // the supplier chip is the first one now
-    await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal", "supplier")));
+    const remove = t.filterChips.active.remove;
+    const names = [
+      t.filterChips.signals.has,
+      t.filterChips.valueBucket.options.UP_TO_10K,
+      t.filterChips.active.party(carried.party!),
+      t.filterChips.active.county(carried.county!),
+    ];
+    for (const name of names) expect(within(group()).getByRole("button", { name: remove(name) })).toBeVisible();
+    const left = { ...carried };
+    const fields = ["hasSignals", "valueBucket", "party", "county"] as const;
+    for (const [i, name] of names.entries()) {
+      await user.click(within(group()).getByRole("button", { name: remove(name) }));
+      delete left[fields[i]!];
+      await waitFor(() => expect(urlFilter()).toEqual(left));
+    }
+  }, 20_000);
+
+  it("Clear filters removes all of them", async () => {
+    await open();
+    await userEvent.setup().click(within(group()).getByRole("button", { name: t.entityPage.recordsTab.empty.clear }));
+    await waitFor(() => expect(urlFilter()).toEqual({}));
   });
 });

@@ -124,10 +124,10 @@ describe("the Records tab", () => {
       expect(screen.queryByRole("table")).toBeNull();
       const panel = screen.getByRole("region", { name: "Records" });
       await userEvent.setup().click(within(panel).getByRole("button", { name: "Clear filters" }));
-      expect(onFilterChange).toHaveBeenCalledWith({ valueBucket: "UP_TO_10K" });
+      expect(onFilterChange).toHaveBeenCalledWith({});
     });
     it("offers no clear button when no filter is on", () => {
-      show(supplierNoMatches, "supplier", { county: "RO-BV" });
+      show(supplierNoMatches, "supplier", { countySide: "SUPPLIER" });
       expect(screen.getByText("No Records match these filters.")).toBeVisible();
       expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
     });

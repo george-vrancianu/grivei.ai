@@ -3,7 +3,6 @@ import type { RecordFilter } from "@grivei/contract";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import { OrderSelect, type OrderSelectCopy, type RecordOrder } from "../../molecules/OrderSelect/index.ts";
 import { PageNav, type PageNavCopy } from "../../molecules/PageNav/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
@@ -12,6 +11,7 @@ import { TotalFigure, type InsetTotalCopy } from "../../molecules/TotalFigure/in
 import type { EntityRef, EntityRole, RecordResult, RecordsTabData } from "../../types.ts";
 import { EmptyRecords, type EmptyRecordsCopy } from "./components/EmptyRecords/index.ts";
 import { RecordsFilterBar, clearRecordFilters, hasRecordFilters, type RecordsFilterBarCopy } from "./components/RecordsFilterBar/index.ts";
+import { showingText } from "./recordsTab.utils.ts";
 import { RecordsTable, type RecordsTableCopy } from "./components/RecordsTable/index.ts";
 
 export interface RecordsTabCopy {
@@ -80,9 +80,7 @@ export function RecordsTab({
   const rows = records?.records.rows ?? [];
   const count = records?.records.count ?? 0;
   const pages = Math.ceil(count / Math.max(1, pageSize));
-  const format = (n: number) => formatCount(n, false, locale);
-  const first = (page - 1) * pageSize + 1;
-  const showing = rows.length > 0 && records ? copy.showing(format(first), format(first + rows.length - 1), formatCount(count, records.total.estimated, locale)) : undefined;
+  const showing = records ? showingText(rows.length, page, pageSize, { count, estimated: records.total.estimated }, locale, copy.showing) : undefined;
   const foot = showing ? [<span key="showing">{showing}</span>, ...(pages > 1 ? [<PageNav key="pages" page={page} pages={pages} pageHref={pageHref} onNavigate={onNavigate} locale={locale} copy={copy.pagination} />] : [])] : undefined;
   const aside = (
     <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 2, rowGap: 0.5 }}>

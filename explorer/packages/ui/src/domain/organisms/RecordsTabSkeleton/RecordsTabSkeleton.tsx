@@ -3,8 +3,6 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Card } from "../../../atoms/Card/index.ts";
 import { Skeleton } from "../../../atoms/Skeleton/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
-import { Typography } from "../../../atoms/Typography/index.ts";
-import { color } from "../../../theme/tokens.ts";
 import { FilterBarRow } from "../../molecules/FilterBarRow/index.ts";
 import { FilterStrip } from "../../molecules/FilterStrip/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
@@ -13,6 +11,7 @@ import type { EntityRole } from "../../types.ts";
 import { listRowSx, listSx } from "../../utils/listSx.ts";
 import { ROW_SHAPES, rowOpacity } from "../../utils/resultsSkeleton.ts";
 import type { RecordsTabCopy } from "../RecordsTab/index.ts";
+import { MenuPill } from "./components/MenuPill/index.ts";
 
 /** The real labels the skeleton shows: the same strings the loaded tab uses. */
 export type RecordsTabSkeletonCopy = Pick<RecordsTabCopy, "heading" | "totalHeading"> & {
@@ -29,18 +28,6 @@ export interface RecordsTabSkeletonProps {
 }
 
 const ROWS = ROW_SHAPES.slice(0, 4);
-
-/** A filter menu before it has its values: its real name over a block. */
-function MenuPill({ label }: { label: string }) {
-  return (
-    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, height: 36, px: 1.75, border: 1, borderColor: color.line, borderRadius: "18px" }}>
-      <Typography variant="meta" component="span">
-        {label}
-      </Typography>
-      <Skeleton aria-hidden="true" variant="rounded" width={36} height={12} />
-    </Box>
-  );
-}
 
 /**
  * The Records tab on first load, before any answer, in the loaded tab's shape: the filter bar with the real menu names, the Total panel (real heading and labels over blocks),

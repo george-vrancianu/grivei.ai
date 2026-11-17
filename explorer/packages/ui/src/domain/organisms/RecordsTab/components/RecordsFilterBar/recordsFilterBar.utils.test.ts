@@ -21,13 +21,32 @@ describe("recordChips", () => {
   });
 });
 
+describe("recordChips, the carried main-screen parameters", () => {
+  const filter: RecordFilter = { valueBucket: "UP_TO_10K", hasSignals: false, party: "USR", county: "RO-BV", uat: "1", countySide: "SUPPLIER", q: "x" };
+  it("shows a chip each, ahead of the search text", () => {
+    expect(chips(filter).map((chip) => chip.label)).toEqual(["Up to 10,000 RON", "Without Signals", "Party: USR", "County: RO-BV", "only Records matching “x”"]);
+  });
+  it("each removes only its own parameter; the county takes its UAT and side with it", () => {
+    const made = chips(filter);
+    expect(made[0]!.remove(filter)).not.toHaveProperty("valueBucket");
+    expect(made[1]!.remove(filter)).toEqual({ ...filter, hasSignals: undefined });
+    expect(made[2]!.remove(filter)).toEqual({ ...filter, party: undefined });
+    expect(made[3]!.remove(filter)).toEqual({ valueBucket: "UP_TO_10K", hasSignals: false, party: "USR", q: "x" });
+  });
+});
+
 describe("clearRecordFilters / hasRecordFilters", () => {
   it("clears every parameter the row shows and leaves the rest", () => {
     const filter: RecordFilter = { q: "x", channel: "CONTRACT", supplier: "1", cpv: "7", badges: ["NO_VALUE"], valueBucket: "UP_TO_10K", county: "RO-BV" };
-    expect(clearRecordFilters(filter)).toEqual({ valueBucket: "UP_TO_10K", county: "RO-BV" });
+    expect(clearRecordFilters(filter)).toEqual({});
+  });
+  it("clears the carried main-screen parameters too, the county with its UAT and side", () => {
+    expect(clearRecordFilters({ hasSignals: false, valueBucket: "UP_TO_10K", party: "X", county: "RO-BV", uat: "1", countySide: "SUPPLIER", q: "x" })).toEqual({});
   });
   it("sees nothing to clear in a filter with only other fields", () => {
-    expect(hasRecordFilters({ county: "RO-BV", valueBucket: "UP_TO_10K" })).toBe(false);
+    expect(hasRecordFilters({ countySide: "SUPPLIER" })).toBe(false);
+    expect(hasRecordFilters({ hasSignals: false })).toBe(true);
+    expect(hasRecordFilters({ county: "RO-BV" })).toBe(true);
     expect(hasRecordFilters({ badges: [] })).toBe(false);
     expect(hasRecordFilters({ cpv: "770" })).toBe(true);
   });

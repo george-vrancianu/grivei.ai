@@ -1,4 +1,4 @@
-import type { Channel, RecordBadge, RecordFilter, SignalRuleSlug } from "@grivei/contract";
+import type { Channel, RecordBadge, RecordFilter, SignalRuleSlug, ValueBucket } from "@grivei/contract";
 import type { BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordFacetData, EntityRole } from "../../../../types.ts";
@@ -48,6 +48,15 @@ export interface RecordsFilterBarCopy {
     signal: (rule: string) => string;
     /** "CPV: 45210000". */
     cpv: (code: string) => string;
+    /** "County: RO-BV": the area is the county's code (the Records tab has no county names). */
+    county: (area: string) => string;
+    /** "Up to 10,000 RON" and the like: one label per value bucket. */
+    valueBucket: Record<ValueBucket, string>;
+    /** "Has Signals" / "Without Signals". */
+    hasSignals: string;
+    withoutSignals: string;
+    /** "Party: USR". */
+    party: (list: string) => string;
     /** The search text the filter holds: "only Records matching “x”". */
     query: (text: string) => string;
   };
@@ -159,24 +168,24 @@ export function facetGroups(
   return groups.filter((group) => group.options.length > 0);
 }
 
-/** The `RecordFilter` fields the active row shows, one chip each (the date range, `from` and `to`, is one chip): the filter's Records parameters. */
-const CHIP_PARAMS = ["signal", "supplier", "authority", "from", "to", "cpv", "channel", "procedure", "badges", "q"] as const satisfies readonly (keyof RecordFilter)[];
+/** The `RecordFilter` fields the active row shows, one chip each (the date range, `from` and `to`, is one chip; the county and its UAT are one chip): every Records parameter a reader can set or carry in. */
+const CHIP_PARAMS = ["signal", "supplier", "authority", "from", "to", "cpv", "channel", "procedure", "badges", "q", "hasSignals", "valueBucket", "county", "uat", "party"] as const satisfies readonly (keyof RecordFilter)[];
 
 const isSet = (value: unknown) => (Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "");
 
 /** True when the filter holds a parameter the active row shows: there is something to clear. */
 export const hasRecordFilters = (filter: RecordFilter): boolean => CHIP_PARAMS.some((field) => isSet(filter[field]));
 
-/** The filter with every parameter the active row shows removed (the row's Clear filters); the rest of the filter (map, value bucket, ...) stays. */
+/** The filter with every parameter the active row shows removed (the row's Clear filters); the rest of the filter stays. */
 export function clearRecordFilters(filter: RecordFilter): RecordFilter {
-  const patch: Record<string, undefined> = {};
+  const patch: Record<string, undefined> = { countySide: undefined };
   for (const field of CHIP_PARAMS) patch[field] = undefined;
   return withFields(filter, patch as RecordFilter);
 }
 
 /**
  * One chip per parameter that is set, each removing only its own parameter (the date range is one chip and removes both ends): the Signal, the supplier or authority
- * (by name when the facets list it, else by key), the date range, the CPV code, the channel, each procedure, each badge and the search text.
+ * (by name when the facets list it, else by key), the date range, the CPV code, the channel, each procedure, each badge, the value bucket, Signals, the Party, the county and the search text.
  */
 export function recordChips(filter: RecordFilter, role: EntityRole, facets: RecordFacetData, copy: RecordsFilterBarCopy, locale: Locale): ActiveChip[] {
   const chips: ActiveChip[] = [];
@@ -208,6 +217,11 @@ export function recordChips(filter: RecordFilter, role: EntityRole, facets: Reco
     chips.push({ id: `procedure:${name}`, label: name, remove: (f) => withFields(f, { procedure: (f.procedure ?? []).filter((p) => p !== name) }) });
   for (const badge of filter.badges ?? [])
     chips.push({ id: `badge:${badge}`, label: copy.badges[badge].label, remove: (f) => withFields(f, { badges: (f.badges ?? []).filter((b) => b !== badge) }) });
+  if (filter.valueBucket) chips.push({ id: "valueBucket", label: text.valueBucket[filter.valueBucket], remove: (f) => withFields(f, { valueBucket: undefined }) });
+  if (filter.hasSignals !== undefined && filter.hasSignals !== null)
+    chips.push({ id: "hasSignals", label: filter.hasSignals ? text.hasSignals : text.withoutSignals, remove: (f) => withFields(f, { hasSignals: undefined }) });
+  if (filter.party) chips.push({ id: "party", label: text.party(filter.party), remove: (f) => withFields(f, { party: undefined }) });
+  if (filter.county) chips.push({ id: "county", label: text.county(filter.county), remove: (f) => withFields(f, { county: undefined, uat: undefined, countySide: undefined }) });
   if (filter.q) chips.push({ id: "q", label: text.query(filter.q), remove: (f) => withFields(f, { q: undefined }) });
   return chips;
 }

@@ -1,5 +1,7 @@
 import type { RecordFilter, SignalRuleSlug } from "@grivei/contract";
 import { withFields, yearEnd, yearOf, yearStart } from "../../molecules/FilterChips/index.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import type { EntityRole } from "../../types.ts";
 import { counterpartyRole } from "../EntityOverview/entityOverview.utils.ts";
 
@@ -23,3 +25,12 @@ export const toggleYear = (filter: RecordFilter, year: number): RecordFilter =>
   selectedYear(filter) === year
     ? withFields(filter, { from: undefined, to: undefined })
     : withFields(filter, { from: yearStart(year), to: yearEnd(year) });
+
+/** The foot's "Showing a–b of n" for page `page` of `rowCount` rows, or undefined when the page has no rows. */
+export function showingText(
+  rowCount: number, page: number, pageSize: number, total: { count: number; estimated: boolean }, locale: Locale, text: (from: string, to: string, total: string) => string,
+): string | undefined {
+  if (rowCount === 0) return undefined;
+  const first = (page - 1) * pageSize + 1;
+  return text(formatCount(first, false, locale), formatCount(first + rowCount - 1, false, locale), formatCount(total.count, total.estimated, locale));
+}

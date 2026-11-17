@@ -540,6 +540,7 @@ const recordsFacets = (locale: Locale): RecordsFilterBarCopy =>
         active: {
           group: "Filtre active", remove: (chip) => `Elimină ${chip}`, clearAll: "Șterge filtrele", from: (when) => `Din ${when}`, to: (when) => `Până în ${when}`,
           between: (from, to) => `${from} – ${to}`, signal: (rule) => `Semnal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `doar înregistrările care se potrivesc cu „${q}”`,
+          county: (area) => `Județ: ${area}`, valueBucket: filterChips("ro").valueBucket.options, hasSignals: "Are Semnale", withoutSignals: "Fără Semnale", party: (list) => `Partid: ${list}`,
         },
       }
     : {
@@ -558,6 +559,7 @@ const recordsFacets = (locale: Locale): RecordsFilterBarCopy =>
         active: {
           group: "Active filters", remove: (chip) => `Remove ${chip}`, clearAll: "Clear filters", from: (when) => `From ${when}`, to: (when) => `Until ${when}`,
           between: (from, to) => `${from} – ${to}`, signal: (rule) => `Signal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `only Records matching “${q}”`,
+          county: (area) => `County: ${area}`, valueBucket: filterChips("en").valueBucket.options, hasSignals: "Has Signals", withoutSignals: "Without Signals", party: (list) => `Party: ${list}`,
         },
       };
 
