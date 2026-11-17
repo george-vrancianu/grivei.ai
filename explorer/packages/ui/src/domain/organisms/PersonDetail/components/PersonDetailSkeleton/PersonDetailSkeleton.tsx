@@ -24,7 +24,7 @@ export function PersonDetailSkeleton({ copy, homeHref, onNavigate, status }: Per
   return (
     <PersonFrame privateView={copy.privateView}>
       <PersonPanel homeHref={homeHref} onNavigate={onNavigate} breadcrumb={copy.breadcrumb}>
-        <Box aria-hidden="true">{skeletonBlock("min(420px, 90%)", 40)}</Box>
+        {skeletonBlock("min(420px, 90%)", 40)}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
           <InsetFigure label={copy.figures.born}>{skeletonBlock(56, 22)}</InsetFigure>
           <InsetFigure label={copy.figures.roles}>{skeletonBlock(32, 22)}</InsetFigure>
