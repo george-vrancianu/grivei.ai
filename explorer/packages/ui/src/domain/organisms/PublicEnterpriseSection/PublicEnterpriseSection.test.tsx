@@ -26,8 +26,8 @@ describe("PublicEnterpriseSection", () => {
     show(publicEnterprise);
     const region = screen.getByRole("region", { name: "Public enterprise (AMEPIP)" });
     expect(within(region).getByText("AMEPIP · list of 13 January 2026")).toBeVisible();
-    expect(within(region).getByText("Listed as", { selector: "dt" })).toBeVisible();
-    expect(within(region).getByText("ALFA DEMO SRL", { selector: "dd" })).toBeVisible();
+    expect(within(region).getAllByRole("term").map((t) => t.textContent)).toContain("Listed as");
+    expect(within(region).getAllByRole("definition").map((d) => d.textContent)).toContain("ALFA DEMO SRL");
     const foot = region.querySelector<HTMLElement>('[data-panel-part="foot"]')!;
     expect(within(foot).getByRole("link", { name: "AMEPIP's indicator tables on data.gov.ro" })).toBeVisible();
     expect(within(foot).getByText(/Fetched 14 November 2026/)).toBeVisible();

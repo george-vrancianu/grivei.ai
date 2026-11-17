@@ -62,7 +62,7 @@ export function FirmDonationsSection({ donations, supplier, locale, copy, busy }
       aside={copy.aside(donations.dataThroughYear)}
       foot={
         <>
-          <span>{copy.attribution(source.publisher, source.license, formatDate(source.fetchedAt, locale, "long"))}</span>
+          <Typography component="span" variant="inherit">{copy.attribution(source.publisher, source.license, formatDate(source.fetchedAt, locale, "long"))}</Typography>
           {source.underlyingUrl ? <Link href={source.underlyingUrl} target="_blank">{copy.methodologyLink}</Link> : null}
         </>
       }

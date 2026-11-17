@@ -94,8 +94,8 @@ describe("the supplier sections' headers and layout", () => {
 
   it("shows the seat as a definition and each status as a tag beside its date", async () => {
     const section = await opened("/explore/supplier/3100020");
-    expect(section.getByText("Registered seat", { selector: "dt" })).toBeVisible();
-    expect(section.getByText(/Cluj-Napoca, Str\. EXEMPLU/, { selector: "dd" })).toBeVisible();
+    expect(section.getAllByRole("term").map((t) => t.textContent)).toContain("Registered seat");
+    expect(section.getAllByRole("definition").some((d) => /Cluj-Napoca, Str\. EXEMPLU/.test(d.textContent ?? ""))).toBe(true);
     expect(section.getByText("insolvență")).toBeVisible();
     expect(section.getByText("legal name today")).toBeVisible();
   });

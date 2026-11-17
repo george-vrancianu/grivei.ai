@@ -52,7 +52,7 @@ describe("the public-enterprise panel's header, facts and foot", () => {
     await opened(url);
     const section = within(await screen.findByRole("region", { name: /^(Public enterprise \(AMEPIP\)|Întreprindere publică \(AMEPIP\))$/ }));
     expect(section.getByText(aside)).toBeVisible();
-    expect(section.getByText(term, { selector: "dt" })).toBeVisible();
-    expect(section.getByText("ALFA DEMO SRL", { selector: "dd" })).toBeVisible();
+    expect(section.getAllByRole("term").map((t) => t.textContent)).toContain(term);
+    expect(section.getAllByRole("definition").map((d) => d.textContent)).toContain("ALFA DEMO SRL");
   });
 });

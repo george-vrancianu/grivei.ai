@@ -23,7 +23,8 @@ export function SupplierSkeleton({ onrc, people }: SupplierSkeletonProps) {
     <Box aria-hidden="true">
       <PanelPair
         wide={
-          <Panel heading={onrc.heading} level="h2">
+          <Panel heading={onrc.heading} level="h2" flush>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, p: 2 }}>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
               <InsetFigure label={onrc.registrationNumber}>{skeletonBlock(120, 22)}</InsetFigure>
               <InsetFigure label={onrc.registrationDate}>{skeletonBlock(120, 22)}</InsetFigure>
@@ -31,6 +32,7 @@ export function SupplierSkeleton({ onrc, people }: SupplierSkeletonProps) {
             </Box>
             {skeletonBlock("100%", 20)}
             {skeletonBlock("100%", 72)}
+            </Box>
           </Panel>
         }
         narrow={

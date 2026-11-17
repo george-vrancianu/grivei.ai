@@ -159,7 +159,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} busy={loading} />;
   // The Leadership list (#180): a town hall, sector, Bucharest city hall, county council, or a subordinate body shown through its authority; the authority role page only, never the supplier role page of the same entity
   const leadershipSection = state.leadership && role === "AUTHORITY" && (
-    <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} />
+    <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} busy={loading} />
   );
   // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
   const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} busy={loading} />;

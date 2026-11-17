@@ -1,5 +1,4 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { OnrcRegistrationData } from "../../../../types.ts";
@@ -29,7 +28,7 @@ export interface AliasListProps {
 /** ONRC's legal name and earlier names with the snapshots they were seen in: aliases only, never the name shown at the top of the page. */
 export function AliasList({ aliases, locale, copy }: AliasListProps) {
   return (
-    <Stack component="div">
+    <Box>
       <Typography variant="meta" component="h3" color="text.secondary" sx={{ px: 2, pb: 1 }}>
         {copy.heading}
       </Typography>
@@ -52,6 +51,6 @@ export function AliasList({ aliases, locale, copy }: AliasListProps) {
       <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: "divider" }}>
         {copy.note}
       </Typography>
-    </Stack>
+    </Box>
   );
 }

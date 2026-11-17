@@ -37,8 +37,8 @@ describe("OnrcSection", () => {
     show();
     const section = screen.getByRole("region", { name: "ONRC registration" });
     expect(within(section).getByText("trade register · snapshot of 6 May 2026")).toBeVisible();
-    expect(within(section).getByText("Registered seat", { selector: "dt" })).toBeVisible();
-    expect(within(section).getByText("Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001 · Cluj", { selector: "dd" })).toBeVisible();
+    expect(within(section).getAllByRole("term").map((t) => t.textContent)).toContain("Registered seat");
+    expect(within(section).getAllByRole("definition").map((d) => d.textContent)).toContain("Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001 · Cluj");
     expect(section.querySelector('[data-panel-part="foot"]')).toHaveTextContent("Source: ONRC, snapshot of 6 May 2026");
   });
 
