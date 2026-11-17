@@ -272,7 +272,12 @@ export const en: Copy = {
     },
   },
   pages: {
-    notFound: { title: "Page not found", back: "Back to the main screen" },
+    notFound: {
+      title: "Page not found",
+      body: "Nothing in the explorer lives at this address. Check it for a typo, or start again from the main screen.",
+      back: "Back to the main screen",
+      search: "Search",
+    },
     search: { title: "Search" },
   },
   badges,

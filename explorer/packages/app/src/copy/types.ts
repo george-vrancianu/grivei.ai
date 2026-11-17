@@ -53,7 +53,7 @@ export interface Copy {
   zoomedCounty: ZoomedCountySectionCopy & { /** The back link in the map panel's header strip: the way out of the zoom. */ back: string };
   /** The titles of the pages that carry no data of their own (the page not found, the search page); the others have their own keys. */
   pages: {
-    notFound: { title: string; back: string };
+    notFound: { title: string; body: string; back: string; search: string };
     search: { title: string };
   };
   /** Badge labels and explanations (they double as filter chips). */

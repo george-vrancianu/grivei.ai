@@ -1,6 +1,5 @@
-import { Button, LoadingStatus, PersonDetail, PersonDetailFailed, PersonDetailSkeleton, StateNote, Typography, type Locale } from "@grivei/ui";
-import { AppLink } from "../../components/AppLink/index.ts";
-import { PageShell } from "../../components/PageShell/index.ts";
+import { Button, LoadingStatus, PersonDetail, PersonDetailFailed, PersonDetailSkeleton, StateNote, type Locale } from "@grivei/ui";
+import { NotFoundPage } from "../NotFoundPage/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
 import { pathFor } from "../../routing/routes.ts";
@@ -43,13 +42,7 @@ export function PersonPage({ locale, id }: PersonPageProps) {
   }
   if (state.person === null) {
     return (
-      <PageShell>
-        <Typography variant="h4" component="h1">
-          {t.personPage.notFound.title}
-        </Typography>
-        <Typography>{t.personPage.notFound.body}</Typography>
-        <AppLink href={homeHref}>{t.pages.notFound.back}</AppLink>
-      </PageShell>
+      <NotFoundPage locale={locale} title={t.personPage.notFound.title} body={t.personPage.notFound.body} />
     );
   }
   return (
