@@ -604,6 +604,7 @@ export const ro: Copy = {
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",
+      totalHeading: "Total atribuit",
       table: { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } },
       facets: {
         label: "Filtre pe fațete",
@@ -615,6 +616,7 @@ export const ro: Copy = {
         counterpartyKey: (key) => `Contraparte ${key}`,
         signals: ruleLabels(signalCard.rules),
       },
+      chips: { between: (from, to) => `${from} – ${to}`, signal: (rule) => `Semnal: ${rule}`, cpv: (code) => `CPV: ${code}` },
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
       onlyMatching: { query: (q) => `doar înregistrările care se potrivesc cu „${q}”`, filters: "doar înregistrările care se potrivesc filtrelor căutării" },
     },

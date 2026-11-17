@@ -1,4 +1,4 @@
-import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, Box, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
@@ -47,7 +47,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   // The Records tab's Source switch (#178): ONRC's registrations of the entity, found by its CUI. The query text is not a chip here (the CUI is the search).
   const onrcChips: OnrcFilter = onrcMode ? Object.fromEntries(Object.entries(onrcUrl.filter).filter(([field]) => field !== "q")) : NO_FILTER;
   // ONRC's rows are asked for only when they would be shown: on the ONRC side, or when SEAP has no Records of the entity. Whether ONRC lists the CUI at all comes with the Records tab (`onrcListed`).
-  const onrcListed = state.status !== "error" && state.onrcListed;
+  const onrcListed = state.onrcListed;
   const seapEmpty = state.status === "ready" && state.records === null;
   const registrations = useEntityOnrc(state.status !== "error" ? (state.entity?.cui ?? null) : null, onrcChips, view === "records" && onrcListed && (onrcMode || seapEmpty));
   const tabCounts = useTabCounts(`${role}:${entityKey}`, state, filter, locale);
@@ -98,12 +98,38 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
     onNavigate,
     copy: t.entityPage.layout,
   };
+  // The Records tab has a Source switch when both Sources have something for the entity; a Source with nothing is not offered and shows nothing.
+  const switches = t.sources.recordsSwitch;
+  const seapHasRecords = state.records !== null;
+  const onrcHasRegistrations = registrations.status === "ready" && registrations.all.length > 0;
+  // "SEAP has nothing" is decided once SEAP has settled: while its Records load (coming from another tab, say), the plain URL must not flash ONRC's registrations
+  const showOnrcRecords = onrcHasRegistrations && (onrcMode || seapEmpty);
+  // the ONRC side waits for the Records tab's answer on whether ONRC lists the CUI, then for the rows
+  const onrcPending = onrcMode && ((state.status === "loading" && !onrcListed) || registrations.status === "loading");
+  // `entity.onrc` does not say the registration is one ONRC's search lists: once the rows are in and there are none, ONRC has nothing to offer and the switch goes
+  const onrcEmpty = registrations.status === "ready" && registrations.all.length === 0;
+  const sourceSwitch = seapHasRecords && onrcListed && !onrcEmpty && (
+    <SourcePicker
+      options={[{ id: "SEAP", label: switches.options.SEAP }, { id: "ONRC", label: switches.options.ONRC }]}
+      selected={showOnrcRecords ? "ONRC" : "SEAP"}
+      // each Source has its own filter in the URL: a switch starts the other one unfiltered
+      onSelect={(id) => navigate(asSource(id) === "ONRC" ? `${pathFor(locale, { name: "entity", entity: routeRole, key: entityKey, view: "records" })}${encodeOnrcScreen({ filter: {} })}` : tabHref(locale, routeRole, entityKey, "records", { filter: {}, ...(carried ? { carried } : {}) }), "push")}
+      copy={switches}
+    />
+  );
   if (state.status === "error") {
     // A failed request: the page around it stays when the entity's header is known from before (with its tabs and address), the note and its retry take the body.
-    // A first load that failed has no header to show: the note stands alone.
+    // On the Records tab the note takes the Records panel only: the Source picker and the filter bar (from the last Records) stay. A first load that failed has no header to show: the note stands alone.
     return state.entity ? (
       <EntityPageLayout header={headerOf(state.entity)} {...layoutProps}>
-        {retryNote(state.retry)}
+        {view === "records" && !onrcMode ? (
+          <Stack spacing={2}>
+            {sourceSwitch}
+            <RecordsTab records={state.records} signalBadges={signals.badges} failure={retryNote(state.retry)} {...recordsTab} />
+          </Stack>
+        ) : (
+          retryNote(state.retry)
+        )}
       </EntityPageLayout>
     ) : (
       <PageShell>{retryNote(state.retry)}</PageShell>
@@ -139,25 +165,6 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
   // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
   const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} />;
-  // The Records tab has a Source switch when both Sources have something for the entity; a Source with nothing is not offered and shows nothing.
-  const switches = t.sources.recordsSwitch;
-  const seapHasRecords = state.records !== null;
-  const onrcHasRegistrations = registrations.status === "ready" && registrations.all.length > 0;
-  // "SEAP has nothing" is decided once SEAP has settled: while its Records load (coming from another tab, say), the plain URL must not flash ONRC's registrations
-  const showOnrcRecords = onrcHasRegistrations && (onrcMode || seapEmpty);
-  // the ONRC side waits for the Records tab's answer on whether ONRC lists the CUI, then for the rows
-  const onrcPending = onrcMode && ((state.status === "loading" && !onrcListed) || registrations.status === "loading");
-  // `entity.onrc` does not say the registration is one ONRC's search lists: once the rows are in and there are none, ONRC has nothing to offer and the switch goes
-  const onrcEmpty = registrations.status === "ready" && registrations.all.length === 0;
-  const sourceSwitch = seapHasRecords && onrcListed && !onrcEmpty && (
-    <SourcePicker
-      options={[{ id: "SEAP", label: switches.options.SEAP }, { id: "ONRC", label: switches.options.ONRC }]}
-      selected={showOnrcRecords ? "ONRC" : "SEAP"}
-      // each Source has its own filter in the URL: a switch starts the other one unfiltered
-      onSelect={(id) => navigate(asSource(id) === "ONRC" ? `${pathFor(locale, { name: "entity", entity: routeRole, key: entityKey, view: "records" })}${encodeOnrcScreen({ filter: {} })}` : tabHref(locale, routeRole, entityKey, "records", { filter: {}, ...(carried ? { carried } : {}) }), "push")}
-      copy={switches}
-    />
-  );
   return (
     <EntityPageLayout header={headerOf(entity)} {...layoutProps}>
       {view === "records" ? (
@@ -178,13 +185,13 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         ) : onrcPending ? (
           <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : state.records ? (
-          // The last Records stay on screen while the next filter loads, so the panel keeps its place and focus.
-          <div aria-busy={loading}>
-            {sourceSwitch && <Box sx={{ mb: 2 }}>{sourceSwitch}</Box>}
-            <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
-          </div>
+          // The last Records stay on screen while the next filter loads, so the panels keep their place and focus: their bodies dimmed, the bar and the headers at full strength.
+          <Stack spacing={2}>
+            {sourceSwitch}
+            <RecordsTab records={state.records} signalBadges={signals.badges} busy={loading} status={loading ? <LoadingStatus label={t.status.loading} /> : undefined} {...recordsTab} />
+          </Stack>
         ) : loading ? (
-          <StateNote kind="loading">{t.status.loading}</StateNote>
+          <RecordsTabSkeleton role={routeRole} status={<LoadingStatus label={t.status.loading} />} copy={recordsTab.copy} />
         ) : (
           // ready, but the entity has no Records in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
