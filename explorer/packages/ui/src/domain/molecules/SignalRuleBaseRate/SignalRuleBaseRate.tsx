@@ -53,8 +53,9 @@ export function SignalRuleBaseRate(props: SignalRuleBaseRateProps) {
     );
   }
   const rule = props.status === "ready" ? props.rule : null;
+  const busy = busyProps(props.busy);
   return (
-    <Box {...busyProps(props.busy)} sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, ...busyProps(props.busy).sx }}>
+    <Box {...busy} sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, ...busy.sx }}>
       <InsetFigure label={copy.windowLabel}>{rule ? windowWords(rule, locale, copy) : skeletonBlock(160, 22)}</InsetFigure>
       <InsetFigure label={copy.rateLabel} note={rule ? baseRateNote(rule, copy, locale) : undefined}>
         {rule ? baseRateValue(rule, locale) : skeletonBlock(64, 22)}

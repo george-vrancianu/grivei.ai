@@ -213,7 +213,8 @@ describe.each(["en", "ro"] as const)("the section in view at %s", (locale) => {
     const nav = await screen.findByRole("navigation", { name: t.contents });
     await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
     expect(within(nav).getByRole("link", { name: t.sections.awardedValue.heading })).toHaveAttribute("aria-current", "location");
-    act(() => observer.seeing([[document.getElementById("signal-splitting")!, true]]));
+    // a rule panel is inside the Signal rules section: the browser reports both together
+    act(() => observer.seeing([[document.getElementById("signals")!, true], [document.getElementById("signal-splitting")!, true]]));
     expect(within(nav).getByRole("link", { name: t.rules.SPLITTING.heading })).toHaveAttribute("aria-current", "location");
     expect(within(nav).getAllByRole("link").filter((l) => l.getAttribute("aria-current"))).toHaveLength(1);
   });

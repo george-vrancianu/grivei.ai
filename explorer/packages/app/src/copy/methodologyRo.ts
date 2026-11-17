@@ -293,7 +293,7 @@ export const methodologyRo: MethodologyPageCopy = {
     dataThrough: (date) => `Date până la ${date}`,
     dataThroughLabel: "Date până la",
     loading: "Se încarcă fereastra și cifra națională…",
-    error: "Fereastra și cifra națională nu au putut fi încărcate. Regula de mai sus rămâne valabilă.",
+    error: "Ferestrele și cifrele naționale nu au putut fi încărcate. Regulile de mai jos rămân valabile.",
     missing: "Nu există încă o cifră națională pentru această regulă.",
   },
   retry: "Reîncearcă",

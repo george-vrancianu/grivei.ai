@@ -19,7 +19,7 @@ export interface MethodologyContentsProps {
   onNavigate?: (href: string) => void;
 }
 
-/** The sticky header is about 80 px tall (there is no token for it): the panel stops this far from the top, clear of it, from `md`. */
+/** The sticky header is about 72-80 px tall and there is no token for it (a header-height token is a follow-up): the panel stops 24 px short of `headerScrollPadding` (96 px), clear of it, from `md`. */
 const STICKY_TOP = layout.headerScrollPadding - 24;
 
 /**
@@ -40,7 +40,7 @@ export function MethodologyContents({ label, entries, current = null, sectionHre
                   <Link
                     href={href}
                     onClick={(event) => {
-                      onSelect?.(anchor);
+                      if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onSelect?.(anchor);
                       followLink(href, onNavigate)(event);
                     }}
                     aria-current={isCurrent ? "location" : undefined}

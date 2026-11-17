@@ -228,6 +228,32 @@ describe("the section in view (scroll-spy)", () => {
     expect(within(screen.getByRole("navigation", { name: "On this page" })).getAllByRole("link").filter((l) => l.getAttribute("aria-current"))).toHaveLength(1);
   });
 
+  it("marks a Signal rule current while its parent Signal rules section is in view too, and the group only when no rule is", () => {
+    show();
+    act(() => observer.seeing([[section("signals"), true]]));
+    expect(link("Signal rules")).toHaveAttribute("aria-current", "location");
+    act(() => observer.seeing([[section("signal-splitting"), true]]));
+    expect(link("Splitting")).toHaveAttribute("aria-current", "location");
+    expect(link("Signal rules")).not.toHaveAttribute("aria-current");
+    act(() => observer.seeing([[section("signal-splitting"), false]]));
+    expect(link("Signal rules")).toHaveAttribute("aria-current", "location");
+  });
+
+  it("keeps a clicked link current while the page scrolls to it, even when an earlier section is reported", async () => {
+    show({ onNavigate: vi.fn() });
+    await userEvent.setup().click(link("No publication"));
+    act(() => observer.seeing([[section("signals"), true], [section("signal-framework-overrun"), true]]));
+    expect(link("No publication")).toHaveAttribute("aria-current", "location");
+  });
+
+  it("does not mark a link current for a click that opens it elsewhere", async () => {
+    show({ onNavigate: vi.fn() });
+    const user = userEvent.setup();
+    await user.keyboard("{Control>}");
+    await user.click(link("Placement"));
+    expect(link("Placement")).not.toHaveAttribute("aria-current");
+  });
+
   it("keeps the last current section when none is in view", () => {
     show();
     act(() => observer.seeing([[section("suspect-values"), true]]));

@@ -293,7 +293,7 @@ export const methodologyEn: MethodologyPageCopy = {
     dataThrough: (date) => `Data through ${date}`,
     dataThroughLabel: "Data through",
     loading: "Loading the window and the national figure…",
-    error: "The window and the national figure could not be loaded. The rule above still applies.",
+    error: "The windows and national figures could not be loaded. The rules below still apply.",
     missing: "There is no national figure for this rule yet.",
   },
   retry: "Try again",

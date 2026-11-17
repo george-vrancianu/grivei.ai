@@ -1,3 +1,4 @@
+// Keep in step with the app copy (packages/app/src/testing/intersectionObserverStub.ts): the two are the same file by design (the ui package exports no test helpers).
 /**
  * jsdom has no `IntersectionObserver`. This is a small honest stand-in, installed per test: it records the observers made, the elements each observes and its callback,
  * and the test fires entries by hand (`seeing`), the way the browser would as the reader scrolls. `uninstall` puts the global back.
