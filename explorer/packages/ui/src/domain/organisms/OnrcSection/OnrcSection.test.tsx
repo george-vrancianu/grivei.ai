@@ -33,6 +33,22 @@ describe("OnrcSection", () => {
     expect(screen.getByText(/never change the name at the top of the page/)).toBeVisible();
   });
 
+  it("names the Source and its snapshot in the header, shows the seat as a definition and puts the source line in the foot", () => {
+    show();
+    const section = screen.getByRole("region", { name: "ONRC registration" });
+    expect(within(section).getByText("trade register · snapshot of 6 May 2026")).toBeVisible();
+    expect(within(section).getByText("Registered seat", { selector: "dt" })).toBeVisible();
+    expect(within(section).getByText("Cluj-Napoca, Str. EXEMPLU, Nr. 1, Cod postal 400001 · Cluj", { selector: "dd" })).toBeVisible();
+    expect(section.querySelector('[data-panel-part="foot"]')).toHaveTextContent("Source: ONRC, snapshot of 6 May 2026");
+  });
+
+  it("dims the body while the next answer loads, the header at full strength", () => {
+    renderInUi(<OnrcSection registration={onrcRegistration} onrcOnly={false} locale="en" copy={sampleCopy.onrcSection("en")} busy />, "en");
+    const section = screen.getByRole("region", { name: "ONRC registration" });
+    expect(section.querySelector('[data-panel-part="body"]')).toHaveAttribute("aria-busy", "true");
+    expect(section.querySelector('[data-panel-part="header"]')).not.toHaveAttribute("aria-busy");
+  });
+
   it("cites the snapshot and links to the dataset", () => {
     show();
     expect(screen.getByRole("link", { name: "Source: ONRC, snapshot of 6 May 2026" })).toHaveAttribute("href", "https://data.gov.ro/dataset/firme-06-05-2026");

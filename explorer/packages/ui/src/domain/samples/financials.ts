@@ -6,6 +6,7 @@ import type { FinancialStatementsData, FinancialYearData } from "../types.ts";
 export const financialsCopy: Record<Locale, FinancialStatementsSectionCopy> = {
   en: {
     heading: "Financial statements",
+    aside: "MF · RON",
     intro: "Annual statements the company filed, as the Ministry of Finance (MF) publishes them on data.gov.ro, in RON. A blank cell in MF's file reads \"not reported\", never zero.",
     caption: "Annual financial statements by fiscal year, with the awards of the same year",
     columns: { year: "Fiscal year", turnover: "Turnover", profitOrLoss: "Profit or loss", debts: "Debts", equity: "Equity", employees: "Average employees", awarded: "Awarded that year", share: "Awards as a share of turnover", source: "Source" },
@@ -20,6 +21,7 @@ export const financialsCopy: Record<Locale, FinancialStatementsSectionCopy> = {
   },
   ro: {
     heading: "Situații financiare",
+    aside: "MF · RON",
     intro: "Situațiile financiare anuale depuse de companie, așa cum le publică Ministerul Finanțelor (MF) pe data.gov.ro, în RON. O celulă goală în fișierul MF se afișează „nedeclarat”, niciodată zero.",
     caption: "Situații financiare anuale pe an fiscal, cu atribuirile aceluiași an",
     columns: { year: "An fiscal", turnover: "Cifra de afaceri", profitOrLoss: "Profit sau pierdere", debts: "Datorii", equity: "Capitaluri", employees: "Număr mediu de salariați", awarded: "Atribuit în acel an", share: "Atribuiri ca pondere din cifra de afaceri", source: "Sursa" },

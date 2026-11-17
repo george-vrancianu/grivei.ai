@@ -1,4 +1,4 @@
-import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
@@ -151,20 +151,20 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const flowCopy = flowLensCopy(t);
   const entity = state.entity;
   // The ONRC section: the same on both role pages of an entity that is an authority and a supplier; an entity with no SEAP role at all exists in ONRC only
-  const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} />;
+  const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} busy={loading} />;
   // ONRC's administrators and legal representatives (#177), public tier: the API sends them only for a SEAP counterparty. A holder links to a person page only when the API sent a person
   // (the host's Restricted switch is `show`), so this page never builds a link the host would not serve.
-  const peopleSection = state.people && <PeopleSection people={state.people} personHref={(id) => pathFor(locale, { name: "person", id })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.people} />;
+  const peopleSection = state.people && <PeopleSection people={state.people} personHref={(id) => pathFor(locale, { name: "person", id })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.people} busy={loading} />;
   // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI appears in AMEPIP's tables (the same on both role pages)
-  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
+  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} busy={loading} />;
   // The Leadership list (#180): a town hall, sector, Bucharest city hall, county council, or a subordinate body shown through its authority; the authority role page only, never the supplier role page of the same entity
   const leadershipSection = state.leadership && role === "AUTHORITY" && (
     <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} />
   );
   // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
-  const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
+  const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} busy={loading} />;
   // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
-  const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} />;
+  const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} busy={loading} />;
   return (
     <EntityPageLayout header={headerOf(entity)} {...layoutProps}>
       {view === "records" ? (
@@ -230,8 +230,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
               graphHref={layoutProps.tabHrefs.relationships}
               {...overviewTab} />
             {/* the Reference sources' panels come after the SEAP Overview (headline numbers and Signals), so a large entity's page does not open on up to six panels of other sources */}
-            {onrcSection}
-            {peopleSection}
+            {(onrcSection || peopleSection) && <PanelPair wide={onrcSection || undefined} narrow={peopleSection || undefined} />}
             {publicEnterpriseSection}
             {leadershipSection}
             {financialsSection}
@@ -239,7 +238,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
           </Stack>
         ) : loading ? (
           // a first load (or a different entity or role): the Overview's shape with real labels
-          <OverviewSkeleton copy={overviewTab.copy} status={<LoadingStatus label={t.status.loading} />} />
+          <Stack spacing={3}>
+            <OverviewSkeleton copy={overviewTab.copy} status={<LoadingStatus label={t.status.loading} />} />
+            {/* a supplier's ONRC and People row (the other sections may be absent, so they are not drawn) */}
+            {role === "SUPPLIER" && <SupplierSkeleton onrc={t.entityPage.onrc} people={t.entityPage.people} />}
+          </Stack>
         ) : (
           // ready, but the entity has nothing in this role: its ONRC section (an organisation that exists only in ONRC) still shows
           <Stack spacing={3}>

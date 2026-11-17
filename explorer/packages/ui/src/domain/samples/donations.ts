@@ -8,6 +8,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 export const donationsCopy: Record<Locale, FirmDonationsSectionCopy> = {
   en: {
     heading: "Firm donations to parties",
+    aside: (year) => `BaniPartide · data through ${year}`,
     supplierContext: (donations, loans) => `This supplier is also a firm donor: ${plural(donations, "donation", "donations")} and ${plural(loans, "loan", "loans")} to parties. Context only, not a Signal.`,
     intro: (year) => `Donations and loans this company made to parties, as BaniPartide lists them from the parties' annual publications, in RON. Data through ${year}: donations after that may be missing.`,
     caption: "Firm donations and loans to parties, newest first",
@@ -24,6 +25,7 @@ export const donationsCopy: Record<Locale, FirmDonationsSectionCopy> = {
   },
   ro: {
     heading: "Donații ale firmei către partide",
+    aside: (year) => `BaniPartide · date până în ${year}`,
     supplierContext: (donations, loans) => `Acest furnizor este și o firmă donatoare: ${plural(donations, "donație", "donații")} și ${plural(loans, "împrumut", "împrumuturi")} către partide. Doar context, nu un Semnal.`,
     intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
     caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",

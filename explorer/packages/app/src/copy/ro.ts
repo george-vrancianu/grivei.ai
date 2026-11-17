@@ -421,6 +421,7 @@ export const ro: Copy = {
     },
     onrc: {
       heading: "Înmatriculare ONRC",
+      aside: (snapshot) => `registrul comerțului · instantaneul din ${snapshot}`,
       registrationNumber: "Număr de înmatriculare",
       registrationDate: "Înmatriculată",
       registrationDateUnknown: "nu apare în instantaneul citit",
@@ -449,6 +450,8 @@ export const ro: Copy = {
     },
     people: {
       heading: "Administratori și reprezentanți legali",
+      aside: (snapshot) => `ONRC · instantaneul din ${snapshot}`,
+      foot: "Numele duc la pagina unei persoane doar într-o vedere privată.",
       intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
       none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
       born: (year) => `anul nașterii ${year}`,
@@ -547,6 +550,7 @@ export const ro: Copy = {
     signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     publicEnterprise: {
       heading: "Întreprindere publică (AMEPIP)",
+      aside: (published) => `AMEPIP · lista din ${published}`,
       basis: (cui, published, withYears) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}${withYears ? ", pentru anii financiari afișați mai jos" : ""}. Potrivirea se face după CUI.`,
       listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
       years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
@@ -571,6 +575,7 @@ export const ro: Copy = {
     },
     financials: {
       heading: "Situații financiare",
+      aside: "MF · RON",
       intro: "Situațiile financiare anuale depuse de companie, așa cum le publică Ministerul Finanțelor (MF) pe data.gov.ro, în RON. O celulă goală în fișierul MF se afișează „nedeclarat”, niciodată zero.",
       caption: "Situații financiare anuale pe an fiscal, cu atribuirile aceluiași an",
       columns: { year: "An fiscal", turnover: "Cifra de afaceri", profitOrLoss: "Profit sau pierdere", debts: "Datorii", equity: "Capitaluri", employees: "Număr mediu de salariați", awarded: "Atribuit în acel an", share: "Atribuiri ca pondere din cifra de afaceri", source: "Sursa" },
@@ -585,6 +590,7 @@ export const ro: Copy = {
     },
     donations: {
       heading: "Donații ale firmei către partide",
+      aside: (year) => `BaniPartide · date până în ${year}`,
       supplierContext: (donations, loans) => `Acest furnizor este și o firmă donatoare: ${donations} ${donations === 1 ? "donație" : "donații"} și ${loans} ${loans === 1 ? "împrumut" : "împrumuturi"} către partide. Doar context, nu un Semnal.`,
       intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
       caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",

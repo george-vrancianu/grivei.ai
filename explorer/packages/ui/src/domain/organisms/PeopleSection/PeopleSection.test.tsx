@@ -13,14 +13,24 @@ describe("PeopleSection", () => {
     show();
     const section = screen.getByRole("region", { name: "Administrators and legal representatives" });
     expect(within(section).getByText("POPESCU ION")).toBeVisible();
-    expect(within(section).getByText("administrator · born 1975")).toBeVisible();
-    expect(within(section).getByText("administrator · born 1980")).toBeVisible();
+    expect(within(section).getByText("born 1975")).toBeVisible();
+    expect(within(section).getByText("born 1980")).toBeVisible();
+    // the role is a tag on the right of the row, as ONRC wrote it
+    expect(within(within(section).getAllByRole("listitem")[0]!).getByText("administrator")).toBeVisible();
     expect(within(section).getByRole("link", { name: "Source: ONRC, snapshot of 6 May 2026" })).toHaveAttribute("href", "https://data.gov.ro/dataset/firme-06-05-2026");
+  });
+
+  it("names the Source in the header and states the privacy rule in the foot, on every host", () => {
+    show();
+    const section = screen.getByRole("region", { name: "Administrators and legal representatives" });
+    expect(within(section).getByText("ONRC · snapshot of 6 May 2026")).toBeVisible();
+    expect(section.querySelector('[data-panel-part="foot"]')).toHaveTextContent("Names link to a person page only in a Private view.");
   });
 
   it("shows a holder with no birth date as an unlinked role holder, never as a link", () => {
     show(peoplePrivate);
-    expect(screen.getByText("reprezentant al persoanei juridice · no birth date in ONRC: listed on this page only, linked to no one")).toBeVisible();
+    expect(screen.getByText("no birth date in ONRC: listed on this page only, linked to no one")).toBeVisible();
+    expect(screen.getByText("reprezentant al persoanei juridice")).toBeVisible();
     expect(screen.queryByRole("link", { name: /SC SERVICII/ })).toBeNull();
   });
 
@@ -45,7 +55,8 @@ describe("PeopleSection", () => {
   it("speaks Romanian and keeps ONRC's words as published", () => {
     show(peoplePublic, "ro");
     expect(screen.getByRole("region", { name: "Administratori și reprezentanți legali" })).toBeVisible();
-    expect(screen.getByText("administrator · anul nașterii 1975")).toBeVisible();
-    expect(screen.getByText(/reprezentant al persoanei juridice · fără dată a nașterii/)).toBeVisible();
+    expect(screen.getByText("anul nașterii 1975")).toBeVisible();
+    expect(screen.getByText(/fără dată a nașterii/)).toBeVisible();
+    expect(screen.getByText("Numele duc la pagina unei persoane doar într-o vedere privată.")).toBeVisible();
   });
 });

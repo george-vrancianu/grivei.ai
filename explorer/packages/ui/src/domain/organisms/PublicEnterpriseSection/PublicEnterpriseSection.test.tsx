@@ -22,6 +22,17 @@ describe("PublicEnterpriseSection", () => {
     expect(region.getByText(/Fetched 14 November 2026 from data.gov.ro, licence CC-BY-4.0/)).toBeVisible();
   });
 
+  it("lists AMEPIP's facts as a definition list, names the Source in the header and puts the link and the fetched line in the foot", () => {
+    show(publicEnterprise);
+    const region = screen.getByRole("region", { name: "Public enterprise (AMEPIP)" });
+    expect(within(region).getByText("AMEPIP · list of 13 January 2026")).toBeVisible();
+    expect(within(region).getByText("Listed as", { selector: "dt" })).toBeVisible();
+    expect(within(region).getByText("ALFA DEMO SRL", { selector: "dd" })).toBeVisible();
+    const foot = region.querySelector<HTMLElement>('[data-panel-part="foot"]')!;
+    expect(within(foot).getByRole("link", { name: "AMEPIP's indicator tables on data.gov.ro" })).toBeVisible();
+    expect(within(foot).getByText(/Fetched 14 November 2026/)).toBeVisible();
+  });
+
   it("is the same in Romanian, with AMEPIP's own words left as they are", () => {
     show(publicEnterprise, "ro");
     expect(screen.getByRole("heading", { name: "Întreprindere publică (AMEPIP)" })).toBeVisible();

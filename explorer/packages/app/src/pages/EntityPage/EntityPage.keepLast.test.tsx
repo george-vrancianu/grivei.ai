@@ -87,3 +87,59 @@ describe.each(["en", "ro"] as const)("the Overview while the other role loads (%
     expect(screen.queryByText(w.old)).toBeNull();
   });
 });
+
+/** Answers every `EntityOverview` from the recorded fixtures (the unfiltered one for any filter); the requests numbered in `held` wait for `release()`. */
+function gatedClient(held: number[]) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  let count = 0;
+  const client = createClient({
+    fetch: async (_url, init) => {
+      const { variables } = JSON.parse(String(init?.body)) as { variables: { filter: Record<string, unknown> } };
+      if (held.includes(++count)) await gate;
+      const hit = fixtures.EntityOverview.find((f) => canonical(f.variables) === canonical({ ...variables, filter: {} }));
+      return hit ? Response.json({ data: hit.data }) : Response.json({ errors: [{ message: "no fixture" }] }, { status: 400 });
+    },
+  });
+  return { client, release };
+}
+
+const supplier = {
+  en: { base: "/explore/supplier/3100020?signalOrder=value-desc", onrc: "ONRC registration", people: "Administrators and legal representatives", fact: "J40/1001/2015" },
+  ro: { base: "/ro/explore/supplier/3100020?signalOrder=value-desc", onrc: "Înmatriculare ONRC", people: "Administratori și reprezentanți legali", fact: "J40/1001/2015" },
+} as const;
+
+describe.each(["en", "ro"] as const)("a supplier's ONRC and People panels while the Overview reloads (%s)", (lang) => {
+  const w = supplier[lang];
+  const body = (name: string) => screen.getByRole("region", { name }).querySelector("[data-panel-part='body']")!;
+
+  it("keeps both panels on screen, their bodies aria-busy and their headers at full strength, until the next answer lands", async () => {
+    openAt(w.base);
+    const { client, release } = gatedClient([2]);
+    render(<App client={client} />);
+    await screen.findByRole("region", { name: w.onrc });
+    expect(body(w.onrc)).not.toHaveAttribute("aria-busy");
+
+    act(() => navigate(`${w.base}&from=2023-06-01`, "replace"));
+    await waitFor(() => expect(body(w.onrc)).toHaveAttribute("aria-busy", "true"));
+    expect(body(w.people)).toHaveAttribute("aria-busy", "true");
+    expect(within(screen.getByRole("region", { name: w.onrc })).getByText(w.fact)).toBeVisible();
+    expect(screen.getByRole("region", { name: w.onrc }).querySelector("[data-panel-part='header']")).not.toHaveAttribute("aria-busy");
+
+    release();
+    await waitFor(() => expect(body(w.onrc)).not.toHaveAttribute("aria-busy"));
+    expect(body(w.people)).not.toHaveAttribute("aria-busy");
+  });
+
+  it("draws the two panels' titles and labels as a skeleton on the first load, then the real panels", async () => {
+    openAt(w.base);
+    const { client, release } = gatedClient([1]);
+    render(<App client={client} />);
+    expect(await screen.findByRole("region", { name: w.onrc, hidden: true })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: w.people, hidden: true })).toBeInTheDocument();
+    expect(screen.queryByText(w.fact)).toBeNull();
+
+    release();
+    expect(await screen.findByText(w.fact)).toBeVisible();
+  });
+});

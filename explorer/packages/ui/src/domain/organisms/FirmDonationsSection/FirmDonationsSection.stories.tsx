@@ -22,3 +22,11 @@ export const OnAnotherPage = section(donations, false);
 /** No date cell (the year stands in), neither date nor year ("not stated"), a party in the case BaniPartide published it, no licence in the metadata. */
 export const UndatedRows = section(donationsUndated, true);
 export const OneDonation = section({ ...donations, donationCount: 1, loanCount: 0, items: [donations.items[1]!] }, true);
+
+/** A reload with the last answer held: the body is dimmed and `aria-busy`; the header and the foot stay at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return <FirmDonationsSection donations={donations} supplier locale={locale} copy={donationsCopy[locale]} busy />;
+  },
+};

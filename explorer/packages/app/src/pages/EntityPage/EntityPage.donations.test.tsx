@@ -73,3 +73,17 @@ describe("the firm donations section", () => {
     expect(section.getByText(/Date până în 2024/)).toBeVisible();
   });
 });
+
+describe("the firm donations panel's header and foot", () => {
+  it.each([
+    ["/explore/supplier/2000007", "Firm donations to parties", "BaniPartide · data through 2024", "How BaniPartide sources its data"],
+    ["/ro/explore/supplier/2000007", "Donații ale firmei către partide", "BaniPartide · date până în 2024", /BaniPartide/],
+  ])("names the Source and the data-through year in the header; the attribution is the foot (%s)", async (url, name, aside, link) => {
+    await opened(url);
+    const panel = await screen.findByRole("region", { name });
+    expect(within(panel).getByText(aside)).toBeVisible();
+    const foot = panel.querySelector<HTMLElement>("[data-panel-part='foot']")!;
+    expect(within(foot).getByText(/BaniPartide \(Expert Forum\)/)).toBeVisible();
+    expect(within(foot).getByRole("link", { name: link })).toBeVisible();
+  });
+});
