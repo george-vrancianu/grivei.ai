@@ -156,9 +156,13 @@ Each is a titled panel; the Source and its snapshot or data-through go in the he
 - `WinnersSection`: a titled panel; each winner in a well (name link, share line), two per row from `md`; the convention note below.
 - Side column: `RecordFacts`, `BadgeExplanations`, `ProvenanceSection` are titled panels; `SignalsSection` keeps its heading on the ground and shows the new `SignalCard`.
 
-### Search, full results (`pages/SearchPage`, `organisms/FullResults`)
+### Full results (`pages/SearchPage`, `organisms/FullResults`)
 
-- The search bar sits in a panel like the main screen's (label, input well, hint), under the `h1`.
+**Changed, confirmed ([#268](https://github.com/george-vrancianu/grivei.ai/issues/268)):** the header menu loses Search, leaving Explore, Coverage and Methodology. This page is the main screen's drill-down, reached by "Show all", and marks Explore in the menu.
+
+- The `h1` names the kind: "All suppliers", "All contracting authorities", "All Records" (RO "Toți furnizorii", "Toate autoritățile contractante", "Toate înregistrările").
+- The search bar sits in a panel like the main screen's (label, input well, hint), under the `h1`. The query stays editable.
+- The active filter chips (the main screen's `ActiveChips` row) sit under the search bar, each removable. No facet menus, no map, no kind switcher. A change keeps the page, restarts at page 1 and keeps the order.
 - "Back to results" stays a link on the ground.
 - The results are one panel: the kind and its count pill with "Showing 1–50 of n" on the left of the header and the `OrderSelect` on the right; the framed `CiteLine` as a strip under it; the rows; the `PageNav` in the foot with the "Showing" line repeated on its left.
 
@@ -193,7 +197,7 @@ A narrower page (960 px). The private-view sentence is a notice on the overlay s
 
 ### Not found (`pages/NotFoundPage`)
 
-**Changed, confirmed:** a panel, 760 px wide: "404" in mono `muted`, the title, one new sentence, a primary "Back to the main screen" and a secondary "Search". The entity, person and Record not-found states take the same panel with their own title and body.
+**Changed, confirmed:** a panel, 760 px wide: "404" in mono `muted`, the title, one new sentence, and a primary "Back to the main screen". No secondary "Search" button: the main screen is where a search starts (#268). The entity, person and Record not-found states take the same panel with their own title and body.
 
 ## Loading, refetch and errors
 
