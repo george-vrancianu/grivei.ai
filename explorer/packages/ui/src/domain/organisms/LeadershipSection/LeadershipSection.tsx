@@ -40,13 +40,15 @@ export interface LeadershipSectionProps {
   onNavigate?: (href: string) => void;
   locale: Locale;
   copy: LeadershipSectionCopy;
+  /** The held answer is being refreshed: the Panel body dims and is aria-busy. */
+  busy?: boolean;
 }
 
 /**
  * An authority's Leadership list, a full-width panel: the caveat that the leader may have switched party since (and, for a subordinate body, the basis of the tie to its authority), then a table
  * of the Mandates (leader's name as AEP wrote it, the list as registered, the dates, the AEP basis) and the gaps, listed as gaps, in the foot. Leaders are never links.
  */
-export function LeadershipSection({ leadership, authorityHref, onNavigate, locale, copy }: LeadershipSectionProps) {
+export function LeadershipSection({ leadership, authorityHref, onNavigate, locale, copy, busy }: LeadershipSectionProps) {
   const period = (from: string, to: string | null) => copy.period(formatDate(from, locale, "long"), to ? formatDate(to, locale, "long") : copy.inForce);
   const { columns } = copy;
   return (
@@ -54,6 +56,7 @@ export function LeadershipSection({ leadership, authorityHref, onNavigate, local
       heading={copy.heading}
       level="h2"
       flush
+      busy={busy}
       foot={
         leadership.gaps.length > 0 ? (
           <Box>

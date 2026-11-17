@@ -658,6 +658,7 @@ const CAEN_YEARS = [1998, 2003, 2008, 2025];
 const onrcSection: Record<Locale, OnrcSectionCopy> = {
   en: {
     heading: "ONRC registration",
+    aside: (snapshot) => `trade register · snapshot of ${snapshot}`,
     registrationNumber: "Registration number",
     registrationDate: "Registered",
     registrationDateUnknown: "not in the snapshot we read",
@@ -686,6 +687,7 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
   },
   ro: {
     heading: "Înmatriculare ONRC",
+    aside: (snapshot) => `registrul comerțului · instantaneul din ${snapshot}`,
     registrationNumber: "Număr de înmatriculare",
     registrationDate: "Înmatriculată",
     registrationDateUnknown: "nu apare în instantaneul citit",
@@ -717,6 +719,8 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
 const peopleSection: Record<Locale, PeopleSectionCopy> = {
   en: {
     heading: "Administrators and legal representatives",
+    aside: (snapshot) => `ONRC · snapshot of ${snapshot}`,
+    foot: "Names link to a person page only in a Private view.",
     intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
     none: "ONRC lists no administrator or legal representative for this organisation.",
     born: (year) => `born ${year}`,
@@ -726,6 +730,8 @@ const peopleSection: Record<Locale, PeopleSectionCopy> = {
   },
   ro: {
     heading: "Administratori și reprezentanți legali",
+    aside: (snapshot) => `ONRC · instantaneul din ${snapshot}`,
+    foot: "Numele duc la pagina unei persoane doar într-o vedere privată.",
     intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
     none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
     born: (year) => `anul nașterii ${year}`,

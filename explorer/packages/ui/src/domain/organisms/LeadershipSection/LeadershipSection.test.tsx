@@ -7,10 +7,17 @@ import type { Locale } from "../../../theme/index.ts";
 import type { LeadershipData } from "../../types.ts";
 import { LeadershipSection } from "./index.ts";
 
-const show = (data: LeadershipData, locale: Locale = "en", onNavigate?: (href: string) => void) =>
-  renderInUi(<LeadershipSection leadership={data} authorityHref={(key) => `/explore/authority/${key}`} onNavigate={onNavigate} locale={locale} copy={leadershipCopy[locale]} />, locale);
+const show = (data: LeadershipData, locale: Locale = "en", onNavigate?: (href: string) => void, busy?: boolean) =>
+  renderInUi(<LeadershipSection leadership={data} authorityHref={(key) => `/explore/authority/${key}`} onNavigate={onNavigate} locale={locale} copy={leadershipCopy[locale]} busy={busy} />, locale);
 
 describe("LeadershipSection", () => {
+  it("marks its body aria-busy while the held answer refreshes, the header at full strength", () => {
+    show(leadership, "en", undefined, true);
+    const region = screen.getByRole("region", { name: "Leadership list" });
+    expect(region.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(region.querySelector("[data-panel-part='header']")).not.toHaveAttribute("aria-busy");
+  });
+
   it("lists each mandate with the leader, the list as registered, the dates and the basis, under the caveat that the leader may have switched party", () => {
     show(leadership);
     const region = within(screen.getByRole("region", { name: "Leadership list" }));

@@ -2,6 +2,7 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { OnrcRegistrationData } from "../../../../types.ts";
+import { Tag } from "../../../../atoms/Tag/index.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
 
 export interface StatusListCopy {
@@ -35,9 +36,9 @@ export function StatusList({ statuses, locale, copy }: StatusListProps) {
       ) : (
         <Stack component="ul" spacing={0.5} sx={{ m: 0, p: 0, listStyle: "none" }}>
           {statuses.map((s) => (
-            <Typography component="li" key={s.code}>
+            <Typography component="li" key={s.code} sx={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 1, rowGap: 0.5 }}>
               {/* the status is source data (ONRC's Romanian nomenclature), shown as published */}
-              <strong>{s.name ?? copy.unnamed(s.code)}</strong>{" "}
+              <Tag>{s.name ?? copy.unnamed(s.code)}</Tag>
               <Typography component="span" color="text.secondary">
                 {(s.sinceAtLeast ? copy.sinceAtLeast : copy.firstSeen)(formatDate(s.firstSeen, locale, "long"))}
               </Typography>

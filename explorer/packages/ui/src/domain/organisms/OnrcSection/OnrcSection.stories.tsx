@@ -21,3 +21,11 @@ export const Typical: Story = { render: story(onrcRegistration, false) };
 export const OnrcOnly: Story = { render: story(onrcRegistration, true) };
 /** Legacy layout: no registration date, no CAEN codes, no seat, an unnamed status code, no link to the dataset. */
 export const Sparse: Story = { render: story(onrcRegistrationSparse, true) };
+
+/** A reload with the last answer held: the body is dimmed and `aria-busy`; the header and the foot stay at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return <OnrcSection registration={onrcRegistration} onrcOnly={false} locale={locale} copy={sampleCopy.onrcSection(locale)} busy />;
+  },
+};

@@ -28,7 +28,7 @@ describe("FirmDonationsSection", () => {
     show();
     expect(row(2).getByText("20.01.2024; 15.05.2024")).toBeVisible(); // two dates in the cell: shown verbatim, not one of them picked
     show(donationsUndated);
-    expect(within(screen.getAllByRole("region")[1]!).getAllByText("2021").length).toBeGreaterThan(0); // the year stands in for an empty cell
+    expect(within(screen.getAllByRole("region", { name: "Firm donations to parties" })[1]!).getAllByText("2021").length).toBeGreaterThan(0); // the year stands in for an empty cell
     expect(screen.getByText("not stated")).toBeVisible();
     expect(screen.getByText("pnl")).toBeVisible(); // the party exactly as published, not upper-cased or matched to a Party
   });
@@ -55,6 +55,23 @@ describe("FirmDonationsSection", () => {
     expect(screen.getAllByText(/also a firm donor/)).toHaveLength(1); // only the first render's
   });
 
+  it("names the Source and its data-through year in the header, shows the kind as a tag and puts the attribution and methodology link in the foot", () => {
+    show();
+    const region = screen.getByRole("region", { name: "Firm donations to parties" });
+    expect(within(region).getByText("BaniPartide · data through 2024")).toBeVisible();
+    const foot = region.querySelector<HTMLElement>('[data-panel-part="foot"]')!;
+    expect(within(foot).getByText(/table fetched 14 November 2026/)).toBeVisible();
+    expect(within(foot).getByRole("link", { name: "How BaniPartide sources its data" })).toBeVisible();
+    expect(within(foot).queryByText(/also a firm donor/)).toBeNull();
+  });
+
+  it("dims the table and keeps the header at full strength while the next answer loads", () => {
+    renderInUi(<FirmDonationsSection donations={donations} supplier locale="en" copy={donationsCopy.en} busy />, "en");
+    const region = screen.getByRole("region", { name: "Firm donations to parties" });
+    expect(region.querySelector('[data-panel-part="body"]')).toHaveAttribute("aria-busy", "true");
+    expect(region.querySelector('[data-panel-part="header"]')).not.toHaveAttribute("aria-busy");
+  });
+
   it("says a firm donation is context, never a Party, and its amounts are never summed", () => {
     show();
     expect(screen.getByText(/is context, not a Signal\. It is never a Party, and its amounts are never summed or added to awarded value/)).toBeVisible();
@@ -70,5 +87,6 @@ describe("FirmDonationsSection", () => {
     expect(screen.getByText(/Acest furnizor este și o firmă donatoare: 1 donație și 1 împrumut către partide/)).toBeVisible();
     expect(screen.getByText(/Date până în 2024/)).toBeVisible();
     expect(row(1).getByRole("link", { name: "BaniPartide, rândul 1" })).toBeVisible();
+    expect(screen.getByText("BaniPartide · date până în 2024")).toBeVisible();
   });
 });

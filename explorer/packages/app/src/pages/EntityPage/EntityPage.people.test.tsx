@@ -18,16 +18,27 @@ describe("the administrators of a SEAP counterparty (public tier)", () => {
     await opened("/explore/supplier/3100020?signalOrder=value-desc");
     const section = await people();
     expect(section.getByText("POPESCU ION")).toBeVisible();
-    expect(section.getByText("administrator · born 1975")).toBeVisible();
-    expect(section.getByText("administrator · born 1980")).toBeVisible();
+    expect(section.getByText("born 1975")).toBeVisible();
+    expect(section.getByText("born 1980")).toBeVisible();
+    expect(section.getAllByText("administrator")).toHaveLength(2); // the role, as a tag, at the right of each row
     expect(section.queryByText(/RADU/)).toBeNull(); // a possible match is never served
     expect(section.getByRole("link", { name: "Source: ONRC, snapshot of 6 May 2026" })).toBeVisible();
     expect(section.queryAllByRole("link").filter((l) => /person/.test(l.getAttribute("href") ?? ""))).toEqual([]);
   });
 
+  it.each([
+    ["/explore/supplier/3100020?signalOrder=value-desc", "ONRC · snapshot of 6 May 2026", "Names link to a person page only in a Private view."],
+    ["/ro/explore/supplier/3100020?signalOrder=value-desc", /^ONRC · instantaneul din 6 mai 2026$/, "Numele duc la pagina unei persoane doar într-o vedere privată."],
+  ])("names the Source in the header and states the privacy rule in the foot (%s)", async (url, aside, foot) => {
+    await opened(url);
+    const section = await people();
+    expect(section.getByText(aside)).toBeVisible();
+    expect(section.getByText(foot)).toBeVisible();
+  });
+
   it("shows a holder with no birth date as an unlinked role holder", async () => {
     await opened("/explore/supplier/3100055?signalOrder=value-desc");
-    expect((await people()).getByText(/administrator · no birth date in ONRC: listed on this page only, linked to no one/)).toBeVisible();
+    expect((await people()).getByText(/no birth date in ONRC: listed on this page only, linked to no one/)).toBeVisible();
   });
 
   it("names no one for an organisation that exists only in ONRC", async () => {
@@ -43,7 +54,7 @@ describe("the administrators of a SEAP counterparty (public tier)", () => {
 
   it("is in Romanian under /ro/", async () => {
     await opened("/ro/explore/supplier/3100020?signalOrder=value-desc");
-    expect((await people()).getByText("administrator · anul nașterii 1975")).toBeVisible();
+    expect((await people()).getByText("anul nașterii 1975")).toBeVisible();
   });
 });
 
