@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import type { Locale } from "../../../../../theme/index.ts";
 import { Box } from "../../../../../atoms/Box/index.ts";
-import { Card } from "../../../../../atoms/Card/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
-import { type as typeScale } from "../../../../../theme/tokens.ts";
-import { plainMethodologyText, renderMethodologyText, type MethodologyText } from "./methodologyText.tsx";
+import { MethodologyProse } from "../MethodologyProse/index.ts";
+import type { MethodologyText } from "./methodologyText.tsx";
 
 export interface MethodologySectionCopy {
   heading: string;
@@ -15,49 +14,29 @@ export interface MethodologySectionCopy {
 }
 
 export interface MethodologySectionProps {
-  /** The anchor: the heading's id, the same in both languages. */
+  /** The anchor: the section element's id, the same in both languages (the heading is `<id>-heading`, the section's name). */
   id: string;
-  /** 2 for a section of the page, 3 for a Signal rule inside the Signal rules' section (drawn as a card). */
-  level?: 2 | 3;
   locale: Locale;
   copy: MethodologySectionCopy;
-  /** Shown after the prose: the base-rate slot, a closing line. */
+  /** The heading row's right end: a loading status for the group the section holds. */
+  aside?: ReactNode;
+  /** Shown after the prose: a closing line, the Signal rules' panels. */
   children?: ReactNode;
 }
 
-const longText = { fontSize: typeScale.bodyLong.size, lineHeight: typeScale.bodyLong.lineHeight } as const;
-
-/** One section of the page: a heading that carries the anchor, its paragraphs and list, and anything the caller adds. */
-export function MethodologySection({ id, level = 2, locale, copy, children }: MethodologySectionProps) {
-  const content = (
-    <>
-      <Typography id={id} variant={level === 2 ? "h2" : "h3"} component={level === 2 ? "h2" : "h3"} sx={{ scrollMarginTop: 16, mb: 1.5 }}>
-        {copy.heading}
-      </Typography>
-      {copy.paragraphs.map((text) => (
-        <Typography key={text} sx={{ ...longText, mb: 1.5 }}>
-          {text}
+/** One section of the article: behind a hairline, a 24 px `h2`, its paragraphs and list, and anything the caller adds. The `section` carries the anchor and is named by its heading. */
+export function MethodologySection({ id, locale, copy, aside, children }: MethodologySectionProps) {
+  const headingId = `${id}-heading`;
+  return (
+    <Box component="section" id={id} aria-labelledby={headingId} sx={{ borderTop: 1, borderColor: "divider", pt: 3, mt: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 2, rowGap: 0.5, mb: 1.5 }}>
+        <Typography id={headingId} variant="h2" component="h2">
+          {copy.heading}
         </Typography>
-      ))}
-      {copy.items && copy.items.length > 0 && (
-        <Box component="ul" sx={{ mt: 0, mb: 1.5, pl: 3 }}>
-          {copy.items.map((text) => (
-            <Typography key={plainMethodologyText(text)} component="li" sx={{ ...longText, mb: 0.75 }}>
-              {renderMethodologyText(text, locale)}
-            </Typography>
-          ))}
-        </Box>
-      )}
+        {aside}
+      </Box>
+      <MethodologyProse locale={locale} copy={copy} />
       {children}
-    </>
-  );
-  return level === 3 ? (
-    <Card component="section" aria-labelledby={id} sx={{ p: 2.5 }}>
-      {content}
-    </Card>
-  ) : (
-    <Box component="section" aria-labelledby={id}>
-      {content}
     </Box>
   );
 }

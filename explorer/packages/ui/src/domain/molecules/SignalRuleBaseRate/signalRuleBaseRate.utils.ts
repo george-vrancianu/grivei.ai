@@ -18,7 +18,12 @@ export function windowWords(rule: SignalRuleBaseRateData, locale: Locale, copy: 
   return rule.window.from === null ? copy.openStart(to) : copy.range(formatDate(rule.window.from, locale, "long"), to);
 }
 
-/** The base rate as words; a rate of zero says that no authority had one, rather than "0%". */
-export function baseRateWords(rule: SignalRuleBaseRateData, locale: Locale, copy: SignalRuleBaseRateCopy): string {
+/** The base rate as the figure's value: the percentage, in the locale's format ("0%" when no authority had one; the note says so). */
+export function baseRateValue(rule: SignalRuleBaseRateData, locale: Locale): string {
+  return formatBaseRate(rule.baseRate, locale);
+}
+
+/** The base rate as the figure's note: the sentence with its year ("5.7% of contracting authorities had at least one in 2024."); a rate of zero says that no authority had one. */
+export function baseRateNote(rule: SignalRuleBaseRateData, copy: SignalRuleBaseRateCopy, locale: Locale): string {
   return rule.baseRate === 0 ? copy.none(rule.baseRateYear) : copy.rate(formatBaseRate(rule.baseRate, locale), rule.baseRateYear);
 }

@@ -1,18 +1,19 @@
 // Seam 3 for the methodology page ("About the numbers" / "Despre cifre"): the app rendered at both URLs against the `MethodologyBaseRates`
 // fixtures through the injected fetch (ticket #61). Acceptance: every section exists in EN and RO with a stable anchor; each Signal rule's
 // section has a base-rate slot fed from the `signalRules` fixture.
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fixtures, recordedSignalsMethodology } from "@grivei/contract/fixtures";
 import allowlist from "@grivei/contract/persisted-queries.json";
 import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES as ALL_SIGNAL_RULES, forbiddenWords, plainMethodologyText, METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, allMethodologyAnchors, signalAnchor, type Locale, type MethodologySectionKey } from "@grivei/ui";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { createClient } from "../../graphql/client.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { signalMethodologyHref } from "../../signals/signalLinks.ts";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
+import { installIntersectionObserver } from "../../testing/intersectionObserverStub.ts";
 import { openAt } from "../../testing/openAt.ts";
 
 const PATH = { en: "/explore/methodology", ro: "/ro/explore/methodology" } as const;
@@ -60,14 +61,17 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     ...SIGNAL_RULES.map((r) => [signalAnchor(r), t.rules[r].heading] as [string, string]),
   ];
 
-  it("has a heading with its stable anchor for every section", async () => {
+  it("has a section with its stable anchor, named by its heading, for every section", async () => {
     open(PATH[locale]);
     expect(await screen.findByRole("heading", { level: 1, name: t.title })).toBeVisible();
     for (const [anchor, text] of headings) {
-      const heading = document.getElementById(anchor);
-      expect(heading, anchor).not.toBeNull();
+      const section = document.getElementById(anchor);
+      expect(section, anchor).not.toBeNull();
+      expect(section?.tagName).toBe("SECTION");
+      const heading = within(section!).getAllByRole("heading")[0]!;
       expect(heading).toHaveTextContent(text);
-      expect(heading?.tagName).toMatch(/^H[23]$/);
+      expect(heading.tagName).toMatch(/^H[23]$/);
+      expect(section).toHaveAccessibleName(text);
     }
     expect(headings.map(([a]) => a)).toEqual(ANCHORS);
     expect(new Set(ANCHORS).size).toBe(ANCHORS.length);
@@ -97,7 +101,8 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
       // the Romanian percent sign follows a no-break space
       const sentence = t.baseRate.rate(percent, rule.baseRateYear).replace(/\s/g, " ");
       expect(section.getByText((text) => text.replace(/\s/g, " ") === sentence)).toBeVisible();
-      expect(section.getByText(t.baseRate.dataThrough(fmt(rule.dataThrough)))).toBeVisible();
+      expect(section.getByText(t.baseRate.dataThroughLabel)).toBeVisible();
+      expect(section.getByText(fmt(rule.dataThrough))).toBeVisible();
     }
   });
 
@@ -145,21 +150,73 @@ describe.each(["en", "ro"] as const)("the page at %s", (locale) => {
     expect(region(t.sections.firmDonations.heading).queryByText(t.referenceYearThrough(2024))).toBeNull();
   });
 
-  it("keeps every section's prose when the figures are loading", async () => {
+  it("keeps every section's prose and the real labels on first load, with the figures as placeholders and one loading status", async () => {
     open(PATH[locale], "pending");
     expect(await screen.findByRole("heading", { level: 1, name: t.title })).toBeVisible();
     for (const rule of SIGNAL_RULES) {
       const section = region(t.rules[rule].heading);
       expect(section.getByText(t.rules[rule].paragraphs[0]!)).toBeVisible();
-      expect(section.getByRole("status")).toHaveTextContent(t.baseRate.loading);
+      expect(section.getByText(t.baseRate.windowLabel)).toBeVisible();
+      expect(section.queryByRole("status")).toBeNull();
     }
+    expect(screen.getByRole("status")).toHaveTextContent(t.baseRate.loading);
+    expect(region(t.signals.heading).getByRole("status")).toBeVisible();
   });
 
-  it("keeps every section's prose when the figures fail to load", async () => {
-    open(PATH[locale], "fail");
-    expect((await screen.findAllByText(t.baseRate.error)).length).toBe(SIGNAL_RULES.length);
-    for (const rule of SIGNAL_RULES) expect(region(t.rules[rule].heading).getByText(t.rules[rule].paragraphs[0]!)).toBeVisible();
+  it("keeps every section's prose when the figures fail, with one error note and its retry in the Signal rules' section, and recovers on retry", async () => {
+    let fail = true;
+    const id = allowlist.operations.find((o) => o.name === "MethodologyBaseRates")!.sha256;
+    const referenceId = allowlist.operations.find((o) => o.name === "MethodologyReferenceSources")!.sha256;
+    const calls = vi.fn();
+    openAt(PATH[locale]);
+    render(
+      <App
+        client={createClient({
+          fetch: async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            if (body.id === referenceId) return Response.json({ data: fixtures.MethodologyReferenceSources.find((f) => f.name === "amepip-held")!.data });
+            expect(body.id).toBe(id);
+            calls();
+            if (fail) return Response.json({ errors: [{ message: "boom" }] }, { status: 500 });
+            return Response.json({ data: fixtures.MethodologyBaseRates.find((f) => f.name === "typical-after-backfill")!.data });
+          },
+        })}
+      />,
+    );
+    const note = await screen.findByRole("alert");
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(note).toHaveTextContent(t.baseRate.error);
+    expect(region(t.signals.heading).getByRole("alert")).toBe(note);
+    for (const rule of SIGNAL_RULES) {
+      expect(region(t.rules[rule].heading).getByText(t.rules[rule].paragraphs[0]!)).toBeVisible();
+      expect(region(t.rules[rule].heading).queryByText(t.baseRate.windowLabel)).toBeNull();
+    }
+    expect(screen.getByRole("heading", { level: 1, name: t.title })).toBeVisible();
+    fail = false;
+    await userEvent.setup().click(within(note).getByRole("button", { name: t.retry }));
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(calls).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe.each(["en", "ro"] as const)("the section in view at %s", (locale) => {
+  let observer: ReturnType<typeof installIntersectionObserver>;
+  beforeEach(() => {
+    observer = installIntersectionObserver();
+  });
+  afterEach(() => observer.uninstall());
+
+  it("scrolling a section into view marks it current in the contents list", async () => {
+    const t = catalogue[locale].methodology;
+    open(PATH[locale]);
+    const nav = await screen.findByRole("navigation", { name: t.contents });
+    await within(await screen.findByRole("region", { name: t.rules.OVER_CAP.heading })).findAllByText(/2024/);
+    expect(within(nav).getByRole("link", { name: t.sections.awardedValue.heading })).toHaveAttribute("aria-current", "location");
+    // a rule panel is inside the Signal rules section: the browser reports both together
+    act(() => observer.seeing([[document.getElementById("signals")!, true], [document.getElementById("signal-splitting")!, true]]));
+    expect(within(nav).getByRole("link", { name: t.rules.SPLITTING.heading })).toHaveAttribute("aria-current", "location");
+    expect(within(nav).getAllByRole("link").filter((l) => l.getAttribute("aria-current"))).toHaveLength(1);
   });
 });
 
@@ -235,7 +292,7 @@ describe("every methodology link the app builds lands on an anchor of the page",
 describe("the Signal sections' wording", () => {
   it.each(["en", "ro"] as const)("never uses a word a Signal never uses (%s)", (locale) => {
     const t = catalogue[locale].methodology;
-    const texts = [t.signals.heading, ...t.signals.paragraphs, ...Object.values(t.rules).flatMap((r) => [r.heading, ...r.paragraphs, ...(r.items ?? []).map(plainMethodologyText), r.lawful]), t.baseRate.windowLabel, t.baseRate.rateLabel, t.baseRate.loading, t.baseRate.error, t.baseRate.missing];
+    const texts = [t.signals.heading, ...t.signals.paragraphs, ...Object.values(t.rules).flatMap((r) => [r.heading, ...r.paragraphs, ...(r.items ?? []).map(plainMethodologyText), r.lawful]), t.baseRate.windowLabel, t.baseRate.rateLabel, t.baseRate.dataThroughLabel, t.retry, t.baseRate.loading, t.baseRate.error, t.baseRate.missing];
     for (const text of texts) expect(forbiddenWords(text, locale), text).toEqual([]);
   });
 });
@@ -268,7 +325,8 @@ describe.each(["en", "ro"] as const)("the base rates from the API's own answers 
         const sentence = t.baseRate.rate(percent, rule.baseRateYear).replace(/\s/g, " ");
         expect(section.getByText((text) => text.replace(/\s/g, " ") === sentence)).toBeVisible();
       }
-      expect(section.getByText(t.baseRate.dataThrough(fmt(rule.dataThrough)))).toBeVisible();
+      expect(section.getByText(t.baseRate.dataThroughLabel)).toBeVisible();
+      expect(section.getByText(fmt(rule.dataThrough))).toBeVisible();
     }
   });
 
