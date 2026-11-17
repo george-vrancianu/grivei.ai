@@ -731,19 +731,23 @@ const peopleSection: Record<Locale, PeopleSectionCopy> = {
 
 const personDetail: Record<Locale, PersonDetailCopy> = {
   en: {
-    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
-    born: (year) => `born ${year}`,
+    privateView: { lead: "Private view:", text: "this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public." },
+    breadcrumb: { label: "You are here", home: "explore", current: "person" },
+    figures: { born: "Born", roles: "Roles", source: "Source", sourceName: "ONRC", snapshot: (date) => `snapshot of ${date}` },
     rolesHeading: "Roles",
     roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "no organisation page",
     basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
     source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
   },
   ro: {
-    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
-    born: (year) => `anul nașterii ${year}`,
+    privateView: { lead: "Vedere privată:", text: "această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică." },
+    breadcrumb: { label: "Unde te afli", home: "explorare", current: "persoană" },
+    figures: { born: "Născut(ă)", roles: "Roluri", source: "Sursa", sourceName: "ONRC", snapshot: (date) => `instantaneul din ${date}` },
     rolesHeading: "Roluri",
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
     source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
