@@ -14,24 +14,29 @@ const show = (r: SignalRuleBaseRateData | null, locale: Locale = "en") =>
   renderInUi(<SignalRuleBaseRate status="ready" rule={r} locale={locale} copy={sampleBaseRateCopy(locale)} />, locale);
 
 describe("the base-rate slot of a Signal rule", () => {
-  it("shows the window, the rate as a percentage, its year and the data-through date", () => {
+  it("shows the window, the rate as a percentage with its sentence as the note, and the data-through date, each under its label", () => {
     show(rule());
+    expect(screen.getByText("Time window")).toBeVisible();
     expect(screen.getByText("1 January 2021 to 30 November 2024")).toBeVisible();
+    expect(screen.getByText("How often it fires nationally")).toBeVisible();
+    expect(screen.getByText("5.7%")).toBeVisible();
     expect(screen.getByText("5.7% of contracting authorities had at least one in 2024.")).toBeVisible();
-    expect(screen.getByText("Data through 30 November 2024")).toBeVisible();
+    expect(screen.getByText("Data through")).toBeVisible();
+    expect(screen.getByText("30 November 2024")).toBeVisible();
   });
 
   it("formats in Romanian", () => {
     show(rule(), "ro");
     expect(screen.getByText("1 ianuarie 2021 – 30 noiembrie 2024")).toBeVisible();
     expect(screen.getByText(/^5,7\s?% dintre autoritățile contractante au avut cel puțin unul în 2024\.$/)).toBeVisible();
-    expect(screen.getByText("Date până la 30 noiembrie 2024")).toBeVisible();
+    expect(screen.getByText("Date până la")).toBeVisible();
+    expect(screen.getByText("30 noiembrie 2024")).toBeVisible();
   });
 
-  it("says no authority had one when the rate is zero, instead of 0%", () => {
+  it("says no authority had one when the rate is zero, as the note under a bare 0%", () => {
     show(rule({ baseRate: 0 }));
+    expect(screen.getByText("0%")).toBeVisible();
     expect(screen.getByText("No contracting authority had one in 2024.")).toBeVisible();
-    expect(screen.queryByText(/0%/)).toBeNull();
   });
 
   it("says the window has no start when it is open, and runs to the data-through date when it has no end", () => {
@@ -49,10 +54,20 @@ describe("the base-rate slot of a Signal rule", () => {
     expect(methodologyRates("typical-after-backfill").map((r) => r.slug)).toEqual(["OVER_CAP", "SPLITTING", "FRAMEWORK_OVERRUN", "NO_PUBLICATION"]);
   });
 
-  it.each([["loading"], ["error"]] as const)("says so while %s, with no figures", (status) => {
-    renderInUi(<SignalRuleBaseRate status={status} locale="en" copy={sampleBaseRateCopy("en")} />, "en");
-    expect(screen.getByRole("status")).toHaveTextContent(status === "loading" ? "Loading" : "could not be loaded");
+  it("shows the real labels and no figures while loading, with the placeholder values hidden from assistive technology", () => {
+    const { container } = renderInUi(<SignalRuleBaseRate status="loading" locale="en" copy={sampleBaseRateCopy("en")} />, "en");
+    for (const label of ["Time window", "How often it fires nationally", "Data through"]) expect(screen.getByText(label)).toBeVisible();
     expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(container.querySelectorAll("[aria-hidden='true']").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("marks the held answer busy while the next one loads, and is not busy otherwise", () => {
+    const { container, rerender } = renderInUi(<SignalRuleBaseRate status="ready" rule={rule()} busy locale="en" copy={sampleBaseRateCopy("en")} />, "en");
+    expect(container.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.getByText("5.7%")).toBeVisible();
+    rerender(<SignalRuleBaseRate status="ready" rule={rule()} locale="en" copy={sampleBaseRateCopy("en")} />);
+    expect(container.querySelector("[aria-busy]")).toBeNull();
   });
 
   it("says there is no figure when the answer has no entry for the rule", () => {

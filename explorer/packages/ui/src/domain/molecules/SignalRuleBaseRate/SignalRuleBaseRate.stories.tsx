@@ -18,12 +18,14 @@ const slot =
     const locale = localeOf(globals["locale"]);
     return <SignalRuleBaseRate status="ready" rule={rule} locale={locale} copy={sampleBaseRateCopy(locale)} />;
   };
-const waiting =
-  (status: "loading" | "error"): Story["render"] =>
-  (_args, { globals }) => {
-    const locale = localeOf(globals["locale"]);
-    return <SignalRuleBaseRate status={status} locale={locale} copy={sampleBaseRateCopy(locale)} />;
-  };
+const waiting: Story["render"] = (_args, { globals }) => {
+  const locale = localeOf(globals["locale"]);
+  return <SignalRuleBaseRate status="loading" locale={locale} copy={sampleBaseRateCopy(locale)} />;
+};
+const held: Story["render"] = (_args, { globals }) => {
+  const locale = localeOf(globals["locale"]);
+  return <SignalRuleBaseRate status="ready" rule={slug(typical, "OVER_CAP")} busy locale={locale} copy={sampleBaseRateCopy(locale)} />;
+};
 
 /** A rule with its window and a base rate of a few percent. */
 export const Typical: Story = { render: slot(slug(typical, "OVER_CAP")) };
@@ -33,7 +35,9 @@ export const SmallRate: Story = { render: slot(slug(typical, "FRAMEWORK_OVERRUN"
 export const RateZeroOpenStart: Story = { render: slot(slug(beforeBackfill, "FRAMEWORK_OVERRUN")) };
 /** The window starts in 2023 until the 2021-22 backfill is loaded. */
 export const WindowFrom2023: Story = { render: slot(slug(beforeBackfill, "NO_PUBLICATION")) };
-export const Loading: Story = { render: waiting("loading") };
-export const Failed: Story = { render: waiting("error") };
+/** First load: the labels are real, the values are placeholder blocks. */
+export const Loading: Story = { render: waiting };
+/** The last answer held while the next loads: dimmed, `aria-busy="true"`. */
+export const Busy: Story = { render: held };
 /** The answer holds no entry for this rule. */
 export const Missing: Story = { render: slot(null) };
