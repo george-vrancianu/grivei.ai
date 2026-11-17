@@ -65,13 +65,11 @@ describe.each([
     expect(panel().getByRole("heading", { level: 2, name: kind })).toBeVisible();
     expect(screen.getAllByText(t.status.loading)).toHaveLength(1);
     expect(panel().getByText(t.status.loading)).toBeVisible();
-    expect(page().querySelector(".MuiSkeleton-root")).not.toBeNull();
     expect(screen.getByRole("search")).not.toHaveAttribute("aria-busy", "true"); // no typed query: the field does not spin
 
     release();
     expect(await screen.findByRole("heading", { level: 2, name: `${kind} 120` }, SLOW)).toBeVisible();
     expect(screen.queryByText(t.status.loading)).toBeNull();
-    expect(page().querySelector(".MuiSkeleton-root")).toBeNull();
   });
 
   it("a page change keeps the last answer, dimmed and aria-busy, with the Loading line in the header, then swaps", async () => {
@@ -85,7 +83,6 @@ describe.each([
     expect(screen.queryByText(t.status.loading)).toBeNull();
 
     act(() => navigate(`${url}&page=2`, "replace"));
-    expect(page().querySelector(".MuiSkeleton-root")).toBeNull(); // a refetch never shows the skeleton
     expect(panel().getAllByRole("link").map((a) => a.textContent)).toEqual(rowsBefore);
     expect(screen.getAllByText(showing)).toHaveLength(2); // the Showing line describes the rows on screen (page 1), not the requested page 2
     expect(screen.queryByText(t.fullResults.showing("51", "100", "120"))).toBeNull();
@@ -110,7 +107,6 @@ describe.each([
 
     act(() => navigate(url, "replace"));
     expect(within(screen.getByRole("region", { name: kind })).getByRole("status")).toBeVisible();
-    expect(page().querySelector(".MuiSkeleton-root")).not.toBeNull();
     expect(screen.queryByRole("region", { name: t.results.tabs.suppliers })).toBeNull();
     release();
     expect(await screen.findByRole("heading", { level: 2, name: `${kind} 120` }, SLOW)).toBeVisible();

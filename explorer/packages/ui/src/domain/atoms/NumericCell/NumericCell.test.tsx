@@ -3,6 +3,7 @@ import { createRef } from "react";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableHead } from "../../../atoms/TableHead/index.ts";
 import { renderInUi } from "../../../testing/render.tsx";
+import { rgb } from "../../../testing/color.ts";
 import { sxProbe, sxProbeStyle } from "../../../testing/sx.ts";
 import { color } from "../../../theme/tokens.ts";
 import { NumericCell } from "./index.ts";
@@ -22,7 +23,7 @@ describe("NumericCell", () => {
     const cell = screen.getByRole("columnheader");
     expect(cell).toHaveStyle({ textAlign: "right", fontVariantNumeric: "tabular-nums" });
     expect(getComputedStyle(cell).fontSize).toBe("12px");
-    expect(getComputedStyle(cell).color).toBe(`rgb(${[1, 3, 5].map((i) => parseInt(color.muted.slice(i, i + 2), 16)).join(", ")})`);
+    expect(getComputedStyle(cell).color).toBe(rgb(color.muted));
   });
   it("passes MUI props, sx and ref through", () => {
     const ref = createRef<HTMLTableCellElement>();

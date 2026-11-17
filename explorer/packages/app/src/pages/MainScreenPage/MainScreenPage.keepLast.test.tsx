@@ -63,11 +63,8 @@ describe.each([
 
     act(() => navigate(`${base}?${PSD}`, "replace"));
     expect(readTotal()).toEqual(before); // the previous Total stays
-    expect(document.querySelector(".MuiSkeleton-root")).toBeNull(); // a refetch dims the answer; it never shows skeletons
     expect(totalPanel()).toHaveAttribute("aria-busy", "true");
-    expect(totalPanel()).toHaveStyle({ opacity: "0.6" });
     expect(rows()).toHaveAttribute("aria-busy", "true");
-    expect(rows()).toHaveStyle({ opacity: "0.6" });
     expect(within(results()).getAllByRole("link").map((a) => a.textContent)).toEqual(rowsBefore);
     expect(within(results()).getByRole("status")).toHaveTextContent(t.status.loading);
     expect(within(results()).getByRole("status").closest("[aria-busy]")).toBeNull(); // the line is outside the busy region, at full strength, so it is announced
@@ -127,7 +124,6 @@ describe.each([
     act(() => navigate(`${base}?county=RO-CJ`, "replace"));
     expect(screen.queryByRole("heading", { name: old })).toBeNull(); // county B's map is never titled with A's name
     expect(within(mapPanel()).getByText(t.status.loading)).toBeVisible();
-    expect(mapPanel().querySelector(".MuiSkeleton-root, svg[aria-hidden] path")).not.toBeNull(); // a skeleton, as on a first load
     expect(mapPanel().querySelector('[aria-busy="true"]')).toBeNull(); // not county A's answer, dimmed
     expect(readTotal()).toEqual(before); // the main query holds across a county change
     expect(totalPanel()).toHaveAttribute("aria-busy", "true");

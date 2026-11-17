@@ -3,7 +3,8 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Link } from "../../../atoms/Link/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { Well } from "../../../atoms/Well/index.ts";
-import { color, type } from "../../../theme/tokens.ts";
+import { focusRing, selected as selectedSx } from "../../../theme/states.ts";
+import { type } from "../../../theme/tokens.ts";
 import { neutralLinkSx } from "../../utils/neutralLinkSx.ts";
 
 export interface InsetFigureProps {
@@ -15,7 +16,7 @@ export interface InsetFigureProps {
   href?: string;
   /** An optional third line under the value: what the figure rests on, such as a window or a caveat (mono 12 px, muted). With `href` it is part of the link. */
   note?: ReactNode;
-  /** Makes the figure a toggle (the ONRC count map's Unplaced tile): a button with `aria-pressed` that calls `onSelect` on a click. `selected` is its pressed state, drawn with a stronger border and the `raised` fill. Not with `href`. */
+  /** Makes the figure a toggle (the ONRC count map's Unplaced tile): a button with `aria-pressed` that calls `onSelect` on a click. `selected` is its pressed state, drawn with the shared `selected` look (`theme/states.ts`). Not with `href`. */
   onSelect?: () => void;
   selected?: boolean;
 }
@@ -44,8 +45,8 @@ export function InsetFigure({ label, children, href, note, onSelect, selected = 
   return (
     <Well
       component="p"
-      edge={selected ? "lineStrong" : "line"}
-      sx={{ flex: "1 1 200px", minWidth: 0, m: 0, px: 2, py: 1.5, display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.5, ...(selected && { backgroundColor: color.raised }) }}
+      edge="line"
+      sx={{ flex: "1 1 200px", minWidth: 0, m: 0, px: 2, py: 1.5, display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.5, ...(selected && selectedSx) }}
     >
       {toggle ? (
         <Box
@@ -53,7 +54,7 @@ export function InsetFigure({ label, children, href, note, onSelect, selected = 
           type="button"
           aria-pressed={selected}
           onClick={onSelect}
-          sx={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", gap: 0.5, minWidth: 0, color: "text.primary", "&:focus-visible": { outline: "2px solid currentColor", outlineOffset: 4 } }}
+          sx={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", gap: 0.5, minWidth: 0, color: "text.primary", "&:focus-visible": focusRing }}
         >
           {text}
         </Box>

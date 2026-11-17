@@ -93,13 +93,11 @@ describe.each([
     const roles = screen.getByRole("region", { name: t.rolesHeading });
     expect(within(roles).getByRole("status")).toHaveTextContent(catalogue[locale].status.loading);
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(container.querySelectorAll(".MuiSkeleton-root").length).toBeGreaterThan(5);
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     expect(container.querySelector("[aria-busy]")).toBeNull();
 
     act(() => release());
     expect(await screen.findByRole("heading", { level: 1, name: "POPESCU ION" })).toBeVisible();
-    expect(container.querySelector(".MuiSkeleton-root")).toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
   });
 

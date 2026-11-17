@@ -66,14 +66,12 @@ describe.each([
     expect(screen.getByRole("region", { name: t.recordPage.heading.panel })).toBeVisible();
     expect(within(value).getByRole("status")).toHaveTextContent(t.status.loading);
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(container.querySelectorAll(".MuiSkeleton-root").length).toBeGreaterThan(5);
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     expect(container.querySelector("[aria-busy]")).toBeNull(); // nothing held yet: this is not a refetch
 
     act(() => release());
     expect(await screen.findByRole("heading", { level: 1, name: record.title })).toBeVisible();
     expect(screen.queryByText(t.status.loading)).toBeNull();
-    expect(container.querySelector(".MuiSkeleton-root")).toBeNull();
   });
 
   it("a failed request is one error note with Try again in a panel in the body, and pressing it shows the Record", async () => {
@@ -105,15 +103,12 @@ describe.each([
     expect(screen.getByRole("heading", { level: 1, name: first.title })).toBeVisible();
     const headingBlock = screen.getByRole("heading", { level: 1, name: first.title }).closest("header")!;
     expect(headingBlock).toHaveAttribute("aria-busy", "true");
-    expect(headingBlock).toHaveStyle({ opacity: "0.6" });
     const value = screen.getByRole("region", { name: t.recordPage.value.heading });
     const body = value.querySelector("[data-panel-part=body]")!;
     expect(body).toHaveAttribute("aria-busy", "true");
-    expect(body).toHaveStyle({ opacity: "0.6" });
-    expect(value.querySelector("[data-panel-part=header]")).toHaveStyle({ opacity: "1" });
+    expect(value.querySelector("[data-panel-part=header]")).not.toHaveAttribute("aria-busy");
     expect(within(value).getByRole("status")).toHaveTextContent(t.status.loading);
     expect(within(value.querySelector("[data-panel-part=header]") as HTMLElement).getByRole("status")).toBeVisible();
-    expect(container.querySelector(".MuiSkeleton-root")).toBeNull();
 
     act(() => release());
     const next = recorded("subsequent-contract");

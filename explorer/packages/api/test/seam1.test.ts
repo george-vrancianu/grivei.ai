@@ -3367,7 +3367,7 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
     });
   });
 
-  describe("recorded fixtures (#85): eight small archives -> rebuild -> the recorded RecordPage", () => {
+  describe("recorded fixtures (#85): nine small archives -> rebuild -> the recorded RecordPage", () => {
     // The app's seam 3 renders the Record page against these answers, so the two seams stay in step: this block fails when an answer
     // drifts from the committed JSON. `RECORD_FIXTURES=1` rewrites the JSON instead (see packages/contract/README.md).
     const recording = process.env.RECORD_FIXTURES === "1";

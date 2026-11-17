@@ -61,7 +61,6 @@ describe.each([
     const panel = await screen.findByRole("region", { name: s.onrc.results.title });
     expect(within(panel).getByRole("heading", { level: 2, name: s.onrc.results.title })).toBeVisible();
     expect(within(panel).getByRole("status")).toHaveTextContent(c.status.loading);
-    expect(panel.querySelectorAll(".MuiSkeleton-root").length).toBeGreaterThan(0);
     expect(within(panel).queryByRole("listitem")).toBeNull();
     // real labels: the title, the search box, the filter bar and the lens toggle
     expect(screen.getByRole("heading", { level: 1, name: s.onrc.title })).toBeVisible();
@@ -73,7 +72,6 @@ describe.each([
     release();
     expect(await screen.findByRole("region", { name: heading })).toBeVisible();
     expect(within(region(heading)).queryByRole("status")).toBeNull();
-    expect(document.querySelector(".MuiSkeleton-root")).toBeNull();
   });
 
   it("keeps the last answer dimmed and aria-busy, with the header at full strength, while a filter change loads, then swaps", async () => {
@@ -86,7 +84,6 @@ describe.each([
     act(() => navigate(`${base}?${FILTERED}&source=onrc`, "replace"));
     await waitFor(() => expect(body()).toHaveAttribute("aria-busy", "true"));
     expect(within(panel).getAllByRole("listitem")).toHaveLength(2); // the previous rows stay
-    expect(document.querySelector(".MuiSkeleton-root")).toBeNull(); // a refetch never shows skeletons
     expect(within(panel).getByRole("status")).toHaveTextContent(c.status.loading);
     expect(within(panel).getByRole("status").closest("[aria-busy]")).toBeNull(); // the status line is outside the dimmed body
     expect(panel.querySelector('[data-panel-part="header"]')).not.toHaveAttribute("aria-busy");

@@ -5,10 +5,10 @@
  * ask for exactly these variables, so a case here is also a page a test can open. Same convention as `recordedCases.ts` (#83) and
  * `recordedEntityCases.ts` (#86), in its own file.
  *
- * Seven small existing archives and `frameworkCount` (one authority, three frameworks with 51, 50 and 49 subsequent contracts, #254), each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
+ * Eight small existing archives and `frameworkCount` (one authority, three frameworks with 51, 50 and 49 subsequent contracts, #254), each rebuilt into its own database: `counting` (the counting rule: suspect values, no value, a
  * framework agreement and its subsequent contracts, a consortium with a natural person), `contracts` (contracts and award notices as
  * the Contracte files publish them, with the odd codes), `bulk` (DA and DAN files), `identity` (every identity case, the override
- * file), `crawl` (crawled Records beside the bulk), `signals` (Records inside over-cap and no-publication Signals) and `splitting` (a Record inside a splitting Signal). A code is asked in ONE archive only:
+ * file), `crawl` (crawled Records beside the bulk), `signals` (Records inside over-cap and no-publication Signals), `splitting` (a Record inside a splitting Signal) and `party` (the placement world, AEP's minutes and MF's snapshots, #180). A code is asked in ONE archive only:
  * the app's fixture client answers by variables, so two archives holding the same code would collide.
  */
 import type { FixtureKind } from "@grivei/contract/fixtures";

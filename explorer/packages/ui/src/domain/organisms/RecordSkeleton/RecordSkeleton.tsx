@@ -8,6 +8,7 @@ import { layout } from "../../../theme/tokens.ts";
 import { InsetFigure } from "../../molecules/InsetFigure/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { pageSx } from "../../utils/pageSx.ts";
+import { skeletonBlock } from "../../utils/skeletonBlock.tsx";
 
 export interface RecordSkeletonCopy {
   /** The value panel's title and its two figures' labels. */
@@ -24,8 +25,6 @@ export interface RecordSkeletonProps {
   status: ReactNode;
 }
 
-const block = (width: number | string, height: number) => <Skeleton aria-hidden="true" variant="rounded" width={width} height={height} />;
-
 /**
  * The Record page on first load, before any answer: the title and the actions as blocks on the ground, the value panel with its real title and labels over a block for
  * each figure, the winners panel with a well per winner, and the Record's facts in the side column, each row a block. Everything but the labels is `aria-hidden`.
@@ -35,9 +34,9 @@ export function RecordSkeleton({ copy, status }: RecordSkeletonProps) {
   return (
     <Stack component="main" spacing={3} sx={pageSx}>
       <Stack spacing={2} aria-hidden="true">
-        {block(160, 20)}
+        {skeletonBlock(160, 20)}
         <Skeleton variant="rounded" width="min(640px, 90%)" height={40} />
-        {block(176, 44)}
+        {skeletonBlock(176, 44)}
       </Stack>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: `minmax(0, 1fr) ${layout.sideColumn}px` }, gap: 3, alignItems: "start" }}>
         <Stack spacing={3} sx={{ minWidth: 0 }}>
@@ -54,7 +53,7 @@ export function RecordSkeleton({ copy, status }: RecordSkeletonProps) {
           </Panel>
           <Panel heading={copy.winners} level="h2">
             <Box aria-hidden="true" sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" }, gap: 1.5 }}>
-              <Well sx={{ px: 2, py: 1.5 }}>{block("70%", 20)}</Well>
+              <Well sx={{ px: 2, py: 1.5 }}>{skeletonBlock("70%", 20)}</Well>
             </Box>
           </Panel>
         </Stack>
@@ -63,8 +62,8 @@ export function RecordSkeleton({ copy, status }: RecordSkeletonProps) {
             <Stack spacing={1.5} aria-hidden="true">
               {[60, 80, 70, 50].map((width, index) => (
                 <Box key={index} sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-                  {block(72, 16)}
-                  {block(`${width}%`, 16)}
+                  {skeletonBlock(72, 16)}
+                  {skeletonBlock(`${width}%`, 16)}
                 </Box>
               ))}
             </Stack>
