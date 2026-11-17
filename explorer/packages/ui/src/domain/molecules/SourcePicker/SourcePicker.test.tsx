@@ -1,7 +1,10 @@
+import { rgb } from "../../../testing/color.ts";
 import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import { renderInUi } from "../../../testing/render.tsx";
+import { color } from "../../../theme/tokens.ts";
 import { SourcePicker } from "./index.ts";
+
 
 const copy = { label: "Source" };
 const options = [{ id: "SEAP", label: "SEAP", count: "120 Records" }, { id: "ONRC", label: "ONRC", count: "40 registrations" }];
@@ -29,6 +32,14 @@ describe("SourcePicker", () => {
     expect(onSelect).toHaveBeenCalledWith("ONRC");
   });
 
+  it("sits on the well track when it stands on a panel", () => {
+    renderInUi(<SourcePicker options={options} selected="SEAP" onSelect={() => {}} copy={copy} />);
+    const group = screen.getByRole("group", { name: "Source" });
+    expect(getComputedStyle(group.parentElement!).borderTopColor).toBe(rgb(color.lineStrong));
+    expect(getComputedStyle(group.parentElement!).boxShadow).toMatch(/\binset\b/);
+    expect(screen.getByRole("button", { name: "SEAP · 120 Records" }).parentElement).toBe(group);
+  });
+
   describe("inline, in the search box", () => {
     afterEach(() => vi.unstubAllGlobals());
     const screenIs = (narrow: boolean) => vi.stubGlobal("matchMedia", (query: string) => ({ matches: narrow, media: query, addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {} }));
@@ -38,6 +49,12 @@ describe("SourcePicker", () => {
       renderInUi(<SourcePicker inline options={options} selected="SEAP" onSelect={() => {}} copy={copy} />);
       expect(screen.getByRole("button", { name: "SEAP · 120 Records" })).toHaveAttribute("aria-pressed", "true");
       expect(screen.queryByRole("combobox")).toBeNull();
+    });
+
+    it("keeps no second track inside the search field, which is already a well", () => {
+      screenIs(false);
+      renderInUi(<SourcePicker inline options={options} selected="SEAP" onSelect={() => {}} copy={copy} />);
+      expect(getComputedStyle(screen.getByRole("group", { name: "Source" }).parentElement!).boxShadow).not.toMatch(/\binset\b/);
     });
 
     it("becomes a dropdown on a narrow screen, with the counts in its options, and reports the Source picked", () => {

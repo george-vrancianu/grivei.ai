@@ -17,3 +17,11 @@ const section = (enterprise: PublicEnterpriseData): Story => ({
 
 export const Listed = section(publicEnterprise);
 export const OnlyTheNameAndOneYear = section(publicEnterpriseBare);
+
+/** A reload with the last answer held: the body is dimmed and `aria-busy`; the header and the foot stay at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return <PublicEnterpriseSection enterprise={publicEnterprise} cui="2000007" locale={locale} copy={publicEnterpriseCopy[locale]} busy />;
+  },
+};

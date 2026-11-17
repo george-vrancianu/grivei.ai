@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { sampleCopy } from "../../samples/copy.ts";
 import { HAND_ENTERED_NOTE, fixturePageContent, samplePageContent } from "../../samples/coverageGrid.ts";
 import { CoveragePageLayout, type CoveragePageContent } from "./index.ts";
@@ -84,10 +85,10 @@ describe("the Coverage page", () => {
     const through = section("Data through");
     const items = through.getAllByRole("listitem").map((li) => li.textContent);
     expect(items).toEqual([
-      "Direct purchases: data through 30 June 2025",
-      "Direct purchase award notifications: data through 31 March 2025",
-      "Contracts: data through 19 September 2025",
-      "Award notices: data through 19 September 2025",
+      "Direct purchases data through 30 June 2025",
+      "Direct purchase award notifications data through 31 March 2025",
+      "Contracts data through 19 September 2025",
+      "Award notices data through 19 September 2025",
     ]);
   });
 
@@ -129,9 +130,82 @@ describe("the Coverage page", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Loading coverage");
   });
 
-  it("shows an error as an alert", () => {
-    show(undefined, "error");
-    expect(screen.getByRole("alert")).toHaveTextContent("Coverage could not be loaded");
+  it("shows an error as an alert inside the grid panel, with its retry, and leaves the rules and the selector", async () => {
+    const onRetry = vi.fn();
+    render(<CoveragePageLayout status="error" locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} retry={{ label: "Try again", onRetry }} copy={sampleCopy.coveragePageLayout("en")} />);
+    const grid = section("Quarter by record kind");
+    expect(grid.getByRole("alert")).toHaveTextContent("Coverage could not be loaded");
+    expect(grid.getByText("selector")).toBeVisible();
+    await userEvent.click(grid.getByRole("button", { name: "Try again" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("region", { name: "How gaps are decided" })).toBeVisible();
+    for (const name of ["Known gaps", "Data through", "Public entities list", "per county: N of M"]) expect(screen.queryByRole("region", { name })).toBeNull();
+  });
+
+  it("shows the first load as skeletons under real titles, with one loading status in the grid panel's header and the rules in full", () => {
+    show(undefined, "loading");
+    for (const name of ["Quarter by record kind", "Known gaps", "Data through", "How gaps are decided", "Public entities list", "per county: N of M"]) expect(screen.getByRole("region", { name })).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Records not in bulk data" })).toBeNull();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(section("Quarter by record kind").getByRole("status")).toHaveTextContent("Loading coverage");
+    expect(section("How gaps are decided").getByRole("link", { name: "How the numbers are counted" })).toBeVisible();
+    expect(document.querySelectorAll("[aria-busy='true']")).toHaveLength(0);
+  });
+
+  it("keeps the last answer when busy: every data panel's body dims with aria-busy, the header strips stay, and the loading status shows beside the selector", () => {
+    render(<CoveragePageLayout status="ready" content={samplePageContent()} busy locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} copy={sampleCopy.coveragePageLayout("en")} />);
+    const busy = screen.getAllByRole("region").filter((r) => r.querySelector("[aria-busy='true']") !== null);
+    expect(busy.map((r) => r.getAttribute("aria-label"))).toEqual(["Quarter by record kind", "Known gaps", "Records not in bulk data", "Data through", "Public entities list", "per county: N of M"]);
+    expect(section("Quarter by record kind").getByRole("status")).toHaveTextContent("Loading coverage");
+    expect(section("Quarter by record kind").getByText("selector")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "Known gaps" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "How gaps are decided" }).querySelector("[aria-busy='true']")).toBeNull();
+  });
+
+  it("is not busy and has no loading status once the answer is current", () => {
+    show(samplePageContent());
+    expect(document.querySelectorAll("[aria-busy='true']")).toHaveLength(0);
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("puts the grid in a titled panel: the selector in its header, the grid in one sideways-scrolling box, the legend and the window note as its foot", () => {
+    render(<CoveragePageLayout status="ready" content={samplePageContent({ from: "2023-01-01", to: "2023-12-31" })} locale="en" methodologyHref="/m" lensHref="/l" sourceSelector={<p>selector</p>} copy={sampleCopy.coveragePageLayout("en")} />);
+    const grid = section("Quarter by record kind");
+    expect(screen.getByRole("heading", { level: 2, name: "Quarter by record kind" })).toBeVisible();
+    expect(grid.getByText("selector")).toBeVisible();
+    expect(grid.getByRole("region", { name: "Coverage by quarter and record kind" })).toBeVisible();
+    expect(grid.getAllByRole("region")).toHaveLength(2); // the grid's scroll box and the legend: no second scroll box
+    expect(grid.getByRole("region", { name: "Cell states" })).toBeVisible();
+    expect(grid.getByText(/quarters follow the publication date/)).toBeVisible();
+    expect(grid.getByText("Inside the date range")).toBeVisible(); // the range swatch, as there is a window
+  });
+
+  it("counts the rows of the Known gaps table in the panel header, also when there are none", () => {
+    const { unmount } = render(<CoveragePageLayout status="ready" content={samplePageContent()} locale="en" methodologyHref="/m" lensHref="/l" copy={sampleCopy.coveragePageLayout("en")} />);
+    const rows = section("Known gaps").getAllByRole("row").length - 1;
+    expect(screen.getByText(`${rows} cells`)).toBeVisible();
+    unmount();
+    show({ ...samplePageContent(), cells: samplePageContent().cells.filter((c) => c.state === "LOADED") });
+    expect(screen.getByText("0 cells")).toBeVisible();
+    expect(screen.getByText("No known gaps in the data shown.")).toBeVisible();
+  });
+
+  it("shows each state's cell colour beside its name in the Known gaps rows, without a glyph", () => {
+    show(samplePageContent());
+    const rows = section("Known gaps").getAllByRole("row").slice(1);
+    for (const row of rows) {
+      const swatch = row.querySelector<HTMLElement>("[aria-hidden='true']")!;
+      expect(swatch).toBeInTheDocument();
+      expect(swatch.textContent).toBe("");
+    }
+    expect(section("Known gaps").getByRole("region", { name: "Known gaps by quarter and record kind" })).toBeVisible();
+  });
+
+  it("shows one inset figure per record kind in Data through: the kind as its label", () => {
+    show(samplePageContent());
+    const item = within(section("Data through").getByRole("list", { name: "SEAP" })).getAllByRole("listitem")[0]!;
+    expect(within(item).getByText("Direct purchases")).toBeVisible();
+    expect(item).toHaveTextContent("Direct purchases data through 30 June 2025");
   });
 
   it("reads in Romanian", () => {
@@ -139,5 +213,13 @@ describe("the Coverage page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Acoperire" })).toBeVisible();
     expect(screen.getByText("Lista entităților publice a Ministerului Finanțelor: versiunea din 14 august 2025")).toBeVisible();
     expect(section("Înregistrări absente din datele în masă").getByText("Contracte, T3 2025: 140 de înregistrări absente din datele în masă")).toBeVisible();
+    const rows = section("Lacune cunoscute").getAllByRole("row").length - 1;
+    expect(screen.getByText(new RegExp(`^${rows} (de )?celule$`))).toBeVisible();
+  });
+
+  it("counts cells in Romanian with the plural rule", () => {
+    const { knownGaps } = sampleCopy.coveragePageLayout("ro");
+    expect([1, 7, 20, 21, 120].map(knownGaps.count)).toEqual(["1 celulă", "7 celule", "20 de celule", "21 de celule", "120 de celule"]);
+    expect(sampleCopy.coveragePageLayout("en").knownGaps.count(1)).toBe("1 cell");
   });
 });

@@ -1,6 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { rgb } from "../../../testing/color.ts";
+import { color } from "../../../theme/tokens.ts";
 import { renderInUi } from "../../../testing/render.tsx";
 import { sampleCopy } from "../../samples/copy.ts";
 import { SignalOrderToggle } from "./index.ts";
@@ -25,5 +27,13 @@ describe("SignalOrderToggle", () => {
     renderInUi(<SignalOrderToggle value="DATE_DESC" onChange={onChange} copy={sampleCopy.signalOrder("en")} />);
     await userEvent.click(screen.getByRole("button", { name: "by RON" }));
     expect(onChange).toHaveBeenCalledExactlyOnceWith("VALUE_DESC");
+  });
+
+  it("sits on the well track and keeps its buttons directly inside the group", () => {
+    renderInUi(<SignalOrderToggle value="DATE_DESC" onChange={() => {}} copy={sampleCopy.signalOrder("en")} />);
+    const group = screen.getByRole("group", { name: "Order Signals" });
+    expect(getComputedStyle(group.parentElement!).borderTopColor).toBe(rgb(color.lineStrong));
+    expect(getComputedStyle(group.parentElement!).boxShadow).toMatch(/\binset\b/);
+    expect(screen.getByRole("button", { name: "by RON" }).parentElement).toBe(group);
   });
 });

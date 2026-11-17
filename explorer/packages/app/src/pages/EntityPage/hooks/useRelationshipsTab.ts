@@ -4,7 +4,8 @@ import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
 import { pathFor, type EntityRoute } from "../../../routing/routes.ts";
 import { useUrlState } from "../../../urlState/useUrlState.ts";
-import { tabHref } from "../entityPage.utils.ts";
+import { recordsHref, roleOf, tabHref } from "../entityPage.utils.ts";
+import { withCounterparty } from "./usePickedCounterparty.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
 
 type Wiring = Omit<RelationshipsTabProps, "entity" | "counterparties" | "timeline" | "selectedTimeline" | "sidePanel" | "sidePanelLoading" | "flowToggle" | "flowMap">;
@@ -23,6 +24,11 @@ export function useRelationshipsTab(locale: Wiring["locale"], entity: EntityRout
     return {
       role: entity,
       selected: counterparty ?? null,
+      // The Records tab with only this counterparty's Records, from the page's own filter and no carried search (so the count is the panel's); with `signals`, only those carrying Signals
+      counterpartyHref: (key, kind) => {
+        const only = withCounterparty(roleOf(entity), filter, key);
+        return recordsHref(locale, entity, entityKey, { filter: kind === "signals" ? { ...only, hasSignals: true } : only });
+      },
       onSelect: (key) => update({ counterparty: key ?? undefined, page: undefined }),
       sidePanelPaging: { page: page ?? 1, pageSize: RECORDS_PAGE_SIZE, pageHref: here },
       // a page change is the same screen on another slice: it replaces the history entry like a filter change does

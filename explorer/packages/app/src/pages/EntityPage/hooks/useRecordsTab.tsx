@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { RecordsTabProps } from "@grivei/ui";
+import { DEFAULT_RECORD_ORDER, type RecordsTabProps } from "@grivei/ui";
 import { useCopy } from "../../../copy/useCopy.ts";
 import { navigate } from "../../../routing/location.tsx";
 import { pathFor, type EntityRoute } from "../../../routing/routes.ts";
@@ -10,7 +10,7 @@ import { useUrlState } from "../../../urlState/useUrlState.ts";
 import { onlyMatchingHref, patchTo, recordsHref } from "../entityPage.utils.ts";
 import { RECORDS_PAGE_SIZE } from "./useEntityPage.ts";
 
-type Wiring = Omit<RecordsTabProps, "records">;
+type Wiring = Omit<RecordsTabProps, "records" | "busy" | "status" | "failure">;
 
 /**
  * Everything the Records tab needs from the app but its data: the URL's filter and page, the way to change the filter (history replaced,
@@ -18,13 +18,16 @@ type Wiring = Omit<RecordsTabProps, "records">;
  */
 export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, entityKey: string): Wiring {
   const t = useCopy();
-  const { filter, page, order, carried, setFilter } = useUrlState();
+  const { filter, page, order, carried, setFilter, update } = useUrlState();
   return useMemo(() => {
     const here = (n: number) => recordsHref(locale, entity, entityKey, { filter, ...(order ? { order } : {}), ...(carried ? { carried } : {}), page: n });
     const own = t.entityPage.recordsTab;
     return {
       filter,
       onFilterChange: (next) => setFilter(patchTo(filter, next)),
+      order: order ?? DEFAULT_RECORD_ORDER,
+      // by value is the API's default; a different order starts again at page 1
+      onOrderChange: (next) => update({ order: next === DEFAULT_RECORD_ORDER ? undefined : next, page: undefined }),
       role: entity,
       page: page ?? 1,
       pageSize: RECORDS_PAGE_SIZE,
@@ -42,13 +45,25 @@ export function useRecordsTab(locale: Wiring["locale"], entity: EntityRoute, ent
         : undefined,
       copy: {
         heading: own.heading,
-        facets: { ...own.facets, badges: t.badges, channels: t.filterChips.channel.options },
+        totalHeading: own.totalHeading,
+        facets: {
+          ...own.facets,
+          badges: t.badges,
+          channels: t.filterChips.channel.options,
+          any: t.filterChips.menuAny,
+          picked: t.filterChips.picked,
+          active: { ...own.chips, group: t.filterChips.active.group, remove: t.filterChips.active.remove, clearAll: own.empty.clear, from: t.filterChips.active.from, to: t.filterChips.active.to, query: own.onlyMatching.query,
+            county: t.filterChips.active.county, valueBucket: t.filterChips.valueBucket.options, hasSignals: t.filterChips.signals.has, withoutSignals: t.filterChips.signals.without, party: t.filterChips.active.party,
+          },
+        },
         empty: own.empty,
+        order: t.fullResults.order,
+        showing: t.fullResults.showing,
         total: t.total,
         recordRow: t.results.recordRow,
         table: own.table,
         pagination: t.fullResults.pagination,
       },
     };
-  }, [locale, entity, entityKey, filter, page, order, carried, setFilter, t]);
+  }, [locale, entity, entityKey, filter, page, order, carried, setFilter, update, t]);
 }

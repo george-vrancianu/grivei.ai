@@ -1,4 +1,6 @@
-import { DEFAULT_RESULT_TAB, FullResults, SearchBar, toResultTab, Typography } from "@grivei/ui";
+import { Button, DEFAULT_RESULT_TAB, FullResults, FullResultsSkeleton, LoadingStatus, Panel, SearchBar, SearchPanel, StateNote, toResultTab, Typography } from "@grivei/ui";
+import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
+import { AppLink } from "../../components/AppLink/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
@@ -17,6 +19,7 @@ export function SearchPage() {
   const { filter, tab: tabParam, page = 1, order, setFilter, update } = useUrlState();
   const tab = toResultTab(tabParam);
   const state = useFullResults({ tab, filter, page, order });
+  const typing = useTypedQuerySpinner(filter.q, state);
   const here = pathFor(locale, { name: "search" });
   // The page links keep the whole URL state and change only `page`; page 1 is the default and drops out of the URL.
   // The tab is the canonical one, so a spelling the page falls back from never makes a second URL for the same view.
@@ -29,18 +32,37 @@ export function SearchPage() {
       <Typography variant="h1" sx={(theme) => ({ maxWidth: theme.graf.layout.titleMaxWidth })}>
         {t.pages.search.title}
       </Typography>
-      <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={state.status === "loading"} />
-      {state.status === "loading" && <Typography role="status">{t.status.loading}</Typography>}
-      {state.status === "error" && <Typography role="alert">{t.status.failed}</Typography>}
+      <SearchPanel label={t.mainScreenLayout.regions.search}>
+        <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={typing} />
+      </SearchPanel>
+      <AppLink href={backHref} sx={{ alignSelf: "flex-start" }}>
+        {t.fullResults.back}
+      </AppLink>
+      {state.status === "loading" && (
+        <FullResultsSkeleton tab={tab} copy={{ heading: t.results.tabs[tab], head: t.results.entityRow.head }} status={<LoadingStatus label={t.status.loading} />} />
+      )}
+      {state.status === "error" && (
+        <Panel heading={t.results.tabs[tab]} level="h2">
+          <StateNote
+            kind="error"
+            action={
+              <Button size="small" onClick={state.retry}>
+                {t.status.retry}
+              </Button>
+            }
+          >
+            {t.status.failed}
+          </StateNote>
+        </Panel>
+      )}
       {state.status === "ready" && (
         <FullResults
           results={state.results}
-          page={page}
+          page={state.page}
           pageSize={FULL_RESULTS_PAGE_SIZE}
           pageHref={pageHref}
           // Page links change state within this page (replace); leaving it, as "Back to results" does, is a step of its own (push).
           onNavigate={(href) => navigate(href, href.split("?")[0] === here ? "replace" : "push")}
-          backHref={backHref}
           emptyHref={coverageLensHref(locale, filter)}
           citeUrl={currentUrl()}
           order={order}
@@ -48,6 +70,8 @@ export function SearchPage() {
           onOrderChange={(next) => update({ order: next, page: undefined })}
           entityHref={entityHrefFrom(locale, filter)}
           recordHref={(record) => pathFor(locale, { name: "record", code: record.code })}
+          status={state.stale ? <LoadingStatus label={t.status.loading} /> : undefined}
+          busy={state.stale}
           locale={locale}
           copy={{ ...t.fullResults, heading: t.results.tabs, empty: t.results.empty, emptyLink: t.results.emptyLink, entityRow: t.results.entityRow, recordRow: t.results.recordRow }}
         />

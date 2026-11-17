@@ -54,14 +54,14 @@ describe.each([
 ] as const)("the Records tab's Source switch at $base", ({ base, c }) => {
   const s = c.sources;
   const URL = `${base}/supplier/${CUI}/records`;
-  const facets = () => screen.queryByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
+  const facets = () => screen.queryByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ });
   /** Gives a request that was never to be sent time to show up. */
   const settled = () => new Promise((resolve) => setTimeout(resolve, 60));
   const switchGroup = () => within(screen.getByRole("group", { name: s.recordsSwitch.label }));
 
   it("opens the existing URL on SEAP Records and offers ONRC registrations beside it, since ONRC lists the entity", async () => {
     const { sent } = open(URL);
-    await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
+    await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ });
     await screen.findByRole("group", { name: s.recordsSwitch.label });
     expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.SEAP, pressed: true })).toBeVisible();
     expect(switchGroup().getByRole("button", { name: s.recordsSwitch.options.ONRC, pressed: false })).toBeVisible();
@@ -114,12 +114,12 @@ describe.each([
     await screen.findByRole("heading", { level: 2, name: s.onrc.results.heading(1, "1") });
     await userEvent.click(switchGroup().getByRole("button", { name: s.recordsSwitch.options.SEAP }));
     expect(here()).toBe(URL);
-    expect(await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
+    expect(await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
   });
 
   it("reads a SEAP filter in the URL as SEAP's: ONRC is not offered a county or a query as a chip there", async () => {
     const { sent } = open(`${URL}?channel=contract`);
-    await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
+    await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ });
     await settled();
     expect(sent.filter((r) => r.operation === "OnrcSearch")).toHaveLength(0); // nothing of ONRC is asked on the SEAP side: a SEAP chip is never an ONRC one
     expect(sent.find((r) => r.operation === "EntityRecords")?.variables).toMatchObject({ filter: { channel: "CONTRACT" } });
@@ -127,7 +127,7 @@ describe.each([
 
   it("shows no switch, and nothing of ONRC, for an entity ONRC lists nothing under", async () => {
     const { sent } = open(URL, [], undefined, false);
-    await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ });
+    await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ });
     await settled();
     expect(sent.some((r) => r.operation === "OnrcSearch")).toBe(false);
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
@@ -136,7 +136,7 @@ describe.each([
 
   it("falls back to the SEAP Records when ONRC's rows cannot be read on the ONRC side", async () => {
     open(`${URL}?source=onrc`, []);
-    expect(await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
+    expect(await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
     expect(screen.queryByText("J40/777/2015")).toBeNull();
   });
 
@@ -161,7 +161,7 @@ describe.each([
 
   it("drops the switch when ONRC's search lists none of the entity's registrations, though the entity says ONRC has it", async () => {
     open(`${URL}?source=onrc`, [{ ...ask({}), data: answer([]) }]);
-    expect(await screen.findByRole("complementary", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
+    expect(await screen.findByRole("region", { name: /^(Filter by facet|Filtre pe fațete)$/ })).toBeVisible();
     await settled();
     expect(screen.queryByRole("group", { name: s.recordsSwitch.label })).toBeNull();
   });

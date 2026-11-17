@@ -20,7 +20,9 @@ export const Typical: Story = { render: page({ status: "ready", rules: methodolo
 export const BeforeBackfill: Story = { render: page({ status: "ready", rules: methodologyRates("before-backfill") }) };
 /** The figures are on their way; the prose is already readable. */
 export const Loading: Story = { render: page({ status: "loading" }) };
-/** The figures could not be loaded; every rule's prose stays and says so beside the slot. */
-export const Failed: Story = { render: page({ status: "error" }) };
+/** The figures could not be loaded: one error note with its retry under the Signal rules' heading; every rule keeps its prose and its lawful explanations. */
+export const Failed: Story = { render: page({ status: "error", retry: () => {} }) };
+/** A retry is in flight with the last answer held: the figure rows are dimmed (`aria-busy`), the loading status sits beside the Signal rules' heading. */
+export const Refetching: Story = { render: page({ status: "ready", rules: methodologyRates("typical-after-backfill"), stale: true }) };
 /** The answer holds only some rules: the others say there is no figure yet. */
 export const OneRuleMissing: Story = { render: page({ status: "ready", rules: methodologyRates("typical-after-backfill").slice(0, 3) }) };

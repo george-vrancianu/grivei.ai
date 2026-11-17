@@ -20,7 +20,8 @@ function render(props: Partial<OnrcCoverageSectionProps>): NonNullable<Story["re
         failed={false}
         locale={locale}
         copy={{ ...t.sources.onrc.coverage.snapshots, states: t.coverage.grid.states }}
-        status={{ loading: t.status.loading, failed: t.status.failed }}
+        status={{ loading: t.status.loading, failed: t.status.failed, retry: t.status.retry }}
+        onRetry={() => undefined}
         {...props}
       />
     );

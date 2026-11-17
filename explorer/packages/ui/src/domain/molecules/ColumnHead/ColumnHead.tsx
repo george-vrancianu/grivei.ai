@@ -2,7 +2,7 @@ import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { color } from "../../../theme/tokens.ts";
 import type { EntityRole } from "../../types.ts";
-import { STRIP_FILL } from "../FilterStrip/filterStrip.fill.ts";
+import { STRIP_FILL } from "../../../theme/stripFill.ts";
 import type { EntityResultRowCopy } from "../EntityResultRow/index.ts";
 import { ROW_INSET, SIGNALS_COLUMN, AMOUNT_COLUMN } from "../../utils/resultRowColumns.ts";
 

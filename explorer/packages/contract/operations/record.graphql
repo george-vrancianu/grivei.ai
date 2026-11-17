@@ -21,6 +21,7 @@ query RecordPage($code: ID!) {
       framework {
         ceiling
         subsequentReported
+        subsequentCount
         ratio
         agreement { code title }
         subsequent(limit: 50) { ...RecordRowFields }

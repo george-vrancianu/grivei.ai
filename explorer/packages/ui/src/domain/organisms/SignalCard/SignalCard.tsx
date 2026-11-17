@@ -1,13 +1,10 @@
-import { Box } from "../../../atoms/Box/index.ts";
-import { Card } from "../../../atoms/Card/index.ts";
-import { CardContent } from "../../../atoms/CardContent/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
+import { Well } from "../../../atoms/Well/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
-import { type as typeScale } from "../../../theme/tokens.ts";
 import type { EntityRef, EntityRole, SignalData } from "../../types.ts";
 import { SignalMark } from "../../atoms/SignalMark/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { Panel } from "../../molecules/Panel/index.ts";
 import type { SignalBadgeCopy } from "../../molecules/SignalBadge/index.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { signalSentenceNodes } from "../../utils/signalSentenceNodes.tsx";
@@ -45,34 +42,36 @@ export interface SignalCardProps {
 export function SignalCard({ signal, reproduceHref, methodologyHref, seapHref, entityHref, onNavigate, locale, copy }: SignalCardProps) {
   const rule = copy.rules[signal.rule];
   return (
-    <Card variant="outlined" component="article" aria-label={rule.label}>
-      <CardContent sx={{ "&:last-child": { pb: 2 } }}>
-        <Stack spacing={1}>
-          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1.25, rowGap: 0.75 }}>
-            <SignalMark />
-            <Typography variant="h3" component="h3" sx={{ fontSize: typeScale.cardTitle.min }}>
-              {rule.label}
-            </Typography>
-            <Typography variant="meta" component="span">
-              {copy.date(formatDate(signal.date, locale, "long"))} · {copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}
-            </Typography>
-          </Box>
-          <Typography sx={{ textWrap: "pretty" }}>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ textWrap: "pretty" }}>
-            {rule.lawful}
+    <Panel
+      heading={
+        <>
+          <SignalMark />
+          <Typography variant="h4" component="span">
+            {rule.label}
           </Typography>
-          <SignalParties authority={signal.authority} suppliers={signal.suppliers} entityHref={entityHref} locale={locale} copy={copy.parties} onNavigate={onNavigate} />
-          <SignalLinks
-            recordCount={signal.recordCount}
-            reproduceHref={reproduceHref}
-            methodologyHref={methodologyHref}
-            seapHref={seapHref}
-            onNavigate={onNavigate}
-            locale={locale}
-            copy={copy.links}
-          />
-        </Stack>
-      </CardContent>
-    </Card>
+        </>
+      }
+      label={rule.label}
+      aside={`${copy.date(formatDate(signal.date, locale, "long"))} · ${copy.records(signal.recordCount, formatCount(signal.recordCount, false, locale))}`}
+      foot={
+        <SignalLinks
+          recordCount={signal.recordCount}
+          reproduceHref={reproduceHref}
+          methodologyHref={methodologyHref}
+          seapHref={seapHref}
+          onNavigate={onNavigate}
+          locale={locale}
+          copy={copy.links}
+        />
+      }
+    >
+      <Typography sx={{ textWrap: "pretty" }}>{signalSentenceNodes(signal, locale, copy.rules)}</Typography>
+      <Well component="p" sx={{ m: 0, px: 2, py: 1.5 }}>
+        <Typography variant="body2" component="span" color="text.secondary" sx={{ textWrap: "pretty" }}>
+          {rule.lawful}
+        </Typography>
+      </Well>
+      <SignalParties authority={signal.authority} suppliers={signal.suppliers} entityHref={entityHref} locale={locale} copy={copy.parties} onNavigate={onNavigate} />
+    </Panel>
   );
 }

@@ -43,3 +43,16 @@ describe("the public-enterprise section", () => {
     expect(screen.queryByRole("region", { name: /AMEPIP/ })).toBeNull();
   });
 });
+
+describe("the public-enterprise panel's header, facts and foot", () => {
+  it.each([
+    ["/explore/supplier/2000007", "AMEPIP · list of 13 January 2026", "Listed as"],
+    ["/ro/explore/supplier/2000007", "AMEPIP · lista din 13 ianuarie 2026", "Înscrisă ca"],
+  ])("names the Source in the header and lists its facts as a definition list (%s)", async (url, aside, term) => {
+    await opened(url);
+    const section = within(await screen.findByRole("region", { name: /^(Public enterprise \(AMEPIP\)|Întreprindere publică \(AMEPIP\))$/ }));
+    expect(section.getByText(aside)).toBeVisible();
+    expect(section.getAllByRole("term").map((t) => t.textContent)).toContain(term);
+    expect(section.getAllByRole("definition").map((d) => d.textContent)).toContain("ALFA DEMO SRL");
+  });
+});

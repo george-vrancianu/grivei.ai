@@ -10,15 +10,15 @@ const baseRate: Record<Locale, SignalRuleBaseRateCopy> = {
   en: {
     windowLabel: "Time window", range: (from, to) => `${from} to ${to}`, openStart: (to) => `From the first Record loaded to ${to}`,
     rateLabel: "How often it fires nationally", rate: (percent, year) => `${percent} of contracting authorities had at least one in ${year}.`,
-    none: (year) => `No contracting authority had one in ${year}.`, dataThrough: (date) => `Data through ${date}`,
-    loading: "Loading the window and the national figure…", error: "The window and the national figure could not be loaded. The rule above still applies.",
+    none: (year) => `No contracting authority had one in ${year}.`, dataThrough: (date) => `Data through ${date}`, dataThroughLabel: "Data through",
+    loading: "Loading the window and the national figure…", error: "The windows and national figures could not be loaded. The rules below still apply.",
     missing: "There is no national figure for this rule yet.",
   },
   ro: {
     windowLabel: "Fereastra de timp", range: (from, to) => `${from} – ${to}`, openStart: (to) => `De la prima înregistrare încărcată până la ${to}`,
     rateLabel: "Cât de des apare la nivel național", rate: (percent, year) => `${percent} dintre autoritățile contractante au avut cel puțin unul în ${year}.`,
-    none: (year) => `Nicio autoritate contractantă nu a avut vreunul în ${year}.`, dataThrough: (date) => `Date până la ${date}`,
-    loading: "Se încarcă fereastra și cifra națională…", error: "Fereastra și cifra națională nu au putut fi încărcate. Regula de mai sus rămâne valabilă.",
+    none: (year) => `Nicio autoritate contractantă nu a avut vreunul în ${year}.`, dataThrough: (date) => `Date până la ${date}`, dataThroughLabel: "Date până la",
+    loading: "Se încarcă fereastra și cifra națională…", error: "Ferestrele și cifrele naționale nu au putut fi încărcate. Regulile de mai jos rămân valabile.",
     missing: "Nu există încă o cifră națională pentru această regulă.",
   },
 };
@@ -68,6 +68,7 @@ export function sampleMethodologyCopy(locale: Locale): MethodologyPageCopy {
       DONOR_TO_PARTY: rule(rules[locale].DONOR_TO_PARTY), SOE_BOARD_IN_SUPPLIER: rule(rules[locale].SOE_BOARD_IN_SUPPLIER),
     },
     baseRate: baseRate[locale],
+    retry: en ? "Try again" : "Reîncearcă",
     referenceDataThrough: (date) => (locale === "ro" ? `Date până la ${date}` : `Data through ${date}`),
     referenceFiscalYearThrough: (year) => (locale === "ro" ? `Date până la anul fiscal ${year}` : `Data through fiscal year ${year}`),
     referenceYearThrough: (year) => (locale === "ro" ? `Date până în ${year}` : `Data through ${year}`),

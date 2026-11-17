@@ -21,3 +21,11 @@ export const Public: Story = { render: story(peoplePublic) };
 export const PrivateView: Story = { render: story(peoplePrivate) };
 /** A sole trader's or an IF's page, or a registration with no holder in the snapshot. */
 export const NoHolders: Story = { render: story(peopleNone) };
+
+/** A reload with the last answer held: the body is dimmed and `aria-busy`; the header and the foot stay at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return <PeopleSection people={peoplePublic} personHref={(id) => `/explore/person/${id}`} locale={locale} copy={sampleCopy.peopleSection(locale)} busy />;
+  },
+};

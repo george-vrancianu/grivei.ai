@@ -1,15 +1,19 @@
 // Seam 3: the reproducing link of a Signal opens the authority's Records tab with the Signal's filter on, and lists exactly the Signal's
 // Records (the app at the built URL over the API's recorded answers: every Signal of the recorded Overviews, all ten rules).
 // Acceptance (#89): "for each rule, a Signal's reproducing link lists exactly its Records".
+import type { RecordFilter } from "@grivei/contract";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { SignalRule } from "@grivei/ui";
 import { describe, expect, it } from "vitest";
 import { App } from "../App.tsx";
+import { fixtures } from "@grivei/contract/fixtures";
 import { fixtureClient } from "../testing/fixtureClient.ts";
 import { openAt } from "../testing/openAt.ts";
 import { overviewsWithSignals, overviewUrl, recordedSignals, recordsOfSignal, type OverviewSignal } from "../testing/signalRecordings.ts";
 import { decodeUrlState } from "../urlState/codec.ts";
+import { catalogue } from "../copy/index.ts";
+import { recordsHref } from "../pages/EntityPage/entityPage.utils.ts";
 import { reproduceFilter, signalReproduceHref } from "./reproduceHref.ts";
 
 const FACETS = /^(Filter by facet|Filtre pe fațete)$/;
@@ -48,7 +52,7 @@ async function followReproduceLink(locale: "en" | "ro", signal: OverviewSignal) 
     return found;
   });
   await userEvent.setup().click(link);
-  const panel = await screen.findByRole("complementary", { name: FACETS });
+  const panel = await screen.findByRole("region", { name: FACETS });
   return { sent, panel: within(panel), href };
 }
 
@@ -71,7 +75,7 @@ describe.each(RULES)("%s: a Signal's reproducing link lists exactly its Records"
     const request = sent.filter((s) => s.operation === "EntityRecords").at(-1);
     expect(request?.variables).toEqual({ key: String(signal.reproduce.authority), role: "AUTHORITY", filter, limit: 100, offset: 0 });
     expect(tabs().getByRole("link", { name: "Records" })).toHaveAttribute("aria-current", "page");
-    expect(panel.getByRole("button", { name: new RegExp(`^${RULE_LABEL.en[rule]}`), pressed: true })).toBeVisible();
+    expect(panel.getByRole("button", { name: `Remove Signal: ${RULE_LABEL.en[rule]}` })).toBeVisible();
     // the rows are the Signal's Records, no more and no fewer
     const expected = recordsOfSignal(signal).records.rows.map((r) => r.record.code);
     expect(expected).toHaveLength(signal.recordCount);
@@ -83,7 +87,7 @@ describe.each(RULES)("%s: a Signal's reproducing link lists exactly its Records"
     const { panel } = await followReproduceLink("ro", signal);
     expect(window.location.pathname.startsWith("/ro/explore/authority/")).toBe(true);
     expect(tabs().getByRole("link", { name: "Înregistrări" })).toHaveAttribute("aria-current", "page");
-    expect(panel.getByRole("button", { name: new RegExp(`^${RULE_LABEL.ro[rule]}`), pressed: true })).toBeVisible();
+    expect(panel.getByRole("button", { name: `Elimină Semnal: ${RULE_LABEL.ro[rule]}` })).toBeVisible();
     const expected = recordsOfSignal(signal).records.rows.map((r) => r.record.code);
     await waitFor(() => expect(recordLinks().sort()).toEqual([...expected].sort()));
   });
@@ -100,7 +104,103 @@ describe("a Signal's reproducing link, on a supplier's page", () => {
     expect(link).toHaveAttribute("href", signalReproduceHref("en", signal));
     expect(link.getAttribute("href")).toContain("/explore/authority/1000017/records");
     await userEvent.setup().click(link);
-    await screen.findByRole("complementary", { name: FACETS });
+    await screen.findByRole("region", { name: FACETS });
     await waitFor(() => expect(recordLinks().sort()).toEqual(["CAN9800001~1", "CAN9800002~1"]));
+  });
+});
+
+describe("a Signal's reproducing filter shows one active chip per parameter, each clearing only its own", () => {
+  const signal = signals.find((s) => s.reproduce.supplier && s.reproduce.cpv && s.reproduce.from && s.reproduce.to)!;
+  const filter = reproduceFilter(signal.reproduce);
+  const chips = () => within(screen.getByRole("group", { name: /^(Active filters|Filtre active)$/ })).getAllByRole("button", { name: /^(Remove|Elimină) / });
+  const urlFilter = () => decodeUrlState(window.location.search).filter;
+  const without = (whole: RecordFilter, ...fields: (keyof RecordFilter)[]): RecordFilter => Object.fromEntries(Object.entries(whole).filter(([field]) => !fields.includes(field as keyof RecordFilter)));
+
+  it("has a recorded Signal with a supplier, a CPV code and a date range", () => {
+    expect(signal).toBeDefined();
+  });
+
+  it.each([
+    ["en", "Remove", `Signal: ${RULE_LABEL.en[signal.rule]}`, "CPV: "],
+    ["ro", "Elimină", `Semnal: ${RULE_LABEL.ro[signal.rule]}`, "CPV: "],
+  ] as const)("shows the Signal, the supplier, the date range and the CPV code (%s)", async (locale, remove, signalChip, cpvChip) => {
+    await followReproduceLink(locale, signal);
+    const names = chips().map((chip) => chip.getAttribute("aria-label"));
+    // the date range is one chip, so a filter of signal, supplier, from, to and cpv has four
+    expect(names).toHaveLength(4);
+    expect(names[0]).toBe(`${remove} ${signalChip}`);
+    expect(names[3]).toBe(`${remove} ${cpvChip}${signal.reproduce.cpv}`);
+  });
+
+  describe.each(["en", "ro"] as const)("clearing a chip (%s)", (locale) => {
+    const request = (sent: { operation: string; variables?: unknown }[]) => (sent.filter((s) => s.operation === "EntityRecords").at(-1)?.variables as { filter: RecordFilter }).filter;
+
+    it("clearing the CPV chip removes only the CPV code from the URL; the list is asked for the shorter filter", async () => {
+      const { sent } = await followReproduceLink(locale, signal);
+      const cpv = chips()[3]!;
+      expect(cpv.getAttribute("aria-label")).toContain(signal.reproduce.cpv!);
+      await userEvent.setup().click(cpv);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "cpv")));
+      await waitFor(() => expect(request(sent)).toEqual(without(filter, "cpv")));
+    });
+
+    it("clearing the date-range chip removes from and to together and nothing else", async () => {
+      await followReproduceLink(locale, signal);
+      await userEvent.setup().click(chips()[2]!);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "from", "to")));
+    });
+
+    it("clearing the Signal chip and the supplier chip each removes only its own parameter", async () => {
+      await followReproduceLink(locale, signal);
+      const user = userEvent.setup();
+      await user.click(chips()[0]!);
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal")));
+      await user.click(chips()[0]!); // the supplier chip is the first one now
+      await waitFor(() => expect(urlFilter()).toEqual(without(filter, "signal", "supplier")));
+    });
+  });
+});
+
+describe.each(["en", "ro"] as const)("a carried main-screen filter's Records parameters show as chips too (%s)", (locale) => {
+  const carried: RecordFilter = { hasSignals: true, valueBucket: "UP_TO_10K", county: "RO-BV", party: "ALIANȚA USR PLUS" };
+  const t = catalogue[locale];
+  const group = () => screen.getByRole("group", { name: t.filterChips.active.group });
+  const urlFilter = () => decodeUrlState(window.location.search).filter;
+
+  async function open() {
+    openAt(recordsHref(locale, "authority", "1000017", { filter: carried }));
+    // the contract recorded no answer for these filters: serve the authority's unfiltered Records answer for each step of the clearing
+    const recorded = fixtures.EntityRecords.find((f) => (f.variables as { key?: string; filter?: object }).key === "1000017" && Object.keys((f.variables as { filter: object }).filter).length === 0)!;
+    const steps: RecordFilter[] = [carried, ...["hasSignals", "valueBucket", "party", "county"].map((_, i, all) => Object.fromEntries(Object.entries(carried).filter(([k]) => !all.slice(0, i + 1).includes(k))))];
+    const extra = [...steps, {}].map((filter) => ({ operation: "EntityRecords", variables: { ...(recorded.variables as object), filter }, data: recorded.data }));
+    const { client } = fixtureClient({ extra });
+    render(<App client={client} />);
+    await screen.findByRole("region", { name: FACETS });
+  }
+
+  it("has a chip for each, and each clears only its own parameter", async () => {
+    await open();
+    const user = userEvent.setup();
+    const remove = t.filterChips.active.remove;
+    const names = [
+      t.filterChips.signals.has,
+      t.filterChips.valueBucket.options.UP_TO_10K,
+      t.filterChips.active.party(carried.party!),
+      t.filterChips.active.county(carried.county!),
+    ];
+    for (const name of names) expect(within(group()).getByRole("button", { name: remove(name) })).toBeVisible();
+    const left = { ...carried };
+    const fields = ["hasSignals", "valueBucket", "party", "county"] as const;
+    for (const [i, name] of names.entries()) {
+      await user.click(within(group()).getByRole("button", { name: remove(name) }));
+      delete left[fields[i]!];
+      await waitFor(() => expect(urlFilter()).toEqual(left));
+    }
+  }, 20_000);
+
+  it("Clear filters removes all of them", async () => {
+    await open();
+    await userEvent.setup().click(within(group()).getByRole("button", { name: t.entityPage.recordsTab.empty.clear }));
+    await waitFor(() => expect(urlFilter()).toEqual({}));
   });
 });

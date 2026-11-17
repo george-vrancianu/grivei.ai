@@ -1,15 +1,21 @@
 import type { Locale } from "../../../theme/index.ts";
 import { Box } from "../../../atoms/Box/index.ts";
 import { layout } from "../../../theme/tokens.ts";
+import { Button } from "../../../atoms/Button/index.ts";
+import { Card } from "../../../atoms/Card/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
-import { SignalRuleBaseRate, type SignalRuleBaseRateCopy } from "../../molecules/SignalRuleBaseRate/index.ts";
+import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
+import { StateNote } from "../../molecules/StateNote/index.ts";
+import type { SignalRuleBaseRateCopy } from "../../molecules/SignalRuleBaseRate/index.ts";
 import type { SignalRule, SignalRuleBaseRateData } from "../../types.ts";
 import { METHODOLOGY_ANCHORS, METHODOLOGY_SECTIONS, signalAnchor, type MethodologySectionKey } from "../../utils/methodologyAnchors.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { RESTRICTED_SIGNAL_RULES, SIGNAL_RULES } from "../../utils/signalWording.ts";
 import { MethodologyContents } from "./components/MethodologyContents/index.ts";
+import { MethodologyRulePanel } from "./components/MethodologyRulePanel/index.ts";
 import { MethodologySection, type MethodologySectionCopy } from "./components/MethodologySection/index.ts";
+import { useScrollSpy } from "./hooks/useScrollSpy.ts";
 import { useScrollToAnchor } from "./hooks/useScrollToAnchor.ts";
 
 export interface MethodologyRuleCopy extends MethodologySectionCopy {
@@ -31,6 +37,8 @@ export interface MethodologyPageCopy {
   /** One section per rule; its id is `signalAnchor(rule)`. */
   rules: Record<SignalRule, MethodologyRuleCopy>;
   baseRate: SignalRuleBaseRateCopy;
+  /** The retry button of the Signal rules' failure note: "Try again". */
+  retry: string;
   /** The line under a Reference source's section: "Data through 13 January 2026". */
   referenceDataThrough: (date: string) => string;
   /** The line under the financial statements' section: "Data through fiscal year 2025" (the newest fiscal year held). */
@@ -39,8 +47,11 @@ export interface MethodologyPageCopy {
   referenceYearThrough: (year: number) => string;
 }
 
-/** What the `MethodologyBaseRates` query gives the page: nothing yet, a failure, or the rules' windows and base rates. */
-export type MethodologyBaseRates = { status: "loading" | "error" } | { status: "ready"; rules: readonly SignalRuleBaseRateData[] };
+/**
+ * What the `MethodologyBaseRates` query gives the page: nothing yet, a failure with its retry, or the rules' windows and base rates (`stale` while the next answer loads
+ * after a retry: the last answer stays, dimmed).
+ */
+export type MethodologyBaseRates = { status: "loading" } | { status: "error"; retry: () => void } | { status: "ready"; rules: readonly SignalRuleBaseRateData[]; stale?: boolean };
 
 /** What the `MethodologyReferenceSources` query gives the page: the day AMEPIP's held list was published (null when none is held or the query failed: the prose stands alone). */
 export interface MethodologyReferenceDates {
@@ -82,6 +93,14 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
     { anchor: METHODOLOGY_ANCHORS.signals, label: copy.signals.heading },
     ...rules.map((rule) => ({ anchor: signalAnchor(rule), label: copy.rules[rule].heading, indent: true })),
   ];
+  const { current, select } = useScrollSpy(contents.map((entry) => entry.anchor), anchor);
+  const loading = baseRates.status === "loading" || (baseRates.status === "ready" && baseRates.stale === true);
+  const figuresOf = (rule: SignalRule) =>
+    baseRates.status === "error"
+      ? null
+      : baseRates.status === "loading"
+        ? ({ status: "loading" } as const)
+        : ({ status: "ready", rule: baseRates.rules.find((r) => r.slug === rule) ?? null, stale: baseRates.stale === true } as const);
   return (
     <Box
       sx={{
@@ -98,8 +117,8 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
         alignItems: "start",
       }}
     >
-      <MethodologyContents label={copy.contents} entries={contents} sectionHref={sectionHref} {...(onNavigate ? { onNavigate } : {})} />
-      <Stack component="article" spacing={4.5} sx={{ maxWidth: layout.articleMaxWidth, minWidth: 0 }}>
+      <MethodologyContents label={copy.contents} entries={contents} current={current} sectionHref={sectionHref} onSelect={select} {...(onNavigate ? { onNavigate } : {})} />
+      <Card component="article" sx={{ maxWidth: layout.articleMaxWidth, minWidth: 0, p: { xs: 2.5, md: 4 } }}>
         <Stack spacing={1.5}>
           <Typography variant="label" component="p" color="primary.main" sx={{ m: 0 }}>
             {copy.eyebrow}
@@ -125,21 +144,28 @@ export function MethodologyPage({ baseRates, referenceDates, anchor = null, sect
             )}
           </MethodologySection>
         ))}
-        <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals}>
+        <MethodologySection id={METHODOLOGY_ANCHORS.signals} locale={locale} copy={copy.signals} aside={loading ? <LoadingStatus label={copy.baseRate.loading} /> : undefined}>
+          {baseRates.status === "error" && (
+            <Box sx={{ mt: 2 }}>
+              <StateNote
+                kind="error"
+                action={
+                  <Button size="small" onClick={baseRates.retry}>
+                    {copy.retry}
+                  </Button>
+                }
+              >
+                {copy.baseRate.error}
+              </StateNote>
+            </Box>
+          )}
           <Stack spacing={2} sx={{ mt: 2 }}>
             {rules.map((rule) => (
-              <MethodologySection key={rule} id={signalAnchor(rule)} level={3} locale={locale} copy={copy.rules[rule]}>
-                {baseRates.status === "ready" ? (
-                  <SignalRuleBaseRate status="ready" rule={baseRates.rules.find((r) => r.slug === rule) ?? null} locale={locale} copy={copy.baseRate} />
-                ) : (
-                  <SignalRuleBaseRate status={baseRates.status} locale={locale} copy={copy.baseRate} />
-                )}
-                <Typography sx={{ mt: 1, color: "text.secondary" }}>{copy.rules[rule].lawful}</Typography>
-              </MethodologySection>
+              <MethodologyRulePanel key={rule} id={signalAnchor(rule)} locale={locale} copy={copy.rules[rule]} baseRateCopy={copy.baseRate} figures={figuresOf(rule)} />
             ))}
           </Stack>
         </MethodologySection>
-      </Stack>
+      </Card>
     </Box>
   );
 }

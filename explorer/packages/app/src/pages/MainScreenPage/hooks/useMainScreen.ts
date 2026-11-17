@@ -1,6 +1,6 @@
 import type { MainScreenQuery, MainScreenQueryVariables } from "@grivei/contract";
 import { MainScreen } from "../../../graphql/operations.ts";
-import { useHeldQuery, type QueryState } from "./useHeldQuery.ts";
+import { useHeldQuery, type QueryState } from "../../../graphql/useHeldQuery.ts";
 
 export type MainScreenState = QueryState<MainScreenQuery>;
 

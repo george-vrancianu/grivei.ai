@@ -1,6 +1,8 @@
 import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { color, font, size, type } from "../../../../../theme/tokens.ts";
+import { hover, selected } from "../../../../../theme/states.ts";
+import { color, font, radius, size, type } from "../../../../../theme/tokens.ts";
+import { CountPill } from "../../../../atoms/CountPill/index.ts";
 import type { EntityPageView } from "../../../../types.ts";
 import { followLink } from "../../../../utils/followLink.ts";
 
@@ -23,41 +25,42 @@ export interface EntityTabNavProps {
   copy: EntityTabNavCopy;
 }
 
+const tabSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+  minHeight: size.tab,
+  px: 1.5,
+  borderRadius: `${radius.control}px`,
+  fontFamily: font.mono,
+  fontSize: type.tab.size,
+  color: color.muted,
+  "&:hover": hover,
+} as const;
+/** The open tab: the shared selected fragment (line fill, inset accent outline, full-strength text), held on hover. No underline. */
+const currentSx = { ...tabSx, ...selected, "&:hover": selected } as const;
+
 /**
  * The three tabs as a navigation of links: every tab has its own URL, so it can be opened, copied and cited on its own.
- * Plain links, not an ARIA tablist: each one is a Tab stop and the open one is marked `aria-current="page"`.
+ * Plain links, not an ARIA tablist: each one is a Tab stop and the open one is marked `aria-current="page"` and drawn in the selected state.
+ * The nav has no border of its own: it is meant for a panel's foot strip. A count is a pill beside the name.
  */
 export function EntityTabNav({ view, hrefs, counts, onNavigate, copy }: EntityTabNavProps) {
   return (
-    <Box component="nav" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", columnGap: 3.5, borderBottom: 1, borderColor: "divider" }}>
-      {ENTITY_PAGE_VIEWS.map((v) => {
-        const current = v === view;
-        return (
-          <Link
-            key={v}
-            href={hrefs[v]}
-            aria-current={current ? "page" : undefined}
-            underline="none"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              minHeight: size.tab,
-              fontFamily: font.mono,
-              fontSize: type.tab.size,
-              color: current ? color.text : color.muted,
-              borderBottom: 2,
-              borderColor: current ? color.accent : "transparent",
-              mb: "-1px",
-              "&:hover": { color: color.text },
-            }}
-            onClick={followLink(hrefs[v], onNavigate)}
-          >
-            {copy.tabs[v]}
-            {counts?.[v] !== undefined && <span>{counts[v]}</span>}
-          </Link>
-        );
-      })}
+    <Box component="nav" aria-label={copy.label} sx={{ display: "flex", flexWrap: "wrap", columnGap: 1, rowGap: 0.5 }}>
+      {ENTITY_PAGE_VIEWS.map((v) => (
+        <Link
+          key={v}
+          href={hrefs[v]}
+          aria-current={v === view ? "page" : undefined}
+          underline="none"
+          sx={v === view ? currentSx : tabSx}
+          onClick={followLink(hrefs[v], onNavigate)}
+        >
+          {copy.tabs[v]}
+          {counts?.[v] !== undefined && <CountPill>{counts[v]}</CountPill>}
+        </Link>
+      ))}
     </Box>
   );
 }

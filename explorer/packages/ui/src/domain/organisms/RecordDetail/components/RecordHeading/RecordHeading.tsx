@@ -6,6 +6,7 @@ import { layout } from "../../../../../theme/tokens.ts";
 import { BadgeChip, type BadgeCopy } from "../../../../atoms/BadgeChip/index.ts";
 import { ChannelTag } from "../../../../atoms/ChannelTag/index.ts";
 import type { RecordPageData } from "../../../../types.ts";
+import { busyProps } from "../../../../utils/busy.ts";
 import { visuallyHidden } from "../../../../utils/visuallyHidden.ts";
 
 export interface RecordHeadingCopy {
@@ -21,15 +22,17 @@ export interface RecordHeadingProps {
   copy: RecordHeadingCopy & { badges: BadgeCopy; /** The label of each channel, as on the Record row. */ channel: Record<RecordPageData["channel"], string> };
   /** The actions under the title (Check in SEAP, the citable URL). */
   children?: ReactNode;
+  /** The Record is a held answer while the next loads: the block is dimmed with `aria-busy`. */
+  busy?: boolean | undefined;
 }
 
 /**
  * Over the title: the channel as a tag (as on the Record row), the code and the caveat badges; then the title as the page heading (as published) and the actions.
  * The kind, date, procedure, contract type and CPV are in the "the Record" panel.
  */
-export function RecordHeading({ record, copy, children }: RecordHeadingProps) {
+export function RecordHeading({ record, copy, children, busy }: RecordHeadingProps) {
   return (
-    <Stack component="header" spacing={2}>
+    <Stack component="header" spacing={2} {...busyProps(busy)}>
       <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", alignItems: "center", columnGap: 1.5, rowGap: 1 }}>
         <Typography variant="meta" component="span" sx={{ minWidth: 0 }}>
           <ChannelTag channel={record.channel} labels={copy.channel} />

@@ -1,14 +1,14 @@
 import { Link } from "../../../../../atoms/Link/index.ts";
-import { Table } from "../../../../../atoms/Table/index.ts";
 import { TableBody } from "../../../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../../../atoms/TableCell/index.ts";
-import { TableContainer } from "../../../../../atoms/TableContainer/index.ts";
+import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableHead } from "../../../../../atoms/TableHead/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { EntityLink } from "../../../../atoms/EntityLink/index.ts";
 import { PartyName } from "../../../../atoms/PartyName/index.ts";
+import { PanelTable } from "../../../../molecules/PanelTable/index.ts";
 import { MatchedLine } from "../../../../molecules/MatchedLine/index.ts";
 import { RecordBadges } from "../../../../molecules/RecordBadges/index.ts";
 import type { RecordResultRowCopy, RecordSignalBadges } from "../../../../molecules/RecordResultRow/index.ts";
@@ -42,16 +42,15 @@ export interface RecordsTableProps {
 export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy, signalBadges }: RecordsTableProps) {
   const row = copy.recordRow;
   return (
-    <TableContainer>
-      <Table aria-label={copy.label} sx={{ minWidth: 760, "& td": { verticalAlign: "top", py: 1.5 } }}>
+    <PanelTable label={copy.label} aria-label={copy.label} minWidth={760} sx={{ "& td": { verticalAlign: "top" } }}>
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: 150 }}>{copy.columns.record}</TableCell>
             <TableCell>{copy.columns.title}</TableCell>
             <TableCell sx={{ width: 230 }}>{role === "authority" ? row.winners : row.authority}</TableCell>
-            <TableCell align="right" sx={{ width: 140 }}>
+            <NumericCell sx={{ width: 140 }}>
               {copy.columns.value}
-            </TableCell>
+            </NumericCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -94,14 +93,13 @@ export function RecordsTable({ rows, role, entityHref, recordHref, locale, copy,
                     <EntityLink entity={record.authority} href={entityHref(record.authority, "authority")} copy={row.party.entityLink} />
                   )}
                 </TableCell>
-                <TableCell align="right">
+                <NumericCell>
                   <RecordValue record={record} locale={locale} copy={row} />
-                </TableCell>
+                </NumericCell>
               </TableRow>
             );
           })}
         </TableBody>
-      </Table>
-    </TableContainer>
+    </PanelTable>
   );
 }

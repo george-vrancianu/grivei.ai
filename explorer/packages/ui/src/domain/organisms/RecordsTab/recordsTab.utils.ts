@@ -1,32 +1,12 @@
 import type { RecordFilter, SignalRuleSlug } from "@grivei/contract";
 import { withFields, yearEnd, yearOf, yearStart } from "../../molecules/FilterChips/index.ts";
+import type { Locale } from "../../../theme/index.ts";
+import { formatCount } from "../../atoms/ApproxCount/index.ts";
 import type { EntityRole } from "../../types.ts";
 import { counterpartyRole } from "../EntityOverview/entityOverview.utils.ts";
 
 /** The filter field a counterparty facet sets: named after the counterparty's role. */
 export const counterpartyField = (role: EntityRole): "supplier" | "authority" => counterpartyRole(role);
-
-/**
- * The `RecordFilter` fields the facet panel owns: year (`from`/`to`), channel, procedure, signal, badges and the counterparty
- * (`supplier` on an authority's page, `authority` on a supplier's). Every other field passes through untouched.
- */
-export const facetFields = (role: EntityRole) =>
-  ["from", "to", "channel", "procedure", "signal", "badges", counterpartyField(role)] as const satisfies readonly (keyof RecordFilter)[];
-
-/** True when the filter holds a value the panel owns: there is something to clear. */
-export function hasFacetsOn(filter: RecordFilter, role: EntityRole): boolean {
-  return facetFields(role).some((field) => {
-    const value = filter[field];
-    return Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null;
-  });
-}
-
-/** The filter with the panel's fields removed (a clear-all); the rest (text, map, value bucket, ...) stays. */
-export function clearFacets(filter: RecordFilter, role: EntityRole): RecordFilter {
-  const patch: Record<string, undefined> = {};
-  for (const field of facetFields(role)) patch[field] = undefined;
-  return withFields(filter, patch as RecordFilter);
-}
 
 export const toggleSignal = (filter: RecordFilter, signal: SignalRuleSlug): RecordFilter =>
   withFields(filter, { signal: filter.signal === signal ? undefined : signal });
@@ -45,3 +25,12 @@ export const toggleYear = (filter: RecordFilter, year: number): RecordFilter =>
   selectedYear(filter) === year
     ? withFields(filter, { from: undefined, to: undefined })
     : withFields(filter, { from: yearStart(year), to: yearEnd(year) });
+
+/** The foot's "Showing a–b of n" for page `page` of `rowCount` rows, or undefined when the page has no rows. */
+export function showingText(
+  rowCount: number, page: number, pageSize: number, total: { count: number; estimated: boolean }, locale: Locale, text: (from: string, to: string, total: string) => string,
+): string | undefined {
+  if (rowCount === 0) return undefined;
+  const first = (page - 1) * pageSize + 1;
+  return text(formatCount(first, false, locale), formatCount(first + rowCount - 1, false, locale), formatCount(total.count, total.estimated, locale));
+}

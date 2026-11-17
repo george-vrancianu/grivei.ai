@@ -277,7 +277,12 @@ export const ro: Copy = {
     },
   },
   pages: {
-    notFound: { title: "Pagina nu a fost găsită", back: "Înapoi la ecranul principal" },
+    notFound: {
+      title: "Pagina nu a fost găsită",
+      body: "La această adresă nu se află nimic în explorer. Verifică dacă este scrisă corect sau pornește din nou de la ecranul principal.",
+      back: "Înapoi la ecranul principal",
+      search: "Căutare",
+    },
     search: { title: "Căutare" },
   },
   badges,
@@ -311,6 +316,7 @@ export const ro: Copy = {
       panel: "Înregistrarea",
     },
     value: {
+      heading: "Valoare",
       published: "Valoare publicată",
       counted: "Valoare luată în calcul",
       noValue: "Nicio valoare în SEAP",
@@ -344,6 +350,12 @@ export const ro: Copy = {
       lineBlankCeiling: (reported) => `Plafon nepublicat; contracte subsecvente raportate până acum ${reported}`,
       agreement: "Atribuit în baza acordului-cadru",
       subsequentHeading: "Contracte subsecvente",
+      subsequentAside: (n, f, sum) => `${roCount(n, f, "contract", "contracte")} · ${sum}`,
+      shown: (shown, total) => `${shown} din ${total} afișate, după valoare`,
+      showAll: (_n, f) => `Arată toate cele ${f}`,
+      showFirst: (_n, f) => `Arată primele ${f}`,
+      showFewer: "Arată mai puține",
+      moreLink: "Contractele subsecvente ale acestui acord-cadru, în Înregistrări",
     },
     cite: { label: "Adresa acestei înregistrări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } },
     badges: { heading: "Insigne și semnificația lor" },
@@ -371,10 +383,12 @@ export const ro: Copy = {
     },
   },
   personPage: {
-    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
-    born: (year) => `anul nașterii ${year}`,
+    privateView: { lead: "Vedere privată:", text: "această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică." },
+    breadcrumb: { label: "Unde te afli", home: "explorare", current: "persoană" },
+    figures: { born: "Născut(ă)", roles: "Roluri", source: "Sursa", sourceName: "ONRC", snapshot: (date) => `instantaneul din ${date}` },
     rolesHeading: "Roluri",
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
     source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
@@ -383,6 +397,7 @@ export const ro: Copy = {
   entityPage: {
     layout: { label: "Secțiunile paginii", cite: { label: "Adresa acestei vizualizări", copyLink: { label: "Copiază linkul", copied: "Link copiat", failed: "Linkul nu a putut fi copiat" } }, tabs: { overview: "Prezentare generală", records: "Înregistrări", relationships: "Relații" } },
     header: {
+      breadcrumb: { label: "Unde te afli", home: "explorare", roles: { AUTHORITY: "autoritate contractantă", SUPPLIER: "furnizor" } },
       identity: {
         cui: "CUI",
         foreignVatId: "Cod TVA străin",
@@ -413,6 +428,7 @@ export const ro: Copy = {
     },
     onrc: {
       heading: "Înmatriculare ONRC",
+      aside: (snapshot) => `registrul comerțului · instantaneul din ${snapshot}`,
       registrationNumber: "Număr de înmatriculare",
       registrationDate: "Înmatriculată",
       registrationDateUnknown: "nu apare în instantaneul citit",
@@ -441,6 +457,8 @@ export const ro: Copy = {
     },
     people: {
       heading: "Administratori și reprezentanți legali",
+      aside: (snapshot) => `ONRC · instantaneul din ${snapshot}`,
+      foot: "Numele duc la pagina unei persoane doar într-o vedere privată.",
       intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
       none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
       born: (year) => `anul nașterii ${year}`,
@@ -473,11 +491,14 @@ export const ro: Copy = {
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          period: (from, to) => (from === to ? from : `${from} – ${to}`), tallest: (month, amount) => `luna cu cei mai mulți bani: ${month}, ${amount}`,
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
-          total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.",
+          awarded: "Atribuit", records: "Înregistrări", signals: "Are Semnale", wonTogether: "Unele înregistrări au fost câștigate împreună cu alte părți, într-un consorțiu.",
+          shown: (n, m) => `${n} din ${m} afișate`, all: (records, name) => `Toate cele ${records} cu ${name}`,
+          close: "Închide", empty: "Nicio înregistrare cu această contraparte.",
         },
       },
       flow: {
@@ -509,6 +530,8 @@ export const ro: Copy = {
           homeCounty: "Județul entității",
           direction: { supplier: (home) => `Banii intră în ${home}`, authority: (home) => `Banii pleacă din ${home}` },
         },
+        panel: { heading: "Flux de bani", meta: { authority: "încotro merg banii autorității", supplier: "de unde vin banii furnizorului" } },
+        counties: { label: "Banii pe județe" },
         empty: "Niciun flux de bani pentru filtrul curent.",
       },
     },
@@ -517,16 +540,16 @@ export const ro: Copy = {
         label: "Cifre principale", total: "Total atribuit", counterparties: "Contraparți", topShare: (p) => `Cea mai mare deține ${p} din total`,
         directPurchase: "Pondere prin achiziție directă", signals: "Semnale",
       },
-      signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate." },
-      counterparties: { heading: "Contraparți", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`, empty: "Nicio contraparte în această selecție." },
-      procedures: { heading: "Tipuri de procedură", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
+      signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate.", range: (from, to, total) => `Semnalele ${from}–${to} din ${total}` },
+      counterparties: { heading: "Contraparți", meta: "pondere din totalul atribuit", graph: (_n, f) => `Toate cele ${f}, ca graf`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`, empty: "Nicio contraparte în această selecție." },
+      procedures: { heading: "Tipuri de procedură", meta: "așa cum le publică SEAP", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
       consortia: {
         heading: "Asocieri", convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP.",
         share: (amount) => `parte egală ${amount}`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"),
       },
       frameworks: {
         heading: "Acorduri-cadru",
-        line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+        agreements: "Acorduri", ceilings: "Plafoane", notSummed: "neadunate", subsequent: "Contracte subsecvente", ofCeilings: (p) => `${p} din plafoane`,
         none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
       },
       largest: { heading: "Cele mai mari înregistrări", note: "Doar înregistrările numărate: valorile suspecte și plafoanele acordurilor-cadru nu apar aici.", empty: "Nicio înregistrare numărată în această selecție." },
@@ -539,6 +562,7 @@ export const ro: Copy = {
     signalOrder: { label: "Ordinea Semnalelor", options: { DATE_DESC: "după dată", VALUE_DESC: "după RON" } },
     publicEnterprise: {
       heading: "Întreprindere publică (AMEPIP)",
+      aside: (published) => `AMEPIP · lista din ${published}`,
       basis: (cui, published, withYears) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}${withYears ? ", pentru anii financiari afișați mai jos" : ""}. Potrivirea se face după CUI.`,
       listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
       years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
@@ -549,6 +573,8 @@ export const ro: Copy = {
       heading: "Lista conducerii",
       caveat: "Fiecare listă este cea pe care a fost ales liderul, așa cum a fost înscrisă la alegeri. Este posibil ca liderul să-și fi schimbat partidul între timp: nu este apartenența actuală la un partid. Liderii nu sunt niciodată legați de o pagină de persoană.",
       inForce: "în funcție",
+      columns: { leader: "Lider", list: "Listă (așa cum a fost înscrisă)", period: "Perioadă", basis: "Temei" },
+      tableLabel: "Mandate",
       period: (from, to) => `${from} – ${to}`,
       gapHeading: "Goluri (fără mandat, niciodată presupuse)",
       gaps: {
@@ -561,6 +587,7 @@ export const ro: Copy = {
     },
     financials: {
       heading: "Situații financiare",
+      aside: "MF · RON",
       intro: "Situațiile financiare anuale depuse de companie, așa cum le publică Ministerul Finanțelor (MF) pe data.gov.ro, în RON. O celulă goală în fișierul MF se afișează „nedeclarat”, niciodată zero.",
       caption: "Situații financiare anuale pe an fiscal, cu atribuirile aceluiași an",
       columns: { year: "An fiscal", turnover: "Cifra de afaceri", profitOrLoss: "Profit sau pierdere", debts: "Datorii", equity: "Capitaluri", employees: "Număr mediu de salariați", awarded: "Atribuit în acel an", share: "Atribuiri ca pondere din cifra de afaceri", source: "Sursa" },
@@ -575,6 +602,7 @@ export const ro: Copy = {
     },
     donations: {
       heading: "Donații ale firmei către partide",
+      aside: (year) => `BaniPartide · date până în ${year}`,
       supplierContext: (donations, loans) => `Acest furnizor este și o firmă donatoare: ${donations} ${donations === 1 ? "donație" : "donații"} și ${loans} ${loans === 1 ? "împrumut" : "împrumuturi"} către partide. Doar context, nu un Semnal.`,
       intro: (year) => `Donațiile și împrumuturile acordate de această companie partidelor, așa cum le listează BaniPartide din publicările anuale ale partidelor, în RON. Date până în ${year}: donațiile de după acest an pot lipsi.`,
       caption: "Donații și împrumuturi ale firmei către partide, cele mai recente primele",
@@ -592,6 +620,7 @@ export const ro: Copy = {
     recordsNoRole: { authority: "Această entitate nu are Înregistrări ca autoritate contractantă.", supplier: "Această entitate nu are Înregistrări ca furnizor." },
     recordsTab: {
       heading: "Înregistrări",
+      totalHeading: "Total atribuit",
       table: { label: "Înregistrările entității", columns: { record: "Înregistrare", title: "Titlu", value: "Valoare" } },
       facets: {
         label: "Filtre pe fațete",
@@ -603,6 +632,7 @@ export const ro: Copy = {
         counterpartyKey: (key) => `Contraparte ${key}`,
         signals: ruleLabels(signalCard.rules),
       },
+      chips: { between: (from, to) => `${from} – ${to}`, signal: (rule) => `Semnal: ${rule}`, cpv: (code) => `CPV: ${code}` },
       empty: { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" },
       onlyMatching: { query: (q) => `doar înregistrările care se potrivesc cu „${q}”`, filters: "doar înregistrările care se potrivesc filtrelor căutării" },
     },
@@ -659,6 +689,8 @@ export const ro: Copy = {
       heading: "Lacune cunoscute",
       intro: "Fiecare celulă care este lacună cunoscută, posibil incompletă sau nevizibilă în sursă, cu motivul sau regula ei.",
       empty: "Nicio lacună cunoscută în datele afișate.",
+      tableLabel: "Lacunele cunoscute pe trimestre și tipuri de înregistrare",
+      count: (n) => roCount(n, String(n), "celulă", "celule"),
       columns: { quarter: "Trimestru", kind: "Tip de înregistrare", state: "Stare", reason: "Motiv sau regulă", records: "Înregistrări" },
     },
     rules: {
@@ -715,6 +747,7 @@ export const ro: Copy = {
         minLengthHint: "Scrie cel puțin 2 caractere pentru a căuta.",
       },
       results: {
+        title: "Înmatriculări",
         heading: (n, f) => roCount(n, f, "înmatriculare", "înmatriculări"),
         showing: (from, to, total) => `Se afișează ${from}–${to} din ${total}`,
         empty: "Nicio înmatriculare nu corespunde. PFA-urile, întreprinderile individuale și cele familiale (PFA, II, IF) nu sunt listate.",
@@ -742,7 +775,7 @@ export const ro: Copy = {
           picked: (n) => roCount(n, String(n), "aleasă", "alese"),
         },
         any: "Oricare",
-        seapCounterparty: { group: "În SEAP", yes: "Doar părți în SEAP", no: "Nu în SEAP" },
+        seapCounterparty: { group: "În SEAP", yes: "Parte în SEAP", no: "Nu în SEAP" },
         caen: { label: "CAEN", hint: "4211 sau 42" },
         registered: { group: "Înmatriculată", from: "De la", to: "Până la" },
         active: {
@@ -757,6 +790,7 @@ export const ro: Copy = {
           clearAll: "Șterge toate",
         },
       },
+      mapTitle: "Înmatriculări pe județe",
       countMap: {
         map: { mapLabel: "Harta județelor după înmatriculări", legendTitle: "Înmatriculări", noData: "Fără înmatriculări", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `până la ${value}` },
         unplaced: "Fără județ",

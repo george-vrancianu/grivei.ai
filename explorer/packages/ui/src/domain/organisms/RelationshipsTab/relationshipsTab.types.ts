@@ -55,23 +55,33 @@ export interface MonthlyTimelineCopy {
   picked: (name: string | null) => string;
   /** Sentence for no months at all. */
   empty: string;
+  /** The header's right slot: the first and last month with money, already formatted ("Jan 2024 to Oct 2026"); one month when they are the same. */
+  period: (from: string, to: string) => string;
+  /** The line under the bars: the month with the most money and its amount, both formatted ("tallest month: July 2026, RON 672M"). */
+  tallest: (month: string, amount: string) => string;
   /** The text alternative: a table of the same months. */
   table: { caption: string; month: string; amount: string; picked: (name: string | null) => string };
 }
 
 export interface CounterpartyPanelCopy {
-  /** The panel's accessible name. */
+  /** The panel's accessible name ("Records with the picked counterparty"). */
   label: string;
-  /** The mono label above the panel ('picked counterparty'). */
+  /** The panel's title in the header strip ("Picked counterparty"). */
   eyebrow: string;
   /** Shown while nothing is picked. */
   hint: string;
-  /** The heading's words before the counterparty's name ("Records with"). */
-  heading: string;
-  /** The picked counterparty's total in the filter, amounts formatted ("RON 1,200 across 4 Records"). */
-  total: (amount: string, records: string) => string;
+  /** Labels of the two inset figures: the counterparty's total awarded and its Record count in the filter. */
+  awarded: string;
+  records: string;
+  /** The Signals chip's text, shown when the counterparty carries Signals. It leads to the Records tab with only those Records. */
+  signals: string;
+  /** One sentence for a counterparty that won together with the entity (no names: the data does not carry them). */
+  wonTogether: string;
+  /** The foot's count: "4 of 25 shown", given the two formatted numbers. */
+  shown: (shown: string, total: string) => string;
+  /** The foot's link to every Record with it, given the Records count ("25 Records") and the counterparty's name. */
+  all: (records: string, name: string) => string;
   close: string;
-  loading: string;
   /** The picked counterparty has no Record in the filter. */
   empty: string;
 }

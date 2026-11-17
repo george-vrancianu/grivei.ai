@@ -45,6 +45,14 @@ describe.each([
     expect(sent.map((r) => [r.operation, r.variables])).toEqual([["OnrcCoverage", {}]]);
   });
 
+  it("puts ONRC's coverage in a panel titled as its section, with the selector in the panel's header", async () => {
+    open(`${base}/coverage?source=onrc`);
+    const panel = within(await screen.findByRole("region", { name: s.onrc.coverage.heading }));
+    expect(panel.getByRole("heading", { level: 2, name: s.onrc.coverage.heading })).toBeVisible();
+    expect(panel.getByRole("group", { name: s.coverageSwitch.label })).toBeVisible();
+    expect(await panel.findByRole("table", { name: s.onrc.coverage.snapshots.label })).toBeVisible();
+  });
+
   it("moves between the Sources with the selector, the URL carrying the choice (SEAP's the plain one)", async () => {
     open(`${base}/coverage`);
     await screen.findByRole("region", { name: c.coverage.gridHeading });
@@ -58,7 +66,7 @@ describe.each([
 
   it("says no ONRC snapshot is held when there is none", async () => {
     open(`${base}/coverage?source=onrc`, { extra: [{ operation: "OnrcCoverage", variables: {}, data: { sources: [], coverage: { window: { from: null, to: null }, denominator: "NONE", counties: [], grid: [] } } }] });
-    expect(await screen.findByRole("status")).toHaveTextContent(s.onrc.coverage.snapshots.empty);
+    expect(await screen.findByText(s.onrc.coverage.snapshots.empty)).toBeVisible();
   });
 
   it("settles on a message when ONRC's coverage cannot be loaded", async () => {

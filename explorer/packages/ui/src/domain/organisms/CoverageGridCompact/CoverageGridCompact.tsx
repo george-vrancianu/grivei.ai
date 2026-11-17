@@ -38,7 +38,7 @@ export function CoverageGridCompact({ cells, dateWindow, locale, copy, href, onN
         <Table size="small" sx={{ borderCollapse: "separate", borderSpacing: 1, width: "auto" }}>
           <TableHead>
             <TableRow>
-              <TableCell component="th" scope="col" aria-label={copy.kindHeader} sx={{ p: 0, border: 0 }} />
+              <TableCell component="th" scope="col" aria-label={copy.kindHeader} sx={{ p: 0, border: 0, backgroundColor: "transparent" }} />
               {quarters.map((quarter) => {
                 const inRange = quarterInWindow(quarter, dateWindow);
                 const parsed = parseQuarter(quarter);
@@ -51,7 +51,7 @@ export function CoverageGridCompact({ cells, dateWindow, locale, copy, href, onN
                     aria-current={inRange ? "true" : undefined}
                     data-in-range={inRange ? "true" : undefined}
                     data-quarter={quarter}
-                    sx={{ p: 0, height: coverage.compactYearHeight, minWidth: coverage.cellCompact.size, fontSize: coverage.compactYearFontSize, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "visible", textAlign: "left", color: "text.secondary", border: 0, borderBottom: "3px solid", borderBottomColor: inRange ? RANGE_COLOR : "transparent" }}
+                    sx={{ p: 0, height: coverage.compactYearHeight, minWidth: coverage.cellCompact.size, fontSize: coverage.compactYearFontSize, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "visible", textAlign: "left", color: "text.secondary", border: 0, backgroundColor: "transparent", borderBottom: "3px solid", borderBottomColor: inRange ? RANGE_COLOR : "transparent" }}
                   >
                     <span aria-hidden>{parsed && parsed.q === 1 ? parsed.year : ""}</span>
                   </TableCell>

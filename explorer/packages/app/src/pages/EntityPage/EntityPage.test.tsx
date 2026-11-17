@@ -84,10 +84,13 @@ describe("an entity page", () => {
     expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
     expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
-    expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
+    // the skeleton keeps the real "Records" heading; only the content (the filter bar and the rows) has not arrived
+    expect(screen.queryByRole("region", { name: "Filter by facet" })).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
 
     release();
-    expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Filter by facet" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(screen.queryByText("Loading…")).toBeNull();
   });
 
@@ -153,6 +156,14 @@ describe("an entity page", () => {
     expect(await screen.findByRole("list", { name: "Cifre principale" })).toBeInTheDocument();
   });
 
+  it("has a breadcrumb back to the explorer's home, in the page's language", async () => {
+    open("/ro/explore/authority/1000017");
+    expect(await screen.findByRole("heading", { level: 1, name: "SPITALUL EXEMPLU" })).toBeInTheDocument();
+    const crumb = screen.getByRole("navigation", { name: "Unde te afli" });
+    expect(crumb).toHaveTextContent("explorare / autoritate contractantă");
+    expect(within(crumb).getByRole("link", { name: "explorare" })).toHaveAttribute("href", "/ro/explore/");
+  });
+
   it("says so when no entity has that key", async () => {
     open("/explore/supplier/name-nobody-has-this-key");
     expect(await screen.findByRole("heading", { level: 1, name: "Entity not found" })).toBeInTheDocument();
@@ -197,7 +208,7 @@ describe("an entity page", () => {
       expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
       expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
       release();
-      await screen.findByRole("heading", { level: 2 });
+      await screen.findByRole("group", { name: "Graph of the top counterparties" });
       expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
     });
 

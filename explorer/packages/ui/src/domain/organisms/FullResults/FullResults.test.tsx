@@ -31,19 +31,19 @@ function show(results: FullResultsData, page: number, props: Partial<FullResults
 const nav = () => screen.getByRole("navigation", { name: "Result pages" });
 
 describe("FullResults", () => {
-  it("first page: heading with the count, the range, no Previous link, page 1 current", () => {
+  it("first page: heading with the count, the range, Previous disabled, page 1 current", () => {
     show(authorities(8), 1);
     expect(screen.getByRole("heading", { name: /Authorities 8/ })).toBeInTheDocument();
-    expect(screen.getByText("Showing 1–3 of 8")).toBeInTheDocument();
+    expect(screen.getAllByText("Showing 1–3 of 8")).toHaveLength(2); // the header and the foot
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    expect(within(nav()).queryByRole("link", { name: "Previous" })).not.toBeInTheDocument();
+    expect(within(nav()).getByRole("link", { name: "Previous" })).toHaveAttribute("aria-disabled", "true");
     expect(within(nav()).getByRole("link", { name: "Page 1" })).toHaveAttribute("aria-current", "page");
     expect(within(nav()).getByRole("link", { name: "Next" })).toHaveAttribute("href", "/explore/search?tab=records&page=2");
   });
 
   it("middle page: Previous and Next link to the neighbours, only the current page is marked", () => {
     show(authorities(8), 2);
-    expect(screen.getByText("Showing 4–6 of 8")).toBeInTheDocument();
+    expect(screen.getAllByText("Showing 4–6 of 8")).toHaveLength(2); // the header and the foot
     expect(within(nav()).getByRole("link", { name: "Previous" })).toHaveAttribute("href", pageHref(1));
     expect(within(nav()).getByRole("link", { name: "Next" })).toHaveAttribute("href", pageHref(3));
     expect(within(nav()).getByRole("link", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
@@ -52,9 +52,9 @@ describe("FullResults", () => {
 
   it("last page: a partial page counts its own rows and has no Next link", () => {
     show(authorities(8, fullResultsAuthorityRows.slice(0, 2)), 3);
-    expect(screen.getByText("Showing 7–8 of 8")).toBeInTheDocument();
+    expect(screen.getAllByText("Showing 7–8 of 8")).toHaveLength(2); // the header and the foot
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(within(nav()).queryByRole("link", { name: "Next" })).not.toBeInTheDocument();
+    expect(within(nav()).getByRole("link", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
     expect(within(nav()).getByRole("link", { name: "Page 3" })).toHaveAttribute("aria-current", "page");
   });
 
@@ -69,7 +69,7 @@ describe("FullResults", () => {
     unmount();
     show(records(11, fullResultsRecords.rows.slice(0, 4)), 1, { pageSize: 4 });
     expect(screen.getByRole("heading", { name: "Records 11" })).toBeInTheDocument();
-    expect(screen.getByText("Showing 1–4 of 11")).toBeInTheDocument();
+    expect(screen.getAllByText("Showing 1–4 of 11")).toHaveLength(2); // the header and the foot
   });
 
   it("collapses far pages into the first, last and neighbouring pages", () => {
@@ -142,11 +142,6 @@ describe("FullResults", () => {
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it("links back to the main screen when given where", () => {
-    show(authorities(8), 1, { backHref: "/explore/?tab=authorities" });
-    expect(screen.getByRole("link", { name: "Back to results" })).toHaveAttribute("href", "/explore/?tab=authorities");
-  });
-
   it("numbers pages in the Romanian format", () => {
     renderInUi(
       <FullResults
@@ -161,7 +156,7 @@ describe("FullResults", () => {
       />,
       "ro",
     );
-    expect(screen.getByText("Se afișează 1–3 din 12.000")).toBeInTheDocument();
+    expect(screen.getAllByText("Se afișează 1–3 din 12.000")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "Pagina 4.000" })).toBeInTheDocument();
   });
 });
@@ -209,5 +204,49 @@ describe("FullResults, the citable view and the order", () => {
     show(some, 1, { pageSize: 4, onOrderChange: () => {}, citeUrl: "https://grivei.ai/ro/explore/search", copy: sampleCopy.fullResults("ro"), locale: "ro" });
     expect(screen.getByRole("combobox", { name: "ordine" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Copiază linkul" })).toBeVisible();
+  });
+});
+
+describe("FullResults, in a panel", () => {
+  const some = records(11, fullResultsRecords.rows.slice(0, 4));
+  const panel = () => within(screen.getByRole("region", { name: "Records" }));
+
+  it("is one region named for the kind, with the kind and its count as the h2 and the order beside the status", () => {
+    show(some, 1, { pageSize: 4, onOrderChange: () => {}, status: <span role="status">Loading</span>, citeUrl: "https://grivei.ai/explore/search?tab=records" });
+    expect(panel().getByRole("heading", { level: 2, name: "Records 11" })).toBeVisible();
+    expect(panel().getByRole("combobox", { name: "order" })).toBeVisible();
+    expect(panel().getByText("Loading")).toBeVisible();
+    expect(panel().getByText("grivei.ai/explore/search?tab=records")).toBeVisible();
+    expect(panel().getAllByRole("listitem")).toHaveLength(4);
+  });
+
+  it("says which results the page shows in the header and in the foot, and puts the page links in the foot", () => {
+    show(some, 1, { pageSize: 4 });
+    expect(panel().getAllByText("Showing 1–4 of 11")).toHaveLength(2);
+    expect(panel().getByRole("navigation", { name: "Result pages" })).toBeVisible();
+  });
+
+  it("keeps the Showing line in the foot on a single page, with no page links", () => {
+    show(authorities(3), 1);
+    expect(screen.getAllByText("Showing 1–3 of 3")).toHaveLength(2);
+    expect(screen.queryByRole("navigation")).toBeNull();
+  });
+
+  it("an empty result has no foot and no Showing line, and its notice stays in the panel", () => {
+    show({ tab: "suppliers", page: { count: 0, countEstimated: false, rows: [] } }, 1);
+    expect(within(screen.getByRole("region", { name: "Suppliers" })).getByText("No suppliers.")).toBeVisible();
+    expect(screen.queryByText(/Showing/)).toBeNull();
+  });
+
+  it("while it holds the last answer the body is busy and the header's status stays", () => {
+    show(some, 1, { pageSize: 4, busy: true, status: <span role="status">Loading</span> });
+    expect(panel().getByText("Loading")).toBeVisible();
+    expect(panel().getAllByRole("listitem")[0]?.closest("[aria-busy=true]")).not.toBeNull();
+    expect(panel().getByText("Loading").closest("[aria-busy=true]")).toBeNull();
+  });
+
+  it("has no busy mark at rest", () => {
+    show(some, 1, { pageSize: 4 });
+    expect(document.querySelector("[aria-busy]")).toBeNull();
   });
 });

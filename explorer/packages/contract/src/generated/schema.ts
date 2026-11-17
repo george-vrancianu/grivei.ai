@@ -371,6 +371,8 @@ export type FrameworkLink = {
   /** subsequentReported / ceiling; null when the ceiling is blank. */
   ratio: Maybe<Scalars['Float']['output']>;
   subsequent: Array<SeapRecord>;
+  /** The total number of the framework's subsequent contracts, all of them (not capped by the `subsequent` limit). */
+  subsequentCount: Scalars['Int']['output'];
   subsequentReported: Scalars['Bani']['output'];
 };
 
@@ -2079,6 +2081,7 @@ export type FrameworkLinkResolvers<ContextType = any, ParentType extends Resolve
   ceiling?: Resolver<Maybe<ResolversTypes['Bani']>, ParentType, ContextType>;
   ratio?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   subsequent?: Resolver<Array<ResolversTypes['SeapRecord']>, ParentType, ContextType, RequireFields<FrameworkLinkSubsequentArgs, 'limit' | 'offset'>>;
+  subsequentCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   subsequentReported?: Resolver<ResolversTypes['Bani'], ParentType, ContextType>;
 };
 

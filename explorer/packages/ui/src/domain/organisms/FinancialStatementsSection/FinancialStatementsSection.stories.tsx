@@ -20,3 +20,11 @@ export const FourYears = section(financials);
 /** A blank turnover (no share) and a share above 100%. */
 export const BlankTurnoverAndShareAboveAHundred = section(financialsBlankTurnover);
 export const OneRevisedYear = section({ years: [financials.years[2]!] });
+
+/** A reload with the last answer held: the body is dimmed and `aria-busy`; the header stays at full strength. */
+export const Busy: Story = {
+  render: (_args, { globals }) => {
+    const locale = localeOf(globals["locale"]);
+    return <FinancialStatementsSection financials={financials} locale={locale} copy={financialsCopy[locale]} busy />;
+  },
+};

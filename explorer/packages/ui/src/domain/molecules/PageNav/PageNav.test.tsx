@@ -15,9 +15,17 @@ describe("PageNav", () => {
     expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/p?page=4");
     expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute("href", "/p?page=2");
   });
-  it("has no previous link on the first page", () => {
+  it("shows Previous disabled on the first page", () => {
     nav(1);
-    expect(screen.queryByRole("link", { name: "Previous" })).toBeNull();
+    const previous = screen.getByRole("link", { name: "Previous" });
+    expect(previous).toHaveAttribute("aria-disabled", "true");
+    expect(previous).not.toHaveAttribute("href");
+    expect(screen.getByRole("link", { name: "Next" })).not.toHaveAttribute("aria-disabled");
+  });
+  it("shows Next disabled on the last page", () => {
+    nav(5);
+    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("link", { name: "Previous" })).not.toHaveAttribute("aria-disabled");
   });
   it("hands a plain click to onNavigate", async () => {
     const onNavigate = vi.fn();

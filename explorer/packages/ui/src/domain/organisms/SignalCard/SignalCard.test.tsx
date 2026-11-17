@@ -5,7 +5,7 @@ import { sentence } from "../../../testing/sentence.ts";
 import { renderInUi } from "../../../testing/render.tsx";
 import type { Locale } from "../../../theme/index.ts";
 import { sampleCopy } from "../../samples/copy.ts";
-import { frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, splittingSignal } from "../../samples/signals.ts";
+import { authorityOnlySignal, frameworkOverrunSignal, manySuppliersSignal, noPublicationSignal, overCapSignal, splittingSignal } from "../../samples/signals.ts";
 import type { SignalData } from "../../types.ts";
 import { SignalCard } from "./index.ts";
 
@@ -46,11 +46,33 @@ describe("the money in a Signal sentence", () => {
 describe("the Signal card", () => {
   it("states an over-cap Signal in four parts: label, sentence with its numbers, lawful explanations, and what it consists of", () => {
     show(overCapSignal);
-    const card = screen.getByRole("article", { name: "Over cap" });
+    const card = screen.getByRole("region", { name: "Over cap" });
     expect(within(card).getByRole("heading", { level: 3, name: "Over cap" })).toBeVisible();
     expect(within(card).getByText(sentence("One direct purchase was awarded for RON 300,000.00, 1.11 times the direct-purchase cap of RON 270,120.00."))).toBeVisible();
     expect(within(card).getByText(/^Possible lawful explanations: a call-off under a framework agreement/)).toBeVisible();
     expect(within(card).getByText("Latest Record: 19 January 2024 · 1 Record")).toBeVisible();
+  });
+
+  it("is a titled panel: the rule label and meta in the header, the lawful line in a well, the parties as a definition list, the links in the foot", () => {
+    show(overCapSignal, "en", { seapHref: "/source/seap/DA12345678" });
+    const card = screen.getByRole("region", { name: "Over cap" });
+    const part = (name: string) => card.querySelector<HTMLElement>(`[data-panel-part="${name}"]`)!;
+    expect(within(part("header")).getByRole("heading", { level: 3, name: "Over cap" })).toBeVisible();
+    expect(within(part("header")).getByText("Latest Record: 19 January 2024 · 1 Record")).toBeVisible();
+    const lawful = within(part("body")).getByText(/^Possible lawful explanations:/);
+    expect(part("body").contains(lawful)).toBe(true);
+    expect(getComputedStyle(lawful.closest("p")!).boxShadow).not.toBe("none");
+    expect(part("body").querySelector("dl")).not.toBeNull();
+    expect(within(part("foot")).getAllByRole("link").map((l) => l.textContent)).toEqual(["See the Record", "Check in SEAP", "How this Signal is detected"]);
+    expect(within(part("body")).queryByRole("link", { name: /Check in SEAP/ })).toBeNull();
+  });
+
+  it("names the authority alone when the Signal has no supplier, and says to check each Record without a SEAP link", () => {
+    show(authorityOnlySignal);
+    const card = screen.getByRole("region", { name: "Over cap" });
+    expect(within(card).getByText("Contracting authority")).toBeVisible();
+    expect(within(card).queryByText("Suppliers")).toBeNull();
+    expect(within(card).getByText("Check each Record in SEAP")).toBeVisible();
   });
 
   it("fills a splitting Signal with its purchases, group, window and sums", () => {

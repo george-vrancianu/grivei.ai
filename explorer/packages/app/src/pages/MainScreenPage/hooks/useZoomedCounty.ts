@@ -1,6 +1,6 @@
 import type { ZoomedCountyQuery, ZoomedCountyQueryVariables } from "@grivei/contract";
 import { ZoomedCounty } from "../../../graphql/operations.ts";
-import { useHeldQuery, type QueryState } from "./useHeldQuery.ts";
+import { useHeldQuery, type QueryState } from "../../../graphql/useHeldQuery.ts";
 
 export type ZoomedCountyState = QueryState<ZoomedCountyQuery>;
 

@@ -16,6 +16,16 @@ export function shareOfTotal(part: Bani, whole: Bani): number | null {
   return Math.min(1, Math.max(0, Number(scaled) / 10_000));
 }
 
+/**
+ * `part` over `whole` (integer bani strings) as an unclamped ratio, to four decimals: 1.124 when the part is 112.4% of the whole. For text only (a share can exceed 100%, say the
+ * subsequent contracts reported against the ceilings); a bar takes `shareOfTotal`. Null when the whole is zero.
+ */
+export function ratioOf(part: Bani, whole: Bani): number | null {
+  const total = BigInt(whole);
+  if (total <= 0n) return null;
+  return Number((BigInt(part) * 10_000n) / total) / 10_000;
+}
+
 /** The side a counterparty is on: an authority's counterparties are suppliers, a supplier's are authorities. */
 export const counterpartyRole = (role: EntityRole): EntityRole => (role === "authority" ? "supplier" : "authority");
 

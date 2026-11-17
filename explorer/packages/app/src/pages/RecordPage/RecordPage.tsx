@@ -1,12 +1,13 @@
-import { RecordDetail, SignalCard, Typography, type Locale } from "@grivei/ui";
-import { AppLink } from "../../components/AppLink/index.ts";
+import { Button, LoadingStatus, Panel, RecordDetail, RecordSkeleton, SignalCard, StateNote, type Locale } from "@grivei/ui";
 import { PageShell } from "../../components/PageShell/index.ts";
+import { NotFoundPage } from "../NotFoundPage/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
 import { navigate } from "../../routing/location.tsx";
 import { currentUrl } from "../../routing/currentUrl.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
+import { subsequentRecordsHref } from "./recordPage.utils.ts";
 import { useRecordPage } from "./hooks/useRecordPage.ts";
 
 export interface RecordPageProps {
@@ -23,32 +24,43 @@ export function RecordPage({ locale, code }: RecordPageProps) {
 
   if (state.status === "loading") {
     return (
-      <PageShell>
-        <Typography role="status">{t.status.loading}</Typography>
-      </PageShell>
+      <RecordSkeleton
+        copy={{ value: { heading: t.recordPage.value.heading, published: t.recordPage.value.published, counted: t.recordPage.value.counted }, winners: t.recordPage.parties.winners, facts: t.recordPage.heading.panel }}
+        status={<LoadingStatus label={t.status.loading} />}
+      />
     );
   }
   if (state.status === "error") {
+    // the Record is one query: a failure is one note, with its retry, in a panel in the page body
     return (
       <PageShell>
-        <Typography role="alert">{t.status.failed}</Typography>
+        <Panel heading={t.recordPage.heading.panel} level="h2">
+          <StateNote
+            kind="error"
+            action={
+              <Button size="small" onClick={state.retry}>
+                {t.status.retry}
+              </Button>
+            }
+          >
+            {t.status.failed}
+          </StateNote>
+        </Panel>
       </PageShell>
     );
   }
   if (state.record === null) {
     return (
-      <PageShell>
-        <Typography variant="h4" component="h1">
-          {t.recordPage.notFound.title}
-        </Typography>
-        <Typography>{t.recordPage.notFound.body(code)}</Typography>
-        <AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>
-      </PageShell>
+      <NotFoundPage locale={locale} title={t.recordPage.notFound.title} body={t.recordPage.notFound.body(code)} />
     );
   }
   return (
     <RecordDetail
+      key={state.record.code}
       record={state.record}
+      busy={state.stale}
+      status={state.stale ? <LoadingStatus label={t.status.loading} /> : undefined}
+      subsequentMoreHref={subsequentRecordsHref(locale, state.record)}
       citeUrl={currentUrl()}
       entityHref={(entity, role) => pathFor(locale, { name: "entity", entity: role, key: entity.key, view: "overview" })}
       authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })}

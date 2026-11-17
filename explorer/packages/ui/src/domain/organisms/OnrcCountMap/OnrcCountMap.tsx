@@ -3,9 +3,10 @@ import type { Topology } from "topojson-specification";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { formatCount } from "../../atoms/ApproxCount/index.ts";
+import { InsetFigure } from "../../molecules/InsetFigure/index.ts";
 import type { OnrcCountMapData } from "../../types.ts";
 import { BaseMap, type AreaInfo, type BaseMapCopy } from "../BaseMap/index.ts";
-import { MapTile, type MapArea } from "../MoneyLensMap/index.ts";
+import { type MapArea } from "../MoneyLensMap/index.ts";
 
 export interface OnrcCountMapCopy {
   map: BaseMapCopy;
@@ -34,7 +35,7 @@ export const UNPLACED_AREA = "UNPLACED";
 
 /**
  * ONRC's count lens at county level, on the base map: counties coloured by how many registrations match the search (a count, on a linear scale, so colour tracks
- * size; every shown number is the exact count), and an Unplaced tile for registrations with no county. A county click is a chip of the ONRC filter. Presentational.
+ * size; every shown number is the exact count), and an Unplaced tile (an `InsetFigure` that toggles) for registrations with no county. A county click is a chip of the ONRC filter. Presentational.
  */
 export function OnrcCountMap({ map, topology, selected, onSelect, locale, copy }: OnrcCountMapProps) {
   const values = useMemo(() => Object.fromEntries(map.counties.map((c) => [c.area, c.registrations])), [map]);
@@ -55,9 +56,9 @@ export function OnrcCountMap({ map, topology, selected, onSelect, locale, copy }
       tiles={
         <>
           <Typography variant="caption">{copy.tilesHeading}</Typography>
-          <MapTile title={copy.unplaced} selected={selected === UNPLACED_AREA} onSelect={() => onSelect(UNPLACED_AREA)}>
-            <Typography component="span" variant="body2" sx={{ display: "block" }}>{format(map.unplacedRegistrations)}</Typography>
-          </MapTile>
+          <InsetFigure label={copy.unplaced} selected={selected === UNPLACED_AREA} onSelect={() => onSelect(UNPLACED_AREA)}>
+            {format(map.unplacedRegistrations)}
+          </InsetFigure>
         </>
       }
       copy={copy.map}

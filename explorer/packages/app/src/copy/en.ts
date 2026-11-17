@@ -272,7 +272,12 @@ export const en: Copy = {
     },
   },
   pages: {
-    notFound: { title: "Page not found", back: "Back to the main screen" },
+    notFound: {
+      title: "Page not found",
+      body: "Nothing in the explorer lives at this address. Check it for a typo, or start again from the main screen.",
+      back: "Back to the main screen",
+      search: "Search",
+    },
     search: { title: "Search" },
   },
   badges,
@@ -306,6 +311,7 @@ export const en: Copy = {
       panel: "The Record",
     },
     value: {
+      heading: "Value",
       published: "Value as published",
       counted: "Counted value",
       noValue: "No value in SEAP",
@@ -339,6 +345,12 @@ export const en: Copy = {
       lineBlankCeiling: (reported) => `Ceiling not published; subsequent contracts reported so far ${reported}`,
       agreement: "Awarded under the framework agreement",
       subsequentHeading: "Subsequent contracts",
+      subsequentAside: (n, f, sum) => `${f} ${plural(n, "contract", "contracts")} · ${sum}`,
+      shown: (shown, total) => `${shown} of ${total} shown, by value`,
+      showAll: (_n, f) => `Show all ${f}`,
+      showFirst: (_n, f) => `Show the first ${f}`,
+      showFewer: "Show fewer",
+      moreLink: "Subsequent contracts of this framework, in Records",
     },
     cite: { label: "Address of this Record", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } },
     badges: { heading: "Badges and what they mean" },
@@ -366,10 +378,12 @@ export const en: Copy = {
     },
   },
   personPage: {
-    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
-    born: (year) => `born ${year}`,
+    privateView: { lead: "Private view:", text: "this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public." },
+    breadcrumb: { label: "You are here", home: "explore", current: "person" },
+    figures: { born: "Born", roles: "Roles", source: "Source", sourceName: "ONRC", snapshot: (date) => `snapshot of ${date}` },
     rolesHeading: "Roles",
     roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "no organisation page",
     basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
     source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
@@ -378,6 +392,7 @@ export const en: Copy = {
   entityPage: {
     layout: { label: "Sections of this page", cite: { label: "Address of this view", copyLink: { label: "Copy link", copied: "Link copied", failed: "Could not copy the link" } }, tabs: { overview: "Overview", records: "Records", relationships: "Relationships" } },
     header: {
+      breadcrumb: { label: "You are here", home: "explore", roles: { AUTHORITY: "contracting authority", SUPPLIER: "supplier" } },
       identity: {
         cui: "CUI",
         foreignVatId: "Foreign VAT ID",
@@ -408,6 +423,7 @@ export const en: Copy = {
     },
     onrc: {
       heading: "ONRC registration",
+      aside: (snapshot) => `trade register · snapshot of ${snapshot}`,
       registrationNumber: "Registration number",
       registrationDate: "Registered",
       registrationDateUnknown: "not in the snapshot we read",
@@ -436,6 +452,8 @@ export const en: Copy = {
     },
     people: {
       heading: "Administrators and legal representatives",
+      aside: (snapshot) => `ONRC · snapshot of ${snapshot}`,
+      foot: "Names link to a person page only in a Private view.",
       intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
       none: "ONRC lists no administrator or legal representative for this organisation.",
       born: (year) => `born ${year}`,
@@ -468,11 +486,14 @@ export const en: Copy = {
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          period: (from, to) => (from === to ? from : `${from} to ${to}`), tallest: (month, amount) => `tallest month: ${month}, ${amount}`,
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
-          total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.",
+          awarded: "Awarded", records: "Records", signals: "Has Signals", wonTogether: "Some Records were won together with other parties, as a consortium.",
+          shown: (n, m) => `${n} of ${m} shown`, all: (records, name) => `All ${records} with ${name}`,
+          close: "Close", empty: "No Records with this counterparty.",
         },
       },
       flow: {
@@ -504,6 +525,8 @@ export const en: Copy = {
           homeCounty: "The entity's county",
           direction: { supplier: (home) => `Money flows in to ${home}`, authority: (home) => `Money flows out of ${home}` },
         },
+        panel: { heading: "Money flow", meta: { authority: "where this authority's money goes", supplier: "where this supplier's money comes from" } },
+        counties: { label: "Money by county" },
         empty: "No money flow for the current filter.",
       },
     },
@@ -512,16 +535,16 @@ export const en: Copy = {
         label: "Headline numbers", total: "Total awarded", counterparties: "Counterparties", topShare: (p) => `The largest holds ${p} of the total`,
         directPurchase: "Share via direct purchase", signals: "Signals",
       },
-      signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity." },
-      counterparties: { heading: "Counterparties", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`, empty: "No counterparties in this selection." },
-      procedures: { heading: "Procedure types", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
+      signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity.", range: (from, to, total) => `Signals ${from}–${to} of ${total}` },
+      counterparties: { heading: "Counterparties", meta: "share of the total awarded", graph: (_n, f) => `All ${f}, as a graph`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`, empty: "No counterparties in this selection." },
+      procedures: { heading: "Procedure types", meta: "as SEAP publishes them", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
       consortia: {
         heading: "Consortia", convention: "Each member's equal share is a counting convention, not a figure SEAP publishes.",
         share: (amount) => `equal share ${amount}`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`,
       },
       frameworks: {
         heading: "Framework agreements",
-        line: (n, f, ceilings, reported) => `${f} ${plural(n, "framework agreement", "framework agreements")}, ceilings ${ceilings}, reported subsequent contracts ${reported}`,
+        agreements: "Agreements", ceilings: "Ceilings", notSummed: "not summed", subsequent: "Subsequent contracts", ofCeilings: (p) => `${p} of the ceilings`,
         none: "No framework agreements.", note: "Ceilings are not money awarded and are not in the total.",
       },
       largest: { heading: "Largest Records", note: "Counted Records only: suspect values and framework ceilings are not listed here.", empty: "No counted Records in this selection." },
@@ -534,6 +557,7 @@ export const en: Copy = {
     signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     publicEnterprise: {
       heading: "Public enterprise (AMEPIP)",
+      aside: (published) => `AMEPIP · list of ${published}`,
       basis: (cui, published, withYears) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}${withYears ? ", for the financial years shown below" : ""}. The match is by CUI.`,
       listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
       years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
@@ -544,6 +568,8 @@ export const en: Copy = {
       heading: "Leadership list",
       caveat: "Each list is the one the leader was elected on, as registered at that election. A leader may have switched party since: this is not current party membership. Leaders are never linked to a person page.",
       inForce: "in force",
+      columns: { leader: "Leader", list: "List (as registered)", period: "Period", basis: "Basis" },
+      tableLabel: "Mandates",
       period: (from, to) => `${from} – ${to}`,
       gapHeading: "Gaps (no Mandate, never guessed)",
       gaps: {
@@ -556,6 +582,7 @@ export const en: Copy = {
     },
     financials: {
       heading: "Financial statements",
+      aside: "MF · RON",
       intro: "Annual statements the company filed, as the Ministry of Finance (MF) publishes them on data.gov.ro, in RON. A blank cell in MF's file reads \"not reported\", never zero.",
       caption: "Annual financial statements by fiscal year, with the awards of the same year",
       columns: { year: "Fiscal year", turnover: "Turnover", profitOrLoss: "Profit or loss", debts: "Debts", equity: "Equity", employees: "Average employees", awarded: "Awarded that year", share: "Awards as a share of turnover", source: "Source" },
@@ -570,6 +597,7 @@ export const en: Copy = {
     },
     donations: {
       heading: "Firm donations to parties",
+      aside: (year) => `BaniPartide · data through ${year}`,
       supplierContext: (donations, loans) => `This supplier is also a firm donor: ${donations} ${donations === 1 ? "donation" : "donations"} and ${loans} ${loans === 1 ? "loan" : "loans"} to parties. Context only, not a Signal.`,
       intro: (year) => `Donations and loans this company made to parties, as BaniPartide lists them from the parties' annual publications, in RON. Data through ${year}: donations after that may be missing.`,
       caption: "Firm donations and loans to parties, newest first",
@@ -587,6 +615,7 @@ export const en: Copy = {
     recordsNoRole: { authority: "This entity has no Records as a contracting authority.", supplier: "This entity has no Records as a supplier." },
     recordsTab: {
       heading: "Records",
+      totalHeading: "Total awarded",
       table: { label: "Records of this entity", columns: { record: "Record", title: "Title", value: "Value" } },
       facets: {
         label: "Filter by facet",
@@ -598,6 +627,7 @@ export const en: Copy = {
         counterpartyKey: (key) => `Counterparty ${key}`,
         signals: ruleLabels(signalCard.rules),
       },
+      chips: { between: (from, to) => `${from} – ${to}`, signal: (rule) => `Signal: ${rule}`, cpv: (code) => `CPV: ${code}` },
       empty: { text: "No Records match these filters.", clear: "Clear filters" },
       onlyMatching: { query: (q) => `only Records matching “${q}”`, filters: "only Records matching the search's filters" },
     },
@@ -654,6 +684,8 @@ export const en: Copy = {
       heading: "Known gaps",
       intro: "Every cell that is a known gap, possibly incomplete or not visible in the source, with its reason or its rule.",
       empty: "No known gaps in the data shown.",
+      tableLabel: "Known gaps by quarter and record kind",
+      count: (n) => `${n} ${plural(n, "cell", "cells")}`,
       columns: { quarter: "Quarter", kind: "Record kind", state: "State", reason: "Reason or rule", records: "Records" },
     },
     rules: {
@@ -710,6 +742,7 @@ export const en: Copy = {
         minLengthHint: "Type at least 2 characters to search.",
       },
       results: {
+        title: "Registrations",
         heading: (n, f) => `${f} ${plural(n, "registration", "registrations")}`,
         showing: (from, to, total) => `Showing ${from}–${to} of ${total}`,
         empty: "No registration matches. Sole traders (PFA, II, IF) are not listed.",
@@ -737,7 +770,7 @@ export const en: Copy = {
           picked: (n) => `${n} picked`,
         },
         any: "Any",
-        seapCounterparty: { group: "In SEAP", yes: "SEAP counterparties only", no: "Not in SEAP" },
+        seapCounterparty: { group: "In SEAP", yes: "SEAP counterparty", no: "Not in SEAP" },
         caen: { label: "CAEN", hint: "4211 or 42" },
         registered: { group: "Registered", from: "From", to: "To" },
         active: {
@@ -752,6 +785,7 @@ export const en: Copy = {
           clearAll: "Clear all",
         },
       },
+      mapTitle: "Registrations by county",
       countMap: {
         map: { mapLabel: "Map of counties by registrations", legendTitle: "Registrations", noData: "No registrations", areaLabel: (name, value) => `${name}: ${value}`, atMost: (value) => `up to ${value}` },
         unplaced: "No county",

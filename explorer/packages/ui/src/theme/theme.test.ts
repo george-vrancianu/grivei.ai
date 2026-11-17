@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createGriveiTheme } from "./index.ts";
+import { STRIP_FILL } from "./stripFill.ts";
 import { color, font, headerFill, layout, logoShadow, map, radius, shadow, size } from "./tokens.ts";
 
 /** WCAG 2.x relative luminance and contrast ratio of two #rrggbb colours. */
@@ -201,5 +202,21 @@ describe("depth", () => {
   it("leaves the selected and focus treatments as they were", () => {
     expect(theme.graf.states.selected).toEqual({ backgroundColor: color.line, color: color.text, boxShadow: `inset 0 0 0 1px ${color.accent}` });
     expect(theme.graf.states.focusRing).toEqual({ outline: `2px solid ${color.text}`, outlineOffset: 2 });
+  });
+});
+
+describe("tables", () => {
+  const cell = theme.components?.MuiTableCell?.styleOverrides as Record<string, Record<string, unknown>>;
+  const row = theme.components?.MuiTableRow?.styleOverrides as Record<string, Record<string, Record<string, unknown>>>;
+
+  it("lays the head row as a strip: the strip fill, mono 12 muted", () => {
+    expect(cell["head"]).toMatchObject({ backgroundColor: STRIP_FILL, fontFamily: font.mono, color: color.muted });
+  });
+  it("pads every cell 12 px 14 px under a line hairline", () => {
+    expect(cell["root"]).toMatchObject({ padding: "12px 14px", borderBottomColor: color.line });
+  });
+  it("fills a hovered row with raised and a selected one with line", () => {
+    expect(row["root"]?.["&.MuiTableRow-hover:hover"]).toMatchObject({ backgroundColor: color.raised });
+    expect(row["root"]?.["&.Mui-selected, &.Mui-selected:hover"]).toMatchObject({ backgroundColor: color.line });
   });
 });

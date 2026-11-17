@@ -1,7 +1,8 @@
-import { EntityHeader, EntityOverview, Box, EntityPageLayout, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, Typography, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, type RelationshipsData, MoneyFlowPanel, RelationshipsTabSkeleton, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import type { ReactNode } from "react";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
-import { AppLink } from "../../components/AppLink/index.ts";
+import { NotFoundPage } from "../NotFoundPage/index.ts";
 import { flowLensCopy, LoadedFlowLensSection } from "../../components/FlowLensSection/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { useSignalLinks } from "../../signals/useSignalLinks.ts";
@@ -47,7 +48,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   // The Records tab's Source switch (#178): ONRC's registrations of the entity, found by its CUI. The query text is not a chip here (the CUI is the search).
   const onrcChips: OnrcFilter = onrcMode ? Object.fromEntries(Object.entries(onrcUrl.filter).filter(([field]) => field !== "q")) : NO_FILTER;
   // ONRC's rows are asked for only when they would be shown: on the ONRC side, or when SEAP has no Records of the entity. Whether ONRC lists the CUI at all comes with the Records tab (`onrcListed`).
-  const onrcListed = state.status !== "error" && state.onrcListed;
+  const onrcListed = state.onrcListed;
   const seapEmpty = state.status === "ready" && state.records === null;
   const registrations = useEntityOnrc(state.status !== "error" ? (state.entity?.cui ?? null) : null, onrcChips, view === "records" && onrcListed && (onrcMode || seapEmpty));
   const tabCounts = useTabCounts(`${role}:${entityKey}`, state, filter, locale);
@@ -55,50 +56,49 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
   const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
   // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
-  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
+  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
 
   // a link to `#signals` (the "n Signals" chip of an entity row) lands on the Overview's Signals section once it has rendered
   useScrollToHash(view === "overview" && state.status === "ready" && state.overview !== null);
 
-  if (state.status === "error") {
-    return (
-      <PageShell>
-        <StateNote kind="error">{t.status.failed}</StateNote>
-      </PageShell>
-    );
-  }
-  if (state.status === "ready" && state.entity === null) {
-    return (
-      <PageShell>
-        <Typography variant="h1" component="h1">
-          {t.entityPage.notFound.title}
-        </Typography>
-        <StateNote kind="empty" action={<AppLink href={pathFor(locale, { name: "main" })}>{t.pages.notFound.back}</AppLink>}>
-          {t.entityPage.notFound.body}
-        </StateNote>
-      </PageShell>
-    );
-  }
-  const loading = state.status === "loading";
-  const flowCopy = flowLensCopy(t);
-  const entity = state.entity;
-  // The ONRC section: the same on both role pages of an entity that is an authority and a supplier; an entity with no SEAP role at all exists in ONRC only
-  const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} />;
-  // ONRC's administrators and legal representatives (#177), public tier: the API sends them only for a SEAP counterparty. A holder links to a person page only when the API sent a person
-  // (the host's Restricted switch is `show`), so this page never builds a link the host would not serve.
-  const peopleSection = state.people && <PeopleSection people={state.people} personHref={(id) => pathFor(locale, { name: "person", id })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.people} />;
-  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI appears in AMEPIP's tables (the same on both role pages)
-  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} />;
-  // The Leadership list (#180): a town hall, sector, Bucharest city hall, county council, or a subordinate body shown through its authority; the authority role page only, never the supplier role page of the same entity
-  const leadershipSection = state.leadership && role === "AUTHORITY" && (
-    <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} />
-  );
-  // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
-  const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} />;
-  // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
-  const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} />;
   // Plain clicks on the tab and role links change page without a load; the links keep their real hrefs.
   const onNavigate = (href: string) => navigate(href, "push");
+  const retryNote = (retry: () => void) => (
+    <StateNote
+      kind="error"
+      action={
+        <Button size="small" onClick={retry}>
+          {t.status.retry}
+        </Button>
+      }
+    >
+      {t.status.failed}
+    </StateNote>
+  );
+  // The header the layout draws: the entity's own (held from before when the page is reloading or failed), or its skeleton on a first load
+  const headerOf = (held: EntityHeaderData | null) => (slots: EntityHeaderSlots) =>
+    held ? (
+      <EntityHeader
+        entity={held}
+        role={role}
+        homeHref={pathFor(locale, { name: "main" })}
+        roleHref={(r) => roleHref(locale, held.key, view, r)}
+        onNavigate={onNavigate}
+        locale={locale}
+        copy={t.entityPage.header}
+        {...slots}
+      />
+    ) : (
+      <EntityHeaderSkeleton role={role} homeHref={pathFor(locale, { name: "main" })} onNavigate={onNavigate} copy={t.entityPage.header} {...slots} />
+    );
+  const layoutProps = {
+    view,
+    tabHrefs: tabHrefs(locale, routeRole, state.entity?.key ?? entityKey, filter, carried),
+    tabCounts,
+    citeUrl: currentUrl(),
+    onNavigate,
+    copy: t.entityPage.layout,
+  };
   // The Records tab has a Source switch when both Sources have something for the entity; a Source with nothing is not offered and shows nothing.
   const switches = t.sources.recordsSwitch;
   const seapHasRecords = state.records !== null;
@@ -118,27 +118,106 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       copy={switches}
     />
   );
+  // The Relationships tab: the last answer of the same entity and role stays (dimmed) while a filter reloads it, the picked counterparty's last answer while the next loads,
+  // and a failure sits inside the panel that failed (the graph, or the Money flow panel; the picked panel's own).
+  const lensToggle = (
+    <OptionToggle options={LENSES} value={lens === "flow" ? "flow" : "graph"} onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })} labels={t.entityPage.relationships.lens.options} label={t.entityPage.relationships.lens.label} />
+  );
+  const relationshipsView = (header: EntityHeaderData, relationships: RelationshipsData | null, busy: boolean, failure: ReactNode) => {
+    const loadingStatus = <LoadingStatus label={t.status.loading} />;
+    const flowOpen = lens === "flow";
+    const answer = picked.status === "ready" ? picked : picked.status === "loading" ? picked.held : null;
+    const flowCopy = flowLensCopy(t);
+    return (
+      <RelationshipsTab
+        entity={header}
+        counterparties={relationships?.counterparties ?? null}
+        timeline={relationships?.timeline ?? null}
+        selectedTimeline={answer?.timeline ?? null}
+        sidePanel={answer?.panel ?? null}
+        sidePanelKey={answer?.counterparty ?? null}
+        sidePanelLoading={picked.status === "loading"}
+        sidePanelStatus={picked.status === "loading" ? loadingStatus : undefined}
+        sidePanelFailure={picked.status === "error" ? retryNote(picked.retry) : undefined}
+        busy={busy}
+        status={busy ? loadingStatus : undefined}
+        failure={failure}
+        flowToggle={lensToggle}
+        flowMap={
+          !flowOpen ? undefined : relationships ? (
+            <LoadedFlowLensSection
+              flow={relationships.flow}
+              role={routeRole}
+              home={header.placement?.county?.code ?? null}
+              locale={locale}
+              copy={flowCopy}
+              status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading, retry: t.status.retry }}
+              busy={busy}
+              loadingStatus={busy ? loadingStatus : undefined}
+              failure={failure}
+            />
+          ) : failure ? (
+            <MoneyFlowPanel role={routeRole} copy={flowCopy.panel}>{failure}</MoneyFlowPanel>
+          ) : undefined
+        }
+        {...relationshipsTab}
+      />
+    );
+  };
+  const relationshipsSkeleton = (
+    <RelationshipsTabSkeleton
+      role={routeRole}
+      view={lens === "flow" ? "flow" : "graph"}
+      picked={counterparty !== undefined}
+      toggle={lensToggle}
+      status={<LoadingStatus label={t.status.loading} />}
+      copy={{ ...t.entityPage.relationships.tab, flow: t.entityPage.relationships.flow.panel }}
+    />
+  );
+  if (state.status === "error") {
+    // A failed request: the page around it stays when the entity's header is known from before (with its tabs and address), the note and its retry take the body.
+    // On the Records tab the note takes the Records panel only: the Source picker and the filter bar (from the last Records) stay. A first load that failed has no header to show: the note stands alone.
+    return state.entity ? (
+      <EntityPageLayout header={headerOf(state.entity)} {...layoutProps}>
+        {view === "records" && !onrcMode ? (
+          <Stack spacing={2}>
+            {sourceSwitch}
+            <RecordsTab records={state.records} signalBadges={signals.badges} failure={retryNote(state.retry)} {...recordsTab} />
+          </Stack>
+        ) : view === "relationships" ? (
+          relationshipsView(state.entity, state.relationships, false, retryNote(state.retry))
+        ) : (
+          retryNote(state.retry)
+        )}
+      </EntityPageLayout>
+    ) : (
+      <PageShell>{retryNote(state.retry)}</PageShell>
+    );
+  }
+  if (state.status === "ready" && state.entity === null) {
+    return (
+      <NotFoundPage locale={locale} title={t.entityPage.notFound.title} body={t.entityPage.notFound.body} />
+    );
+  }
+  const loading = state.status === "loading";
+  const entity = state.entity;
+  // The ONRC section: the same on both role pages of an entity that is an authority and a supplier; an entity with no SEAP role at all exists in ONRC only
+  const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} busy={loading} />;
+  // ONRC's administrators and legal representatives (#177), public tier: the API sends them only for a SEAP counterparty. A holder links to a person page only when the API sent a person
+  // (the host's Restricted switch is `show`), so this page never builds a link the host would not serve.
+  const peopleSection = state.people && <PeopleSection people={state.people} personHref={(id) => pathFor(locale, { name: "person", id })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.people} busy={loading} />;
+  // "Public enterprise (AMEPIP)" with its basis, on the Overview of an entity whose CUI appears in AMEPIP's tables (the same on both role pages)
+  const publicEnterpriseSection = state.publicEnterprise && entity?.cui && <PublicEnterpriseSection enterprise={state.publicEnterprise} cui={entity.cui} locale={locale} copy={t.entityPage.publicEnterprise} busy={loading} />;
+  // The Leadership list (#180): a town hall, sector, Bucharest city hall, county council, or a subordinate body shown through its authority; the authority role page only, never the supplier role page of the same entity
+  const leadershipSection = state.leadership && role === "AUTHORITY" && (
+    <LeadershipSection leadership={state.leadership} authorityHref={(key) => pathFor(locale, { name: "entity", entity: "authority", key, view: "overview" })} onNavigate={(href) => navigate(href, "push")} locale={locale} copy={t.entityPage.leadership} busy={loading} />
+  );
+  // MF's annual statements with the awards of each year beside them (#179): a supplier's page; an entity with no SEAP role (ONRC only) opens as a supplier too
+  const financialsSection = state.financials && role === "SUPPLIER" && <FinancialStatementsSection financials={state.financials} locale={locale} copy={t.entityPage.financials} busy={loading} />;
+  // BaniPartide's firm donations and loans (#182) on any role page of the entity; on a supplier's page they open with "also a firm donor" as context (never a Signal)
+  const donationsSection = state.donations && <FirmDonationsSection donations={state.donations} supplier={role === "SUPPLIER" && !!entity?.seap.roles.includes("SUPPLIER")} locale={locale} copy={t.entityPage.donations} busy={loading} />;
   return (
-    <EntityPageLayout
-      header={
-        entity && (
-          <EntityHeader
-            entity={entity}
-            role={role}
-            roleHref={(r) => roleHref(locale, entity.key, view, r)}
-            onNavigate={onNavigate}
-            locale={locale}
-            copy={t.entityPage.header}
-          />
-        )
-      }
-      view={view}
-      tabHrefs={tabHrefs(locale, routeRole, entity?.key ?? entityKey, filter, carried)}
-      tabCounts={tabCounts}
-      citeUrl={currentUrl()}
-      onNavigate={onNavigate}
-      copy={t.entityPage.layout}
-    >
+    <EntityPageLayout header={headerOf(entity)} {...layoutProps}>
       {view === "records" ? (
         showOnrcRecords && registrations.status === "ready" ? (
           <Stack spacing={2}>
@@ -157,22 +236,24 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         ) : onrcPending ? (
           <StateNote kind="loading">{t.status.loading}</StateNote>
         ) : state.records ? (
-          // The last Records stay on screen while the next filter loads, so the panel keeps its place and focus.
-          <div aria-busy={loading}>
-            {sourceSwitch && <Box sx={{ mb: 2 }}>{sourceSwitch}</Box>}
-            <RecordsTab records={state.records} signalBadges={signals.badges} {...recordsTab} />
-          </div>
+          // The last Records stay on screen while the next filter loads, so the panels keep their place and focus: their bodies dimmed, the bar and the headers at full strength.
+          <Stack spacing={2}>
+            {sourceSwitch}
+            <RecordsTab records={state.records} signalBadges={signals.badges} busy={loading} status={loading ? <LoadingStatus label={t.status.loading} /> : undefined} {...recordsTab} />
+          </Stack>
         ) : loading ? (
-          <StateNote kind="loading">{t.status.loading}</StateNote>
+          <RecordsTabSkeleton role={routeRole} status={<LoadingStatus label={t.status.loading} />} copy={recordsTab.copy} />
         ) : (
           // ready, but the entity has no Records in this role
           <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
         )
       ) : view === "overview" ? (
         state.overview && entity ? (
-          // The last Overview of this entity and filter stays on screen while a new Signals order or page loads (the toggle keeps its focus).
-          <Stack spacing={3} aria-busy={loading}>
+          // The last Overview of this entity stays on screen, dimmed, while a new filter, Signals order or page loads (the toggle keeps its focus).
+          <Stack spacing={3}>
             <EntityOverview overview={state.overview} aliases={entity.aliases}
+              busy={loading}
+              status={<LoadingStatus label={t.status.loading} />}
               signalsToolbar={
                 <SignalOrderToggle
                   value={signalOrder ?? "DATE_DESC"}
@@ -186,26 +267,33 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
                   signals={state.overview.signals.rows}
                   locale={locale}
                   renderItem={(signal) => <SignalCard signal={signal} {...signals.cardProps(signal, signal.records)} />}
-                  pagination={{
-                    page: page ?? 1,
-                    pages: Math.ceil(state.overview.signals.count / SIGNALS_PAGE_SIZE),
-                    // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
-                    pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
-                    onNavigate: (href) => navigate(href, "replace"),
-                    copy: t.entityPage.signalPages,
-                  }}
                 />
-              } {...overviewTab} />
+              }
+              signalsPaging={{
+                page: page ?? 1,
+                pageSize: SIGNALS_PAGE_SIZE,
+                shown: state.overview.signals.rows.length,
+                // the Overview's page links: the same view on another slice of the Signals, so the history entry is replaced
+                pageHref: (n) => tabHref(locale, routeRole, entityKey, "overview", { filter, ...(signalOrder ? { signalOrder } : {}), ...(carried ? { carried } : {}), page: n }),
+                onNavigate: (href) => navigate(href, "replace"),
+                copy: t.entityPage.signalPages,
+              }}
+              graphHref={layoutProps.tabHrefs.relationships}
+              {...overviewTab} />
             {/* the Reference sources' panels come after the SEAP Overview (headline numbers and Signals), so a large entity's page does not open on up to six panels of other sources */}
-            {onrcSection}
-            {peopleSection}
+            {(onrcSection || peopleSection) && <PanelPair wide={onrcSection || undefined} narrow={peopleSection || undefined} />}
             {publicEnterpriseSection}
             {leadershipSection}
             {financialsSection}
             {donationsSection}
           </Stack>
         ) : loading ? (
-          <StateNote kind="loading">{t.status.loading}</StateNote>
+          // a first load (or a different entity or role): the Overview's shape with real labels
+          <Stack spacing={3}>
+            <OverviewSkeleton copy={overviewTab.copy} status={<LoadingStatus label={t.status.loading} />} />
+            {/* a supplier's ONRC and People row (the other sections may be absent, so they are not drawn) */}
+            {role === "SUPPLIER" && <SupplierSkeleton onrc={t.entityPage.onrc} people={t.entityPage.people} />}
+          </Stack>
         ) : (
           // ready, but the entity has nothing in this role: its ONRC section (an organisation that exists only in ONRC) still shows
           <Stack spacing={3}>
@@ -215,42 +303,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
           </Stack>
         )
-      ) : loading ? (
-        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : state.relationships && entity ? (
-        <>
-          {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
-          <RelationshipsTab
-            entity={entity}
-            counterparties={state.relationships.counterparties}
-            timeline={state.relationships.timeline}
-            selectedTimeline={picked.status === "ready" ? picked.timeline : null}
-            sidePanel={picked.status === "ready" ? picked.panel : null}
-            sidePanelLoading={picked.status === "loading"}
-            flowToggle={
-              <OptionToggle
-                options={LENSES}
-                value={lens === "flow" ? "flow" : "graph"}
-                onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })}
-                labels={t.entityPage.relationships.lens.options}
-                label={t.entityPage.relationships.lens.label}
-              />
-            }
-            flowMap={
-              lens === "flow" ? (
-                <LoadedFlowLensSection
-                  flow={state.relationships.flow}
-                  role={routeRole}
-                  home={entity.placement?.county?.code ?? null}
-                  locale={locale}
-                  copy={flowCopy}
-                  status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
-                />
-              ) : undefined
-            }
-            {...relationshipsTab}
-          />
-        </>
+        // The last answer of this entity stays on screen, dimmed, while a new filter loads
+        relationshipsView(entity, state.relationships, loading, null)
+      ) : loading ? (
+        relationshipsSkeleton
       ) : (
         // ready, but the entity has nothing in this role
         <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>

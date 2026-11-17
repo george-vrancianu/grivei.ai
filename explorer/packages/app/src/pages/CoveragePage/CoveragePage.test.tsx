@@ -8,6 +8,9 @@ import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 import { highlightWindow } from "./coveragePage.utils.ts";
 
+/** The grid panel's title is real from the first load (skeleton), so a loaded page is told by the grid's own region. */
+const loaded = (locale: "en" | "ro") => screen.findByRole("region", { name: catalogue[locale].coverage.grid.label });
+
 function open(url: string) {
   openAt(url);
   const { client, sent } = fixtureClient();
@@ -16,14 +19,15 @@ function open(url: string) {
 }
 
 describe.each([
-  ["en", "/explore/coverage", "Coverage", "Quarter by record kind", "Contracts: data through 2 July 2025", "Ministry of Finance list of public entities: snapshot of 1 November 2026"],
-  ["ro", "/ro/explore/coverage", "Acoperire", "Trimestre și tipuri de înregistrare", "Contracte: date până la 2 iulie 2025", "Lista entităților publice a Ministerului Finanțelor: versiunea din 1 noiembrie 2026"],
+  ["en", "/explore/coverage", "Coverage", "Quarter by record kind", "Contracts data through 2 July 2025", "Ministry of Finance list of public entities: snapshot of 1 November 2026"],
+  ["ro", "/ro/explore/coverage", "Acoperire", "Trimestre și tipuri de înregistrare", "Contracte date până la 2 iulie 2025", "Lista entităților publice a Ministerului Finanțelor: versiunea din 1 noiembrie 2026"],
 ] as const)("the Coverage page in %s", (_locale, path, title, gridHeading, contractThrough, snapshot) => {
   const marked = () => [...document.querySelectorAll<HTMLElement>("th[aria-current='true']")].map((th) => th.dataset["quarter"]);
 
   it("shows the title, the whole grid, data-through per record kind and the MF snapshot date, asking for the whole grid", async () => {
     const sent = open(path);
-    const grid = within(await screen.findByRole("region", { name: gridHeading }));
+    await loaded(_locale);
+    const grid = within(screen.getByRole("region", { name: gridHeading }));
     expect(screen.getByRole("heading", { level: 1, name: title })).toBeVisible();
     expect(grid.getAllByRole("cell").length).toBeGreaterThan(0);
     expect(document.querySelectorAll("th[data-quarter]")).toHaveLength(19);
@@ -35,7 +39,8 @@ describe.each([
 
   it("leaves no cell's state to colour alone: a glyph and an accessible name on every cell, stripes on a known gap, and the grid scrolls in its own box", async () => {
     open(path);
-    const grid = await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
+    const grid = screen.getByRole("region", { name: gridHeading });
     const cells = [...grid.querySelectorAll<HTMLElement>("td[data-state]")];
     expect(cells.length).toBeGreaterThan(0);
     for (const cell of cells) {
@@ -50,7 +55,7 @@ describe.each([
 
   it("has the N of M block with a link to the Coverage lens, and the lead paragraph", async () => {
     open(path);
-    await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
     const block = within(screen.getByRole("region", { name: catalogue[_locale].coverage.perCounty.heading }));
     expect(block.getByRole("link", { name: catalogue[_locale].coverage.perCounty.lensLink })).toHaveAttribute("href", `${path.replace("coverage", "")}?lens=coverage`);
     expect(screen.getByText(catalogue[_locale].coverage.intro)).toBeVisible();
@@ -58,14 +63,14 @@ describe.each([
 
   it("keeps the date chip's window on the link back to the Coverage lens", async () => {
     open(`${path}?from=2023-01-01&to=2023-12-31`);
-    await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
     const block = within(screen.getByRole("region", { name: catalogue[_locale].coverage.perCounty.heading }));
     expect(block.getByRole("link", { name: catalogue[_locale].coverage.perCounty.lensLink })).toHaveAttribute("href", `${path.replace("coverage", "")}?from=2023-01-01&to=2023-12-31&lens=coverage`);
   });
 
   it("shows the eyebrow, the one year label per four quarters and the grid caption", async () => {
     open(path);
-    await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
     const t = catalogue[_locale].coverage;
     expect(screen.getByText(t.eyebrow)).toBeVisible();
     expect(screen.getByText(t.grid.windowNote)).toBeVisible();
@@ -74,7 +79,7 @@ describe.each([
 
   it("highlights only the quarters of the date chip's window, against the whole grid", async () => {
     const sent = open(`${path}?from=2023-01-01&to=2023-12-31`);
-    await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
     expect(document.querySelectorAll("th[data-quarter]")).toHaveLength(19);
     expect(marked()).toEqual(["2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4"]);
     const outside = document.querySelector("th[data-quarter='2022-Q4']");
@@ -86,7 +91,7 @@ describe.each([
 
   it("highlights nothing when there is no date chip", async () => {
     open(path);
-    await screen.findByRole("region", { name: gridHeading });
+    await loaded(_locale);
     expect(marked()).toEqual([]);
   });
 });
@@ -116,7 +121,7 @@ describe("highlightWindow", () => {
 describe.each([
   {
     locale: "en", path: "/explore/coverage",
-    through: ["Award notices: data through 2 July 2025", "Contracts: data through 2 July 2025", "Direct purchases: data through 24 March 2023"],
+    through: ["Award notices data through 2 July 2025", "Contracts data through 2 July 2025", "Direct purchases data through 24 March 2023"],
     crawlOnly: ["Award notices, Q2 2021: 2 Records not in bulk data", "Award notices, Q3 2021: 1 Record not in bulk data", "Contracts, Q2 2025: 1 Record not in bulk data"],
     gaps: [
       ["Q1 2023", "Direct purchase award notifications", "Known gap", "Fisier lipsa la sursa (fixture); raportat", "0"],
@@ -126,7 +131,7 @@ describe.each([
   },
   {
     locale: "ro", path: "/ro/explore/coverage",
-    through: ["Anunțuri de atribuire: date până la 2 iulie 2025", "Contracte: date până la 2 iulie 2025", "Achiziții directe: date până la 24 martie 2023"],
+    through: ["Anunțuri de atribuire date până la 2 iulie 2025", "Contracte date până la 2 iulie 2025", "Achiziții directe date până la 24 martie 2023"],
     crawlOnly: [
       "Anunțuri de atribuire, T2 2021: 2 înregistrări absente din datele în masă",
       "Anunțuri de atribuire, T3 2021: 1 înregistrare absentă din datele în masă",
@@ -143,7 +148,7 @@ describe.each([
 
   it("lists the data-through date of every record kind SEAP has data for, and no planned Source", async () => {
     open(c.path);
-    await screen.findByRole("region", { name: t.coverage.gridHeading });
+    await screen.findByRole("region", { name: t.coverage.grid.label });
     const list = screen.getByRole("list", { name: "SEAP" });
     expect(within(list).getAllByRole("listitem").map((li) => (li.textContent ?? "").replace(/\s/g, " "))).toEqual(c.through);
     expect(screen.queryByRole("list", { name: "ONRC" })).toBeNull(); // planned Sources are served, but have nothing to show
@@ -163,7 +168,7 @@ describe.each([
 
   it("names a not-yet-loaded cell in the grid, with and without the awaiting-bulk-file rule", async () => {
     open(c.path);
-    await screen.findByRole("region", { name: t.coverage.gridHeading });
+    await screen.findByRole("region", { name: t.coverage.grid.label });
     const named = (quarter: string, kind: string) => {
       const header = document.querySelector(`th[data-quarter='${quarter}']`)!;
       const column = [...header.parentElement!.children].indexOf(header) + 1; // the kind label opens each body row, but sits in the header's first row, above the years
@@ -180,7 +185,7 @@ describe.each([
 
   it("lists the crawl-only Records per quarter and record kind, from the API's counts (#60/#90)", async () => {
     open(c.path);
-    await screen.findByRole("region", { name: t.coverage.gridHeading });
+    await screen.findByRole("region", { name: t.coverage.grid.label });
     const section = screen.getByRole("region", { name: t.coverage.crawlOnly.heading });
     expect(within(section).getAllByRole("listitem").map((li) => (li.textContent ?? "").replace(/\s/g, " "))).toEqual(c.crawlOnly);
   });

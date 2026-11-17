@@ -22,7 +22,7 @@ import type { ResultTabsCopy } from "../organisms/ResultTabs/index.ts";
 import type { FullResultsCopy } from "../organisms/FullResults/index.ts";
 import type { FilterChipsCopy } from "../molecules/FilterChips/index.ts";
 import type { SearchBarCopy } from "../molecules/SearchBar/index.ts";
-import type { FacetPanelCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
+import type { RecordsFilterBarCopy, RecordsTabCopy } from "../organisms/RecordsTab/index.ts";
 import type { MoneyLensMapCopy } from "../organisms/MoneyLensMap/index.ts";
 import type { CoverageGridCopy } from "../organisms/CoverageGrid/index.ts";
 import type { CoveragePageLayoutCopy } from "../templates/CoveragePageLayout/index.ts";
@@ -60,6 +60,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       panel: "The Record",
     },
     value: {
+      heading: "Value",
       published: "Value as published",
       counted: "Counted value",
       noValue: "No value in SEAP",
@@ -93,6 +94,12 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       lineBlankCeiling: (reported) => `Ceiling not published; subsequent contracts reported so far ${reported}`,
       agreement: "Awarded under the framework agreement",
       subsequentHeading: "Subsequent contracts",
+      subsequentAside: (n, f, sum) => `${f} ${plural(n, "contract", "contracts")} · ${sum}`,
+      shown: (shown, total) => `${shown} of ${total} shown, by value`,
+      showAll: (_n, f) => `Show all ${f}`,
+      showFirst: (_n, f) => `Show the first ${f}`,
+      showFewer: "Show fewer",
+      moreLink: "Subsequent contracts of this framework, in Records",
     },
     badges: { heading: "Badges and what they mean" },
     signals: {
@@ -120,6 +127,7 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       panel: "Înregistrarea",
     },
     value: {
+      heading: "Valoare",
       published: "Valoare publicată",
       counted: "Valoare luată în calcul",
       noValue: "Nicio valoare în SEAP",
@@ -153,6 +161,12 @@ const recordDetail: Record<Locale, Omit<RecordDetailCopy, "recordRow" | "cite">>
       lineBlankCeiling: (reported) => `Plafon nepublicat; contracte subsecvente raportate până acum ${reported}`,
       agreement: "Atribuit în baza acordului-cadru",
       subsequentHeading: "Contracte subsecvente",
+      subsequentAside: (n, f, sum) => `${roCount(n, f, "contract", "contracte")} · ${sum}`,
+      shown: (shown, total) => `${shown} din ${total} afișate, după valoare`,
+      showAll: (_n, f) => `Arată toate cele ${f}`,
+      showFirst: (_n, f) => `Arată primele ${f}`,
+      showFewer: "Arată mai puține",
+      moreLink: "Contractele subsecvente ale acestui acord-cadru, în Înregistrări",
     },
     badges: { heading: "Insigne și semnificația lor" },
     signals: {
@@ -215,6 +229,7 @@ const entityLink: Record<Locale, EntityLinkCopy> = {
 
 const entityHeader: Record<Locale, EntityHeaderCopy> = {
   en: {
+    breadcrumb: { label: "You are here", home: "explore", roles: { AUTHORITY: "contracting authority", SUPPLIER: "supplier" } },
     identity: {
       cui: "CUI",
       foreignVatId: "Foreign VAT ID",
@@ -244,6 +259,7 @@ const entityHeader: Record<Locale, EntityHeaderCopy> = {
     },
   },
   ro: {
+    breadcrumb: { label: "Unde te afli", home: "explorare", roles: { AUTHORITY: "autoritate contractantă", SUPPLIER: "furnizor" } },
     identity: {
       cui: "CUI",
       foreignVatId: "Cod TVA străin",
@@ -506,7 +522,7 @@ const filterChips = (locale: Locale): FilterChipsCopy => {
     };
 };
 
-const recordsFacets = (locale: Locale): FacetPanelCopy =>
+const recordsFacets = (locale: Locale): RecordsFilterBarCopy =>
   locale === "ro"
     ? {
         label: "Filtre pe fațete",
@@ -519,6 +535,13 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         signals: { OVER_CAP: "Peste plafon", SPLITTING: "Fracționare", FRAMEWORK_OVERRUN: "Depășirea acordului-cadru", NO_PUBLICATION: "Fără publicare", YOUNG_FIRM: "Firmă tânără", NO_CONSTRUCTION_CAEN: "Lucrări fără CAEN de construcții", AFTER_STRIKE_OFF: "După radiere", INSOLVENCY: "Insolvență", FEW_EMPLOYEES: "Cel mult un angajat", NO_FINANCIAL_STATEMENT: "Fără situații financiare", DONOR_TO_PARTY: "Donator al Partidului autorității", SOE_BOARD_IN_SUPPLIER: "Administrator al unei întreprinderi publice într-un furnizor" },
         channels: { DIRECT_PURCHASE: "Achiziție directă", CONTRACT: "Contract" },
         badges: badges.ro,
+        any: "Oricare",
+        picked: (n) => `${n} alese`,
+        active: {
+          group: "Filtre active", remove: (chip) => `Elimină ${chip}`, clearAll: "Șterge filtrele", from: (when) => `Din ${when}`, to: (when) => `Până în ${when}`,
+          between: (from, to) => `${from} – ${to}`, signal: (rule) => `Semnal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `doar înregistrările care se potrivesc cu „${q}”`,
+          county: (area) => `Județ: ${area}`, valueBucket: filterChips("ro").valueBucket.options, hasSignals: "Are Semnale", withoutSignals: "Fără Semnale", party: (list) => `Partid: ${list}`,
+        },
       }
     : {
         label: "Filter by facet",
@@ -531,11 +554,21 @@ const recordsFacets = (locale: Locale): FacetPanelCopy =>
         signals: { OVER_CAP: "Over cap", SPLITTING: "Splitting", FRAMEWORK_OVERRUN: "Framework overrun", NO_PUBLICATION: "No publication", YOUNG_FIRM: "Young firm", NO_CONSTRUCTION_CAEN: "Works without a construction CAEN", AFTER_STRIKE_OFF: "After strike-off", INSOLVENCY: "Insolvency", FEW_EMPLOYEES: "At most one employee", NO_FINANCIAL_STATEMENT: "No financial statement", DONOR_TO_PARTY: "Donor to the authority's Party", SOE_BOARD_IN_SUPPLIER: "Public-enterprise board member in a supplier" },
         channels: { DIRECT_PURCHASE: "Direct purchase", CONTRACT: "Contract" },
         badges: badges.en,
+        any: "Any",
+        picked: (n) => `${n} picked`,
+        active: {
+          group: "Active filters", remove: (chip) => `Remove ${chip}`, clearAll: "Clear filters", from: (when) => `From ${when}`, to: (when) => `Until ${when}`,
+          between: (from, to) => `${from} – ${to}`, signal: (rule) => `Signal: ${rule}`, cpv: (code) => `CPV: ${code}`, query: (q) => `only Records matching “${q}”`,
+          county: (area) => `County: ${area}`, valueBucket: filterChips("en").valueBucket.options, hasSignals: "Has Signals", withoutSignals: "Without Signals", party: (list) => `Party: ${list}`,
+        },
       };
 
 const recordsTab = (locale: Locale): RecordsTabCopy => ({
   heading: locale === "ro" ? "Înregistrări" : "Records",
+  totalHeading: locale === "ro" ? "Total atribuit" : "Total awarded",
   facets: recordsFacets(locale),
+  order: orderSelect(locale),
+  showing: fullResults(locale).showing,
   empty: locale === "ro" ? { text: "Nicio înregistrare nu se potrivește cu aceste filtre.", clear: "Șterge filtrele" } : { text: "No Records match these filters.", clear: "Clear filters" },
   total: sampleCopy.total(locale),
   recordRow: recordRow(locale),
@@ -569,11 +602,14 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          period: (from, to) => (from === to ? from : `${from} – ${to}`), tallest: (month, amount) => `luna cu cei mai mulți bani: ${month}, ${amount}`,
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
-          total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.",
+          awarded: "Atribuit", records: "Înregistrări", signals: "Are Semnale", wonTogether: "Unele înregistrări au fost câștigate împreună cu alte părți, într-un consorțiu.",
+          shown: (n, m) => `${n} din ${m} afișate`, all: (records, name) => `Toate cele ${records} cu ${name}`,
+          close: "Închide", empty: "Nicio înregistrare cu această contraparte.",
         },
       }
     : {
@@ -599,11 +635,14 @@ const relationshipsTab = (locale: Locale): RelationshipsTabCopy => {
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          period: (from, to) => (from === to ? from : `${from} to ${to}`), tallest: (month, amount) => `tallest month: ${month}, ${amount}`,
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
-          total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.",
+          awarded: "Awarded", records: "Records", signals: "Has Signals", wonTogether: "Some Records were won together with other parties, as a consortium.",
+          shown: (n, m) => `${n} of ${m} shown`, all: (records, name) => `All ${records} with ${name}`,
+          close: "Close", empty: "No Records with this counterparty.",
         },
       };
 };
@@ -619,6 +658,7 @@ const CAEN_YEARS = [1998, 2003, 2008, 2025];
 const onrcSection: Record<Locale, OnrcSectionCopy> = {
   en: {
     heading: "ONRC registration",
+    aside: (snapshot) => `trade register · snapshot of ${snapshot}`,
     registrationNumber: "Registration number",
     registrationDate: "Registered",
     registrationDateUnknown: "not in the snapshot we read",
@@ -647,6 +687,7 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
   },
   ro: {
     heading: "Înmatriculare ONRC",
+    aside: (snapshot) => `registrul comerțului · instantaneul din ${snapshot}`,
     registrationNumber: "Număr de înmatriculare",
     registrationDate: "Înmatriculată",
     registrationDateUnknown: "nu apare în instantaneul citit",
@@ -678,6 +719,8 @@ const onrcSection: Record<Locale, OnrcSectionCopy> = {
 const peopleSection: Record<Locale, PeopleSectionCopy> = {
   en: {
     heading: "Administrators and legal representatives",
+    aside: (snapshot) => `ONRC · snapshot of ${snapshot}`,
+    foot: "Names link to a person page only in a Private view.",
     intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
     none: "ONRC lists no administrator or legal representative for this organisation.",
     born: (year) => `born ${year}`,
@@ -687,6 +730,8 @@ const peopleSection: Record<Locale, PeopleSectionCopy> = {
   },
   ro: {
     heading: "Administratori și reprezentanți legali",
+    aside: (snapshot) => `ONRC · instantaneul din ${snapshot}`,
+    foot: "Numele duc la pagina unei persoane doar într-o vedere privată.",
     intro: "Așa cum îi listează ONRC pentru această organizație, legată de bani publici. Persoanele cu același nume nu sunt niciodată unite: o persoană este aceeași doar dacă numele și data nașterii completă coincid.",
     none: "ONRC nu listează niciun administrator sau reprezentant legal pentru această organizație.",
     born: (year) => `anul nașterii ${year}`,
@@ -698,19 +743,23 @@ const peopleSection: Record<Locale, PeopleSectionCopy> = {
 
 const personDetail: Record<Locale, PersonDetailCopy> = {
   en: {
-    privateView: "Private view: this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public.",
-    born: (year) => `born ${year}`,
+    privateView: { lead: "Private view:", text: "this page is shown only where the host reveals Restricted content. It joins one person's roles across organisations and is not public." },
+    breadcrumb: { label: "You are here", home: "explore", current: "person" },
+    figures: { born: "Born", roles: "Roles", source: "Source", sourceName: "ONRC", snapshot: (date) => `snapshot of ${date}` },
     rolesHeading: "Roles",
     roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "no organisation page",
     basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
     source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
   },
   ro: {
-    privateView: "Vedere privată: această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică.",
-    born: (year) => `anul nașterii ${year}`,
+    privateView: { lead: "Vedere privată:", text: "această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică." },
+    breadcrumb: { label: "Unde te afli", home: "explorare", current: "persoană" },
+    figures: { born: "Născut(ă)", roles: "Roluri", source: "Sursa", sourceName: "ONRC", snapshot: (date) => `instantaneul din ${date}` },
     rolesHeading: "Roluri",
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
+    keyLine: (key) => `CUI ${key}`,
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
     source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,
@@ -725,19 +774,19 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
           label: "Cifre principale", total: "Total atribuit", counterparties: "Contraparți", topShare: (p) => `Cea mai mare deține ${p} din total`,
           directPurchase: "Pondere prin achiziție directă", signals: "Semnale", totalFigure: sampleCopy.total(locale),
         },
-        signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate." },
+        signals: { heading: (_n, f) => `Semnale (${f})`, empty: "Niciun semnal pentru această entitate.", range: (from, to, total) => `Semnalele ${from}–${to} din ${total}` },
         counterparties: {
-          heading: "Contraparți", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`,
+          heading: "Contraparți", meta: "pondere din totalul atribuit", graph: (_n, f) => `Toate cele ${f}, ca graf`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), more: (_n, f) => `și încă ${f}`,
           empty: "Nicio contraparte în această selecție.", party,
         },
-        procedures: { heading: "Tipuri de procedură", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
+        procedures: { heading: "Tipuri de procedură", meta: "așa cum le publică SEAP", records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), empty: "Nicio procedură în această selecție." },
         consortia: {
           heading: "Asocieri", convention: "Partea egală a fiecărui membru este o convenție de calcul, nu o cifră publicată de SEAP.",
           share: (amount) => `parte egală ${amount}`, records: (n, f) => roCount(n, f, "înregistrare", "înregistrări"), party,
         },
         frameworks: {
           heading: "Acorduri-cadru",
-          line: (n, f, ceilings, reported) => `${roCount(n, f, "acord-cadru", "acorduri-cadru")}, plafoane ${ceilings}, contracte subsecvente raportate ${reported}`,
+          agreements: "Acorduri", ceilings: "Plafoane", notSummed: "neadunate", subsequent: "Contracte subsecvente", ofCeilings: (p) => `${p} din plafoane`,
           none: "Niciun acord-cadru.", note: "Plafoanele nu sunt bani atribuiți și nu intră în total.",
         },
         largest: {
@@ -754,19 +803,19 @@ const entityOverview = (locale: Locale): EntityOverviewCopy => {
           label: "Headline numbers", total: "Total awarded", counterparties: "Counterparties", topShare: (p) => `The largest holds ${p} of the total`,
           directPurchase: "Share via direct purchase", signals: "Signals", totalFigure: sampleCopy.total(locale),
         },
-        signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity." },
+        signals: { heading: (_n, f) => `Signals (${f})`, empty: "No Signals for this entity.", range: (from, to, total) => `Signals ${from}–${to} of ${total}` },
         counterparties: {
-          heading: "Counterparties", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`,
+          heading: "Counterparties", meta: "share of the total awarded", graph: (_n, f) => `All ${f}, as a graph`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, more: (_n, f) => `and ${f} more`,
           empty: "No counterparties in this selection.", party,
         },
-        procedures: { heading: "Procedure types", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
+        procedures: { heading: "Procedure types", meta: "as SEAP publishes them", records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, empty: "No procedures in this selection." },
         consortia: {
           heading: "Consortia", convention: "Each member's equal share is a counting convention, not a figure SEAP publishes.",
           share: (amount) => `equal share ${amount}`, records: (n, f) => `${f} ${plural(n, "Record", "Records")}`, party,
         },
         frameworks: {
           heading: "Framework agreements",
-          line: (n, f, ceilings, reported) => `${f} ${plural(n, "framework agreement", "framework agreements")}, ceilings ${ceilings}, reported subsequent contracts ${reported}`,
+          agreements: "Agreements", ceilings: "Ceilings", notSummed: "not summed", subsequent: "Subsequent contracts", ofCeilings: (p) => `${p} of the ceilings`,
           none: "No framework agreements.", note: "Ceilings are not money awarded and are not in the total.",
         },
         largest: {
@@ -946,7 +995,28 @@ const sourceEyebrow: Record<Locale, SourceEyebrowCopy> = {
   ro: { search: "caută", scope: "național", period: "din 2021" },
 };
 
+/** The four not-found states' titles and sentences and the two actions' labels, as the app's catalogue words them. */
+const notFoundPanel = {
+  en: {
+    back: "Back to the main screen",
+    search: "Search",
+    address: ["Page not found", "Nothing in the explorer lives at this address. Check it for a typo, or start again from the main screen."],
+    entity: ["Entity not found", "No authority or supplier is published under this key."],
+    person: ["Person page not available", "This page is not available on this host, or no person has this id. Person pages are shown only in a Private view."],
+    record: ["Record not found", "No Record is published under the code CAN0000000."],
+  },
+  ro: {
+    back: "Înapoi la ecranul principal",
+    search: "Căutare",
+    address: ["Pagina nu a fost găsită", "La această adresă nu se află nimic în explorer. Verifică dacă este scrisă corect sau pornește din nou de la ecranul principal."],
+    entity: ["Entitatea nu a fost găsită", "Nicio autoritate sau furnizor nu este publicat sub această cheie."],
+    person: ["Pagina persoanei nu este disponibilă", "Această pagină nu este disponibilă pe această gazdă sau nicio persoană nu are acest id. Paginile persoanelor apar doar într-o vedere privată."],
+    record: ["Înregistrarea nu a fost găsită", "Nicio înregistrare nu este publicată sub codul CAN0000000."],
+  },
+} as const;
+
 export const sampleCopy = {
+  notFoundPanel: (locale: Locale) => notFoundPanel[locale],
   sourceEyebrow: (locale: Locale): SourceEyebrowCopy => sourceEyebrow[locale],
   signalCard: (locale: Locale): SignalCardCopy => signalCard[locale],
   signalBadge: (locale: Locale): SignalBadgeCopy => signalCard[locale],
@@ -1116,6 +1186,8 @@ export const sampleCopy = {
             homeCounty: "Județul entității",
             direction: { supplier: (home) => `Banii intră în ${home}`, authority: (home) => `Banii pleacă din ${home}` },
           },
+          panel: { heading: "Flux de bani", meta: { authority: "încotro merg banii autorității", supplier: "de unde vin banii furnizorului" } },
+          counties: { label: "Banii pe județe" },
           empty: "Niciun flux de bani pentru filtrul curent.",
         }
       : {
@@ -1148,6 +1220,8 @@ export const sampleCopy = {
             homeCounty: "The entity's county",
             direction: { supplier: (home) => `Money flows in to ${home}`, authority: (home) => `Money flows out of ${home}` },
           },
+          panel: { heading: "Money flow", meta: { authority: "where this authority's money goes", supplier: "where this supplier's money comes from" } },
+          counties: { label: "Money by county" },
           empty: "No money flow for the current filter.",
         };
   },
@@ -1226,6 +1300,8 @@ export const sampleCopy = {
           heading: "Lacune cunoscute",
           intro: "Fiecare celulă care este lacună cunoscută, posibil incompletă sau nevizibilă în sursă, cu motivul sau regula ei.",
           empty: "Nicio lacună cunoscută în datele afișate.",
+          tableLabel: "Lacunele cunoscute pe trimestre și tipuri de înregistrare",
+          count: (n) => roCount(n, String(n), "celulă", "celule"),
           columns: { quarter: "Trimestru", kind: "Tip de înregistrare", state: "Stare", reason: "Motiv sau regulă", records: "Înregistrări" },
         },
         rules: {
@@ -1311,6 +1387,8 @@ export const sampleCopy = {
           heading: "Known gaps",
           intro: "Every cell that is a known gap, possibly incomplete or not visible in the source, with its reason or its rule.",
           empty: "No known gaps in the data shown.",
+          tableLabel: "Known gaps by quarter and record kind",
+          count: (n) => `${n} ${plural(n, "cell", "cells")}`,
           columns: { quarter: "Quarter", kind: "Record kind", state: "State", reason: "Reason or rule", records: "Records" },
         },
         rules: {

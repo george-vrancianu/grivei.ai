@@ -3,6 +3,7 @@ import type { EntityRef, EntityRole } from "../../../../types.ts";
 import { EntityLink, type EntityLinkCopy } from "../../../../atoms/EntityLink/index.ts";
 import { formatCount } from "../../../../atoms/ApproxCount/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { color, font, type } from "../../../../../theme/tokens.ts";
 import { shownSuppliers } from "../../signalCard.utils.ts";
 
 export interface SignalPartiesCopy {
@@ -26,7 +27,7 @@ export interface SignalPartiesProps {
 export function SignalParties({ authority, suppliers, entityHref, locale, copy, onNavigate }: SignalPartiesProps) {
   const { shown, more } = shownSuppliers(suppliers);
   return (
-    <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", columnGap: 2, rowGap: 0.5, m: 0, "& dd": { m: 0 } }}>
+    <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "max-content 1fr", columnGap: 2, rowGap: 0.5, m: 0, "& dt": { color: color.muted, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.body.lineHeight }, "& dd": { m: 0 } }}>
       <dt>{copy.authority}</dt>
       <dd>
         <EntityLink entity={authority} href={entityHref(authority, "authority")} copy={copy.entityLink} onNavigate={onNavigate} />
