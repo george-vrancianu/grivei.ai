@@ -18,7 +18,7 @@ describe("the routes in both languages", () => {
     for (const [locale, prefix] of [["en", "/explore"], ["ro", "/ro/explore"]] as const) {
       openAt(`${prefix}/search`);
       const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
-      expect(screen.getByRole("heading", { level: 1, name: catalogue[locale].pages.search.title })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: catalogue[locale].pages.search.title.suppliers })).toBeInTheDocument();
       expect(await screen.findByRole("heading", { level: 2, name: new RegExp(`^${catalogue[locale].results.tabs.suppliers} 3$`) })).toBeInTheDocument();
       unmount();
     }
@@ -79,7 +79,8 @@ describe("the header and the footer", () => {
   it("marks the current page, and only that one", () => {
     const cases = [
       ["/explore/", "explore"],
-      ["/explore/search", "search"],
+      ["/explore/search", "explore"],
+      ["/ro/explore/search?tab=records", "explore"],
       ["/explore/coverage", "coverage"],
       ["/ro/explore/methodology", "methodology"],
       ["/explore/authority/4384206", "explore"],
@@ -91,6 +92,17 @@ describe("the header and the footer", () => {
       const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
       const marked = nav(locale).getAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page");
       expect(marked.map((link) => link.textContent), path).toEqual([catalogue[locale].nav[current]]);
+      unmount();
+    }
+  });
+
+  it("lists Explore, Coverage and Methodology only, with no Search item, in both languages", () => {
+    for (const locale of ["en", "ro"] as const) {
+      openAt(locale === "en" ? "/explore/" : "/ro/explore/");
+      const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+      const copy = catalogue[locale].nav;
+      expect(nav(locale).getAllByRole("link").slice(0, 3).map((link) => link.textContent)).toEqual([copy.explore, copy.coverage, copy.methodology]);
+      expect(nav(locale).getAllByRole("link")).toHaveLength(4); // the language switch is the fourth
       unmount();
     }
   });

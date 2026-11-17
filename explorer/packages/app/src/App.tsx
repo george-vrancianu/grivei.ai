@@ -17,15 +17,15 @@ export interface AppProps {
   loadUatTopology?: LoadUatTopology;
 }
 
-/** The nav item a page belongs to: entity and Record pages are part of exploring; an unknown path has none. */
+/** The nav item a page belongs to: the main screen, Full results, entity and Record pages are part of exploring; an unknown path has none. */
 function navItemOf(route: Route): NavItem | null {
   switch (route.name) {
     case "main":
+    case "search":
     case "entity":
     case "record":
     case "person":
       return "explore";
-    case "search":
     case "coverage":
     case "methodology":
       return route.name;
@@ -50,7 +50,6 @@ function Shell() {
         switchTo={{ locale: other, href: switchLocalePath(pathname, search, other, hash) }}
         links={{
           explore: pathFor(locale, { name: "main" }),
-          search: pathFor(locale, { name: "search" }),
           coverage: pathFor(locale, { name: "coverage" }),
           methodology: pathFor(locale, { name: "methodology" }),
         }}

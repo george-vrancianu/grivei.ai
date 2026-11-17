@@ -26,7 +26,7 @@ export interface FilterChipsProps {
   /** The whole next filter. Fields the chips do not own come back as given. */
   onChange: (next: RecordFilter) => void;
   /** Procedure names to offer, as SEAP publishes them (the facet values); any the filter holds are added. */
-  procedureOptions: readonly string[];
+  procedureOptions?: readonly string[];
   /**
    * The lists the Party filter offers, as registered at the election (#181). The control is shown when there are any or the filter holds one;
    * a graph built without AEP's mandates offers none, and the chip is simply absent.
@@ -35,9 +35,13 @@ export interface FilterChipsProps {
   /** First year of the year selects; 2021 by default (the bulk data starts there). */
   firstYear?: number;
   /** Last year of the year selects (the current year, or the year the data runs through). */
-  lastYear: number;
+  lastYear?: number;
   /** The name the page shows for the filter's `county` ("Brașov"); the code is shown when absent. The county chip appears whenever the filter holds a county. */
   countyName?: string;
+  /** The name the page shows for the filter's `uat`; its SIRUTA is shown when absent. The UAT chip appears whenever the filter holds a UAT; removing it unsets only `uat`. */
+  uatName?: string;
+  /** Show the filter menus (default). `false` shows only the active chips, each removable, with Clear all: the full-results page, which sets no facet. */
+  menus?: boolean;
   locale: Locale;
   copy: FilterChipsCopy;
 }
@@ -49,10 +53,10 @@ const CHANNELS = ["DIRECT_PURCHASE", "CONTRACT"] as const satisfies readonly Cha
 const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[];
 
 /**
- * The filter bar: the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
- * with the active ones listed below as chips, each removable (the map-picked county among them: removing it unsets `county` and `uat`; Clear all does too). Controlled: it reflects `filter` and reports the next one.
+ * The filter bar (or, with `menus={false}`, only the active chips: the full-results page): the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
+ * with the active ones listed below as chips, each removable (the map-picked county among them, worded "Supplier county" on the suppliers' side: removing it unsets `county` and `uat`, Clear all does too; the picked UAT is a chip of its own, removing it unsets `uat` only). Controlled: it reflects `filter` and reports the next one.
  */
-export function FilterChips({ filter, onChange, procedureOptions, partyOptions = [], firstYear = FIRST_YEAR, lastYear, countyName, locale, copy }: FilterChipsProps) {
+export function FilterChips({ filter, onChange, procedureOptions = [], partyOptions = [], firstYear = FIRST_YEAR, lastYear = new Date().getFullYear(), countyName, uatName, menus = true, locale, copy }: FilterChipsProps) {
   const active = activeChips(
     filter,
     {
@@ -65,60 +69,67 @@ export function FilterChips({ filter, onChange, procedureOptions, partyOptions =
       badges: badgeLabels(copy.badges.badges),
       party: copy.active.party,
       county: copy.active.county,
+      supplierCounty: copy.active.supplierCounty,
+      uat: copy.active.uat,
     },
     locale,
     countyName,
+    uatName,
   );
+  // Chips only and none on: nothing to show, and no empty "Filters" region.
+  if (!menus && active.length === 0) return null;
   return (
     <Box component="section" aria-label={copy.label}>
-      <FilterStrip>
-        <FilterBarRow>
-          <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
-          <FilterBarDivider />
-          <YearMenu
-            filter={filter}
-            firstYear={firstYear}
-            lastYear={lastYear}
-            onFromYear={(year) => onChange(setFromYear(filter, year))}
-            onToYear={(year) => onChange(setToYear(filter, year))}
-            copy={copy.year}
-            unsetLabel={copy.menuAny}
-          />
-          <ChoiceMenu
-            label={copy.channel.group}
-            unsetLabel={copy.menuAny}
-            options={CHANNELS.map((value) => ({ value, label: copy.channel.options[value] }))}
-            selected={filter.channel}
-            onChoose={(channel) => onChange(toggleChannel(filter, channel))}
-          />
-          <ChoiceMenu
-            label={copy.valueBucket.group}
-            unsetLabel={copy.menuAny}
-            options={BUCKETS.map((value) => ({ value, label: copy.valueBucket.options[value] }))}
-            selected={filter.valueBucket}
-            onChoose={(bucket) => onChange(toggleValueBucket(filter, bucket))}
-          />
-          <ProcedureMenu
-            procedures={procedureChoices(procedureOptions, filter)}
-            selected={filter.procedure}
-            onToggle={(procedure) => onChange(toggleProcedure(filter, procedure))}
-            copy={copy.procedure}
-            unsetLabel={copy.menuAny}
-            picked={copy.picked}
-          />
-          <BadgeMenu
-            label={copy.badges.menu}
-            selected={filter.badges}
-            onToggle={(badge) => onChange(toggleBadge(filter, badge))}
-            copy={copy.badges.badges}
-            unsetLabel={copy.menuAny}
-            picked={copy.picked}
-          />
-          {(partyOptions.length > 0 || filter.party) && (
-            <PartyMenu parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} unsetLabel={copy.menuAny} />
-          )}
-        </FilterBarRow>
-      </FilterStrip>
+      {menus && (
+        <FilterStrip>
+          <FilterBarRow>
+            <HasSignalsChip hasSignals={filter.hasSignals} onToggle={() => onChange(toggleHasSignals(filter))} copy={copy.signals} />
+            <FilterBarDivider />
+            <YearMenu
+              filter={filter}
+              firstYear={firstYear}
+              lastYear={lastYear}
+              onFromYear={(year) => onChange(setFromYear(filter, year))}
+              onToYear={(year) => onChange(setToYear(filter, year))}
+              copy={copy.year}
+              unsetLabel={copy.menuAny}
+            />
+            <ChoiceMenu
+              label={copy.channel.group}
+              unsetLabel={copy.menuAny}
+              options={CHANNELS.map((value) => ({ value, label: copy.channel.options[value] }))}
+              selected={filter.channel}
+              onChoose={(channel) => onChange(toggleChannel(filter, channel))}
+            />
+            <ChoiceMenu
+              label={copy.valueBucket.group}
+              unsetLabel={copy.menuAny}
+              options={BUCKETS.map((value) => ({ value, label: copy.valueBucket.options[value] }))}
+              selected={filter.valueBucket}
+              onChoose={(bucket) => onChange(toggleValueBucket(filter, bucket))}
+            />
+            <ProcedureMenu
+              procedures={procedureChoices(procedureOptions, filter)}
+              selected={filter.procedure}
+              onToggle={(procedure) => onChange(toggleProcedure(filter, procedure))}
+              copy={copy.procedure}
+              unsetLabel={copy.menuAny}
+              picked={copy.picked}
+            />
+            <BadgeMenu
+              label={copy.badges.menu}
+              selected={filter.badges}
+              onToggle={(badge) => onChange(toggleBadge(filter, badge))}
+              copy={copy.badges.badges}
+              unsetLabel={copy.menuAny}
+              picked={copy.picked}
+            />
+            {(partyOptions.length > 0 || filter.party) && (
+              <PartyMenu parties={partyOptions} selected={filter.party} onChoose={(party) => onChange(setParty(filter, party))} copy={copy.party} unsetLabel={copy.menuAny} />
+            )}
+          </FilterBarRow>
+        </FilterStrip>
+      )}
       {/* Guard here, not in ActiveChips: an empty list must drop the strip too. */}
       {active.length > 0 && (
         <FilterStrip>

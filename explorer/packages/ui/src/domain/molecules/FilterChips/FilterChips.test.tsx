@@ -14,7 +14,7 @@ const OTHERS: RecordFilter = { q: "pod", authority: "4000001", supplier: "300000
 
 const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "ALIANȚA USR PLUS"];
 
-function setup(filter: RecordFilter = {}, extra: { countyName?: string; lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
+function setup(filter: RecordFilter = {}, extra: { countyName?: string; uatName?: string; lastYear?: number; firstYear?: number; partyOptions?: readonly string[]; menus?: boolean } = {}) {
   const onChange = vi.fn();
   renderInUi(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
   return onChange;
@@ -31,6 +31,19 @@ describe("FilterChips: what the reader sees", () => {
     expect(bar()).toBeVisible();
     expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
     expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
+  });
+
+  it("with menus={false} shows only the active chips, each removable, and no menus or switch", async () => {
+    const onChange = setup({ from: "2023-01-01", channel: "CONTRACT" }, { menus: false });
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Award year|^Channel/, hidden: true })).toBeNull();
+    await userEvent.click(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: "Remove Contract" }));
+    expect(onChange).toHaveBeenCalledWith({ from: "2023-01-01" });
+  });
+
+  it("with menus={false} and no chip renders nothing, not an empty Filters region", () => {
+    setup({}, { menus: false });
+    expect(screen.queryByRole("region", { name: "Filters" })).toBeNull();
   });
 
   it("reflects a filter: pressed switch, years, and one removable chip per value", () => {
@@ -328,9 +341,16 @@ describe("FilterChips: the active chips' remove actions", () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ channel: "CONTRACT" });
   });
 
+  it("shows the picked UAT as its own chip and the supplier side on the county chip; removing the UAT unsets only it", async () => {
+    const onChange = setup({ county: "RO-BV", uat: "880010", countySide: "SUPPLIER" }, { countyName: "Brașov", uatName: "Sânpetru" });
+    expect(active().getByRole("button", { name: "Remove Supplier county: Brașov" })).toBeVisible();
+    await userEvent.click(active().getByRole("button", { name: "Remove UAT: Sânpetru" }));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith({ county: "RO-BV", countySide: "SUPPLIER" });
+  });
+
   it("removing the county chip unsets the county and the UAT, and nothing else", async () => {
     const onChange = setup({ ...FULL, county: "RO-BV", uat: "12345" }, { countyName: "Brașov" });
-    await userEvent.click(active().getByRole("button", { name: "Remove County: Brașov" }));
+    await userEvent.click(active().getByRole("button", { name: "Remove Supplier county: Brașov" }));
     expect(onChange).toHaveBeenCalledExactlyOnceWith(FULL);
   });
 

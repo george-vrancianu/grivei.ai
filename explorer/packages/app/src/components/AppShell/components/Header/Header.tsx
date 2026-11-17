@@ -5,7 +5,7 @@ import { AppLink } from "../../../AppLink/index.ts";
 import { LanguageSwitch } from "../../../LanguageSwitch/index.ts";
 import { headerSx } from "./header.utils.ts";
 
-export type NavItem = "explore" | "search" | "coverage" | "methodology";
+export type NavItem = "explore" | "coverage" | "methodology";
 
 export interface HeaderProps {
   copy: Pick<Copy, "brand" | "nav" | "language">;
@@ -18,7 +18,7 @@ export interface HeaderProps {
   busy?: boolean;
 }
 
-const NAV: readonly NavItem[] = ["explore", "search", "coverage", "methodology"];
+const NAV: readonly NavItem[] = ["explore", "coverage", "methodology"];
 
 /** The header of every page: the logo and brand (home), the main navigation with the current page marked, then the EN/RO switch. */
 export function Header({ copy, switchTo, links, current, busy = false }: HeaderProps) {

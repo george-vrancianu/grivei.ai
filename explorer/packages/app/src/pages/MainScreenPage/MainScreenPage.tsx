@@ -13,7 +13,7 @@ import { MainTotal } from "../../components/MainTotal/index.ts";
 import { methodologyHref } from "../../methodology/methodologyLinks.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate } from "../../routing/location.tsx";
-import { useCountyTopology, useUatTopology } from "../../geo/index.ts";
+import { countyChipName, useCountyTopology, useUatChipName, useUatTopology } from "../../geo/index.ts";
 import { pathFor } from "../../routing/routes.ts";
 import { encodeUrlState } from "../../urlState/codec.ts";
 import { asSource, NO_COUNTS, pickerOptions } from "../../sources/sourceCounts.ts";
@@ -24,7 +24,7 @@ import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { withSuspectBadge } from "../../urlState/suspect.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { highlightWindow, useCoveragePage } from "../CoveragePage/index.ts";
-import { anyInFlight, busyPanels, countyChipName } from "./mainScreenPage.utils.ts";
+import { anyInFlight, busyPanels } from "./mainScreenPage.utils.ts";
 import { isStale } from "../../graphql/useHeldQuery.ts";
 import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
 import { useCoverageLens } from "./hooks/useCoverageLens.ts";
@@ -50,6 +50,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
   const mapLens = toMapLens(lens);
   const state = useMainScreen({ filter });
   const topology = useCountyTopology();
+  const uatName = useUatChipName(filter);
   // A county on the authority side zooms into its UATs: a second query beside MainScreen for the same filter, and the county's own outlines.
   const zoomed = zoomedCountyOf(filter);
   const zoom = useZoomedCounty(zoomed === null ? null : zoomVariables(filter, zoomed));
@@ -106,6 +107,7 @@ export function MainScreenPage({ locale }: { locale: Locale }) {
           partyOptions={partyOptions}
           lastYear={new Date().getFullYear()}
           {...(filter.county ? { countyName: countyChipName(filter.county, topology, t.moneyLensMap.tiles) } : {})}
+          {...(uatName ? { uatName } : {})}
           locale={locale}
           copy={t.filterChips}
         />

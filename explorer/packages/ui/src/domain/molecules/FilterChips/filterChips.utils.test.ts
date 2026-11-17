@@ -18,6 +18,8 @@ const text: ActiveChipText = {
   badges: Object.fromEntries(Object.entries(copy.badges.badges).map(([b, t]) => [b, t.label])) as ActiveChipText["badges"],
   party: copy.active.party,
   county: copy.active.county,
+  supplierCounty: copy.active.supplierCounty,
+  uat: copy.active.uat,
 };
 
 describe("filter helpers", () => {
@@ -96,14 +98,28 @@ describe("filter helpers", () => {
 });
 
 describe("activeChips", () => {
-  it("is empty for a filter without chip fields or county", () => {
-    expect(activeChips({ q: "x", uat: "1" }, text, "en")).toEqual([]);
+  it("is empty for a filter without chip fields, county or UAT", () => {
+    expect(activeChips({ q: "x", countySide: "SUPPLIER" }, text, "en")).toEqual([]);
   });
 
-  it("has a county chip, first, named by the caller or else by its code, removing the county and the UAT", () => {
-    const filter: RecordFilter = { q: "x", county: "RO-BV", uat: "1", countySide: "SUPPLIER", channel: "CONTRACT" };
-    const [county, channel] = activeChips(filter, text, "en", "Brașov");
+  it("words the county as the suppliers' county on the supplier side", () => {
+    expect(activeChips({ county: "RO-BV", countySide: "SUPPLIER" }, text, "en", "Brașov")[0]!.label).toBe("Supplier county: Brașov");
+    expect(activeChips({ county: "RO-BV", countySide: "AUTHORITY" }, text, "en", "Brașov")[0]!.label).toBe("County: Brașov");
+  });
+
+  it("has a UAT chip after the county, named by the caller or else by its SIRUTA, removing only the UAT", () => {
+    const filter: RecordFilter = { county: "RO-BV", uat: "880010", channel: "CONTRACT" };
+    const [county, uat] = activeChips(filter, text, "en", "Brașov", "Sânpetru");
     expect(county!.label).toBe("County: Brașov");
+    expect(uat!.label).toBe("UAT: Sânpetru");
+    expect(uat!.remove(filter)).toEqual({ county: "RO-BV", channel: "CONTRACT" });
+    expect(activeChips(filter, text, "en")[1]!.label).toBe("UAT: 880010");
+  });
+
+  it("has a county chip, first, worded by the side and named by the caller or else by its code, removing the county and the UAT", () => {
+    const filter: RecordFilter = { q: "x", county: "RO-BV", uat: "1", countySide: "SUPPLIER", channel: "CONTRACT" };
+    const [county, , channel] = activeChips(filter, text, "en", "Brașov");
+    expect(county!.label).toBe("Supplier county: Brașov");
     expect(channel!.label).toBe("Contract");
     expect(county!.remove(filter)).toEqual({ q: "x", countySide: "SUPPLIER", channel: "CONTRACT" });
     expect(activeChips({ county: "RO-BV" }, text, "en")[0]!.label).toBe("County: RO-BV");

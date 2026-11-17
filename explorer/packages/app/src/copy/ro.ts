@@ -121,7 +121,7 @@ const mandateBasis: Copy["entityPage"]["leadership"]["mandateBasis"] = {
 
 export const ro: Copy = {
   brand: "Grivei.ai",
-  nav: { label: "Principal", explore: "Explorează", search: "Căutare", coverage: "Acoperire", methodology: "Despre cifre" },
+  nav: { label: "Principal", explore: "Explorează", coverage: "Acoperire", methodology: "Despre cifre" },
   footer: {
     provenance: "sursa: SEAP, prin exporturile trimestriale de pe data.gov.ro și colectarea de pe e-licitatie.ro · fiecare înregistrare trimite la documentul său sursă",
     signals: "Semnalele sunt numărate, niciodată notate cu un scor",
@@ -272,6 +272,8 @@ export const ro: Copy = {
       to: (when) => `Până în ${when}`,
       party: (list) => `Partid: ${list}`,
       county: (area) => `Județ: ${area}`,
+      supplierCounty: (area) => `Județul furnizorului: ${area}`,
+      uat: (name) => `UAT: ${name}`,
       remove: (chip) => `Elimină ${chip}`,
       clearAll: "Șterge tot",
     },
@@ -281,9 +283,8 @@ export const ro: Copy = {
       title: "Pagina nu a fost găsită",
       body: "La această adresă nu se află nimic în explorer. Verifică dacă este scrisă corect sau pornește din nou de la ecranul principal.",
       back: "Înapoi la ecranul principal",
-      search: "Căutare",
     },
-    search: { title: "Căutare" },
+    search: { title: { suppliers: "Toți furnizorii", authorities: "Toate autoritățile contractante", records: "Toate înregistrările" } },
   },
   badges,
   entityLink,

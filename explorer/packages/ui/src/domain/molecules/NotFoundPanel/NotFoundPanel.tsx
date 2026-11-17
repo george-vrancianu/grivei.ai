@@ -20,18 +20,16 @@ export interface NotFoundPanelProps {
   body: string;
   /** The way back to the main screen: the accent button. */
   primary: NotFoundAction;
-  /** The other way on (Search): the outlined button. */
-  secondary: NotFoundAction;
-  /** A plain click on either action goes here instead of loading the page. */
+  /** A plain click on the action goes here instead of loading the page. */
   onNavigate?: ((href: string) => void) | undefined;
 }
 
 /**
- * The page's `main` (760 px wide) holding the one not-found panel (#260): "404" in mono `muted`, the title, a sentence and two actions.
+ * The page's `main` (760 px wide) holding the one not-found panel (#260): "404" in mono `muted`, the title, a sentence and the way back.
  * The unknown address, an entity, a person and a Record that are not there all use it, each with its own title and sentence.
  * A card, not a titled `Panel`: there is no header strip.
  */
-export function NotFoundPanel({ title, body, primary, secondary, onNavigate }: NotFoundPanelProps) {
+export function NotFoundPanel({ title, body, primary, onNavigate }: NotFoundPanelProps) {
   const headingId = useId();
   return (
     <Stack component="main" sx={{ ...pageSx, maxWidth: layout.notFoundMaxWidth, pt: 6 }}>
@@ -47,9 +45,6 @@ export function NotFoundPanel({ title, body, primary, secondary, onNavigate }: N
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
             <Button variant="contained" href={primary.href} onClick={followLink(primary.href, onNavigate)}>
               {primary.label}
-            </Button>
-            <Button variant="outlined" color="inherit" href={secondary.href} onClick={followLink(secondary.href, onNavigate)}>
-              {secondary.label}
             </Button>
           </Box>
         </Stack>

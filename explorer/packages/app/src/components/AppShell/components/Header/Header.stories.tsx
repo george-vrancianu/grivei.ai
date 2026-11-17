@@ -15,7 +15,7 @@ const header = (current: NavItem | null): StoryObj => ({
         copy={catalogue[locale]}
         switchTo={{ locale: other, href: other === "ro" ? "/ro/explore/" : "/explore/" }}
         current={current}
-        links={{ explore: `${base}/`, search: `${base}/search`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
+        links={{ explore: `${base}/`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
       />
     );
   },
@@ -23,7 +23,6 @@ const header = (current: NavItem | null): StoryObj => ({
 
 /** One story per nav item: the current page is marked; the last has no nav item at all. */
 export const Explore = header("explore");
-export const Search = header("search");
 export const Coverage = header("coverage");
 export const Methodology = header("methodology");
 export const NoCurrentPage = header(null);
