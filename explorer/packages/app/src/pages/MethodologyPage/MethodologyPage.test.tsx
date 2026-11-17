@@ -274,7 +274,7 @@ describe("every methodology link the app builds lands on an anchor of the page",
   it("points the totals' ⓘ at awarded value and the suspect Record's rule at suspect values, then resolves each on the page", async () => {
     const overview = await screenLinks("/explore/authority/1000017", () => screen.findByRole("list", { name: "Headline numbers" }));
     expect(overview).toContain("/explore/methodology#awarded-value");
-    const records = await screenLinks("/explore/authority/1000017/records", () => screen.findByRole("complementary", { name: "Filter by facet" }));
+    const records = await screenLinks("/explore/authority/1000017/records", () => screen.findByRole("region", { name: "Filter by facet" }));
     expect(records).toContain("/explore/methodology#awarded-value");
     const record = await screenLinks(suspectPath(), () => screen.findByRole("region", { name: "Suspect value rule" }));
     expect(record).toContain("/explore/methodology#suspect-values");
