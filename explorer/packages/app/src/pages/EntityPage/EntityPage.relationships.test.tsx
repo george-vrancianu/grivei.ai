@@ -137,7 +137,7 @@ describe("the picked counterparty's links", () => {
   ])("lead from the Signals chip to the Records carrying Signals (%s)", async (_locale, base, name) => {
     // ALFA carries Signals in the 2023 answer; the picked months and Records are the unfiltered ones under that filter
     const filter = { from: "2023-01-01", to: "2023-12-31" };
-    const find = (list: { variables: unknown }[], variables: unknown) => list.find((f) => canonical(f.variables) === canonical(variables))!;
+    const find = <T extends { variables: unknown }>(list: readonly T[], variables: unknown): T => list.find((f) => canonical(f.variables) === canonical(variables))!;
     const months = find(fixtures.EntityRelationships, { key: "1000017", role: "AUTHORITY", filter: {}, counterparty: "2000007" });
     const records = find(fixtures.EntityRecords, { key: "1000017", role: "AUTHORITY", filter: { supplier: "2000007" }, limit: 100, offset: 0 });
     openAt(`${base}?from=2023-01-01&to=2023-12-31&counterparty=2000007`);
