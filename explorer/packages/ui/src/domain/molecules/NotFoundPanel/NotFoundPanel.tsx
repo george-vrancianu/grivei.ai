@@ -1,9 +1,10 @@
+import { useId } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Button } from "../../../atoms/Button/index.ts";
 import { Card } from "../../../atoms/Card/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
-import { color, font, layout } from "../../../theme/tokens.ts";
+import { color, font, layout, type } from "../../../theme/tokens.ts";
 import { followLink } from "../../utils/followLink.ts";
 import { pageSx } from "../../utils/pageSx.ts";
 
@@ -31,17 +32,18 @@ export interface NotFoundPanelProps {
  * A card, not a titled `Panel`: there is no header strip.
  */
 export function NotFoundPanel({ title, body, primary, secondary, onNavigate }: NotFoundPanelProps) {
+  const headingId = useId();
   return (
     <Stack component="main" sx={{ ...pageSx, maxWidth: layout.notFoundMaxWidth, pt: 6 }}>
-      <Card component="section" aria-label={title} sx={{ p: 4 }}>
+      <Card component="section" aria-labelledby={headingId} sx={{ p: 4 }}>
         <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
           <Typography component="span" variant="label" sx={{ color: color.muted, fontFamily: font.mono }}>
             404
           </Typography>
-          <Typography variant="h1" component="h1">
+          <Typography id={headingId} variant="h1" component="h1">
             {title}
           </Typography>
-          <Typography>{body}</Typography>
+          <Typography sx={{ color: color.text2, fontSize: type.bodyLong.size, lineHeight: type.bodyLong.lineHeight }}>{body}</Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
             <Button variant="contained" href={primary.href} onClick={followLink(primary.href, onNavigate)}>
               {primary.label}

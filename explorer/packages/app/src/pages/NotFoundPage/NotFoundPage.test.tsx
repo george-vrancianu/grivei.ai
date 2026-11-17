@@ -33,7 +33,15 @@ describe.each([
     expect(panel.getByRole("link", { name: t.pages.notFound.search })).toHaveAttribute("href", `${base}/search`);
   });
 
-  it("follows both actions without a page load", async () => {
+  it("follows the primary action to the main screen", async () => {
+    openAt(`${base}/nope`);
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    await userEvent.click(within(screen.getByRole("main")).getByRole("link", { name: t.pages.notFound.back }));
+    expect(window.location.pathname).toBe(`${base}/`);
+    expect(await screen.findByRole("heading", { level: 1, name: t.main.title })).toBeVisible();
+  });
+
+  it("follows the secondary action to Search without a page load", async () => {
     openAt(`${base}/nope`);
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     await userEvent.click(within(screen.getByRole("main")).getByRole("link", { name: t.pages.notFound.search }));
