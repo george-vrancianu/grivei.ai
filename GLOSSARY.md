@@ -225,6 +225,10 @@ The entity page's summary card: headline numbers, Signals, top counterparties, p
 The entity page's filterable table of every record, its filters kept in the URL so a filtered list can be cited.
 _Avoid_: ledger
 
+**Full results**:
+The page listing every result of one kind (authorities, suppliers or Records) for the main screen's current search and filters, reached by its "Show all" link; not a separate place to start a search.
+_Avoid_: search page, drill-down
+
 **Pipeline ledger**:
 The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph; unrelated to the Records tab.
 _Avoid_: history, audit log
