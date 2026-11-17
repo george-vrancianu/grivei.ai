@@ -116,7 +116,7 @@ const mandateBasis: Copy["entityPage"]["leadership"]["mandateBasis"] = {
 
 export const en: Copy = {
   brand: "Grivei.ai",
-  nav: { label: "Main", explore: "Explore", search: "Search", coverage: "Coverage", methodology: "About the numbers" },
+  nav: { label: "Main", explore: "Explore", coverage: "Coverage", methodology: "About the numbers" },
   footer: {
     provenance: "source: SEAP, via data.gov.ro quarterly exports and the e-licitatie.ro crawl · every Record links to its source document",
     signals: "Signals are counted, never scored",
@@ -276,9 +276,8 @@ export const en: Copy = {
       title: "Page not found",
       body: "Nothing in the explorer lives at this address. Check it for a typo, or start again from the main screen.",
       back: "Back to the main screen",
-      search: "Search",
     },
-    search: { title: "Search" },
+    search: { title: { suppliers: "All suppliers", authorities: "All contracting authorities", records: "All Records" } },
   },
   badges,
   entityLink,

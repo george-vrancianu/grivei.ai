@@ -59,7 +59,7 @@ describe.each([
     openAt(url);
     render(<App client={client} />);
 
-    expect(screen.getByRole("heading", { level: 1, name: t.pages.search.title })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: t.pages.search.title.records })).toBeVisible();
     expect(screen.getByRole("searchbox")).toBeVisible();
     expect(screen.getByRole("link", { name: t.fullResults.back })).toBeVisible();
     expect(panel().getByRole("heading", { level: 2, name: kind })).toBeVisible();
@@ -120,7 +120,7 @@ describe.each([
 
     await screen.findByRole("alert", {}, SLOW);
     expect(panel().getByRole("alert")).toHaveTextContent(t.status.failed); // inside the results panel (read after the swap: the panel is a new element)
-    expect(screen.getByRole("heading", { level: 1, name: t.pages.search.title })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: t.pages.search.title.records })).toBeVisible();
     expect(screen.getByRole("searchbox")).toBeVisible();
     expect(screen.getByRole("link", { name: t.fullResults.back })).toBeVisible();
     expect(screen.getAllByRole("button", { name: t.status.retry })).toHaveLength(1);

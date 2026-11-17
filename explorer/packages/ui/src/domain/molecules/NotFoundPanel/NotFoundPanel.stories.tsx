@@ -17,7 +17,6 @@ const story = (state: "address" | "entity" | "person" | "record"): Story => ({
         title={t[state][0]}
         body={t[state][1]}
         primary={{ label: t.back, href: `${prefix}/` }}
-        secondary={{ label: t.search, href: `${prefix}/search` }}
       />
     );
   },

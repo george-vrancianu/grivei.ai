@@ -17,7 +17,7 @@ const shell = (busy: boolean): StoryObj => ({
         switchTo={{ locale: other, href: other === "ro" ? "/ro/explore/" : "/explore/" }}
         current="explore"
         busy={busy}
-        links={{ explore: `${base}/`, search: `${base}/search`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
+        links={{ explore: `${base}/`, coverage: `${base}/coverage`, methodology: `${base}/methodology` }}
       >
         <Typography sx={{ p: 3 }}>{catalogue[locale].main.title}</Typography>
       </AppShell>

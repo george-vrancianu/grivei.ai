@@ -1,7 +1,8 @@
-import { Button, DEFAULT_RESULT_TAB, FullResults, FullResultsSkeleton, LoadingStatus, Panel, SearchBar, SearchPanel, StateNote, toResultTab, Typography } from "@grivei/ui";
+import { Button, chipFieldsOf, DEFAULT_RESULT_TAB, FilterChips, FullResults, FullResultsSkeleton, LoadingStatus, Panel, SearchBar, SearchPanel, StateNote, toResultTab, Typography } from "@grivei/ui";
 import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
+import { countyChipName, useCountyTopology } from "../../geo/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
 import { currentUrl } from "../../routing/currentUrl.ts";
@@ -19,6 +20,7 @@ export function SearchPage() {
   const { filter, tab: tabParam, page = 1, order, setFilter, update } = useUrlState();
   const tab = toResultTab(tabParam);
   const state = useFullResults({ tab, filter, page, order });
+  const topology = useCountyTopology();
   const typing = useTypedQuerySpinner(filter.q, state);
   const here = pathFor(locale, { name: "search" });
   // The page links keep the whole URL state and change only `page`; page 1 is the default and drops out of the URL.
@@ -30,11 +32,20 @@ export function SearchPage() {
   return (
     <PageShell>
       <Typography variant="h1" sx={(theme) => ({ maxWidth: theme.graf.layout.titleMaxWidth })}>
-        {t.pages.search.title}
+        {t.pages.search.title[tab]}
       </Typography>
       <SearchPanel label={t.mainScreenLayout.regions.search}>
         <SearchBar copy={t.searchBar} value={filter.q ?? ""} onQueryChange={(q) => setFilter({ q: q || undefined })} loading={typing} />
       </SearchPanel>
+      <FilterChips
+        menus={false}
+        filter={filter}
+        // The chips' fields plus the county and its UAT, as on the main screen; a changed filter drops `page` and keeps `tab` and `order`.
+        onChange={(next) => setFilter({ ...chipFieldsOf(next), county: next.county ?? undefined, uat: next.uat ?? undefined })}
+        {...(filter.county ? { countyName: countyChipName(filter.county, topology, t.moneyLensMap.tiles) } : {})}
+        locale={locale}
+        copy={t.filterChips}
+      />
       <AppLink href={backHref} sx={{ alignSelf: "flex-start" }}>
         {t.fullResults.back}
       </AppLink>

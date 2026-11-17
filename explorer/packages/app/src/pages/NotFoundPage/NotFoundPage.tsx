@@ -11,7 +11,7 @@ export interface NotFoundPageProps {
   body: string;
 }
 
-/** The one not-found panel for the unknown address, an entity, a person and a Record: its own title and sentence, and the two ways on (the main screen, Search). */
+/** The one not-found panel for the unknown address, an entity, a person and a Record: its own title and sentence, and the way back to the main screen. */
 export function NotFoundPage({ locale, title, body }: NotFoundPageProps) {
   const t = useCopy();
   return (
@@ -19,7 +19,6 @@ export function NotFoundPage({ locale, title, body }: NotFoundPageProps) {
       title={title}
       body={body}
       primary={{ label: t.pages.notFound.back, href: pathFor(locale, { name: "main" }) }}
-      secondary={{ label: t.pages.notFound.search, href: pathFor(locale, { name: "search" }) }}
       onNavigate={(href) => navigate(href, "push")}
     />
   );

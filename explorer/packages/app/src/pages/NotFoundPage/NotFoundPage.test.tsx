@@ -22,7 +22,7 @@ describe.each([
     { name: "an unknown Record", path: `${base}/record/CAN0000000`, title: t.recordPage.notFound.title, body: t.recordPage.notFound.body("CAN0000000") },
   ];
 
-  it.each(states)("shows the title, the sentence and both actions for $name", async ({ path, title, body }) => {
+  it.each(states)("shows the title, the sentence and the one way back for $name", async ({ path, title, body }) => {
     openAt(path);
     render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
     expect(await screen.findByRole("heading", { level: 1, name: title })).toBeVisible();
@@ -30,7 +30,7 @@ describe.each([
     expect(screen.getByText(body)).toBeVisible();
     const panel = within(screen.getByRole("main"));
     expect(panel.getByRole("link", { name: t.pages.notFound.back })).toHaveAttribute("href", `${base}/`);
-    expect(panel.getByRole("link", { name: t.pages.notFound.search })).toHaveAttribute("href", `${base}/search`);
+    expect(panel.queryByRole("link", { name: /^(Search|Căutare)$/ })).not.toBeInTheDocument();
   });
 
   it("follows the primary action to the main screen", async () => {
@@ -39,13 +39,5 @@ describe.each([
     await userEvent.click(within(screen.getByRole("main")).getByRole("link", { name: t.pages.notFound.back }));
     expect(window.location.pathname).toBe(`${base}/`);
     expect(await screen.findByRole("heading", { level: 1, name: t.main.title })).toBeVisible();
-  });
-
-  it("follows the secondary action to Search without a page load", async () => {
-    openAt(`${base}/nope`);
-    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
-    await userEvent.click(within(screen.getByRole("main")).getByRole("link", { name: t.pages.notFound.search }));
-    expect(window.location.pathname).toBe(`${base}/search`);
-    expect(await screen.findByRole("heading", { level: 1, name: t.pages.search.title })).toBeVisible();
   });
 });
