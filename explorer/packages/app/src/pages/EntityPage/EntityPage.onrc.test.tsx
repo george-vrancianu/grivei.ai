@@ -79,3 +79,24 @@ describe("the ONRC section on an entity page", () => {
     expect(section.getByText(/ONRC publică stările fără date/)).toBeVisible();
   });
 });
+
+describe("the supplier sections' headers and layout", () => {
+  it.each([
+    ["/explore/supplier/3100020?signalOrder=value-desc", "trade register · snapshot of 6 May 2026"],
+    ["/ro/explore/supplier/3100020?signalOrder=value-desc", "registrul comerțului · instantaneul din 6 mai 2026"],
+  ])("names the Source and its snapshot in the header and puts ONRC before People (%s)", async (url, aside) => {
+    const section = await opened(url, /^(ONRC registration|Înmatriculare ONRC)$/);
+    expect(section.getByText(aside)).toBeVisible();
+    const onrc = screen.getByRole("region", { name: /^(ONRC registration|Înmatriculare ONRC)$/ });
+    const people = await screen.findByRole("region", { name: /^(Administrators and legal representatives|Administratori și reprezentanți legali)$/ });
+    expect(onrc.compareDocumentPosition(people) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("shows the seat as a definition and each status as a tag beside its date", async () => {
+    const section = await opened("/explore/supplier/3100020");
+    expect(section.getAllByRole("term").map((t) => t.textContent)).toContain("Registered seat");
+    expect(section.getAllByRole("definition").some((d) => /Cluj-Napoca, Str\. EXEMPLU/.test(d.textContent ?? ""))).toBe(true);
+    expect(section.getByText("insolvență")).toBeVisible();
+    expect(section.getByText("legal name today")).toBeVisible();
+  });
+});

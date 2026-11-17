@@ -1,7 +1,7 @@
 import { Link } from "../../../atoms/Link/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
+import { Box } from "../../../atoms/Box/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import type { PublicEnterpriseData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
@@ -9,6 +9,8 @@ import { formatDate } from "../../utils/formatDate.ts";
 export interface PublicEnterpriseSectionCopy {
   /** The section's title and the mark: "Public enterprise (AMEPIP)". */
   heading: string;
+  /** The header's right slot, the Source: "AMEPIP · list of 13 January 2026", given the formatted day AMEPIP published the list. */
+  aside: (published: string) => string;
   /** The basis in one sentence, given the formatted day AMEPIP published the list and whether the years are shown below it: why the entity is marked. */
   basis: (cui: string, published: string, withYears: boolean) => string;
   /** The label of each fact AMEPIP's row gives; the values are source data, shown as published. */
@@ -30,6 +32,8 @@ export interface PublicEnterpriseSectionProps {
   cui: string;
   locale: Locale;
   copy: PublicEnterpriseSectionCopy;
+  /** The panel shows its last answer while the next loads: its body is dimmed with `aria-busy="true"`; the header and the foot stay at full strength. */
+  busy?: boolean | undefined;
 }
 
 /**
@@ -37,30 +41,38 @@ export interface PublicEnterpriseSectionProps {
  * AMEPIP is a Reference source, so this is a short section on the page and not a Source of its own. The wording of the status and the
  * registration number is AMEPIP's (Romanian source data), never translated.
  */
-export function PublicEnterpriseSection({ enterprise, cui, locale, copy }: PublicEnterpriseSectionProps) {
+export function PublicEnterpriseSection({ enterprise, cui, locale, copy, busy }: PublicEnterpriseSectionProps) {
   const years = enterprise.firstYear !== null && enterprise.lastYear !== null ? copy.years(enterprise.firstYear, enterprise.lastYear) : null;
   const facts: [string, string][] = [
     [copy.listedAs, enterprise.listedAs],
     ...(enterprise.registrationNumber ? ([[copy.registrationNumber, enterprise.registrationNumber]] as [string, string][]) : []),
     ...(enterprise.status ? ([[copy.status, enterprise.status]] as [string, string][]) : []),
   ];
+  const published = formatDate(enterprise.snapshot, locale, "long");
   return (
-    <Panel heading={copy.heading} level="h2">
-      <Typography>{copy.basis(cui, formatDate(enterprise.snapshot, locale, "long"), years !== null)}</Typography>
-      <Stack component="dl" spacing={0.5} sx={{ m: 0 }}>
+    <Panel
+      heading={copy.heading}
+      level="h2"
+      busy={busy}
+      aside={copy.aside(published)}
+      foot={
+        <Typography variant="meta" component="span">
+          {enterprise.url ? <Link href={enterprise.url} target="_blank">{copy.link}</Link> : null}
+          {enterprise.url ? " · " : ""}
+          {copy.fetched(formatDate(enterprise.fetchedAt, locale, "long"), enterprise.license)}
+        </Typography>
+      }
+    >
+      <Typography>{copy.basis(cui, published, years !== null)}</Typography>
+      <Box component="dl" sx={{ m: 0, display: "grid", gridTemplateColumns: "max-content minmax(0, 1fr)", columnGap: 2, rowGap: 0.5 }}>
         {facts.map(([label, value]) => (
-          <Stack key={label} direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-            <Typography component="dt" variant="caption" color="text.secondary">{label}</Typography>
+          <Box key={label} sx={{ display: "contents" }}>
+            <Typography component="dt" variant="meta" color="text.secondary">{label}</Typography>
             <Typography component="dd" variant="body2" sx={{ m: 0 }}>{value}</Typography>
-          </Stack>
+          </Box>
         ))}
-      </Stack>
+      </Box>
       {years && <Typography variant="caption" color="text.secondary">{years}</Typography>}
-      <Typography variant="caption" color="text.secondary">
-        {enterprise.url ? <Link href={enterprise.url} target="_blank">{copy.link}</Link> : null}
-        {enterprise.url ? " · " : ""}
-        {copy.fetched(formatDate(enterprise.fetchedAt, locale, "long"), enterprise.license)}
-      </Typography>
     </Panel>
   );
 }

@@ -4,6 +4,7 @@ import { NumericCell } from "../../../../atoms/NumericCell/index.ts";
 import { TableRow } from "../../../../../atoms/TableRow/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
+import { Tag } from "../../../../atoms/Tag/index.ts";
 import { MoneyAmount } from "../../../../atoms/MoneyAmount/index.ts";
 import type { FinancialYearData } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
@@ -12,7 +13,7 @@ import { formatShare } from "../../financialStatementsSection.utils.ts";
 export interface FinancialYearRowCopy {
   /** Shown for every blank cell of MF's file (a blank is never read as zero): "not reported". */
   notReported: string;
-  /** The year's release, under the fiscal year. */
+  /** The year's release, a tag under the source lines. */
   revision: { firstRelease: string; revised: string; firstReleaseMayBeRevised: string };
   /** "MF, WEB_BL_BS_SL_AN2024.txt": the link text of the file a figure cites, given the file name. */
   source: (file: string) => string;
@@ -34,10 +35,9 @@ export function FinancialYearRow({ year, locale, copy }: FinancialYearRowProps) 
   const share = year.awardShareOfTurnover !== null ? formatShare(year.awardShareOfTurnover, locale) : year.turnover === null ? blank : "\u2014";
   const money = (bani: string | null) => (bani === null ? blank : <MoneyAmount bani={bani} locale={locale} />);
   return (
-    <TableRow data-fiscal-year={year.fiscalYear} data-revision={year.revision}>
+    <TableRow hover data-fiscal-year={year.fiscalYear} data-revision={year.revision}>
       <TableCell component="th" scope="row">
         <Typography component="span" variant="body2">{year.fiscalYear}</Typography>
-        <Typography component="div" variant="meta" color="text.secondary">{release}</Typography>
       </TableCell>
       <NumericCell>{money(year.turnover)}</NumericCell>
       <NumericCell>{money(year.profitOrLoss)}</NumericCell>
@@ -51,6 +51,8 @@ export function FinancialYearRow({ year, locale, copy }: FinancialYearRowProps) 
         {year.source.fileUrl ? <Link href={year.source.fileUrl} target="_blank">{copy.source(year.source.file)}</Link> : copy.source(year.source.file)}
         {year.source.datasetUrl && <Typography component="div" variant="meta"><Link href={year.source.datasetUrl} target="_blank">{year.source.via}</Link></Typography>}
         {year.source.published && <Typography component="div" variant="meta" color="text.secondary">{copy.published(formatDate(year.source.published, locale, "long"))}</Typography>}
+        {/* the year's release, under the source lines */}
+        <Typography component="div" variant="meta" sx={{ mt: 0.5 }}><Tag>{release}</Tag></Typography>
       </TableCell>
     </TableRow>
   );

@@ -418,6 +418,7 @@ export const en: Copy = {
     },
     onrc: {
       heading: "ONRC registration",
+      aside: (snapshot) => `trade register · snapshot of ${snapshot}`,
       registrationNumber: "Registration number",
       registrationDate: "Registered",
       registrationDateUnknown: "not in the snapshot we read",
@@ -446,6 +447,8 @@ export const en: Copy = {
     },
     people: {
       heading: "Administrators and legal representatives",
+      aside: (snapshot) => `ONRC · snapshot of ${snapshot}`,
+      foot: "Names link to a person page only in a Private view.",
       intro: "As ONRC lists them for this organisation, which is tied to public money. People who share a name are never merged: a person is the same only when name and full birth date match.",
       none: "ONRC lists no administrator or legal representative for this organisation.",
       born: (year) => `born ${year}`,
@@ -544,6 +547,7 @@ export const en: Copy = {
     signalOrder: { label: "Order Signals", options: { DATE_DESC: "by date", VALUE_DESC: "by RON" } },
     publicEnterprise: {
       heading: "Public enterprise (AMEPIP)",
+      aside: (published) => `AMEPIP · list of ${published}`,
       basis: (cui, published, withYears) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}${withYears ? ", for the financial years shown below" : ""}. The match is by CUI.`,
       listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
       years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
@@ -568,6 +572,7 @@ export const en: Copy = {
     },
     financials: {
       heading: "Financial statements",
+      aside: "MF · RON",
       intro: "Annual statements the company filed, as the Ministry of Finance (MF) publishes them on data.gov.ro, in RON. A blank cell in MF's file reads \"not reported\", never zero.",
       caption: "Annual financial statements by fiscal year, with the awards of the same year",
       columns: { year: "Fiscal year", turnover: "Turnover", profitOrLoss: "Profit or loss", debts: "Debts", equity: "Equity", employees: "Average employees", awarded: "Awarded that year", share: "Awards as a share of turnover", source: "Source" },
@@ -582,6 +587,7 @@ export const en: Copy = {
     },
     donations: {
       heading: "Firm donations to parties",
+      aside: (year) => `BaniPartide · data through ${year}`,
       supplierContext: (donations, loans) => `This supplier is also a firm donor: ${donations} ${donations === 1 ? "donation" : "donations"} and ${loans} ${loans === 1 ? "loan" : "loans"} to parties. Context only, not a Signal.`,
       intro: (year) => `Donations and loans this company made to parties, as BaniPartide lists them from the parties' annual publications, in RON. Data through ${year}: donations after that may be missing.`,
       caption: "Firm donations and loans to parties, newest first",

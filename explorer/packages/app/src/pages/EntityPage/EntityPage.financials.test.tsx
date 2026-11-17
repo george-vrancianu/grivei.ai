@@ -77,3 +77,13 @@ describe("the financial statements section", () => {
     expect(screen.queryByRole("region", { name: /Financial statements/ })).toBeNull();
   });
 });
+
+describe("the financial statements panel's header", () => {
+  it.each([
+    ["/explore/supplier/2000007", "Financial statements"],
+    ["/ro/explore/supplier/2000007", "Situații financiare"],
+  ])("names the Source and the unit in the header (%s)", async (url, name) => {
+    await opened(url);
+    expect(within(await screen.findByRole("region", { name })).getByText("MF · RON")).toBeVisible();
+  });
+});

@@ -39,6 +39,15 @@ describe("FinancialStatementsSection", () => {
     expect(screen.getByText(/The newest year is a first release/)).toBeVisible();
   });
 
+  it("names the Source and the unit in the header, and dims the table while the next answer loads", () => {
+    const { rerender } = show();
+    const region = screen.getByRole("region", { name: "Financial statements" });
+    expect(within(region).getByText("MF · RON")).toBeVisible();
+    expect(region.querySelector('[data-panel-part="body"]')).not.toHaveAttribute("aria-busy");
+    rerender(<FinancialStatementsSection financials={financials} locale="en" copy={financialsCopy.en} busy />);
+    expect(region.querySelector('[data-panel-part="body"]')).toHaveAttribute("aria-busy", "true");
+  });
+
   it("shows a loss as negative and the awards of the year with their share of turnover as context", () => {
     show();
     expect(row(2023).getByText(/[-\u2212]\s?(RON\s)?150[\s\u00a0.,]000/)).toBeVisible();

@@ -6,6 +6,7 @@ import type { PublicEnterpriseData } from "../types.ts";
 export const publicEnterpriseCopy: Record<Locale, PublicEnterpriseSectionCopy> = {
   en: {
     heading: "Public enterprise (AMEPIP)",
+    aside: (published) => `AMEPIP · list of ${published}`,
     basis: (cui, published, withYears) => `CUI ${cui} appears in AMEPIP's indicator tables of public enterprises under OUG 109/2011, published ${published}${withYears ? ", for the financial years shown below" : ""}. The match is by CUI.`,
     listedAs: "Listed as", registrationNumber: "Registration number", status: "ONRC status (as AMEPIP writes it)",
     years: (first, last) => (first === last ? `Financial year ${first}` : `Financial years ${first}–${last}`),
@@ -14,6 +15,7 @@ export const publicEnterpriseCopy: Record<Locale, PublicEnterpriseSectionCopy> =
   },
   ro: {
     heading: "Întreprindere publică (AMEPIP)",
+    aside: (published) => `AMEPIP · lista din ${published}`,
     basis: (cui, published, withYears) => `CUI ${cui} apare în tabelele de indicatori AMEPIP ale întreprinderilor publice din OUG 109/2011, publicate la ${published}${withYears ? ", pentru anii financiari afișați mai jos" : ""}. Potrivirea se face după CUI.`,
     listedAs: "Înscrisă ca", registrationNumber: "Număr de înregistrare", status: "Starea ONRC (cum o scrie AMEPIP)",
     years: (first, last) => (first === last ? `Anul financiar ${first}` : `Anii financiari ${first}–${last}`),
