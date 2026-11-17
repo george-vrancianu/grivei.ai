@@ -13,7 +13,7 @@ import { coverageLensHref } from "../../urlState/coverageLens.ts";
 import { useUrlState } from "../../urlState/useUrlState.ts";
 import { FULL_RESULTS_PAGE_SIZE, useFullResults } from "./hooks/useFullResults.ts";
 
-/** `/explore/search`: one tab's rows (`tab`, Suppliers by default) for the filter, a page at a time (`page`), plus the search box. */
+/** Full results, `/explore/search`: the heading for the kind, the search box, the active filter chips and one tab's rows (`tab`, Suppliers by default) for the filter, a page at a time (`page`). */
 export function SearchPage() {
   const t = useCopy();
   const { locale } = useLocation();

@@ -51,7 +51,7 @@ const CHANNELS = ["DIRECT_PURCHASE", "CONTRACT"] as const satisfies readonly Cha
 const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[];
 
 /**
- * The filter bar: the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
+ * The filter bar (or, with `menus={false}`, only the active chips: the full-results page): the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
  * with the active ones listed below as chips, each removable (the map-picked county among them: removing it unsets `county` and `uat`; Clear all does too). Controlled: it reflects `filter` and reports the next one.
  */
 export function FilterChips({ filter, onChange, procedureOptions = [], partyOptions = [], firstYear = FIRST_YEAR, lastYear = new Date().getFullYear(), countyName, menus = true, locale, copy }: FilterChipsProps) {
@@ -71,6 +71,8 @@ export function FilterChips({ filter, onChange, procedureOptions = [], partyOpti
     locale,
     countyName,
   );
+  // Chips only and none on: nothing to show, and no empty "Filters" region.
+  if (!menus && active.length === 0) return null;
   return (
     <Box component="section" aria-label={copy.label}>
       {menus && (

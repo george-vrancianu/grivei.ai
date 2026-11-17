@@ -51,7 +51,7 @@ export interface Copy {
   coverageLensMap: CoverageLensMapCopy;
   /** The Money lens zoomed into a county (UAT choropleth): the map's strings, the way back, the heading, the chosen UAT. */
   zoomedCounty: ZoomedCountySectionCopy & { /** The back link in the map panel's header strip: the way out of the zoom. */ back: string };
-  /** The titles of the pages that carry no data of their own (the page not found, the search page); the others have their own keys. */
+  /** The titles of the pages that carry no data of their own (the page not found, Full results); the others have their own keys. */
   pages: {
     notFound: { title: string; body: string; back: string };
     /** The Full results h1: "All <kind>", keyed by the result tab shown. */

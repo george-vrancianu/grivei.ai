@@ -14,7 +14,7 @@ const OTHERS: RecordFilter = { q: "pod", authority: "4000001", supplier: "300000
 
 const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "ALIANȚA USR PLUS"];
 
-function setup(filter: RecordFilter = {}, extra: { countyName?: string; lastYear?: number; firstYear?: number; partyOptions?: readonly string[] } = {}) {
+function setup(filter: RecordFilter = {}, extra: { countyName?: string; lastYear?: number; firstYear?: number; partyOptions?: readonly string[]; menus?: boolean } = {}) {
   const onChange = vi.fn();
   renderInUi(<FilterChips filter={filter} onChange={onChange} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale="en" copy={copy} {...extra} />);
   return onChange;
@@ -31,6 +31,19 @@ describe("FilterChips: what the reader sees", () => {
     expect(bar()).toBeVisible();
     expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
     expect(screen.queryByRole("group", { name: "Active filters" })).toBeNull();
+  });
+
+  it("with menus={false} shows only the active chips, each removable, and no menus or switch", async () => {
+    const onChange = setup({ from: "2023-01-01", channel: "CONTRACT" }, { menus: false });
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Award year|^Channel/, hidden: true })).toBeNull();
+    await userEvent.click(within(screen.getByRole("group", { name: "Active filters" })).getByRole("button", { name: "Remove Contract" }));
+    expect(onChange).toHaveBeenCalledWith({ from: "2023-01-01" });
+  });
+
+  it("with menus={false} and no chip renders nothing, not an empty Filters region", () => {
+    setup({}, { menus: false });
+    expect(screen.queryByRole("region", { name: "Filters" })).toBeNull();
   });
 
   it("reflects a filter: pressed switch, years, and one removable chip per value", () => {

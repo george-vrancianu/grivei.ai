@@ -18,11 +18,11 @@ const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "PARTIDUL NAȚIONAL LIBERAL", "ALIA
 const COUNTY_NAMES: Record<string, string> = { "RO-BV": "Brașov" };
 
 /** The chips are controlled; in the workbench a little state stands in for the URL. */
-function Demo({ initial, locale }: { initial: RecordFilter; locale: "en" | "ro" }) {
+function Demo({ initial, locale, menus = true }: { initial: RecordFilter; locale: "en" | "ro"; menus?: boolean }) {
   const [filter, setFilter] = useState<RecordFilter>(initial);
   return (
     <>
-      <FilterChips filter={filter} countyName={filter.county ? COUNTY_NAMES[filter.county] : undefined} onChange={setFilter} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
+      <FilterChips filter={filter} countyName={filter.county ? COUNTY_NAMES[filter.county] : undefined} onChange={setFilter} menus={menus} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
       <Typography variant="caption" component="pre" sx={{ mt: 2 }}>
         {JSON.stringify(filter)}
       </Typography>
@@ -31,6 +31,9 @@ function Demo({ initial, locale }: { initial: RecordFilter; locale: "en" | "ro" 
 }
 
 const demo = (initial: RecordFilter): Story["render"] => (_args, { globals }) => <Demo initial={initial} locale={localeOf(globals["locale"])} />;
+
+/** The full-results page: only the active chips (and Clear all), no facet menus; nothing at all with no filter. */
+export const ChipsOnly: Story = { render: (_args, { globals }) => <Demo initial={{ county: "RO-BV", from: "2024-01-01", channel: "CONTRACT" }} locale={localeOf(globals["locale"])} menus={false} /> };
 
 export const NoChips: Story = { render: demo({}) };
 export const SeveralActive: Story = {

@@ -7,6 +7,7 @@ import { App } from "../../App.tsx";
 import { catalogue } from "../../copy/index.ts";
 import { fixtureClient, type ExtraFixture } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
+import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
 
 const recordsAnswer = fixtures.FullResultsRecords.find((f) => f.variables.offset === 0 && !f.variables.order)!.data;
 const records = (filter: Record<string, unknown>, offset: number, order?: string): ExtraFixture => ({
@@ -45,6 +46,7 @@ it("opens bare /explore/search on unfiltered Suppliers, with no chips", async ()
   expect(await screen.findByRole("heading", { name: "Suppliers 3" })).toBeVisible();
   expect(sent.at(-1)).toMatchObject({ operation: "FullResultsSuppliers", variables: { filter: {}, offset: 0 } });
   expect(screen.queryByRole("group", { name: catalogue.en.filterChips.active.group })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: catalogue.en.filterChips.label })).not.toBeInTheDocument();
 });
 
 describe("the active filter chips", () => {
@@ -82,8 +84,8 @@ describe("the active filter chips", () => {
   it("removing the county chip unsets the county and its UAT", async () => {
     openAt("/explore/search?county=RO-BV&uat=1&tab=authorities");
     const { client } = fixtureClient({ extra: [{ operation: "FullResultsAuthorities", variables: { filter: { county: "RO-BV", uat: 1 }, limit: 50, offset: 0 }, data: fixtures.FullResultsAuthorities[0]!.data }] });
-    render(<App client={client} />);
-    await userEvent.click(await screen.findByRole("button", { name: "Remove County: RO-BV" }));
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Remove County: Brașov" }));
     await waitFor(() => expect(window.location.search).toBe("?tab=authorities"));
   });
 

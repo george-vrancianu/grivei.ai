@@ -20,7 +20,7 @@ export interface NotFoundPanelProps {
   body: string;
   /** The way back to the main screen: the accent button. */
   primary: NotFoundAction;
-  /** A plain click on either action goes here instead of loading the page. */
+  /** A plain click on the action goes here instead of loading the page. */
   onNavigate?: ((href: string) => void) | undefined;
 }
 
