@@ -32,21 +32,6 @@ function failFirst() {
   return client;
 }
 
-/** The fixture network where the first request waits for `release()`. */
-function holdFirst() {
-  const real = fixtureClient();
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => (release = resolve));
-  let calls = 0;
-  const client: GraphqlClient = {
-    query: async (op, variables, options) => {
-      if (++calls === 1) await gate;
-      return real.client.query(op, variables, options);
-    },
-  };
-  return { client, release: () => release() };
-}
-
 describe.each([
   { locale: "en", base: "/explore" },
   { locale: "ro", base: "/ro/explore" },
@@ -82,8 +67,9 @@ describe.each([
     expect(roles.getByText(t.roleCount(3))).toBeVisible();
     expect(roles.getByRole("link", { name: "ALFA SRL" })).toHaveAttribute("href", supplierHref);
     expect(roles.getByRole("link", { name: "BETA SRL" })).toHaveAttribute("href", authorityHref);
-    expect(roles.getByText(t.keyLine("30000002", "SUPPLIER"))).toBeVisible();
-    expect(roles.getByText(t.keyLine("30000003", "AUTHORITY"))).toBeVisible();
+    expect(roles.getByText(t.keyLine("30000002"))).toBeVisible();
+    expect(roles.getByText(t.keyLine("30000003"))).toBeVisible();
+    expect(roles.queryByText(/supplier|furnizor|contracting authority|autoritate contractantă/)).toBeNull(); // entityRole is a routing default, not a SEAP role
     const rows = roles.getAllByRole("listitem");
     expect(rows).toHaveLength(3);
     expect(within(rows[0]!).getByText("administrator")).toBeVisible();
@@ -97,7 +83,9 @@ describe.each([
 
   it("first load: the notice, breadcrumb and labels are real, the values are blocks, one status line", async () => {
     openAt(path);
-    const { client, release } = holdFirst();
+    let release!: () => void;
+    const until = new Promise<void>((resolve) => (release = resolve));
+    const { client } = fixtureClient({ hold: { operation: "PersonPage", until } });
     const { container } = render(<App client={client} />);
     expect(screen.getAllByRole("note")).toHaveLength(1);
     expect(screen.getByRole("navigation", { name: t.breadcrumb.label })).toBeVisible();

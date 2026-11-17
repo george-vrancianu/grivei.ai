@@ -380,10 +380,10 @@ export const ro: Copy = {
   personPage: {
     privateView: { lead: "Vedere privată:", text: "această pagină apare doar unde gazda dezvăluie conținutul restricționat. Unește rolurile unei persoane în mai multe organizații și nu este publică." },
     breadcrumb: { label: "Unde te afli", home: "explorare", current: "persoană" },
-    figures: { born: "Născut(ă)", roles: "Roluri", source: "Sursa", sourceName: "ONRC", snapshot: (date) => `instantaneu din ${date}` },
+    figures: { born: "Născut(ă)", roles: "Roluri", source: "Sursa", sourceName: "ONRC", snapshot: (date) => `instantaneul din ${date}` },
     rolesHeading: "Roluri",
     roleCount: (count) => (count === 1 ? "1 rol" : `${count} roluri`),
-    keyLine: (key, role) => `CUI ${key} · ${role === "AUTHORITY" ? "autoritate contractantă" : "furnizor"}`,
+    keyLine: (key) => `CUI ${key}`,
     noPage: "fără pagină de organizație",
     basis: "Rolurile sunt grupate după același nume și aceeași dată completă a nașterii în registrul ONRC sau printr-o corecție verificată (curată), acolo unde registrul singur nu a putut hotărî. Se arată anul nașterii; data completă și locul nașterii nu se arată niciodată.",
     source: (snapshot) => `Sursa: ONRC, instantaneul din ${snapshot}`,

@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
-import { Card } from "../../../atoms/Card/index.ts";
-import { Stack } from "../../../atoms/Stack/index.ts";
-import { PersonBreadcrumb } from "./components/PersonBreadcrumb/index.ts";
-import { PersonFrame } from "./components/PersonFrame/index.ts";
-import type { PersonDetailCopy } from "./PersonDetail.tsx";
+import type { PersonDetailCopy } from "../../PersonDetail.tsx";
+import { PersonFrame } from "../PersonFrame/index.ts";
+import { PersonPanel } from "../PersonPanel/index.ts";
 
 export interface PersonDetailFailedProps {
   copy: Pick<PersonDetailCopy, "privateView" | "breadcrumb">;
@@ -17,12 +15,9 @@ export interface PersonDetailFailedProps {
 export function PersonDetailFailed({ copy, homeHref, onNavigate, children }: PersonDetailFailedProps) {
   return (
     <PersonFrame privateView={copy.privateView}>
-      <Card component="header" sx={{ p: 0, minWidth: 0 }}>
-        <Stack spacing={1.75} sx={{ px: 2.5, pt: 2.5, pb: 2.25, minWidth: 0 }}>
-          <PersonBreadcrumb homeHref={homeHref} onNavigate={onNavigate} copy={copy.breadcrumb} />
-          {children}
-        </Stack>
-      </Card>
+      <PersonPanel homeHref={homeHref} onNavigate={onNavigate} breadcrumb={copy.breadcrumb}>
+        {children}
+      </PersonPanel>
     </PersonFrame>
   );
 }

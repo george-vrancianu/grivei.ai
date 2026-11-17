@@ -1,22 +1,20 @@
 import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
-import { Card } from "../../../atoms/Card/index.ts";
-import { Link } from "../../../atoms/Link/index.ts";
 import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { type as typeScale } from "../../../theme/tokens.ts";
-import { Tag } from "../../atoms/Tag/index.ts";
 import { InsetFigure } from "../../molecules/InsetFigure/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
 import type { PersonPageData } from "../../types.ts";
 import { busyProps } from "../../utils/busy.ts";
-import { followLink } from "../../utils/followLink.ts";
 import { formatDate } from "../../utils/formatDate.ts";
-import { listRowSx, listSx } from "../../utils/listSx.ts";
-import { PersonBreadcrumb, type PersonBreadcrumbCopy } from "./components/PersonBreadcrumb/index.ts";
+import { listSx } from "../../utils/listSx.ts";
+import type { PersonBreadcrumbCopy } from "./components/PersonBreadcrumb/index.ts";
 import { PersonFrame, type PrivateViewCopy } from "./components/PersonFrame/index.ts";
+import { PersonPanel } from "./components/PersonPanel/index.ts";
+import { PersonRoleRow } from "./components/PersonRoleRow/index.ts";
 
 export interface PersonFiguresCopy {
   /** The figure labels: the birth year, the number of roles, and where the person comes from. */
@@ -37,8 +35,8 @@ export interface PersonDetailCopy {
   rolesHeading: string;
   /** "3 roles", given the count (the person's roles across organisations; Restricted like the list). */
   roleCount: (count: number) => string;
-  /** The line under an organisation that has a page: "CUI 3100020 · supplier", given its key and the role page it opens on. */
-  keyLine: (key: string, role: "AUTHORITY" | "SUPPLIER") => string;
+  /** The line under an organisation that has a page: "CUI 3100020", given its key. No role word: `entityRole` is the page to open it on, not a SEAP role. */
+  keyLine: (key: string) => string;
   /** The organisation has no entity page (its ONRC registration carries no valid CUI). */
   noPage: string;
   /** Said once under the roles: what links these roles and what does not. */
@@ -72,48 +70,33 @@ export function PersonDetail({ person, homeHref, entityHref, onNavigate, busy, s
   const snapshot = formatDate(person.snapshot, locale, "long");
   return (
     <PersonFrame privateView={copy.privateView}>
-      <Card component="header" sx={{ p: 0, minWidth: 0 }}>
-        <Stack spacing={1.75} sx={{ px: 2.5, pt: 2.5, pb: 2.25, minWidth: 0 }}>
-          <PersonBreadcrumb homeHref={homeHref} onNavigate={onNavigate} copy={copy.breadcrumb} />
-          <Stack spacing={1.75} {...busyProps(busy)}>
-            {/* the name is source data, shown as ONRC wrote it */}
-            <Typography variant="h1" component="h1" sx={{ fontSize: typeScale.entityTitle.size, overflowWrap: "anywhere" }}>
-              {person.name}
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-              <InsetFigure label={copy.figures.born}>{person.birthYear}</InsetFigure>
-              <InsetFigure label={copy.figures.roles}>{person.roleCount}</InsetFigure>
-              <InsetFigure label={copy.figures.source} note={copy.figures.snapshot(snapshot)}>
-                {copy.figures.sourceName}
-              </InsetFigure>
-            </Box>
-          </Stack>
+      <PersonPanel homeHref={homeHref} onNavigate={onNavigate} breadcrumb={copy.breadcrumb}>
+        <Stack spacing={1.75} {...busyProps(busy)}>
+          {/* the name is source data, shown as ONRC wrote it */}
+          <Typography variant="h1" component="h1" sx={{ fontSize: typeScale.entityTitle.size, overflowWrap: "anywhere" }}>
+            {person.name}
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+            <InsetFigure label={copy.figures.born}>{person.birthYear}</InsetFigure>
+            <InsetFigure label={copy.figures.roles}>{person.roleCount}</InsetFigure>
+            <InsetFigure label={copy.figures.source} note={copy.figures.snapshot(snapshot)}>
+              {copy.figures.sourceName}
+            </InsetFigure>
+          </Box>
         </Stack>
-      </Card>
+      </PersonPanel>
       <Panel heading={copy.rolesHeading} level="h2" flush busy={busy} aside={status ?? copy.roleCount(person.roleCount)}>
         <Box component="ul" sx={listSx}>
-          {person.roles.map((r, i) => {
-            const href = r.entityKey ? entityHref(r.entityKey, r.entityRole ?? "SUPPLIER") : null;
-            return (
-              <Box component="li" key={`${r.organisationName}-${r.role}-${i}`} sx={{ ...listRowSx, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-                <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                  {href !== null ? (
-                    <Link href={href} onClick={followLink(href, onNavigate)}>
-                      <strong>{r.organisationName}</strong>
-                    </Link>
-                  ) : (
-                    <strong>{r.organisationName}</strong>
-                  )}
-                  <Typography variant="meta" component="span">
-                    {r.entityKey ? copy.keyLine(r.entityKey, r.entityRole ?? "SUPPLIER") : copy.noPage}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" component="span" sx={{ flex: "none", maxWidth: "50%", display: "flex" }}>
-                  <Tag>{r.role}</Tag>
-                </Typography>
-              </Box>
-            );
-          })}
+          {person.roles.map((r, i) => (
+            <PersonRoleRow
+              key={`${r.organisationName}-${r.role}-${i}`}
+              organisationName={r.organisationName}
+              href={r.entityKey ? entityHref(r.entityKey, r.entityRole ?? "SUPPLIER") : null}
+              onNavigate={onNavigate}
+              detail={r.entityKey ? copy.keyLine(r.entityKey) : copy.noPage}
+              role={r.role}
+            />
+          ))}
         </Box>
         <Stack spacing={1.5} sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Typography variant="body2" color="text.secondary">

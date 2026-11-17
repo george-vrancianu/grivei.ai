@@ -378,7 +378,7 @@ export const en: Copy = {
     figures: { born: "Born", roles: "Roles", source: "Source", sourceName: "ONRC", snapshot: (date) => `snapshot of ${date}` },
     rolesHeading: "Roles",
     roleCount: (count) => (count === 1 ? "1 role" : `${count} roles`),
-    keyLine: (key, role) => `CUI ${key} · ${role === "AUTHORITY" ? "contracting authority" : "supplier"}`,
+    keyLine: (key) => `CUI ${key}`,
     noPage: "no organisation page",
     basis: "Roles are grouped by the same name and full birth date in ONRC's register, or by a reviewed correction (curated) where the register alone could not tell. The birth year is shown; the full date and the birthplace never are.",
     source: (snapshot) => `Source: ONRC, snapshot of ${snapshot}`,
