@@ -84,10 +84,13 @@ describe("an entity page", () => {
     expect(screen.getByRole("heading", { level: 1, name: NAME })).toBeInTheDocument();
     expect(currentTab()).toEqual(["Records"]);
     expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
-    expect(screen.queryByRole("heading", { level: 2, name: "Records" })).toBeNull();
+    // the skeleton keeps the real "Records" heading; only the content (the filter bar and the rows) has not arrived
+    expect(screen.queryByRole("region", { name: "Filter by facet" })).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
 
     release();
-    expect(await screen.findByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Filter by facet" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Records" })).toBeInTheDocument();
     expect(screen.queryByText("Loading…")).toBeNull();
   });
 
