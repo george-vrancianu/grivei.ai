@@ -38,6 +38,8 @@ export interface FilterChipsProps {
   lastYear?: number;
   /** The name the page shows for the filter's `county` ("Brașov"); the code is shown when absent. The county chip appears whenever the filter holds a county. */
   countyName?: string;
+  /** The name the page shows for the filter's `uat`; its SIRUTA is shown when absent. The UAT chip appears whenever the filter holds a UAT; removing it unsets only `uat`. */
+  uatName?: string;
   /** Show the filter menus (default). `false` shows only the active chips, each removable, with Clear all: the full-results page, which sets no facet. */
   menus?: boolean;
   locale: Locale;
@@ -52,9 +54,9 @@ const BUCKETS = VALUE_BUCKETS.map((edge) => edge.bucket) satisfies ValueBucket[]
 
 /**
  * The filter bar (or, with `menus={false}`, only the active chips: the full-results page): the Signals toggle, then the menus (award-date years, channel, value bucket, procedure, Record badges and, when offered, party),
- * with the active ones listed below as chips, each removable (the map-picked county among them: removing it unsets `county` and `uat`; Clear all does too). Controlled: it reflects `filter` and reports the next one.
+ * with the active ones listed below as chips, each removable (the map-picked county among them, worded "Supplier county" on the suppliers' side: removing it unsets `county` and `uat`, Clear all does too; the picked UAT is a chip of its own, removing it unsets `uat` only). Controlled: it reflects `filter` and reports the next one.
  */
-export function FilterChips({ filter, onChange, procedureOptions = [], partyOptions = [], firstYear = FIRST_YEAR, lastYear = new Date().getFullYear(), countyName, menus = true, locale, copy }: FilterChipsProps) {
+export function FilterChips({ filter, onChange, procedureOptions = [], partyOptions = [], firstYear = FIRST_YEAR, lastYear = new Date().getFullYear(), countyName, uatName, menus = true, locale, copy }: FilterChipsProps) {
   const active = activeChips(
     filter,
     {
@@ -67,9 +69,12 @@ export function FilterChips({ filter, onChange, procedureOptions = [], partyOpti
       badges: badgeLabels(copy.badges.badges),
       party: copy.active.party,
       county: copy.active.county,
+      supplierCounty: copy.active.supplierCounty,
+      uat: copy.active.uat,
     },
     locale,
     countyName,
+    uatName,
   );
   // Chips only and none on: nothing to show, and no empty "Filters" region.
   if (!menus && active.length === 0) return null;

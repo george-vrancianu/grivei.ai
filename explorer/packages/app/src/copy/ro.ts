@@ -272,6 +272,8 @@ export const ro: Copy = {
       to: (when) => `Până în ${when}`,
       party: (list) => `Partid: ${list}`,
       county: (area) => `Județ: ${area}`,
+      supplierCounty: (area) => `Județul furnizorului: ${area}`,
+      uat: (name) => `UAT: ${name}`,
       remove: (chip) => `Elimină ${chip}`,
       clearAll: "Șterge tot",
     },

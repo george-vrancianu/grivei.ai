@@ -44,6 +44,10 @@ export interface FilterChipsCopy {
     party: (list: string) => string;
     /** The active chip of the county picked on the map: "County: Brașov"; gets the name the page shows for the area. */
     county: (area: string) => string;
+    /** The same chip when the county is the suppliers' side: "Supplier county: Brașov". */
+    supplierCounty: (area: string) => string;
+    /** The active chip of the UAT picked on the zoomed county map: "UAT: Sânpetru"; gets the name the page shows, else the SIRUTA. */
+    uat: (name: string) => string;
     /** The accessible name of an active chip's remove action. */
     remove: (chip: string) => string;
     clearAll: string;

@@ -124,15 +124,22 @@ export interface ActiveChipText {
   badges: Record<RecordBadge, string>;
   party: (list: string) => string;
   county: (area: string) => string;
+  /** The county chip when the county is the suppliers' side (`countySide: SUPPLIER`). */
+  supplierCounty: (area: string) => string;
+  uat: (name: string) => string;
 }
 
 /**
- * One entry per active chip, in a stable order: the county (named by the caller, else its code), dates, channel, value bucket, Signals, procedures, the Party, badges (in the
+ * One entry per active chip, in a stable order: the county (named by the caller, else its code; worded as the suppliers' county when `countySide` is SUPPLIER), the UAT picked in it (named by the caller, else its SIRUTA; removing it unsets only `uat`), dates, channel, value bucket, Signals, procedures, the Party, badges (in the
  * order of the filter's list). A date that is not Jan 1 (from) or Dec 31 (to) is shown as the date, not as its year.
  */
-export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: Locale, countyName?: string): ActiveChip[] {
+export function activeChips(filter: RecordFilter, text: ActiveChipText, locale: Locale, countyName?: string, uatName?: string): ActiveChip[] {
   const chips: ActiveChip[] = [];
-  if (filter.county) chips.push({ id: "county", label: text.county(countyName ?? filter.county), remove: withoutCounty });
+  if (filter.county) {
+    const area = countyName ?? filter.county;
+    chips.push({ id: "county", label: filter.countySide === "SUPPLIER" ? text.supplierCounty(area) : text.county(area), remove: withoutCounty });
+  }
+  if (filter.uat) chips.push({ id: "uat", label: text.uat(uatName ?? filter.uat), remove: (f) => withFields(f, { uat: undefined }) });
   const when = (date: string, aligned: boolean) => (aligned ? String(yearOf(date)) : formatDateOr(date, locale));
   if (filter.from) {
     const from = filter.from;

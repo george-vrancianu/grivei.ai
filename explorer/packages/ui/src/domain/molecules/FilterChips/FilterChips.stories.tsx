@@ -16,13 +16,15 @@ const PARTIES = ["PARTIDUL SOCIAL DEMOCRAT", "PARTIDUL NAȚIONAL LIBERAL", "ALIA
 
 // County names as the page shows them (map topology); a code with no name is shown as the code.
 const COUNTY_NAMES: Record<string, string> = { "RO-BV": "Brașov" };
+// UAT names as the page shows them (the county's outlines), by SIRUTA.
+const UAT_NAMES: Record<string, string> = { "880010": "Sânpetru" };
 
 /** The chips are controlled; in the workbench a little state stands in for the URL. */
 function Demo({ initial, locale, menus = true }: { initial: RecordFilter; locale: "en" | "ro"; menus?: boolean }) {
   const [filter, setFilter] = useState<RecordFilter>(initial);
   return (
     <>
-      <FilterChips filter={filter} countyName={filter.county ? COUNTY_NAMES[filter.county] : undefined} onChange={setFilter} menus={menus} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
+      <FilterChips filter={filter} countyName={filter.county ? COUNTY_NAMES[filter.county] : undefined} uatName={filter.uat ? UAT_NAMES[filter.uat] : undefined} onChange={setFilter} menus={menus} procedureOptions={PROCEDURES} partyOptions={PARTIES} lastYear={2025} locale={locale} copy={sampleCopy.filterChips(locale)} />
       <Typography variant="caption" component="pre" sx={{ mt: 2 }}>
         {JSON.stringify(filter)}
       </Typography>
@@ -44,6 +46,9 @@ export const SeveralActive: Story = {
 };
 /** Only a county picked on the map: the active row appears with its chip; removing it (or Clear all) unsets the county. */
 export const CountyOnly: Story = { render: demo({ county: "RO-BV" }) };
+
+/** A UAT picked on the zoomed county map is a chip of its own; the supplier side words the county chip. */
+export const UatAndSupplierSide: Story = { render: demo({ county: "RO-BV", uat: "880010", countySide: "SUPPLIER" }) };
 /** The Party filter on one list, with its active chip (#181). */
 export const PartyChosen: Story = { render: demo({ party: "ALIANȚA USR PLUS", from: "2024-01-01" }) };
 /** Every badge chip on at once. */

@@ -267,6 +267,8 @@ export const en: Copy = {
       to: (when) => `Until ${when}`,
       party: (list) => `Party: ${list}`,
       county: (area) => `County: ${area}`,
+      supplierCounty: (area) => `Supplier county: ${area}`,
+      uat: (name) => `UAT: ${name}`,
       remove: (chip) => `Remove ${chip}`,
       clearAll: "Clear all",
     },

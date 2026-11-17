@@ -8,6 +8,7 @@ import { catalogue } from "../../copy/index.ts";
 import { fixtureClient, type ExtraFixture } from "../../testing/fixtureClient.ts";
 import { openAt } from "../../testing/openAt.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
+import { loadTestUatTopology } from "../../testing/uatTopology.ts";
 
 const recordsAnswer = fixtures.FullResultsRecords.find((f) => f.variables.offset === 0 && !f.variables.order)!.data;
 const records = (filter: Record<string, unknown>, offset: number, order?: string): ExtraFixture => ({
@@ -87,6 +88,26 @@ describe("the active filter chips", () => {
     render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
     await userEvent.click(await screen.findByRole("button", { name: "Remove County: Brașov" }));
     await waitFor(() => expect(window.location.search).toBe("?tab=authorities"));
+  });
+
+  it("shows the picked UAT as a chip by its name; removing it unsets only the UAT and keeps the county", async () => {
+    openAt("/explore/search?county=RO-BV&uat=880010&tab=authorities");
+    const { client } = fixtureClient({ extra: [{ operation: "FullResultsAuthorities", variables: { filter: { county: "RO-BV", uat: 880010 }, limit: 50, offset: 0 }, data: fixtures.FullResultsAuthorities[0]!.data }, { operation: "FullResultsAuthorities", variables: { filter: { county: "RO-BV" }, limit: 50, offset: 0 }, data: fixtures.FullResultsAuthorities[0]!.data }] });
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} loadUatTopology={loadTestUatTopology} />);
+    expect(await screen.findByRole("button", { name: "Remove County: Brașov" })).toBeVisible();
+    await userEvent.click(await screen.findByRole("button", { name: "Remove UAT: Sânpetru" }));
+    await waitFor(() => expect(window.location.search).toBe("?county=RO-BV&tab=authorities"));
+    expect(screen.queryByRole("button", { name: /^Remove UAT/ })).not.toBeInTheDocument();
+  });
+
+  it("words the county chip as the suppliers' county when the side is Supplier, in both languages", async () => {
+    openAt("/explore/search?county=RO-BV&countySide=supplier");
+    const { unmount } = render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    expect(await screen.findByRole("button", { name: "Remove Supplier county: Brașov" })).toBeVisible();
+    unmount();
+    openAt("/ro/explore/search?county=RO-BV&countySide=supplier");
+    render(<App client={fixtureClient().client} loadCountyTopology={loadTestCountyTopology} />);
+    expect(await screen.findByRole("button", { name: "Elimină Județul furnizorului: Brașov" })).toBeVisible();
   });
 
   it("editing the query does the same and replaces the history entry", async () => {

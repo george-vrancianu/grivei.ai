@@ -2,7 +2,7 @@ import { Button, chipFieldsOf, DEFAULT_RESULT_TAB, FilterChips, FullResults, Ful
 import { useTypedQuerySpinner } from "../../graphql/useTypedQuerySpinner.ts";
 import { AppLink } from "../../components/AppLink/index.ts";
 import { PageShell } from "../../components/PageShell/index.ts";
-import { countyChipName, useCountyTopology } from "../../geo/index.ts";
+import { countyChipName, useCountyTopology, useUatChipName } from "../../geo/index.ts";
 import { useCopy } from "../../copy/useCopy.ts";
 import { navigate, useLocation } from "../../routing/location.tsx";
 import { currentUrl } from "../../routing/currentUrl.ts";
@@ -21,6 +21,7 @@ export function SearchPage() {
   const tab = toResultTab(tabParam);
   const state = useFullResults({ tab, filter, page, order });
   const topology = useCountyTopology();
+  const uatName = useUatChipName(filter);
   const typing = useTypedQuerySpinner(filter.q, state);
   const here = pathFor(locale, { name: "search" });
   // The page links keep the whole URL state and change only `page`; page 1 is the default and drops out of the URL.
@@ -43,6 +44,7 @@ export function SearchPage() {
         // The chips' fields plus the county and its UAT, as on the main screen; a changed filter drops `page` and keeps `tab` and `order`.
         onChange={(next) => setFilter({ ...chipFieldsOf(next), county: next.county ?? undefined, uat: next.uat ?? undefined })}
         {...(filter.county ? { countyName: countyChipName(filter.county, topology, t.moneyLensMap.tiles) } : {})}
+        {...(uatName ? { uatName } : {})}
         locale={locale}
         copy={t.filterChips}
       />

@@ -3,3 +3,5 @@ export { useCountyTopology, type CountyTopologyState } from "./useCountyTopology
 export { UatTopologyProvider, uatTopologyUrl, type LoadUatTopology, type UatTopology } from "./UatTopologyContext.tsx";
 export { useUatTopology, type UatTopologyState } from "./useUatTopology.ts";
 export { countyChipName } from "./countyChipName.ts";
+export { uatChipName } from "./uatChipName.ts";
+export { useUatChipName } from "./useUatChipName.ts";
