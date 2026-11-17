@@ -491,11 +491,14 @@ export const ro: Copy = {
         },
         timeline: {
           heading: "Pe luni", label: "Banii pe luni", overall: "Toate contrapărțile", picked: (name) => name ?? "Contrapartea aleasă", empty: "Nicio lună în filtrele alese.",
+          period: (from, to) => (from === to ? from : `${from} – ${to}`), tallest: (month, amount) => `luna cu cei mai mulți bani: ${month}, ${amount}`,
           table: { caption: "Banii pe luni", month: "Luna", amount: "Total", picked: (name) => name ?? "Contrapartea aleasă" },
         },
         panel: {
-          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.", heading: "Înregistrări cu",
-          total: (amount, records) => `${amount} în ${records}`, close: "Închide", loading: "Se încarcă înregistrările", empty: "Nicio înregistrare cu această contraparte.",
+          label: "Înregistrările contrapărții alese", eyebrow: "Contraparte aleasă", hint: "Alege o contraparte din graf ca să vezi toate înregistrările cu ea.",
+          awarded: "Atribuit", records: "Înregistrări", signals: "Are Semnale", wonTogether: "Unele înregistrări au fost câștigate împreună cu alte părți, într-un consorțiu.",
+          shown: (n, m) => `${n} din ${m} afișate`, all: (records, name) => `Toate cele ${records} cu ${name}`,
+          close: "Închide", empty: "Nicio înregistrare cu această contraparte.",
         },
       },
       flow: {
@@ -527,6 +530,8 @@ export const ro: Copy = {
           homeCounty: "Județul entității",
           direction: { supplier: (home) => `Banii intră în ${home}`, authority: (home) => `Banii pleacă din ${home}` },
         },
+        panel: { heading: "Flux de bani", meta: { authority: "încotro merg banii autorității", supplier: "de unde vin banii furnizorului" } },
+        counties: { label: "Banii pe județe" },
         empty: "Niciun flux de bani pentru filtrul curent.",
       },
     },

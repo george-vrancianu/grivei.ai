@@ -15,7 +15,7 @@ export interface FlowCaptionProps {
 export function FlowCaption({ role, homeName, localOnly, copy }: FlowCaptionProps) {
   const text = homeName === null ? copy.noHome[role] : localOnly ? copy.localOnly[role](homeName) : copy.direction[role](homeName);
   return (
-    <Typography variant="caption" component="p" data-flow-caption sx={{ mt: 1, maxWidth: 520 }}>
+    <Typography variant="meta" component="span" data-flow-caption>
       {text} {copy.offMap}
     </Typography>
   );

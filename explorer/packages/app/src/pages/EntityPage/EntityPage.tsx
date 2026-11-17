@@ -1,4 +1,5 @@
-import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import { Button, EntityHeader, EntityHeaderSkeleton, EntityOverview, OverviewSkeleton, LoadingStatus, EntityPageLayout, PanelPair, SupplierSkeleton, FinancialStatementsSection, FirmDonationsSection, OnrcFilterChips, OnrcResults, OnrcSection, PeopleSection, LeadershipSection, OptionToggle, PublicEnterpriseSection, RecordsTab, RecordsTabSkeleton, RelationshipsTab, type RelationshipsData, MoneyFlowPanel, RelationshipsTabSkeleton, SignalCard, SignalList, SignalOrderToggle, SourcePicker, Stack, StateNote, type EntityHeaderData, type EntityHeaderSlots, type Locale } from "@grivei/ui";
+import type { ReactNode } from "react";
 import type { OnrcFilter } from "@grivei/contract";
 import { PageShell } from "../../components/PageShell/index.ts";
 import { NotFoundPage } from "../NotFoundPage/index.ts";
@@ -55,7 +56,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   const overviewTab = useOverviewTab(locale, routeRole, entityKey);
   const relationshipsTab = useRelationshipsTab(locale, routeRole, entityKey);
   // The picked counterparty's months and Records load beside the tab's own data, so a pick never reloads the graph.
-  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.status !== "error" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
+  const picked = usePickedCounterparty({ key: entityKey, role, filter, counterparty: view === "relationships" && state.relationships ? (counterparty ?? null) : null, page: page ?? 1 });
 
   // a link to `#signals` (the "n Signals" chip of an entity row) lands on the Overview's Signals section once it has rendered
   useScrollToHash(view === "overview" && state.status === "ready" && state.overview !== null);
@@ -117,6 +118,62 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       copy={switches}
     />
   );
+  // The Relationships tab: the last answer of the same entity and role stays (dimmed) while a filter reloads it, the picked counterparty's last answer while the next loads,
+  // and a failure sits inside the panel that failed (the graph, or the Money flow panel; the picked panel's own).
+  const lensToggle = (
+    <OptionToggle options={LENSES} value={lens === "flow" ? "flow" : "graph"} onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })} labels={t.entityPage.relationships.lens.options} label={t.entityPage.relationships.lens.label} />
+  );
+  const relationshipsView = (header: EntityHeaderData, relationships: RelationshipsData | null, busy: boolean, failure: ReactNode) => {
+    const loadingStatus = <LoadingStatus label={t.status.loading} />;
+    const flowOpen = lens === "flow";
+    const answer = picked.status === "ready" ? picked : picked.status === "loading" ? picked.held : null;
+    const flowCopy = flowLensCopy(t);
+    return (
+      <RelationshipsTab
+        entity={header}
+        counterparties={relationships?.counterparties ?? null}
+        timeline={relationships?.timeline ?? null}
+        selectedTimeline={answer?.timeline ?? null}
+        sidePanel={answer?.panel ?? null}
+        sidePanelKey={answer?.counterparty ?? null}
+        sidePanelLoading={picked.status === "loading"}
+        sidePanelStatus={picked.status === "loading" ? loadingStatus : undefined}
+        sidePanelFailure={picked.status === "error" ? retryNote(picked.retry) : undefined}
+        busy={busy}
+        status={busy ? loadingStatus : undefined}
+        failure={failure}
+        flowToggle={lensToggle}
+        flowMap={
+          !flowOpen ? undefined : relationships ? (
+            <LoadedFlowLensSection
+              flow={relationships.flow}
+              role={routeRole}
+              home={header.placement?.county?.code ?? null}
+              locale={locale}
+              copy={flowCopy}
+              status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading, retry: t.status.retry }}
+              busy={busy}
+              loadingStatus={busy ? loadingStatus : undefined}
+              failure={failure}
+            />
+          ) : failure ? (
+            <MoneyFlowPanel role={routeRole} copy={flowCopy.panel}>{failure}</MoneyFlowPanel>
+          ) : undefined
+        }
+        {...relationshipsTab}
+      />
+    );
+  };
+  const relationshipsSkeleton = (
+    <RelationshipsTabSkeleton
+      role={routeRole}
+      view={lens === "flow" ? "flow" : "graph"}
+      picked={counterparty !== undefined}
+      toggle={lensToggle}
+      status={<LoadingStatus label={t.status.loading} />}
+      copy={{ ...t.entityPage.relationships.tab, flow: t.entityPage.relationships.flow.panel }}
+    />
+  );
   if (state.status === "error") {
     // A failed request: the page around it stays when the entity's header is known from before (with its tabs and address), the note and its retry take the body.
     // On the Records tab the note takes the Records panel only: the Source picker and the filter bar (from the last Records) stay. A first load that failed has no header to show: the note stands alone.
@@ -127,6 +184,8 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             {sourceSwitch}
             <RecordsTab records={state.records} signalBadges={signals.badges} failure={retryNote(state.retry)} {...recordsTab} />
           </Stack>
+        ) : view === "relationships" ? (
+          relationshipsView(state.entity, state.relationships, false, retryNote(state.retry))
         ) : (
           retryNote(state.retry)
         )}
@@ -141,7 +200,6 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
     );
   }
   const loading = state.status === "loading";
-  const flowCopy = flowLensCopy(t);
   const entity = state.entity;
   // The ONRC section: the same on both role pages of an entity that is an authority and a supplier; an entity with no SEAP role at all exists in ONRC only
   const onrcSection = state.onrc && entity && <OnrcSection registration={state.onrc} onrcOnly={entity.seap.roles.length === 0} locale={locale} copy={t.entityPage.onrc} busy={loading} />;
@@ -245,42 +303,11 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
             <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>
           </Stack>
         )
-      ) : loading ? (
-        <StateNote kind="loading">{t.status.loading}</StateNote>
       ) : state.relationships && entity ? (
-        <>
-          {picked.status === "error" && <StateNote kind="error">{t.status.failed}</StateNote>}
-          <RelationshipsTab
-            entity={entity}
-            counterparties={state.relationships.counterparties}
-            timeline={state.relationships.timeline}
-            selectedTimeline={picked.status === "ready" ? picked.timeline : null}
-            sidePanel={picked.status === "ready" ? picked.panel : null}
-            sidePanelLoading={picked.status === "loading"}
-            flowToggle={
-              <OptionToggle
-                options={LENSES}
-                value={lens === "flow" ? "flow" : "graph"}
-                onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })}
-                labels={t.entityPage.relationships.lens.options}
-                label={t.entityPage.relationships.lens.label}
-              />
-            }
-            flowMap={
-              lens === "flow" ? (
-                <LoadedFlowLensSection
-                  flow={state.relationships.flow}
-                  role={routeRole}
-                  home={entity.placement?.county?.code ?? null}
-                  locale={locale}
-                  copy={flowCopy}
-                  status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading }}
-                />
-              ) : undefined
-            }
-            {...relationshipsTab}
-          />
-        </>
+        // The last answer of this entity stays on screen, dimmed, while a new filter loads
+        relationshipsView(entity, state.relationships, loading, null)
+      ) : loading ? (
+        relationshipsSkeleton
       ) : (
         // ready, but the entity has nothing in this role
         <StateNote kind="empty">{t.entityPage.recordsNoRole[role === "AUTHORITY" ? "authority" : "supplier"]}</StateNote>

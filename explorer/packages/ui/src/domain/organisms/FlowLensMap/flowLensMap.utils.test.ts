@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { authorityNationwideFlow, supplierNationwideFlow } from "../../samples/flowMaps.ts";
 import {
-  MAX_ARC_WIDTH, MAX_BUBBLE_RADIUS, MIN_ARC_WIDTH, MIN_BUBBLE_RADIUS, arcShape, arcWidth, bubbleRadius, flowMarks, flowRows, flowSide, isEmptyFlow, maxAwarded, ratio,
+  MAX_ARC_WIDTH, MAX_BUBBLE_RADIUS, MIN_ARC_WIDTH, MIN_BUBBLE_RADIUS, arcShape, arcWidth, bubbleRadius, countyListRows, flowMarks, flowRows, flowSide, isEmptyFlow, maxAwarded, ratio,
 } from "./flowLensMap.utils.ts";
 
 const centroids = new Map<string, readonly [number, number]>([
@@ -118,5 +118,19 @@ describe("flowSide and isEmptyFlow", () => {
     const zero = { awarded: "0", records: 0, suspectLeftOut: 0, noValue: 0, frameworkCeilings: "0", estimated: false };
     expect(isEmptyFlow({ counties: [], national: zero, unplaced: null, unknownSupplierCounty: null })).toBe(true);
     expect(isEmptyFlow({ counties: [], national: zero, unplaced: null, unknownSupplierCounty: { ...zero, awarded: "5", records: 1 } })).toBe(false);
+  });
+});
+
+describe("countyListRows", () => {
+  const names = { national: "National", unplaced: "Unplaced authorities", unknownSupplierCounty: "Unknown supplier county" };
+  it("lists the counties with money largest first, then the off-map money, with the total of all of them", () => {
+    const { rows, total } = countyListRows(supplierNationwideFlow, names);
+    expect(rows.map((r) => r.name)).toEqual(["Brașov", "Cluj", "Iași", "Suceava", "National", "Unplaced authorities"]);
+    expect(total).toBe((280000000n + 120000000n + 70000000n + 17500000n + 30000000n + 3600000n).toString());
+  });
+  it("puts the unknown supplier county last and leaves out a zero county", () => {
+    const { rows } = countyListRows(authorityNationwideFlow, names);
+    expect(rows.at(-1)?.name).toBe("Unknown supplier county");
+    expect(rows.map((r) => r.key)).not.toContain("RO-TM");
   });
 });

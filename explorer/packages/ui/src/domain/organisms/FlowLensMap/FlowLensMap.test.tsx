@@ -157,6 +157,23 @@ describe("FlowLensMap home county, names and caption", () => {
     expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("Money that no county holds is on the tiles beside the map.");
   });
 
+  it("is one titled panel: the caption is its foot, the counties are listed beside the map, largest first", () => {
+    setup(authority);
+    const panel = screen.getByRole("region", { name: "Money flow" });
+    expect(within(panel).getByText("where this authority's money goes")).toBeVisible();
+    expect(panel.querySelector("[data-panel-part='foot']")).toContainElement(document.querySelector("[data-flow-caption]"));
+    const items = within(within(panel).getByRole("list", { name: "Money by county" })).getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent("Cluj");
+    expect(items.at(-1)).toHaveTextContent("Unknown supplier county");
+  });
+
+  it("dims the body while busy, with the status in the header", () => {
+    setup({ ...authority, status: <span role="status">Loading…</span>, busy: true });
+    const panel = screen.getByRole("region", { name: "Money flow" });
+    expect(panel.querySelector("[data-panel-part='body']")).toHaveAttribute("aria-busy", "true");
+    expect(within(panel).getByRole("status")).toBeVisible();
+  });
+
   it("explains an authority's direction the other way", () => {
     setup(authority);
     expect(document.querySelector("[data-flow-caption]")).toHaveTextContent("Where this authority's money goes: suppliers across Romania, flowing out of Brașov.");
@@ -265,5 +282,15 @@ describe("FlowLensMap empty state", () => {
   it("says it in Romanian", () => {
     setup({ flow: emptyAuthorityFlow, role: "authority", home: null }, "ro");
     expect(screen.getByText("Niciun flux de bani pentru filtrul curent.")).toBeVisible();
+  });
+});
+
+describe("FlowLensMap with a failed reload", () => {
+  it("shows the failure inside the Money flow panel, the held map and county list still there", () => {
+    setup({ ...authority, failure: <p role="alert">It failed</p> });
+    const panel = screen.getByRole("region", { name: "Money flow" });
+    expect(within(panel).getByRole("alert")).toHaveTextContent("It failed");
+    expect(within(panel).getByRole("list", { name: "Money by county" })).toBeVisible();
+    expect(Object.keys(radii()).length).toBeGreaterThan(0);
   });
 });

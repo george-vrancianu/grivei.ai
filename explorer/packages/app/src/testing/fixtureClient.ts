@@ -28,13 +28,22 @@ export interface ExtraFixture {
   data: unknown;
 }
 
-export function fixtureClient(options: { failing?: readonly string[]; extra?: readonly ExtraFixture[]; rewrite?: (operation: string, data: unknown) => unknown; hold?: { operation: string; until: Promise<void> } } = {}): { client: GraphqlClient; sent: SentRequest[] } {
+/** Decides each request before it is answered: wait (a promise), fail (`"fail"`) or go through (nothing). `n` is the 1-based count of requests of that operation so far. */
+export type Before = (request: { operation: string; variables: unknown; n: number }) => Promise<void> | "fail" | undefined;
+
+export function fixtureClient(options: { failing?: readonly string[]; extra?: readonly ExtraFixture[]; rewrite?: (operation: string, data: unknown) => unknown; hold?: { operation: string; until: Promise<void> }; before?: Before } = {}): { client: GraphqlClient; sent: SentRequest[] } {
   const sent: SentRequest[] = [];
+  const counts = new Map<string, number>();
   const client = createClient({
     fetch: async (_url, init) => {
       const { id, variables } = JSON.parse(String(init?.body)) as { id: string; variables: unknown };
       const op = allowlist.operations.find((o) => o.sha256 === id);
       sent.push({ id, operation: op?.name ?? "?", variables });
+      const n = (counts.get(op?.name ?? "?") ?? 0) + 1;
+      counts.set(op?.name ?? "?", n);
+      const verdict = op ? options.before?.({ operation: op.name, variables, n }) : undefined;
+      if (verdict === "fail") return Response.json({ errors: [{ message: "down" }] }, { status: 500 });
+      if (verdict) await verdict;
       if (op && options.hold?.operation === op.name) await options.hold.until; // a slow answer: the request is out, the response waits
       if (op && options.failing?.includes(op.name)) return Response.json({ errors: [{ message: "down" }] }, { status: 500 });
       const set = op ? (fixtures[op.name as OperationName] as readonly { variables: unknown; data: unknown }[] | undefined) : undefined;

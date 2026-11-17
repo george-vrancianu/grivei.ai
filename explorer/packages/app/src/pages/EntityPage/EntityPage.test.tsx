@@ -208,7 +208,7 @@ describe("an entity page", () => {
       expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain("Loading…");
       expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
       release();
-      await screen.findByRole("heading", { level: 2 });
+      await screen.findByRole("group", { name: "Graph of the top counterparties" });
       expect(tabs().getByRole("link", { name: /^Records/ }).textContent).toBe(shown);
     });
 
