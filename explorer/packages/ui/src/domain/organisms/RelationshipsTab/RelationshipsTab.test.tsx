@@ -17,6 +17,7 @@ const data = authorityTypicalRelationships;
 
 const common = {
   entity: data.entity, role: "authority" as const, counterparties: data.counterparties, timeline: data.timeline,
+  counterpartyHref: (key: string, kind: "records" | "signals") => `/records?counterparty=${key}${kind === "signals" ? "&hasSignals=true" : ""}`,
   entityHref: (entity: { key: string }, role: string) => `/explore/${role}/${entity.key}`,
   recordHref: (record: { code: string }) => `/explore/record/${record.code}`,
   locale: "en" as const, copy,
@@ -84,10 +85,12 @@ describe("RelationshipsTab", () => {
 
     await user.click(node(/CONSTRUCȚII TRANSILVANIA S\.A\./));
 
-    const panel = screen.getByRole("complementary", { name: copy.panel.label });
-    expect(within(panel).getByRole("heading", { name: /Records with\s+CONSTRUCȚII TRANSILVANIA S\.A\./ })).toBeVisible();
-    const heading = within(panel).getByRole("heading", { name: /Records with/ });
+    const panel = screen.getByRole("region", { name: copy.panel.label });
+    expect(within(panel).getByRole("heading", { name: copy.panel.eyebrow })).toBeVisible();
+    const heading = within(panel).getByRole("heading", { level: 4 });
     expect(within(heading).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/explore/supplier/30000002");
+    expect(within(panel).getByText(copy.panel.awarded)).toBeVisible();
+    expect(within(panel).getByText(/^\d+ of \d+ shown$/)).toBeVisible();
     expect(within(panel).getByText("Modernizare străzi, cartier Noua")).toBeVisible();
     expect(within(panel).getByRole("link", { name: /Modernizare străzi/ })).toHaveAttribute("href", "/explore/record/CAN1166685");
     expect(node(/CONSTRUCȚII TRANSILVANIA S\.A\./)).toHaveAttribute("aria-pressed", "true");
@@ -141,9 +144,9 @@ describe("RelationshipsTab", () => {
 
   it("shows a loading state while the picked counterparty's Records are on their way", () => {
     renderInUi(<RelationshipsTab {...common} selected="30000002" onSelect={vi.fn()} sidePanel={null} sidePanelLoading />);
-    expect(screen.getByRole("status")).toHaveTextContent("Loading Records");
-    expect(screen.getByRole("complementary", { name: copy.panel.label })).toHaveAttribute("aria-busy", "true");
-    expect(within(screen.getByRole("heading", { name: /Records with/ })).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toBeVisible();
+    const panel = within(screen.getByRole("region", { name: copy.panel.label }));
+    expect(panel.getByText(copy.panel.awarded)).toBeVisible();
+    expect(panel.getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toBeVisible();
   });
 
   it("labels money with no Entity that is not a natural person as unidentified, never as a person, and does not make it pickable", () => {
@@ -162,14 +165,14 @@ describe("RelationshipsTab", () => {
       ...rest, record: { ...record, winners: [{ naturalPerson: false, publishedName: "NAME-ONLY FIRM SRL", share: null, entity: beyond }] },
     }));
     renderInUi(<RelationshipsTab {...common} selected={beyond.key} onSelect={vi.fn()} sidePanel={{ ...authorityDirectSupplierPanel, records: { ...authorityDirectSupplierPanel.records, rows } }} />);
-    expect(within(screen.getByRole("heading", { name: /Records with/ })).getByText("NAME-ONLY FIRM")).toBeVisible();
+    expect(within(screen.getByRole("heading", { level: 4 })).getByText("NAME-ONLY FIRM")).toBeVisible();
   });
 
   it("names a picked authority beyond the shown rows from the Records' authority on a supplier's page", () => {
     const authority = { key: "4000999", displayName: "COMUNA BEYOND", identity: "NAME_ONLY" as const };
     const rows = authorityDirectSupplierPanel.records.rows.map(({ record, ...rest }) => ({ ...rest, record: { ...record, authority } }));
     renderInUi(<RelationshipsTab {...common} role="supplier" selected={authority.key} onSelect={vi.fn()} sidePanel={{ ...authorityDirectSupplierPanel, records: { ...authorityDirectSupplierPanel.records, rows } }} />);
-    expect(within(screen.getByRole("heading", { name: /Records with/ })).getByText("COMUNA BEYOND")).toBeVisible();
+    expect(within(screen.getByRole("heading", { level: 4 })).getByText("COMUNA BEYOND")).toBeVisible();
   });
 
   it("highlights the timeline of a pick whose name is not known yet, under a neutral label", () => {
@@ -180,15 +183,63 @@ describe("RelationshipsTab", () => {
 
   it("shows no name, and invents none, for a picked key beyond the rows until its Records arrive", () => {
     renderInUi(<RelationshipsTab {...common} selected="99999999" onSelect={vi.fn()} sidePanel={null} sidePanelLoading />);
-    const heading = screen.getByRole("heading", { name: /Records with/ });
-    expect(within(heading).queryByRole("link")).toBeNull();
-    expect(heading).not.toHaveTextContent("99999999");
-    expect(screen.getByRole("status")).toBeVisible();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+    expect(screen.queryByText("99999999")).toBeNull();
+  });
+
+  it("keeps the last counterparty's panel, named after it and dimmed, while the next pick loads", () => {
+    const { container } = renderInUi(<RelationshipsTab {...common} selected="30000001" sidePanelKey="30000002" onSelect={vi.fn()} sidePanel={authorityPickedPanel} selectedTimeline={authorityTypicalPickedTimeline} sidePanelLoading sidePanelStatus={<span role="status">Loading…</span>} />);
+    const panel = screen.getByRole("region", { name: copy.panel.label });
+    expect(within(within(panel).getByRole("heading", { level: 4 })).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toBeVisible();
+    expect(panel.querySelector("[data-panel-part='body']")).toHaveAttribute("aria-busy", "true");
+    expect(within(panel).getByRole("status")).toHaveTextContent("Loading…");
+    expect(within(panel).getByRole("button", { name: "Close" })).toBeEnabled();
+    expect(container.querySelectorAll('rect[data-series="picked"]').length).toBeGreaterThan(0);
+  });
+
+  it("shows the Signals chip and the won-together sentence of the shown counterparty from its graph row", () => {
+    const row = consortiumHeavyRelationships.counterparties.rows.find((r) => r.wonTogether && r.entity)!;
+    const rel = consortiumHeavyRelationships;
+    renderInUi(<RelationshipsTab {...common} entity={rel.entity} role="supplier" counterparties={rel.counterparties} timeline={rel.timeline} selected={row.entity!.key} onSelect={vi.fn()} sidePanel={authorityDirectSupplierPanel} sidePanelKey={row.entity!.key} />);
+    expect(screen.getByText(copy.panel.wonTogether)).toBeVisible();
+    expect(screen.getByRole("link", { name: /^All \d+ Records with / })).toHaveAttribute("href", `/records?counterparty=${row.entity!.key}`);
+  });
+
+  it("puts the graph in a titled panel with the legend as its foot", () => {
+    renderInUi(<Harness />);
+    const panel = within(screen.getByRole("region", { name: copy.graph.heading }));
+    expect(panel.getByRole("group", { name: copy.graph.label })).toBeVisible();
+    expect(panel.getByRole("region", { name: "Legend" })).toBeVisible();
+  });
+
+  it("puts the period in the header of By month and the tallest month under the bars", () => {
+    renderInUi(<Harness />);
+    const panel = within(screen.getByRole("region", { name: "By month" }));
+    expect(panel.getByText(/ to /)).toBeVisible();
+    expect(panel.getByText(/^tallest month: /)).toBeVisible();
+  });
+
+  it("shows the failure inside the graph panel with nothing held, with no By month and no picked panel", () => {
+    renderInUi(<RelationshipsTab {...common} counterparties={null} timeline={null} selected={null} onSelect={vi.fn()} sidePanel={null} failure={<p role="alert">It failed</p>} flowToggle={<button type="button">Show</button>} />);
+    expect(screen.getByRole("heading", { name: "Relationships" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Show" })).toBeVisible();
+    expect(within(screen.getByRole("region", { name: copy.graph.heading })).getByRole("alert")).toHaveTextContent("It failed");
+    expect(screen.queryByRole("region", { name: "By month" })).toBeNull();
+    expect(screen.queryByRole("region", { name: copy.panel.label })).toBeNull();
+  });
+
+  it("dims the held graph and months while refetching, the headers at full strength", () => {
+    renderInUi(<Harness busy status={<span role="status">Loading…</span>} />);
+    for (const name of [copy.graph.heading, "By month"]) {
+      const panel = screen.getByRole("region", { name });
+      expect(panel.querySelector("[data-panel-part='body']")).toHaveAttribute("aria-busy", "true");
+      expect(within(panel).getByRole("status")).toBeVisible();
+    }
   });
 
   it("gives a counterparty the other role's page", () => {
     renderInUi(<RelationshipsTab {...common} role="supplier" selected="30000002" onSelect={vi.fn()} sidePanel={authorityPickedPanel} />);
-    const heading = screen.getByRole("heading", { name: /Records with/ });
+    const heading = screen.getByRole("heading", { level: 4 });
     expect(within(heading).getByRole("link", { name: "CONSTRUCȚII TRANSILVANIA S.A." })).toHaveAttribute("href", "/explore/authority/30000002");
   });
 
@@ -197,14 +248,15 @@ describe("RelationshipsTab", () => {
     expect(screen.getByRole("button", { name: "Flow lens" })).toBeVisible();
   });
 
-  it("shows the Flow lens map in place of the graph, keeping the timeline and the side panel", () => {
+  it("shows the Money flow panel as the whole view under the heading and the toggle", () => {
     renderInUi(<Harness flowMap={<p>The flow map</p>} />);
     expect(screen.getByText("The flow map")).toBeVisible();
     expect(screen.queryByRole("group", { name: copy.graph.label })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Legend" })).not.toBeInTheDocument();
     expect(screen.queryAllByRole("button").filter((el) => el.hasAttribute("aria-pressed"))).toHaveLength(0);
-    expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
-    expect(screen.getByRole("complementary", { name: "Records with the picked counterparty" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Relationships" })).toBeVisible();
+    expect(screen.queryByRole("region", { name: "By month" })).toBeNull();
+    expect(screen.queryByRole("region", { name: copy.panel.label })).toBeNull();
   });
 
   it("explains the marks in a legend, the dashed one only when it is used", () => {

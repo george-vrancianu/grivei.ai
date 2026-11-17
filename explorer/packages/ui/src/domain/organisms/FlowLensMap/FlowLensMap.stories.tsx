@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
+import { LoadingStatus } from "../../molecules/LoadingStatus/index.ts";
 import { localeOf, sampleCopy } from "../../samples/copy.ts";
 import {
   authorityHome, authorityLocalFlow, authorityNationwideFlow, emptyAuthorityFlow, emptySupplierFlow, supplierHome, supplierLocalFlow, supplierNationwideFlow,
@@ -16,17 +17,17 @@ export default meta;
 type Story = StoryObj<Record<string, unknown>>;
 
 /** The selection lives in the URL in the app; the stories hold it in state so clicking works. */
-function Lens({ locale, flow, role, home, selected: initial }: { locale: "en" | "ro"; flow: MoneyMap; role: EntityRole; home: string | null; selected?: MapArea }) {
+function Lens({ locale, flow, role, home, selected: initial, busy = false }: { locale: "en" | "ro"; flow: MoneyMap; role: EntityRole; home: string | null; selected?: MapArea; busy?: boolean }) {
   const [selected, setSelected] = useState<MapArea | undefined>(initial);
   return (
     <Box sx={{ maxWidth: 820 }}>
-      <FlowLensMap flow={flow} role={role} home={home} topology={countiesTopology} selected={selected} onSelect={setSelected} locale={locale} copy={sampleCopy.flowLensMap(locale)} />
+      <FlowLensMap flow={flow} role={role} home={home} topology={countiesTopology} selected={selected} onSelect={setSelected} locale={locale} copy={sampleCopy.flowLensMap(locale)} busy={busy} status={busy ? <LoadingStatus label={locale === "ro" ? "Se încarcă…" : "Loading…"} /> : undefined} />
     </Box>
   );
 }
 
-const story = (flow: MoneyMap, role: EntityRole, home: string | null, selected?: MapArea): Story => ({
-  render: (_args, { globals }) => <Lens locale={localeOf(globals["locale"])} flow={flow} role={role} home={home} selected={selected} />,
+const story = (flow: MoneyMap, role: EntityRole, home: string | null, selected?: MapArea, busy = false): Story => ({
+  render: (_args, { globals }) => <Lens locale={localeOf(globals["locale"])} flow={flow} role={role} home={home} selected={selected} busy={busy} />,
 });
 
 /** A supplier in Cluj: arcs flow in from the authority counties; National and Unplaced tiles. */
@@ -42,3 +43,5 @@ export const SelectedCounty: Story = story(supplierNationwideFlow, "supplier", s
 export const SelectedTile: Story = story(authorityNationwideFlow, "authority", authorityHome, "UNKNOWN_SUPPLIER_COUNTY");
 export const EmptyAuthority: Story = story(emptyAuthorityFlow, "authority", authorityHome);
 export const EmptySupplier: Story = story(emptySupplierFlow, "supplier", supplierHome);
+/** A refetch (a filter changed): the last map and list stay, dimmed with aria-busy, the loading status in the header. */
+export const Refetching: Story = story(authorityNationwideFlow, "authority", authorityHome, undefined, true);

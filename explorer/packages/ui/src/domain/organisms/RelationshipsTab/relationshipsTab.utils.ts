@@ -140,3 +140,17 @@ export function timelineBars(overall: RelationshipsTimeline, picked: Relationshi
     };
   });
 }
+
+/** The month with the most money in a timeline (the earliest of equal months), or null for no months. */
+export function tallestMonth(timeline: RelationshipsTimeline): RelationshipsTimeline[number] | null {
+  let best: RelationshipsTimeline[number] | null = null;
+  for (const point of timeline) if (best === null || BigInt(point.total.awarded) > BigInt(best.total.awarded)) best = point;
+  return best;
+}
+
+/** The first and last month of a timeline (months are sorted ascending in the data; this does not rely on it), or null for none. */
+export function periodOf(timeline: RelationshipsTimeline): { from: string; to: string } | null {
+  if (timeline.length === 0) return null;
+  const months = timeline.map((point) => point.month).sort();
+  return { from: months[0]!, to: months[months.length - 1]! };
+}

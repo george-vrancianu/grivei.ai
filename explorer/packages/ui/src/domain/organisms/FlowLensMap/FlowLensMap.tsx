@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Topology } from "topojson-specification";
+import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
@@ -8,13 +9,15 @@ import { formatMoney } from "../../atoms/MoneyAmount/index.ts";
 import type { EntityRole, MoneyMap } from "../../types.ts";
 import { BaseMap, featuresOf, type AreaInfo } from "../BaseMap/index.ts";
 import { OffMapTiles, totalsByCounty, type MapArea } from "../MoneyLensMap/index.ts";
+import { MoneyFlowPanel } from "../MoneyFlowPanel/index.ts";
+import { CountyList } from "./components/CountyList/index.ts";
 import { FlowArcs } from "./components/FlowArcs/index.ts";
 import { FlowBubbles } from "./components/FlowBubbles/index.ts";
 import { FlowCaption } from "./components/FlowCaption/index.ts";
 import { FlowLegend } from "./components/FlowLegend/index.ts";
 import { FlowTooltip } from "./components/FlowTooltip/index.ts";
 import type { FlowLensMapCopy } from "./flowLensMap.types.ts";
-import { HOME_COLOR, OTHER_COLOR, flowMarks, flowRows, flowSide, isEmptyFlow } from "./flowLensMap.utils.ts";
+import { HOME_COLOR, OTHER_COLOR, countyListRows, flowMarks, flowRows, flowSide, isEmptyFlow } from "./flowLensMap.utils.ts";
 
 export type FlowLensMapProps = {
   /** The entity's Flow lens (`entity.seap.role(role:).flow`): drawn on the counterparty's side, so a supplier's carries `AUTHORITY` and an authority's `SUPPLIER`. */
@@ -31,14 +34,18 @@ export type FlowLensMapProps = {
   onSelect: (area: MapArea) => void;
   locale: Locale;
   copy: FlowLensMapCopy;
+  /** The panel's header: the page's `LoadingStatus` while a request is in flight. */
+  status?: ReactNode;
+  /** The panel shows its last answer while the next loads: the body is dimmed with `aria-busy="true"`, the header and the caption stay at full strength. */
+  busy?: boolean | undefined;
 };
 
 /**
- * The Flow lens at county level: a bubble per county that holds money (area by awarded value), an arc between each of them and the entity's own
+ * The Money flow panel (the Relationships tab's Flow lens at county level): a bubble per county that holds money (area by awarded value), an arc between each of them and the entity's own
  * county (width by money, arrowhead showing the direction by role), the home county highlighted, and the off-map tiles. It draws the same Totals
  * the Money lens does. Presentational: data in, clicks out.
  */
-export function FlowLensMap({ flow, role, home = null, topology, selected, onSelect, locale, copy }: FlowLensMapProps) {
+export function FlowLensMap({ flow, role, home = null, topology, selected, onSelect, locale, copy, status, busy }: FlowLensMapProps) {
   const names = useMemo(() => new Map(featuresOf(topology).map((area) => [area.properties.code, area.properties.name])), [topology]);
   const rows = useMemo(() => flowRows(flow), [flow]);
   const totals = useMemo(() => totalsByCounty(flow), [flow]);
@@ -49,8 +56,13 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
   if (flow.side !== flowSide(role)) throw new Error(`A ${role}'s Flow lens is drawn on the ${flowSide(role)} side, not ${flow.side}`);
 
   if (isEmptyFlow(flow)) {
-    return <Typography variant="body2" data-flow-empty>{copy.empty}</Typography>;
+    return (
+      <MoneyFlowPanel role={role} status={status} busy={busy} copy={copy.panel}>
+        <Typography variant="body2" data-flow-empty>{copy.empty}</Typography>
+      </MoneyFlowPanel>
+    );
   }
+  const list = countyListRows(flow, copy.tiles);
 
   const describeArea = ({ code }: AreaInfo) => {
     const total = totals.get(code);
@@ -62,8 +74,17 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
   const colorOf = (code: string) => (code === homeCode ? HOME_COLOR : rows.some((row) => row.code === code) ? OTHER_COLOR : null);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <BaseMap
+    <MoneyFlowPanel
+      role={role}
+      status={status}
+      busy={busy}
+      flush
+      copy={copy.panel}
+      foot={<FlowCaption role={role} homeName={homeName} localOnly={homeCode !== null && localOnly} copy={copy.caption} />}
+    >
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.7fr) minmax(220px, 1fr)" } }}>
+        <Box sx={{ p: 2, minWidth: 0 }}>
+          <BaseMap
         topology={topology}
         // The fill is categorical (home / has money / none): the money is in the bubbles and arcs, and exact in the names and tooltips.
         values={{}}
@@ -88,7 +109,11 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
         tiles={<OffMapTiles map={flow} selected={selected} onSelect={onSelect} locale={locale} copy={copy.tiles} />}
         copy={copy.map}
       />
-      <FlowCaption role={role} homeName={homeName} localOnly={homeCode !== null && localOnly} copy={copy.caption} />
-    </Box>
+        </Box>
+        <Box sx={{ minWidth: 0, borderTop: { xs: 1, md: 0 }, borderLeft: { xs: 0, md: 1 }, borderColor: "divider" }}>
+          <CountyList rows={list.rows} total={list.total} locale={locale} label={copy.counties.label} />
+        </Box>
+      </Box>
+    </MoneyFlowPanel>
   );
 }

@@ -1,5 +1,6 @@
 import type { EntityRole } from "../../types.ts";
 import type { BaseMapCopy } from "../BaseMap/index.ts";
+import type { MoneyFlowPanelCopy } from "../MoneyFlowPanel/index.ts";
 import type { OffMapTilesCopy } from "../MoneyLensMap/index.ts";
 
 /** Direction-dependent strings: the page's entity is a supplier (money flows in) or an authority (money flows out). */
@@ -46,6 +47,10 @@ export type FlowLensMapCopy = {
   legend: FlowLegendCopy;
   caption: FlowCaptionCopy;
   tooltip: FlowTooltipCopy;
+  /** The panel the map sits in: its title and the role's meta line. */
+  panel: MoneyFlowPanelCopy;
+  /** The county list beside the map. */
+  counties: { label: string };
   /** Shown instead of the map when the flow has no money anywhere. */
   empty: string;
 };
