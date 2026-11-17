@@ -137,3 +137,22 @@ export function isEmptyFlow(flow: Pick<MoneyMap, "counties" | "national" | "unpl
   const zero = (total: { awarded: string; records: number }) => total.records === 0 && BigInt(total.awarded) === 0n;
   return flowRows(flow).length === 0 && zero(flow.national) && (!flow.unplaced || zero(flow.unplaced.total)) && (!flow.unknownSupplierCounty || zero(flow.unknownSupplierCounty));
 }
+
+export type CountyListRow = { key: string; name: string; awarded: string };
+
+/**
+ * The rows of the money-flow panel's list and the total their shares are of. One answer, SEAP awarded only (ADR 0014): every county that holds money, largest first, then the
+ * off-map money that holds some (National, Unplaced authorities, the unknown supplier county), named as the tiles name it. The total is the sum of those rows, so the shares add up to one.
+ */
+export function countyListRows(flow: Pick<MoneyMap, "counties" | "national" | "unplaced" | "unknownSupplierCounty">, names: { national: string; unplaced: string; unknownSupplierCounty: string }): { rows: CountyListRow[]; total: string } {
+  const counties = flowRows(flow)
+    .map((row) => ({ key: row.code, name: row.name, awarded: row.awarded }))
+    .sort((a, b) => (BigInt(b.awarded) > BigInt(a.awarded) ? 1 : BigInt(b.awarded) < BigInt(a.awarded) ? -1 : a.name.localeCompare(b.name)));
+  const offMap = [
+    { key: "NATIONAL", name: names.national, awarded: flow.national.awarded },
+    { key: "UNPLACED", name: names.unplaced, awarded: flow.unplaced?.total.awarded ?? "0" },
+    { key: "UNKNOWN_SUPPLIER_COUNTY", name: names.unknownSupplierCounty, awarded: flow.unknownSupplierCounty?.awarded ?? "0" },
+  ].filter((row) => BigInt(row.awarded) > 0n);
+  const rows = [...counties, ...offMap];
+  return { rows, total: rows.reduce((sum, row) => sum + BigInt(row.awarded), 0n).toString() };
+}

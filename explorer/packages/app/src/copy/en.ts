@@ -481,11 +481,14 @@ export const en: Copy = {
         },
         timeline: {
           heading: "By month", label: "Money by month", overall: "All counterparties", picked: (name) => name ?? "Picked counterparty", empty: "No months for the chosen filters.",
+          period: (from, to) => (from === to ? from : `${from} to ${to}`), tallest: (month, amount) => `tallest month: ${month}, ${amount}`,
           table: { caption: "Money by month", month: "Month", amount: "Total", picked: (name) => name ?? "Picked counterparty" },
         },
         panel: {
-          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.", heading: "Records with",
-          total: (amount, records) => `${amount} across ${records}`, close: "Close", loading: "Loading Records", empty: "No Records with this counterparty.",
+          label: "Records with the picked counterparty", eyebrow: "Picked counterparty", hint: "Pick a counterparty in the graph to list every Record with it.",
+          awarded: "Awarded", records: "Records", signals: "Has Signals", wonTogether: "Some Records were won together with other parties, as a consortium.",
+          shown: (n, m) => `${n} of ${m} shown`, all: (records, name) => `All ${records} with ${name}`,
+          close: "Close", empty: "No Records with this counterparty.",
         },
       },
       flow: {
@@ -517,6 +520,8 @@ export const en: Copy = {
           homeCounty: "The entity's county",
           direction: { supplier: (home) => `Money flows in to ${home}`, authority: (home) => `Money flows out of ${home}` },
         },
+        panel: { heading: "Money flow", meta: { authority: "where this authority's money goes", supplier: "where this supplier's money comes from" } },
+        counties: { label: "Money by county" },
         empty: "No money flow for the current filter.",
       },
     },

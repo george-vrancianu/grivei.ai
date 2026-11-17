@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { color } from "../../../theme/tokens.ts";
 import {
   CONTRACT_COLOR, DIRECT_PURCHASE_COLOR, MAX_EDGE_WIDTH, MIN_EDGE_WIDTH, edgeWidth, SIGNAL_RING_COLOR, MAX_NODE_RADIUS, MIN_NODE_RADIUS, channelColor, counterpartyKey, dominantChannel, layoutNodes, maxAwarded,
-  nodeRadius, share, timelineBars,
+  nodeRadius, periodOf, share, tallestMonth, timelineBars,
 } from "./relationshipsTab.utils.ts";
 import {
   authorityTypicalPickedDirectTimeline, authorityTypicalPickedTimeline, authorityTypicalRelationships, supplierPickedRelationships,
@@ -134,5 +134,20 @@ describe("edge width and the dark-ground colours", () => {
 
   it("draws a Signal ring in amber (never red)", () => {
     expect(SIGNAL_RING_COLOR).toBe(color.accent);
+  });
+});
+
+describe("tallestMonth and periodOf", () => {
+  it("find the month with the most money and the first and last month", () => {
+    const months = authorityTypicalPickedTimeline.length > 0 ? authorityTypicalRelationships.timeline : [];
+    const tallest = tallestMonth(months)!;
+    for (const point of months) expect(BigInt(tallest.total.awarded)).toBeGreaterThanOrEqual(BigInt(point.total.awarded));
+    const period = periodOf(months)!;
+    expect(period.from <= period.to).toBe(true);
+    expect(months.map((point) => point.month)).toContain(period.from);
+  });
+  it("are null for no months", () => {
+    expect(tallestMonth([])).toBeNull();
+    expect(periodOf([])).toBeNull();
   });
 });
