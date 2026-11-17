@@ -64,24 +64,24 @@ export function MonthlyTimeline({ timeline, pickedTimeline, pickedName, busy, st
       ) : (
         <>
           <Well sx={{ p: 1.5 }}>
-          <Box component="svg" role="img" aria-label={copy.label} viewBox={`0 0 ${WIDTH} ${HEIGHT + AXIS}`} sx={{ width: "100%", height: "auto", display: "block", color: color.muted, fontFamily: font.mono }}>
-            {bars.map((bar) => (
-              <g key={bar.month} data-month={bar.month}>
-                <rect data-series="overall" x={bar.x} y={bar.y} width={bar.width} height={bar.height} fill={picked ? TIMELINE_DIMMED_COLOR : TIMELINE_COLOR} rx={radius.cell} />
-                {picked && bar.pickedHeight > 0 && (
-                  <rect data-series="picked" x={bar.x} y={bar.pickedY} width={bar.width} height={bar.pickedHeight} fill={TIMELINE_PICKED_COLOR} rx={radius.cell} />
-                )}
-              </g>
-            ))}
-            <line x1={0} x2={WIDTH} y1={HEIGHT} y2={HEIGHT} stroke={color.lineStrong} strokeWidth={1} />
-            {bars.map((bar, i) =>
-              i % every === 0 ? (
-                <text key={`label-${bar.month}`} x={bar.x + bar.width / 2} y={HEIGHT + 14} textAnchor="middle" fontSize={10} fill="currentColor" aria-hidden="true">
-                  {formatMonth(bar.month, locale)}
-                </text>
-              ) : null,
-            )}
-          </Box>
+            <Box component="svg" role="img" aria-label={copy.label} viewBox={`0 0 ${WIDTH} ${HEIGHT + AXIS}`} sx={{ width: "100%", height: "auto", display: "block", color: color.muted, fontFamily: font.mono }}>
+              {bars.map((bar) => (
+                <g key={bar.month} data-month={bar.month}>
+                  <rect data-series="overall" x={bar.x} y={bar.y} width={bar.width} height={bar.height} fill={picked ? TIMELINE_DIMMED_COLOR : TIMELINE_COLOR} rx={radius.cell} />
+                  {picked && bar.pickedHeight > 0 && (
+                    <rect data-series="picked" x={bar.x} y={bar.pickedY} width={bar.width} height={bar.pickedHeight} fill={TIMELINE_PICKED_COLOR} rx={radius.cell} />
+                  )}
+                </g>
+              ))}
+              <line x1={0} x2={WIDTH} y1={HEIGHT} y2={HEIGHT} stroke={color.lineStrong} strokeWidth={1} />
+              {bars.map((bar, i) =>
+                i % every === 0 ? (
+                  <text key={`label-${bar.month}`} x={bar.x + bar.width / 2} y={HEIGHT + 14} textAnchor="middle" fontSize={10} fill="currentColor" aria-hidden="true">
+                    {formatMonth(bar.month, locale)}
+                  </text>
+                ) : null,
+              )}
+            </Box>
           </Well>
           <Box sx={{ display: "flex", columnGap: 2, rowGap: 0.5, flexWrap: "wrap", alignItems: "center" }} data-legend="timeline">
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>

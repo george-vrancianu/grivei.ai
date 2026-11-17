@@ -1,6 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { Topology } from "topojson-specification";
-import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
@@ -38,6 +37,8 @@ export type FlowLensMapProps = {
   status?: ReactNode;
   /** The panel shows its last answer while the next loads: the body is dimmed with `aria-busy="true"`, the header and the caption stay at full strength. */
   busy?: boolean | undefined;
+  /** The page's request failed while this map is held: the note sits inside the panel, above the held map. */
+  failure?: ReactNode;
 };
 
 /**
@@ -45,7 +46,7 @@ export type FlowLensMapProps = {
  * county (width by money, arrowhead showing the direction by role), the home county highlighted, and the off-map tiles. It draws the same Totals
  * the Money lens does. Presentational: data in, clicks out.
  */
-export function FlowLensMap({ flow, role, home = null, topology, selected, onSelect, locale, copy, status, busy }: FlowLensMapProps) {
+export function FlowLensMap({ flow, role, home = null, topology, selected, onSelect, locale, copy, status, busy, failure }: FlowLensMapProps) {
   const names = useMemo(() => new Map(featuresOf(topology).map((area) => [area.properties.code, area.properties.name])), [topology]);
   const rows = useMemo(() => flowRows(flow), [flow]);
   const totals = useMemo(() => totalsByCounty(flow), [flow]);
@@ -58,6 +59,7 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
   if (isEmptyFlow(flow)) {
     return (
       <MoneyFlowPanel role={role} status={status} busy={busy} copy={copy.panel}>
+        {failure}
         <Typography variant="body2" data-flow-empty>{copy.empty}</Typography>
       </MoneyFlowPanel>
     );
@@ -82,33 +84,34 @@ export function FlowLensMap({ flow, role, home = null, topology, selected, onSel
       copy={copy.panel}
       foot={<FlowCaption role={role} homeName={homeName} localOnly={homeCode !== null && localOnly} copy={copy.caption} />}
     >
+      {failure && <Box sx={{ p: 2, pb: 0 }}>{failure}</Box>}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.7fr) minmax(220px, 1fr)" } }}>
         <Box sx={{ p: 2, minWidth: 0 }}>
           <BaseMap
-        topology={topology}
-        // The fill is categorical (home / has money / none): the money is in the bubbles and arcs, and exact in the names and tooltips.
-        values={{}}
-        formatValue={() => ""}
-        colorOf={colorOf}
-        describeArea={describeArea}
-        legend={<FlowLegend role={role} hasHome={homeCode !== null} copy={copy.legend} />}
-        renderOverlay={({ centroids }) => {
-          const { bubbles, arcs } = flowMarks(rows, centroids, homeCode, role);
-          return (
-            <>
-              <FlowArcs arcs={arcs} />
-              <FlowBubbles bubbles={bubbles} />
-            </>
-          );
-        }}
-        renderTooltip={({ code, name }) => (
-          <FlowTooltip name={name} total={totals.get(code)} role={role} isHome={code === homeCode} homeName={homeName} locale={locale} copy={copy} />
-        )}
-        onSelect={onSelect}
-        selected={selected}
-        tiles={<OffMapTiles map={flow} selected={selected} onSelect={onSelect} locale={locale} copy={copy.tiles} />}
-        copy={copy.map}
-      />
+            topology={topology}
+            // The fill is categorical (home / has money / none): the money is in the bubbles and arcs, and exact in the names and tooltips.
+            values={{}}
+            formatValue={() => ""}
+            colorOf={colorOf}
+            describeArea={describeArea}
+            legend={<FlowLegend role={role} hasHome={homeCode !== null} copy={copy.legend} />}
+            renderOverlay={({ centroids }) => {
+              const { bubbles, arcs } = flowMarks(rows, centroids, homeCode, role);
+              return (
+                <>
+                  <FlowArcs arcs={arcs} />
+                  <FlowBubbles bubbles={bubbles} />
+                </>
+              );
+            }}
+            renderTooltip={({ code, name }) => (
+              <FlowTooltip name={name} total={totals.get(code)} role={role} isHome={code === homeCode} homeName={homeName} locale={locale} copy={copy} />
+            )}
+            onSelect={onSelect}
+            selected={selected}
+            tiles={<OffMapTiles map={flow} selected={selected} onSelect={onSelect} locale={locale} copy={copy.tiles} />}
+            copy={copy.map}
+          />
         </Box>
         <Box sx={{ minWidth: 0, borderTop: { xs: 1, md: 0 }, borderLeft: { xs: 0, md: 1 }, borderColor: "divider" }}>
           <CountyList rows={list.rows} total={list.total} locale={locale} label={copy.counties.label} />

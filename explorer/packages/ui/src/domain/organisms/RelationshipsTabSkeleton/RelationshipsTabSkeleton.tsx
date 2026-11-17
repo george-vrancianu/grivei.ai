@@ -9,9 +9,18 @@ import { skeletonBlock } from "../../utils/skeletonBlock.tsx";
 import { InsetFigure } from "../../molecules/InsetFigure/index.ts";
 import { MoneyFlowPanel } from "../MoneyFlowPanel/index.ts";
 import type { EntityRole } from "../../types.ts";
-import type { RelationshipsTabSkeletonCopy } from "../RelationshipsTab/index.ts";
+import type { CounterpartyGraphCopy, CounterpartyPanelCopy, MonthlyTimelineCopy } from "../RelationshipsTab/index.ts";
+import type { MoneyFlowPanelCopy } from "../MoneyFlowPanel/index.ts";
 
-export type { RelationshipsTabSkeletonCopy } from "../RelationshipsTab/index.ts";
+/** What the first-load skeleton shows for real: the labels of the loaded tab, over placeholder blocks. */
+export interface RelationshipsTabSkeletonCopy {
+  heading: string;
+  graph: Pick<CounterpartyGraphCopy, "heading">;
+  timeline: Pick<MonthlyTimelineCopy, "heading">;
+  panel: Pick<CounterpartyPanelCopy, "label" | "eyebrow" | "hint" | "awarded" | "records">;
+  /** The Money flow panel's title and meta line (the skeleton of the Money flow view). */
+  flow: MoneyFlowPanelCopy;
+}
 
 export interface RelationshipsTabSkeletonProps {
   /** The page's role: it picks the Money flow panel's meta line. */
@@ -29,7 +38,7 @@ export interface RelationshipsTabSkeletonProps {
 
 /**
  * The Relationships tab on first load, before any answer, in the loaded tab's shape: the heading and the toggle, the graph panel (real title, the loading status in its header, a well where the graph will be),
- * the picked panel (real title and hint) and "By month" (real title, a well). The Money flow view is its one panel. The placeholders are `aria-hidden`. A refetch never shows this: it keeps the last answer on screen, dimmed.
+ * the picked panel (real title and hint) and "By month" (real title, a well). In the Money flow view its panel takes the graph panel's place. The placeholders are `aria-hidden`. A refetch never shows this: it keeps the last answer on screen, dimmed.
  */
 export function RelationshipsTabSkeleton({ role, toggle, view = "graph", picked = false, status, copy }: RelationshipsTabSkeletonProps) {
   const heading = (
@@ -38,41 +47,41 @@ export function RelationshipsTabSkeleton({ role, toggle, view = "graph", picked 
       {toggle && <Box data-slot="flow-toggle">{toggle}</Box>}
     </Box>
   );
-  if (view === "flow") {
-    return (
-      <Stack spacing={2}>
-        {heading}
-        <MoneyFlowPanel role={role} status={status} copy={copy.flow}>
-          {skeletonBlock("100%", 320)}
-        </MoneyFlowPanel>
-      </Stack>
-    );
-  }
+  const pickedPanel = (
+    <Panel heading={copy.panel.eyebrow} label={copy.panel.label}>
+      {picked ? (
+        <>
+          {skeletonBlock("60%", 22)}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+            <InsetFigure label={copy.panel.awarded}>{skeletonBlock(96, 18)}</InsetFigure>
+            <InsetFigure label={copy.panel.records}>{skeletonBlock(48, 18)}</InsetFigure>
+          </Box>
+        </>
+      ) : (
+        <Typography variant="body2" color="text.secondary">{copy.panel.hint}</Typography>
+      )}
+    </Panel>
+  );
   return (
     <Stack spacing={2}>
       {heading}
-      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 3 }}>
-        <Box sx={{ flex: "1.3 1 520px", minWidth: 0 }}>
-          <Panel heading={copy.graph.heading} aside={status}>
-            <Well sx={{ p: 1.5 }}>{skeletonBlock("100%", 300)}</Well>
-          </Panel>
+      {view === "flow" ? (
+        <>
+          <MoneyFlowPanel role={role} status={status} copy={copy.flow}>
+            {skeletonBlock("100%", 320)}
+          </MoneyFlowPanel>
+          {pickedPanel}
+        </>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 3 }}>
+          <Box sx={{ flex: "1.3 1 520px", minWidth: 0 }}>
+            <Panel heading={copy.graph.heading} aside={status}>
+              <Well sx={{ p: 1.5 }}>{skeletonBlock("100%", 300)}</Well>
+            </Panel>
+          </Box>
+          <Box sx={{ flex: "1 1 380px", minWidth: 0 }}>{pickedPanel}</Box>
         </Box>
-        <Box sx={{ flex: "1 1 380px", minWidth: 0 }}>
-          <Panel heading={copy.panel.eyebrow} label={copy.panel.label}>
-            {picked ? (
-              <>
-                {skeletonBlock("60%", 22)}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-                  <InsetFigure label={copy.panel.awarded}>{skeletonBlock(96, 18)}</InsetFigure>
-                  <InsetFigure label={copy.panel.records}>{skeletonBlock(48, 18)}</InsetFigure>
-                </Box>
-              </>
-            ) : (
-              <Typography variant="body2" color="text.secondary">{copy.panel.hint}</Typography>
-            )}
-          </Panel>
-        </Box>
-      </Box>
+      )}
       <Panel heading={copy.timeline.heading}>
         <Well sx={{ p: 1.5 }}>{skeletonBlock("100%", 120)}</Well>
       </Panel>

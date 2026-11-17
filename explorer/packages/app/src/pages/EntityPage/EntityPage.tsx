@@ -120,12 +120,13 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
   );
   // The Relationships tab: the last answer of the same entity and role stays (dimmed) while a filter reloads it, the picked counterparty's last answer while the next loads,
   // and a failure sits inside the panel that failed (the graph, or the Money flow panel; the picked panel's own).
+  const lensToggle = (
+    <OptionToggle options={LENSES} value={lens === "flow" ? "flow" : "graph"} onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })} labels={t.entityPage.relationships.lens.options} label={t.entityPage.relationships.lens.label} />
+  );
   const relationshipsView = (header: EntityHeaderData, relationships: RelationshipsData | null, busy: boolean, failure: ReactNode) => {
     const loadingStatus = <LoadingStatus label={t.status.loading} />;
     const flowOpen = lens === "flow";
     const answer = picked.status === "ready" ? picked : picked.status === "loading" ? picked.held : null;
-    const own = t.entityPage.relationships;
-    const toggle = <OptionToggle options={LENSES} value={flowOpen ? "flow" : "graph"} onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })} labels={own.lens.options} label={own.lens.label} />;
     const flowCopy = flowLensCopy(t);
     return (
       <RelationshipsTab
@@ -141,11 +142,9 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
         busy={busy}
         status={busy ? loadingStatus : undefined}
         failure={failure}
-        flowToggle={toggle}
+        flowToggle={lensToggle}
         flowMap={
-          !flowOpen ? undefined : failure ? (
-            <MoneyFlowPanel role={routeRole} copy={flowCopy.panel}>{failure}</MoneyFlowPanel>
-          ) : relationships ? (
+          !flowOpen ? undefined : relationships ? (
             <LoadedFlowLensSection
               flow={relationships.flow}
               role={routeRole}
@@ -155,7 +154,10 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
               status={{ unavailable: t.main.mapUnavailable, loading: t.status.loading, retry: t.status.retry }}
               busy={busy}
               loadingStatus={busy ? loadingStatus : undefined}
+              failure={failure}
             />
+          ) : failure ? (
+            <MoneyFlowPanel role={routeRole} copy={flowCopy.panel}>{failure}</MoneyFlowPanel>
           ) : undefined
         }
         {...relationshipsTab}
@@ -167,7 +169,7 @@ export function EntityPage({ locale, entity: routeRole, entityKey, view }: Entit
       role={routeRole}
       view={lens === "flow" ? "flow" : "graph"}
       picked={counterparty !== undefined}
-      toggle={<OptionToggle options={LENSES} value={lens === "flow" ? "flow" : "graph"} onChange={(next) => update({ lens: next === "flow" ? "flow" : undefined })} labels={t.entityPage.relationships.lens.options} label={t.entityPage.relationships.lens.label} />}
+      toggle={lensToggle}
       status={<LoadingStatus label={t.status.loading} />}
       copy={{ ...t.entityPage.relationships.tab, flow: t.entityPage.relationships.flow.panel }}
     />

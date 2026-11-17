@@ -25,10 +25,12 @@ describe.each(["en", "ro"] as const)("RelationshipsTabSkeleton (%s)", (locale) =
     expect(panel.getByText(copy.panel.records)).toBeVisible();
   });
 
-  it("is the Money flow panel alone in the flow view", () => {
+  it("puts the Money flow panel in the graph's place in the flow view, the picked panel and By month staying", () => {
     setup({ view: "flow" });
     expect(screen.getByRole("region", { name: copy.flow.heading })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: copy.timeline.heading })).toBeNull();
+    expect(screen.queryByRole("region", { name: copy.graph.heading })).toBeNull();
+    expect(screen.getByRole("region", { name: copy.panel.label })).toBeVisible();
+    expect(screen.getByRole("heading", { name: copy.timeline.heading })).toBeVisible();
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 });

@@ -16,7 +16,7 @@ import { MonthlyTimeline } from "./components/MonthlyTimeline/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import type { RelationshipsTabCopy } from "./relationshipsTab.types.ts";
 
-export type { RelationshipsTabSkeletonCopy, RelationshipsTabCopy, CounterpartyGraphCopy, GraphLegendCopy, MonthlyTimelineCopy, CounterpartyPanelCopy, NodeNameParts } from "./relationshipsTab.types.ts";
+export type { RelationshipsTabCopy, CounterpartyGraphCopy, GraphLegendCopy, MonthlyTimelineCopy, CounterpartyPanelCopy, NodeNameParts } from "./relationshipsTab.types.ts";
 
 export interface RelationshipsTabProps {
   /** The entity whose page this is: the centre of the graph. */
@@ -66,7 +66,7 @@ export interface RelationshipsTabProps {
   recordHref: (record: RecordResult["record"]) => string;
   /** The Graph / Money flow toggle: it shares the heading's line above the panels. */
   flowToggle?: ReactNode;
-  /** The Money flow panel: when given, it is the whole view in place of the graph, "By month" and the picked panel (the heading and the toggle stay above it). */
+  /** The Money flow panel: when given, it takes the graph panel's place (full width, the picked panel under it); "By month" and the picked panel stay as in the Graph view. */
   flowMap?: ReactNode;
   locale: Locale;
   copy: RelationshipsTabCopy;
@@ -85,7 +85,7 @@ const entityInRecords = (sidePanel: CounterpartyRecordsData | null, key: string)
 /**
  * The Relationships tab of an Entity page: the heading and the Graph / Money flow toggle on one line, then in the Graph view a titled panel with the radial graph of the top counterparties
  * (size = money, colour = contracts or direct purchases, dashed = won together, ring = has Signals; the legend is its foot) beside the picked-counterparty panel, and "By month" full width below;
- * in the Money flow view the one Money flow panel. Presentational: the page owns the data, the refetch (`busy`, `status`) and the failures.
+ * in the Money flow view the one Money flow panel takes the graph panel's place (full width, the picked panel under it) and "By month" stays. Presentational: the page owns the data, the refetch (`busy`, `status`) and the failures.
  */
 export function RelationshipsTab({
   entity, role, counterparties, timeline, selectedTimeline = null, selected, onSelect, sidePanel, sidePanelKey = null, sidePanelLoading = false, sidePanelStatus, sidePanelFailure, counterpartyHref, busy, status, failure, sidePanelPaging,
@@ -103,65 +103,64 @@ export function RelationshipsTab({
       {flowToggle && <Box data-slot="flow-toggle">{flowToggle}</Box>}
     </Box>
   );
-  if (flowMap) {
-    return (
-      <Stack spacing={2}>
-        {heading}
-        {flowMap}
-      </Stack>
-    );
-  }
+  const graphPanel = (
+    <Panel
+      heading={copy.graph.heading}
+      busy={busy}
+      aside={status}
+      foot={
+        rows.length > 0 ? (
+          <>
+            <GraphLegend copy={copy.legend} hasWonTogether={rows.some((row) => row.wonTogether)} hasSignals={rows.some((row) => row.hasSignals)} />
+            {rows.some((row) => row.wonTogether) && <Typography variant="meta" color="text.secondary" component="p" sx={{ m: 0, flex: "1 1 100%" }}>{copy.graph.consortiumNote}</Typography>}
+          </>
+        ) : undefined
+      }
+    >
+      {failure}
+      {counterparties && (
+        <Well sx={{ p: 1.5 }}>
+          <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />
+        </Well>
+      )}
+    </Panel>
+  );
+  const pickedPanel = counterparties && (
+    <CounterpartyPanel
+      picked={selected !== null}
+      counterparty={picked}
+      records={sidePanel}
+      loading={sidePanelLoading}
+      status={sidePanelStatus}
+      failure={sidePanelFailure}
+      hasSignals={shownRow?.hasSignals ?? false}
+      wonTogether={shownRow?.wonTogether ?? false}
+      allRecordsHref={shown === null ? null : counterpartyHref(shown, "records")}
+      signalsHref={shown === null ? null : counterpartyHref(shown, "signals")}
+      counterpartyRole={counterpartyRole(role)}
+      onClose={() => onSelect(null)}
+      paging={sidePanelPaging}
+      onNavigate={onNavigate}
+      entityHref={entityHref}
+      recordHref={recordHref}
+      locale={locale}
+      copy={copy}
+    />
+  );
   return (
     <Stack spacing={2}>
       {heading}
-      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 3 }}>
-        <Box sx={{ flex: "1.3 1 520px", minWidth: 0 }}>
-          <Panel
-            heading={copy.graph.heading}
-            busy={busy}
-            aside={status}
-            foot={
-              rows.length > 0 ? (
-                <>
-                  <GraphLegend copy={copy.legend} hasWonTogether={rows.some((row) => row.wonTogether)} hasSignals={rows.some((row) => row.hasSignals)} />
-                  {rows.some((row) => row.wonTogether) && <Typography variant="meta" color="text.secondary" component="p" sx={{ m: 0, flex: "1 1 100%" }}>{copy.graph.consortiumNote}</Typography>}
-                </>
-              ) : undefined
-            }
-          >
-            {failure}
-            {counterparties && (
-              <Well sx={{ p: 1.5 }}>
-                <CounterpartyGraph entity={entity} counterparties={counterparties} selected={selected} onSelect={onSelect} locale={locale} copy={copy} />
-              </Well>
-            )}
-          </Panel>
+      {flowMap ? (
+        <>
+          {flowMap}
+          {pickedPanel}
+        </>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 3 }}>
+          <Box sx={{ flex: "1.3 1 520px", minWidth: 0 }}>{graphPanel}</Box>
+          {pickedPanel && <Box sx={{ flex: "1 1 380px", minWidth: 0 }}>{pickedPanel}</Box>}
         </Box>
-        {counterparties && (
-          <Box sx={{ flex: "1 1 380px", minWidth: 0 }}>
-            <CounterpartyPanel
-              picked={selected !== null}
-              counterparty={picked}
-              records={sidePanel}
-              loading={sidePanelLoading}
-              status={sidePanelStatus}
-              failure={sidePanelFailure}
-              hasSignals={shownRow?.hasSignals ?? false}
-              wonTogether={shownRow?.wonTogether ?? false}
-              allRecordsHref={shown === null ? null : counterpartyHref(shown, "records")}
-              signalsHref={shown === null ? null : counterpartyHref(shown, "signals")}
-              counterpartyRole={counterpartyRole(role)}
-              onClose={() => onSelect(null)}
-              paging={sidePanelPaging}
-              onNavigate={onNavigate}
-              entityHref={entityHref}
-              recordHref={recordHref}
-              locale={locale}
-              copy={copy}
-            />
-          </Box>
-        )}
-      </Box>
+      )}
       {timeline && (
         <MonthlyTimeline
           timeline={timeline}

@@ -248,15 +248,15 @@ describe("RelationshipsTab", () => {
     expect(screen.getByRole("button", { name: "Flow lens" })).toBeVisible();
   });
 
-  it("shows the Money flow panel as the whole view under the heading and the toggle", () => {
+  it("puts the Money flow panel in the graph's place, keeping By month and the picked panel", () => {
     renderInUi(<Harness flowMap={<p>The flow map</p>} />);
     expect(screen.getByText("The flow map")).toBeVisible();
     expect(screen.queryByRole("group", { name: copy.graph.label })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Legend" })).not.toBeInTheDocument();
     expect(screen.queryAllByRole("button").filter((el) => el.hasAttribute("aria-pressed"))).toHaveLength(0);
     expect(screen.getByRole("heading", { name: "Relationships" })).toBeVisible();
-    expect(screen.queryByRole("region", { name: "By month" })).toBeNull();
-    expect(screen.queryByRole("region", { name: copy.panel.label })).toBeNull();
+    expect(screen.getByRole("region", { name: "By month" })).toBeVisible();
+    expect(screen.getByRole("region", { name: copy.panel.label })).toBeVisible();
   });
 
   it("explains the marks in a legend, the dashed one only when it is used", () => {

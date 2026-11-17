@@ -30,6 +30,6 @@ const sample =
 export const GraphFirstLoad: Story = { render: sample("authority", "graph") };
 /** A counterparty is in the URL: the picked panel shows its real figure labels over blocks. */
 export const WithPickedCounterparty: Story = { render: sample("supplier", "graph", true) };
-/** The Money flow view on first load: its one panel, a block where the map will be. */
+/** The Money flow view on first load: its panel in the graph's place (a block where the map will be), the picked panel and By month as in the Graph view. */
 export const MoneyFlowFirstLoad: Story = { render: sample("authority", "flow") };
 export const Phone: Story = { ...GraphFirstLoad, globals: { viewport: { value: "mobile2", isRotated: false } } };

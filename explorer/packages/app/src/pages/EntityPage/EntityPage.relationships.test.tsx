@@ -3,6 +3,7 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { fixtures } from "@grivei/contract/fixtures";
 import { App } from "../../App.tsx";
 import { fixtureClient } from "../../testing/fixtureClient.ts";
 import { loadTestCountyTopology } from "../../testing/countyTopology.ts";
@@ -19,6 +20,7 @@ async function opened(url: string, ready: string | RegExp = /^(Graph of the top 
   await screen.findByRole("group", { name: ready });
   return sent;
 }
+const canonical = (value: unknown): string => JSON.stringify(value, (_k, v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v));
 const panel = () => screen.getByRole("region", { name: /^(Records with the picked counterparty|Înregistrările contrapărții alese)$/ });
 const node = (name: RegExp) => screen.getByRole("button", { name });
 
@@ -107,13 +109,58 @@ describe("the Relationships tab of a supplier", () => {
     expect(screen.getAllByText(/Unplaced/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("group", { name: "Graph of the top counterparties" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Money flow" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "By month" })).toBeNull();
+    // as on main, the lens replaces only the graph: "By month" and the picked panel stay
+    expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
+    expect(within(panel()).getByText(/Pick a counterparty/)).toBeVisible();
     expect(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: "Money flow", pressed: true })).toBeVisible();
     // the Flow lens is part of the same response: no new request
     expect(sent.map((s) => s.operation)).toEqual(["EntityRelationships"]);
     await user.click(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: "Graph" }));
     await waitFor(() => expect(window.location.search).toBe(""));
     expect(await screen.findByRole("group", { name: "Graph of the top counterparties" })).toBeVisible();
+  });
+});
+
+describe("the picked counterparty's links", () => {
+  it("point at the Records tab filtered to the counterparty, and following one lands there with the filter chipped", async () => {
+    await opened(`${AUTHORITY}?counterparty=2000007`);
+    const link = await within(panel()).findByRole("link", { name: /^All \d+ Records with ALFA DEMO SRL$/ });
+    expect(link).toHaveAttribute("href", "/explore/authority/1000017/records?supplier=2000007");
+    await userEvent.setup().click(link);
+    await waitFor(() => expect(window.location.pathname).toBe("/explore/authority/1000017/records"));
+    expect(window.location.search).toBe("?supplier=2000007");
+  });
+
+  it.each([
+    ["en", AUTHORITY, /^Has Signals$|^Signals$/],
+    ["ro", `/ro${AUTHORITY}`, /Semnale/],
+  ])("lead from the Signals chip to the Records carrying Signals (%s)", async (_locale, base, name) => {
+    // ALFA carries Signals in the 2023 answer; the picked months and Records are the unfiltered ones under that filter
+    const filter = { from: "2023-01-01", to: "2023-12-31" };
+    const find = (list: { variables: unknown }[], variables: unknown) => list.find((f) => canonical(f.variables) === canonical(variables))!;
+    const months = find(fixtures.EntityRelationships, { key: "1000017", role: "AUTHORITY", filter: {}, counterparty: "2000007" });
+    const records = find(fixtures.EntityRecords, { key: "1000017", role: "AUTHORITY", filter: { supplier: "2000007" }, limit: 100, offset: 0 });
+    openAt(`${base}?from=2023-01-01&to=2023-12-31&counterparty=2000007`);
+    const extra = [
+      { operation: "EntityRelationships", variables: { key: "1000017", role: "AUTHORITY", filter, counterparty: "2000007" }, data: months.data },
+      { operation: "EntityRecords", variables: { key: "1000017", role: "AUTHORITY", filter: { ...filter, supplier: "2000007" }, limit: 100, offset: 0 }, data: records.data },
+    ];
+    render(<App client={fixtureClient({ extra }).client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByRole("group", { name: /^(Graph of the top counterparties|Graful principalelor contrapărți)$/ });
+    const chip = await within(panel()).findByRole("link", { name });
+    expect(chip.getAttribute("href")).toContain("hasSignals=true");
+    expect(chip.getAttribute("href")).toContain("supplier=2000007");
+  });
+
+  it("keeps By month and the filled picked panel in the Money flow view opened from the URL", async () => {
+    openAt(`${SUPPLIER}?lens=flow&counterparty=1000017`);
+    const { client } = fixtureClient();
+    render(<App client={client} loadCountyTopology={loadTestCountyTopology} />);
+    expect(await screen.findByText(/All of the money placed in a county comes from Cluj/)).toBeVisible();
+    expect(screen.getByRole("region", { name: "Money flow" })).toBeVisible();
+    expect(await within(panel()).findByRole("heading", { level: 4 })).toHaveTextContent("SPITALUL EXEMPLU");
+    expect(screen.getByRole("heading", { name: "By month" })).toBeVisible();
+    expect(screen.queryByRole("group", { name: "Graph of the top counterparties" })).toBeNull();
   });
 });
 

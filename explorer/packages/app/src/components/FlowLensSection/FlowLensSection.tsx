@@ -19,10 +19,12 @@ export interface FlowLensSectionProps {
   /** The flow request is refetching (a filter changed): the last map stays, dimmed, with `loadingStatus` in the panel's header. */
   busy?: boolean;
   loadingStatus?: ReactNode;
+  /** The tab's request failed with this map held: the note sits inside the panel above the held map. */
+  failure?: ReactNode;
 }
 
 /** The Money flow panel of an Entity page's Relationships tab: the area picked on the map is the map's own highlight. Every state (outlines loading, outlines failed, the map) sits in the same panel. */
-export function FlowLensSection({ flow, role, topology, home, locale, copy, status, busy, loadingStatus }: FlowLensSectionProps) {
+export function FlowLensSection({ flow, role, topology, home, locale, copy, status, busy, loadingStatus, failure }: FlowLensSectionProps) {
   const [selected, setSelected] = useState<MapArea | undefined>(undefined);
   if (topology.status === "error") {
     return (
@@ -52,6 +54,7 @@ export function FlowLensSection({ flow, role, topology, home, locale, copy, stat
       copy={copy}
       busy={busy}
       status={loadingStatus}
+      failure={failure}
     />
   );
 }

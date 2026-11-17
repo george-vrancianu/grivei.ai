@@ -66,6 +66,32 @@ describe.each(["en", "ro"] as const)("the Relationships tab's states (%s)", (lan
     expect(within(region(w.graph)).queryByRole("status")).toBeNull();
   });
 
+  it("keeps the Money flow view's By month and picked panel, dimmed too, while a filter reloads it", async () => {
+    openAt(`${w.base}?lens=flow&counterparty=2000007`);
+    const held = gate();
+    const before: Before = ({ operation, variables }) => (operation === "EntityRelationships" && isGraph(variables) && (variables as { filter: { from?: string } }).filter.from !== undefined ? held.until : undefined);
+    render(<App client={fixtureClient({ before, extra: [...filteredToo("2023-06-01"), ...pickedFor("2023-06-01")] }).client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByRole("list", { name: /^(Money by county|Banii pe județe)$/ });
+    await within(region(w.picked)).findByRole("heading", { level: 4 });
+    act(() => navigate(`${w.base}?lens=flow&counterparty=2000007&from=2023-06-01`, "replace"));
+    await waitFor(() => expect(body(region(w.byMonth))).toHaveAttribute("aria-busy", "true"));
+    expect(body(region(w.flow))).toHaveAttribute("aria-busy", "true");
+    expect(within(region(w.picked)).getByRole("heading", { level: 4 })).toBeVisible();
+    act(() => held.release());
+    await waitFor(() => expect(body(region(w.byMonth))).not.toHaveAttribute("aria-busy"));
+  });
+
+  it("a failed reload in the Money flow view keeps the held map and puts the note inside its panel", async () => {
+    openAt(`${w.base}?lens=flow`);
+    const before: Before = ({ operation, variables, n }) => (operation === "EntityRelationships" && isGraph(variables) && n === 2 ? "fail" : undefined);
+    render(<App client={fixtureClient({ before, extra: filteredToo("2023-06-01") }).client} loadCountyTopology={loadTestCountyTopology} />);
+    await screen.findByRole("list", { name: /^(Money by county|Banii pe județe)$/ });
+    act(() => navigate(`${w.base}?lens=flow&from=2023-06-01`, "replace"));
+    const alert = await within(region(w.flow)).findByRole("alert");
+    expect(alert).toHaveTextContent(w.failed);
+    expect(within(region(w.flow)).getByRole("list", { name: /^(Money by county|Banii pe județe)$/ })).toBeVisible();
+  });
+
   it("keeps the picked panel through a filter reload", async () => {
     openAt(`${w.base}?counterparty=2000007`);
     const held = gate();

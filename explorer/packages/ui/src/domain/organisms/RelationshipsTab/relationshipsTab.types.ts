@@ -1,6 +1,5 @@
 import type { EntityLinkCopy } from "../../atoms/EntityLink/index.ts";
 import type { PageNavCopy } from "../../molecules/PageNav/index.ts";
-import type { MoneyFlowPanelCopy } from "../MoneyFlowPanel/index.ts";
 import type { RecordResultRowCopy } from "../../molecules/RecordResultRow/index.ts";
 
 /** What a node's accessible name is built from (amounts and counts arrive already formatted in the page's language). */
@@ -99,14 +98,4 @@ export interface RelationshipsTabCopy {
   entityLink: EntityLinkCopy;
   recordRow: RecordResultRowCopy;
   pagination: PageNavCopy;
-}
-
-/** What the first-load skeleton shows for real: the labels of the loaded tab, over placeholder blocks. */
-export interface RelationshipsTabSkeletonCopy {
-  heading: string;
-  graph: Pick<CounterpartyGraphCopy, "heading">;
-  timeline: Pick<MonthlyTimelineCopy, "heading">;
-  panel: Pick<CounterpartyPanelCopy, "label" | "eyebrow" | "hint" | "awarded" | "records">;
-  /** The Money flow panel's title and meta line (the skeleton of the Money flow view). */
-  flow: MoneyFlowPanelCopy;
 }

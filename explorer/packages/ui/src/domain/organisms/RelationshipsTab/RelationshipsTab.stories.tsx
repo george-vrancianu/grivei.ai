@@ -120,7 +120,7 @@ export const Refetching: Story = { render: render({ data: authorityTypicalRelati
 export const Failed: Story = { render: render({ data: null, role: "authority", failure: true }) };
 /** The tab's request failed with an answer held: the note sits above the held graph. */
 export const FailedWithHeldAnswer: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", picked: typicalPicked, initial: "30000002", failure: true }) };
-/** The Money flow view: its one panel is the whole view under the heading and the toggle (no graph, "By month" or picked panel). */
+/** The Money flow view: its one panel takes the graph panel's place; the picked panel and "By month" stay. */
 export const FlowLensOpen: Story = { render: render({ data: authorityTypicalRelationships, role: "authority", flowOpen: true }) };
 /** No counterparty carries a Signal: no amber ring on the graph and no ring entry in the legend. */
 export const WithoutSignals: Story = {
