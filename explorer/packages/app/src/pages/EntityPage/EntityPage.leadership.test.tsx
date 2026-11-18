@@ -49,7 +49,7 @@ describe("the Leadership list", () => {
     await opened("/ro/explore/authority/51000501");
     const section = within(await screen.findByRole("region", { name: "Lista conducerii" }));
     expect(section.getByText(/Fereastra de predare/)).toBeVisible();
-    expect(section.getByText(/27 octombrie 2024 – în funcție/)).toBeVisible();
+    expect(section.getByText("în funcție").parentElement).toHaveTextContent("27 octombrie 2024 – în funcție");
   });
 
   it("is absent from a school (two principals) and from a supplier", async () => {

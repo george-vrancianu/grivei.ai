@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Box } from "../../../atoms/Box/index.ts";
 import { TableBody } from "../../../atoms/TableBody/index.ts";
 import { TableCell } from "../../../atoms/TableCell/index.ts";
@@ -7,23 +8,27 @@ import { Typography } from "../../../atoms/Typography/index.ts";
 import { ViaSentence } from "../../molecules/ViaSentence/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { MandateBasisLine, type MandateBasisCopy } from "../../molecules/MandateBasisLine/index.ts";
+import { Tag } from "../../atoms/Tag/index.ts";
 import { NumericCell } from "../../atoms/NumericCell/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { PanelTable } from "../../molecules/PanelTable/index.ts";
 import type { LeadershipData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 
+/** Stands in for the period's end while the copy's sentence is built, then gives way to the Tag. */
+const IN_FORCE_SLOT = "\u0000";
+
 export interface LeadershipSectionCopy {
   heading: string;
   /** The caveat: the party is as registered at the election and may have changed since; leaders are not linked to a person. */
   caveat: string;
-  /** Shown for a mandate with no end. */
+  /** Shown, as a Tag, for a mandate with no end. */
   inForce: string;
   /** The table's column heads. */
   columns: { leader: string; list: string; period: string; basis: string };
   /** The table's accessible name ("Mandates"). */
   tableLabel: string;
-  /** "27 September 2024 – 27 October 2024", given the formatted start and end (or `inForce`). */
+  /** "27 September 2024 – 27 October 2024", given the formatted start and end (for an open period the end is a slot the `inForce` Tag takes, so keep it as one piece of the text). */
   period: (from: string, to: string) => string;
   gapHeading: string;
   gaps: Record<LeadershipData["gaps"][number]["kind"], string>;
@@ -49,7 +54,18 @@ export interface LeadershipSectionProps {
  * of the Mandates (leader's name as AEP wrote it, the list as registered, the dates, the AEP basis) and the gaps, listed as gaps, in the foot. Leaders are never links.
  */
 export function LeadershipSection({ leadership, authorityHref, onNavigate, locale, copy, busy }: LeadershipSectionProps) {
-  const period = (from: string, to: string | null) => copy.period(formatDate(from, locale, "long"), to ? formatDate(to, locale, "long") : copy.inForce);
+  // An open period ends in the "in force" Tag: the copy's period sentence is split at a slot the Tag takes, so its wording and order stay the copy's.
+  const period = (from: string, to: string | null): ReactNode => {
+    if (to) return copy.period(formatDate(from, locale, "long"), formatDate(to, locale, "long"));
+    const [before = "", after = ""] = copy.period(formatDate(from, locale, "long"), IN_FORCE_SLOT).split(IN_FORCE_SLOT);
+    return (
+      <>
+        {before}
+        <Tag>{copy.inForce}</Tag>
+        {after}
+      </>
+    );
+  };
   const { columns } = copy;
   return (
     <Panel
