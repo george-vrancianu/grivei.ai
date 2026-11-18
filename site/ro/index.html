@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Grivei.ai · watchdog pentru achiziții publice</title>
-  <meta name="description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <meta name="description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Graful național vine în curând.">
   <link rel="canonical" href="https://grivei.ai/ro/">
   <!-- Language versions. Keep this block identical in both pages. -->
   <link rel="alternate" hreflang="en" href="https://grivei.ai/">
@@ -18,7 +18,7 @@
   <meta property="og:locale:alternate" content="en_US">
   <meta property="og:url" content="https://grivei.ai/ro/">
   <meta property="og:title" content="Grivei.ai · watchdog pentru achiziții publice">
-  <meta property="og:description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Proiectul este în faza de cercetare.">
+  <meta property="og:description" content="Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Graful național vine în curând.">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#0D1014">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -26,16 +26,18 @@
   <!-- Fonts are self-hosted (see @font-face at the top of styles.css). The page makes no third-party requests. -->
   <link rel="stylesheet" href="../styles.css">
   <script src="../status.js" defer></script>
+  <script src="../graph.js" defer></script>
 </head>
 <body>
 
   <header class="topbar">
     <div class="wrap topbar__in">
-      <p class="brand"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
+      <p class="brand"><img class="brand__logo" src="../logo-disc.svg" alt="" width="40" height="40"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
       <div class="topbar__end">
-        <a class="explore-link" href="/ro/explore/">explorator</a>
-        <!-- Project phase. Change the word here when the project leaves research. -->
-        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>stadiu: cercetare</p>
+        <!-- Hidden until the host's explorer flag says "open" (GRIVEI_EXPLORER, read by status.js from /site-flags.json). -->
+        <a class="explore-link" href="/ro/explore/" hidden>explorator</a>
+        <!-- Project phase. Change the word here when the phase changes. -->
+        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>stadiu: în curând</p>
         <nav class="lang" aria-label="Limbă">
           <a href="../" hreflang="en" lang="en">EN</a>
           <a href="./" hreflang="ro" lang="ro" aria-current="page">RO</a>
@@ -46,40 +48,37 @@
 
   <main>
 
-    <section class="wrap hero">
-      <div class="hero__text">
-        <p class="eyebrow">achiziții publice · surse publice</p>
-        <h1>Câți pași sunt între cine semnează și cine câștigă?</h1>
-        <p class="lede">Grivei.ai construiește un graf al instituțiilor și firmelor, numai din surse publice. Fiecare legătură trimite la documentul din care provine.</p>
-      </div>
-
-      <div class="target">
-        <h2 class="label">întrebarea-țintă</h2>
-        <p class="target__big">≤ 3 pași</p>
-        <!-- Decorative: the sentence below says the same thing in words. -->
-        <div class="path" aria-hidden="true">
-          <div class="path__steps"><span>pas 1</span><span>pas 2</span><span>pas 3</span></div>
-          <div class="path__line">
-            <span class="node node--from"></span><span class="edge"></span>
-            <span class="node"></span><span class="edge"></span>
-            <span class="node"></span><span class="edge"></span>
-            <span class="node node--to"></span>
-          </div>
-          <div class="path__ends"><span class="path__from">decident</span><span>firmă câștigătoare</span></div>
+    <section class="wrap stage-sec">
+      <p class="eyebrow">achiziții publice · surse publice</p>
+      <div class="stage" id="stage">
+        <!-- Decorative: graph.js draws a made-up graph that assembles with the build animation. It shows no real data. -->
+        <svg class="stage__graph" id="graph" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+        <!-- The build animation: graph.js plays a simulated build once per visit (not the real rebuild's progress), then shows the block after it. -->
+        <div class="stage__over stage__build" aria-hidden="true" hidden>
+          <p class="label">construim graful național</p>
+          <p class="stage__pct"><span id="stage-pct">0</span>%</p>
+          <p class="stage__step" id="stage-step"></p>
         </div>
-        <p class="target__note">Căutăm drumuri de cel mult trei pași între un decident și o firmă care câștigă contracte de la aceeași instituție.</p>
+        <div class="stage__over stage__done">
+          <p class="label">graful național</p>
+          <h1>În curând.</h1>
+          <p class="lede">Fiecare instituție și firmă din SEAP, acum legată de registrul comerțului. Exploratorul se deschide aici după ce noul graf trece verificările.</p>
+          <!-- Figures from docs/source-roadmap.md (issue #127). Update them only from the project's own documents. -->
+          <ul class="facts">
+            <li><b>13,94 mil.</b> înregistrări de achiziții</li>
+            <li><b>1.098 mld. lei</b> numărați</li>
+            <li>1.01.2021 – 12.11.2026</li>
+          </ul>
+        </div>
       </div>
     </section>
 
     <section class="wrap">
       <div class="block">
         <div class="block__head">
-          <h2 class="label label--accent">surse de date</h2>
+          <h2 class="label label--accent">sursele, pe măsură ce intră în graf</h2>
           <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
           <p class="label" id="sources-summary">1 funcțională · 1 în lucru · 2 urmează · 1 omisă</p>
-        </div>
-        <div class="bar" id="sources-bar" aria-hidden="true">
-          <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="skipped"></span>
         </div>
 
         <!--
@@ -87,18 +86,20 @@
           data-status: "live" (funcțional) · "wip" (în lucru) · "next" (urmează) · "skipped" (omis).
           A skipped source goes last and explains why in <p class="source__note">.
           To change a source's status, change data-status AND the word in <p class="status">.
-          Row numbers, the bar above and the summary line update themselves.
+          Row numbers and the summary line update themselves. An optional <p class="source__count"> goes after the status.
         -->
         <ol class="sources" id="sources">
           <li class="source" data-status="live">
             <h3 class="source__name">SEAP</h3>
             <p class="source__what">Achiziții directe, anunțuri de atribuire, contracte</p>
             <p class="status">funcțional</p>
+            <p class="source__count"><span class="n" data-count="13.94">13,94 mil.</span><span class="s">înregistrări din 2021</span></p>
           </li>
           <li class="source" data-status="wip">
             <h3 class="source__name">ONRC</h3>
             <p class="source__what">Administratori, stare și coduri CAEN ale firmelor</p>
             <p class="status">în lucru</p>
+            <p class="source__count source__count--pending"><span class="n">…</span><span class="s">intră acum</span></p>
           </li>
           <li class="source" data-status="next">
             <h3 class="source__name">Ministerul Finanțelor</h3>
@@ -115,6 +116,39 @@
             <p class="source__what">Declarații de avere și de interese</p>
             <p class="status">omis</p>
             <p class="source__note">Curtea Constituțională a decis că publicarea online a acestor declarații încalcă dreptul la viață privată (<a href="https://www.ccr.ro/wp-content/uploads/2025/06/Decizie_297_2025.pdf">Decizia nr. 297/2025</a>, 29 mai 2025). Legea nr. 180/2026, în vigoare din 31 august 2026, păstrează confidențiale declarațiile complete.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="news">
+        <h2 class="label label--accent">ultimele noutăți</h2>
+        <!-- Newest first. Written from merged work; name no institutions or people. -->
+        <ol class="updates">
+          <li>
+            <time datetime="2026-11-18">18.11.2026</time>
+            <p><strong>A început reconstruirea națională.</strong> Graful se reconstruiește de la zero, cu registrul comerțului inclus. Când trece verificarea față de graful actual, intră în funcțiune.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-17">17.11.2026</time>
+            <p><strong>Explorator: toate paginile reproiectate.</strong> Organizațiile, înregistrările, persoanele, acoperirea și rezultatele căutării au acum același aspect.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-16">16.11.2026</time>
+            <p><strong>Explorator: căutare pe surse.</strong> Alegi sursa direct în caseta de căutare; registrul comerțului are propriile filtre.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-14">14.11.2026</time>
+            <p><strong>Intră registrul comerțului.</strong> Firmele din ONRC și administratorii lor, cu situațiile financiare, rezultatele alegerilor, donațiile firmelor către partide și lista companiilor de stat ca surse de referință.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-13">13.11.2026</time>
+            <p><strong>Planul surselor.</strong> După ONRC: PNRR, ajutoarele de stat, fondurile europene de coeziune, rapoartele Curții de Conturi și procesele dintre organizații.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-13">13.11.2026</time>
+            <p><strong>Confidențialitate înainte de lansare.</strong> Intrarea în funcțiune cere o notă de informare privind datele personale; conținutul restricționat rămâne oprit pe site-ul public.</p>
           </li>
         </ol>
       </div>
@@ -142,7 +176,7 @@
     <div class="wrap foot__in">
       <p>grivei.ai</p>
       <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ../index.html. -->
-      <p>actualizat: <time datetime="2026-11-14">14.11.2026</time></p>
+      <p>actualizat: <time datetime="2026-11-18">18.11.2026</time></p>
     </div>
   </footer>
 

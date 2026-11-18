@@ -85,6 +85,10 @@ services:
     mem_limit: 2g
     ports:
       - "127.0.0.1:8080:8080"
+    environment:
+      # The explorer flag: only the exact value `open` serves the explorer and shows its link on the landing page; empty or anything else
+      # redirects /explore/ to the landing page and hides the link (deploy/Caddyfile).
+      GRIVEI_EXPLORER: ${GRIVEI_EXPLORER:-}
     volumes:
       # the county and UAT TopoJSON `pipeline rebuild` writes (PIPELINE_GEO_DIR below), served at /geo/ (#67)
       - ${GRIVEI_GEO_DIR:-./geo}:/srv/geo:ro

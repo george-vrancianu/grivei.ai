@@ -178,10 +178,24 @@ ol { padding: 0; list-style: none; }
   align-items: center;
   justify-content: space-between;
   gap: 8px 24px;
-  padding-block: 22px;
+  padding-block: 14px;
   font: 400 0.8125rem/1.5 var(--font-mono);
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0 6px;
+}
+/* the explorer's logo (a copy of explorer/packages/app/src/assets/logo-disc.svg), with its header shadow */
+.brand__logo {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
 .brand strong { font-weight: 600; }
 .brand span { color: var(--muted); }
 
@@ -243,6 +257,7 @@ ol { padding: 0; list-style: none; }
 
 @media (prefers-reduced-motion: no-preference) {
   .phase__dot { animation: pulse 2.4s ease-out infinite; }
+  .source[data-status="wip"]::before { animation: pulse 2.4s ease-out infinite; }
 }
 @keyframes pulse {
   0%   { box-shadow: 0 0 0 0 rgba(242, 179, 61, 0.5); }
@@ -250,20 +265,90 @@ ol { padding: 0; list-style: none; }
   100% { box-shadow: 0 0 0 0 rgba(242, 179, 61, 0); }
 }
 
-/* ---------- hero ---------- */
+/* ---------- stage: the building graph ---------- */
 
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 48px 64px;
-  padding-block: 80px;
-}
-
-.hero__text {
+.stage-sec {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  padding-block: 48px 64px;
+}
+
+.stage {
+  position: relative;
+  min-height: 460px;
+  height: min(64vh, 580px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 50%, var(--panel) 0%, var(--bg) 70%);
+}
+
+.stage__graph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* graph.js adds .is-on as each part is drawn; once the build animation ends (.is-built) the edges turn amber */
+.g-edge { stroke: var(--line-strong); stroke-width: 1; opacity: 0; transition: opacity 0.6s ease-out, stroke 1.2s; }
+.g-node { fill: var(--text-2); opacity: 0; transition: opacity 0.6s ease-out; }
+.g-node--hub { fill: var(--accent); }
+.g-edge.is-on { opacity: 0.55; }
+.g-node.is-on { opacity: 1; }
+.stage.is-built .g-edge { stroke: var(--accent); opacity: 0.4; }
+
+/* the copy sits on a dark ellipse (and a glow) so it stays readable over the graph */
+.stage__over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px var(--gutter);
+  text-align: center;
+  background: radial-gradient(ellipse 52% 46% at 50% 50%, rgba(13, 16, 20, 0.92) 0%, rgba(13, 16, 20, 0.75) 55%, rgba(13, 16, 20, 0) 100%);
+}
+.stage__over > * { text-shadow: 0 0 24px var(--bg); }
+.stage__over .lede { max-width: 34em; }
+
+/* while the build animation plays, the "coming soon" block is out of sight but stays in the accessibility tree */
+.stage.is-building .stage__done {
+  clip-path: inset(50%);
+  opacity: 0;
+}
+.stage__done { transition: opacity 0.8s ease-out; }
+
+.stage__build { gap: 6px; }
+.stage__build[hidden] { display: none; }
+.stage__pct {
+  font: 600 clamp(3.5rem, 10vw, 7rem)/1 var(--font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stage__step {
+  min-height: 1.5em;
+  font: 400 0.9rem/1.5 var(--font-mono);
+  color: var(--accent);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 28px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font: 400 0.875rem/1.5 var(--font-mono);
+  color: var(--text-2);
+}
+.facts b {
+  font-weight: 600;
+  color: var(--text);
 }
 
 .eyebrow {
@@ -285,90 +370,6 @@ h1 {
   text-wrap: pretty;
 }
 
-/* the "≤ 3 pași" card */
-
-.target {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 28px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.target__big {
-  font: 600 3.5rem/1 var(--font-display);
-  letter-spacing: -0.02em;
-  color: var(--accent);
-}
-
-.target__note {
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  color: var(--text-2);
-  text-wrap: pretty;
-}
-
-.path {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-block: 8px;
-  font: 400 0.75rem/1.4 var(--font-mono);
-  color: var(--muted);
-}
-
-/* three labels centred over the three edges: the 16px inset and gap match the node width */
-.path__steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 16px;
-  padding-inline: 16px;
-  text-align: center;
-}
-
-.path__line {
-  display: flex;
-  align-items: center;
-}
-
-.node {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--muted);
-  border-radius: 50%;
-}
-.node--from {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.node--to {
-  background: var(--text);
-  border-color: var(--text);
-}
-
-.edge {
-  flex: 1;
-  height: 2px;
-  background: var(--line-strong);
-}
-
-.path__ends {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 0.8125rem;
-  color: var(--text);
-}
-/* on narrow cards the labels may wrap: keep the end label right-aligned and never break "decision-maker" at its hyphen */
-.path__ends span:last-child { text-align: right; }
-.path__from {
-  color: var(--accent);
-  white-space: nowrap;
-}
-
 /* ---------- data sources ---------- */
 
 .block {
@@ -387,89 +388,149 @@ h1 {
   gap: 8px 24px;
 }
 
-.bar {
-  display: flex;
-  gap: 6px;
-}
-.bar span {
-  flex: 1;
-  height: 8px;
-  background: var(--line);
-}
-.bar span[data-status="live"] { background: var(--accent); }
-.bar span[data-status="wip"] {
-  background: transparent;
-  border: 2px solid var(--accent);
-}
-.bar span[data-status="skipped"] {
-  background: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 6px);
-}
-
+/* Wide screens: the sources as a pipeline, one column each, joined by a line through their marks.
+   Each row's mark (the ::before) carries its status by shape as well as colour:
+   filled dot (live), accent ring that pulses (wip), grey ring (next), dashed grey ring (skipped). */
 .sources {
-  margin-top: 8px;
-  border-bottom: 1px solid var(--line);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: 20px;
+  margin-top: 16px;
   counter-reset: source;
+}
+.sources::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--line-strong);
 }
 
 .source {
-  display: grid;
-  grid-template-columns: 28px 240px minmax(0, 1fr) 120px;
-  align-items: baseline;
-  column-gap: 24px;
-  padding-block: 18px;
-  border-top: 1px solid var(--line);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
   counter-increment: source;
 }
 
 .source::before {
-  content: counter(source, decimal-leading-zero);
-  font: 400 0.8125rem/1.5 var(--font-mono);
-  color: var(--muted);
+  content: "";
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 10px;
+  border: 2px solid var(--idle);
+  border-radius: 50%;
+  background: var(--bg);
 }
+.source[data-status="live"]::before { background: var(--text); border-color: var(--text); }
+.source[data-status="wip"]::before { border-color: var(--accent); }
+.source[data-status="skipped"]::before { border-style: dashed; }
 
 .source__name { font: 600 1.25rem/1.3 var(--font-display); }
-.source__what { color: var(--text-2); }
-.source__note {
-  grid-column: 3 / 5;
-  margin-top: 6px;
-  font-size: 0.875rem;
+.source__what { font-size: 0.9375rem; color: var(--text-2); text-wrap: balance; }
+.source__count {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+.source__count .n { font: 600 1.3rem/1.3 var(--font-display); font-variant-numeric: tabular-nums; }
+.source__count .s,
+.status {
+  font: 400 0.75rem/1.5 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--muted);
+}
+.source__count--pending .n { color: var(--idle); }
+.source__note {
+  order: 3;
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
 }
 .source__note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
-/* Status marks differ in shape as well as colour: filled dot, accent ring, grey ring, grey dash. */
+/* the status word; in the rows layout it also gets its own mark (see the media queries) */
 .status {
+  order: 2;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
+}
+.source[data-status="live"] .status { color: var(--accent); }
+.source[data-status="wip"] .status { color: var(--text); }
+.source[data-status="skipped"] .source__name,
+.source[data-status="skipped"] .source__what { color: var(--muted); }
+
+/* ---------- latest updates ---------- */
+
+.news {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-block: 64px;
+  border-top: 1px solid var(--line);
+}
+.news > * { max-width: 720px; }
+
+/* a vertical timeline, the newest entry marked in accent */
+.updates {
+  position: relative;
+  padding-left: 28px;
+}
+.updates::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--line);
+}
+.updates li {
+  position: relative;
+  padding-bottom: 22px;
+}
+.updates li:last-child { padding-bottom: 0; }
+.updates li::before {
+  content: "";
+  position: absolute;
+  left: -27px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.updates li:first-child::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.updates time {
   font: 400 0.8125rem/1.5 var(--font-mono);
   color: var(--muted);
 }
-.status::before {
-  content: "";
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border: 2px solid var(--idle);
-  border-radius: 50%;
+.updates p {
+  margin-top: 2px;
+  color: var(--text-2);
+  line-height: 1.55;
+  text-wrap: pretty;
 }
-
-.source[data-status="live"] .status { color: var(--accent); }
-.source[data-status="live"] .status::before {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.source[data-status="wip"] .status { color: var(--text); }
-.source[data-status="wip"] .status::before { border-color: var(--accent); }
-
-.source[data-status="skipped"] .source__name,
-.source[data-status="skipped"] .source__what { color: var(--muted); }
-.source[data-status="skipped"] .status::before {
-  height: 2px;
-  border: 0;
-  border-radius: 0;
-  background: var(--idle);
+.updates strong {
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* ---------- how we work ---------- */
@@ -518,29 +579,73 @@ h1 {
 /* ---------- narrower screens ---------- */
 
 @media (max-width: 900px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr);
-    padding-block: 56px;
+  .stage-sec { padding-block: 32px 48px; }
+
+  /* the sources go back to rows: number · name · status on one line, description, count and note underneath */
+  .sources {
+    display: block;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sources::before { display: none; }
+  .source {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "n name status"
+      ". what what"
+      ". count count"
+      ". note note";
+    align-items: baseline;
+    column-gap: 16px;
+    row-gap: 4px;
+    padding-block: 18px;
+    border-top: 1px solid var(--line);
+    text-align: left;
+  }
+  .source::before,
+  .source[data-status]::before {
+    grid-area: n;
+    content: counter(source, decimal-leading-zero);
+    width: auto;
+    height: auto;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    animation: none;
+    font: 400 0.8125rem/1.5 var(--font-mono);
+    color: var(--muted);
+  }
+  .source__name { grid-area: name; }
+  .source__what { grid-area: what; }
+  .source__count { grid-area: count; flex-direction: row; align-items: baseline; gap: 8px; margin-top: 0; }
+  .source__count .n { font-size: 1rem; }
+  .source__note { grid-area: note; margin-top: 0; }
+  .status { grid-area: status; }
+
+  /* the status mark: filled dot, accent ring, grey ring, grey dash */
+  .status::before {
+    content: "";
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--idle);
+    border-radius: 50%;
+  }
+  .source[data-status="live"] .status::before { background: var(--accent); border-color: var(--accent); }
+  .status { margin-top: 0; text-transform: none; letter-spacing: 0; font-size: 0.8125rem; }
+  .source[data-status="wip"] .status::before { border-color: var(--accent); }
+  .source[data-status="skipped"] .status::before {
+    height: 2px;
+    border: 0;
+    border-radius: 0;
+    background: var(--idle);
   }
 }
 
 @media (max-width: 760px) {
-  .block { padding-block: 48px; }
-
-  /* number · name · status on one line, description underneath */
-  .source {
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-    grid-template-areas:
-      "n name status"
-      ". what what";
-    column-gap: 16px;
-    row-gap: 4px;
-  }
-  .source::before { grid-area: n; }
-  .source__name { grid-area: name; }
-  .source__what { grid-area: what; }
-  .status { grid-area: status; }
-  .source__note { grid-column: 2 / -1; margin-top: 0; }
+  .block, .news { padding-block: 48px; }
 
   .rules {
     grid-template-columns: minmax(0, 1fr);
@@ -549,6 +654,5 @@ h1 {
 }
 
 @media (max-width: 420px) {
-  .target { padding: 20px; }
-  .target__big { font-size: 2.75rem; }
+  .stage { min-height: 520px; }
 }

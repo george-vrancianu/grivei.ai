@@ -24,6 +24,26 @@
 		file_server
 	}
 
+	# The explorer flag (GRIVEI_EXPLORER in compose.yaml): only the exact value `open` makes the explorer available.
+	# Closed, /explore/... and /ro/explore/... redirect to the landing page in the same language (`redir` runs before `handle`),
+	# and /site-flags.json tells the landing page to keep its explorer link hidden (site/status.js).
+	@explore_closed {
+		path /explore /explore/*
+		expression `"{$GRIVEI_EXPLORER}" != "open"`
+	}
+	@explore_closed_ro {
+		path /ro/explore /ro/explore/*
+		expression `"{$GRIVEI_EXPLORER}" != "open"`
+	}
+	redir @explore_closed / 302
+	redir @explore_closed_ro /ro/ 302
+
+	handle /site-flags.json {
+		header Content-Type application/json
+		header Cache-Control "no-cache"
+		respond `{"explorer": "{$GRIVEI_EXPLORER}"}` 200
+	}
+
 	# The explorer: one bundle for both languages. Hashed assets are immutable.
 	handle /explore/assets/* {
 		root * /srv/explore
