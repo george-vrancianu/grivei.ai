@@ -11,13 +11,18 @@ import { AnafStatusBadge, type AnafStatusBadgeCopy } from "./components/AnafStat
 import { IdentityMarkers, type IdentityMarkersCopy } from "./components/IdentityMarkers/index.ts";
 import { PlacementLine, type PlacementLineCopy } from "./components/PlacementLine/index.ts";
 import { SeapNamesLine, type SeapNamesLineCopy } from "./components/SeapNamesLine/index.ts";
-import { Breadcrumb, type BreadcrumbCopy } from "./components/Breadcrumb/index.ts";
 import { RoleSwitch, type RoleSwitchCopy } from "./components/RoleSwitch/index.ts";
+import { Breadcrumb, type BreadcrumbCopy } from "../../molecules/Breadcrumb/index.ts";
 import { HeaderFoot } from "./components/HeaderFoot/index.ts";
 import { SourceLine, type SourceLineCopy } from "./components/SourceLine/index.ts";
 
+/** The shared breadcrumb's words, and the page's role in words for its last segment. */
+export interface EntityBreadcrumbCopy extends BreadcrumbCopy {
+  roles: Record<EntityPageRole, string>;
+}
+
 export interface EntityHeaderCopy {
-  breadcrumb: BreadcrumbCopy;
+  breadcrumb: EntityBreadcrumbCopy;
   identity: IdentityMarkersCopy;
   anafStatus: AnafStatusBadgeCopy;
   placement: PlacementLineCopy;
@@ -55,7 +60,7 @@ export function EntityHeader({ entity, role, homeHref, roleHref, onNavigate, tab
   return (
     <Card component="header" sx={{ p: 0, display: "flex", flexDirection: "column", minWidth: 0 }}>
       <Stack data-panel-part="body" spacing={1.75} sx={{ px: 2.5, pt: 2.5, pb: 2.25, minWidth: 0 }}>
-        <Breadcrumb role={role} homeHref={homeHref} onNavigate={onNavigate} copy={copy.breadcrumb} />
+        <Breadcrumb current={copy.breadcrumb.roles[role]} homeHref={homeHref} onNavigate={onNavigate} copy={copy.breadcrumb} />
         <Typography variant="h1" component="h1" sx={{ fontSize: typeScale.entityTitle.size, overflowWrap: "anywhere" }}>
           {entity.displayName}
         </Typography>

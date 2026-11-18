@@ -40,3 +40,4 @@ export * from "./TotalSkeleton/index.ts";
 export * from "./PanelTable/index.ts";
 export * from "./Fact/index.ts";
 export * from "./SearchPanel/index.ts";
+export * from "./Breadcrumb/index.ts";
