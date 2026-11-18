@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Grivei.ai · public procurement watchdog</title>
-  <meta name="description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The project is in its research phase.">
+  <meta name="description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The national graph is coming soon.">
   <link rel="canonical" href="https://grivei.ai/">
   <!-- Language versions. Keep this block identical in both pages. -->
   <link rel="alternate" hreflang="en" href="https://grivei.ai/">
@@ -18,7 +18,7 @@
   <meta property="og:locale:alternate" content="ro_RO">
   <meta property="og:url" content="https://grivei.ai/">
   <meta property="og:title" content="Grivei.ai · public procurement watchdog">
-  <meta property="og:description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The project is in its research phase.">
+  <meta property="og:description" content="Grivei.ai builds a graph of institutions and companies, from public sources only. The national graph is coming soon.">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#0D1014">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -26,16 +26,18 @@
   <!-- Fonts are self-hosted (see @font-face at the top of styles.css). The page makes no third-party requests. -->
   <link rel="stylesheet" href="styles.css">
   <script src="status.js" defer></script>
+  <script src="graph.js" defer></script>
 </head>
 <body>
 
   <header class="topbar">
     <div class="wrap topbar__in">
-      <p class="brand"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
+      <p class="brand"><img class="brand__logo" src="logo-disc.svg" alt="" width="40" height="40"><strong>grivei.ai</strong> <span>/ watchdog</span></p>
       <div class="topbar__end">
-        <a class="explore-link" href="/explore/">explorer</a>
-        <!-- Project phase. Change the word here when the project leaves research. -->
-        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>phase: research</p>
+        <!-- Hidden until the host's explorer flag says "open" (GRIVEI_EXPLORER, read by status.js from /site-flags.json). -->
+        <a class="explore-link" href="/explore/" hidden>explorer</a>
+        <!-- Project phase. Change the word here when the phase changes. -->
+        <p class="phase"><span class="phase__dot" aria-hidden="true"></span>phase: coming soon</p>
         <nav class="lang" aria-label="Language">
           <a href="./" hreflang="en" lang="en" aria-current="page">EN</a>
           <a href="ro/" hreflang="ro" lang="ro">RO</a>
@@ -46,40 +48,37 @@
 
   <main>
 
-    <section class="wrap hero">
-      <div class="hero__text">
-        <p class="eyebrow">public procurement · public sources</p>
-        <h1>How many steps between who signs and who wins?</h1>
-        <p class="lede">Grivei.ai builds a graph of institutions and companies, from public sources only. Every link points to the document it comes from.</p>
-      </div>
-
-      <div class="target">
-        <h2 class="label">target question</h2>
-        <p class="target__big">≤ 3 steps</p>
-        <!-- Decorative: the sentence below says the same thing in words. -->
-        <div class="path" aria-hidden="true">
-          <div class="path__steps"><span>step 1</span><span>step 2</span><span>step 3</span></div>
-          <div class="path__line">
-            <span class="node node--from"></span><span class="edge"></span>
-            <span class="node"></span><span class="edge"></span>
-            <span class="node"></span><span class="edge"></span>
-            <span class="node node--to"></span>
-          </div>
-          <div class="path__ends"><span class="path__from">decision-maker</span><span>winning company</span></div>
+    <section class="wrap stage-sec">
+      <p class="eyebrow">public procurement · public sources</p>
+      <div class="stage" id="stage">
+        <!-- Decorative: graph.js draws a made-up graph that assembles with the build animation. It shows no real data. -->
+        <svg class="stage__graph" id="graph" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+        <!-- The build animation: graph.js plays a simulated build once per visit (not the real rebuild's progress), then shows the block after it. -->
+        <div class="stage__over stage__build" aria-hidden="true" hidden>
+          <p class="label">building the national graph</p>
+          <p class="stage__pct"><span id="stage-pct">0</span>%</p>
+          <p class="stage__step" id="stage-step"></p>
         </div>
-        <p class="target__note">We look for paths of at most three steps between a decision-maker and a company that wins contracts from the same institution.</p>
+        <div class="stage__over stage__done">
+          <p class="label">the national graph</p>
+          <h1>Coming soon.</h1>
+          <p class="lede">Every institution and company from SEAP, now joined with the trade register. The explorer opens here once the new graph passes its checks.</p>
+          <!-- Figures from docs/source-roadmap.md (issue #127). Update them only from the project's own documents. -->
+          <ul class="facts">
+            <li><b>13.94M</b> procurement records</li>
+            <li><b>1,098 bn RON</b> counted</li>
+            <li>1 Jan 2021 to 12 Nov 2026</li>
+          </ul>
+        </div>
       </div>
     </section>
 
     <section class="wrap">
       <div class="block">
         <div class="block__head">
-          <h2 class="label label--accent">data sources</h2>
+          <h2 class="label label--accent">sources, as they join the graph</h2>
           <!-- Filled in from the rows below by status.js; this text is the no-JS fallback. -->
           <p class="label" id="sources-summary">1 live · 1 in progress · 2 next · 1 skipped</p>
-        </div>
-        <div class="bar" id="sources-bar" aria-hidden="true">
-          <span data-status="live"></span><span data-status="wip"></span><span data-status="next"></span><span data-status="next"></span><span data-status="skipped"></span>
         </div>
 
         <!--
@@ -87,18 +86,20 @@
           data-status: "live" · "wip" (in progress) · "next" · "skipped".
           A skipped source goes last and explains why in <p class="source__note">.
           To change a source's status, change data-status AND the word in <p class="status">.
-          Row numbers, the bar above and the summary line update themselves.
+          Row numbers and the summary line update themselves. An optional <p class="source__count"> goes after the status.
         -->
         <ol class="sources" id="sources">
           <li class="source" data-status="live">
             <h3 class="source__name">SEAP</h3>
             <p class="source__what">Direct purchases, award notices, contracts</p>
             <p class="status">live</p>
+            <p class="source__count"><span class="n" data-count="13.94">13.94M</span><span class="s">records since 2021</span></p>
           </li>
           <li class="source" data-status="wip">
             <h3 class="source__name">ONRC</h3>
             <p class="source__what">Company directors, status and activity codes</p>
             <p class="status">in progress</p>
+            <p class="source__count source__count--pending"><span class="n">…</span><span class="s">joining now</span></p>
           </li>
           <li class="source" data-status="next">
             <h3 class="source__name">Ministry of Finance</h3>
@@ -115,6 +116,39 @@
             <p class="source__what">Asset and interest declarations</p>
             <p class="status">skipped</p>
             <p class="source__note">The Constitutional Court ruled that publishing these declarations online breaches the right to private life (<a href="https://www.ccr.ro/wp-content/uploads/2025/06/Decizie_297_2025.pdf">Decision 297/2025</a>, 29 May 2025). Law 180/2026, in force since 31 August 2026, keeps full declarations confidential.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="news">
+        <h2 class="label label--accent">latest updates</h2>
+        <!-- Newest first. Written from merged work; name no institutions or people. -->
+        <ol class="updates">
+          <li>
+            <time datetime="2026-11-18">18 Nov 2026</time>
+            <p><strong>The national rebuild has started.</strong> The graph is being rebuilt from scratch with the trade register in it. When the check against the current graph passes, it goes live.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-17">17 Nov 2026</time>
+            <p><strong>Explorer: every page redesigned.</strong> Organisations, records, people, coverage and search results now share one layout.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-16">16 Nov 2026</time>
+            <p><strong>Explorer: search by source.</strong> Pick a source inside the search box; the trade register gets its own filters.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-14">14 Nov 2026</time>
+            <p><strong>The trade register joins.</strong> ONRC companies and their administrators, with financial statements, election results, company donations to parties and the list of state-owned companies as reference sources.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-13">13 Nov 2026</time>
+            <p><strong>Source roadmap.</strong> After ONRC: PNRR, state aid, EU cohesion funds, Court of Auditors reports and court cases between organisations.</p>
+          </li>
+          <li>
+            <time datetime="2026-11-13">13 Nov 2026</time>
+            <p><strong>Privacy before launch.</strong> Going live needs a privacy notice; restricted content stays switched off on the public site.</p>
           </li>
         </ol>
       </div>
@@ -142,7 +176,7 @@
     <div class="wrap foot__in">
       <p>grivei.ai</p>
       <!-- Bump both the datetime attribute and the visible date whenever the status changes, here and in ro/index.html. -->
-      <p>updated: <time datetime="2026-11-14">14 Nov 2026</time></p>
+      <p>updated: <time datetime="2026-11-18">18 Nov 2026</time></p>
     </div>
   </footer>
 
