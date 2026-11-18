@@ -38,7 +38,7 @@ class Statement:
 class ReadStats:
     rows: int = 0
     bad_cui: int = 0  # rows with no usable CUI (dropped)
-    bad_values: int = 0  # cells that are not a number (read as blank)
+    bad_values: int = 0  # cells that are not a number, or an impossible employee count (read as blank)
     duplicates: int = 0  # a CUI seen again in the same file (the later row wins)
     seen: set[str] = field(default_factory=set)
 
@@ -46,6 +46,8 @@ class ReadStats:
 REQUIRED = ("CUI", "I7", "I10", "I13", "I18", "I19", "I20")
 _INT = re.compile(r"^-?\d+$")
 _DECIMAL = re.compile(r"^-?\d+[.,]\d+$")
+# I20 above this is filler, not a headcount: the files carry 777777777777777, 55555555, 9999999, while the largest real count is ~25,000
+MAX_EMPLOYEES = 100_000
 
 
 def _number(text: str, stats: ReadStats | None) -> int | None:
@@ -59,6 +61,15 @@ def _number(text: str, stats: ReadStats | None) -> int | None:
     if stats is not None:
         stats.bad_values += 1
     return None
+
+
+def _employees(text: str, stats: ReadStats | None) -> int | None:
+    n = _number(text, stats)
+    if n is not None and not 0 <= n <= MAX_EMPLOYEES:
+        if stats is not None:
+            stats.bad_values += 1
+        return None
+    return n
 
 
 def _header(first: list[str]) -> dict[str, int]:
@@ -111,4 +122,4 @@ def read_statements(path: Path, stats: ReadStats | None = None) -> Iterator[Stat
                     stats.duplicates += 1
                 stats.seen.add(cui)
             yield Statement(cui, _number(row[pos["I13"]], stats), None if profit is None and loss is None else (profit or 0) - (loss or 0),
-                            _number(row[pos["I7"]], stats), _number(row[pos["I10"]], stats), _number(row[pos["I20"]], stats))
+                            _number(row[pos["I7"]], stats), _number(row[pos["I10"]], stats), _employees(row[pos["I20"]], stats))
