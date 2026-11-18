@@ -7,7 +7,7 @@ export interface DefinitionListProps {
   children: ReactNode;
   /** A tight gap, and the label stays beside its value on a narrow screen (a card's parties). Default: a roomy gap, and the label stands above its value below `sm` (a panel's facts). */
   compact?: boolean;
-  /** The values' size: `body` inherits the surrounding text, `small` is 14 px. */
+  /** The values' size: `body` inherits the surrounding text, `small` is 13 px (the `body2` size). */
   valueSize?: "body" | "small";
 }
 
@@ -23,7 +23,7 @@ export function DefinitionList({ children, compact = false, valueSize = "body" }
         rowGap: compact ? 0.5 : { xs: 0, sm: 1 },
         m: 0,
         "& dt": { color: color.muted, fontFamily: font.mono, fontSize: type.meta.size, lineHeight: type.body.lineHeight },
-        "& dd": { m: 0, ...(compact ? {} : { mb: { xs: 1, sm: 0 } }), minWidth: 0, overflowWrap: "anywhere", ...(valueSize === "small" ? { fontSize: type.small.max } : {}) },
+        "& dd": { m: 0, ...(compact ? {} : { mb: { xs: 1, sm: 0 } }), minWidth: 0, overflowWrap: "anywhere", ...(valueSize === "small" ? { fontSize: type.small.min } : {}) },
       }}
     >
       {children}

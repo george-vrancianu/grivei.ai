@@ -4,7 +4,6 @@ import { Stack } from "../../../atoms/Stack/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { type as typeScale } from "../../../theme/tokens.ts";
-import type { BreadcrumbCopy } from "../../molecules/Breadcrumb/index.ts";
 import { InsetFigure } from "../../molecules/InsetFigure/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import { SourceCaption } from "../../molecules/SourceCaption/index.ts";
@@ -13,7 +12,7 @@ import { busyProps } from "../../utils/busy.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { listSx } from "../../utils/listSx.ts";
 import { PersonFrame, type PrivateViewCopy } from "./components/PersonFrame/index.ts";
-import { PersonPanel } from "./components/PersonPanel/index.ts";
+import { PersonPanel, type PersonBreadcrumbCopy } from "./components/PersonPanel/index.ts";
 import { PersonRoleRow } from "./components/PersonRoleRow/index.ts";
 
 export interface PersonFiguresCopy {
@@ -30,7 +29,7 @@ export interface PersonFiguresCopy {
 export interface PersonDetailCopy {
   /** The notice at the top: this page exists only in a Private view (Restricted, ADR 0015). */
   privateView: PrivateViewCopy;
-  breadcrumb: BreadcrumbCopy & { current: string };
+  breadcrumb: PersonBreadcrumbCopy;
   figures: PersonFiguresCopy;
   rolesHeading: string;
   /** "3 roles", given the count (the person's roles across organisations; Restricted like the list). */

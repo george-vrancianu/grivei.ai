@@ -40,7 +40,8 @@ describe("DefinitionList", () => {
       unmount();
       return value;
     };
-    expect(gap(true)).not.toBe(gap(false));
+    expect(gap(true)).toBe("16px");
+    expect(gap(false)).toBe("24px");
   });
 
   it("sets the values at the small size when asked", () => {
@@ -50,6 +51,6 @@ describe("DefinitionList", () => {
         <dd>Contract</dd>
       </DefinitionList>,
     );
-    expect(getComputedStyle(screen.getByText("Contract")).fontSize).toBe("14px");
+    expect(getComputedStyle(screen.getByText("Contract")).fontSize).toBe("13px");
   });
 });

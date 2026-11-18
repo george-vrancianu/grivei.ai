@@ -5,7 +5,8 @@ import { Stack } from "../../../../../atoms/Stack/index.ts";
 
 import type { EntityPageRole } from "../../../../types.ts";
 import { HeaderFoot } from "../HeaderFoot/index.ts";
-import { Breadcrumb, type BreadcrumbCopy } from "../../../../molecules/Breadcrumb/index.ts";
+import { Breadcrumb } from "../../../../molecules/Breadcrumb/index.ts";
+import type { EntityBreadcrumbCopy } from "../../EntityHeader.tsx";
 import { skeletonBlock } from "../../../../utils/skeletonBlock.tsx";
 
 export interface EntityHeaderSkeletonProps {
@@ -16,7 +17,7 @@ export interface EntityHeaderSkeletonProps {
   /** The foot strip's left and right end, as for `EntityHeader`: the tabs and the address are real while the entity loads. */
   tabs?: ReactNode;
   address?: ReactNode;
-  copy: { breadcrumb: BreadcrumbCopy & { roles: Record<EntityPageRole, string> } };
+  copy: { breadcrumb: EntityBreadcrumbCopy };
 }
 
 /** The entity header on a first load: the same panel as `EntityHeader`, with blocks for the name, the role chips and the identity facts; the breadcrumb, the tabs and the address are real. */

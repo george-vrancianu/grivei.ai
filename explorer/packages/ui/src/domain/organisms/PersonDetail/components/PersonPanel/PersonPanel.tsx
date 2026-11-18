@@ -3,10 +3,15 @@ import { Card } from "../../../../../atoms/Card/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
 import { Breadcrumb, type BreadcrumbCopy } from "../../../../molecules/Breadcrumb/index.ts";
 
+/** The shared breadcrumb's words, and the page's kind in words for its last segment. */
+export interface PersonBreadcrumbCopy extends BreadcrumbCopy {
+  current: string;
+}
+
 export interface PersonPanelProps {
   homeHref: string;
   onNavigate?: ((href: string) => void) | undefined;
-  breadcrumb: BreadcrumbCopy & { current: string };
+  breadcrumb: PersonBreadcrumbCopy;
   /** Under the breadcrumb: the name and the figures, a skeleton of them, or the error note. */
   children: ReactNode;
 }
