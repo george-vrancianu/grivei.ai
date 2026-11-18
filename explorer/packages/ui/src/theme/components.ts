@@ -27,7 +27,7 @@ const overlaySurface = {
 export const components: Components<Theme> = {
   MuiCssBaseline: {
     styleOverrides: (theme) => ({
-      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (one header row plus room for a wrapped nav and a gap).
+      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (the header's height plus a gap each side of the target).
       html: { colorScheme: "dark", [theme.breakpoints.up("md")]: { scrollPaddingTop: layout.headerScrollPadding } },
       body: {
         backgroundColor: color.bg,

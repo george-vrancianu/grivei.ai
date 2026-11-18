@@ -19,8 +19,8 @@ export interface MethodologyContentsProps {
   onNavigate?: (href: string) => void;
 }
 
-/** The sticky header is about 72-80 px tall and there is no token for it (a header-height token is a follow-up): the panel stops 24 px short of `headerScrollPadding` (96 px), clear of it, from `md`. */
-const STICKY_TOP = layout.headerScrollPadding - 24;
+/** From `md` the panel sticks just below the sticky header: the header-height token plus its clearance. */
+const STICKY_TOP = layout.headerStickyTop;
 
 /**
  * "On this page": a titled `Panel` (`h2`, flush) holding one link row per section, Signal rules indented. From `md` it is sticky below the header and scrolls inside itself when it is

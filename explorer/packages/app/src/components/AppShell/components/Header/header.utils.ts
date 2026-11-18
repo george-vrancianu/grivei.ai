@@ -13,6 +13,8 @@ export const headerSx = (theme: Theme) => ({
   [theme.breakpoints.up("md")]: {
     position: "sticky",
     top: 0,
+    // The one row's own height (48 px logo, 12 px above and below, the border), which the sticky panels and anchor offsets below it are derived from.
+    minHeight: theme.graf.layout.headerHeight,
     zIndex: theme.zIndex.modal + 1,
     bgcolor: theme.graf.headerFill,
     backdropFilter: "blur(10px)",
