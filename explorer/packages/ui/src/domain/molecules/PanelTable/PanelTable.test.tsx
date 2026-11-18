@@ -58,9 +58,16 @@ describe("PanelTable", () => {
     expect(screen.getByRole("region", { name: "Tabel" })).toBeInTheDocument();
   });
   it("leaves the denser cell paddings alone", () => {
-    renderInUi(<table><tbody><tr><TableCell padding="none">a</TableCell><TableCell padding="checkbox">b</TableCell></tr></tbody></table>);
+    renderInUi(<table><tbody><tr><TableCell padding="none">a</TableCell><TableCell padding="checkbox" size="medium">b</TableCell></tr></tbody></table>);
     expect(getComputedStyle(screen.getByText("a")).padding).toBe("0px");
     expect(getComputedStyle(screen.getByText("b")).padding).toBe("0px 0px 0px 4px");
+  });
+  it("keeps MUI's own checkbox padding for a small cell, against the root padding", () => {
+    renderInUi(<table><tbody><tr><TableCell padding="checkbox" size="small">c</TableCell><TableCell size="small">d</TableCell></tr></tbody></table>);
+    const cell = getComputedStyle(screen.getByText("c"));
+    expect(cell.padding).toBe("0px 12px 0px 16px");
+    expect(cell.width).toBe("24px");
+    expect(getComputedStyle(screen.getByText("d")).padding).toBe("12px 14px");
   });
   it("passes Table props and sx through", () => {
     table({ sx: sxProbe, size: "medium" });

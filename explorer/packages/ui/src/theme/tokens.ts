@@ -40,8 +40,17 @@ export const map = {
   highlight: tokensJson.map.highlight.value,
 } as const;
 
-/** The layout limits of a page. */
-export const layout = tokensJson.layout;
+const { headerHeight, headerClearance } = tokensJson.layout;
+
+/**
+ * The layout limits of a page, and what hangs off the sticky header's height (`headerHeight`: one row of the 48 px logo, 12 px above and below, the 1 px border; the app's `Header` is that tall from `md`).
+ * `headerStickyTop` is where a sticky panel stops under it (the height and a `headerClearance` gap); `headerScrollPadding` is the room an in-page anchor and the scroll-spy leave (the height and two gaps).
+ */
+export const layout = {
+  ...tokensJson.layout,
+  headerStickyTop: headerHeight + headerClearance,
+  headerScrollPadding: headerHeight + 2 * headerClearance,
+} as const;
 
 /** Coverage grid colours and sizes (cell, gap, font, swatch): harvested, the known-gap stripes, possibly incomplete, awaiting the bulk file. A state is never colour alone (glyph, stripe or border). */
 export const coverage = tokensJson.coverage;

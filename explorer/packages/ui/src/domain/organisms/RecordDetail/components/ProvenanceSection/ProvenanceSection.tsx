@@ -1,11 +1,10 @@
-import { Box } from "../../../../../atoms/Box/index.ts";
 import { Link } from "../../../../../atoms/Link/index.ts";
 import { Typography } from "../../../../../atoms/Typography/index.ts";
+import { DefinitionList } from "../../../../molecules/DefinitionList/index.ts";
 import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import type { RecordPageData } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
-import { factsSx } from "../facts.ts";
 
 type Provenance = RecordPageData["provenance"];
 
@@ -36,7 +35,7 @@ export function ProvenanceSection({ provenance, locale, copy, busy }: Provenance
   const { source, url, via, kind, fetchedAt } = provenance;
   return (
     <Panel heading={copy.heading} level="h2" busy={busy}>
-      <Box component="dl" sx={factsSx}>
+      <DefinitionList>
         <dt>{copy.source}</dt>
         <dd>{source}</dd>
         {via && (
@@ -51,7 +50,7 @@ export function ProvenanceSection({ provenance, locale, copy, busy }: Provenance
         <dd>
           <time dateTime={fetchedAt}>{formatDate(fetchedAt, locale, "long")}</time>
         </dd>
-      </Box>
+      </DefinitionList>
       {url ? (
         <Typography>
           <Link href={url} target="_blank">

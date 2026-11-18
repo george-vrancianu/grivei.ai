@@ -27,7 +27,7 @@ const overlaySurface = {
 export const components: Components<Theme> = {
   MuiCssBaseline: {
     styleOverrides: (theme) => ({
-      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (one header row plus room for a wrapped nav and a gap).
+      // The sticky header (md up) covers the top of the viewport: an in-page anchor scrolls to just below it (the header's height plus a gap each side of the target).
       html: { colorScheme: "dark", [theme.breakpoints.up("md")]: { scrollPaddingTop: layout.headerScrollPadding } },
       body: {
         backgroundColor: color.bg,
@@ -159,7 +159,7 @@ export const components: Components<Theme> = {
   MuiTableCell: {
     styleOverrides: {
       root: { borderBottomColor: color.line, fontSize: type.small.max, padding: "12px 14px" },
-      // The denser paddings keep their own (the root padding would otherwise reach them: overrides apply after MUI's variants).
+      // `paddingNone` and a medium `paddingCheckbox` repeat MUI's values because this flat root padding comes after MUI's variants. A small checkbox cell keeps MUI's own `0 12px 0 16px` / width 24, set under `&.MuiTableCell-paddingCheckbox`, which outranks the root padding.
       paddingNone: { padding: 0 },
       paddingCheckbox: { padding: "0 0 0 4px" },
       head: { fontFamily: font.mono, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.muted, backgroundColor: STRIP_FILL },

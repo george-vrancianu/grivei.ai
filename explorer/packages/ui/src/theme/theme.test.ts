@@ -195,6 +195,14 @@ describe("depth", () => {
     expect(html[theme.breakpoints.up("md")]).toMatchObject({ scrollPaddingTop: layout.headerScrollPadding });
   });
 
+  it("derives the sticky offset and the anchor padding from the header height", () => {
+    // one row of the 48 px logo, 12 px above and below, and the 1 px border
+    expect(layout.headerHeight).toBe(48 + 2 * 12 + 1);
+    expect(layout.headerStickyTop).toBe(layout.headerHeight + layout.headerClearance);
+    expect(layout.headerScrollPadding).toBeGreaterThan(layout.headerStickyTop);
+    expect(layout.headerScrollPadding).toBe(layout.headerHeight + 2 * layout.headerClearance);
+  });
+
   it("does not lift a disabled outlined button", () => {
     expect(root("MuiButton", "outlined")["&.Mui-disabled"]).toMatchObject({ boxShadow: "none" });
   });
