@@ -39,6 +39,23 @@ def test_the_reader_keeps_blank_cells_as_none_and_a_reported_zero_as_zero(tmp_pa
     assert (stats.rows, stats.bad_cui, stats.bad_values) == (4, 1, 1)
 
 
+def test_an_impossible_employee_count_is_filler_and_reads_as_blank(tmp_path):
+    # MF's 2021-2023 files carry filler counts such as 777777777777777, which is past Postgres' integer and failed the 2026-11-18 rebuild
+    path = tmp_path / "f.txt"
+    path.write_bytes(table(
+        row("36091166", turnover=357_653, employees=777_777_777_777_777),
+        row("13171100", employees=55_555_555),
+        row("11054529", employees=24_639),  # the largest real count in the files: kept
+        row("2000007", employees=100_000),  # the cap itself is still a count
+    ))
+    stats = ReadStats()
+    rows = {s.cui: s for s in read_statements(path, stats)}
+    assert (rows["36091166"].turnover, rows["36091166"].employees) == (357_653, None)  # the rest of the row stays
+    assert rows["13171100"].employees is None
+    assert (rows["11054529"].employees, rows["2000007"].employees) == (24_639, 100_000)
+    assert stats.bad_values == 2
+
+
 def test_a_file_that_is_not_the_statements_layout_is_refused(tmp_path):
     for body in (b"<html>error</html>\r\n", b"", f"{HEADER}\r\n".encode(), b"CUI,CAEN,I1\r\n1,2,3\r\n", f"{HEADER}\r\n,4120\r\n".encode()):
         path = tmp_path / "f.txt"
