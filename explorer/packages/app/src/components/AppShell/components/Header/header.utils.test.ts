@@ -22,6 +22,9 @@ describe("the header's frame", () => {
     });
     expect((sx[md] as { zIndex: number }).zIndex).toBeGreaterThan(theme.zIndex.modal);
   });
+  it("is as tall as the header-height token the sticky offsets are derived from", () => {
+    expect(sx[md]).toMatchObject({ minHeight: theme.graf.layout.headerHeight });
+  });
 });
 
 describe("the footer's frame", () => {

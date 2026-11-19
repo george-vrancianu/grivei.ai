@@ -30,6 +30,16 @@ describe("LeadershipSection", () => {
     expect(region.queryByRole("link")).toBeNull(); // leaders are never linked
   });
 
+  it("sets an open mandate's \"in force\" as a Tag after the start date, not as part of the period text", () => {
+    show(leadership);
+    const region = within(screen.getByRole("region", { name: "Leadership list" }));
+    const tag = region.getByText("in force");
+    expect(tag.tagName).toBe("SPAN");
+    expect(tag).toHaveStyle({ borderStyle: "solid" });
+    expect(tag.parentElement).toHaveTextContent("27 October 2024 – in force");
+    expect(region.getAllByText("in force")).toHaveLength(1);
+  });
+
   it("shows the gaps as gaps, and an independent, an alliance's members and a partial election with their wording", () => {
     show(leadershipWithGaps);
     const region = within(screen.getByRole("region", { name: "Leadership list" }));
@@ -59,6 +69,7 @@ describe("LeadershipSection", () => {
     expect(region.getByText(/și-a schimbat partidul|schimbat partidul/)).toBeVisible();
     expect(region.getByText(/Afișată prin/)).toHaveTextContent("Afișată prin MUNICIPIUL BRASOV, ordonator principal de credite, lista MF din 1 decembrie 2026; relație de finanțare, legătură actuală.");
     expect(region.getByText(/Fereastra de predare/)).toBeVisible();
-    expect(region.getByText(/27 octombrie 2024 – în funcție/)).toBeVisible();
+    expect(region.getByText("în funcție")).toBeVisible();
+    expect(region.getByText("în funcție").parentElement).toHaveTextContent("27 octombrie 2024 – în funcție");
   });
 });

@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 import { Card } from "../../../../../atoms/Card/index.ts";
 import { Stack } from "../../../../../atoms/Stack/index.ts";
-import { PersonBreadcrumb, type PersonBreadcrumbCopy } from "../PersonBreadcrumb/index.ts";
+import { Breadcrumb, type BreadcrumbCopy } from "../../../../molecules/Breadcrumb/index.ts";
+
+/** The shared breadcrumb's words, and the page's kind in words for its last segment. */
+export interface PersonBreadcrumbCopy extends BreadcrumbCopy {
+  current: string;
+}
 
 export interface PersonPanelProps {
   homeHref: string;
@@ -16,7 +21,7 @@ export function PersonPanel({ homeHref, onNavigate, breadcrumb, children }: Pers
   return (
     <Card component="header" sx={{ p: 0, minWidth: 0 }}>
       <Stack spacing={1.75} sx={{ px: 2.5, pt: 2.5, pb: 2.25, minWidth: 0 }}>
-        <PersonBreadcrumb homeHref={homeHref} onNavigate={onNavigate} copy={breadcrumb} />
+        <Breadcrumb current={breadcrumb.current} homeHref={homeHref} onNavigate={onNavigate} copy={breadcrumb} />
         {children}
       </Stack>
     </Card>

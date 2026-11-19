@@ -1,1 +1,1 @@
-export { PersonPanel, type PersonPanelProps } from "./PersonPanel.tsx";
+export { PersonPanel, type PersonPanelProps, type PersonBreadcrumbCopy } from "./PersonPanel.tsx";

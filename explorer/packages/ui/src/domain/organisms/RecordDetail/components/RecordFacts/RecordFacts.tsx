@@ -1,10 +1,9 @@
-import { Box } from "../../../../../atoms/Box/index.ts";
 import type { Locale } from "../../../../../theme/index.ts";
 import { EntityLink, type EntityLinkCopy } from "../../../../atoms/EntityLink/index.ts";
+import { DefinitionList } from "../../../../molecules/DefinitionList/index.ts";
 import { Panel } from "../../../../molecules/Panel/index.ts";
 import type { EntityRef, EntityRole, RecordPageData } from "../../../../types.ts";
 import { formatDate } from "../../../../utils/formatDate.ts";
-import { factsSx } from "../facts.ts";
 
 export interface RecordFactsCopy {
   /** The panel's title ("The Record"). */
@@ -32,7 +31,7 @@ export function RecordFacts({ record, entityHref, locale, copy, onNavigate, busy
   const { facets } = copy;
   return (
     <Panel heading={copy.heading} level="h2" busy={busy}>
-      <Box component="dl" sx={factsSx}>
+      <DefinitionList>
         <dt>{facets.kind}</dt>
         <dd>{copy.kinds[record.kind]}</dd>
         {record.date && (
@@ -67,7 +66,7 @@ export function RecordFacts({ record, entityHref, locale, copy, onNavigate, busy
             </dd>
           </>
         )}
-      </Box>
+      </DefinitionList>
     </Panel>
   );
 }

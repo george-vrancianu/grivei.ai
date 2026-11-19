@@ -11,9 +11,8 @@ import type { PersonPageData } from "../../types.ts";
 import { busyProps } from "../../utils/busy.ts";
 import { formatDate } from "../../utils/formatDate.ts";
 import { listSx } from "../../utils/listSx.ts";
-import type { PersonBreadcrumbCopy } from "./components/PersonBreadcrumb/index.ts";
 import { PersonFrame, type PrivateViewCopy } from "./components/PersonFrame/index.ts";
-import { PersonPanel } from "./components/PersonPanel/index.ts";
+import { PersonPanel, type PersonBreadcrumbCopy } from "./components/PersonPanel/index.ts";
 import { PersonRoleRow } from "./components/PersonRoleRow/index.ts";
 
 export interface PersonFiguresCopy {

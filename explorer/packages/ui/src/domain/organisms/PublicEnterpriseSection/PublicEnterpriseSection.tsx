@@ -2,6 +2,7 @@ import { Link } from "../../../atoms/Link/index.ts";
 import type { Locale } from "../../../theme/index.ts";
 import { Typography } from "../../../atoms/Typography/index.ts";
 import { Box } from "../../../atoms/Box/index.ts";
+import { DefinitionList } from "../../molecules/DefinitionList/index.ts";
 import { Panel } from "../../molecules/Panel/index.ts";
 import type { PublicEnterpriseData } from "../../types.ts";
 import { formatDate } from "../../utils/formatDate.ts";
@@ -64,14 +65,14 @@ export function PublicEnterpriseSection({ enterprise, cui, locale, copy, busy }:
       }
     >
       <Typography>{copy.basis(cui, published, years !== null)}</Typography>
-      <Box component="dl" sx={{ m: 0, display: "grid", gridTemplateColumns: "max-content minmax(0, 1fr)", columnGap: 2, rowGap: 0.5 }}>
+      <DefinitionList compact valueSize="small">
         {facts.map(([label, value]) => (
           <Box key={label} sx={{ display: "contents" }}>
-            <Typography component="dt" variant="meta" color="text.secondary">{label}</Typography>
-            <Typography component="dd" variant="body2" sx={{ m: 0 }}>{value}</Typography>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
           </Box>
         ))}
-      </Box>
+      </DefinitionList>
       {years && <Typography variant="caption" color="text.secondary">{years}</Typography>}
     </Panel>
   );
