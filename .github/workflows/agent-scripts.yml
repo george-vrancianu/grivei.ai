@@ -1,0 +1,21 @@
+name: agent-scripts
+
+# The agent workflow's own scripts under .claude/. Kept apart from explorer.yml so a
+# skill-doc change doesn't run the explorer and seam-1 jobs.
+on:
+  pull_request:
+    paths:
+      - ".claude/**"
+      - ".github/workflows/agent-scripts.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".claude/**"
+
+jobs:
+  mem-watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5 # the test itself takes about 10 s
+    steps:
+      - uses: actions/checkout@v4
+      - run: timeout -s KILL 120 bash .claude/skills/orchestrate-specs/mem-watch.test.sh
