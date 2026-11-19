@@ -8,7 +8,7 @@ Grivei.ai is a public-money watchdog. It takes large public databases and uses a
 
 Building, not public yet. [grivei.ai](https://grivei.ai/) shows a "coming soon" page; the explorer runs locally and stays hidden on the public site until it goes live.
 
-- **Release 1, SEAP (public procurement):** built. The national graph holds 13.94M records from 2021 onwards (1,098 bn RON), refreshed by a nightly pipeline. The operator acceptance (real rebuild, latency gate, a week unattended) is still open: [`docs/release-1-runbook.md`](docs/release-1-runbook.md).
+- **Release 1, SEAP (public procurement):** built. The national graph holds 13.94M records from 2021 onwards (1,098 bn RON), refreshed by a monthly pipeline. The operator acceptance (real rebuild, latency gate, a week unattended) is still open: [`docs/release-1-runbook.md`](docs/release-1-runbook.md).
 - **Release 2, ONRC (trade register):** code merged. Companies and their administrators, with annual financial statements, AEP election results, BaniPartide company donations, AMEPIP state-owned companies and the MF taxpayer list as Reference sources. The national rebuild is running; acceptance follows [`docs/release-2-runbook.md`](docs/release-2-runbook.md).
 - **Explorer:** search per Source, the Money and Coverage lenses, Signals, and pages for organisations, records and people, in English and Romanian.
 - **Next:** PNRR, state aid (RegAS), EU cohesion funds, Curtea de Conturi reports and court cases between organisations. Order and rules: [`docs/source-roadmap.md`](docs/source-roadmap.md).
