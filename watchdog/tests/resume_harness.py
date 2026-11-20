@@ -221,21 +221,21 @@ class Harness:
         return self._references[key]
 
     def kill_then_resume(self, point: KillPoint, killed_by: BaseException, *extra: str,
-                         between: Callable[[Path, str], None] | None = None) -> tuple[Path, Outcome, Outcome]:
+                         between: Callable[[Path, str], None] | None = None, flags: tuple[str, ...] = ()) -> tuple[Path, Outcome, Outcome]:
         """Kill a beside build at `point`, rerun it with nothing armed: (the archive, the killed run, the rerun). The rerun's graph is the live one after the swap.
-        `between(archive, live_url)` runs after the kill and before the rerun: what changes in the meantime (a unit lands, the code changes, a ledger row goes)."""
+        `flags` go to both runs (`--in-place --staged`: the build is into `live` itself). `between(archive, live_url)` runs after the kill and before the rerun: what changes in the meantime (a unit lands, the code changes, a ledger row goes)."""
         archive, live = self.new_archive(point.name), self.new_live()
-        killed = self.run(archive, live, kill=point, killed_by=killed_by)
+        killed = self.run(archive, live, *flags, kill=point, killed_by=killed_by)
         if between:
             between(archive, live)
-        return archive, killed, self.run(archive, live, *extra)
+        return archive, killed, self.run(archive, live, *flags, *extra)
 
     def assert_resumes_like_reference(self, point: KillPoint, killed_by: BaseException, *, between: Callable[[Path, str], None] | None = None,
-                                      expect: str | None = None) -> Outcome:
+                                      expect: str | None = None, flags: tuple[str, ...] = ()) -> Outcome:
         """Kill at `point`, rerun, and compare with the uninterrupted build. `expect`: the verdict the rerun must lead with (`resume` or `fresh`; the point's
-        own `resumes` by default); `between` as in `kill_then_resume`. Needs a `world` that is a module-level function: the reference is cached by it."""
+        own `resumes` by default); `between` and `flags` as in `kill_then_resume`. Needs a `world` that is a module-level function: the reference is cached by it."""
         ref = self.reference()
-        archive, killed, rerun = self.kill_then_resume(point, killed_by, between=between)
+        archive, killed, rerun = self.kill_then_resume(point, killed_by, between=between, flags=flags)
         assert killed.first.startswith("rebuild: fresh - "), killed.out[:2]  # a first build into an empty server: fresh, no next database
         verdict = expect or ("resume" if point.resumes else "fresh")
         assert rerun.first.startswith(f"rebuild: {verdict} - "), rerun.out[0]

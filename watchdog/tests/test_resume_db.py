@@ -19,7 +19,7 @@ from pipeline.rebuild import rebuild  # noqa: E402
 from pipeline.resume import RESUME, Verdict, load_held  # noqa: E402
 from pipeline.refresh import Pinger, StepResult, run_refresh  # noqa: E402
 from pipeline.refresh.steps import Impl  # noqa: E402
-from resume_harness import FIXTURES, Harness, KillPoint, make_world, onrc_snapshot_kill_points, step_kill_points, vacuum_kill_points  # noqa: E402
+from resume_harness import FIXTURES, Harness, KillPoint, make_world, onrc_snapshot_kill_points, step_kill_points, unit_kill_points, vacuum_kill_points  # noqa: E402
 from test_refresh import Clock  # noqa: E402
 from test_bulk_loader_db import HEAD, _write, server  # noqa: E402,F401
 
@@ -311,3 +311,34 @@ def test_finishing_the_onrc_step_without_its_snapshot_loop_fails_loudly():
     from pipeline.onrc.build import OnrcSummary, finish_onrc
     with pytest.raises(RuntimeError, match="build_onrc_snapshots"):
         finish_onrc(None, OnrcSummary(snapshots=2))  # a summary restored from a hand-off holds no snapshots to finish from
+
+
+# --- `rebuild --in-place --staged` (#297): the major-upgrade build into a fresh database nobody reads, committed per Step, Unit and snapshot, resumable
+
+IN_PLACE_STAGED = ("--in-place", "--staged")
+UNIT_POINTS = {p.name: p for p in unit_kill_points()}
+STAGED_KILLS = [(POINTS["in-onrc"], SystemExit(143)), (POINTS["in-onrc"], RuntimeError("bug")), (POINTS["in-entities"], SystemExit(143)),
+                (UNIT_POINTS["after-unit-3-commit"], SystemExit(143)), (UNIT_POINTS["after-unit-3-commit"], RuntimeError("bug")),
+                (ONRC_POINTS["after-onrc-snapshot-2"], SystemExit(143)), (ONRC_POINTS["after-onrc-snapshot-2"], RuntimeError("bug"))]
+
+
+@pytest.mark.parametrize("point, killed_by", STAGED_KILLS, ids=[f"{p.name}-{type(k).__name__}" for p, k in STAGED_KILLS])
+def test_an_in_place_staged_build_resumes_like_a_beside_one(harness, point, killed_by):
+    rerun = harness.assert_resumes_like_reference(point, killed_by, flags=IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: resume - ")
+
+
+def test_an_in_place_staged_build_commits_per_step_and_the_first_line_says_fresh_on_an_empty_database(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    live = h.new_live()
+    killed = h.run(h.new_archive("a"), live, *IN_PLACE_STAGED, kill=POINTS["in-aep"], killed_by=SystemExit(143))
+    assert killed.first == "rebuild: fresh - the next database has no usable build ledger (the build schema is missing)"  # the target database exists but is empty
+    assert onrc_rows(live, "SELECT count(*) FROM build.step")[0][0] > 0  # the Steps before the kill are committed in the target database itself
+    assert h.run(h.new_archive("b"), live, *IN_PLACE_STAGED, "--fresh").first == "rebuild: fresh - --fresh given"
+
+
+def test_staged_without_in_place_is_a_parser_error(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    with pytest.raises(SystemExit) as e:
+        cli.main(h.args(h.new_archive("a"), h.new_live(), "--staged"))
+    assert e.value.code == 2 and "a beside build is always staged" in capsys.readouterr().err

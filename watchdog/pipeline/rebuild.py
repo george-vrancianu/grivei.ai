@@ -2,10 +2,10 @@
 
 Reads only units with a complete manifest, oldest fetch first, and loads each unit all or nothing (SEAP bulk files of
 every registered kind: DA, DAN, contracte, fara-anunt). A unit that fails validation is moved to the quarantine area with
-a reason file and loads nothing. An in-place rebuild is one transaction, so a failed or killed one leaves the previous
+a reason file and loads nothing. An in-place rebuild (without `--staged`) is one transaction, so a failed or killed one leaves the previous
 schema in place and nothing half-loaded; a staged one (beside the live graph) commits after every Step into its own next database, where a failure leaves a
 partial graph nothing serves, and the next run resumes it after the last committed Step when the pinned inputs and the code are unchanged (resume.py, pins.py),
-else rebuilds it; an in-place build is always rerun from scratch. The same archive always gives the same database, resumed or not.
+else rebuilds it; an in-place build is rerun from scratch unless it is `--in-place --staged` (#297: the target database itself holds the ledger). The same archive always gives the same database, resumed or not.
 
 The rebuild's steps are declared in build_steps.py (`STEPS`, each with the tables it reads and writes and the code it owns); `rebuild()` runs them in order.
 
@@ -518,11 +518,11 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             today: date | None = None, known_gaps_path: Path | str | None = None,
             gate: Callable[[], None] | None = None, staged: bool = False, verdict: Verdict | None = None) -> RebuildSummary:
     """`staged` commits after every Step and every Raw archive unit (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
-    the default is one transaction for the whole build (`--in-place`), which rolls back as one. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
+    the default is one transaction for the whole build (`--in-place`), which rolls back as one; `--in-place --staged` is `staged` against the database itself. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
     live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file.
 
     `verdict` (resume.py) is the decision made before the next database was touched (switchover.build_and_switch): a resume continues the Steps that
-    are committed there, with the pinned inputs it holds; fresh builds from the start with the verdict's pins. Without one (a direct call, `--in-place`)
+    are committed there, with the pinned inputs it holds; fresh builds from the start with the verdict's pins. Without one (a direct call, plain `--in-place`)
     the build is fresh, pinned now, and this function prints the verdict line itself: it is always the first line of a run. Every read of the Raw
     archive goes through a view pinned to the verdict's units, so a unit that lands during the build waits for the next one."""
     from .build_steps import STEPS, BuildContext, run_steps  # here, not at the top: build_steps imports this module's helpers
