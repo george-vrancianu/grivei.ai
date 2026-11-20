@@ -138,6 +138,7 @@ export async function cancellableQuery<R extends pg.QueryResultRow = pg.QueryRes
     // the abort can land before the backend is running the statement: retry until it has finished
     for (let attempt = 0; attempt < 100 && !finished; attempt++) {
       const killer = new pg.Client(pool.options);
+      killer.on("error", () => undefined); // a socket error after the statement failed would otherwise end the process; the catch below already handles the failure
       try {
         await killer.connect();
         // pg_stat_activity.query is cut at track_activity_query_size: compare both texts cut to what it can hold
@@ -156,15 +157,18 @@ export async function cancellableQuery<R extends pg.QueryResultRow = pg.QueryRes
   };
   const onAbort = () => void cancel();
   signal?.addEventListener("abort", onAbort, { once: true });
+  let broken: Error | undefined;
   try {
     if (signal?.aborted) throw new AbortedError();
     return await client.query<R>(text, params);
   } catch (e) {
     if (signal?.aborted) throw new AbortedError();
+    // a lost connection (no SQLSTATE: pg's own error) must not go back to the pool: hand the error to release so the pool discards the client
+    if (e instanceof Error && !("code" in e)) broken = e;
     throw e;
   } finally {
     finished = true;
     signal?.removeEventListener("abort", onAbort);
-    client.release();
+    client.release(broken);
   }
 }
