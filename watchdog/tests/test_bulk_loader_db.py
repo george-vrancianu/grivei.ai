@@ -15,6 +15,7 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg")
 
+from graph_dump import dump_graph  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 
@@ -342,8 +343,8 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     shutil.copytree(CONTRACTS, root)
     archive, status_file = Archive(root), tmp_path / "progress.json"
     rebuild(archive, db)
-    complete = _dump_all(db)
-    assert len(complete[0]) == 12
+    complete = dump_graph(db)
+    assert len(complete["seap.record"]) == 12
 
     # a second rebuild dies in the middle of its third file
     real, calls = rebuild_module.load_records, []
@@ -357,13 +358,13 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     monkeypatch.setattr(rebuild_module, "load_records", dying)
     with pytest.raises(type(killed_by)):
         rebuild(archive, db, Progress(status_file, out=lambda line: None))
-    assert _dump_all(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
+    assert dump_graph(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
     status = read_status(status_file)
     assert status["state"] == "failed" and status["done"] == 2 and status["loaded"] == 2
 
     monkeypatch.setattr(rebuild_module, "load_records", real)
     rebuild(archive, db, Progress(status_file, out=lambda line: None))  # rerun from scratch
-    assert _dump_all(db) == complete
+    assert dump_graph(db) == complete
     assert read_status(status_file)["state"] == "finished"
 
 
@@ -375,13 +376,6 @@ def test_a_kill_before_the_first_commit_leaves_no_schema_at_all(db, tmp_path, mo
         rebuild(Archive(root), db)
     with psycopg.connect(db) as c:
         assert c.execute("SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'seap'").fetchone() == (0,)
-
-
-def _dump_all(url):
-    with psycopg.connect(url) as c:
-        return (c.execute("SELECT code, kind, title, value_bani, quarter, winners, source_file_id FROM seap.record ORDER BY code").fetchall(),
-                c.execute("SELECT record_code, winner_position, share_bani FROM seap.search ORDER BY 1, 2").fetchall(),
-                c.execute("SELECT id, kind, unit, sha256 FROM seap.source_file ORDER BY id").fetchall())
 
 
 # ---- crawled Records (#77): bulk supersedes the crawl, survivors are tagged, the cursor is data-through --------------------
