@@ -51,7 +51,7 @@ The record inside a built graph of how it was built: one row per Step, committed
 _Avoid_: build log, migration table
 
 **Pinned inputs**:
-What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version (and the hash of every code file, `build.run.code_files`), the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now) and is refused, starting a fresh build, when a pinned unit or the schema files differ, or when a changed code file belongs to a Step that has run or to every Step (a shared module); a code change confined to Steps that have not run resumes with the new code, and the changed files are recorded in `build.run.changed_files`; a unit that lands in the Raw archive later waits for the next build.
+What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version (and the hash of every code file, `build.run.code_files`), the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now); whether it may resume is the Resume gate's decision. A unit that lands in the Raw archive later waits for the next build.
 _Avoid_: snapshot, lockfile
 
 **Resume gate**:
