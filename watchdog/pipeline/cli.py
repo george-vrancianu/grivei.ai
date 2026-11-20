@@ -365,6 +365,7 @@ def _rebuild_beside(archive: Archive, args, progress: Progress, say):
     if staged_in_place:  # no Switchover and no check gate: the target database itself holds the ledger a rerun resumes from
         verdict = decide_resume(pins, load_held(args.db), STEPS, fresh=fresh)
         say(verdict.line)
+        progress.mark_staged(in_place=True)  # the failure and status texts name the target database, not a live graph and a next database
         return build(args.db, None, True, verdict)
     said = getattr(args, "first_line_said", None)
 

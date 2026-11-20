@@ -333,6 +333,7 @@ def test_an_in_place_staged_build_commits_per_step_and_the_first_line_says_fresh
     live = h.new_live()
     killed = h.run(h.new_archive("a"), live, *IN_PLACE_STAGED, kill=POINTS["in-aep"], killed_by=SystemExit(143))
     assert killed.first == "rebuild: fresh - the next database has no usable build ledger (the build schema is missing)"  # the target database exists but is empty
+    assert "the database keeps its committed Steps; rerun the same command" in killed.out[-1] and "live graph" not in killed.out[-1]
     assert onrc_rows(live, "SELECT count(*) FROM build.step")[0][0] > 0  # the Steps before the kill are committed in the target database itself
     assert h.run(h.new_archive("b"), live, *IN_PLACE_STAGED, "--fresh").first == "rebuild: fresh - --fresh given"
 
@@ -342,3 +343,33 @@ def test_staged_without_in_place_is_a_parser_error(server, tmp_path, monkeypatch
     with pytest.raises(SystemExit) as e:
         cli.main(h.args(h.new_archive("a"), h.new_live(), "--staged"))
     assert e.value.code == 2 and "a beside build is always staged" in capsys.readouterr().err
+
+
+def _databases(server) -> set[str]:
+    with psycopg.connect(f"{server}/postgres", autocommit=True) as c:
+        return {r[0] for r in c.execute("SELECT datname FROM pg_database")}
+
+
+def test_a_complete_in_place_staged_build_is_rebuilt_fresh_on_a_rerun_and_makes_no_next_database(harness, server):
+    ref = harness.reference()
+    archive, live = harness.new_archive("complete"), harness.new_live()
+    harness.run(archive, live, *IN_PLACE_STAGED)
+    again = harness.run(harness.new_archive("complete2"), live, *IN_PLACE_STAGED)  # the runbook's "run step 2 again"
+    assert again.first.startswith("rebuild: fresh - ") and "already complete" in again.first
+    assert again.graph == ref.graph
+    assert f"{live.rsplit('/', 1)[1]}_next" not in _databases(server)
+
+
+def test_a_staged_build_over_a_plain_in_place_graph_without_a_build_schema_starts_fresh_then_resumes(harness, server):
+    ref = harness.reference()
+    live = harness.new_live()
+    harness.run(harness.new_archive("plain"), live, "--in-place")
+    with psycopg.connect(live, autocommit=True) as c:
+        c.execute("DROP SCHEMA build CASCADE")  # a graph from before the build ledger
+    archive = harness.new_archive("over")
+    killed = harness.run(archive, live, *IN_PLACE_STAGED, kill=POINTS["in-onrc"], killed_by=SystemExit(143))
+    assert killed.first.startswith("rebuild: fresh - ") and "build schema is missing" in killed.first
+    rerun = harness.run(archive, live, *IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: resume - ")
+    assert rerun.graph == ref.graph
+    assert f"{live.rsplit('/', 1)[1]}_next" not in _databases(server)
