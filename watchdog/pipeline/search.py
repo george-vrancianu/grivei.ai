@@ -1,8 +1,8 @@
 """The search table's pg_search index and its upkeep (#68).
 
 `seap.search` (pipeline/sql/seap_schema.sql) holds one row per Record x winner. Its BM25 index lives in the same Postgres and
-is updated by the same transaction as the rows: `create_index` runs inside the load transaction, so a load is visible to
-search only when it commits. VACUUM cannot run in a transaction, so `vacuum` runs right after the commit (it merges the
+is updated by the same transaction as the rows: `create_index` runs inside its Step's transaction, so the index is visible only once that Step
+commits (in a build beside the live graph, nothing reads it before the Switchover). VACUUM cannot run in a transaction, so `vacuum` runs right after the commit (it merges the
 index's segments and drops dead rows: a broad query is several times slower without it). Never `visibility => 'raw'` in a
 query: between a load and its VACUUM it could count dead rows, which is wrong for money.
 """

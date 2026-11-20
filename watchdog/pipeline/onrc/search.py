@@ -1,7 +1,7 @@
 """ONRC's search table and its pg_search index (#176), built by `pipeline rebuild` after the SEAP search index (it reads who is a SEAP counterparty).
 
 `onrc.search` (pipeline/sql/onrc_schema.sql) holds one row per registration of the newest snapshot, except the sole traders' (PFA, II, IF: named after
-a natural person, so never findable by name here, ADR 0009 / `pipeline/sole_trader.py`). The BM25 index lives in the same transaction as the rows;
+a natural person, so never findable by name here, ADR 0009 / `pipeline/sole_trader.py`). The BM25 index lives in the same transaction as the rows (the Step's);
 VACUUM ANALYZE runs right after the commit, as for `seap.search` (pipeline/search.py). The document is folded with the same fold as SEAP's and as the
 API's query (pipeline/fold.py <-> api/src/fold.ts), so a typed word matches the published one whatever its diacritics, case or legal form.
 """

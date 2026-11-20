@@ -137,7 +137,7 @@ docker compose up -d --build api web                                            
 
 By hand instead (the same steps): the three lookups above, then `$P rebuild`. Rebuild: hours (about 860 Records/s; 20M search rows is of the order of 6+ hours, estimate), 1.5 GB for the biggest DA
 quarter in the pipeline container, 3 copies of the graph on disk during the build (live, `<db>_prev`, `<db>_next`; check `df -h` and the Docker volume's disk first), the db container busy on
-up to 8 CPUs. It is one transaction: not resumable, a kill rolls back and the live graph is untouched; rerun the same command. The seed resumes at the failed step. Progress:
+up to 8 CPUs. Not resumable: a kill leaves the live graph untouched (an in-place rebuild is one transaction and rolls back; a beside-build leaves a partial `<db>_next` the next run drops); rerun the same command. The seed resumes at the failed step. Progress:
 `tail -n 2 ~/grivei-data/seed.log` (one line per unit: `rebuild unit i/N ...`), `$P status`. After it: read `status` for quarantines
 (`<archive>/quarantine/**/reason.json`), fix the header alias or reader, `requeue --match TEXT`, rebuild again (`load-quarter 2023Q2` does both for one quarter).
 

@@ -345,12 +345,12 @@ def _log_line(line: str) -> None:
 def _rebuild_beside(archive: Archive, args, progress: Progress, say):
     """The rebuild every verb shares: into a fresh database beside the live one, checked, then switched over (switchover.py);
     `--in-place` rebuilds into the database itself (it locks it for the whole load)."""
-    def build(url: str, gate=None):
+    def build(url: str, gate=None, staged: bool = False):
         return rebuild(archive, url, progress, overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps, gate=gate)
+                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps, gate=gate, staged=staged)
     if args.in_place:
         return build(args.db)
-    return switchover.build_and_switch(args.db, build, say=say)
+    return switchover.build_and_switch(args.db, lambda url, gate: build(url, gate, staged=True), say=say)  # beside the live graph: each Step commits
 
 
 def _operate(archive: Archive, args, parser) -> int:

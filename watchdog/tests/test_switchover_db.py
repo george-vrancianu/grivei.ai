@@ -12,6 +12,7 @@ psycopg = pytest.importorskip("psycopg")
 from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
+from graph_dump import dump_graph  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, server  # noqa: E402,F401
 
@@ -43,7 +44,7 @@ def _databases(url: str) -> set[str]:
 
 
 def _build(archive: Archive):
-    return lambda url, gate=None: rebuild(archive, url, gate=gate)
+    return lambda url, gate=None: rebuild(archive, url, gate=gate, staged=True)
 
 
 def test_a_rebuild_switches_over_only_after_its_checks_pass_keeps_the_old_graph_and_rollback_cleanup_work(live, tmp_path):
@@ -202,7 +203,7 @@ def test_a_swap_killed_between_the_renames_is_repaired_by_the_next_run_which_nev
 
     def build(url, gate):
         seen.append(names.live in _databases(live))  # while the new graph builds, the live name must serve again
-        return rebuild(_archive(tmp_path, "full"), url, gate=gate)
+        return rebuild(_archive(tmp_path, "full"), url, gate=gate, staged=True)
 
     lines = []
     switchover.build_and_switch(live, build, say=lines.append)
@@ -231,7 +232,7 @@ def test_a_refused_graph_is_not_reported_as_finished_and_writes_no_outlines(live
     status_file, geo = tmp_path / "status.json", tmp_path / "geo"
 
     with pytest.raises(switchover.SwitchoverRefused):
-        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate), say=lambda _: None)
+        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate, staged=True), say=lambda _: None)
 
     status = read_status(status_file)
     assert status["state"] == "failed" and "SwitchoverRefused" in status["error"]  # `pipeline status` must not call the refused graph finished
@@ -317,3 +318,26 @@ def test_the_check_is_onrc_aware_a_missing_index_or_a_lost_register_is_not_switc
     with psycopg.connect(full, autocommit=True) as c:
         c.execute("DROP INDEX onrc.search_bm25")
     assert any("onrc.search_bm25" in f for f in switchover.check_graph(full))
+
+
+@pytest.mark.parametrize("tamper", [
+    "UPDATE build.run SET state = 'building'",
+    "DELETE FROM build.step WHERE name = 'rollup'",
+    "DROP SCHEMA build CASCADE",
+], ids=["state-not-complete", "a-step-row-missing", "no-ledger-at-all"])
+def test_a_switchover_never_swaps_in_a_next_database_whose_ledger_is_not_complete(live, tmp_path, tamper):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    before = dump_graph(live)
+
+    def build(url, gate):
+        result = rebuild(_archive(tmp_path, "full"), url, staged=True)
+        with psycopg.connect(url, autocommit=True) as c:
+            c.execute(tamper)
+        return result
+
+    lines = []
+    with pytest.raises(switchover.SwitchoverRefused):
+        switchover.build_and_switch(live, build, say=lines.append)
+    assert dump_graph(live) == before and names.next in _databases(live) and names.prev not in _databases(live)
+    assert any("CHECK FAILED" in line and ("ledger" in line or "not complete" in line) for line in lines), lines

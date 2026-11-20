@@ -93,6 +93,10 @@ class Progress:
         self.state.update(state="running", total=total)
         self._line(f"rebuild start units={total} archive={archive} pid={os.getpid()}")
 
+    def mark_staged(self) -> None:
+        """The build commits after every Step, into a database beside the live graph: a failure leaves the live graph untouched and a partial next database."""
+        self.state["staged"] = True
+
     def begin(self, index: int, total: int, kind: str, unit: str) -> None:
         self._unit_started = self._now()
         self.state["current"] = {"index": index, "kind": kind, "unit": unit}
@@ -130,7 +134,8 @@ class Progress:
         self.state.update(state="failed", error=f"{type(error).__name__}: {error}".strip(": "))
         try:
             during = f" in step {self.state['step']}" if self.state.get("step") else ""
-            self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units{during}: {self.state['error']}; nothing was loaded, rerun from scratch")
+            self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units{during}: {self.state['error']}; " + (
+                "the live graph is untouched; the next run drops the next database and rebuilds" if self.state.get("staged") else "nothing was loaded, rerun from scratch"))
         except OSError:  # the status file cannot be written: the real cause must not be replaced by this one
             pass
 
@@ -211,7 +216,9 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
     if status.get("last"):
         lines.append(f"last line: {status['last']}")
     if state == "interrupted":
-        lines.append("the rebuild is not running and did not finish: the database is as it was before it started; rerun the same command")
+        lines.append("the rebuild is not running and did not finish: the live graph is untouched (the next run drops the next database); rerun the same command"
+                     if status.get("staged") else
+                     "the rebuild is not running and did not finish: the database is as it was before it started; rerun the same command")
     if state == "failed":
         lines.append(f"error: {status.get('error')}")
     return lines

@@ -100,6 +100,18 @@ def test_a_failure_is_reported_and_says_to_rerun_from_scratch(run):
     assert s["state"] == "failed" and s["error"] == "RuntimeError: connection lost"
 
 
+def test_a_staged_failure_says_the_live_graph_is_untouched_and_the_status_says_it_after_a_kill(run):
+    p, _, lines, status_file = run
+    p.mark_staged()
+    p.start(5, "/archive")
+    p.fail(RuntimeError("connection lost"))
+    assert re.fullmatch(rf"{TS} rebuild FAILED after 0/5 units: RuntimeError: connection lost; the live graph is untouched; the next run drops the next database and rebuilds", lines[-1])
+    p.state.update(state="running")  # a kill never gets to write `failed`: the file still says running
+    p._write()
+    gone = "\n".join(describe(read_status(status_file), alive=lambda pid: False))
+    assert "state: interrupted" in gone and "the live graph is untouched" in gone and "rerun the same command" in gone
+
+
 def test_a_step_logs_its_start_and_its_duration_and_shows_in_status(run):
     p, clock, lines, status_file = run
     p.start(1, "/archive")

@@ -46,6 +46,10 @@ _Avoid_: cache, dump, backup
 Replacing the served graph with a freshly rebuilt one: the rebuild is built into a database beside the live one, must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
 _Avoid_: migration, cutover (for a rebuild that locks the live database)
 
+**Build ledger**:
+The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work, and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
+_Avoid_: build log, migration table
+
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
 _Avoid_: last updated, freshness
@@ -230,7 +234,7 @@ The page listing every result of one kind (authorities, suppliers or Records) fo
 _Avoid_: search page, drill-down
 
 **Pipeline ledger**:
-The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph; unrelated to the Records tab.
+The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph (the Build ledger is the graph's own record of its build); unrelated to the Records tab.
 _Avoid_: history, audit log
 
 **Relationships tab**:

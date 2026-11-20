@@ -1,8 +1,9 @@
 """Rebuild beside the live database, check it, switch over (ADR 0004, #82).
 
-The rebuild is one transaction that drops and recreates the `seap` and `core` schemas, so run against the live database it holds
+An in-place rebuild is one transaction that drops and recreates the `seap` and `core` schemas, so run against the live database it holds
 exclusive locks for hours and the API stalls. Instead the graph is built into a fresh database in the same cluster, `<db>_next`
-(a full copy of the graph beside the live one; the live database is not touched while it builds), checked, and only then swapped
+(a full copy of the graph beside the live one; the live database is not touched while it builds; each Step commits there, and the build ledger
+records it), checked (a build whose ledger is not complete is refused), and only then swapped
 in by renaming: the live `<db>` becomes `<db>_prev` and `<db>_next` becomes `<db>`. The swap is two renames and a session
 termination, so the API sees a moment of refused connections and its pool reconnects to the new graph (its cache checks the load
 generation, which differs). A database is the unit because every query is schema-qualified and a database rename moves the BM25
@@ -123,6 +124,15 @@ def _graph_counts(url: str) -> dict[str, int] | None:
         return None
 
 
+def _ledger_failures(c: psycopg.Connection) -> list[str]:
+    """The build ledger of the next database must show every Step committed and the build complete (build_ledger.py)."""
+    from .build_ledger import ledger_failures  # here, not at the top: build_steps (the Step names) imports a lot, and a verb that only renames databases needs none of it
+    from .build_steps import STEPS
+
+    with c.cursor() as cur:
+        return ledger_failures(cur, [s.name for s in STEPS])
+
+
 def check_graph(url: str, against: str | None = None, min_ratio: float = MIN_RATIO) -> list[str]:
     """The checks a new graph passes before it is served; the failures (empty = all passed). `against` is the graph it would replace."""
     failures: list[str] = []
@@ -137,6 +147,7 @@ def check_graph(url: str, against: str | None = None, min_ratio: float = MIN_RAT
         if counts["entities"] == 0:
             failures.append("no entities built")
         with psycopg.connect(url, connect_timeout=10) as c:
+            failures += _ledger_failures(c)
             if c.execute("SELECT count(*) FROM seap.rollup_meta").fetchone()[0] != 1:
                 failures.append("no load generation (seap.rollup_meta): the API's cache could not tell this load from the last")
             if c.execute("SELECT 1 FROM pg_indexes WHERE schemaname = 'seap' AND indexname = 'search_bm25'").fetchone() is None:
