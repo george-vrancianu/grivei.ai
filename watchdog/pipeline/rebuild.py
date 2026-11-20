@@ -233,6 +233,8 @@ _WRITE_WITHHELD = f"""INSERT INTO withheld.natural_person_name ({", ".join(_WITH
 _WRITE_SEARCH = f"""INSERT INTO seap.search ({", ".join(_SEARCH_COLUMNS)})
     SELECT {", ".join(f"s.{c}" for c in _SEARCH_COLUMNS)} FROM stage_search s JOIN stage_applied a ON a.code = s.record_code ORDER BY s.seq"""
 
+_TRUNCATE_STAGING = "TRUNCATE stage_record, stage_search, stage_withheld, stage_applied"
+
 
 def _copy(cur: psycopg.Cursor, table: str, columns: Sequence[str], rows: list[tuple]) -> None:
     with cur.copy(f"COPY {table} (seq, {', '.join(columns)}) FROM STDIN") as copy:
@@ -332,7 +334,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                                  counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.key, authority.cui,
                                  w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
                                  w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc))
-        cur.execute("TRUNCATE stage_record, stage_search, stage_withheld, stage_applied")
+        cur.execute(_TRUNCATE_STAGING)
         _copy(cur, "stage_record", _RECORD_COLUMNS, records)
         _copy(cur, "stage_search", _SEARCH_COLUMNS, searches)
         _copy(cur, "stage_withheld", _WITHHELD_COLUMNS, withheld)
@@ -341,6 +343,7 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
             cur.execute(stmt)
         cur.execute(_WRITE_WITHHELD)
         cur.execute(_WRITE_SEARCH)
+        cur.execute(_TRUNCATE_STAGING)  # a batch of staged rows is not kept until the top-level commit
 
 
 @dataclass
