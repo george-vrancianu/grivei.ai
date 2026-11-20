@@ -19,7 +19,7 @@ from pipeline.rebuild import rebuild  # noqa: E402
 from pipeline.resume import RESUME, Verdict, load_held  # noqa: E402
 from pipeline.refresh import Pinger, StepResult, run_refresh  # noqa: E402
 from pipeline.refresh.steps import Impl  # noqa: E402
-from resume_harness import FIXTURES, Harness, KillPoint, make_world, step_kill_points, vacuum_kill_points  # noqa: E402
+from resume_harness import FIXTURES, Harness, KillPoint, make_world, onrc_snapshot_kill_points, step_kill_points, vacuum_kill_points  # noqa: E402
 from test_refresh import Clock  # noqa: E402
 from test_bulk_loader_db import HEAD, _write, server  # noqa: E402,F401
 
@@ -248,3 +248,59 @@ def test_load_quarter_always_builds_fresh_and_prints_its_verdict_first(server, t
     assert "rebuild: fresh - load-quarter always starts over" in out[0] and sum("rebuild: fresh" in line for line in out) == 1  # first, and once
     with psycopg.connect(live) as c:
         assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DANNEW1'").fetchone() == (1,)
+
+
+ONRC_POINTS = {p.name: p for p in onrc_snapshot_kill_points()}
+
+
+def onrc_rows(url, sql):
+    with psycopg.connect(url) as c:
+        return c.execute(sql).fetchall()
+
+
+@pytest.mark.parametrize("killed_by", [SystemExit(143), RuntimeError("bug")], ids=["sigterm", "bug"])
+@pytest.mark.parametrize("name", list(ONRC_POINTS))
+def test_killed_after_an_onrc_snapshot_the_resume_continues_from_the_next_one_and_leaves_the_uninterrupted_graph(harness, name, killed_by):
+    rerun = harness.assert_resumes_like_reference(ONRC_POINTS[name], killed_by)  # four snapshots with a rename and status changes
+    assert onrc_rows(rerun.url, "SELECT ordinal, snapshot_date::text, applied FROM build.snapshot ORDER BY ordinal") == [
+        (1, "2025-03-18", True), (2, "2026-03-02", True), (3, "2026-04-03", True), (4, "2026-05-06", True)]
+
+
+@pytest.mark.parametrize("k", [1, 2, 3, 4])
+def test_each_committed_onrc_snapshot_is_visible_in_the_next_database_after_the_kill(harness, k):
+    archive, live = harness.new_archive("visible"), harness.new_live()
+    harness.run(archive, live, kill=ONRC_POINTS[f"after-onrc-snapshot-{k}"], killed_by=SystemExit(143))
+    next_url = switchover.names_of(live).next_url
+    assert [r[0] for r in onrc_rows(next_url, "SELECT ordinal FROM build.snapshot ORDER BY ordinal")] == list(range(1, k + 1))
+    assert onrc_rows(next_url, "SELECT count(*) FROM onrc.snapshot") == [(k,)]
+    assert onrc_rows(next_url, "SELECT count(*) FROM build.step WHERE name = 'onrc'") == [(0,)]  # the Step itself is not done
+
+
+def test_the_onrc_summary_is_complete_after_a_resume_in_the_middle_of_the_step(harness):
+    ref = harness.reference()
+    rerun = harness.assert_resumes_like_reference(ONRC_POINTS["after-onrc-snapshot-2"], SystemExit(143))
+    row = "SELECT summary FROM build.step WHERE name = 'onrc'"
+    assert onrc_rows(rerun.url, row) == onrc_rows(ref.url, row)
+    summary = onrc_rows(rerun.url, row)[0][0]["summary"]
+    assert summary["snapshots"] == 4 and summary["first"] == "2025-03-18" and summary["latest"] == "2026-05-06" and summary["status_spans"] > 0 and summary["companies"] > 0
+
+
+def onrc_with_a_broken_snapshot(root):
+    make_world(root, ("archive-onrc-signals",))
+    Archive(root).write_unit(source="onrc", stream="snapshot", kind="firme", unit="2026-03-20", fetched_at=datetime(2026, 11, 13, 5, tzinfo=timezone.utc),
+                             files={"junk.csv": b"x\n"}, origin={"system": "data.gov.ro", "layout": "current", "resources": []})
+    return root
+
+
+def test_a_snapshot_set_aside_before_the_kill_is_still_named_after_the_resume(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=onrc_with_a_broken_snapshot)
+    rerun = h.assert_resumes_like_reference(ONRC_POINTS["after-onrc-snapshot-3"], SystemExit(143))  # 2025-03-18, 2026-03-02, the broken 2026-03-20 are done
+    assert onrc_rows(rerun.url, "SELECT snapshot_date::text, applied FROM build.snapshot ORDER BY ordinal")[2] == ("2026-03-20", False)
+    assert any("skipped snapshot 2026-03-20" in line for line in rerun.out)
+
+
+def test_an_in_place_build_stays_one_transaction_even_with_the_onrc_snapshot_ledger(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys)
+    live = h.new_live()
+    h.run(h.new_archive("inplace"), live, "--in-place", kill=ONRC_POINTS["after-onrc-snapshot-2"], killed_by=RuntimeError("bug"))
+    assert onrc_rows(live, "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('build', 'onrc')") == [(0,)]  # all or nothing: two snapshots did not stay

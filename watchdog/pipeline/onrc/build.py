@@ -50,6 +50,9 @@ class OnrcSummary:
     people: PeopleSummary = field(default_factory=PeopleSummary)  # the roles of the newest snapshot with a people file (#177)
     coverage_cells: int = 0  # Coverage grid cells: one per snapshot, one per missing month since March 2026 (#176)
 
+    def __post_init__(self) -> None:
+        self._held: list[Unit] = []  # working state between the snapshot loop and `finish_onrc`: the applied snapshots, oldest first (not a field: never persisted)
+
     def line(self) -> str:
         if not self.snapshots:
             return "onrc: no snapshot archived (run `pipeline fetch-onrc`)" + "".join(f"; skipped {s}" for s in self.skipped)
@@ -159,25 +162,60 @@ def _store_coverage(cur: psycopg.Cursor, held: list[date]) -> int:
     return cells
 
 
-def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None, person_overrides: PersonOverrides | None = None) -> OnrcSummary:
+def _after_snapshot(unit: Unit) -> None:
+    """Called once a snapshot's transaction has ended (committed, in a staged build). Does nothing; the place a test kills the build after a snapshot."""
+
+
+def _committed_snapshots(cur: psycopg.Cursor) -> list[tuple[date, bool, str | None]]:
+    """(date, applied, why it was set aside) of the snapshots an earlier run of this Step committed, in loop order."""
+    cur.execute("SELECT snapshot_date, applied, skipped FROM build.snapshot ORDER BY ordinal")
+    return cur.fetchall()
+
+
+def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
+    """The first part of the `onrc` Step: every snapshot not yet committed, oldest first, each in a transaction of its own with its `build.snapshot` row. On a
+    staged connection (autocommit) each is a real commit, so a failure loses at most one snapshot and a rerun continues with the next; under the one
+    `--in-place` transaction each is a savepoint. Returns the summary so far; `finish_onrc` completes it."""
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
     summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
     # no `last_seen`-only index on the span tables: the per-snapshot statements below join on the primary keys (reg_no first), and with all open spans sharing one `last_seen` the planner takes such an index for selective (#287)
-    held: list[Unit] = []
-    previous: date | None = None
+    committed = _committed_snapshots(cur)  # a rerun after a kill inside this Step
+    done = {d for d, _, _ in committed}
+    applied = {d for d, ok, _ in committed if ok}
+    previous: date | None = max(applied, default=None)
+    summary.skipped += [why for _, ok, why in committed if not ok]
+    ordinal = len(committed)
     for unit in snapshot_units([u for u, _ in surveyed if u is not None]):
-        try:
-            with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the rebuild's transaction
-                companies = _stage_snapshot(cur, unit)
-        except Exception as e:  # noqa: BLE001 - a broken snapshot must not stop the rebuild: the history is built from the others, the summary says so
-            summary.skipped.append(f"snapshot {unit.unit} ({unit.path.relative_to(archive.root)}): {e}")
-            log.warning("onrc snapshot %s skipped: %s", unit.unit, e)
+        when = date.fromisoformat(unit.unit)
+        if when in done:
             continue
-        _apply_snapshot(cur, unit, companies, previous, previous is None, archive)
-        previous = date.fromisoformat(unit.unit)
-        held.append(unit)
-        summary.snapshots += 1
+        ordinal += 1
+        with cur.connection.transaction():  # the snapshot's commit: its spans and its ledger row together
+            try:
+                with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the snapshot's transaction
+                    companies = _stage_snapshot(cur, unit)
+            except Exception as e:  # noqa: BLE001 - a broken snapshot must not stop the rebuild: the history is built from the others, the summary says so
+                message = f"snapshot {unit.unit} ({unit.path.relative_to(archive.root)}): {str(e).replace(f'{archive.root}/', '')}"  # no absolute path: the row is part of the graph, equal in every build of the same archive
+                summary.skipped.append(message)
+                log.warning("onrc snapshot %s skipped: %s", unit.unit, e)
+                cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, false, %s)", (when, ordinal, message))
+            else:
+                _apply_snapshot(cur, unit, companies, previous, previous is None, archive)
+                cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, true, NULL)", (when, ordinal))
+                previous = when
+                applied.add(when)
+        _after_snapshot(unit)
+    summary._held = [u for u in snapshot_units([u for u, _ in surveyed if u is not None]) if date.fromisoformat(u.unit) in applied]
+    summary.snapshots = len(applied)
+    return summary
+
+
+def finish_onrc(cur: psycopg.Cursor, summary: OnrcSummary, data_dir: Path | str | None = None, person_overrides: PersonOverrides | None = None) -> OnrcSummary:
+    """The second part of the `onrc` Step, in the Step's own transaction (with its `build.step` row): what needs every snapshot (Coverage cells, the newest
+    snapshot's registrations, the status nomenclature, the people), computed from the held snapshots and the tables, so a resumed Step gives the summary
+    of an uninterrupted one."""
+    held = summary._held
     if held:
         summary.first, summary.latest = date.fromisoformat(held[0].unit), date.fromisoformat(held[-1].unit)
         summary.coverage_cells = _store_coverage(cur, [date.fromisoformat(u.unit) for u in held])
@@ -197,6 +235,11 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
     cur.execute("DROP TABLE IF EXISTS onrc_obs")
     analyze(cur, "onrc.snapshot", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.role")
     return summary
+
+
+def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None = None, person_overrides: PersonOverrides | None = None) -> OnrcSummary:
+    """Both parts in the caller's transaction (what the rebuild's `onrc` Step runs as two, `Step.segments` and `run`)."""
+    return finish_onrc(cur, build_onrc_snapshots(cur, archive), data_dir, person_overrides)
 
 
 class OnrcNames(Mapping):
