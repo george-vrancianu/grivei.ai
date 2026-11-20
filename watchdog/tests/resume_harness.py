@@ -31,6 +31,7 @@ from pipeline.build_steps import STEPS
 from pipeline.progress import Progress
 from pipeline.stop import PAUSED_EXIT_CODE, STOP_FILE
 from pipeline.onrc.people import SECRET_ENV
+from pipeline.pins import PACKAGE as REAL_PACKAGE  # the source tree, whatever a test later points `pins.PACKAGE` at
 
 FIXTURES = Path(__file__).parent / "fixtures"
 # Every fixture that makes a Step do real work: SEAP bulk and crawl units (units, crawl-status, crawl-badges, frameworks, entities, coverage, signals),
@@ -333,3 +334,16 @@ class Harness:
 def _summary(lines: list[str], archive: Path) -> list[str]:
     """The `summary.lines()` part of a run's stdout (the log lines are timestamped, these are not), with the archive's own path made comparable."""
     return [line.replace(str(archive), "<archive>") for line in lines if not line[:4].isdigit() and not line.startswith("rebuild:")]
+
+
+def copy_package(dest: Path) -> Path:
+    """A copy of the `pipeline/` package at `dest` (#295): a test points `pins.PACKAGE` at it (monkeypatch) so the build hashes the copy, then edits a file in
+    it between a kill and the resume. The real source tree is never touched, and `dest` is not at `<repo>/watchdog/pipeline`, as in the image (`/app/pipeline`)."""
+    shutil.copytree(REAL_PACKAGE, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    return dest
+
+
+def edit_code(package: Path, relpath: str) -> None:
+    """Change one file of a package copy (a hash-level change: the copy is only hashed, the build keeps running the real modules)."""
+    with (package / relpath).open("a") as f:
+        f.write("\n# edited between the kill and the resume\n")

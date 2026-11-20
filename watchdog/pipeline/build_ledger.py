@@ -18,8 +18,18 @@ BUILDING, COMPLETE, PAUSED = "building", "complete", "paused"
 
 def start_run(cur: psycopg.Cursor, staged: bool, pins: Pins) -> None:
     """The run's one row, in the schema Step (after build_schema.sql has recreated the `build` schema), with the pinned inputs of the run."""
-    cur.execute("INSERT INTO build.run (started, state, staged, pinned_units, code_version, schema_files, today, pinned_quarantine) VALUES (clock_timestamp(), %s, %s, %s, %s, %s, %s, %s)",
-                (BUILDING, staged, Jsonb(dict(pins.units)), pins.code_version, Jsonb(dict(pins.schema_files)), pins.today, Jsonb(list(pins.quarantined))))
+    cur.execute("INSERT INTO build.run (started, state, staged, pinned_units, code_version, code_files, schema_files, today, pinned_quarantine) VALUES (clock_timestamp(), %s, %s, %s, %s, %s, %s, %s, %s)",
+                (BUILDING, staged, Jsonb(dict(pins.units)), pins.code_version, Jsonb(dict(pins.code_files)), Jsonb(dict(pins.schema_files)), pins.today, Jsonb(list(pins.quarantined))))
+
+
+def record_code_change(cur: psycopg.Cursor, pins: Pins, changed: tuple[str, ...]) -> None:
+    """A resume after a code change confined to Steps that have not run (resume.decide): `build.run` takes this run's code hashes and adds the files to `changed_files`.
+    The new hashes replace the old ones (not just the first ones) because every committed Step's files are identical in both (else the build would have started
+    fresh), so the next resume is compared against the code the remaining Steps now run with: comparing against the first hashes would wrongly allow a resume
+    after a file is reverted whose Step already ran under the changed version."""
+    cur.execute("UPDATE build.run SET code_version = %s, code_files = %s, "
+                "changed_files = (SELECT coalesce(jsonb_agg(f ORDER BY f), '[]') FROM (SELECT DISTINCT jsonb_array_elements_text(changed_files || %s) AS f) x) WHERE one",
+                (pins.code_version, Jsonb(dict(pins.code_files)), Jsonb(list(changed))))
 
 
 def stamp_step(cur: psycopg.Cursor, name: str, started: datetime) -> None:

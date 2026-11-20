@@ -65,20 +65,21 @@ def test_a_step_that_reads_build_step_reads_a_hand_off_written_by_an_earlier_ste
 
 
 def _files(patterns):
-    return {p for p in expand(patterns, REPO)}
+    return {p for p in expand(patterns, PIPELINE)}
 
 
 def test_every_file_under_pipeline_is_owned_by_a_step_shared_or_outside_the_build():
     everything = {p for p in PIPELINE.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"}
     claimed = _files(SHARED) | _files(OUTSIDE_THE_BUILD) | {p for s in STEPS for p in _files(s.owns)}
-    assert not everything - claimed, f"owned by no Step, not SHARED, not OUTSIDE_THE_BUILD: {sorted(str(p.relative_to(REPO)) for p in everything - claimed)}"
+    assert not everything - claimed, f"owned by no Step, not SHARED, not OUTSIDE_THE_BUILD: {sorted(str(p.relative_to(PIPELINE)) for p in everything - claimed)}"
     assert not _files(SHARED) & _files(OUTSIDE_THE_BUILD)
+    assert not {p for s in STEPS for p in _files(s.owns)} & _files(OUTSIDE_THE_BUILD)  # a Step's file outside the build would let a change to it resume
 
 
 def test_every_declared_path_exists():
     for patterns in (SHARED, OUTSIDE_THE_BUILD, *(s.owns for s in STEPS)):
         for pattern in patterns:
-            assert (REPO / pattern).exists(), pattern
+            assert (PIPELINE / pattern).exists(), pattern
 
 
 def _imports(path: Path) -> set[Path]:
@@ -128,16 +129,16 @@ def test_a_step_owns_everything_its_owned_code_imports_or_it_is_shared(step):
 
 def test_owners_of_names_every_step_for_a_shared_file_and_the_owning_steps_for_the_rest():
     everyone = {s.name for s in STEPS}
-    assert owners_of("watchdog/pipeline/rebuild.py") == everyone
-    assert owners_of("watchdog/pipeline/signals/young_firm.py") == {"signals"}
-    assert owners_of("watchdog/pipeline/cli.py") == set()
+    assert owners_of("rebuild.py") == everyone
+    assert owners_of("signals/young_firm.py") == {"signals"}
+    assert owners_of("cli.py") == set()
 
 
 def test_units_owns_the_shared_helpers_it_runs_through_rebuild_py():
     """The closure test does not follow SHARED files' imports: `value_bucket` (search.py) and `parse_quarter` (coverage/) are run by the unit loop."""
-    assert "units" in owners_of("watchdog/pipeline/search.py")
-    assert "units" in owners_of("watchdog/pipeline/coverage/__init__.py")
-    assert "units" in owners_of("watchdog/pipeline/estimates.py") and "units" in owners_of("watchdog/pipeline/onrc/build.py")
+    assert "units" in owners_of("search.py")
+    assert "units" in owners_of("coverage/__init__.py")
+    assert "units" in owners_of("estimates.py") and "units" in owners_of("onrc/build.py")
 
 
 def test_no_value_is_handed_between_steps_on_the_build_context():
@@ -149,3 +150,63 @@ def test_no_value_is_handed_between_steps_on_the_build_context():
     inputs = {"archive", "cur", "conn", "summary", "today", "progress", "staged", "placement_dir", "known_gaps_path", "overrides", "person_overrides", "pins"}
     one_step = {"number", "bulk_rows"}  # units' own: persisted in its row
     assert {f.name for f in fields(BuildContext)} <= inputs | one_step | {"data_through"}  # data_through: signals' own, loaded from core.data_through
+
+
+def test_a_fix_in_onrc_search_belongs_to_onrc_search_alone_and_the_other_onrc_files_to_the_steps_that_run_them():
+    """#295: the 2026-11-20 case. onrc/search.py is only run by onrc-search, so fixing it resumes after the Steps before it."""
+    assert owners_of("onrc/search.py") == {"onrc-search"}
+    assert "onrc-search" not in owners_of("onrc/build.py") and {"onrc", "units", "entities", "placement-mf"} <= owners_of("onrc/build.py")
+
+
+def test_owners_of_reads_the_declarations_as_text_so_it_needs_no_checkout_around_the_package():
+    """The image copies the package to /app/pipeline: no repo root, and a deleted file is not on disk. Package-relative text must be enough."""
+    everyone = {s.name for s in STEPS}
+    assert owners_of("signals/a_rule_that_does_not_exist_yet.py") == {"signals"}
+    assert owners_of("brand_new_module.py") == everyone  # no declaration claims it: conservative
+    assert owners_of("extra:placement-data/uat.csv") == everyone and owners_of("extra:known-gaps") == everyone
+    assert owners_of("switchover.py") == set() and owners_of("geo/topo.py") == set()  # outside the build: no Step
+
+
+def _direct_imports_of_the_step_bodies() -> dict[str, set[str]]:
+    """Step name -> the pipeline files its body uses by name: the names the `Step(...)` call, the local functions it points at (transitively) and its hand_off
+    lambda reference, which `build_steps.py` imported from a pipeline module (`from .onrc.build import OnrcNames`)."""
+    tree = ast.parse((PIPELINE / "build_steps.py").read_text(encoding="utf-8"))
+    imported = {}
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.level == 1 and node.module:
+            for a in node.names:
+                imported[a.asname or a.name] = next(f for f in (PIPELINE / f"{node.module.replace('.', '/')}.py", PIPELINE / node.module.replace(".", "/") / "__init__.py") if f.is_file())
+    functions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+
+    def names(node, seen: set[str]) -> set[str]:
+        out = set()
+        for n in ast.walk(node):
+            if isinstance(n, ast.Name) and n.id not in seen:
+                out.add(n.id)
+                if n.id in functions:
+                    seen.add(n.id)
+                    out |= names(functions[n.id], seen)
+        return out
+
+    steps = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "STEPS").value
+    return {call.args[0].value: {imported[x].relative_to(PIPELINE).as_posix() for x in names(call, set()) if x in imported}
+            for call in steps.elts}
+
+
+@pytest.mark.parametrize("step", STEPS, ids=lambda s: s.name)
+def test_a_step_owns_the_pipeline_files_its_body_in_build_steps_py_uses_directly_or_they_are_shared(step):
+    """The closure test only follows the imports of owned files; the Step bodies live in build_steps.py (SHARED), so their own imports are checked here."""
+    used = _direct_imports_of_the_step_bodies()[step.name]
+    claimed = lambda f: owners_of(f) >= {s.name for s in STEPS} or step.name in owners_of(f)  # noqa: E731
+    assert not {f for f in used if not claimed(f)}, f"{step.name}'s body uses files it does not own: {sorted(f for f in used if not claimed(f))}"
+
+
+def test_a_step_owned_file_is_never_hidden_by_the_outside_list():
+    steps = (Step("a", lambda c: None, owns=("x.py",)), Step("b", lambda c: None))
+    import pipeline.build_steps as bs
+    outside = bs.OUTSIDE_THE_BUILD
+    try:
+        bs.OUTSIDE_THE_BUILD = (*outside, "x.py")
+        assert owners_of("x.py", steps) == {"a"}
+    finally:
+        bs.OUTSIDE_THE_BUILD = outside

@@ -59,6 +59,7 @@ from .aep.build import AepSummary
 from .financials.build import FinancialsSummary
 from .banipartide.build import DonationsSummary
 from .placement.build import PlacementSummary
+from .build_ledger import record_code_change
 from .pins import SQL_DIR, compute_pins, pin_extra
 from .progress import Progress
 from .stop import BuildPaused, staged_build
@@ -552,6 +553,8 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES),  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
                                pins=verdict.pins)
+            if verdict.resume and verdict.changed_files:  # resumed after a code change confined to Steps not yet run: the ledger now says which code the rest runs with
+                record_code_change(cur, verdict.pins, verdict.changed_files)
             with staged_build() if staged else nullcontext():  # the Steps' commit boundaries are where a stop request pauses (stop.py)
                 run_steps(ctx, resume=verdict.resume)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
             data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
