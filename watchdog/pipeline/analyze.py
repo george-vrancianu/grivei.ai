@@ -1,7 +1,7 @@
-"""Planner statistics inside the rebuild's single transaction.
+"""Planner statistics inside the rebuild's Step transactions (one transaction for all Steps in place, one per Step when staged).
 
 A table a step bulk-fills has no statistics until something analyzes it (autovacuum cannot run inside the uncommitted transaction, and never reaches a
-temp table). The rule: every step that bulk-fills a table analyzes it before any later step reads it. ANALYZE samples, so it is cheap; it is not VACUUM."""
+temp table). The rule: every step that bulk-fills a table analyzes it before any later step reads it. ANALYZE samples, so it is cheap; it is not VACUUM (a beside build vacuums between its committed Steps: the `vacuum` field of a Step, build_steps.py)."""
 import psycopg
 
 

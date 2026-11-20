@@ -99,7 +99,7 @@ def read_estimates(archive: Archive) -> dict[str, Estimate]:
     base = archive.root / SOURCE / STREAM / KIND
     found: list[tuple[datetime, str, str, Estimate]] = []
     for directory in sorted(base.glob("*/*")) if base.is_dir() else []:
-        manifest = _complete(directory) if directory.is_dir() else None
+        manifest = _complete(directory) if directory.is_dir() and archive.complete_at_pin(directory) else None
         if manifest is None:
             continue
         code = manifest["unit"]

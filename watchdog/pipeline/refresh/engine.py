@@ -36,6 +36,7 @@ from ..anaf import AnafUnavailable
 from ..archive import QUARANTINE_DIR, Archive
 from ..crawl import CrawlError
 from ..onrc.fetch import held_snapshots
+from ..stop import STOP, BuildPaused
 from .ledger import LEDGER_NAME, Ledger, parse, stamp
 from .pings import Pinger
 
@@ -94,7 +95,7 @@ class Step:
 
 @dataclass
 class RefreshResult:
-    status: str  # ok | failed | locked
+    status: str  # ok | failed | paused | locked
     run: dict | None = None
     alert: str | None = None
 
@@ -219,7 +220,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
         *financials,
         *banipartide,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),
-        Step("load", impl.load, load_due, fingerprint_all),
+        Step("load", impl.load, load_due, getattr(impl, "loaded_marker", fingerprint_all)),  # what the load covered (a resumed build reads its pins), not the archive at the end
         *backups,  # step 5 (#82): the raw archive to restic nightly, a pg_dump of the graph weekly, same repository
     ]
 
@@ -235,7 +236,7 @@ def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
              *([Step("amepip", impl.amepip, not_done("amepip"))] if _has_amepip(impl) else []),
              *([Step("financials", impl.financials, not_done("financials"))] if _has_financials(impl) else []),
              Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
-             Step("load", impl.load, not_done("load"), marker_load)]
+             Step("load", impl.load, not_done("load"), getattr(impl, "loaded_marker", marker_load))]
     if backfill:
         steps.append(Step("backfill", impl.backfill, not_done("backfill")))
     # ONRC last: a failing ONRC step (or ~60 snapshots to download) never holds up SEAP's ANAF and load; the next refresh's load picks the snapshots up
@@ -279,6 +280,11 @@ def _execute(archive: Archive, step: Step, ledger: Ledger, run: dict, now: Calla
         record["attempts"] = attempt
         try:
             result = step.run()
+        except BuildPaused as e:  # a staged build stopped on request at a committed boundary: neither a success nor a failure, the step stays due so the next trigger resumes it
+            record.update(status="paused", ended=stamp(now()), note=f"{e.reached}: {e.reason}", database=e.database, failureClass=None, error=None)
+            say(f"step {step.name}: paused {e.reached} ({e.reason}); the next run resumes it")
+            ledger.save()
+            return record
         except Exception as e:  # noqa: BLE001 - classed below; SystemExit and KeyboardInterrupt propagate
             kind = classify(e)
             record.update(failureClass=kind, error=f"{type(e).__name__}: {e}"[:500])
@@ -322,6 +328,12 @@ def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger 
                 say(f"step {step.name}: due ({reason})")
                 record = _execute(archive, step, ledger, run, now, sleep, say)
                 ran += 1
+                if record["status"] == "paused":
+                    say(f"step {step.name} paused: the {kind} ends here, the steps after it stay due")
+                    break
+                if step.name == "load" and record["status"] == "ok" and STOP.pending():  # asked for after the last boundary: the load is complete and switched, the rest of the run is not started
+                    say(f"stop requested during the load's last Step: the load is complete; the {kind} ends here, the steps after it stay due")
+                    break
                 if record["status"] == "failed" and stop_on_failure:
                     say(f"step {step.name} failed: the {kind} stops here, so a resumed {kind} starts at this step; the steps after it did not run")
                     break
@@ -334,17 +346,24 @@ def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger 
             if pinger is not None and isinstance(e, Exception):  # a bug in the engine or in a step's `due`: say so now, not when the dead-man's switch trips
                 pinger.fail(f"refresh engine error: {type(e).__name__}: {e}"[:500])
             raise
+        STOP.clear_stop_file(f"the {kind} ended without a build to pause")  # never left to pause a later build by surprise
         failed = [s for s in run["steps"] if s["status"] == "failed"]
         warnings = [f"{s['name']}: {w}" for s in run["steps"] for w in s["warnings"]]
-        run.update(status="failed" if failed else "ok", ended=stamp(now()))
-        alert = _alert(kind, run, failed, warnings, ledger, pinger, say, ran)
+        paused = [s for s in run["steps"] if s["status"] == "paused"]
+        run.update(status="failed" if failed else "paused" if paused else "ok", ended=stamp(now()))  # failed > paused > ok
+        alert = _alert(kind, run, failed, paused, warnings, ledger, pinger, say, ran)
         run["alert"] = alert
         ledger.save()
         say(f"{kind} run {run['id']} {run['status']}" + (f"; alert: {alert}" if alert else ""))
         return RefreshResult(run["status"], run, alert)
 
 
-def _alert(kind: str, run: dict, failed: list[dict], warnings: list[str], ledger: Ledger, pinger: Pinger | None, say, ran: int) -> str | None:
+def _copy_note(step: dict) -> str:
+    db = step.get("database") or "the paused next database"
+    return f"{db} holds a full extra copy of the graph on disk"
+
+
+def _alert(kind: str, run: dict, failed: list[dict], paused: list[dict], warnings: list[str], ledger: Ledger, pinger: Pinger | None, say, ran: int) -> str | None:
     if pinger is None:  # seed: the operator is watching the log
         return None
     deterministic = [s for s in failed if s["failureClass"] == "deterministic"]
@@ -359,6 +378,9 @@ def _alert(kind: str, run: dict, failed: list[dict], warnings: list[str], ledger
             pinger.fail(reason)
             return reason
         say(f"transient failure, run {streak} of the {ALERT_AFTER_FAILED_RUNS + 1} that raise an alert; the next trigger retries")
+        return None
+    if paused:  # `/log`: an event on the check, no state change: not the success that resets the dead-man's switch, not the `/fail` that pages for a pause somebody asked for
+        pinger.log(f"refresh paused: {paused[0]['name']} paused {paused[0]['note']}; {_copy_note(paused[0])}; the next trigger resumes")
         return None
     body = f"refresh ok, {ran} step(s) ran" if ran else "refresh ok, nothing due"
     if warnings:

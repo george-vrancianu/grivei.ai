@@ -100,6 +100,31 @@ def test_a_failure_is_reported_and_says_to_rerun_from_scratch(run):
     assert s["state"] == "failed" and s["error"] == "RuntimeError: connection lost"
 
 
+def test_a_staged_failure_says_the_live_graph_is_untouched_and_the_status_says_it_after_a_kill(run):
+    p, _, lines, status_file = run
+    p.mark_staged()
+    p.start(5, "/archive")
+    p.fail(RuntimeError("connection lost"))
+    assert re.fullmatch(rf"{TS} rebuild FAILED after 0/5 units: RuntimeError: connection lost; the live graph is untouched; the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it", lines[-1])
+    p.state.update(state="running")  # a kill never gets to write `failed`: the file still says running
+    p._write()
+    gone = "\n".join(describe(read_status(status_file), alive=lambda pid: False))
+    assert "state: interrupted" in gone and "the live graph is untouched" in gone and "rerun the same command" in gone
+
+
+def test_an_in_place_staged_failure_names_the_target_database_and_a_later_plain_mark_keeps_it(run):
+    p, _, lines, status_file = run
+    p.mark_staged(in_place=True)
+    p.mark_staged()  # what rebuild() itself calls
+    p.start(5, "/archive")
+    p.fail(RuntimeError("connection lost"))
+    assert lines[-1].endswith("; the database keeps its committed Steps; rerun the same command to resume when the inputs and the code are unchanged, otherwise it rebuilds")
+    p.state.update(state="running")
+    p._write()
+    gone = "\n".join(describe(read_status(status_file), alive=lambda pid: False))
+    assert "the database keeps its committed Steps" in gone and "live graph" not in gone and "rerun the same command" in gone
+
+
 def test_a_step_logs_its_start_and_its_duration_and_shows_in_status(run):
     p, clock, lines, status_file = run
     p.start(1, "/archive")
@@ -225,3 +250,82 @@ def test_a_failing_status_write_does_not_hide_the_failure_line(tmp_path):
     (tmp_path / "no").write_text("a file where the directory should be")
     p.fail(RuntimeError("real cause"))  # must not raise OSError over the real cause
     assert "real cause" in lines[-1]
+
+
+# ---- pause (#296) -------------------------------------------------------------------------------------------------------------------------------------
+
+def test_a_paused_beside_build_says_paused_with_the_step_reached_and_the_extra_copy_on_disk(run):
+    p, _, lines, status_file = run
+    p.mark_staged()
+    p.mark_database("grivei_next")
+    p.start(5, "/archive")
+    p.committed("estimates")
+    p.pause("after unit 2/5 (da 2023Q1)", "stop requested (rebuild.stop)")
+    assert "rebuild PAUSED after unit 2/5 (da 2023Q1) (stop requested (rebuild.stop))" in lines[-1]
+    status = read_status(status_file)
+    assert effective_state(status) == "paused"  # written by the run itself: not judged by its pid
+    text = "\n".join(describe(status, alive=lambda pid: False))
+    assert "state: paused" in text and "after unit 2/5" in text and "last committed Step is estimates" in text
+    assert "grivei_next holds a full extra copy of the graph on disk" in text and "rerun the same command to resume" in text and "the live graph is untouched" in text
+
+
+def test_a_paused_in_place_staged_build_names_the_target_and_has_no_extra_copy_note(run):
+    p, _, _, status_file = run
+    p.mark_staged(in_place=True)
+    p.mark_database("grivei")
+    p.start(5, "/archive")
+    p.pause("after step entities", "stop requested (SIGTERM)")
+    text = "\n".join(describe(read_status(status_file), alive=lambda pid: False))
+    assert "state: paused" in text and "the database is grivei" in text and "extra copy" not in text and "live graph" not in text
+
+
+def test_a_staged_build_killed_after_a_committed_boundary_is_interrupted_and_resumable_with_the_step_reached(run):
+    p, _, _, status_file = run
+    p.mark_staged()
+    p.mark_database("grivei_next")
+    p.start(5, "/archive")
+    p.committed("frameworks")
+    p.state.update(state="running")
+    p._write()
+    status = read_status(status_file)
+    assert effective_state(status, alive=lambda pid: False) == "interrupted"  # `pipeline status` still exits 1 for it
+    text = "\n".join(describe(status, alive=lambda pid: False))
+    assert "state: interrupted (resumable)" in text and "last committed Step is frameworks" in text and "full extra copy" in text
+
+
+def test_a_second_sigterm_leaves_a_staged_build_interrupted_and_resumable_not_failed(run):
+    p, _, lines, status_file = run
+    p.mark_staged()
+    p.start(5, "/archive")
+    p.committed("estimates")
+    p.interrupt(SystemExit(143))
+    assert "rebuild INTERRUPTED" in lines[-1] and read_status(status_file)["state"] == "interrupted"
+    assert "state: interrupted (resumable)" in "\n".join(describe(read_status(status_file)))
+
+
+def test_a_staged_build_killed_before_any_boundary_is_plain_interrupted_and_a_plain_in_place_one_never_resumable(run):
+    p, _, _, status_file = run
+    p.mark_staged()
+    p.start(5, "/archive")
+    p.state.update(state="running")
+    p._write()
+    assert "state: interrupted\n" in "\n".join(describe(read_status(status_file), alive=lambda pid: False)) + "\n"
+    q = Progress(status_file.with_name("plain.json"), out=lambda _: None)
+    q.start(5, "/archive")
+    q.state.update(done=2)
+    q._write()
+    assert "state: interrupted\n" in "\n".join(describe(read_status(status_file.with_name("plain.json")), alive=lambda pid: False)) + "\n"
+
+
+def test_pipeline_status_exits_0_for_a_paused_rebuild_and_1_for_an_interrupted_one(tmp_path, capsys):
+    status_file = tmp_path / "rebuild-progress.json"
+    p = Progress(status_file, out=lambda _: None)
+    p.mark_staged()
+    p.start(3, str(tmp_path))
+    p.pause("after step schema", "stop requested (SIGTERM)")
+    assert main(["--archive", str(tmp_path), "status", "--progress-file", str(status_file)]) == 0
+    assert "state: paused" in capsys.readouterr().out
+    p.state.update(state="running", pid=2 ** 22 + 1)  # a pid nobody has
+    p.committed("schema")
+    assert main(["--archive", str(tmp_path), "status", "--progress-file", str(status_file)]) == 1
+    assert "state: interrupted (resumable)" in capsys.readouterr().out

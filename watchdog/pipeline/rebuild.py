@@ -2,8 +2,12 @@
 
 Reads only units with a complete manifest, oldest fetch first, and loads each unit all or nothing (SEAP bulk files of
 every registered kind: DA, DAN, contracte, fara-anunt). A unit that fails validation is moved to the quarantine area with
-a reason file and loads nothing. The whole rebuild is one transaction, so a failed or killed rebuild leaves the previous
-schema in place and nothing half-loaded: rerun it from scratch. The same archive always gives the same database.
+a reason file and loads nothing. An in-place rebuild (without `--staged`) is one transaction, so a failed or killed one leaves the previous
+schema in place and nothing half-loaded; a staged one (beside the live graph) commits after every Step into its own next database, where a failure leaves a
+partial graph nothing serves, and the next run resumes it after the last committed Step when the pinned inputs and the code are unchanged (resume.py, pins.py),
+else rebuilds it; an in-place build is rerun from scratch unless it is `--in-place --staged` (#297: the target database itself holds the ledger). The same archive always gives the same database, resumed or not.
+
+The rebuild's steps are declared in build_steps.py (`STEPS`, each with the tables it reads and writes and the code it owns); `rebuild()` runs them in order.
 
 Units are read and loaded one at a time, so memory holds one quarter's rows, not the archive's. Each unit reports to a
 `Progress` (log line and status file, see progress.py).
@@ -29,53 +33,58 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Sequence
 
 import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from psycopg.types.json import Jsonb
 
 from .analyze import analyze
 from .anaf import iter_companies
-from .archive import Archive, Unit, sha256_of
+from .archive import QUARANTINE_DIR, Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, SetAside, parse_file_stats
 from .counting import Estimate, count
-from .coverage import build_coverage, flagged as flagged_cells
 from .coverage import parse_quarter as _parse_quarter
 from .crawl import KIND as CRAWL_KIND
-from .crawl.unitdir import BACKFILL_KIND, CRAWLED_KINDS, contiguous_through as crawl_through
 from .crawl.records import parse_unit as parse_crawl_unit
-from .estimates import read_estimates
+from .crawl.unitdir import BACKFILL_KIND
 from .fold import fold
 from .identity import DEFAULT_OVERRIDES, Overrides, Resolved, Resolver, compare_name, resolve_authority, withheld_name
-from .mf.build import MfSummary, build_mf
+from .mf.build import MfSummary
 from .onrc.people import PersonOverrides
-from .onrc.build import OnrcNames, OnrcSummary, build_onrc, build_onrc_entities, build_onrc_placement
-from .onrc.search import SearchSummary as OnrcSearchSummary, build_onrc_search, vacuum as vacuum_onrc_search
-from .amepip.build import AmepipSummary, build_amepip
-from .aep.build import AepSummary, build_aep
-from .financials.build import FinancialsSummary, build_financials
-from .banipartide.build import DonationsSummary, build_donations
-from .placement.build import PlacementSummary, build_placement
+from .onrc.build import OnrcSummary, build_onrc_entities
+from .onrc.search import SearchSummary as OnrcSearchSummary, vacuum as vacuum_onrc_search
+from .amepip.build import AmepipSummary
+from .aep.build import AepSummary
+from .financials.build import FinancialsSummary
+from .banipartide.build import DonationsSummary
+from .placement.build import PlacementSummary
+from .build_ledger import record_code_change
+from .pins import SQL_DIR, compute_pins, pin_extra
 from .progress import Progress
-from .rollup import build_rollup
-from .signals import build_signals
+from .stop import STOP, BuildPaused, staged_build
+from .resume import Verdict, decide
+from .hand_offs import load_data_through, unit_counts
 from .sources import SEAP, SOURCES
-from .search import create_index, value_bucket, vacuum
+from .search import value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
 
-SQL_DIR = Path(__file__).parent / "sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
 AEP_SQL = SQL_DIR / "aep_schema.sql"
 FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
 DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
+MAINTENANCE_WORK_MEM = "1GB"  # the build session's index builds (ParadeDB's guidance for the BM25 build: around 1 GB); the session's own (a connect option, so no statement opens the in-place outer transaction early), no server-wide change
+BUILD_SQL = SQL_DIR / "build_schema.sql"  # the Steps' hand-offs (pipeline/hand_offs.py)
 
 
 @dataclass
 class RebuildSummary:
     files_loaded: int = 0
+    pinned_view: Archive | None = field(default=None, repr=False, compare=False)  # the pinned archive view the build read (and quarantined into): what this load covered, for the refresh's load marker
+    units_total: int = 0  # the units the loop planned (not printed; a resume gives the progress file this total)
     records: int = 0
     anaf_found: int = 0  # CUIs the archived ANAF answers confirm
     anaf_not_found: int = 0  # CUIs ANAF was asked about and does not know
@@ -298,27 +307,44 @@ class UnitOutcome:
     rows: int = 0  # data rows read from its files, duplicates included
     reason: str | None = None
     set_aside: dict[str, SetAside] = field(default_factory=dict)  # file name -> the tail set aside (a file that switches kind partway)
+    duplicate_files: list[Path] = field(default_factory=list)  # this unit's files that are byte-identical to one already planned (also of a unit that is then quarantined)
+    problems: list[str] = field(default_factory=list)  # a quarantined unit's problems: its reason file lists them
 
 
-def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None) -> Iterator[UnitOutcome]:
+def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None,
+               loaded: set[tuple[str, str]] | None = None, recorded: Sequence = ()) -> Iterator[UnitOutcome]:
     """Read the archive one unit at a time: complete units only, each file validated; a failing unit is quarantined.
 
     Oldest fetch first, so a re-uploaded file (a later fetch of the same unit) is applied after the original. A file
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
+    `loaded` is the (kind, sha256) set of files the graph already holds (hand_offs.load_loaded_hashes); it grows as units validate.
+
+    `recorded` (a resumed build, #293): the `build.unit` rows of the units already committed, units 1..N of the same ordering. Those are not read, hashed or
+    yielded again; the others carry on from N+1 and the total counts both, so every index, `units_total` and the progress counters are an uninterrupted run's.
+    A unit that was quarantined is gone from the listing (moved), which is why the total is the recorded units plus the ones still to read.
+
+    A quarantined unit is yielded BEFORE it is moved: the consumer records it (and commits that row), and the move happens when the consumer asks for the
+    next unit. A kill in between leaves a recorded quarantine whose directory is still in the archive: the resume finishes the move (Archive.complete_quarantine).
     """
-    summary.incomplete = archive.incomplete(skip=("onrc", "financials"))  # ONRC and the financial statements report their own (their files are too big to hash twice)
-    units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
+    done = {r.path for r in recorded}
+    summary.incomplete = archive.incomplete(skip=("onrc", "financials"), exclude=done)  # ONRC and the financial statements report their own (their files are too big to hash twice)
+    units = [u for u in archive.units("seap", exclude=done) if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
+    total = len(recorded) + len(units)
+    summary.units_total = total
     if progress:
-        progress.start(len(units), archive.root)
-    loaded: set[tuple[str, str]] = set()  # (kind, sha256) of files already planned
-    for index, unit in enumerate(units, start=1):
+        progress.start(total, archive.root)
+        if recorded:
+            progress.restore_units(**unit_counts(list(recorded)))
+    loaded = set() if loaded is None else loaded  # (kind, sha256) of files already planned
+    for index, unit in enumerate(units, start=len(recorded) + 1):
         if progress:
-            progress.begin(index, len(units), unit.kind, unit.unit)
+            progress.begin(index, total, unit.kind, unit.unit)
         files: list[tuple[str, list[BulkRecord]]] = []
         keys = []  # recorded as loaded only once the whole unit validates
         rows = 0
         set_aside: dict[str, SetAside] = {}
+        duplicates: list[Path] = []
         try:
             if unit.stream == "crawl":  # a crawled day: one parse of its list and contracts pages, Records by kind
                 parsed_day = parse_crawl_unit(unit)
@@ -330,6 +356,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
                     key = (unit.kind, sha256_of(path))
                     if key in loaded or key in keys:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
                         summary.duplicate_files.append(path)
+                        duplicates.append(path)
                         continue
                     parsed = parse_file_stats(unit.kind, unit.unit, path)
                     files.append((name, parsed.records))
@@ -338,13 +365,14 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
                         set_aside[name] = parsed.set_aside
                     keys.append(key)
         except InvalidFile as e:
-            summary.quarantined.append(archive.quarantine(unit, e.reason, [p for p in e.problems if p]))
-            yield UnitOutcome(index, len(units), unit, "quarantined", rows=rows, reason=e.reason)
+            problems = [p for p in e.problems if p]
+            yield UnitOutcome(index, total, unit, "quarantined", rows=rows, reason=e.reason, duplicate_files=duplicates, problems=problems)  # recorded (and committed) first
+            summary.quarantined.append(archive.quarantine(unit, e.reason, problems))
             continue  # all or nothing: none of this unit's files load
         loaded.update(keys)
         summary.set_aside += [(unit.file_path(name), aside) for name, aside in set_aside.items()]
-        yield UnitOutcome(index, len(units), unit, "loaded" if files else "skipped", files, rows,
-                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"), set_aside)
+        yield UnitOutcome(index, total, unit, "loaded" if files else "skipped", files, rows,
+                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"), set_aside, duplicates)
 
 
 @dataclass
@@ -371,9 +399,9 @@ ON CONFLICT (cui) DO UPDATE SET name = EXCLUDED.name, status = EXCLUDED.status, 
 """
 
 
-def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) -> dict[str, str]:
+def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) -> None:
     """The archived ANAF answers into `core.anaf_company`, oldest first so the latest answer per CUI wins (a later
-    "not found" removes the company). Returns the CUIs ANAF confirms, each with its `compare_name`, for the resolver."""
+    "not found" removes the company). Fills the summary's counts; the names the resolver asks are read back from the table (hand_offs.load_anaf_names)."""
     names: dict[str, str] = {}
     missing: set[str] = set()
     for company, not_found in iter_companies(archive):
@@ -388,7 +416,6 @@ def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) ->
             names.pop(str(not_found), None)
             missing.add(str(not_found))
     summary.anaf_found, summary.anaf_not_found = len(names), len(missing)
-    return names
 
 
 # Every (entity key, spelling, date, role) the loaded Records name: suppliers from the search rows (one per winner, a natural
@@ -492,135 +519,56 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
             today: date | None = None, known_gaps_path: Path | str | None = None,
-            gate: Callable[[], None] | None = None) -> RebuildSummary:
-    """`gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
-    live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
+            gate: Callable[[], None] | None = None, staged: bool = False, verdict: Verdict | None = None) -> RebuildSummary:
+    """`staged` commits after every Step and every Raw archive unit (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
+    the default is one transaction for the whole build (`--in-place`), which rolls back as one; `--in-place --staged` is `staged` against the database itself. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
+    live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file.
+
+    `verdict` (resume.py) is the decision made before the next database was touched (switchover.build_and_switch): a resume continues the Steps that
+    are committed there, with the pinned inputs it holds; fresh builds from the start with the verdict's pins. Without one (a direct call, plain `--in-place`)
+    the build is fresh, pinned now, and this function prints the verdict line itself: it is always the first line of a run. Every read of the Raw
+    archive goes through a view pinned to the verdict's units, so a unit that lands during the build waits for the next one."""
+    from .build_steps import STEPS, BuildContext, run_steps  # here, not at the top: build_steps imports this module's helpers
+
     summary = RebuildSummary()
-    number = 0
-    today = today or datetime.now(timezone.utc).date()
-    bulk_rows: dict[tuple[str, tuple[int, int]], int] = {}  # (kind, quarter) -> data rows of the largest loaded bulk unit: the possibly-incomplete rule's count
-    overrides = Overrides.load(overrides_path or DEFAULT_OVERRIDES)
-    person_overrides = PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES)  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
+    if verdict is None:
+        pins = compute_pins(archive, today or datetime.now(timezone.utc).date(),
+                            pin_extra(overrides_path, placement_dir, known_gaps_path))
+        verdict = decide(pins, None, STEPS, staged=staged, direct=True)
+        if progress:
+            progress.note(verdict.line)
+    today = verdict.pins.today
+    pinned = archive.pinned(verdict.pins.units, set(verdict.pins.quarantined))  # the quarantine listing of the pins too: a unit requeued since the pin is still flagged, as in an uninterrupted build
+    summary.pinned_view = pinned
+    if progress and staged:
+        progress.mark_staged()
+        progress.mark_database(conninfo_to_dict(db_url).get("dbname", ""))  # the name only: the URL carries the password
 
     def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
         return progress.step(name) if progress else nullcontext()
 
     try:
-        with psycopg.connect(db_url) as conn, conn.cursor() as cur:
-            with step("schema"):
-                cur.execute(CORE_SQL.read_text(encoding="utf-8"))
-                for source in SOURCES:  # each Source's own schema (sql/<schema>_schema.sql), in registry order
-                    cur.execute((SQL_DIR / f"{source.schema}_schema.sql").read_text(encoding="utf-8"))
-                store_sources(cur)
-                cur.execute(WITHHELD_SQL.read_text(encoding="utf-8"))  # after `seap`: its rows hang off seap.record
-                cur.execute(AMEPIP_SQL.read_text(encoding="utf-8"))  # a Reference source's own tables (#183): not in the registry
-                cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
-                cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
-                cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
-            with step("anaf-identities"):
-                anaf_names = load_anaf(cur, archive, summary)
-                analyze(cur, "core.anaf_company")
-            with step("onrc"):
-                summary.onrc = build_onrc(cur, archive, placement_dir, person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
-                names_cur = conn.cursor()
-                resolver = Resolver(OnrcNames(names_cur, anaf_names), overrides)
-            with step("estimates"):
-                estimates = read_estimates(archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
-                summary.estimates = len(estimates)
-            for o in iter_units(archive, summary, progress):
-                if o.status == "loaded" and o.unit.stream == "bulk":
-                    cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
-                    bulk_rows[cell] = max(bulk_rows.get(cell, 0), o.rows)
-                for name, rows in o.files:
-                    number += 1
-                    crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
-                    cur.execute(
-                        "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream, load_notes) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
-                         sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
-                         None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream,
-                         [aside.note()] if (aside := o.set_aside.get(name)) else []),
-                    )
-                    load_records(cur, number, rows, resolver, estimates)
-                    summary.files_loaded += 1
-                if progress:
-                    progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
-                                       sum(len(rows) for _, rows in o.files), o.status, o.reason)
-            with step("crawl-status"):
-                analyze(cur, "seap.source_file", "seap.record", "seap.search")  # the unit loop filled them; every step from here on reads them
-                # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
-                # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
-                cur.execute(
-                    """UPDATE seap.record r SET crawl_status = CASE WHEN EXISTS (
-                           SELECT 1 FROM seap.source_file f WHERE f.stream = 'bulk' AND f.kind = r.kind AND f.unit = r.quarter)
-                       OR (SELECT f.stream FROM seap.source_file f WHERE f.id = r.source_file_id) = 'backfill'
-                       THEN 'CRAWL_ONLY' ELSE 'PROVISIONAL' END WHERE r.via = 'CRAWL'""")
-                for kind, bulk_kind in CRAWLED_KINDS.items():  # per kind: the bulk covers its quarters, the crawl the days after them with no hole
-                    through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
-                    if through:
-                        cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
-                analyze(cur, "seap.crawl_state", "seap.record")  # the UPDATE above rewrote crawl_status: crawl-badges filters on it
-            with step("crawl-badges"):
-                # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
-                cur.execute(
-                    """UPDATE seap.search s SET badges = s.badges || CASE r.crawl_status WHEN 'PROVISIONAL' THEN 'CRAWLED_PROVISIONAL' ELSE 'CRAWL_ONLY' END
-                         FROM seap.record r WHERE r.code = s.record_code AND r.crawl_status IS NOT NULL""")
-            with step("frameworks"):
-                build_frameworks(cur)
-                cur.execute("SELECT count(DISTINCT notice_code) FROM seap.record WHERE load_notes @> ARRAY['estimate:not_fetched']")
-                summary.estimates_missing = cur.fetchone()[0]
-            with step("entities"):
-                build_entities(cur, overrides, summary)
-                names_cur.close()  # the resolver's cursor: the units are loaded
-            with step("placement"):
-                summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
-                analyze(cur, "core.county", "core.uat", "core.placement")
-            with step("mf"):
-                summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
-                analyze(cur, "core.mf_principal", "core.mf_snapshot", "core.mf_entity")
-            with step("amepip"):
-                summary.amepip = build_amepip(cur, archive)  # #183: AMEPIP's public enterprises, flagged by CUI on the entities
-                analyze(cur, "amepip.snapshot", "amepip.enterprise")
-            with step("aep"):
-                summary.aep = build_aep(cur, archive, placement_dir)  # #180: Mandates, Leadership gaps, subordinate bodies, Party per Record (after placement and the MF list)
-            with step("financials"):
-                summary.financials = build_financials(cur, archive)  # #179: MF's annual statements, one row per CUI per fiscal year; read beside the awards, never added to them
-                analyze(cur, "financials.source_file", "financials.statement")
-            with step("donations"):
-                summary.donations = build_donations(cur, archive)  # #182: BaniPartide's firm donors and lenders by CUI; context beside an entity, never a Party or a Signal
-                analyze(cur, "donations.source_file", "donations.donation")
-            with step("coverage"):
-                cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
-                summary.coverage = flagged_cells(cells)
-                gaps = {(c.kind, c.quarter) for c in cells if c.state == "KNOWN_GAP"}
-                summary.set_aside_without_gap = [path for path, _ in summary.set_aside
-                                                 if (KINDS[path.parts[-4]].label, _quarter_label(path.parts[-3])) not in gaps]
-            with step("signals"):
-                cur.execute("SELECT count(*) FROM seap.record")
-                summary.records = cur.fetchone()[0]
-                data_through = store_data_through(cur)  # SEAP and ONRC are final here; the signals and the status file take SEAP's dates
-                summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
-                analyze(cur, "seap.search")  # placement, aep and signals rewrote its county, party and has_signals columns: the rollup groups by them
-            with step("record-indexes"):
-                # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
-                cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
-                cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
-                cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
-                analyze(cur, "seap.record")
-            with step("rollup"):
-                build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
-            with step("search-index"):
-                create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
-            with step("analyze-search"):
-                analyze(cur, "seap.search")
-            with step("onrc-search"):
-                summary.onrc_search = build_onrc_search(cur)  # #176: after the SEAP search table (it reads who is a SEAP counterparty); its BM25 index is in this transaction too
-            with step("commit"):
-                conn.commit()  # what leaving the `with` would do; explicit so the commit is timed
-    except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
+        with psycopg.connect(db_url, autocommit=staged, options=f"-c maintenance_work_mem={MAINTENANCE_WORK_MEM}") as conn, conn.cursor() as cur:  # staged: autocommit, so every Step's `conn.transaction()` is a real BEGIN/COMMIT whatever ran between Steps; in place: the one outer transaction of run_steps
+            ctx = BuildContext(pinned, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
+                               overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
+                               person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES),  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
+                               pins=verdict.pins)
+            if verdict.resume and verdict.changed_files:  # resumed after a code change confined to Steps not yet run: the ledger now says which code the rest runs with
+                record_code_change(cur, verdict.pins, verdict.changed_files)
+            with staged_build() if staged else nullcontext():  # the Steps' commit boundaries are where a stop request pauses (stop.py)
+                run_steps(ctx, resume=verdict.resume)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
+            data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
+        STOP.build_finished()  # the load is complete: a stop request that came after the last boundary is noted, a leftover stop file removed (stop.py)
+    except BuildPaused as e:  # stopped on request at a committed boundary: not a failure, the next run resumes it
         if progress:
-            progress.fail(e)
+            progress.pause(e.reached, e.reason)
+        raise
+    except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the open transaction rolls back (all of it in place; the running Step when staged), the old schema stays
+        if progress:
+            if staged and isinstance(e, SystemExit):  # the second SIGTERM of a staged build: its committed Steps stay, so it is resumable, not failed
+                progress.interrupt(e)
+            else:
+                progress.fail(e)
         raise
     if gate:
         try:

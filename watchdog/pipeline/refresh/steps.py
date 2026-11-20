@@ -12,7 +12,7 @@ from ..anaf import AnafClient, AnafProgress, collect_cuis, lookup
 from ..archive import Archive
 from ..crawl import CrawlError, CrawlProgress, Crawler, plan_run, run_crawl
 from ..onrc.fetch import held_snapshots
-from .engine import DeterministicError, StepResult, TransientError
+from .engine import DeterministicError, archive_fingerprint, StepResult, TransientError
 
 RECHECK_ANAF_AFTER_DAYS = 365
 ONRC_STALE_AFTER_DAYS = 70  # ONRC publishes monthly: a newest snapshot older than this means the dataset stopped (suspicious success)
@@ -119,8 +119,17 @@ class Impl:
         warnings = [f"anaf: {summary.failed_batches} batch(es) skipped after every retry failed, {summary.failed_cuis} CUIs still pending"] if summary.failed_batches else []
         return StepResult({"cuis": summary.cuis, "found": summary.found, "notFound": summary.not_found, "batches": summary.batches}, [], warnings)
 
+    loaded_view: Archive | None = None  # the archive view the last load read (the pins of its build): the load marker describes THIS, not the archive after the load
+
+    def loaded_marker(self) -> dict:
+        """The load Step's marker: the fingerprint of what the load covered. A resumed build reads the units it pinned, which may be fewer than the archive now
+        holds (units fetched since wait for the next build): the marker must differ from the archive's fingerprint then, so the next refresh loads them."""
+        return archive_fingerprint(self.loaded_view or self.archive)
+
     def load(self) -> StepResult:
+        self.loaded_view = None
         summary = self.load_fn()
+        self.loaded_view = getattr(summary, "pinned_view", None)
         warnings = [f"quarantined (not loaded, shown as not yet loaded): {p}" for p in summary.quarantined]
         warnings += [line for line in summary.coverage if "possibly incomplete" in line]
         warnings += [f"set aside (a file that switches kind partway; its tail is not loaded and its cell has no known gap): {p}" for p in summary.set_aside_without_gap]

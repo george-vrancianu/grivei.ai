@@ -17,7 +17,7 @@ from test_bulk_loader_db import READ_BY_LATER_STEPS, db, server, tables_without_
 FIXTURES = Path(__file__).parent / "fixtures"
 # which fixture archives make which tables non-empty (an empty table is not checked)
 WORLDS = {
-    "onrc-signals": (["archive-onrc-signals"], {"core.entity", "core.anaf_company", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "seap.record", "seap.search", "seap.signal", "seap.source_file", "seap.rollup_prefix", "onrc.snapshot", "financials.source_file", "financials.statement"}),
+    "onrc-signals": (["archive-onrc-signals"], {"core.entity", "core.anaf_company", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "seap.record", "seap.search", "seap.signal", "seap.source_file", "seap.rollup_prefix", "onrc.snapshot", "financials.source_file", "financials.statement", "build.step"}),
     "onrc-search": (["archive-onrc-search"], {"onrc.status_span", "onrc.name_span", "onrc.status_name", "seap.record"}),
     "placement-mf-aep": (["archive-placement", "archive-mf", "archive-aep"], {"core.county", "core.uat", "core.placement", "aep.subordinate", "core.mf_principal", "aep.mandate", "aep.authority", "aep.record_party"}),
     "onrc-people": (["archive-onrc-people"], {"onrc.role"}),

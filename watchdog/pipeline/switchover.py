@@ -1,16 +1,17 @@
 """Rebuild beside the live database, check it, switch over (ADR 0004, #82).
 
-The rebuild is one transaction that drops and recreates the `seap` and `core` schemas, so run against the live database it holds
+An in-place rebuild is one transaction that drops and recreates the `seap` and `core` schemas, so run against the live database it holds
 exclusive locks for hours and the API stalls. Instead the graph is built into a fresh database in the same cluster, `<db>_next`
-(a full copy of the graph beside the live one; the live database is not touched while it builds), checked, and only then swapped
+(a full copy of the graph beside the live one; the live database is not touched while it builds; each Step commits there, and the build ledger
+records it; a build that was interrupted is resumed from that ledger when its pinned inputs and the code are unchanged, resume.py), checked (a build whose ledger is not complete is refused), and only then swapped
 in by renaming: the live `<db>` becomes `<db>_prev` and `<db>_next` becomes `<db>`. The swap is two renames and a session
 termination, so the API sees a moment of refused connections and its pool reconnects to the new graph (its cache checks the load
 generation, which differs). A database is the unit because every query is schema-qualified and a database rename moves the BM25
 index with it, untouched.
 
 `<db>_prev` is the fallback: kept until the next successful switchover replaces it or `cleanup` drops it; `rollback` swaps it back
-(and back again, it is symmetric). A failed check leaves `<db>` serving and `<db>_next` in place for a look (`cleanup`, or the
-next build, drops it). A major Postgres/ParadeDB upgrade is the same idea one level up: a rebuild into a new cluster on a new
+(and back again, it is symmetric). A failed check leaves `<db>` serving and `<db>_next` in place for a look (`cleanup` drops it; the
+next build drops it too, since a complete build is never resumed). A major Postgres/ParadeDB upgrade is the same idea one level up: a rebuild into a new cluster on a new
 volume, `verify`, then repoint DATABASE_URL (watchdog/README.md).
 
 Needs a role that may create databases and terminate sessions (the compose `grivei` role is the superuser).
@@ -24,6 +25,8 @@ from typing import Callable
 import psycopg
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
+from .resume import FRESH, Held, Verdict, load_held
 
 NEXT, PREV, SWAP = "_next", "_prev", "_swap"  # `_swap` is the live graph's parking place during a rollback
 MIN_RATIO = 0.95  # the new graph may hold at most 5% fewer Records than the one it replaces (Records are only ever added: the archive is append-only)
@@ -123,6 +126,15 @@ def _graph_counts(url: str) -> dict[str, int] | None:
         return None
 
 
+def _ledger_failures(c: psycopg.Connection) -> list[str]:
+    """The build ledger of the next database must show every Step committed and the build complete (build_ledger.py)."""
+    from .build_ledger import ledger_failures  # here, not at the top: build_steps (the Step names) imports a lot, and a verb that only renames databases needs none of it
+    from .build_steps import STEPS
+
+    with c.cursor() as cur:
+        return ledger_failures(cur, [s.name for s in STEPS])
+
+
 def check_graph(url: str, against: str | None = None, min_ratio: float = MIN_RATIO) -> list[str]:
     """The checks a new graph passes before it is served; the failures (empty = all passed). `against` is the graph it would replace."""
     failures: list[str] = []
@@ -137,6 +149,7 @@ def check_graph(url: str, against: str | None = None, min_ratio: float = MIN_RAT
         if counts["entities"] == 0:
             failures.append("no entities built")
         with psycopg.connect(url, connect_timeout=10) as c:
+            failures += _ledger_failures(c)
             if c.execute("SELECT count(*) FROM seap.rollup_meta").fetchone()[0] != 1:
                 failures.append("no load generation (seap.rollup_meta): the API's cache could not tell this load from the last")
             if c.execute("SELECT 1 FROM pg_indexes WHERE schemaname = 'seap' AND indexname = 'search_bm25'").fetchone() is None:
@@ -170,21 +183,37 @@ def _say_default(line: str) -> None:
     print(line, flush=True)
 
 
-def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], object], *, say: Callable[[str], None] = _say_default,
-                     check: Callable[[str, str | None], list[str]] = check_graph) -> object:
+def build_and_switch(db_url: str, build: Callable[..., object], *, say: Callable[[str], None] = _say_default,
+                     check: Callable[[str, str | None], list[str]] = check_graph,
+                     decide: Callable[[Held | None, bool], Verdict] | None = None) -> object:
     """`build(next_url, gate)` builds the graph into a fresh `<db>_next` and calls `gate()` once it has committed (before reporting
     anything as finished); if `check(next_url, live_url)` finds nothing wrong the databases are swapped, else `SwitchoverRefused` and
-    the live database is untouched. A `build` that never calls the gate is checked after it returns. Returns what `build` returned."""
+    the live database is untouched. A `build` that never calls the gate is checked after it returns. Returns what `build` returned.
+
+    `decide(held, repair)` (resume.decide with the run's pins) chooses between resuming a leftover `<db>_next` and dropping it: `held` is what that
+    database holds (None: there is none) and `repair` whether `recover` has an interrupted swap to repair first (then the verdict is fresh). Its
+    verdict line is the first thing `say` prints; a resume keeps `<db>_next` and `build(next_url, gate, verdict)` continues it. Without `decide` the
+    leftover is always dropped and `build(next_url, gate)` builds from scratch."""
     n = names_of(db_url)
+    verdict = None
     with psycopg.connect(n.admin_url, autocommit=True) as admin:
+        if decide:
+            repair = recover(n, say, admin, dry_run=True)  # whether there is an interrupted swap to repair: the same checks as the repair itself
+            verdict = decide(load_held(n.next_url) if _exists(admin, n.next) else None, repair)
+            say(verdict.line)  # the first line of the run, before the repair or anything else is said
         recover(n, say, admin)  # before anything is dropped or built: an interrupted swap must not leave the API without a database for the hours of a build
-        if _exists(admin, n.next):
-            say(f"switchover: dropping the leftover {n.next} of an earlier build")
-            _drop(admin, n.next)
-        admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(n.next)))
+        resuming = verdict is not None and verdict.resume and _exists(admin, n.next)
+        if verdict is not None and verdict.resume and not resuming:  # the next database vanished since the decision (not reachable under the lock): there is nothing to continue
+            verdict = Verdict(FRESH, "the next database disappeared after the decision, so the build starts over", verdict.pins)
+            say(verdict.line)
+        if not resuming:
+            if _exists(admin, n.next):
+                say(f"switchover: dropping the leftover {n.next} of an earlier build")
+                _drop(admin, n.next)
+            admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(n.next)))
     with psycopg.connect(n.next_url, autocommit=True) as c:
         c.execute("CREATE EXTENSION IF NOT EXISTS pg_search")
-    say(f"switchover: building into {n.next} beside the live {n.live} (the live one keeps serving)")
+    say(f"switchover: {'resuming the build in' if resuming else 'building into'} {n.next} beside the live {n.live} (the live one keeps serving)")
     checked = []
 
     def gate() -> None:
@@ -200,7 +229,7 @@ def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], obj
         checked.append(True)
         say("switchover: checks passed")
 
-    result = build(n.next_url, gate)
+    result = build(n.next_url, gate, verdict) if decide else build(n.next_url, gate)
     gate()
     swap_in(n, say)
     return result
@@ -211,24 +240,30 @@ def _rename_plain(admin: psycopg.Connection, old: str, new: str) -> None:
     admin.execute(sql.SQL("ALTER DATABASE {} RENAME TO {}").format(sql.Identifier(old), sql.Identifier(new)))
 
 
-def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.Connection | None = None) -> bool:
+def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.Connection | None = None, dry_run: bool = False) -> bool:
     """A swap that was killed (or lost its connection) between its renames leaves no `<db>`, or a `<db>` that refuses connections, or a
     `<db>_swap` that was never renamed to `<db>_prev`: put the graph that was live back, so the API has a database again, before anything
-    else runs. A missing `<db>` is restored from `<db>_swap` (a rollback) or else `<db>_prev` (a switchover). Returns whether it repaired anything."""
+    else runs. A missing `<db>` is restored from `<db>_swap` (a rollback) or else `<db>_prev` (a switchover). Returns whether it repaired anything; with `dry_run` it changes and says nothing and returns whether it WOULD
+    (the one list of repairs, so the resume decision and the repair cannot disagree)."""
     if admin is None:
         with psycopg.connect(n.admin_url, autocommit=True) as own:
-            return recover(n, say, own)
+            return recover(n, say, own, dry_run)
     if _exists(admin, n.live):
         repaired = False
         if admin.execute("SELECT datallowconn FROM pg_database WHERE datname = %s", (n.live,)).fetchone()[0] is False:
+            if dry_run:
+                return True
             say(f"switchover: REPAIR: {n.live} refuses connections (a swap was killed after disallowing them); allowing them again")
             _allow(admin, n.live, True)
             repaired = True
         swap = n.live + SWAP
         if _exists(admin, swap):  # a rollback killed after its second rename: the graph that was live is parked as `_swap`
             if _exists(admin, n.prev):
-                say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
+                if not dry_run:
+                    say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
             else:
+                if dry_run:
+                    return True
                 say(f"switchover: REPAIR: finishing an interrupted rollback, {swap} becomes {n.prev}")
                 _rename_plain(admin, swap, n.prev)
                 _allow(admin, n.prev, True)
@@ -236,6 +271,8 @@ def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.
         return repaired
     for name in (n.live + SWAP, n.prev):
         if _exists(admin, name):
+            if dry_run:
+                return True
             say(f"switchover: REPAIR: no {n.live} (an earlier swap was interrupted); restoring the old graph from {name}")
             _rename_plain(admin, name, n.live)
             _allow(admin, n.live, True)

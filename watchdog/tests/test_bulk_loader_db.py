@@ -15,6 +15,7 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg")
 
+from graph_dump import dump_graph  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 
@@ -73,7 +74,7 @@ READ_BY_LATER_STEPS = (
     "onrc.snapshot", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.role",
     "seap.source_file", "seap.record", "seap.search", "seap.crawl_state", "seap.signal", "seap.rollup_prefix",
     "amepip.enterprise", "aep.mandate", "aep.authority", "aep.subordinate", "aep.record_party",
-    "financials.source_file", "financials.statement", "donations.donation",
+    "financials.source_file", "financials.statement", "donations.donation", "build.step",
 )
 
 
@@ -286,7 +287,7 @@ def test_a_second_rebuild_of_the_contracts_fixture_gives_the_same_graph(db, tmp_
 
 # ---- progress and kill safety of a rebuild (ticket #64, operator) --------------------------------------------------------
 
-from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline.cli import main as cli_main  # noqa: E402
 from pipeline.progress import Progress, read_status  # noqa: E402
 
@@ -303,19 +304,20 @@ def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db,
 
     rebuild(Archive(root), db, Progress(status_file, out=out))
     units = [x for x in lines if " rebuild unit " in x]
+    assert " rebuild: fresh - in-place builds run in one transaction" in lines[0]  # the first line of every run says resume or fresh, and why (#292)
     assert len(units) == 7  # six loaded files and the quarantined one
     assert re.search(r"rebuild unit 1/7 kind=contracte unit=2021Q3 files=1 rows=2 records=2 loaded in \d+\.\ds$", units[0])
     assert re.search(r"rebuild unit 3/7 kind=contracte unit=2022Q2 files=1 rows=2 records=2 loaded in", units[2])
     assert re.search(r"rebuild unit 5/7 kind=contracte unit=2023Q1 files=1 rows=0 records=0 quarantined \(headers do not match a CONTRACT file\)$", units[4])
     assert re.search(r"rebuild unit 7/7 kind=fara-anunt unit=2025Q1 files=1 rows=4 records=2 loaded", units[6])
     assert any("rebuild done units=7 loaded=6 skipped=0 quarantined=1 records=12 in" in x for x in lines)
-    unit_seen = [done for line, done in zip(lines, seen) if " rebuild step " not in line]
+    unit_seen = [done for line, done in zip(lines, seen) if " rebuild step " not in line and " rebuild: fresh - " not in line]  # the first line of the run is the verdict (#292), printed before the status file exists
     # the file moves with the run: at each line it shows the units done before it (it exists before `rebuild start`: the schema steps wrote it)
     assert unit_seen == [0, 0, 1, 2, 3, 4, 5, 6, 7]
     # every stage outside the unit loop is timed, in order, with a start line and a done line
     steps = [m.group(1, 2) for m in (re.search(r" rebuild step (\S+?)(: start| done in \d+:\d\d:\d\d)$", x) for x in lines) if m]
     names = ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf", "amepip", "aep", "financials",
-             "donations", "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "onrc-search", "commit", "vacuum", "outlines"]
+             "donations", "coverage", "record-indexes", "signals", "rollup", "search-index", "analyze-search", "onrc-search", "commit", "vacuum", "outlines"]
     assert [n for n, _ in steps] == [n for n in names for _ in (0, 1)]
     assert [k == ": start" for _, k in steps] == [True, False] * len(names)
     assert lines.index(next(x for x in lines if " rebuild done " in x)) > lines.index(next(x for x in lines if "step commit done" in x))
@@ -342,11 +344,12 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     shutil.copytree(CONTRACTS, root)
     archive, status_file = Archive(root), tmp_path / "progress.json"
     rebuild(archive, db)
-    complete = _dump_all(db)
-    assert len(complete[0]) == 12
+    rebuild(archive, db)  # the first build moved a quarantined unit: this one is on the settled archive, which the rerun below also reads
+    complete = dump_graph(db)
+    assert len(complete["seap.record"]) == 12
 
     # a second rebuild dies in the middle of its third file
-    real, calls = rebuild_module.load_records, []
+    real, calls = build_steps_module.load_records, []
 
     def dying(cur, source_file_id, rows, resolver=None, estimates=None):
         calls.append(source_file_id)
@@ -354,34 +357,27 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
             raise killed_by
         real(cur, source_file_id, rows, resolver, estimates)
 
-    monkeypatch.setattr(rebuild_module, "load_records", dying)
+    monkeypatch.setattr(build_steps_module, "load_records", dying)
     with pytest.raises(type(killed_by)):
         rebuild(archive, db, Progress(status_file, out=lambda line: None))
-    assert _dump_all(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
+    assert dump_graph(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
     status = read_status(status_file)
     assert status["state"] == "failed" and status["done"] == 2 and status["loaded"] == 2
 
-    monkeypatch.setattr(rebuild_module, "load_records", real)
+    monkeypatch.setattr(build_steps_module, "load_records", real)
     rebuild(archive, db, Progress(status_file, out=lambda line: None))  # rerun from scratch
-    assert _dump_all(db) == complete
+    assert dump_graph(db) == complete  # the whole dump, build.step included
     assert read_status(status_file)["state"] == "finished"
 
 
 def test_a_kill_before_the_first_commit_leaves_no_schema_at_all(db, tmp_path, monkeypatch):
     root = tmp_path / "archive"
     shutil.copytree(CONTRACTS, root)
-    monkeypatch.setattr(rebuild_module, "load_records", lambda *a: (_ for _ in ()).throw(SystemExit(143)))
+    monkeypatch.setattr(build_steps_module, "load_records", lambda *a: (_ for _ in ()).throw(SystemExit(143)))
     with pytest.raises(SystemExit):
         rebuild(Archive(root), db)
     with psycopg.connect(db) as c:
         assert c.execute("SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'seap'").fetchone() == (0,)
-
-
-def _dump_all(url):
-    with psycopg.connect(url) as c:
-        return (c.execute("SELECT code, kind, title, value_bani, quarter, winners, source_file_id FROM seap.record ORDER BY code").fetchall(),
-                c.execute("SELECT record_code, winner_position, share_bani FROM seap.search ORDER BY 1, 2").fetchall(),
-                c.execute("SELECT id, kind, unit, sha256 FROM seap.source_file ORDER BY id").fetchall())
 
 
 # ---- crawled Records (#77): bulk supersedes the crawl, survivors are tagged, the cursor is data-through --------------------

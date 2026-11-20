@@ -43,8 +43,24 @@ Every file a Connector fetched, kept as fetched and dated, apart from the person
 _Avoid_: cache, dump, backup
 
 **Switchover**:
-Replacing the served graph with a freshly rebuilt one: the rebuild is built into a database beside the live one, must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
+Replacing the served graph with a rebuilt one: the rebuild is built into a database beside the live one (an interrupted or paused build there is resumed when its Pinned inputs and the code are unchanged, else rebuilt from scratch), must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
 _Avoid_: migration, cutover (for a rebuild that locks the live database)
+
+**Build ledger**:
+The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work (and, inside the `onrc` Step, one row per ONRC snapshot in `build.snapshot`, committed with that snapshot's spans; the unit load likewise has one row per Raw archive unit in `build.unit`, committed with that unit's rows), and kept in the served graph as build provenance. Its state is `building`, `paused` (stopped on request at a committed boundary, resumable) or `complete`. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
+_Avoid_: build log, migration table
+
+**Pinned inputs**:
+What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version (and the hash of every code file, `build.run.code_files`), the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now); whether it may resume is the Resume gate's decision. A unit that lands in the Raw archive later waits for the next build.
+_Avoid_: snapshot, lockfile
+
+**Resume gate**:
+The decision a build makes before it touches the next database: continue the unfinished build or start over. It continues only when the Pinned inputs are unchanged and any code change is confined to Steps not yet run.
+_Avoid_: restart check
+
+**Staged build**:
+A build that commits as it goes (each Step, Raw archive unit and ONRC snapshot, with its Build ledger row), so it can be paused and resumed. A build beside the live database is always staged.
+_Avoid_: incremental build
 
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
@@ -230,7 +246,7 @@ The page listing every result of one kind (authorities, suppliers or Records) fo
 _Avoid_: search page, drill-down
 
 **Pipeline ledger**:
-The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph; unrelated to the Records tab.
+The refresh run's own record of every run and step (when, outcome, counts, warnings; the outcome is `ok`, `failed`, `interrupted`, or `paused` for a load stopped on request, which is neither a success nor a failure and is resumed by the next trigger), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph (the Build ledger is the graph's own record of its build); unrelated to the Records tab.
 _Avoid_: history, audit log
 
 **Relationships tab**:

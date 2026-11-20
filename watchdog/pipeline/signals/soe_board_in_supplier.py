@@ -38,20 +38,17 @@ def load(cur) -> Context | None:
     cur.execute("SELECT EXISTS (SELECT 1 FROM amepip.enterprise) AND EXISTS (SELECT 1 FROM onrc.role WHERE link = 'LINKED')")
     if not cur.fetchone()[0]:
         return None
-    # set-based on purpose (seap.search has no supplier index yet): the confirmed persons' CUIs, joined to the enterprise-supplier pairs that have a Record
+    # the confirmed persons' CUIs, joined to the enterprise-supplier pairs that have a Record: the probe is served by seap.search's supplier index (built before the Signals)
     cur.execute(
         """WITH held AS (
                SELECT DISTINCT r.person_id, g.cui
                  FROM onrc.role r JOIN onrc.registration g ON g.reg_no = r.reg_no
-                WHERE r.link = 'LINKED' AND r.kind = 'LEGAL' AND r.person_id IS NOT NULL AND g.cui IS NOT NULL),
-             awarded AS (
-               SELECT DISTINCT authority_key, supplier_key FROM seap.search
-                WHERE NOT suspect AND supplier_key IS NOT NULL AND authority_key IN (SELECT cui FROM amepip.enterprise))
+                WHERE r.link = 'LINKED' AND r.kind = 'LEGAL' AND r.person_id IS NOT NULL AND g.cui IS NOT NULL)
            SELECT a.cui, b.cui, count(*)::int
              FROM held a
              JOIN held b ON b.person_id = a.person_id AND b.cui <> a.cui
-             JOIN awarded w ON w.authority_key = a.cui AND w.supplier_key = b.cui
             WHERE a.cui IN (SELECT cui FROM amepip.enterprise) AND b.cui NOT IN (SELECT cui FROM amepip.enterprise)
+              AND EXISTS (SELECT 1 FROM seap.search w WHERE w.supplier_key = b.cui AND w.authority_key = a.cui AND NOT w.suspect)
             GROUP BY a.cui, b.cui""")
     return Context({(enterprise, supplier): n for enterprise, supplier, n in cur.fetchall()})
 

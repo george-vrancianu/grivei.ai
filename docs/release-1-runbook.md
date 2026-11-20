@@ -22,7 +22,7 @@ P="docker compose run --rm -T pipeline"  # the pipeline container: 2 CPUs, 2 GB,
 (it reads only `~/grivei-data/refresh.env`), so nightly runs would connect with the default password and skip the backups; a new terminal would read `./archive`. Do not set these twice in two places.
 
 Long steps run detached, with a log (`nohup docker compose run --rm -T pipeline <verb> >> ~/grivei-data/<verb>.log 2>&1 &`; `$P` below is the same command, for the short ones).
-Stop one with `docker stop` of its run container (or `pkill -f 'pipeline <verb>'` from a venv). **Memory:** WSL has crashed near 30 GB; the compose stack caps `db` at 12 GB and 8 CPUs, `api` and `web` at 2 GB,
+Stop one with `docker stop` of its run container (or `pkill -f 'pipeline <verb>'` from a venv). For a `rebuild`, `refresh` or `seed`, the first SIGTERM (and `touch <archive>/rebuild.stop`, the dependable way) only pauses the build at its next committed boundary and the same command resumes it; a paused beside build keeps a full extra copy of the graph on disk (`watchdog/README.md`, "Pause").   **Memory:** WSL has crashed near 30 GB; the compose stack caps `db` at 12 GB and 8 CPUs, `api` and `web` at 2 GB,
 `pipeline` at 2 GB. Check `free -g` before the load; do not run two heavy steps at once. **Do not run `crawl --from/--to`, `anaf-lookup`, `backfill`,
 `fetch-datagov` or `requeue` beside a `seed` or `refresh`** (they do not take the lock).
 
@@ -137,7 +137,7 @@ docker compose up -d --build api web                                            
 
 By hand instead (the same steps): the three lookups above, then `$P rebuild`. Rebuild: hours (about 860 Records/s; 20M search rows is of the order of 6+ hours, estimate), 1.5 GB for the biggest DA
 quarter in the pipeline container, 3 copies of the graph on disk during the build (live, `<db>_prev`, `<db>_next`; check `df -h` and the Docker volume's disk first), the db container busy on
-up to 8 CPUs. It is one transaction: not resumable, a kill rolls back and the live graph is untouched; rerun the same command. The seed resumes at the failed step. Progress:
+up to 8 CPUs. A kill leaves the live graph untouched (an in-place rebuild is one transaction and rolls back and is never resumed; a beside-build leaves a partial `<db>_next` the next run resumes when the inputs and the code are unchanged, else drops); rerun the same command. The seed resumes at the failed step. Progress:
 `tail -n 2 ~/grivei-data/seed.log` (one line per unit: `rebuild unit i/N ...`), `$P status`. After it: read `status` for quarantines
 (`<archive>/quarantine/**/reason.json`), fix the header alias or reader, `requeue --match TEXT`, rebuild again (`load-quarter 2023Q2` does both for one quarter).
 

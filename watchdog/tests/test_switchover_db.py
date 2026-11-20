@@ -9,10 +9,12 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg")
 
-from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
+from graph_dump import dump_graph  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
+from pipeline.resume import FRESH, Verdict  # noqa: E402
 from test_bulk_loader_db import FIXTURE, server  # noqa: E402,F401
 
 
@@ -43,7 +45,7 @@ def _databases(url: str) -> set[str]:
 
 
 def _build(archive: Archive):
-    return lambda url, gate=None: rebuild(archive, url, gate=gate)
+    return lambda url, gate=None: rebuild(archive, url, gate=gate, staged=True)
 
 
 def test_a_rebuild_switches_over_only_after_its_checks_pass_keeps_the_old_graph_and_rollback_cleanup_work(live, tmp_path):
@@ -103,12 +105,12 @@ def test_the_first_build_into_an_empty_database_switches_over_without_a_previous
 
 def test_the_api_keeps_answering_reads_while_the_shadow_graph_builds_and_across_the_switchover_but_an_in_place_rebuild_blocks_them(live, tmp_path, monkeypatch):
     rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
-    real = rebuild_module.load_records
+    real = build_steps_module.load_records
 
     def slow(*a, **k):  # every file takes a moment: the build holds its locks for seconds, like the national one for hours
         time.sleep(0.4)
         return real(*a, **k)
-    monkeypatch.setattr(rebuild_module, "load_records", slow)
+    monkeypatch.setattr(build_steps_module, "load_records", slow)
 
     reads: list[tuple[float, float, int | None]] = []  # (start, seconds taken, count or None if the connection was refused)
     stop = threading.Event()
@@ -202,7 +204,7 @@ def test_a_swap_killed_between_the_renames_is_repaired_by_the_next_run_which_nev
 
     def build(url, gate):
         seen.append(names.live in _databases(live))  # while the new graph builds, the live name must serve again
-        return rebuild(_archive(tmp_path, "full"), url, gate=gate)
+        return rebuild(_archive(tmp_path, "full"), url, gate=gate, staged=True)
 
     lines = []
     switchover.build_and_switch(live, build, say=lines.append)
@@ -231,7 +233,7 @@ def test_a_refused_graph_is_not_reported_as_finished_and_writes_no_outlines(live
     status_file, geo = tmp_path / "status.json", tmp_path / "geo"
 
     with pytest.raises(switchover.SwitchoverRefused):
-        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate), say=lambda _: None)
+        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate, staged=True), say=lambda _: None)
 
     status = read_status(status_file)
     assert status["state"] == "failed" and "SwitchoverRefused" in status["error"]  # `pipeline status` must not call the refused graph finished
@@ -293,6 +295,20 @@ def test_a_rollback_killed_before_its_last_rename_is_finished_by_the_next_run_an
     assert set(switchover.cleanup(live, lambda _: None)) == {names.prev, swap}
 
 
+def test_a_swap_left_over_beside_a_fallback_is_not_said_before_the_verdict(live, tmp_path):
+    names = switchover.names_of(live)
+    swap = names.live + switchover.SWAP
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)  # live and prev both exist
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:
+        admin.execute(f'CREATE DATABASE "{swap}"')
+    said: list[str] = []
+    archive = _archive(tmp_path, "again")
+    switchover.build_and_switch(live, lambda url, gate=None, verdict=None: rebuild(archive, url, gate=gate, staged=True), say=said.append,
+                                decide=lambda held, repair: Verdict(FRESH, "test", None))
+    assert said[0].startswith("rebuild: ")  # the dry-run decision must not print the leftover line first
+
+
 ONRC_ARCHIVE = Path(__file__).parent / "fixtures" / "archive-onrc-search"
 
 
@@ -317,3 +333,26 @@ def test_the_check_is_onrc_aware_a_missing_index_or_a_lost_register_is_not_switc
     with psycopg.connect(full, autocommit=True) as c:
         c.execute("DROP INDEX onrc.search_bm25")
     assert any("onrc.search_bm25" in f for f in switchover.check_graph(full))
+
+
+@pytest.mark.parametrize("tamper", [
+    "UPDATE build.run SET state = 'building'",
+    "DELETE FROM build.step WHERE name = 'rollup'",
+    "DROP SCHEMA build CASCADE",
+], ids=["state-not-complete", "a-step-row-missing", "no-ledger-at-all"])
+def test_a_switchover_never_swaps_in_a_next_database_whose_ledger_is_not_complete(live, tmp_path, tamper):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    before = dump_graph(live)
+
+    def build(url, gate):
+        result = rebuild(_archive(tmp_path, "full"), url, staged=True)
+        with psycopg.connect(url, autocommit=True) as c:
+            c.execute(tamper)
+        return result
+
+    lines = []
+    with pytest.raises(switchover.SwitchoverRefused):
+        switchover.build_and_switch(live, build, say=lines.append)
+    assert dump_graph(live) == before and names.next in _databases(live) and names.prev not in _databases(live)
+    assert any("CHECK FAILED" in line and ("ledger" in line or "not complete" in line) for line in lines), lines

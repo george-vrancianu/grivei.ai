@@ -8,7 +8,7 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg")
 
-from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import db, server  # noqa: E402,F401  (the throwaway ParadeDB container and a database per test)
@@ -103,7 +103,7 @@ def test_signals_are_visible_only_when_the_load_commits_and_a_failed_load_keeps_
     previous = q(built, count)
     assert previous[0][0] > 0
     seen = []
-    real = rebuild_module.build_rollup
+    real = build_steps_module.build_rollup
 
     def peek(cur):
         seen.append(cur.execute("SELECT count(*) FROM seap.signal").fetchone()[0])  # this transaction: the new load's Signals (none)
@@ -112,18 +112,18 @@ def test_signals_are_visible_only_when_the_load_commits_and_a_failed_load_keeps_
             reader.execute("SELECT count(*) FROM seap.signal")
         real(cur)
 
-    monkeypatch.setattr(rebuild_module, "build_rollup", peek)
+    monkeypatch.setattr(build_steps_module, "build_rollup", peek)
     load(built, tmp_path, "archive-roles")
     assert seen == [0]
     assert q(built, count) == [(0, 0, 0)]  # committed: the new load's Signals (none), and the search rows agree
-    monkeypatch.setattr(rebuild_module, "build_rollup", real)
+    monkeypatch.setattr(build_steps_module, "build_rollup", real)
     load(built, tmp_path)
     assert q(built, count) == previous
 
     def boom(cur):
         raise RuntimeError("the index build failed")
 
-    monkeypatch.setattr(rebuild_module, "build_rollup", boom)
+    monkeypatch.setattr(build_steps_module, "build_rollup", boom)
     with pytest.raises(RuntimeError):  # fails after the Signals were built: the previous Signals stay
         load(built, tmp_path, "archive-roles")
     assert q(built, count) == previous

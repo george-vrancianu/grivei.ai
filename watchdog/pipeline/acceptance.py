@@ -238,6 +238,8 @@ def week_report(runs: list[dict], through: date, *, days: int = 7, strict: bool 
                 problems.append(f"{d}: run #{r['id']} alerted: {r['alert']}")
             elif r["status"] == "running":
                 problems.append(f"{d}: run #{r['id']} is still running")
+            elif r["status"] == "paused":  # asked for, not a failure: the next trigger resumes the load
+                notes.append(f"{d}: run #{r['id']} paused (" + "; ".join(f"{s['name']} {s.get('note')}" for s in r["steps"] if s["status"] == "paused") + "), the next trigger resumes it")
             elif r["status"] in ("failed", "interrupted"):
                 msg = f"{d}: run #{r['id']} {r['status']} without an alert (" + "; ".join(f"{s['name']}: {s.get('error')}" for s in r["steps"] if s["status"] in ("failed", "interrupted")) + ")"
                 (problems if strict else notes).append(msg)
