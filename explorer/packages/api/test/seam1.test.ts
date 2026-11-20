@@ -4474,6 +4474,8 @@ describe.skipIf(reason !== null)("seam 1: the API survives a database restart", 
   const restartContainer = `pp37-seam1-restart-${process.pid}`;
   let scratch = "";
   let admin: pg.Pool;
+  let baseUrl = "";
+  let pool: pg.Pool;
   const cleanup = () => {
     spawnSync("docker", ["rm", "-f", "-v", restartContainer], { stdio: "ignore" });
   };
@@ -4497,15 +4499,11 @@ describe.skipIf(reason !== null)("seam 1: the API survives a database restart", 
     if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
   });
 
-  let baseUrl = "";
-
   afterAll(async () => {
     await Promise.all([pool?.end().catch(() => undefined), admin?.end().catch(() => undefined)]);
     cleanup();
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   });
-
-  let pool: pg.Pool;
 
   it("answers the app's persisted query again after the database restarts, with the same API and pool", async () => {
     pool = createPool({ connectionString: `${baseUrl}/restart_a`, max: 2 });
@@ -4516,7 +4514,7 @@ describe.skipIf(reason !== null)("seam 1: the API survives a database restart", 
     expect(before.body.errors).toBeUndefined();
     expect(validateResponse(schema, parse(mainScreen.document), before.body.data, EMPTY_FILTER)).toEqual([]);
 
-    // a request in flight when the database goes down fails cleanly: the server's INTERNAL answer, not a crash
+    // a request in flight when the database goes down fails with an error and the process lives on (a crash would be an unhandled error in this run)
     const inFlight = cancellableQuery(pool, undefined, "SELECT pg_sleep(60)");
     const failed = inFlight.then(() => null, (e: unknown) => e);
     await new Promise((r) => setTimeout(r, 500)); // let the statement start on the server

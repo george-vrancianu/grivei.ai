@@ -39,6 +39,13 @@ describe("cancellableQuery on a lost connection", () => {
     expect(released).toEqual([lost]);
   });
 
+  it("releases the client with a socket error too (its code is not a SQLSTATE)", async () => {
+    const reset = Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" });
+    const { pool, released } = poolWith(() => Promise.reject(reset));
+    await expect(cancellableQuery(pool, undefined, "SELECT 1")).rejects.toBe(reset);
+    expect(released).toEqual([reset]);
+  });
+
   it("releases the client normally after a statement error (it is still usable)", async () => {
     const failed = Object.assign(new Error("syntax error"), { code: "42601" });
     const { pool, released } = poolWith(() => Promise.reject(failed));

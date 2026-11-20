@@ -163,8 +163,9 @@ export async function cancellableQuery<R extends pg.QueryResultRow = pg.QueryRes
     return await client.query<R>(text, params);
   } catch (e) {
     if (signal?.aborted) throw new AbortedError();
-    // a lost connection (no SQLSTATE: pg's own error) must not go back to the pool: hand the error to release so the pool discards the client
-    if (e instanceof Error && !("code" in e)) broken = e;
+    // anything but a statement error (a SQLSTATE such as 42601; socket errors carry codes like ECONNRESET, pg's "Connection terminated" none) is a lost connection: hand the error to release so the pool discards the client
+    const code = e instanceof Error ? (e as { code?: unknown }).code : undefined;
+    if (e instanceof Error && !(typeof code === "string" && /^[0-9A-Z]{5}$/.test(code))) broken = e;
     throw e;
   } finally {
     finished = true;
