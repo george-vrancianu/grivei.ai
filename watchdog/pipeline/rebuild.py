@@ -34,6 +34,7 @@ from typing import Callable, Iterator
 import psycopg
 from psycopg.types.json import Jsonb
 
+from .analyze import analyze
 from .anaf import iter_companies
 from .archive import Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, SetAside, parse_file_stats
@@ -431,8 +432,10 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
     the same string as `core.anaf_company.cui`, so ANAF's name and status attach by key. ANAF's name goes through the
     comma-below fix; the raw name stays in `core.anaf_company`."""
     cur.execute(_PARTIES)
+    analyze(cur, "party")  # a temp table: autovacuum never reaches it
     cur.execute("CREATE TEMP TABLE spelling ON COMMIT DROP AS SELECT key AS entity_key, name, count(DISTINCT record_code) AS records "
                 "FROM party WHERE name IS NOT NULL AND name <> '' GROUP BY key, name")
+    analyze(cur, "spelling")
     cur.execute(_ENTITIES)  # entities first: core.alias references them
     cur.execute(_ALIASES)
     if summary.onrc is not None:  # every registration no Record names becomes an entity too (ADR 0018); an override-pinned CUI keeps the override's entity
@@ -442,6 +445,7 @@ def build_entities(cur: psycopg.Cursor, overrides: Overrides, summary: RebuildSu
         if override.display_name:
             cur.execute("UPDATE core.entity SET display_name = %s WHERE key = %s", (override.display_name, override.key))
     _fold_names(cur)
+    analyze(cur, "core.entity", "core.alias")  # placement, aep, amepip and donations join it
     cur.execute("SELECT count(*) FROM core.entity")
     summary.entities = cur.fetchone()[0]
 
@@ -501,6 +505,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
             with step("anaf-identities"):
                 anaf_names = load_anaf(cur, archive, summary)
+                analyze(cur, "core.anaf_company")
             with step("onrc"):
                 summary.onrc = build_onrc(cur, archive, placement_dir, person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
                 names_cur = conn.cursor()
@@ -529,6 +534,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                     progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                        sum(len(rows) for _, rows in o.files), o.status, o.reason)
             with step("crawl-status"):
+                analyze(cur, "seap.source_file", "seap.record", "seap.search")  # the unit loop filled them; every step from here on reads them
                 # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
                 # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
                 cur.execute(
@@ -540,6 +546,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                     through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
                     if through:
                         cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
+                analyze(cur, "seap.crawl_state")
             with step("crawl-badges"):
                 # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
                 cur.execute(
@@ -554,16 +561,21 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 names_cur.close()  # the resolver's cursor: the units are loaded
             with step("placement"):
                 summary.placement = build_placement(cur, archive, placement_dir, after_insert=build_onrc_placement)  # #67: county, UAT, village, national, from the archive and the checked-in tables
+                analyze(cur, "core.county", "core.uat", "core.placement")
             with step("mf"):
                 summary.mf = build_mf(cur, archive, placement_dir, summary.placement.observations, summary.placement.entries)  # #80: the Ministry of Finance list, the Coverage denominator
+                analyze(cur, "core.mf_principal", "core.mf_snapshot", "core.mf_entity")
             with step("amepip"):
                 summary.amepip = build_amepip(cur, archive)  # #183: AMEPIP's public enterprises, flagged by CUI on the entities
+                analyze(cur, "amepip.snapshot", "amepip.enterprise")
             with step("aep"):
                 summary.aep = build_aep(cur, archive, placement_dir)  # #180: Mandates, Leadership gaps, subordinate bodies, Party per Record (after placement and the MF list)
             with step("financials"):
                 summary.financials = build_financials(cur, archive)  # #179: MF's annual statements, one row per CUI per fiscal year; read beside the awards, never added to them
+                analyze(cur, "financials.source_file", "financials.statement")
             with step("donations"):
                 summary.donations = build_donations(cur, archive)  # #182: BaniPartide's firm donors and lenders by CUI; context beside an entity, never a Party or a Signal
+                analyze(cur, "donations.source_file", "donations.donation")
             with step("coverage"):
                 cells = build_coverage(cur, archive, today, bulk_rows, known_gaps_path)
                 summary.coverage = flagged_cells(cells)

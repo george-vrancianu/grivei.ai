@@ -52,3 +52,4 @@ def build_rollup(cur: psycopg.Cursor) -> None:
     cur.execute("INSERT INTO seap.rollup_meta (generation) VALUES (gen_random_uuid()::text)")
     cur.execute("ANALYZE seap.rollup_cube")
     cur.execute("ANALYZE seap.rollup_entity")
+    cur.execute("ANALYZE seap.rollup_prefix")

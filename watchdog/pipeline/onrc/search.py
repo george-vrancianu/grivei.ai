@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 import psycopg
 
+from ..analyze import analyze
 from ..fold import fold
 from ..sole_trader import is_sole_trader
 
@@ -56,6 +57,8 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
     summary = SearchSummary()
     cur.execute(_COUNTERPARTIES)
     cur.execute("CREATE INDEX onrc_counterparty_cui ON onrc_counterparty (cui)")
+    # the source cursor's correlated lookups plan on these: with no statistics the planner picked a scan that ran at ~20 rows/s over the national register (#287)
+    analyze(cur, "onrc_counterparty", "onrc.status_span", "onrc.name_span", "onrc.caen")
     with cur.connection.cursor(name="onrc_search_source") as source:  # streamed: the register has millions of rows; a COPY cannot run while the cursor fetches, so one batch at a time
         source.execute(_SOURCE)
         while batch := source.fetchmany(BATCH):
@@ -72,10 +75,8 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
                     copy.write_row(row)
             summary.indexed += len(rows)
     cur.execute(INDEX_SQL)
-    # the planner's statistics of every table the API reads for a page of results: without them a join over the national register can pick a scan
-    cur.execute("ANALYZE onrc.search")
-    for table in ("registration", "status_span", "name_span", "caen", "status_name", "snapshot"):
-        cur.execute(f"ANALYZE onrc.{table}")
+    # the new table the API reads for a page of results (the lookup tables were analyzed by the `onrc` step and before the cursor)
+    analyze(cur, "onrc.search")
     return summary
 
 

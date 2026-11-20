@@ -22,6 +22,7 @@ from pathlib import Path
 
 import psycopg
 
+from ..analyze import analyze
 from ..archive import Archive, Unit
 from ..placement.matching import fold
 from ..placement.tables import load_gazetteer
@@ -191,6 +192,7 @@ def build_aep(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None
     cur.executemany("INSERT INTO aep.authority (entity_key, area, how) VALUES (%s, %s, %s)", authorities)
     summary.authorities = len(authorities)
     summary.subordinates = _subordinates(cur)
+    analyze(cur, "aep.mandate", "aep.authority", "aep.subordinate")  # the next statement joins them over every Record
     cur.execute("""INSERT INTO aep.record_party (record_code, mandate_id, via_key)
                    SELECT r.code, m.id, s.authority_key
                      FROM seap.record r
@@ -204,6 +206,7 @@ def build_aep(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | None
                                              party_basis = CASE WHEN p.via_key IS NULL THEN 'DIRECT' ELSE 'SUBORDINATE' END
                      FROM aep.record_party p JOIN aep.mandate m ON m.id = p.mandate_id
                     WHERE p.record_code = s.record_code""")
+    analyze(cur, "aep.snapshot", "aep.gap", "aep.record_party")  # the signals step reads record_party
     return summary
 
 
