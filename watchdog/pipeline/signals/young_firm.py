@@ -40,7 +40,7 @@ def load(cur) -> Context | None:
     cur.execute("SELECT EXISTS (SELECT 1 FROM onrc.registration WHERE registration_date IS NOT NULL)")
     if not cur.fetchone()[0]:
         return None
-    # set-based on purpose: seap.search has no supplier index yet (the record indexes are built after the Signals), so no per-supplier probes
+    # set-based: one pass over the whole table is what this rule needs (the supplier index exists now, built before the Signals, but it is not what serves a full scan)
     cur.execute(
         """SELECT DISTINCT r.cui, r.registration_date
              FROM onrc.registration r JOIN seap.search s ON s.supplier_key = r.cui

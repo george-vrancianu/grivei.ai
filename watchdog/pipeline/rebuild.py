@@ -71,6 +71,7 @@ AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
 AEP_SQL = SQL_DIR / "aep_schema.sql"
 FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
 DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
+MAINTENANCE_WORK_MEM = "1GB"  # the build session's index builds (ParadeDB's guidance for the BM25 build: around 1 GB); the session's own, no server-wide change
 BUILD_SQL = SQL_DIR / "build_schema.sql"  # the Steps' hand-offs (pipeline/hand_offs.py)
 
 
@@ -510,6 +511,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
 
     try:
         with psycopg.connect(db_url, autocommit=staged) as conn, conn.cursor() as cur:  # staged: autocommit, so every Step's `conn.transaction()` is a real BEGIN/COMMIT whatever ran between Steps; in place: the one outer transaction of run_steps
+            cur.execute(f"SET maintenance_work_mem = '{MAINTENANCE_WORK_MEM}'")  # session-level: holds across the staged Steps' transactions and in the in-place one
             ctx = BuildContext(archive, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES))  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)

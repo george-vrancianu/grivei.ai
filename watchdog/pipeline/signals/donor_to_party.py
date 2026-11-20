@@ -55,7 +55,7 @@ def load(cur) -> Context | None:
     if not loaded:
         return None
     names = table()
-    # set-based on purpose: seap.search has no supplier index yet (the record indexes are built after the Signals), so no per-supplier probes
+    # set-based: the join runs from the donations (few) into seap.search, which the supplier index (built before the Signals) now serves
     cur.execute(
         """SELECT s.record_code, (s.award_date - d.donation_date)::int, d.kind, d.party, m.list_name, m.member_parties, rp.via_key IS NOT NULL
              FROM donations.donation d
