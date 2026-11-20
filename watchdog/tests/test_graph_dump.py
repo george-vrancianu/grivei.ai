@@ -41,6 +41,9 @@ def test_a_rebuilt_graph_dumps_every_table_and_the_same_archive_dumps_the_same_t
     rebuild(Archive(root), db)
     first = dump_graph(db)
     assert first["seap.record"] and first["seap.rollup_meta"] == [{}]  # one row; its only comparable fact is that it exists
-    assert {t.split(".")[0] for t in first} == set(GRAPH_SCHEMAS) - {"build"}
+    assert {t.split(".")[0] for t in first} == set(GRAPH_SCHEMAS)
     rebuild(Archive(root), db)
-    assert dump_graph(db) == first
+    second = dump_graph(db)
+    # build.step holds each run's own output (the first run quarantined a unit, so the second run's `quarantined` list is empty): same rows, not the same summaries
+    assert [(r["name"], r["ordinal"]) for r in second.pop("build.step")] == [(r["name"], r["ordinal"]) for r in first.pop("build.step")]
+    assert second == first

@@ -55,8 +55,13 @@ def test_declared_tables_exist_and_every_table_is_written_by_some_step():
     assert tables <= {t for s in STEPS for t in s.writes}, f"no Step writes: {sorted(tables - {t for s in STEPS for t in s.writes})}"
 
 
-def test_every_graph_schema_but_build_is_in_the_schema_files():
+def test_every_graph_schema_is_in_the_schema_files_and_build_step_is_the_hand_off_table():
     assert {t.split(".")[0] for t in _tables_in_sql()} <= set(GRAPH_SCHEMAS)
+    assert "build.step" in _tables_in_sql() and "build.step" in STEPS[0].writes
+
+
+def test_a_step_that_reads_build_step_reads_a_hand_off_written_by_an_earlier_step():
+    assert [s.name for s in STEPS if "build.step" in s.reads] == ["entities", "coverage"]
 
 
 def _files(patterns):

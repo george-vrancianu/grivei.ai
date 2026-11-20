@@ -5,14 +5,14 @@ or killed and resumed against a clean run, with `dump_graph`. Used by the DB tes
 - Every `timestamp` / `timestamptz` column is left out (found from the catalog): a wall-clock time differs between two runs of the same build.
 - `EXCLUDED_COLUMNS` names any other column that differs between two identical builds; each has its reason.
 - Rows are sorted on a stable repr, so the dump does not depend on physical order. A row is a dict column -> value, so a failed `==` shows which column differs.
-- A schema in `GRAPH_SCHEMAS` that does not exist yet (`build`, until the ledger ticket) is skipped."""
+- `build` (the Steps' hand-offs, sql/build_schema.sql) is part of the dump; a schema in `GRAPH_SCHEMAS` that does not exist is skipped (a graph built before it)."""
 import re
 from pathlib import Path
 
 import psycopg
 
 # Every schema the rebuild writes: the schema SQL files create seap, onrc, withheld, amepip, aep, financials and donations; core_schema.sql
-# creates only tables in `core`. `build` is the step ledger's schema (ticket #291); it is dumped as soon as it exists.
+# creates only tables in `core`; `build` holds the hand-offs (ticket #290) and grows into the step ledger (ticket #291).
 GRAPH_SCHEMAS = ("seap", "core", "onrc", "withheld", "amepip", "aep", "financials", "donations", "build")
 
 EXCLUDED_COLUMNS = {

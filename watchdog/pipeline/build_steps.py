@@ -5,8 +5,9 @@ order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connecti
 
 - #291 commits after every Step and writes the Step's ledger row in the same transaction: the place is `run_steps` (marked there).
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
-- Values one Step hands to a later one live on the `BuildContext` (marked "hand-off" below). Persisting them, so a resumed build can reload them,
-  is the next change; a Step reads them from the context only, so that is the one place that changes.
+- Values one Step hands to a later one are persisted: `run_steps` writes the Step's `build.step` row when it finishes (its `hand_off`, or the
+  `RebuildSummary` fields in `summary_fields`), and a consumer Step loads what it needs from the database (hand_offs.py), never from a variable of the
+  Step that produced it. The `BuildContext` fields marked "hand-off" are working state inside a Step or loaded at the start of the Step that reads them.
 
 The Steps still run in ONE transaction (the connection of the context); nothing commits until the `commit` Step.
 
@@ -29,6 +30,8 @@ from .coverage import parse_quarter as _parse_quarter
 from .crawl import KIND as CRAWL_KIND
 from .crawl.unitdir import CRAWLED_KINDS, BACKFILL_KIND, contiguous_through as crawl_through
 from .estimates import read_estimates
+from .hand_offs import (entities_hand_off, encode, load_anaf_names, load_bulk_rows, load_data_through, load_last_source_file_id, load_loaded_hashes,
+                        load_onrc_summary, load_set_aside, onrc_hand_off, units_hand_off, write_step)
 from .identity import Overrides, Resolver
 from .mf.build import build_mf
 from .onrc.build import OnrcNames, build_onrc, build_onrc_placement
@@ -40,7 +43,7 @@ from .financials.build import build_financials
 from .banipartide.build import build_donations
 from .placement.build import build_placement
 from .progress import Progress
-from .rebuild import (CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DIR, WITHHELD_SQL, AEP_SQL, AMEPIP_SQL, RebuildSummary, _quarter_label,
+from .rebuild import (BUILD_SQL, CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DIR, WITHHELD_SQL, AEP_SQL, AMEPIP_SQL, RebuildSummary, _quarter_label,
                       build_entities, build_frameworks, iter_units, load_anaf, load_records, store_data_through, store_sources)
 from .rollup import build_rollup
 from .search import create_index
@@ -64,14 +67,14 @@ class BuildContext:
     known_gaps_path: Path | str | None = None
     overrides: Overrides | None = None  # re-read from the identity file, not handed on
     person_overrides: PersonOverrides | None = None
-    # hand-offs: a Step writes it, a later Step reads it (not yet persisted)
-    anaf_names: dict[str, str] = field(default_factory=dict)  # anaf-identities -> units (the resolver)
+    # working state: loaded from the graph by the Step that needs it (hand_offs.py) or a Step's own accumulator; persisted in build.step by the producer
+    anaf_names: dict[str, str] = field(default_factory=dict)  # onrc: loaded from core.anaf_company, for the resolver the units use
     names_cur: psycopg.Cursor | None = None  # onrc -> units, entities (the resolver's own cursor, closed by entities)
     resolver: Resolver | None = None  # onrc -> units
     estimates: dict = field(default_factory=dict)  # estimates -> units (re-read from the archive, not data of the graph)
-    number: int = 0  # units: the last seap.source_file id handed out
-    bulk_rows: dict[tuple[str, tuple[int, int]], int] = field(default_factory=dict)  # units -> coverage: (kind, quarter) -> data rows of the largest bulk unit
-    data_through: dict[str, str] = field(default_factory=dict)  # signals -> the status file (SEAP's dates per Record kind)
+    number: int = 0  # units: the last seap.source_file id handed out (starts at max(seap.source_file.id))
+    bulk_rows: dict[tuple[str, tuple[int, int]], int] = field(default_factory=dict)  # units' accumulator; persisted in its build.step row, loaded by coverage
+    data_through: dict[str, str] = field(default_factory=dict)  # signals: SEAP's dates per Record kind, loaded from core.data_through
 
     def phase(self, name: str):
         """A timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress."""
@@ -86,6 +89,8 @@ class Step:
     writes: tuple[str, ...] = ()  # qualified tables the Step puts rows into (indexes and statistics are not tables: see the comments below)
     owns: tuple[str, ...] = ()  # the code only this Step uses (beside SHARED); a file two Steps use is listed under both
     progress: tuple[str, ...] | None = None  # the `rebuild step NAME` names it shows; default (name,); () for none; several: `run` opens them itself
+    summary_fields: tuple[str, ...] = ()  # the `RebuildSummary` fields the Step fills: stored in its build.step row (so a later run can print the same output)
+    hand_off: Callable[[BuildContext], dict] | None = None  # the row's other values (what is not a summary field); both together are `summary`
 
     @property
     def progress_names(self) -> tuple[str, ...]:
@@ -102,15 +107,17 @@ def _schema(c: BuildContext) -> None:
     c.cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
     c.cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
     c.cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
+    c.cur.execute(BUILD_SQL.read_text(encoding="utf-8"))  # the Steps' hand-offs: build.step, written by every Step (run_steps)
 
 
 def _anaf_identities(c: BuildContext) -> None:
-    c.anaf_names = load_anaf(c.cur, c.archive, c.summary)
+    load_anaf(c.cur, c.archive, c.summary)  # its names are read back from core.anaf_company by the Step that needs them (onrc)
     analyze(c.cur, "core.anaf_company")
 
 
 def _onrc(c: BuildContext) -> None:
     c.summary.onrc = build_onrc(c.cur, c.archive, c.placement_dir, c.person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
+    c.anaf_names = load_anaf_names(c.cur)
     c.names_cur = c.conn.cursor()
     c.resolver = Resolver(OnrcNames(c.names_cur, c.anaf_names), c.overrides)
 
@@ -122,7 +129,8 @@ def _estimates(c: BuildContext) -> None:
 
 def _units(c: BuildContext) -> None:
     """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`)."""
-    for o in iter_units(c.archive, c.summary, c.progress):
+    c.number = load_last_source_file_id(c.cur)
+    for o in iter_units(c.archive, c.summary, c.progress, load_loaded_hashes(c.cur)):
         if o.status == "loaded" and o.unit.stream == "bulk":
             cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
             c.bulk_rows[cell] = max(c.bulk_rows.get(cell, 0), o.rows)
@@ -175,6 +183,7 @@ def _frameworks(c: BuildContext) -> None:
 
 
 def _entities(c: BuildContext) -> None:
+    c.summary.onrc = load_onrc_summary(c.cur)  # from the `onrc` row: a missing row raises (hand_offs.MissingHandOff), never "no ONRC entities"
     build_entities(c.cur, c.overrides, c.summary)
     c.names_cur.close()  # the resolver's cursor: the units are loaded
 
@@ -209,17 +218,19 @@ def _donations(c: BuildContext) -> None:
 
 
 def _coverage(c: BuildContext) -> None:
-    cells = build_coverage(c.cur, c.archive, c.today, c.bulk_rows, c.known_gaps_path)
+    set_aside = load_set_aside(c.cur, c.archive.root)  # the units' hand-offs, from their build.step row
+    cells = build_coverage(c.cur, c.archive, c.today, load_bulk_rows(c.cur), c.known_gaps_path)
     c.summary.coverage = flagged_cells(cells)
     gaps = {(x.kind, x.quarter) for x in cells if x.state == "KNOWN_GAP"}
-    c.summary.set_aside_without_gap = [path for path, _ in c.summary.set_aside
+    c.summary.set_aside_without_gap = [path for path, _ in set_aside
                                        if (KINDS[path.parts[-4]].label, _quarter_label(path.parts[-3])) not in gaps]
 
 
 def _signals(c: BuildContext) -> None:
     c.cur.execute("SELECT count(*) FROM seap.record")
     c.summary.records = c.cur.fetchone()[0]
-    c.data_through = store_data_through(c.cur)  # SEAP and ONRC are final here; the signals and the status file take SEAP's dates
+    store_data_through(c.cur)  # SEAP and ONRC are final here; the signals and the status file take SEAP's dates
+    c.data_through = load_data_through(c.cur)
     c.summary.signals = build_signals(c.cur, c.data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
     analyze(c.cur, "seap.search")  # placement, aep and signals rewrote its county, party and has_signals columns: the rollup groups by them
 
@@ -255,7 +266,7 @@ def _commit(c: BuildContext) -> None:
 # Code every Step depends on: a change here is a change to every Step (the resume gate treats it as belonging to all of them).
 SHARED = (
     P + "__init__.py", P + "build_steps.py", P + "rebuild.py", P + "analyze.py", P + "archive.py", P + "counting.py", P + "fold.py",
-    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
+    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
     P + "sql/",  # the schema files: each Step's tables are created by the first Step, so a change to any is a change to all
     P + "bulk/", P + "crawl/",  # the Record parsers and the crawl unit directories: read by the schema-independent loaders of several Steps
 )
@@ -276,31 +287,33 @@ _MF = (P + "mf/", *_PLACEMENT)
 # The progress names are the ones the status file and the tests have always shown; the unit loop has none (`progress=()`).
 STEPS: tuple[Step, ...] = (
     # fresh build only: it drops and recreates every schema. The DDL creates every table; `writes` lists the table it fills.
-    Step("schema", _schema, writes=("core.source",)),
-    Step("anaf-identities", _anaf_identities, writes=("core.anaf_company",), owns=(P + "anaf.py",)),
-    Step("onrc", _onrc, owns=_ONRC,
+    Step("schema", _schema, writes=("core.source", "build.step")),  # build.step: the schema Step creates it; every Step writes its own row (run_steps)
+    Step("anaf-identities", _anaf_identities, writes=("core.anaf_company",), owns=(P + "anaf.py",), summary_fields=("anaf_found", "anaf_not_found")),
+    Step("onrc", _onrc, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
          writes=("onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override")),
-    Step("estimates", _estimates, owns=(P + "estimates.py",)),
+    Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
     Step("units", _units, progress=(),
+         hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.bulk_rows, c.summary.duplicate_files, c.summary.set_aside, c.summary.quarantined,
+                                           c.summary.incomplete, c.archive.root),
          reads=("core.anaf_company", "onrc.registration"),  # the resolver confirms a CUI by ANAF's answers, then the register's
          writes=("seap.source_file", "seap.record", "seap.search", "withheld.natural_person_name")),
     Step("crawl-status", _crawl_status, reads=("seap.source_file",), writes=("seap.record", "seap.crawl_state")),
     Step("crawl-badges", _crawl_badges, reads=("seap.record",), writes=("seap.search",)),
-    Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",)),
-    Step("entities", _entities, owns=_ONRC,
-         reads=("seap.search", "seap.record", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
-    Step("placement-mf", _placement_mf, progress=("placement", "mf"), owns=(*_PLACEMENT, *_MF, *_ONRC),
+    Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",), summary_fields=("estimates_missing",)),
+    Step("entities", _entities, owns=_ONRC, hand_off=lambda c: entities_hand_off(c.summary.entities, c.summary.onrc),
+         reads=("build.step", "seap.search", "seap.record", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
+    Step("placement-mf", _placement_mf, progress=("placement", "mf"), owns=(*_PLACEMENT, *_MF, *_ONRC), summary_fields=("placement", "mf"),
          reads=("seap.record", "core.anaf_company", "core.entity", "onrc.registration", "onrc.snapshot"),
          writes=("core.county", "core.uat", "core.placement", "seap.search", "core.mf_principal", "core.mf_snapshot", "core.mf_entity")),
-    Step("amepip", _amepip, owns=(P + "amepip/", *_MF), reads=("core.entity",), writes=("amepip.snapshot", "amepip.enterprise")),
-    Step("aep", _aep, owns=(P + "aep/", *_MF),
+    Step("amepip", _amepip, owns=(P + "amepip/", *_MF), summary_fields=("amepip",), reads=("core.entity",), writes=("amepip.snapshot", "amepip.enterprise")),
+    Step("aep", _aep, owns=(P + "aep/", *_MF), summary_fields=("aep",),
          reads=("core.county", "core.uat", "core.entity", "core.placement", "core.mf_principal", "seap.record"),
          writes=("aep.snapshot", "aep.mandate", "aep.gap", "aep.authority", "aep.record_party", "aep.subordinate", "seap.search")),
-    Step("financials", _financials, owns=(P + "financials/", *_MF), writes=("financials.source_file", "financials.statement")),
-    Step("donations", _donations, owns=(P + "banipartide/",), reads=("core.entity", "onrc.registration"), writes=("donations.source_file", "donations.donation")),
-    Step("coverage", _coverage, owns=(P + "coverage/",), reads=("seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
-    Step("signals", _signals, owns=(P + "signals/", P + "aep/", *_MF),
+    Step("financials", _financials, owns=(P + "financials/", *_MF), summary_fields=("financials",), writes=("financials.source_file", "financials.statement")),
+    Step("donations", _donations, owns=(P + "banipartide/",), summary_fields=("donations",), reads=("core.entity", "onrc.registration"), writes=("donations.source_file", "donations.donation")),
+    Step("coverage", _coverage, owns=(P + "coverage/",), summary_fields=("coverage", "set_aside_without_gap"), reads=("build.step", "seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
+    Step("signals", _signals, owns=(P + "signals/", P + "aep/", *_MF), summary_fields=("records", "signals"),
          reads=("seap.record", "seap.search", "seap.framework", "core.anaf_company", "core.entity", "onrc.registration", "onrc.caen", "onrc.status_name",
                 "onrc.status_span", "onrc.role", "aep.mandate", "aep.record_party", "donations.donation", "financials.source_file",
                 "financials.statement", "amepip.enterprise"),
@@ -311,21 +324,35 @@ STEPS: tuple[Step, ...] = (
          writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta")),
     Step("search-index", _search_index, owns=(P + "search.py",), reads=("seap.search",)),  # creates the seap.search_bm25 index
     Step("analyze-search", _analyze_search, reads=("seap.search",)),  # statistics only
-    Step("onrc-search", _onrc_search, owns=_ONRC,
+    Step("onrc-search", _onrc_search, owns=_ONRC, summary_fields=("onrc_search",),
          reads=("seap.record", "seap.search", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.snapshot"),
          writes=("onrc.search",)),
     Step("commit", _commit),
 )
 
 
+def step_summary(step: Step, ctx: BuildContext) -> dict:
+    """What the Step stores in its `build.step` row: the `RebuildSummary` fields it fills and its `hand_off` values."""
+    root = ctx.archive.root
+    out = {name: encode(getattr(ctx.summary, name), root) for name in step.summary_fields}
+    if step.hand_off:
+        out.update(step.hand_off(ctx))
+    return out
+
+
 def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS) -> None:
     """Run the Steps in order on the context's one connection. A Step with one progress name runs inside that timed phase; a Step with several
     (placement-mf) or none (units) announces them itself."""
-    for step in steps:
+    for ordinal, step in enumerate(steps):
         names = step.progress_names
+        if step.name == "commit":  # its row goes in before the commit, or it would be outside the transaction
+            write_step(ctx.cur, step.name, ordinal, {})
         with ctx.phase(names[0]) if len(names) == 1 else nullcontext():
             step.run(ctx)
-        # #291: the Step's ledger row (and its commit) go here, in the Step's own transaction.
+        if step.name != "commit":
+            write_step(ctx.cur, step.name, ordinal, step_summary(step, ctx))
+            analyze(ctx.cur, "build.step")  # the entities and coverage Steps look rows up in it
+        # #291: the Step's ledger columns (and its commit) go here, in the Step's own transaction.
 
 
 def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:

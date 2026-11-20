@@ -57,6 +57,7 @@ from .financials.build import FinancialsSummary
 from .banipartide.build import DonationsSummary
 from .placement.build import PlacementSummary
 from .progress import Progress
+from .hand_offs import load_data_through
 from .sources import SEAP, SOURCES
 from .search import value_bucket, vacuum
 
@@ -69,6 +70,7 @@ AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
 AEP_SQL = SQL_DIR / "aep_schema.sql"
 FINANCIALS_SQL = SQL_DIR / "financials_schema.sql"
 DONATIONS_SQL = SQL_DIR / "donations_schema.sql"
+BUILD_SQL = SQL_DIR / "build_schema.sql"  # the Steps' hand-offs (pipeline/hand_offs.py)
 
 
 @dataclass
@@ -298,18 +300,20 @@ class UnitOutcome:
     set_aside: dict[str, SetAside] = field(default_factory=dict)  # file name -> the tail set aside (a file that switches kind partway)
 
 
-def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None) -> Iterator[UnitOutcome]:
+def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None,
+               loaded: set[tuple[str, str]] | None = None) -> Iterator[UnitOutcome]:
     """Read the archive one unit at a time: complete units only, each file validated; a failing unit is quarantined.
 
     Oldest fetch first, so a re-uploaded file (a later fetch of the same unit) is applied after the original. A file
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
+    `loaded` is the (kind, sha256) set of files the graph already holds (hand_offs.load_loaded_hashes); it grows as units validate.
     """
     summary.incomplete = archive.incomplete(skip=("onrc", "financials"))  # ONRC and the financial statements report their own (their files are too big to hash twice)
     units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
     if progress:
         progress.start(len(units), archive.root)
-    loaded: set[tuple[str, str]] = set()  # (kind, sha256) of files already planned
+    loaded = set() if loaded is None else loaded  # (kind, sha256) of files already planned
     for index, unit in enumerate(units, start=1):
         if progress:
             progress.begin(index, len(units), unit.kind, unit.unit)
@@ -507,7 +511,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES))  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
             run_steps(ctx)  # build_steps.STEPS, in one transaction; the last Step commits
-            data_through = ctx.data_through
+            data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
         if progress:
             progress.fail(e)
