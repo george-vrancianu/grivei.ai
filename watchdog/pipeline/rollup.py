@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import psycopg
 
+from .analyze import analyze
+
 # The Total's numbers over a group of search rows, as the API's scan defines them (a Record counts once: on its first winner's row).
 _CUBE_SQL = """
 INSERT INTO seap.rollup_cube
@@ -50,6 +52,4 @@ def build_rollup(cur: psycopg.Cursor) -> None:
     cur.execute(_ENTITY_SQL.format(key="supplier_key"), {"side": "SUPPLIER"})
     cur.execute(_PREFIX_SQL)
     cur.execute("INSERT INTO seap.rollup_meta (generation) VALUES (gen_random_uuid()::text)")
-    cur.execute("ANALYZE seap.rollup_cube")
-    cur.execute("ANALYZE seap.rollup_entity")
-    cur.execute("ANALYZE seap.rollup_prefix")
+    analyze(cur, "seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix")

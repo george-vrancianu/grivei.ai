@@ -546,7 +546,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                     through = crawl_through(archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
                     if through:
                         cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
-                analyze(cur, "seap.crawl_state")
+                analyze(cur, "seap.crawl_state", "seap.record")  # the UPDATE above rewrote crawl_status: crawl-badges filters on it
             with step("crawl-badges"):
                 # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
                 cur.execute(
@@ -588,18 +588,19 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                 cur.execute(SEAP.data_through_sql)
                 data_through = dict(cur.fetchall())  # the signals and the status file are SEAP's today (ONRC's dates are read by `pipeline status` and the API)
                 summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
+                analyze(cur, "seap.search")  # placement, aep and signals rewrote its county, party and has_signals columns: the rollup groups by them
             with step("record-indexes"):
                 # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
                 cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
                 cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
                 cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
-                cur.execute("ANALYZE seap.record")
+                analyze(cur, "seap.record")
             with step("rollup"):
                 build_rollup(cur)  # the empty and chips-only states read this; it carries the load generation the API's cache checks
             with step("search-index"):
                 create_index(cur)  # the pg_search index is part of this transaction: search sees the load only once it commits
             with step("analyze-search"):
-                cur.execute("ANALYZE seap.search")
+                analyze(cur, "seap.search")
             with step("onrc-search"):
                 summary.onrc_search = build_onrc_search(cur)  # #176: after the SEAP search table (it reads who is a SEAP counterparty); its BM25 index is in this transaction too
             with step("commit"):

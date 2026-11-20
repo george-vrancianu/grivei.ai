@@ -66,14 +66,14 @@ def db(server, tmp_path):
     return f"{server}/{name}"
 
 
-# The tables a later rebuild step reads (docs: the fill -> read table of ticket #287): each is bulk-filled by one step and must carry planner statistics
+# The tables a later rebuild step reads, or the API reads right after the commit: each is bulk-filled by one step and must carry planner statistics
 # before the next step reads it. Reused by the statistics test (test_statistics_db.py) and by later rebuild tickets.
 READ_BY_LATER_STEPS = (
     "core.anaf_company", "core.entity", "core.county", "core.uat", "core.placement", "core.mf_principal",
     "onrc.snapshot", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.role",
     "seap.source_file", "seap.record", "seap.search", "seap.crawl_state", "seap.signal", "seap.rollup_prefix",
     "amepip.enterprise", "aep.mandate", "aep.authority", "aep.subordinate", "aep.record_party",
-    "financials.statement", "donations.donation",
+    "financials.source_file", "financials.statement", "donations.donation",
 )
 
 
