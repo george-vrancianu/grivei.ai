@@ -2,8 +2,8 @@
 
 `decide` is a pure function of the pinned inputs of THIS run (pins.py), what the next database holds (`Held`, read by `load_held`) and `--fresh`. It
 returns a `Verdict`: resume (keep the next database, skip its committed Steps, read the pins it holds) or fresh (drop it and rebuild, with this run's
-pins), and the reason, which is the first line of the run's log (`Verdict.line`). Later tickets extend it: #295 adds the per-Step code-ownership gate
-(a code change confined to Steps that have not run no longer forces fresh), #296 and #297 read the verdict.
+pins), and the reason, which is the first line of the run's log (`Verdict.line`). It also holds the per-Step code-ownership gate (#295: a code change
+confined to Steps that have not run no longer forces fresh); the pause/resume and switchover code (#296, #297) read the verdict.
 
 Resume only when every one of these holds: not `--fresh`; a staged build (a single-transaction build has nothing committed to resume from); the next
 database exists and holds a build ledger with pins; its build is not complete (a finished build that was never swapped in is rebuilt); the schema files are

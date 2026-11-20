@@ -1,7 +1,7 @@
 """The rebuild as an ordered list of Steps (spec #285, ticket #290).
 
 A `Step` declares its name, a run function on a shared `BuildContext`, the tables it reads and writes, and the code it owns. `STEPS` is the
-order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
+order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the rest of the build reads from here:
 
 - A staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
 - A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294; the `units` Step per Raw archive unit with its `build.unit` row, #293); its `run` then finishes the Step in the Step's transaction.
@@ -12,8 +12,7 @@ order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connecti
   `RebuildSummary` fields in `summary_fields`), and a consumer Step loads what it needs from the database (hand_offs.py), never from a variable of the
   Step that produced it. The `BuildContext` fields marked "hand-off" are working state inside a Step or loaded at the start of the Step that reads them.
 
-A staged build commits after every Step, in the Step's own transaction with its ledger row (run_steps); otherwise (--in-place) the Steps run in
-ONE transaction and nothing commits until the last Step's.
+Otherwise (plain --in-place) the Steps run in ONE transaction and nothing commits until the last Step's.
 
 Paths in `owns`, `SHARED` and `OUTSIDE_THE_BUILD` are relative to the `pipeline/` package directory (`pins.PACKAGE`; the image has no repo around it): a file, or a
 directory with a trailing `/` (everything under it)."""
@@ -99,7 +98,7 @@ class Step:
     summary_fields: tuple[str, ...] = ()  # the `RebuildSummary` fields the Step fills: stored in its build.step row (so a later run can print the same output)
     hand_off: Callable[[BuildContext], dict] | None = None  # the row's other values (what is not a summary field); both together are `summary`
     segments: Callable[[BuildContext], None] | None = None  # work that commits in pieces of its own, run before `run` and outside the Step's transaction: a staged build commits each piece (and a rerun after a kill continues from the next one); in-place the pieces are savepoints of the one transaction. `run` finishes the Step in its transaction
-    vacuum: tuple[str, ...] = ()  # qualified tables `VACUUM ANALYZE`d right after the Step commits, staged builds only (VACUUM cannot run inside the one in-place transaction)
+    vacuum: tuple[str, ...] = ()  # qualified tables `VACUUM ANALYZE`d right after the Step commits, staged builds only (beside or `--in-place --staged`) (VACUUM cannot run inside the one in-place transaction)
 
     @property
     def progress_names(self) -> tuple[str, ...]:

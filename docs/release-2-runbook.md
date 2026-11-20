@@ -43,7 +43,7 @@ There are no migration files: the DDL lives in `watchdog/pipeline/sql/*_schema.s
 | `aep` | `snapshot`, `mandate`, `gap`, `authority`, `subordinate`, `record_party` | #180 |
 | `seap.search` | columns `party` and `party_basis`, both in the BM25 index; filled at the end of the `aep` step | #181 |
 
-The rebuild's steps for them, in order, are `onrc`, `entities`, `placement`, `mf`, `amepip`, `aep`, `financials`, `donations`, `coverage`, `record-indexes`, `signals`, `rollup`, `search-index`, `analyze-search`, `onrc-search`, `commit`, `check` (`watchdog/pipeline/rebuild.py`). Per spec rule, **the user merges the schema PRs** (#175, #179, #180, #181, #182, #183): this runbook starts after they are merged into the branch that is checked out.
+The rebuild's steps for them, in order, are `onrc`, `entities`, `placement`, `mf`, `amepip`, `aep`, `financials`, `donations`, `coverage`, `record-indexes`, `signals`, `rollup`, `search-index`, `analyze-search`, `onrc-search`, `commit`, `check` (`STEPS` in `watchdog/pipeline/build_steps.py`). Per spec rule, **the user merges the schema PRs** (#175, #179, #180, #181, #182, #183): this runbook starts after they are merged into the branch that is checked out.
 
 ## Steps
 

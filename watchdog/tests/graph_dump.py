@@ -1,4 +1,4 @@
-"""The whole graph as one comparable Python value (ticket #290, spec #285): later tickets compare the graph a rebuild leaves, before and after a change,
+"""The whole graph as one comparable Python value (ticket #290, spec #285): the resume and pause tests compare the graph a rebuild leaves, before and after a change,
 or killed and resumed against a clean run, with `dump_graph`. Used by the DB tests; not a test module itself.
 
 - Tables come from the catalog (every base table of every schema in `GRAPH_SCHEMAS`), never from a hand-written table list.
