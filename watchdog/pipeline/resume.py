@@ -6,16 +6,20 @@ pins), and the reason, which is the first line of the run's log (`Verdict.line`)
 (a code change confined to Steps that have not run no longer forces fresh), #296 and #297 read the verdict.
 
 Resume only when every one of these holds: not `--fresh`; a staged build (a single-transaction build has nothing committed to resume from); the next
-database exists and holds a build ledger with pins; its build is not complete (a finished build that was never swapped in is rebuilt); the code version
-and the schema files are the ones it was built with; every pinned unit is still in the archive with the same manifest checksum (a unit this build's own
+database exists and holds a build ledger with pins; its build is not complete (a finished build that was never swapped in is rebuilt); the schema files are
+the ones it was built with; the code is the one it was built with, or every changed code file belongs only to Steps that have not run (#295: ownership comes
+from the Step declarations, `owners_of`; a SHARED file, a file no declaration claims and an outside input belong to every Step, so changing one starts fresh;
+a Step with committed work but no ledger row yet, `Held.partial`, counts as run; a file added or deleted counts as changed). Several Steps rewrite
+`seap.search` in place, so a completed Step cannot be rewound alone: a change to its code starts over. A resume after a code change continues with the new
+code, and `build.run` takes the new hashes and the changed files (build_ledger.record_code_change); every pinned unit is still in the archive with the same manifest checksum (a unit this build's own
 `units` Step quarantined is gone on purpose: not a difference); its `build.step` rows are exactly a non-empty prefix of the Steps, names and ordinals.
 Units that were added to the archive after the pin are NOT a difference: the resume ignores them and the next build pins them (the refresh's load marker then
 covers only the pinned units, so the next refresh loads the rest). `load-quarter` always passes a reason as `fresh`: its requeued units were never pinned."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 import psycopg
 
@@ -34,13 +38,15 @@ class Held:
     steps: Sequence[tuple[str, int]]
     quarantined: frozenset[str]
     problem: str | None = None
+    partial: frozenset[str] = frozenset()  # Steps with committed work of their own but no ledger row yet (onrc: `build.snapshot` rows; units: `build.unit` rows, #293): they have run, for the code gate
 
 
 @dataclass(frozen=True)
 class Verdict:
     verdict: str  # RESUME | FRESH
     reason: str
-    pins: Pins  # the pins the run uses: the held ones on a resume, this run's on a fresh build
+    pins: Pins  # the pins the run uses: the held ones on a resume (with this run's code hashes after a gated code change), this run's on a fresh build
+    changed_files: tuple[str, ...] = ()  # the code files that differ from the held build's (sorted); on a resume, build.run records them
 
     @property
     def resume(self) -> bool:
@@ -52,14 +58,25 @@ class Verdict:
         return f"rebuild: {self.verdict} - {self.reason}"
 
 
-def _fresh(reason: str, pins: Pins) -> Verdict:
-    return Verdict(FRESH, reason, pins)
+def _fresh(reason: str, pins: Pins, changed: tuple[str, ...] = ()) -> Verdict:
+    return Verdict(FRESH, reason, pins, changed)
 
 
-def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, staged: bool = True, repair: bool = False, direct: bool = False) -> Verdict:
+def _files(files: Sequence[str], limit: int = 5) -> str:
+    return ", ".join(files[:limit]) + (f" +{len(files) - limit} more" if len(files) > limit else "")
+
+
+def _changed_files(held: Mapping[str, str], now: Mapping[str, str]) -> list[str]:
+    """The code files that differ between two per-file hash maps (added, deleted or changed), sorted."""
+    return sorted(f for f in set(held) | set(now) if held.get(f) != now.get(f))
+
+
+def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, staged: bool = True, repair: bool = False, direct: bool = False,
+           owners: Callable[[str], set[str]] | None = None) -> Verdict:
     """`pins` are this run's, `held` is what the next database holds (None: there is none), `steps` are `STEPS`; `repair`: an interrupted swap is
     repaired before the build (switchover.recover), so there is nothing to continue. `fresh`: True for `--fresh`, or the reason (a verb that always
-    rebuilds from the start, e.g. load-quarter). `direct`: a staged build called without a Switchover (no next database was looked at)."""
+    rebuilds from the start, e.g. load-quarter). `direct`: a staged build called without a Switchover (no next database was looked at).
+    `owners`: a package-relative code path (or `extra:...` key) -> the names of the Steps it belongs to (default: `build_steps.owners_of` over `steps`)."""
     names = [s.name for s in steps]
     if fresh:
         return _fresh(fresh if isinstance(fresh, str) else "--fresh given", pins)
@@ -75,7 +92,8 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
         return _fresh(f"the next database has no usable build ledger ({held.problem or 'no pins'})", pins)
     if held.state == "complete":
         return _fresh("the next database holds a build that is already complete (never swapped in)", pins)
-    if held.pins.code_version != pins.code_version:
+    changed_code = _changed_files(held.pins.code_files, pins.code_files)
+    if held.pins.code_version != pins.code_version and not changed_code:
         return _fresh(f"code changed (build {held.pins.code_version[:12]}, now {pins.code_version[:12]})", pins)
     if dict(held.pins.schema_files) != dict(pins.schema_files):
         differing = sorted(n for n in set(held.pins.schema_files) | set(pins.schema_files) if held.pins.schema_files.get(n) != pins.schema_files.get(n))
@@ -88,7 +106,23 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
         listed = ", ".join(f"{n}#{i}" for n, i in held.steps) or "none"
         return _fresh(f"the committed Steps ({listed}) are not a proper prefix of the Steps", pins)
     last, nxt = held.steps[-1][0], names[len(held.steps)]
-    return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
+    if not changed_code:
+        return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
+    if owners is None:
+        from .build_steps import owners_of  # here, not at the top: build_steps imports rebuild, which imports this module
+
+        def owners(path: str) -> set[str]:
+            return owners_of(path, steps)
+    run = set(names[:len(held.steps)]) | set(held.partial)  # the Steps whose work is in the next database
+    for path in changed_code:
+        owned = owners(path)
+        if owned >= set(names):
+            return _fresh(f"code changed in a module every Step shares, so the build starts over: {_files(changed_code)}", pins, tuple(changed_code))
+        if owned & run:
+            return _fresh(f"code changed in {path}, which the Step {sorted(owned & run, key=names.index)[0]!r} already ran, so the build starts over: {_files(changed_code)}",
+                          pins, tuple(changed_code))
+    keep = replace(held.pins, code_version=pins.code_version, code_files=pins.code_files)
+    return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; code changed only in Steps not yet run: {_files(changed_code)}", keep, tuple(changed_code))
 
 
 def _changed_units(held: Held, units: Mapping[str, str | None]) -> list[str]:
@@ -116,16 +150,26 @@ def load_held(next_url: str) -> Held:
                         "AND column_name IN ('pinned_units', 'code_version', 'schema_files', 'today', 'pinned_quarantine')")
             if cur.fetchone()[0] != 5:
                 return Held(None, None, [], frozenset(), "the build ledger was written before pinned inputs")
-            cur.execute("SELECT state, pinned_units, code_version, schema_files, today, pinned_quarantine FROM build.run")
+            cur.execute("SELECT count(*) FROM information_schema.columns WHERE table_schema = 'build' AND table_name = 'run' AND column_name = 'code_files'")
+            if cur.fetchone()[0] != 1:
+                return Held(None, None, [], frozenset(), "the build ledger was written before per-file code hashes")
+            cur.execute("SELECT state, pinned_units, code_version, schema_files, today, pinned_quarantine, code_files FROM build.run")
             runs = cur.fetchall()
             if len(runs) != 1:
                 return Held(None, None, [], frozenset(), f"the build ledger has {len(runs)} runs")
-            state, units, code, schema, today, quarantine = runs[0]
+            state, units, code, schema, today, quarantine, files = runs[0]
             cur.execute("SELECT name, ordinal FROM build.step ORDER BY ordinal")
             steps = [(n, o) for n, o in cur.fetchall()]
             cur.execute("SELECT summary->'quarantined' FROM build.step WHERE name = 'units'")
             row = cur.fetchone()
             quarantined = frozenset(row[0] or []) if row else frozenset()
-            return Held(Pins(units, code, schema, today, tuple(quarantine)), state, steps, quarantined)
+            partial = set()  # Steps that committed work inside themselves (to_regclass: a table this build has not got is no work)
+            for table, step in (("build.snapshot", "onrc"), ("build.unit", "units")):
+                cur.execute("SELECT to_regclass(%s) IS NOT NULL", (table,))
+                if cur.fetchone()[0]:
+                    cur.execute(f"SELECT EXISTS (SELECT 1 FROM {table})")
+                    if cur.fetchone()[0]:
+                        partial.add(step)
+            return Held(Pins(units, code, schema, today, tuple(quarantine), files), state, steps, quarantined, partial=frozenset(partial))
     except psycopg.Error as e:
         return Held(None, None, [], frozenset(), f"the next database could not be read: {type(e).__name__}")

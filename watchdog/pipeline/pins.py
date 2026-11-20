@@ -9,11 +9,14 @@ path; no `__pycache__`): the image has no `.git`, and the package holds everythi
 the placement tables and the known gaps. An input file the operator passes from OUTSIDE the package (`--identity-overrides`, `--placement-data`,
 `--known-gaps`) is folded into the same hash by `compute_pins(extra=...)`.
 
+`code_files` is the same content as a map, file -> sha256 (package-relative posix path; `extra:<label>` or `extra:<label>/<relpath>` for an outside input):
+a resume names the files that changed since the build started and asks which Steps own them (resume.py, ticket #295). `code_version` stays the one aggregate.
+
 Not pinned: GRIVEI_PERSON_ID_SECRET (nothing derived from a secret goes into the served graph)."""
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Mapping
@@ -31,6 +34,7 @@ class Pins:
     schema_files: Mapping[str, str]  # sql/*_schema.sql file name -> sha256
     today: date  # the day that ends the Coverage grid's last quarter: a resume on another day gives the same grid
     quarantined: tuple[str, ...] = ()  # the quarantine listing at the start (paths relative to the quarantine area, sorted): Coverage flags those cells, so a requeue between a kill and the resume must not change it
+    code_files: Mapping[str, str] = field(default_factory=dict)  # package-relative posix path (or `extra:<label>[/<relpath>]`) -> sha256 of the file: what code_version aggregates
 
 
 def files_under(root: Path) -> list[Path]:
@@ -60,6 +64,22 @@ def code_version(extra: Mapping[str, Path | str | None] | None = None, package: 
     return h.hexdigest()
 
 
+def code_files(extra: Mapping[str, Path | str | None] | None = None, package: Path | None = None) -> dict[str, str]:
+    """The per-file form of `code_version`: every file under the package (relative posix path) and every file of an outside input (`extra:<label>` for a
+    file, `extra:<label>/<relpath>` for a directory) -> its sha256. `package` defaults to `PACKAGE` at call time (a test points it at a copy)."""
+    package = package or PACKAGE
+    out = {p.relative_to(package).as_posix(): sha256_of(p) for p in files_under(package)}
+    for label, path in sorted((extra or {}).items()):
+        if path is None:
+            continue
+        path = Path(path)
+        if path.is_dir():
+            out.update({f"extra:{label}/{p.relative_to(path).as_posix()}": sha256_of(p) for p in files_under(path)})
+        elif path.is_file():
+            out[f"extra:{label}"] = sha256_of(path)
+    return out
+
+
 def schema_files(sql_dir: Path = SQL_DIR) -> dict[str, str]:
     return {p.name: sha256_of(p) for p in sorted(sql_dir.glob("*_schema.sql"))}
 
@@ -83,5 +103,6 @@ def quarantine_listing(archive: Archive) -> tuple[str, ...]:
     return tuple(sorted(p.relative_to(base).as_posix() for p in archive.quarantined()))
 
 
-def compute_pins(archive: Archive, today: date, extra: Mapping[str, Path | str | None] | None = None) -> Pins:
-    return Pins(unit_checksums(archive), code_version(extra), schema_files(), today, quarantine_listing(archive))
+def compute_pins(archive: Archive, today: date, extra: Mapping[str, Path | str | None] | None = None, package: Path | None = None) -> Pins:
+    package = package or PACKAGE
+    return Pins(unit_checksums(archive), code_version(extra, package), schema_files(), today, quarantine_listing(archive), code_files(extra, package))

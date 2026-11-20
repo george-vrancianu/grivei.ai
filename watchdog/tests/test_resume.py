@@ -9,9 +9,9 @@ NAMES = [s.name for s in STEPS]
 TODAY = date(2026, 11, 20)
 
 
-def _pins(units=None, code="code-1", schema=None, today=TODAY) -> Pins:
+def _pins(units=None, code="code-1", schema=None, today=TODAY, code_files=None) -> Pins:
     return Pins(units if units is not None else {"seap/bulk/dan/2024Q1/2024-05-01": "aa", "seap/bulk/dan/2024Q2/2024-08-01": "bb"}, code,
-                schema if schema is not None else {"core_schema.sql": "c1"}, today)
+                schema if schema is not None else {"core_schema.sql": "c1"}, today, code_files=code_files or {})
 
 
 def _held(pins=None, steps=3, state="building", quarantined=(), problem=None) -> Held:
@@ -117,3 +117,74 @@ def test_a_direct_staged_call_is_fresh_with_the_one_reason_the_decision_owns():
 def test_the_pins_a_resume_reads_include_the_quarantine_listing_it_held():
     held = _held(pins=Pins(_pins().units, "code-1", {"core_schema.sql": "c1"}, TODAY, ("seap/bulk/dan/2025Q1/2026-01-01",)))
     assert _decide(held).pins.quarantined == ("seap/bulk/dan/2025Q1/2026-01-01",)
+
+
+# --- the code-ownership gate (#295): a code change confined to Steps that have not run resumes ---
+
+def _code(**files) -> dict:
+    return {"estimates.py": "e1", "onrc/search.py": "s1", "rebuild.py": "r1", "cli.py": "c1", **files}
+
+
+def _gate(changed: dict, steps=3, partial=(), held_files=None, **kw):
+    held = Held(_pins(code_files=held_files or _code()), "building", [(n, i) for i, n in enumerate(NAMES[:steps])], frozenset(), partial=frozenset(partial))
+    return _decide(held, _pins(code="code-2", code_files=_code(**changed)), **kw)
+
+
+def test_a_change_confined_to_a_step_that_has_not_run_resumes_with_the_new_code_and_names_the_file():
+    v = _gate({"onrc/search.py": "s2"}, steps=NAMES.index("onrc-search"))
+    assert v.verdict == RESUME and "onrc/search.py" in v.reason and "not yet run" in v.reason and "onrc/search.py" in v.line
+    assert v.changed_files == ("onrc/search.py",)
+    assert v.pins.code_version == "code-2" and v.pins.code_files["onrc/search.py"] == "s2" and v.pins.units == _pins().units  # the code the rest runs with; the other pins are the held ones
+
+
+def test_a_change_to_the_code_of_a_completed_step_starts_fresh():
+    v = _gate({"estimates.py": "e2"}, steps=NAMES.index("estimates") + 1)
+    assert v.verdict == FRESH and "estimates.py" in v.reason and "'estimates'" in v.reason and v.changed_files == ("estimates.py",)
+
+
+def test_a_change_to_a_shared_module_starts_fresh_even_before_any_step_that_uses_it_ran():
+    v = _gate({"rebuild.py": "r2"}, steps=1)
+    assert v.verdict == FRESH and "rebuild.py" in v.reason and "shares" in v.reason
+
+
+def test_a_file_no_declaration_claims_and_an_outside_input_are_shared_so_they_start_fresh():
+    assert _gate({"brand_new.py": "x"}).verdict == FRESH
+    assert _gate({"extra:placement-data/a.csv": "x"}).verdict == FRESH
+
+
+def test_a_file_outside_the_build_does_not_block_a_resume():
+    assert _gate({"cli.py": "c2"}).verdict == RESUME
+
+
+def test_a_file_added_or_deleted_counts_as_changed():
+    held_without = {k: v for k, v in _code().items() if k != "onrc/search.py"}
+    assert _gate({}, steps=NAMES.index("onrc-search"), held_files=held_without).changed_files == ("onrc/search.py",)
+    assert _gate({"onrc/search.py": "s1", "estimates.py": "e1"}, steps=NAMES.index("onrc-search"), held_files={**_code(), "estimates.py": "e1", "gone.py": "g"}).verdict == FRESH  # gone.py: unclaimed, so shared
+
+
+def test_a_step_with_committed_work_but_no_ledger_row_counts_as_run():
+    steps = NAMES.index("onrc")  # onrc is next: its snapshots may be committed already
+    assert _gate({"onrc/build.py": "b2"}, steps=steps).verdict == RESUME
+    v = _gate({"onrc/build.py": "b2"}, steps=steps, partial={"onrc"})
+    assert v.verdict == FRESH and "'onrc'" in v.reason
+
+
+def test_the_other_fresh_conditions_still_win_over_the_gate():
+    held = Held(_pins(code_files=_code()), "building", [("schema", 0), ("units", 5)], frozenset())
+    v = _decide(held, _pins(code="code-2", code_files=_code(**{"onrc/search.py": "s2"})))
+    assert v.verdict == FRESH and "not a proper prefix" in v.reason
+
+
+def test_a_changed_version_with_no_file_difference_is_fresh_code_changed():
+    assert "code changed (build" in _decide(_held(pins=_pins(code="code-0"))).reason
+
+
+def test_the_first_line_truncates_a_long_list_of_files():
+    many = {f"onrc/f{i}.py": "x" for i in range(8)}
+    v = _gate(many, steps=NAMES.index("onrc-search"), owners=lambda path: {"onrc-search"})
+    assert v.verdict == RESUME and "+3 more" in v.line
+
+
+def test_owners_are_injected_so_a_fake_step_list_can_be_gated():
+    v = _gate({"estimates.py": "e2"}, steps=NAMES.index("estimates") + 1, owners=lambda path: {"signals"})
+    assert v.verdict == RESUME

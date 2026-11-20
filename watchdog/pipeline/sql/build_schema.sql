@@ -16,9 +16,11 @@ CREATE TABLE build.run (
     -- the pinned inputs (pipeline/pins.py): what this build reads, fixed at its start; a resume reads exactly this set (pipeline/resume.py decides whether it may)
     pinned_units  jsonb NOT NULL,  -- Raw archive fetch directory, relative to the archive root -> sha256 of its manifest.json (null: no manifest at pin time)
     code_version  text NOT NULL,   -- content hash of the pipeline package (and of any input file passed from outside it)
+    code_files    jsonb NOT NULL,  -- the same code file by file: package-relative path (or extra:<label>[/<relpath>] for an outside input) -> sha256; a resume diffs it (pipeline/resume.py)
     schema_files  jsonb NOT NULL,  -- sql/*_schema.sql file name -> sha256
     today         date NOT NULL,   -- the day that ends the Coverage grid's last quarter
-    pinned_quarantine jsonb NOT NULL  -- the archive's quarantine listing at the start (paths relative to the quarantine area, sorted): a resume reads this listing, not the one of the day it runs
+    pinned_quarantine jsonb NOT NULL,  -- the archive's quarantine listing at the start (paths relative to the quarantine area, sorted): a resume reads this listing, not the one of the day it runs
+    changed_files jsonb NOT NULL DEFAULT '[]'  -- the code files that changed at any resume of this build (sorted union); code_version and code_files then hold the code the remaining Steps run with
 );
 
 -- One row per Step of the rebuild (pipeline/build_steps.py), written in the transaction of the Step when it finishes: a row exists only for a Step that

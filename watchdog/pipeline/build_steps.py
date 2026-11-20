@@ -7,7 +7,7 @@ order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connecti
 - A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294); its `run` then finishes the Step in the Step's transaction.
 - A resumed build (`run_steps(..., resume=True)`, decided by resume.py before the Steps run) skips the committed Steps and restores what they reported
   (hand_offs.restore_summary); the Steps that remain load their hand-offs from the graph as in an uninterrupted run. No Step may therefore be run twice.
-- #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
+- #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to (resume.decide). `SHARED` files, and files no declaration claims, belong to every Step.
 - Values one Step hands to a later one are persisted: `run_steps` writes the Step's `build.step` row when it finishes (its `hand_off`, or the
   `RebuildSummary` fields in `summary_fields`), and a consumer Step loads what it needs from the database (hand_offs.py), never from a variable of the
   Step that produced it. The `BuildContext` fields marked "hand-off" are working state inside a Step or loaded at the start of the Step that reads them.
@@ -15,7 +15,8 @@ order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connecti
 A staged build commits after every Step, in the Step's own transaction with its ledger row (run_steps); otherwise (--in-place) the Steps run in
 ONE transaction and nothing commits until the last Step's.
 
-Paths in `owns`, `SHARED` and `OUTSIDE_THE_BUILD` are relative to the repo root: a file, or a directory with a trailing `/` (everything under it)."""
+Paths in `owns`, `SHARED` and `OUTSIDE_THE_BUILD` are relative to the `pipeline/` package directory (`pins.PACKAGE`; the image has no repo around it): a file, or a
+directory with a trailing `/` (everything under it)."""
 from __future__ import annotations
 
 from contextlib import nullcontext
@@ -48,7 +49,7 @@ from .aep.build import build_aep
 from .financials.build import build_financials
 from .banipartide.build import build_donations
 from .placement.build import build_placement
-from .pins import Pins, files_under
+from .pins import PACKAGE, Pins, files_under
 from .progress import Progress
 from .rebuild import (BUILD_SQL, CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DIR, WITHHELD_SQL, AEP_SQL, AMEPIP_SQL, RebuildSummary, _quarter_label,
                       build_entities, build_frameworks, iter_units, load_anaf, load_records, store_data_through, store_sources)
@@ -57,8 +58,7 @@ from .search import create_index
 from .signals import build_signals
 from .sources import SOURCES
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-P = "watchdog/pipeline/"
+P = ""  # the declarations below are package-relative (see the module doc); `P +` stays so a path reads as a package path
 
 
 @dataclass
@@ -306,12 +306,15 @@ OUTSIDE_THE_BUILD = (
     P + "__main__.py", P + "cli.py", P + "acceptance.py", P + "acceptance_cli.py", P + "backup.py", P + "bench.py", P + "bench_onrc.py",
     P + "bench_onrc_queries.json", P + "bench_queries.json", P + "datagov.py", P + "placement_cli.py", P + "seap_status.py", P + "switchover.py",
     P + "validate.py", P + "refresh/", P + "geo/",
-    P + "resume.py",  # the resume decision: made before any Step runs (#295 adds the per-Step gate here)
+    P + "resume.py",  # the resume decision: made before any Step runs
 )
 
 # Code several Steps run: listed under each of them, with what it imports (the declarations test checks the closure).
 _PLACEMENT = (P + "placement/", P + "anaf.py")
-_ONRC = (P + "onrc/", *_PLACEMENT)  # onrc/build.py reads the gazetteer from placement/
+# onrc/ file by file: onrc/search.py (the onrc-search Step's BM25 index) belongs to that Step alone, so a fix there resumes after every Step before it (#295).
+# rebuild.py, which is SHARED, imports it to call `build_onrc_search`; that only loads the module, the code runs in the onrc-search Step.
+_ONRC = (*(P + f"onrc/{name}.py" for name in ("__init__", "build", "fetch", "people", "read", "status")), *_PLACEMENT)  # onrc/build.py reads the gazetteer from placement/
+_ONRC_SEARCH = (P + "onrc/__init__.py", P + "onrc/search.py")
 _MF = (P + "mf/", *_PLACEMENT)
 
 # The progress names are the ones the status file and the tests have always shown; the unit loop has none (`progress=()`).
@@ -356,7 +359,7 @@ STEPS: tuple[Step, ...] = (
          writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta")),
     Step("search-index", _search_index, owns=(P + "search.py",), reads=("seap.search",)),  # creates the seap.search_bm25 index
     Step("analyze-search", _analyze_search, reads=("seap.search",)),  # statistics only
-    Step("onrc-search", _onrc_search, owns=_ONRC, summary_fields=("onrc_search",),
+    Step("onrc-search", _onrc_search, owns=_ONRC_SEARCH, summary_fields=("onrc_search",),
          reads=("seap.record", "seap.search", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.snapshot"),
          writes=("onrc.search",)),
     Step("commit", _commit),
@@ -428,8 +431,8 @@ def _vacuum_after(ctx: BuildContext, step: Step) -> None:
             ctx.cur.execute(f"VACUUM ANALYZE {table}")
 
 
-def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:
-    """The files a list of `owns` / `SHARED` entries names: a file, or every file under a directory entry (trailing `/`)."""
+def expand(patterns: tuple[str, ...], root: Path = PACKAGE) -> set[Path]:
+    """The files a list of `owns` / `SHARED` entries names under `root` (the package directory): a file, or every file under a directory entry (trailing `/`)."""
     files: set[Path] = set()
     for pattern in patterns:
         path = root / pattern
@@ -440,9 +443,17 @@ def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:
     return files
 
 
-def owners_of(path: str | Path, steps: tuple[Step, ...] = STEPS, root: Path = REPO_ROOT) -> set[str]:
-    """The names of the Steps a changed file (repo-relative or absolute) belongs to: every Step for a SHARED file, none for one outside the build."""
-    file = (root / path).resolve()
-    if file in {p.resolve() for p in expand(SHARED, root)}:
+def _claims(patterns: tuple[str, ...], path: str) -> bool:
+    return any(path == p or (p.endswith("/") and path.startswith(p)) for p in patterns)
+
+
+def owners_of(path: str, steps: tuple[Step, ...] = STEPS) -> set[str]:
+    """The names of the Steps a changed code file belongs to. `path` is package-relative and posix (a key of `Pins.code_files`), and is matched against the
+    declarations as text, not on disk: it works in the image (no repo around the package) and for a file that was deleted. Nothing for a file outside the
+    build; every Step for a SHARED file, for one no declaration claims, and for an outside input (`extra:...`): the conservative answer."""
+    if _claims(OUTSIDE_THE_BUILD, path):
+        return set()
+    owners = {s.name for s in steps if _claims(s.owns, path)}
+    if _claims(SHARED, path) or not owners:
         return {s.name for s in steps}
-    return {s.name for s in steps if file in {p.resolve() for p in expand(s.owns, root)}}
+    return owners

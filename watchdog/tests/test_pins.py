@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from pipeline.archive import Archive
-from pipeline.pins import code_version, compute_pins, pin_extra, schema_files, unit_checksums
+from pipeline.pins import code_files, code_version, compute_pins, pin_extra, schema_files, unit_checksums
 from pipeline.crawl.unitdir import fetches, kind_dir, last_bulk_quarter_end
 from pipeline.estimates import RESPONSE_FILE, read_estimates
 
@@ -111,3 +111,29 @@ def test_the_schema_files_are_recorded_by_name_and_compute_pins_carries_the_day(
     assert "build_schema.sql" in schema_files() and "core_schema.sql" in schema_files()
     pins = compute_pins(Archive(tmp_path), date(2026, 11, 20))
     assert pins.today == date(2026, 11, 20) and pins.units == {} and pins.schema_files == schema_files()
+
+
+def test_code_files_is_the_per_file_form_of_the_code_version(tmp_path):
+    pkg, outside = tmp_path / "pkg", tmp_path / "outside"
+    (pkg / "sql").mkdir(parents=True)
+    (pkg / "__pycache__").mkdir()
+    (pkg / "__pycache__" / "a.cpython-312.pyc").write_bytes(b"junk")
+    (pkg / "a.py").write_text("x = 1\n")
+    (pkg / "sql" / "s.sql").write_text("SELECT 1;\n")
+    (outside / "d").mkdir(parents=True)
+    (outside / "d" / "t.csv").write_text("1\n")
+    (tmp_path / "o.toml").write_text("a = 1\n")
+    extra = {"identity-overrides": tmp_path / "o.toml", "placement-data": outside, "known-gaps": None}
+    files = code_files(extra, pkg)
+    assert set(files) == {"a.py", "sql/s.sql", "extra:identity-overrides", "extra:placement-data/d/t.csv"}
+    assert files["a.py"] == hashlib.sha256(b"x = 1\n").hexdigest()
+    before = code_version(extra, pkg)
+    (pkg / "a.py").write_text("x = 2\n")
+    assert code_files(extra, pkg)["a.py"] != files["a.py"] and code_version(extra, pkg) != before  # both move together
+
+
+def test_compute_pins_carries_the_code_files_of_the_package_it_is_given(tmp_path):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
+    pins = compute_pins(Archive(tmp_path / "a"), date(2026, 11, 20), package=tmp_path / "pkg")
+    assert set(pins.code_files) == {"a.py"} and pins.code_version == code_version(package=tmp_path / "pkg")
