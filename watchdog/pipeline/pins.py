@@ -48,7 +48,9 @@ def _tree_hash(root: Path, h) -> None:
 
 
 def code_version(extra: Mapping[str, Path | str | None] | None = None, package: Path = PACKAGE) -> str:
-    """sha256 of the package's files and of every explicit outside input (`extra`: a label -> a file or a directory; None is skipped)."""
+    """sha256 of the package's files and of every explicit outside input (`extra`: a label -> a file or a directory; None is skipped). Unlike `code_files`, it
+    folds in the label of an outside input that does not exist or is an empty directory, so a path that appears or disappears gives a different version with
+    no file to name (the verdict says "code changed" without one: conservative)."""
     h = hashlib.sha256()
     _tree_hash(package, h)
     for label in sorted(extra or {}):

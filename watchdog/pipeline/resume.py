@@ -106,8 +106,19 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
         listed = ", ".join(f"{n}#{i}" for n, i in held.steps) or "none"
         return _fresh(f"the committed Steps ({listed}) are not a proper prefix of the Steps", pins)
     last, nxt = held.steps[-1][0], names[len(held.steps)]
+    # Every RESUME below must come after the code gate (a mid-loop resume of the `units` Step, #293, included): resuming after a change to a file of a
+    # Step that already ran, wholly or in part, would mix two versions of its code in one graph.
+    gated = _code_gate(pins, held, names, steps, changed_code, owners)
+    if gated:
+        return gated
+    return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
+
+
+def _code_gate(pins: Pins, held: Held, names: list[str], steps, changed_code: list[str], owners) -> Verdict | None:
+    """None when no code file changed (the caller resumes as usual); else a fresh verdict naming the file, or a resume verdict carrying the new code hashes
+    and the changed files (the remaining Steps all run with the new code, so `build.run` takes it: build_ledger.record_code_change)."""
     if not changed_code:
-        return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
+        return None
     if owners is None:
         from .build_steps import owners_of  # here, not at the top: build_steps imports rebuild, which imports this module
 
@@ -117,11 +128,12 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
     for path in changed_code:
         owned = owners(path)
         if owned >= set(names):
-            return _fresh(f"code changed in a module every Step shares, so the build starts over: {_files(changed_code)}", pins, tuple(changed_code))
+            return _fresh(f"code changed in {path}, a module every Step shares, so the build starts over: {_files(changed_code)}", pins, tuple(changed_code))
         if owned & run:
             return _fresh(f"code changed in {path}, which the Step {sorted(owned & run, key=names.index)[0]!r} already ran, so the build starts over: {_files(changed_code)}",
                           pins, tuple(changed_code))
     keep = replace(held.pins, code_version=pins.code_version, code_files=pins.code_files)
+    last, nxt = held.steps[-1][0], names[len(held.steps)]
     return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; code changed only in Steps not yet run: {_files(changed_code)}", keep, tuple(changed_code))
 
 

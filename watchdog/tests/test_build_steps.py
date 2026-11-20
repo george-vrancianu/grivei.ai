@@ -73,6 +73,7 @@ def test_every_file_under_pipeline_is_owned_by_a_step_shared_or_outside_the_buil
     claimed = _files(SHARED) | _files(OUTSIDE_THE_BUILD) | {p for s in STEPS for p in _files(s.owns)}
     assert not everything - claimed, f"owned by no Step, not SHARED, not OUTSIDE_THE_BUILD: {sorted(str(p.relative_to(PIPELINE)) for p in everything - claimed)}"
     assert not _files(SHARED) & _files(OUTSIDE_THE_BUILD)
+    assert not {p for s in STEPS for p in _files(s.owns)} & _files(OUTSIDE_THE_BUILD)  # a Step's file outside the build would let a change to it resume
 
 
 def test_every_declared_path_exists():
@@ -198,3 +199,14 @@ def test_a_step_owns_the_pipeline_files_its_body_in_build_steps_py_uses_directly
     used = _direct_imports_of_the_step_bodies()[step.name]
     claimed = lambda f: owners_of(f) >= {s.name for s in STEPS} or step.name in owners_of(f)  # noqa: E731
     assert not {f for f in used if not claimed(f)}, f"{step.name}'s body uses files it does not own: {sorted(f for f in used if not claimed(f))}"
+
+
+def test_a_step_owned_file_is_never_hidden_by_the_outside_list():
+    steps = (Step("a", lambda c: None, owns=("x.py",)), Step("b", lambda c: None))
+    import pipeline.build_steps as bs
+    outside = bs.OUTSIDE_THE_BUILD
+    try:
+        bs.OUTSIDE_THE_BUILD = (*outside, "x.py")
+        assert owners_of("x.py", steps) == {"a"}
+    finally:
+        bs.OUTSIDE_THE_BUILD = outside

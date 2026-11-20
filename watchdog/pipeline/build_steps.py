@@ -312,7 +312,8 @@ OUTSIDE_THE_BUILD = (
 # Code several Steps run: listed under each of them, with what it imports (the declarations test checks the closure).
 _PLACEMENT = (P + "placement/", P + "anaf.py")
 # onrc/ file by file: onrc/search.py (the onrc-search Step's BM25 index) belongs to that Step alone, so a fix there resumes after every Step before it (#295).
-# rebuild.py, which is SHARED, imports it to call `build_onrc_search`; that only loads the module, the code runs in the onrc-search Step.
+# rebuild.py (SHARED) imports its `SearchSummary` and the post-commit `vacuum`; `build_onrc_search` is imported by build_steps.py for the onrc-search body alone.
+# None of it runs in another Step.
 _ONRC = (*(P + f"onrc/{name}.py" for name in ("__init__", "build", "fetch", "people", "read", "status")), *_PLACEMENT)  # onrc/build.py reads the gazetteer from placement/
 _ONRC_SEARCH = (P + "onrc/__init__.py", P + "onrc/search.py")
 _MF = (P + "mf/", *_PLACEMENT)
@@ -451,9 +452,9 @@ def owners_of(path: str, steps: tuple[Step, ...] = STEPS) -> set[str]:
     """The names of the Steps a changed code file belongs to. `path` is package-relative and posix (a key of `Pins.code_files`), and is matched against the
     declarations as text, not on disk: it works in the image (no repo around the package) and for a file that was deleted. Nothing for a file outside the
     build; every Step for a SHARED file, for one no declaration claims, and for an outside input (`extra:...`): the conservative answer."""
-    if _claims(OUTSIDE_THE_BUILD, path):
-        return set()
     owners = {s.name for s in steps if _claims(s.owns, path)}
-    if _claims(SHARED, path) or not owners:
-        return {s.name for s in steps}
-    return owners
+    if owners and not _claims(SHARED, path):
+        return owners  # a Step's file wins over OUTSIDE_THE_BUILD: an overlap must never hide it (the declarations test forbids one anyway)
+    if _claims(OUTSIDE_THE_BUILD, path) and not owners:
+        return set()
+    return {s.name for s in steps}
