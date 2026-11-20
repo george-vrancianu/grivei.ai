@@ -118,6 +118,7 @@ def test_the_roles_have_one_loaded_coverage_cell_for_the_people_snapshot_and_a_d
     n = q(url, "SELECT count(*) FROM onrc.role")[0][0]
     assert q(url, "SELECT period, kind, state, records, data_through::text FROM onrc.coverage_cell WHERE kind = 'ROLE'") == [("2026-05-06", "ROLE", "LOADED", n, "2026-05-06")]
     assert q(url, ONRC.data_through_sql) == [("REGISTRATION", "2026-05-06"), ("ROLE", "2026-05-06")]
+    assert q(url, "SELECT kind, through::text FROM core.data_through WHERE source = 'ONRC' ORDER BY kind") == [("REGISTRATION", "2026-05-06"), ("ROLE", "2026-05-06")]
     assert q(url, "SELECT record_kinds FROM core.source WHERE id = 'ONRC'") == [(["REGISTRATION", "ROLE"],)]
 
 

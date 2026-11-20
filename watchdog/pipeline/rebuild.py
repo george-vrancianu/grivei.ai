@@ -147,6 +147,20 @@ def store_sources(cur: psycopg.Cursor) -> None:
             (s.id, position, s.name, s.schema, list(s.record_kinds), list(s.lenses), s.placement_rule, s.methodology_anchor, s.landing_row.status))
 
 
+def store_data_through(cur: psycopg.Cursor) -> dict[str, str]:
+    """`core.data_through`: every Source's data-through date per record kind, from its registry SQL, in the load transaction (the API reads these rows
+    instead of aggregating whole tables). Returns SEAP's dates as the signals and the status file take them."""
+    seap: dict[str, str] = {}
+    for s in SOURCES:
+        cur.execute(s.data_through_sql)
+        rows = cur.fetchall()
+        for kind, through in rows:
+            cur.execute("INSERT INTO core.data_through (source, kind, through) VALUES (%s, %s, %s)", (s.id, kind, through))
+        if s is SEAP:
+            seap = dict(rows)
+    return seap
+
+
 def _quarter_label(unit: str) -> str:
     """The archive's `2022Q2` as the Coverage grid writes it, `2022-Q2`."""
     year, quarter = _parse_quarter(unit)
@@ -585,8 +599,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             with step("signals"):
                 cur.execute("SELECT count(*) FROM seap.record")
                 summary.records = cur.fetchone()[0]
-                cur.execute(SEAP.data_through_sql)
-                data_through = dict(cur.fetchall())  # the signals and the status file are SEAP's today (ONRC's dates are read by `pipeline status` and the API)
+                data_through = store_data_through(cur)  # SEAP and ONRC are final here; the signals and the status file take SEAP's dates
                 summary.signals = build_signals(cur, data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
                 analyze(cur, "seap.search")  # placement, aep and signals rewrote its county, party and has_signals columns: the rollup groups by them
             with step("record-indexes"):

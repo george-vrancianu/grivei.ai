@@ -440,6 +440,7 @@ def test_data_through_per_record_kind_takes_the_crawl_cursor_for_the_crawled_kin
     rebuild(archive, db)
     with psycopg.connect(db) as c:
         assert dict(c.execute(DATA_THROUGH_SQL).fetchall()) == {"CONTRACT": "2026-04-02", "AWARD_NOTICE": "2026-04-02"}
+        assert c.execute("SELECT kind, through::text FROM core.data_through WHERE source = 'SEAP' ORDER BY kind").fetchall() == c.execute(DATA_THROUGH_SQL).fetchall()
 
 
 def test_the_bulk_wins_whatever_order_the_files_arrive_in_and_a_second_rebuild_is_identical(db, tmp_path):
