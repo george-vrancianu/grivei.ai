@@ -509,7 +509,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
         return progress.step(name) if progress else nullcontext()
 
     try:
-        with psycopg.connect(db_url) as conn, conn.cursor() as cur:
+        with psycopg.connect(db_url, autocommit=staged) as conn, conn.cursor() as cur:  # staged: autocommit, so every Step's `conn.transaction()` is a real BEGIN/COMMIT whatever ran between Steps; in place: the one outer transaction of run_steps
             ctx = BuildContext(archive, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES))  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)

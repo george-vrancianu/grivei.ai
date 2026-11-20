@@ -13,6 +13,7 @@ from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.build_steps import STEPS, reset_identity  # noqa: E402
+from pipeline.progress import Progress  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, db, server  # noqa: E402,F401
 from test_switchover_db import _archive, _count, _databases, live  # noqa: E402,F401
@@ -47,7 +48,7 @@ def test_a_beside_build_commits_after_each_step_and_the_ledger_shows_each_comple
     assert steps == [(name, i, True) for i, name in enumerate(NAMES)]
 
 
-def test_an_in_place_build_is_one_transaction_and_writes_the_same_ledger(db, tmp_path):
+def test_an_in_place_build_writes_the_same_ledger(db, tmp_path):
     rebuild(_archive(tmp_path, "full"), db)
     run, steps = _ledger(db)
     assert run == [("complete", False, True)] and [s[0] for s in steps] == NAMES
@@ -61,8 +62,11 @@ def test_an_interrupted_beside_build_keeps_its_earlier_steps_committed_beside_an
     real = build_steps_module.build_rollup
     monkeypatch.setattr(build_steps_module, "build_rollup", lambda cur: (_ for _ in ()).throw(killed_by))
     full = _archive(tmp_path, "full")
+    lines = []
     with pytest.raises(type(killed_by)):
-        switchover.build_and_switch(live, _staged(full), say=lambda _: None)
+        switchover.build_and_switch(live, lambda url, gate: rebuild(full, url, Progress(tmp_path / "status.json", out=lines.append), gate=gate, staged=True),
+                                    say=lambda _: None)
+    assert "the live graph is untouched" in lines[-1] and "nothing was loaded" not in lines[-1]
 
     assert dump_graph(live) == before  # the served graph is untouched and serving
     assert names.next in _databases(live)
@@ -76,29 +80,6 @@ def test_an_interrupted_beside_build_keeps_its_earlier_steps_committed_beside_an
     switchover.build_and_switch(live, _staged(full), say=lambda _: None)  # drops the partial database, rebuilds, swaps
     assert _count(live) == 13 and names.next not in _databases(live)
     assert _ledger(live)[0] == [("complete", True, True)]
-
-
-@pytest.mark.parametrize("tamper", [
-    "UPDATE build.run SET state = 'building'",
-    "DELETE FROM build.step WHERE name = 'rollup'",
-    "DROP SCHEMA build CASCADE",
-], ids=["state-not-complete", "a-step-row-missing", "no-ledger-at-all"])
-def test_a_switchover_never_swaps_in_a_next_database_whose_ledger_is_not_complete(live, tmp_path, tamper):
-    names = switchover.names_of(live)
-    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
-    before = dump_graph(live)
-
-    def build(url, gate):
-        result = rebuild(_archive(tmp_path, "full"), url, staged=True)
-        with psycopg.connect(url, autocommit=True) as c:
-            c.execute(tamper)
-        return result
-
-    lines = []
-    with pytest.raises(switchover.SwitchoverRefused):
-        switchover.build_and_switch(live, build, say=lines.append)
-    assert dump_graph(live) == before and names.next in _databases(live) and names.prev not in _databases(live)
-    assert any("CHECK FAILED" in line and ("ledger" in line or "not complete" in line) for line in lines), lines
 
 
 @pytest.mark.parametrize("fixture", [FIXTURE, ONRC_ARCHIVE], ids=["bulk", "onrc"])

@@ -26,7 +26,7 @@ The watchdog test dependencies (`pytest`, `xlwt`) are in `watchdog/requirements-
 
 ## Schema is applied at rebuild
 
-There are no migration files. The DDL is `watchdog/pipeline/sql/*_schema.sql`, applied by `pipeline rebuild` (`watchdog/pipeline/rebuild.py`), which derives the whole database from the raw archive. A schema change is an edit to those files, and the existing database picks it up at the next rebuild. The rebuild runs as an ordered list of Steps (`watchdog/pipeline/build_steps.py`); what a Step hands to a later one is stored in `build.step` (`sql/build_schema.sql`, loaders in `hand_offs.py`), not kept in memory. The explorer's API reads the result; its GraphQL schema is separate, in `explorer/packages/contract/schema/`.
+There are no migration files. The DDL is `watchdog/pipeline/sql/*_schema.sql`, applied by `pipeline rebuild` (`watchdog/pipeline/rebuild.py`), which derives the whole database from the raw archive. A schema change is an edit to those files, and the existing database picks it up at the next rebuild. The rebuild runs as an ordered list of Steps (`watchdog/pipeline/build_steps.py`); what a Step hands to a later one is stored in `build.step` (`sql/build_schema.sql`, loaders in `hand_offs.py`), not kept in memory; the build ledger (`build.run`, the Steps' times, the Switchover's ledger check) is `build_ledger.py`. The explorer's API reads the result; its GraphQL schema is separate, in `explorer/packages/contract/schema/`.
 
 ## Seam 1
 

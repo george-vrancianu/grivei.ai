@@ -364,7 +364,7 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS) -> None:
     if ctx.staged:
         _run_each(ctx, steps)
     else:
-        with ctx.conn.transaction():
+        with ctx.conn.transaction():  # the commit phase line (the `commit` Step) ends before this COMMIT: only a staged Step's commit is inside its timed phase
             _run_each(ctx, steps)
 
 

@@ -12,6 +12,7 @@ psycopg = pytest.importorskip("psycopg")
 from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
+from graph_dump import dump_graph  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, server  # noqa: E402,F401
 
@@ -317,3 +318,26 @@ def test_the_check_is_onrc_aware_a_missing_index_or_a_lost_register_is_not_switc
     with psycopg.connect(full, autocommit=True) as c:
         c.execute("DROP INDEX onrc.search_bm25")
     assert any("onrc.search_bm25" in f for f in switchover.check_graph(full))
+
+
+@pytest.mark.parametrize("tamper", [
+    "UPDATE build.run SET state = 'building'",
+    "DELETE FROM build.step WHERE name = 'rollup'",
+    "DROP SCHEMA build CASCADE",
+], ids=["state-not-complete", "a-step-row-missing", "no-ledger-at-all"])
+def test_a_switchover_never_swaps_in_a_next_database_whose_ledger_is_not_complete(live, tmp_path, tamper):
+    names = switchover.names_of(live)
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    before = dump_graph(live)
+
+    def build(url, gate):
+        result = rebuild(_archive(tmp_path, "full"), url, staged=True)
+        with psycopg.connect(url, autocommit=True) as c:
+            c.execute(tamper)
+        return result
+
+    lines = []
+    with pytest.raises(switchover.SwitchoverRefused):
+        switchover.build_and_switch(live, build, say=lines.append)
+    assert dump_graph(live) == before and names.next in _databases(live) and names.prev not in _databases(live)
+    assert any("CHECK FAILED" in line and ("ledger" in line or "not complete" in line) for line in lines), lines
