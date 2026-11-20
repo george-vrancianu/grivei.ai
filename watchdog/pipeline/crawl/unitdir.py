@@ -56,7 +56,7 @@ def fetches(archive: Archive, unit: str, kind: str = KIND) -> list[tuple[Path, d
     base = kind_dir(archive, kind) / unit
     if not base.is_dir():
         return []
-    return [(d, manifest_of(d)) for d in sorted(base.iterdir()) if d.is_dir() and archive.holds(d)]  # a pinned archive (a build) sees only what it pinned
+    return [(d, manifest_of(d) if archive.complete_at_pin(d) else None) for d in sorted(base.iterdir()) if d.is_dir() and archive.holds(d)]  # a pinned archive (a build) sees only what it pinned, and a directory that had no manifest then stays incomplete
 
 
 def complete_days(archive: Archive, kind: str = KIND) -> dict[date, datetime]:
@@ -94,7 +94,7 @@ def last_bulk_quarter_end(archive: Archive, kind: str = "contracte") -> date | N
     if base.is_dir():
         for unit in base.iterdir():
             m = re.fullmatch(r"(\d{4})Q([1-4])", unit.name)
-            if m and any(manifest_of(d) for d in unit.iterdir() if d.is_dir() and archive.holds(d)):
+            if m and any(manifest_of(d) for d in unit.iterdir() if d.is_dir() and archive.complete_at_pin(d)):
                 key = (int(m[1]), int(m[2]))
                 best = max(best, key) if best else key
     if best is None:

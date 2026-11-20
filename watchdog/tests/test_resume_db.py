@@ -2,7 +2,8 @@
 ParadeDB, and the graph it leaves. The kill-everywhere matrix is in resume_harness.py. Needs Docker (the container fixture of test_bulk_loader_db.py)."""
 import json
 import shutil
-from datetime import datetime, timezone
+import signal
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -11,18 +12,29 @@ psycopg = pytest.importorskip("psycopg")
 
 import pipeline.pins as pins_module  # noqa: E402
 from graph_dump import dump_graph  # noqa: E402
-from pipeline import switchover  # noqa: E402
+from pipeline import cli, switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.hand_offs import MissingHandOff  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from pipeline.resume import RESUME, Verdict, load_held  # noqa: E402
-from resume_harness import FIXTURES, Harness, KillPoint, make_world, step_kill_points  # noqa: E402
+from pipeline.refresh import Pinger, StepResult, run_refresh  # noqa: E402
+from pipeline.refresh.steps import Impl  # noqa: E402
+from resume_harness import FIXTURES, Harness, KillPoint, make_world, step_kill_points, vacuum_kill_points  # noqa: E402
+from test_refresh import Clock  # noqa: E402
 from test_bulk_loader_db import HEAD, _write, server  # noqa: E402,F401
 
 POINTS = {p.name: p for p in step_kill_points()}
 SMALL = lambda root: make_world(root, ("archive-bulk",))  # noqa: E731
 CONTRACTS = lambda root: make_world(root, ("archive-contracts",))  # noqa: E731
 CRAWL = lambda root: make_world(root, ("archive-crawl",))  # noqa: E731
+
+
+def quarantined_world(root):
+    """The small archive with its 2025Q1 DAN unit already in quarantine when the build starts (a world must be a module-level function: the reference is cached by it)."""
+    make_world(root, ("archive-bulk",))
+    archive = Archive(root)
+    archive.quarantine(next(u for u in archive.units("seap") if u.kind == "dan" and u.unit == "2025Q1"), "bad headers", [])
+    return root
 
 
 @pytest.fixture
@@ -144,3 +156,95 @@ def test_a_resumed_build_gives_the_status_file_its_unit_total(server, tmp_path, 
     h.run(archive, live)
     resumed = json.loads((tmp_path / "status.json").read_text())
     assert resumed["total"] == reference["total"] > 0 and resumed["state"] == "finished"
+
+
+@pytest.mark.parametrize("name", [p.name for p in vacuum_kill_points()])
+def test_killed_between_a_steps_commit_and_its_vacuum_the_resume_vacuums_again_and_leaves_the_uninterrupted_graph(harness, name):
+    point = next(p for p in vacuum_kill_points() if p.name == name)
+    rerun = harness.assert_resumes_like_reference(point, SystemExit(143))
+    assert any(f"step vacuum {name.removeprefix('before-vacuum-')}: start" in line for line in rerun.out)  # the skipped VACUUM ran on the resume
+
+
+def test_a_unit_requeued_between_the_kill_and_the_resume_is_still_flagged_as_quarantined_as_pinned(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=quarantined_world)
+    rerun = h.assert_resumes_like_reference(POINTS["in-crawl-status"], SystemExit(143), between=lambda archive, live: Archive(archive).requeue(), expect="resume")
+    with psycopg.connect(rerun.url) as c:
+        assert c.execute("SELECT count(*) FROM seap.coverage_cell WHERE kind = 'DAN' AND quarter = '2025-Q1' AND state = 'NOT_YET_LOADED'").fetchone() == (1,)
+
+
+def test_a_next_database_from_before_the_pins_is_rebuilt_fresh(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+
+    def drop_a_pin_column(archive, live):
+        with psycopg.connect(switchover.names_of(live).next_url, autocommit=True) as c:
+            c.execute("ALTER TABLE build.run DROP COLUMN pinned_quarantine")
+
+    archive, live = h.new_archive("old"), h.new_live()
+    h.run(archive, live, kill=POINTS["in-crawl-status"], killed_by=SystemExit(143))
+    drop_a_pin_column(archive, live)
+    rerun = h.run(archive, live)
+    assert rerun.first == "rebuild: fresh - the next database has no usable build ledger (the build ledger was written before pinned inputs)"
+    with psycopg.connect(live) as c:  # rebuilt whole, and complete
+        assert c.execute("SELECT state FROM build.run").fetchone() == ("complete",)
+
+
+def _stub_impl(archive, load) -> Impl:
+    impl = Impl(archive, print, None, None, None, None, load)
+    impl.crawl = impl.datagov = impl.anaf = lambda: StepResult()
+    impl.onrc = lambda limit=None: StepResult()  # the network steps are not under test here
+    return impl
+
+
+def _refresh_load(monkeypatch, h, archive, live):
+    """The load callable `pipeline refresh` would build for these options (the refresh verb parsed, not run)."""
+    seen = []
+    with monkeypatch.context() as m:
+        m.setattr(cli, "_refresh", lambda archive, args: seen.append(args) or 0)
+        cli.main(["--archive", str(archive), "refresh", *h.args(archive, live)[3:]])
+    return cli._loader(Archive(archive), seen[0])
+
+
+def test_a_resumed_load_inside_a_refresh_leaves_the_units_it_missed_due_at_the_next_refresh(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    archive, live = h.new_archive("refresh"), h.new_live()
+    impl = _stub_impl(Archive(archive), _refresh_load(monkeypatch, h, archive, live))
+    clock = Clock()
+    run = lambda: run_refresh(Archive(archive), impl, pinger=Pinger(None), now=clock.now, sleep=clock.sleep, say=lambda _: None)
+    with monkeypatch.context() as m:  # night 1: the load is killed after some of its Steps committed
+        POINTS["in-crawl-status"].arm(m, SystemExit(143))
+        with pytest.raises(SystemExit):
+            run()
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    _write(Archive(archive), "dan", "2025Q2", datetime(2026, 9, 1, 9, tzinfo=timezone.utc), HEAD + "A,1,DANNEW1,01/09/2025,added later,c,d,10,O,2\n")
+    clock.moment += timedelta(days=1)
+    night2 = run()  # resumes the build of night 1: the new unit is not in its pins
+    assert night2.status == "ok"
+    with psycopg.connect(live) as c:
+        assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DANNEW1'").fetchone() == (0,)
+    clock.moment += timedelta(days=1)
+    night3 = run()  # nothing new was fetched, and the load is still due: it did not cover the unit
+    assert "load" in [s["name"] for s in night3.run["steps"]]
+    with psycopg.connect(live) as c:
+        assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DANNEW1'").fetchone() == (1,)
+    clock.moment += timedelta(days=1)
+    assert "load" not in [s["name"] for s in run().run["steps"]]  # and now it is up to date
+
+
+def test_load_quarter_always_builds_fresh_and_prints_its_verdict_first(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    archive, live = h.new_archive("lq"), h.new_live()
+    h.run(archive, live, kill=POINTS["in-crawl-status"], killed_by=SystemExit(143))  # a resumable next database is lying around
+    a = Archive(archive)
+    _write(a, "dan", "2025Q2", datetime(2026, 9, 1, 9, tzinfo=timezone.utc), HEAD + "A,1,DANNEW1,01/09/2025,quarantined earlier,c,d,10,O,2\n")
+    a.quarantine(next(u for u in a.units("seap") if u.unit == "2025Q2"), "quarantined by an older build", [])
+    capsys.readouterr()
+    previous = signal.getsignal(signal.SIGTERM)
+    try:
+        code = cli.main(["--archive", str(archive), "load-quarter", "2025Q2", *h.args(archive, live)[3:]])
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    out = capsys.readouterr().out.splitlines()
+    assert code == 0, out
+    assert "rebuild: fresh - load-quarter requeued units" in out[0] and sum("rebuild: fresh" in line for line in out) == 1  # first, and once
+    with psycopg.connect(live) as c:
+        assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DANNEW1'").fetchone() == (1,)

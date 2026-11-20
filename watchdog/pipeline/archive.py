@@ -88,6 +88,16 @@ class Archive:
         """Whether a fetch directory is visible here: always, unless this is a pinned view."""
         return self._pin is None or directory.relative_to(self.root).as_posix() in self._pin
 
+    def add_pinned_quarantine(self, unit_dir: Path) -> None:
+        """A pinned view lists one more unit as quarantined: what an earlier run of the same build moved there (a resume restores it from the ledger)."""
+        if self._pinned_quarantine is not None:
+            self._pinned_quarantine.add(unit_dir.relative_to(self.root / QUARANTINE_DIR).as_posix())
+
+    def complete_at_pin(self, directory: Path) -> bool:
+        """Whether a fetch directory counts as complete here: always, unless this is a pinned view, where only a directory pinned WITH a manifest checksum
+        does (one that had no manifest at pin time stays incomplete for every reader, even if its writer finishes during the build)."""
+        return self._pin is None or self._pin.get(directory.relative_to(self.root).as_posix()) is not None
+
     # ---- writing ------------------------------------------------------------------------------------------
 
     def unit_dir(self, source: str, stream: str, kind: str, unit: str, fetched_at: datetime) -> Path:
@@ -220,10 +230,9 @@ class Archive:
 
     def quarantined(self) -> list[Path]:
         base = self.root / QUARANTINE_DIR
-        found = sorted(p.parent for p in base.rglob(REASON)) if base.is_dir() else []
-        if self._pinned_quarantine is None:
-            return found
-        return [p for p in found if p.relative_to(base).as_posix() in self._pinned_quarantine]
+        if self._pinned_quarantine is not None:  # a pinned view: the listing the build pinned (plus what it moved itself), whatever is on disk now: a unit requeued since is still quarantined for this build
+            return [base / rel for rel in sorted(self._pinned_quarantine)]
+        return sorted(p.parent for p in base.rglob(REASON)) if base.is_dir() else []
 
     def survey(self, keep=None) -> list[tuple[Unit | None, Path]]:
         """Every fetch directory (or those `keep(directory)` accepts) with its Unit, None when incomplete. Read-only; hashes the files of the kept ones."""

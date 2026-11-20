@@ -102,3 +102,18 @@ def test_ledger_rows_that_are_not_a_prefix_of_the_steps_are_fresh():
     assert _decide(renamed).verdict == FRESH
     empty = _held(steps=0)
     assert _decide(empty).verdict == FRESH
+
+
+def test_a_verb_that_always_starts_over_gives_its_own_reason():
+    v = _decide(_held(), fresh="load-quarter requeued units")
+    assert v.verdict == FRESH and v.line == "rebuild: fresh - load-quarter requeued units"
+
+
+def test_a_direct_staged_call_is_fresh_with_the_one_reason_the_decision_owns():
+    v = _decide(None, direct=True)
+    assert v.verdict == FRESH and "a direct call" in v.reason and v.pins == _pins()
+
+
+def test_the_pins_a_resume_reads_include_the_quarantine_listing_it_held():
+    held = _held(pins=Pins(_pins().units, "code-1", {"core_schema.sql": "c1"}, TODAY, ("seap/bulk/dan/2025Q1/2026-01-01",)))
+    assert _decide(held).pins.quarantined == ("seap/bulk/dan/2025Q1/2026-01-01",)

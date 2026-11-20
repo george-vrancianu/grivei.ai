@@ -1,7 +1,7 @@
 """The pinned inputs of a build (spec #285, ticket #292; GLOSSARY "Pinned inputs").
 
 At the start of a run the build fixes what it will read: the Raw archive units (relative path -> sha256 of the unit's `manifest.json`), the code
-version, the schema files and the day that ends the Coverage grid. `build.run` records them (build_ledger.start_run); a resume reads exactly that
+version, the schema files, the day that ends the Coverage grid and the quarantine listing. `build.run` records them (build_ledger.start_run); a resume reads exactly that
 set (resume.py decides whether it may). A unit that lands in the archive later is not in the set, so the build never sees it; the next build pins it.
 
 The code version is a content hash of the `pipeline/` package directory (every `.py`, `.sql`, `.toml`, `.csv`, `.json` under it, sorted by relative
@@ -18,7 +18,7 @@ from datetime import date
 from pathlib import Path
 from typing import Mapping
 
-from .archive import MANIFEST, Archive, sha256_of
+from .archive import MANIFEST, QUARANTINE_DIR, Archive, sha256_of
 
 PACKAGE = Path(__file__).resolve().parent
 SQL_DIR = PACKAGE / "sql"
@@ -30,14 +30,15 @@ class Pins:
     code_version: str
     schema_files: Mapping[str, str]  # sql/*_schema.sql file name -> sha256
     today: date  # the day that ends the Coverage grid's last quarter: a resume on another day gives the same grid
+    quarantined: tuple[str, ...] = ()  # the quarantine listing at the start (paths relative to the quarantine area, sorted): Coverage flags those cells, so a requeue between a kill and the resume must not change it
 
 
-def _files_under(root: Path) -> list[Path]:
+def files_under(root: Path) -> list[Path]:
     return sorted(p for p in root.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
 
 
 def _tree_hash(root: Path, h) -> None:
-    for path in _files_under(root):
+    for path in files_under(root):
         h.update(path.relative_to(root).as_posix().encode() + b"\0")
         h.update(path.read_bytes() + b"\0")
 
@@ -77,5 +78,10 @@ def pin_extra(overrides_path, placement_dir, known_gaps_path) -> dict[str, Path 
     return {"identity-overrides": overrides_path, "placement-data": placement_dir, "known-gaps": known_gaps_path}
 
 
+def quarantine_listing(archive: Archive) -> tuple[str, ...]:
+    base = archive.root / QUARANTINE_DIR
+    return tuple(sorted(p.relative_to(base).as_posix() for p in archive.quarantined()))
+
+
 def compute_pins(archive: Archive, today: date, extra: Mapping[str, Path | str | None] | None = None) -> Pins:
-    return Pins(unit_checksums(archive), code_version(extra), schema_files(), today)
+    return Pins(unit_checksums(archive), code_version(extra), schema_files(), today, quarantine_listing(archive))

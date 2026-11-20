@@ -8,7 +8,7 @@ about where: for each point it runs a beside build with the point armed (it must
 
 The built-in points, `step_kill_points()`, are derived from `STEPS` when called: for every Step X, "inside X after its body, before its ledger row"
 (the Step's work, its sequence values and its progress lines happened; its transaction rolls back, so X-1 is the last committed Step). A Step another
-ticket adds is covered with no change here. Kill with `SystemExit(143)` (what SIGTERM becomes in the CLI) or `RuntimeError` (a bug or a lost connection)."""
+ticket adds is covered with no change here. `vacuum_kill_points()` adds, for every Step that declares tables to VACUUM, a kill after its commit and before its VACUUM. Kill with `SystemExit(143)` (what SIGTERM becomes in the CLI) or `RuntimeError` (a bug or a lost connection)."""
 from __future__ import annotations
 
 import difflib
@@ -58,6 +58,23 @@ def _after_body_before_row(step_name: str):
 def step_kill_points() -> list[KillPoint]:
     """One point per Step of `STEPS`: killed inside it after its body, before its ledger row. The first Step's kill leaves nothing committed (fresh)."""
     return [KillPoint(f"in-{step.name}", _after_body_before_row(step.name), resumes=ordinal > 0) for ordinal, step in enumerate(STEPS)]
+
+
+def vacuum_kill_points() -> list[KillPoint]:
+    """For every Step that declares tables to VACUUM: killed after its commit, before its VACUUM (#298). The rerun resumes after that Step and runs the VACUUM again."""
+    real = build_steps_module._vacuum_after
+
+    def after_commit(step_name: str):
+        def arm(monkeypatch, killed_by: BaseException) -> None:
+            def vacuum_after(ctx, step):
+                if step.name == step_name:
+                    raise killed_by
+                return real(ctx, step)
+
+            monkeypatch.setattr(build_steps_module, "_vacuum_after", vacuum_after)
+        return arm
+
+    return [KillPoint(f"before-vacuum-{step.name}", after_commit(step.name)) for step in STEPS if step.vacuum]
 
 
 def make_world(root: Path, worlds=WORLD, drop: tuple[str, ...] = ()) -> Path:
@@ -133,7 +150,7 @@ class Harness:
         assert code == 0, lines
         return Outcome(lines, dump_graph(live), live, archive)
 
-    _references: dict = {}  # (server, world function) -> the uninterrupted build: once per world for the whole test session
+    _references: dict = {}  # (server, world function) -> the uninterrupted build: once per world for the whole test session (so a world must be a module-level function: a lambda made inside a test is a new key every time)
 
     def reference(self) -> Outcome:
         """An uninterrupted beside build of the world, once."""
@@ -142,17 +159,24 @@ class Harness:
             self._references[key] = self.run(self.new_archive("reference"), self.new_live())
         return self._references[key]
 
-    def kill_then_resume(self, point: KillPoint, killed_by: BaseException, *extra: str) -> tuple[Path, Outcome, Outcome]:
-        """Kill a beside build at `point`, rerun it with nothing armed: (the archive, the killed run, the rerun). The rerun's graph is the live one after the swap."""
+    def kill_then_resume(self, point: KillPoint, killed_by: BaseException, *extra: str,
+                         between: Callable[[Path, str], None] | None = None) -> tuple[Path, Outcome, Outcome]:
+        """Kill a beside build at `point`, rerun it with nothing armed: (the archive, the killed run, the rerun). The rerun's graph is the live one after the swap.
+        `between(archive, live_url)` runs after the kill and before the rerun: what changes in the meantime (a unit lands, the code changes, a ledger row goes)."""
         archive, live = self.new_archive(point.name), self.new_live()
         killed = self.run(archive, live, kill=point, killed_by=killed_by)
+        if between:
+            between(archive, live)
         return archive, killed, self.run(archive, live, *extra)
 
-    def assert_resumes_like_reference(self, point: KillPoint, killed_by: BaseException) -> Outcome:
+    def assert_resumes_like_reference(self, point: KillPoint, killed_by: BaseException, *, between: Callable[[Path, str], None] | None = None,
+                                      expect: str | None = None) -> Outcome:
+        """Kill at `point`, rerun, and compare with the uninterrupted build. `expect`: the verdict the rerun must lead with (`resume` or `fresh`; the point's
+        own `resumes` by default); `between` as in `kill_then_resume`. Needs a `world` that is a module-level function: the reference is cached by it."""
         ref = self.reference()
-        archive, killed, rerun = self.kill_then_resume(point, killed_by)
+        archive, killed, rerun = self.kill_then_resume(point, killed_by, between=between)
         assert killed.first.startswith("rebuild: fresh - "), killed.out[:2]  # a first build into an empty server: fresh, no next database
-        verdict = "resume" if point.resumes else "fresh"
+        verdict = expect or ("resume" if point.resumes else "fresh")
         assert rerun.first.startswith(f"rebuild: {verdict} - "), rerun.out[0]
         assert rerun.graph == ref.graph, point.name
         got, want = _summary(rerun.out, archive), _summary(ref.out, ref.archive)

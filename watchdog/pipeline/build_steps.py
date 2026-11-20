@@ -47,7 +47,7 @@ from .aep.build import build_aep
 from .financials.build import build_financials
 from .banipartide.build import build_donations
 from .placement.build import build_placement
-from .pins import Pins
+from .pins import Pins, files_under
 from .progress import Progress
 from .rebuild import (BUILD_SQL, CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DIR, WITHHELD_SQL, AEP_SQL, AMEPIP_SQL, RebuildSummary, _quarter_label,
                       build_entities, build_frameworks, iter_units, load_anaf, load_records, store_data_through, store_sources)
@@ -379,8 +379,12 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: boo
     if resume:
         start = committed_steps(ctx.cur, steps)
         restore_summary(ctx.cur, ctx.summary, steps[:start], ctx.archive.root)
+        for unit_dir in ctx.summary.quarantined:  # the units the committed `units` Step moved: quarantined as far as this build is concerned (Coverage flags their cells)
+            ctx.archive.add_pinned_quarantine(unit_dir)
         if ctx.progress and ctx.summary.units_total:
             ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root)
+        if start and ctx.staged:  # a kill between that Step's commit and its VACUUM skipped it: speed only, so it is simply run again (the graph and the ledger do not change)
+            _vacuum_after(ctx, steps[start - 1])
     if ctx.staged:
         _run_each(ctx, steps, start)
     else:
@@ -421,7 +425,7 @@ def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:
     for pattern in patterns:
         path = root / pattern
         if pattern.endswith("/"):
-            files.update(p for p in path.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
+            files.update(files_under(path))
         else:
             files.add(path)
     return files

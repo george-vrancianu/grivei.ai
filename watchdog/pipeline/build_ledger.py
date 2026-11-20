@@ -18,8 +18,8 @@ BUILDING, COMPLETE = "building", "complete"
 
 def start_run(cur: psycopg.Cursor, staged: bool, pins: Pins) -> None:
     """The run's one row, in the schema Step (after build_schema.sql has recreated the `build` schema), with the pinned inputs of the run."""
-    cur.execute("INSERT INTO build.run (started, state, staged, pinned_units, code_version, schema_files, today) VALUES (clock_timestamp(), %s, %s, %s, %s, %s, %s)",
-                (BUILDING, staged, Jsonb(dict(pins.units)), pins.code_version, Jsonb(dict(pins.schema_files)), pins.today))
+    cur.execute("INSERT INTO build.run (started, state, staged, pinned_units, code_version, schema_files, today, pinned_quarantine) VALUES (clock_timestamp(), %s, %s, %s, %s, %s, %s, %s)",
+                (BUILDING, staged, Jsonb(dict(pins.units)), pins.code_version, Jsonb(dict(pins.schema_files)), pins.today, Jsonb(list(pins.quarantined))))
 
 
 def stamp_step(cur: psycopg.Cursor, name: str, started: datetime) -> None:

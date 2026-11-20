@@ -26,7 +26,7 @@ import psycopg
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from .resume import Held, Verdict, load_held
+from .resume import FRESH, Held, Verdict, load_held
 
 NEXT, PREV, SWAP = "_next", "_prev", "_swap"  # `_swap` is the live graph's parking place during a rollback
 MIN_RATIO = 0.95  # the new graph may hold at most 5% fewer Records than the one it replaces (Records are only ever added: the archive is append-only)
@@ -183,15 +183,6 @@ def _say_default(line: str) -> None:
     print(line, flush=True)
 
 
-def _needs_repair(admin: psycopg.Connection, n: Names) -> bool:
-    """Whether `recover` has something to repair (what it checks, without changing anything)."""
-    if not _exists(admin, n.live):
-        return any(_exists(admin, name) for name in (n.live + SWAP, n.prev))
-    if admin.execute("SELECT datallowconn FROM pg_database WHERE datname = %s", (n.live,)).fetchone()[0] is False:
-        return True
-    return _exists(admin, n.live + SWAP) and not _exists(admin, n.prev)
-
-
 def build_and_switch(db_url: str, build: Callable[..., object], *, say: Callable[[str], None] = _say_default,
                      check: Callable[[str, str | None], list[str]] = check_graph,
                      decide: Callable[[Held | None, bool], Verdict] | None = None) -> object:
@@ -207,11 +198,14 @@ def build_and_switch(db_url: str, build: Callable[..., object], *, say: Callable
     verdict = None
     with psycopg.connect(n.admin_url, autocommit=True) as admin:
         if decide:
-            repair = _needs_repair(admin, n)
+            repair = recover(n, say, admin, dry_run=True)  # whether there is an interrupted swap to repair: the same checks as the repair itself
             verdict = decide(load_held(n.next_url) if _exists(admin, n.next) else None, repair)
             say(verdict.line)  # the first line of the run, before the repair or anything else is said
         recover(n, say, admin)  # before anything is dropped or built: an interrupted swap must not leave the API without a database for the hours of a build
         resuming = verdict is not None and verdict.resume and _exists(admin, n.next)
+        if verdict is not None and verdict.resume and not resuming:  # the next database vanished since the decision (not reachable under the lock): there is nothing to continue
+            verdict = Verdict(FRESH, "the next database disappeared after the decision, so the build starts over", verdict.pins)
+            say(verdict.line)
         if not resuming:
             if _exists(admin, n.next):
                 say(f"switchover: dropping the leftover {n.next} of an earlier build")
@@ -246,16 +240,19 @@ def _rename_plain(admin: psycopg.Connection, old: str, new: str) -> None:
     admin.execute(sql.SQL("ALTER DATABASE {} RENAME TO {}").format(sql.Identifier(old), sql.Identifier(new)))
 
 
-def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.Connection | None = None) -> bool:
+def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.Connection | None = None, dry_run: bool = False) -> bool:
     """A swap that was killed (or lost its connection) between its renames leaves no `<db>`, or a `<db>` that refuses connections, or a
     `<db>_swap` that was never renamed to `<db>_prev`: put the graph that was live back, so the API has a database again, before anything
-    else runs. A missing `<db>` is restored from `<db>_swap` (a rollback) or else `<db>_prev` (a switchover). Returns whether it repaired anything."""
+    else runs. A missing `<db>` is restored from `<db>_swap` (a rollback) or else `<db>_prev` (a switchover). Returns whether it repaired anything; with `dry_run` it changes and says nothing and returns whether it WOULD
+    (the one list of repairs, so the resume decision and the repair cannot disagree)."""
     if admin is None:
         with psycopg.connect(n.admin_url, autocommit=True) as own:
-            return recover(n, say, own)
+            return recover(n, say, own, dry_run)
     if _exists(admin, n.live):
         repaired = False
         if admin.execute("SELECT datallowconn FROM pg_database WHERE datname = %s", (n.live,)).fetchone()[0] is False:
+            if dry_run:
+                return True
             say(f"switchover: REPAIR: {n.live} refuses connections (a swap was killed after disallowing them); allowing them again")
             _allow(admin, n.live, True)
             repaired = True
@@ -264,6 +261,8 @@ def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.
             if _exists(admin, n.prev):
                 say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
             else:
+                if dry_run:
+                    return True
                 say(f"switchover: REPAIR: finishing an interrupted rollback, {swap} becomes {n.prev}")
                 _rename_plain(admin, swap, n.prev)
                 _allow(admin, n.prev, True)
@@ -271,6 +270,8 @@ def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.
         return repaired
     for name in (n.live + SWAP, n.prev):
         if _exists(admin, name):
+            if dry_run:
+                return True
             say(f"switchover: REPAIR: no {n.live} (an earlier swap was interrupted); restoring the old graph from {name}")
             _rename_plain(admin, name, n.live)
             _allow(admin, n.live, True)

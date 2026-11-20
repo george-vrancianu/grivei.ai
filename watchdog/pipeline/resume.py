@@ -9,7 +9,8 @@ Resume only when every one of these holds: not `--fresh`; a staged build (a sing
 database exists and holds a build ledger with pins; its build is not complete (a finished build that was never swapped in is rebuilt); the code version
 and the schema files are the ones it was built with; every pinned unit is still in the archive with the same manifest checksum (a unit this build's own
 `units` Step quarantined is gone on purpose: not a difference); its `build.step` rows are exactly a non-empty prefix of the Steps, names and ordinals.
-Units that were added to the archive after the pin are NOT a difference: the resume ignores them and the next build pins them."""
+Units that were added to the archive after the pin are NOT a difference: the resume ignores them and the next build pins them (the refresh's load marker then
+covers only the pinned units, so the next refresh loads the rest). `load-quarter` always passes a reason as `fresh`: its requeued units were never pinned."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ import psycopg
 from .pins import Pins
 
 RESUME, FRESH = "resume", "fresh"
+LOAD_QUARTER_REASON = "load-quarter requeued units, which an interrupted build never pinned, so the build starts over"
 
 
 @dataclass(frozen=True)
@@ -54,14 +56,17 @@ def _fresh(reason: str, pins: Pins) -> Verdict:
     return Verdict(FRESH, reason, pins)
 
 
-def decide(pins: Pins, held: Held | None, steps, *, fresh: bool = False, staged: bool = True, repair: bool = False) -> Verdict:
+def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, staged: bool = True, repair: bool = False, direct: bool = False) -> Verdict:
     """`pins` are this run's, `held` is what the next database holds (None: there is none), `steps` are `STEPS`; `repair`: an interrupted swap is
-    repaired before the build (switchover.recover), so there is nothing to continue."""
+    repaired before the build (switchover.recover), so there is nothing to continue. `fresh`: True for `--fresh`, or the reason (a verb that always
+    rebuilds from the start, e.g. load-quarter). `direct`: a staged build called without a Switchover (no next database was looked at)."""
     names = [s.name for s in steps]
     if fresh:
-        return _fresh("--fresh given", pins)
+        return _fresh(fresh if isinstance(fresh, str) else "--fresh given", pins)
     if not staged:
         return _fresh("in-place builds run in one transaction, so nothing is committed to resume from", pins)
+    if direct:
+        return _fresh("no resume decision was made for this build (a direct call), so it starts from the first Step", pins)
     if repair:
         return _fresh("an interrupted swap is repaired first, so the build starts over", pins)
     if held is None:
@@ -108,19 +113,19 @@ def load_held(next_url: str) -> Held:
             if not cur.fetchone()[0]:
                 return Held(None, None, [], frozenset(), "the build schema is missing")
             cur.execute("SELECT count(*) FROM information_schema.columns WHERE table_schema = 'build' AND table_name = 'run' "
-                        "AND column_name IN ('pinned_units', 'code_version', 'schema_files', 'today')")
-            if cur.fetchone()[0] != 4:
+                        "AND column_name IN ('pinned_units', 'code_version', 'schema_files', 'today', 'pinned_quarantine')")
+            if cur.fetchone()[0] != 5:
                 return Held(None, None, [], frozenset(), "the build ledger was written before pinned inputs")
-            cur.execute("SELECT state, pinned_units, code_version, schema_files, today FROM build.run")
+            cur.execute("SELECT state, pinned_units, code_version, schema_files, today, pinned_quarantine FROM build.run")
             runs = cur.fetchall()
             if len(runs) != 1:
                 return Held(None, None, [], frozenset(), f"the build ledger has {len(runs)} runs")
-            state, units, code, schema, today = runs[0]
+            state, units, code, schema, today, quarantine = runs[0]
             cur.execute("SELECT name, ordinal FROM build.step ORDER BY ordinal")
             steps = [(n, o) for n, o in cur.fetchall()]
             cur.execute("SELECT summary->'quarantined' FROM build.step WHERE name = 'units'")
             row = cur.fetchone()
             quarantined = frozenset(row[0] or []) if row else frozenset()
-            return Held(Pins(units, code, schema, today), state, steps, quarantined)
+            return Held(Pins(units, code, schema, today, tuple(quarantine)), state, steps, quarantined)
     except psycopg.Error as e:
         return Held(None, None, [], frozenset(), f"the next database could not be read: {type(e).__name__}")

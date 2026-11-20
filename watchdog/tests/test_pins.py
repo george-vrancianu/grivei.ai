@@ -1,12 +1,13 @@
 """The pinned inputs (ticket #292): what a build fixes at its start, and the archive view that shows only that set. No database."""
+import hashlib
 import json
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 from pipeline.archive import Archive
 from pipeline.pins import code_version, compute_pins, pin_extra, schema_files, unit_checksums
-from pipeline.crawl.unitdir import fetches
-from pipeline.estimates import read_estimates
+from pipeline.crawl.unitdir import fetches, kind_dir, last_bulk_quarter_end
+from pipeline.estimates import RESPONSE_FILE, read_estimates
 
 
 def _unit(archive: Archive, unit: str, day: int) -> Path:
@@ -40,6 +41,26 @@ def test_a_pinned_view_does_not_see_a_unit_that_lands_later_or_one_that_complete
     assert [u.unit for u in view.units("seap")] == ["2024Q1"]  # the third is unpinned, the second was incomplete at the pin
     assert [p.name for p in view.incomplete()] == ["2026-01-02"]
     assert len(list(view.fetch_dirs())) == 2
+
+
+def test_a_directory_pinned_without_a_manifest_stays_incomplete_for_the_readers_that_bypass_the_survey(tmp_path):
+    a = Archive(tmp_path)
+    crawl = kind_dir(a) / "2026-04-01" / "2026-05-01"
+    bulk = tmp_path / "seap/bulk/contracte/2026Q1/2026-05-01"
+    estimate = tmp_path / "seap/estimates/notice-value/n1/2026-05-01"
+    dirs = [(crawl, "x.json"), (bulk, "x.json"), (estimate, RESPONSE_FILE)]
+    for d, _ in dirs:
+        d.mkdir(parents=True)  # mid-write at pin time: no manifest yet
+    view = a.pinned(unit_checksums(a), set())
+    for d, name in dirs:  # the writers finish after the pin
+        (d / name).write_bytes(b"{}")
+        (d / "manifest.json").write_text(json.dumps({"version": 1, "source": "seap", "stream": "s", "kind": "k", "unit": "u", "fetchedAt": "2026-05-01T09:00:00Z",
+                                                   "files": [{"name": name, "sha256": hashlib.sha256(b"{}").hexdigest(), "bytes": 2}]}))
+    assert fetches(a, "2026-04-01")[0][1] is not None  # the plain archive sees it complete
+    assert [m for _, m in fetches(view, "2026-04-01")] == [None]  # the pinned view lists the directory but still as incomplete
+    assert last_bulk_quarter_end(a) is not None and last_bulk_quarter_end(view) is None
+    assert a.complete_at_pin(estimate) and not view.complete_at_pin(estimate)
+    assert read_estimates(a) != {} and read_estimates(view) == {}
 
 
 def test_a_pinned_view_lists_the_quarantine_of_the_pin_plus_what_it_quarantines_itself(tmp_path):

@@ -44,7 +44,7 @@ from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, 
 from .build_steps import STEPS
 from .pins import compute_pins, pin_extra
 from .rebuild import rebuild
-from .resume import decide as decide_resume
+from .resume import LOAD_QUARTER_REASON, decide as decide_resume
 from .seap_status import backfill_totals
 from .sources import SOURCES
 from .validate import summary_lines, validate_archive
@@ -356,8 +356,15 @@ def _rebuild_beside(archive: Archive, args, progress: Progress, say):
         return build(args.db)  # prints its own "fresh" first line: one transaction, nothing committed to resume from
     # the pins are fixed here, once, before anything is dropped or built: a unit that lands from now on waits for the next build
     pins = compute_pins(archive, args.today or datetime.now(timezone.utc).date(), pin_extra(args.identity_overrides, args.placement_data, args.known_gaps))
-    fresh = getattr(args, "fresh", False)  # `rebuild` only: refresh and seed resume by default
-    return switchover.build_and_switch(args.db, lambda url, gate, verdict: build(url, gate, True, verdict), say=say,  # beside the live graph: each Step commits
+    fresh = getattr(args, "fresh_reason", None) or getattr(args, "fresh", False)  # `rebuild --fresh`; load-quarter always starts over (its reason); refresh and seed resume by default
+    said = getattr(args, "first_line_said", None)
+
+    def say_once(line: str) -> None:  # a verb that already printed the verdict line (load-quarter) does not print it twice
+        if line == said:
+            args.first_line_said = None
+            return
+        say(line)
+    return switchover.build_and_switch(args.db, lambda url, gate, verdict: build(url, gate, True, verdict), say=say_once,  # beside the live graph: each Step commits
                                        decide=lambda held, repair: decide_resume(pins, held, STEPS, fresh=fresh, repair=repair))
 
 
@@ -469,12 +476,16 @@ def _load_quarter(archive: Archive, args) -> int:
             print("load-quarter: a refresh or a seed holds the archive's lock (refresh.lock); try again when it ends", file=sys.stderr)
             return 1
         held = [u for u in archive.units("seap") if u.unit == quarter and u.kind in KINDS]
+        if not held and not any(f"/{quarter}/" in str(p) for p in archive.quarantined()):
+            print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
+            return 1
+        if not args.in_place:  # the verdict first, before anything is requeued or loaded: units requeued or fetched since a leftover next database started are not in its pins, so it is never resumed
+            args.fresh_reason = LOAD_QUARTER_REASON
+            args.first_line_said = f"rebuild: fresh - {LOAD_QUARTER_REASON}"
+            _log_line(args.first_line_said)
         restored = archive.requeue(f"/{quarter}/")
         for path in restored:
             _log_line(f"requeued {path}")
-        if not held and not restored:
-            print(f"load-quarter: nothing archived for {quarter}; fetch it first (`fetch-datagov`)", file=sys.stderr)
-            return 1
         _log_line(f"load-quarter {quarter}: {len(held) + len(restored)} unit(s) in the archive; the graph is derived whole from the archive, so this is a rebuild")
         try:
             _loader(archive, args)()

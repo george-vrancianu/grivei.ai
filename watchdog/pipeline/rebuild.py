@@ -58,16 +58,15 @@ from .aep.build import AepSummary
 from .financials.build import FinancialsSummary
 from .banipartide.build import DonationsSummary
 from .placement.build import PlacementSummary
-from .pins import compute_pins, pin_extra
+from .pins import SQL_DIR, compute_pins, pin_extra
 from .progress import Progress
-from .resume import FRESH, Verdict, decide
+from .resume import Verdict, decide
 from .hand_offs import load_data_through
 from .sources import SEAP, SOURCES
 from .search import value_bucket, vacuum
 
 log = logging.getLogger("pipeline.rebuild")
 
-SQL_DIR = Path(__file__).parent / "sql"
 CORE_SQL = SQL_DIR / "core_schema.sql"
 WITHHELD_SQL = SQL_DIR / "withheld_schema.sql"
 AMEPIP_SQL = SQL_DIR / "amepip_schema.sql"
@@ -81,6 +80,7 @@ BUILD_SQL = SQL_DIR / "build_schema.sql"  # the Steps' hand-offs (pipeline/hand_
 @dataclass
 class RebuildSummary:
     files_loaded: int = 0
+    pinned_view: Archive | None = field(default=None, repr=False, compare=False)  # the pinned archive view the build read (and quarantined into): what this load covered, for the refresh's load marker
     units_total: int = 0  # the units the loop planned (not printed; a resume gives the progress file this total)
     records: int = 0
     anaf_found: int = 0  # CUIs the archived ANAF answers confirm
@@ -515,13 +515,12 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     if verdict is None:
         pins = compute_pins(archive, today or datetime.now(timezone.utc).date(),
                             pin_extra(overrides_path, placement_dir, known_gaps_path))
-        verdict = (decide(pins, None, STEPS, staged=False) if not staged else
-                   Verdict(FRESH, "no resume decision was made for this build (a direct call), so it starts from the first Step", pins))
+        verdict = decide(pins, None, STEPS, staged=staged, direct=True)
         if progress:
             progress.note(verdict.line)
     today = verdict.pins.today
-    quarantine_base = archive.root / QUARANTINE_DIR
-    pinned = archive.pinned(verdict.pins.units, {p.relative_to(quarantine_base).as_posix() for p in archive.quarantined()})
+    pinned = archive.pinned(verdict.pins.units, set(verdict.pins.quarantined))  # the quarantine listing of the pins too: a unit requeued since the pin is still flagged, as in an uninterrupted build
+    summary.pinned_view = pinned
     if progress and staged:
         progress.mark_staged()
 
@@ -534,7 +533,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES),  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
                                pins=verdict.pins)
-            run_steps(ctx, resume=True) if verdict.resume else run_steps(ctx)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
+            run_steps(ctx, resume=verdict.resume)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
             data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the open transaction rolls back (all of it in place; the running Step when staged), the old schema stays
         if progress:
