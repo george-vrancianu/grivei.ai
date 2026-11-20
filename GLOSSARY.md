@@ -54,6 +54,14 @@ _Avoid_: build log, migration table
 What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version (and the hash of every code file, `build.run.code_files`), the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now) and is refused, starting a fresh build, when a pinned unit or the schema files differ, or when a changed code file belongs to a Step that has run or to every Step (a shared module); a code change confined to Steps that have not run resumes with the new code, and the changed files are recorded in `build.run.changed_files`; a unit that lands in the Raw archive later waits for the next build.
 _Avoid_: snapshot, lockfile
 
+**Resume gate**:
+The decision at the start of every build, printed as its first log line (`rebuild: resume - ...` or `rebuild: fresh - <reason>`), whether to continue the unfinished build in the next database or start over. It resumes only when the Pinned inputs are unchanged and any code change is confined to Steps not yet run; `--fresh` always starts over.
+_Avoid_: restart check
+
+**Staged build**:
+A build that commits as it goes (a Step, a Raw archive unit, an ONRC snapshot at a time, in the Build ledger), so it can be paused and resumed. A build beside the live database is always staged; `rebuild --in-place --staged` stages an in-place build into a fresh database nobody reads, and `--in-place` alone is one transaction that always starts over.
+_Avoid_: incremental build
+
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.
 _Avoid_: last updated, freshness

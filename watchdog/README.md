@@ -280,9 +280,13 @@ The run **resumes** when it is a beside build (or `rebuild --in-place --staged`,
 
 The first line of every `pipeline rebuild` run says which and why, before anything else is printed (for `refresh`, `seed` and `load-quarter` it is the first line of the build's own output, after the steps that ran before the load; `load-quarter` prints it before it requeues anything): `2026-11-20T10:15:02+0200 rebuild: resume - continuing after the committed Step 'crawl-badges' with 'frameworks'; the pinned inputs and the code are unchanged`, or `... rebuild: fresh - code changed (build 3fa9..., now 91c0...)`, `... fresh - 2 pinned units changed or missing: seap/bulk/dan/2024Q1/2024-05-01`, `... fresh - --fresh given`, `... fresh - no next database`. A resume skips the committed Steps (the schema Step never runs again, and the append-only `crawl-badges` never runs twice), reloads what the remaining Steps need from the graph (a missing `onrc` row is an error, never "no ONRC entities"), and prints the same summary lines at the end as an uninterrupted run. `pipeline rebuild --fresh` forces a fresh build whatever the ledger says (refresh and seed resume by default; `load-quarter` always builds fresh, `rebuild: fresh - load-quarter always starts over ...`, because the units it requeues, or that landed since, were never pinned by a leftover build). A resume ignores `--today`: the Coverage day stays the one the build started with. The refresh's and the seed's `load` step record what the build covered (the pinned units), not the archive after it: a resumed load that missed units fetched since leaves the next refresh's load due. A resume also runs again the VACUUM of the last committed Step, which a kill between that Step's commit and its VACUUM skipped (speed only). Quarantining a bad unit moves its files on disk outside the database transaction: a kill in the middle of the `units` Step leaves a pinned unit missing, which the decision reads as a difference and rebuilds.
 
+Step-by-step operator paths for a fix after a stall and for a deliberate pause (commands, log lines, disk) are in `docs/release-2-runbook.md`, "Fix a late step, then resume" and "Pause and continue".
+
 `verify` runs the ledger check too, so a graph built before the build ledger (#291) fails it with "no build ledger": its next rebuild gives it one.
 
 ### Pause (#296)
+
+The operator path is in `docs/release-2-runbook.md`, "Pause and continue".
 
 A beside build, or an `--in-place --staged` one, can be **paused** instead of killed: it finishes the work in hand, commits, and stops at the next boundary (after a Step, after a Raw archive unit, after an ONRC snapshot). It marks `build.run.state` `paused`, keeps the database it was building, releases the lock, prints `rebuild PAUSED <where> (<why>)` and exits **75** (`EX_TEMPFAIL`: not done, try again later, so `rebuild && next` never goes on as if the graph had switched). Nothing is swapped in. The next run of the same command resumes it (see "Resume"): the first line says `rebuild: resume - ...`, and the finished graph equals an uninterrupted build's.
 
@@ -328,7 +332,7 @@ docker compose --profile upgrade up -d db-next
 nohup docker compose run --rm -T -e DATABASE_URL=postgresql://grivei:PW@db-next:5432/grivei pipeline rebuild --in-place --staged >> ~/grivei-data/upgrade.log 2>&1 &
 # 3. check it against the live graph
 docker compose run --rm -T pipeline verify --db postgresql://grivei:PW@db-next:5432/grivei --against postgresql://grivei:PW@db:5432/grivei
-#    If the archive grew since step 2, run step 2 again first (a rebuild into an existing database is rerunnable: it replaces the schemas).
+#    If the archive grew since step 2, rerun step 2 with `--fresh` (a plain rerun of an unfinished build resumes its pinned inputs and does not pick up units that arrived later; a finished one is rebuilt fresh, "complete, never swapped in").
 # 4. switch (a few minutes of downtime): stop the API and db-next (a clean shutdown of the new volume), then in compose.yaml give `db` the new
 #    image tag and `volumes: - pgdata-next:/var/lib/postgresql` (the `pgdata-next` volume is already declared there), and start again
 systemctl --user stop grivei-refresh.timer; docker compose stop api; docker compose --profile upgrade stop db-next

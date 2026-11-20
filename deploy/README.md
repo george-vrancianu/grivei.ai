@@ -40,9 +40,18 @@ docker compose run --rm pipeline fetch-bulk --unit 2022Q1 \
 docker compose run --rm pipeline rebuild
 ```
 
-`status` shows how far a running or finished `rebuild` is (it reads `rebuild-progress.json` in the archive root); `rebuild` prints one timestamped line per unit. The operator's full-archive run (nohup, log, kill, rerun) is in `watchdog/README.md`, "Operator: rebuild the graph from the archive for real".
+`status` shows how far a `rebuild` is (it reads `rebuild-progress.json` in the archive root): `state: running`, `paused`, `finished`, `failed`, `interrupted` or `interrupted (resumable)`; `rebuild` prints one timestamped line per unit. The operator's full-archive run (nohup, log, kill, rerun) is in `watchdog/README.md`, "Operator: rebuild the graph from the archive for real".
 
 `fetch-bulk` only downloads into the archive; `anaf-lookup` asks ANAF about the CUIs in the archive and archives the answers (resumable; operator steps in `watchdog/README.md`); `rebuild` builds the graph (`seap` and the core's entity tables) into a new database beside the live one and switches over after its checks (`--in-place` drops and recreates them in the live database instead); see `watchdog/README.md`, "Rebuild beside the live database". Without Docker, from `watchdog/`: `python -m pipeline --archive <dir> rebuild --db postgresql://...`.
+
+### Pause, resume and stop a rebuild
+
+A `rebuild` beside the live database commits after every Step, Raw archive unit and ONRC snapshot (the build ledger), so it can be paused and resumed. The details are in `watchdog/README.md`, "Resume" and "Pause"; the operator paths with commands are in `docs/release-2-runbook.md`.
+
+- **Pause from the host:** `touch "$GRIVEI_ARCHIVE_DIR/rebuild.stop"` (the archive directory is mounted into the container, so the file reaches it). The build stops at the next committed boundary, deletes the file, and exits **75**. The first SIGTERM (`docker stop <container>`) asks for the same pause, but Compose sets no `stop_grace_period`, so Docker kills the container after 10 seconds: the committed work stays, and a Step in progress is lost. A second SIGTERM aborts the Step in progress and exits 143. `rebuild --pause-after 8h` (also `refresh` and `seed`) pauses by itself at the first boundary after that long.
+- **Resume:** run the same command again. It resumes when the pinned inputs (archive units, schema files) and the code are unchanged, or changed only in Steps not yet run; the first log line says `rebuild: resume - ...` or `rebuild: fresh - <reason>`. `--fresh` starts over. `rebuild --in-place --staged` (the major-upgrade build into a fresh database, `watchdog/README.md`) resumes the same way; plain `--in-place` is one transaction and always starts over.
+- **Disk:** a paused or killed build keeps its next database, a full extra copy of the graph, until it is resumed or `pipeline cleanup` drops it.
+- **Scheduled refresh:** a paused `load` ends the run `paused` (exit 0, not a failure) and pings `<GRIVEI_HEALTHCHECK_URL>/log`: no alert, and the dead-man's switch keeps counting from the last real success. The next timer trigger resumes the build.
 
 ## Schedule the refresh
 
