@@ -9,7 +9,7 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg")
 
-from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
@@ -103,12 +103,12 @@ def test_the_first_build_into_an_empty_database_switches_over_without_a_previous
 
 def test_the_api_keeps_answering_reads_while_the_shadow_graph_builds_and_across_the_switchover_but_an_in_place_rebuild_blocks_them(live, tmp_path, monkeypatch):
     rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
-    real = rebuild_module.load_records
+    real = build_steps_module.load_records
 
     def slow(*a, **k):  # every file takes a moment: the build holds its locks for seconds, like the national one for hours
         time.sleep(0.4)
         return real(*a, **k)
-    monkeypatch.setattr(rebuild_module, "load_records", slow)
+    monkeypatch.setattr(build_steps_module, "load_records", slow)
 
     reads: list[tuple[float, float, int | None]] = []  # (start, seconds taken, count or None if the connection was refused)
     stop = threading.Event()

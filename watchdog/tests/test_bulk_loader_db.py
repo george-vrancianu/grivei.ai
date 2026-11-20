@@ -287,7 +287,7 @@ def test_a_second_rebuild_of_the_contracts_fixture_gives_the_same_graph(db, tmp_
 
 # ---- progress and kill safety of a rebuild (ticket #64, operator) --------------------------------------------------------
 
-from pipeline import rebuild as rebuild_module  # noqa: E402
+from pipeline import build_steps as build_steps_module  # noqa: E402
 from pipeline.cli import main as cli_main  # noqa: E402
 from pipeline.progress import Progress, read_status  # noqa: E402
 
@@ -347,7 +347,7 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     assert len(complete["seap.record"]) == 12
 
     # a second rebuild dies in the middle of its third file
-    real, calls = rebuild_module.load_records, []
+    real, calls = build_steps_module.load_records, []
 
     def dying(cur, source_file_id, rows, resolver=None, estimates=None):
         calls.append(source_file_id)
@@ -355,14 +355,14 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
             raise killed_by
         real(cur, source_file_id, rows, resolver, estimates)
 
-    monkeypatch.setattr(rebuild_module, "load_records", dying)
+    monkeypatch.setattr(build_steps_module, "load_records", dying)
     with pytest.raises(type(killed_by)):
         rebuild(archive, db, Progress(status_file, out=lambda line: None))
     assert dump_graph(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
     status = read_status(status_file)
     assert status["state"] == "failed" and status["done"] == 2 and status["loaded"] == 2
 
-    monkeypatch.setattr(rebuild_module, "load_records", real)
+    monkeypatch.setattr(build_steps_module, "load_records", real)
     rebuild(archive, db, Progress(status_file, out=lambda line: None))  # rerun from scratch
     assert dump_graph(db) == complete
     assert read_status(status_file)["state"] == "finished"
@@ -371,7 +371,7 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
 def test_a_kill_before_the_first_commit_leaves_no_schema_at_all(db, tmp_path, monkeypatch):
     root = tmp_path / "archive"
     shutil.copytree(CONTRACTS, root)
-    monkeypatch.setattr(rebuild_module, "load_records", lambda *a: (_ for _ in ()).throw(SystemExit(143)))
+    monkeypatch.setattr(build_steps_module, "load_records", lambda *a: (_ for _ in ()).throw(SystemExit(143)))
     with pytest.raises(SystemExit):
         rebuild(Archive(root), db)
     with psycopg.connect(db) as c:
