@@ -123,6 +123,7 @@ def test_onrc_is_in_the_registry_and_its_data_through_date_is_the_newest_snapsho
     url, _ = built
     assert q(url, "SELECT id, schema_name, record_kinds, landing_status FROM core.source ORDER BY position") == [("SEAP", "seap", ["DA", "DAN", "CONTRACT", "AWARD_NOTICE"], "live"), ("ONRC", "onrc", ["REGISTRATION", "ROLE"], "wip")]
     assert q(url, ONRC.data_through_sql) == [("REGISTRATION", S4)]
+    assert q(url, "SELECT source, kind, through::text FROM core.data_through WHERE source = 'ONRC' ORDER BY kind") == [("ONRC", "REGISTRATION", S4)]
 
 
 def test_a_broken_snapshot_is_set_aside_and_named_and_the_history_is_built_from_the_others(db, archive):
@@ -141,5 +142,6 @@ def test_a_rebuild_with_no_onrc_unit_builds_an_empty_onrc_schema(db, tmp_path):
     summary = rebuild(Archive(root), db)
     assert q(db, "SELECT count(*) FROM onrc.registration") == [(0,)] and summary.onrc.snapshots == 0
     assert q(db, ONRC.data_through_sql) == []
+    assert q(db, "SELECT count(*) FROM core.data_through WHERE source = 'ONRC'") == [(0,)]  # no archive, no row: no date
     assert q(db, "SELECT count(*) FROM core.entity WHERE provenance_source = 'ONRC'") == [(0,)]
     assert q(db, "SELECT count(*) FROM core.entity WHERE key = %s", str(DELTA[1])) == [(0,)]  # without ONRC nothing confirms DELTA's CUI: a name-only supplier, as before

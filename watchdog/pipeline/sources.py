@@ -41,7 +41,7 @@ class Source:
     status: Callable[[Archive, object, dict | None, dict | None, int], int]
 
 
-# SEAP's data-through date per Record kind, used by `pipeline status` and the rebuild; the API's `store.dataThrough()` keeps its own copy, and the two must agree: the latest publication
+# SEAP's data-through date per Record kind, used by `pipeline status` and the rebuild, which stores the answer in `core.data_through` for the API: the latest publication
 # date of the bulk Records, and for the crawled kinds the end of the unbroken run of complete crawl days after the kind's last bulk quarter
 # (crawled Records' own dates do not count: one past a hole would hide the hole; a crawled day with nothing new still means "looked through that day").
 SEAP_DATA_THROUGH_SQL = """

@@ -3,7 +3,7 @@
 -- through entity keys: the CUI, `vat-<id>`, `name-<slug>` or a key the identity override file pins. (The operational
 -- pipeline ledger, which is not rebuilt, lives beside them and is never dropped here.)
 CREATE SCHEMA IF NOT EXISTS core;
-DROP TABLE IF EXISTS core.source, core.mf_principal, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
+DROP TABLE IF EXISTS core.data_through, core.source, core.mf_principal, core.mf_entity, core.mf_snapshot, core.placement, core.uat, core.county, core.alias, core.entity, core.anaf_company CASCADE;
 
 -- The `sources` registry (pipeline/sources.py), stored at every rebuild: one row per explorable Source. The API's `sources` query and
 -- `coverage(source)` read it; a Source's own tables sit in the schema named here.
@@ -17,6 +17,15 @@ CREATE TABLE core.source (
     placement_rule     text NOT NULL,
     methodology_anchor text NOT NULL,             -- the methodology page's section for the Source's measure
     landing_status     text NOT NULL CHECK (landing_status IN ('live', 'wip', 'next', 'skipped'))
+);
+
+-- Each Source's data-through date per record kind (the registry's `data_through_sql`), stored in the load transaction. Rebuilt with every
+-- graph: one row per Source and record kind that has a date; no row means no date. The API's `sources` query reads it instead of scanning.
+CREATE TABLE core.data_through (
+    source  text NOT NULL REFERENCES core.source (id),
+    kind    text NOT NULL,                        -- a record kind of the Source: DA, CONTRACT, REGISTRATION ...
+    through date NOT NULL,
+    PRIMARY KEY (source, kind)
 );
 
 -- One row per CUI ANAF answered "found" for, from the latest archived answer. Placement (#67) reads the address columns:
