@@ -13,7 +13,7 @@ from psycopg.types.json import Jsonb
 
 from .pins import Pins
 
-BUILDING, COMPLETE = "building", "complete"
+BUILDING, COMPLETE, PAUSED = "building", "complete", "paused"
 
 
 def start_run(cur: psycopg.Cursor, staged: bool, pins: Pins) -> None:
@@ -30,6 +30,11 @@ def stamp_step(cur: psycopg.Cursor, name: str, started: datetime) -> None:
 def finish_run(cur: psycopg.Cursor) -> None:
     """Mark the build complete: called in the transaction of the last Step, so the state and that Step's row commit together."""
     cur.execute("UPDATE build.run SET state = %s, ended = clock_timestamp() WHERE one", (COMPLETE,))
+
+
+def resume_run(cur: psycopg.Cursor) -> None:
+    """A resumed build is running again (an earlier run paused it)."""
+    cur.execute("UPDATE build.run SET state = %s WHERE one AND state = %s", (BUILDING, PAUSED))
 
 
 def now() -> datetime:

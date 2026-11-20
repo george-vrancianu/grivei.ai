@@ -43,11 +43,11 @@ Every file a Connector fetched, kept as fetched and dated, apart from the person
 _Avoid_: cache, dump, backup
 
 **Switchover**:
-Replacing the served graph with a rebuilt one: the rebuild is built into a database beside the live one (an interrupted build there is resumed when its Pinned inputs and the code are unchanged, else rebuilt from scratch), must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
+Replacing the served graph with a rebuilt one: the rebuild is built into a database beside the live one (an interrupted or paused build there is resumed when its Pinned inputs and the code are unchanged, else rebuilt from scratch), must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
 _Avoid_: migration, cutover (for a rebuild that locks the live database)
 
 **Build ledger**:
-The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work (and, inside the `onrc` Step, one row per ONRC snapshot in `build.snapshot`, committed with that snapshot's spans; the unit load likewise has one row per Raw archive unit in `build.unit`, committed with that unit's rows), and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
+The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work (and, inside the `onrc` Step, one row per ONRC snapshot in `build.snapshot`, committed with that snapshot's spans; the unit load likewise has one row per Raw archive unit in `build.unit`, committed with that unit's rows); its state is `building`, `paused` (stopped on request at a committed boundary, resumable) or `complete`, and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
 _Avoid_: build log, migration table
 
 **Pinned inputs**:
@@ -238,7 +238,7 @@ The page listing every result of one kind (authorities, suppliers or Records) fo
 _Avoid_: search page, drill-down
 
 **Pipeline ledger**:
-The refresh run's own record of every run and step (when, outcome, counts, warnings), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph (the Build ledger is the graph's own record of its build); unrelated to the Records tab.
+The refresh run's own record of every run and step (when, outcome, counts, warnings; the outcome is `ok`, `failed`, `interrupted`, or `paused` for a load stopped on request, which is neither a success nor a failure and is resumed by the next trigger), kept in the raw archive (`refresh-ledger.json`) and not rebuilt with the graph (the Build ledger is the graph's own record of its build); unrelated to the Records tab.
 _Avoid_: history, audit log
 
 **Relationships tab**:

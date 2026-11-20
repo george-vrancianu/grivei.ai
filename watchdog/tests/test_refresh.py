@@ -576,3 +576,45 @@ def test_status_on_an_archive_with_no_runs_names_every_step_that_is_due_now(arch
     due = next(line for line in capsys.readouterr().out.splitlines() if line.startswith("refresh: due now:"))
     for step in ("crawl", "datagov", "onrc", "amepip", "aep", "financials", "banipartide", "anaf", "load"):
         assert step in due, (step, due)
+
+
+# ---- a paused load (#296) -------------------------------------------------------------------------------------------------------------------------------
+
+def _paused(*_):
+    from pipeline.stop import BuildPaused
+    return BuildPaused("after unit 3/9 (da 2023Q1)", "stop requested (rebuild.stop)")
+
+
+def test_a_paused_load_is_its_own_outcome_pinged_to_log_not_success_not_fail_and_ends_the_run(go, impl, archive, pings, clock):
+    impl.fail["load"] = [_paused()]
+    result = go()
+    assert (result.status, result.exit_code) == ("paused", 0)  # alerting is the ping's job
+    steps = {s["name"]: s for s in result.run["steps"]}
+    assert steps["load"]["status"] == "paused" and steps["load"]["attempts"] == 1 and steps["load"]["failureClass"] is None  # not retried as transient
+    assert "after unit 3/9" in steps["load"]["note"] and "backup" not in steps  # the steps after it stay due
+    assert pings.urls == ["https://hc.example/ping/abc/log"] and pings.calls[0][1].startswith("refresh paused: load paused after unit 3/9")
+    assert "next trigger resumes" in pings.calls[0][1]
+    ledger = Ledger(archive.root / "refresh-ledger.json")
+    assert ledger.last_success("load") is None and ledger.consecutive_failed_runs() == 0
+    clock.next_day()
+    impl.ran.clear()
+    assert go().status == "ok" and "load" in impl.ran  # the next trigger runs the load again (it resumes the build)
+    assert pings.urls[-1] == "https://hc.example/ping/abc"
+
+
+def test_a_failed_step_wins_over_a_paused_one_in_the_run_status_and_the_ping(go, impl, pings):
+    impl.fail["crawl"] = [ValueError("a bug")]
+    impl.fail["load"] = [_paused()]
+    result = go()
+    assert result.status == "failed" and pings.urls == ["https://hc.example/ping/abc/fail"]
+
+
+def test_status_and_the_acceptance_week_show_a_paused_run_explicitly(go, impl, archive):
+    from pipeline.acceptance import week_report
+    from pipeline.refresh.status import describe_refresh
+    impl.fail["load"] = [_paused()]
+    result = go()
+    text = "\n".join(describe_refresh(archive, Ledger(archive.root / "refresh-ledger.json")))
+    assert "paused: " in text and "load paused after unit 3/9" in text and "not a failure" in text
+    ok, lines = week_report([result.run], START.date(), days=1)
+    assert ok and any("paused" in line and "next trigger resumes" in line for line in lines)

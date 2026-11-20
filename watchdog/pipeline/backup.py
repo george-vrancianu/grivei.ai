@@ -35,7 +35,7 @@ HOST = "grivei"
 KEEP = ("--keep-daily", "7", "--keep-weekly", "5", "--keep-monthly", "12")  # spec default taken
 MIN_RESTIC = (0, 17)
 EXIT_NO_REPOSITORY, EXIT_WRONG_PASSWORD = 10, 12  # restic >= 0.17 exit codes
-EXCLUDE = ("refresh.lock",)  # operational, never worth restoring
+EXCLUDE = ("refresh.lock", "rebuild.stop")  # operational, never worth restoring (the stop file asks a rebuild to pause, stop.py)
 
 
 @dataclass

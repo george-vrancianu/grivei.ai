@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
 import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from psycopg.types.json import Jsonb
 
 from .analyze import analyze
@@ -60,6 +61,7 @@ from .banipartide.build import DonationsSummary
 from .placement.build import PlacementSummary
 from .pins import SQL_DIR, compute_pins, pin_extra
 from .progress import Progress
+from .stop import BuildPaused, staged_build
 from .resume import Verdict, decide
 from .hand_offs import load_data_through, unit_counts
 from .sources import SEAP, SOURCES
@@ -539,6 +541,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
     summary.pinned_view = pinned
     if progress and staged:
         progress.mark_staged()
+        progress.mark_database(conninfo_to_dict(db_url).get("dbname", ""))  # the name only: the URL carries the password
 
     def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
         return progress.step(name) if progress else nullcontext()
@@ -549,11 +552,19 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES),  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
                                pins=verdict.pins)
-            run_steps(ctx, resume=verdict.resume)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
+            with staged_build() if staged else nullcontext():  # the Steps' commit boundaries are where a stop request pauses (stop.py)
+                run_steps(ctx, resume=verdict.resume)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
             data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
+    except BuildPaused as e:  # stopped on request at a committed boundary: not a failure, the next run resumes it
+        if progress:
+            progress.pause(e.reached, e.reason)
+        raise
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the open transaction rolls back (all of it in place; the running Step when staged), the old schema stays
         if progress:
-            progress.fail(e)
+            if staged and isinstance(e, SystemExit):  # the second SIGTERM of a staged build: its committed Steps stay, so it is resumable, not failed
+                progress.interrupt(e)
+            else:
+                progress.fail(e)
         raise
     if gate:
         try:

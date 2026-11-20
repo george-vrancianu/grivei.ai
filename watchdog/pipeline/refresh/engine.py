@@ -36,6 +36,7 @@ from ..anaf import AnafUnavailable
 from ..archive import QUARANTINE_DIR, Archive
 from ..crawl import CrawlError
 from ..onrc.fetch import held_snapshots
+from ..stop import BuildPaused
 from .ledger import LEDGER_NAME, Ledger, parse, stamp
 from .pings import Pinger
 
@@ -94,7 +95,7 @@ class Step:
 
 @dataclass
 class RefreshResult:
-    status: str  # ok | failed | locked
+    status: str  # ok | failed | paused | locked
     run: dict | None = None
     alert: str | None = None
 
@@ -279,6 +280,11 @@ def _execute(archive: Archive, step: Step, ledger: Ledger, run: dict, now: Calla
         record["attempts"] = attempt
         try:
             result = step.run()
+        except BuildPaused as e:  # a staged build stopped on request at a committed boundary: neither a success nor a failure, the step stays due so the next trigger resumes it
+            record.update(status="paused", ended=stamp(now()), note=f"{e.reached}: {e.reason}", failureClass=None, error=None)
+            say(f"step {step.name}: paused {e.reached} ({e.reason}); the next run resumes it")
+            ledger.save()
+            return record
         except Exception as e:  # noqa: BLE001 - classed below; SystemExit and KeyboardInterrupt propagate
             kind = classify(e)
             record.update(failureClass=kind, error=f"{type(e).__name__}: {e}"[:500])
@@ -322,6 +328,9 @@ def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger 
                 say(f"step {step.name}: due ({reason})")
                 record = _execute(archive, step, ledger, run, now, sleep, say)
                 ran += 1
+                if record["status"] == "paused":
+                    say(f"step {step.name} paused: the {kind} ends here, the steps after it stay due")
+                    break
                 if record["status"] == "failed" and stop_on_failure:
                     say(f"step {step.name} failed: the {kind} stops here, so a resumed {kind} starts at this step; the steps after it did not run")
                     break
@@ -336,15 +345,16 @@ def _run(archive: Archive, kind: str, trigger: str, build_steps, pinger: Pinger 
             raise
         failed = [s for s in run["steps"] if s["status"] == "failed"]
         warnings = [f"{s['name']}: {w}" for s in run["steps"] for w in s["warnings"]]
-        run.update(status="failed" if failed else "ok", ended=stamp(now()))
-        alert = _alert(kind, run, failed, warnings, ledger, pinger, say, ran)
+        paused = [s for s in run["steps"] if s["status"] == "paused"]
+        run.update(status="failed" if failed else "paused" if paused else "ok", ended=stamp(now()))  # failed > paused > ok
+        alert = _alert(kind, run, failed, paused, warnings, ledger, pinger, say, ran)
         run["alert"] = alert
         ledger.save()
         say(f"{kind} run {run['id']} {run['status']}" + (f"; alert: {alert}" if alert else ""))
         return RefreshResult(run["status"], run, alert)
 
 
-def _alert(kind: str, run: dict, failed: list[dict], warnings: list[str], ledger: Ledger, pinger: Pinger | None, say, ran: int) -> str | None:
+def _alert(kind: str, run: dict, failed: list[dict], paused: list[dict], warnings: list[str], ledger: Ledger, pinger: Pinger | None, say, ran: int) -> str | None:
     if pinger is None:  # seed: the operator is watching the log
         return None
     deterministic = [s for s in failed if s["failureClass"] == "deterministic"]
@@ -359,6 +369,9 @@ def _alert(kind: str, run: dict, failed: list[dict], warnings: list[str], ledger
             pinger.fail(reason)
             return reason
         say(f"transient failure, run {streak} of the {ALERT_AFTER_FAILED_RUNS + 1} that raise an alert; the next trigger retries")
+        return None
+    if paused:  # `/log`: an event on the check, no state change: not the success that resets the dead-man's switch, not the `/fail` that pages for a pause somebody asked for
+        pinger.log(f"refresh paused: {paused[0]['name']} paused {paused[0]['note']}; the paused next database holds a full extra copy of the graph on disk; the next trigger resumes")
         return None
     body = f"refresh ok, {ran} step(s) ran" if ran else "refresh ok, nothing due"
     if warnings:

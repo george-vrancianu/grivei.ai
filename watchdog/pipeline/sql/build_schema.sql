@@ -5,7 +5,7 @@ DROP SCHEMA IF EXISTS build CASCADE;
 CREATE SCHEMA build;
 
 -- The build itself: one row (the key is always true), inserted by the schema Step, finished in the transaction of the last Step. `state` is 'building'
--- until then and 'complete' after: a Switchover refuses a graph whose run is not complete. `staged` is whether each Step committed on its own (a build
+-- until then and 'complete' after ('paused' while a pause requested by the operator holds the build at a committed boundary, build_steps resumes it): a Switchover refuses a graph whose run is not complete. `staged` is whether each Step committed on its own (a build
 -- beside the live graph) or all of them in one transaction (`--in-place`).
 CREATE TABLE build.run (
     one      boolean PRIMARY KEY DEFAULT true CHECK (one),

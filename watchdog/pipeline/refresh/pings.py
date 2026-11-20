@@ -1,4 +1,4 @@
-"""healthchecks.io pings: a success ping after every run that did not fail, a `/fail` ping with a one-line reason. No URL = no pings.
+"""healthchecks.io pings: a success ping after every run that did not fail, a `/fail` ping with a one-line reason, and a `/log` ping when a run paused its load (neither a success, which would reset the dead-man's switch, nor a failure).  No URL = no pings.
 
 The URL is the check's ping URL (env `PIPELINE_HEALTHCHECK_URL`). A ping that cannot be sent is logged and never fails the run:
 the dead-man's switch (3 days without a success ping) covers exactly that.
@@ -32,3 +32,7 @@ class Pinger:
 
     def fail(self, reason: str) -> None:
         self._send("/fail", reason)
+
+    def log(self, body: str) -> None:
+        """A paused run: an entry in the check's log that changes neither its state nor its dead-man's switch."""
+        self._send("/log", body)
