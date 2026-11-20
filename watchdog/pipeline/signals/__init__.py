@@ -43,6 +43,7 @@ from psycopg.types.json import Jsonb
 
 from . import (after_strike_off, donor_to_party, few_employees, framework_overrun, insolvency, no_construction_caen, no_financial_statement, no_publication,
                over_cap, soe_board_in_supplier, splitting, young_firm)
+from ..analyze import analyze
 from .common import Hit
 
 # The contract's SignalRuleSlug order. Every rule is a module with SLUG, KINDS, WHERE and detect; the last six (#184) also read a Reference source
@@ -152,6 +153,7 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
             "VALUES (%s, GREATEST(make_date((SELECT min(extract(year FROM award_date))::int FROM seap.record WHERE kind = ANY(%s)), 1, 1), %s::date), NULL, %s, %s, %s, %s, %s)",
             (rule.SLUG, list(rule.KINDS), getattr(rule, "WINDOW_FROM", date.min), with_signal / seen if seen else 0.0, year, through, seen, with_signal),
         )
+    analyze(cur, "seap.signal", "seap.signal_member")  # the UPDATEs below join them
     # the search rows carry the rule slugs of their Record: the signal and has-Signals filters read them, the rollup copies has_signals
     cur.execute(
         """UPDATE seap.search s SET signals = m.rules, has_signals = true
@@ -164,7 +166,6 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
              FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
                      FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule = ANY(%s) GROUP BY sm.record_code) m
             WHERE s.record_code = m.record_code""", (restricted_slugs(),))
-    cur.execute("ANALYZE seap.signal")
     counts = {r.SLUG: 0 for r in RULES}
     for h in hits:
         counts[h.rule] += 1
