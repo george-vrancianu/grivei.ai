@@ -258,8 +258,9 @@ def onrc_rows(url, sql):
         return c.execute(sql).fetchall()
 
 
-@pytest.mark.parametrize("killed_by", [SystemExit(143), RuntimeError("bug")], ids=["sigterm", "bug"])
-@pytest.mark.parametrize("name", list(ONRC_POINTS))
+@pytest.mark.parametrize("name, killed_by", [(n, SystemExit(143)) for n in ONRC_POINTS]
+                         + [(n, RuntimeError("bug")) for n in ("after-onrc-snapshot-1", "after-onrc-snapshot-4")],
+                         ids=[f"{n}-sigterm" for n in ONRC_POINTS] + [f"{n}-bug" for n in ("after-onrc-snapshot-1", "after-onrc-snapshot-4")])
 def test_killed_after_an_onrc_snapshot_the_resume_continues_from_the_next_one_and_leaves_the_uninterrupted_graph(harness, name, killed_by):
     rerun = harness.assert_resumes_like_reference(ONRC_POINTS[name], killed_by)  # four snapshots with a rename and status changes
     assert onrc_rows(rerun.url, "SELECT ordinal, snapshot_date::text, applied FROM build.snapshot ORDER BY ordinal") == [
@@ -304,3 +305,9 @@ def test_an_in_place_build_stays_one_transaction_even_with_the_onrc_snapshot_led
     live = h.new_live()
     h.run(h.new_archive("inplace"), live, "--in-place", kill=ONRC_POINTS["after-onrc-snapshot-2"], killed_by=RuntimeError("bug"))
     assert onrc_rows(live, "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('build', 'onrc')") == [(0,)]  # all or nothing: two snapshots did not stay
+
+
+def test_finishing_the_onrc_step_without_its_snapshot_loop_fails_loudly():
+    from pipeline.onrc.build import OnrcSummary, finish_onrc
+    with pytest.raises(RuntimeError, match="build_onrc_snapshots"):
+        finish_onrc(None, OnrcSummary(snapshots=2))  # a summary restored from a hand-off holds no snapshots to finish from

@@ -4,6 +4,7 @@ A `Step` declares its name, a run function on a shared `BuildContext`, the table
 order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
 
 - A staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
+- A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294); its `run` then finishes the Step in the Step's transaction.
 - A resumed build (`run_steps(..., resume=True)`, decided by resume.py before the Steps run) skips the committed Steps and restores what they reported
   (hand_offs.restore_summary); the Steps that remain load their hand-offs from the graph as in an uninterrupted run. No Step may therefore be run twice.
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
