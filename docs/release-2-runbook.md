@@ -35,7 +35,7 @@ There are no migration files: the DDL lives in `watchdog/pipeline/sql/*_schema.s
 
 | Where | Tables | Ticket |
 | --- | --- | --- |
-| `core` | `core.source` (the `sources` registry the API reads); `core.mf_principal` (principal credit holders of every held MF snapshot); `core.placement.placed_by` allows `ONRC`; `core.entity.provenance_source` allows `ONRC` | #174, #175, #180 |
+| `core` | `core.source` (the `sources` registry the API reads); `core.data_through` (each Source's data-through date per record kind, stored in the load transaction; the API reads it, and until a graph has it falls back to the old aggregate); `core.mf_principal` (principal credit holders of every held MF snapshot); `core.placement.placed_by` allows `ONRC`; `core.entity.provenance_source` allows `ONRC` | #174, #175, #180 |
 | `onrc` (`onrc_schema.sql`) | `snapshot`, `registration`, `caen`, `status_name`, `status_span`, `name_span`, `search` (with the `onrc.search_bm25` pg_search index), `coverage_cell`, `role`, `person`, `possible_match`, `person_override` | #175, #176, #177 |
 | `amepip` | `snapshot`, `enterprise` | #183 |
 | `financials` | `source_file`, `statement` (also an additive index on `seap.rollup_entity`) | #179 |

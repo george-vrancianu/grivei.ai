@@ -389,12 +389,8 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
         sql = "SELECT key FROM core.entity WHERE key = %s AND identity = 'CUI' LIMIT 2" if cui else "SELECT key FROM core.entity WHERE name_folded = %s AND name_folded <> '' LIMIT 2"
         tasks.append(Task("goto", "scan", ["go_to"], run=lambda timed, s=sql, q=w.q_folded: timed("go_to", s, [q])))
 
-    # dataThrough: asked by every MainScreen request, not cached by the API, and a scan of seap.record (store.ts: no index serves it);
-    # a known cost the whole keystroke pays, judged in every state
-    data_through = (
-        "SELECT kind, max(d)::text AS date FROM (SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind "
-        "UNION ALL SELECT kind, through FROM seap.crawl_state) x GROUP BY kind ORDER BY kind"
-    )
+    # dataThrough: asked by every MainScreen request and not cached by the API: a read of the rows the rebuild stores (store.ts)
+    data_through = "SELECT kind, through::text AS date FROM core.data_through WHERE source = 'SEAP' ORDER BY kind"
     tasks.append(Task("data_through", "record", ["data_through"], run=lambda timed, s=data_through: timed("data_through", s, [])))
     return tasks
 

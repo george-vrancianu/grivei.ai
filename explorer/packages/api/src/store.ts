@@ -589,11 +589,31 @@ function noTable(e: unknown): { rows: never[] } {
   throw e;
 }
 
+// TRANSITIONAL: the data-through aggregates a graph built before `core.data_through` still answers with (a copy of `data_through_sql` in
+// watchdog/pipeline/sources.py). Remove them, and the 42P01 fallback in `storedDataThrough`, once every served graph has the table.
+const SEAP_DATA_THROUGH_AGGREGATE = `SELECT kind, max(d)::text AS date FROM (
+   SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
+   UNION ALL
+   SELECT kind, through FROM seap.crawl_state
+ ) x GROUP BY kind ORDER BY kind`;
+const ONRC_DATA_THROUGH_AGGREGATE = `SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0
+   UNION ALL SELECT 'ROLE', max(snapshot_date)::text FROM onrc.role HAVING count(*) > 0`;
+
 export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup = true, restricted = restrictedShown() }: PostgresStoreOptions = {}): Store {
   // every filter of this store is read with the Restricted switch it was created with (a Restricted rule's Records join the Signal chips only when shown)
   const whereOf = (filter: SearchFilter): Where => buildWhereFor(filter, restricted);
   // the rollup counts the public rules only, so a has-Signals filter is answered from the index when Restricted rules are shown
   const planOf = (filter: SearchFilter) => (restricted && filter.hasSignals != null ? null : rollupPlanFor(filter));
+  /** A Source's data-through dates: the rows the rebuild stored in the load transaction (`core.data_through`); no row, no date. */
+  async function storedDataThrough(source: "SEAP" | "ONRC", aggregate: string): Promise<{ kind: string; date: string }[]> {
+    try {
+      const { rows } = await pool.query(`SELECT kind, through::text AS date FROM core.data_through WHERE source = '${source}' ORDER BY kind`);
+      return rows;
+    } catch (e) {
+      if ((e as { code?: string }).code !== "42P01") throw e;
+      return (await pool.query(aggregate)).rows; // a graph built before the table: the old aggregate, until the next rebuild
+    }
+  }
   /** The ONRC registration a predicate on `onrc.registration r` (one bound parameter) finds, with the history derived from the held snapshots. */
   async function onrcWhere(where: string, param: string): Promise<OnrcRegistrationRow | null> {
     const { rows } = await pool.query(
@@ -1047,17 +1067,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       );
       return rows as SourceRow[];
     },
-    async dataThrough() {
-      const { rows } = await pool.query(
-        // a copy of SEAP_DATA_THROUGH_SQL in watchdog/pipeline/sources.py (`pipeline status`); the two must agree: the crawled kinds are at least as far as the crawl cursor
-        `SELECT kind, max(d)::text AS date FROM (
-           SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind
-           UNION ALL
-           SELECT kind, through FROM seap.crawl_state
-         ) x GROUP BY kind ORDER BY kind`,
-      );
-      return rows;
-    },
+    dataThrough: () => storedDataThrough("SEAP", SEAP_DATA_THROUGH_AGGREGATE),
     async coverageGrid() {
       const { rows } = await pool.query(
         `SELECT quarter, kind, state, rule, note, records, crawl_only AS "crawlOnly", data_through::text AS "dataThrough" FROM seap.coverage_cell
@@ -1159,11 +1169,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
       if (!s) throw new Error(`onrc.snapshot has no row for the snapshot ${p.snapshot} of person ${id}`);
       return { id: p.id, name: p.name, birthYear: p.birthYear, roles: roles.rows, snapshot: p.snapshot, provenance: { url: s.url, via: s.title, fetchedAt: s.fetched_at } };
     },
-    async onrcDataThrough() {
-      const { rows } = await pool.query(`SELECT 'REGISTRATION' AS kind, max(snapshot_date)::text AS date FROM onrc.snapshot HAVING count(*) > 0
-         UNION ALL SELECT 'ROLE', max(snapshot_date)::text FROM onrc.role HAVING count(*) > 0`);
-      return rows;
-    },
+    onrcDataThrough: () => storedDataThrough("ONRC", ONRC_DATA_THROUGH_AGGREGATE),
     async onrc(cui) {
       return onrcWhere("r.cui = $1 AND r.primary_for_cui", cui);
     },
