@@ -55,11 +55,11 @@ What a build fixes at its start and records in the Build ledger: the Raw archive
 _Avoid_: snapshot, lockfile
 
 **Resume gate**:
-The decision at the start of every build, printed as its first log line (`rebuild: resume - ...` or `rebuild: fresh - <reason>`), whether to continue the unfinished build in the next database or start over. It resumes only when the Pinned inputs are unchanged and any code change is confined to Steps not yet run; `--fresh` always starts over.
+The decision a build makes before it touches the next database: continue the unfinished build or start over. It continues only when the Pinned inputs are unchanged and any code change is confined to Steps not yet run.
 _Avoid_: restart check
 
 **Staged build**:
-A build that commits as it goes (a Step, a Raw archive unit, an ONRC snapshot at a time, in the Build ledger), so it can be paused and resumed. A build beside the live database is always staged; `rebuild --in-place --staged` stages an in-place build into a fresh database nobody reads, and `--in-place` alone is one transaction that always starts over.
+A build that commits as it goes (each Step, Raw archive unit and ONRC snapshot, with its Build ledger row), so it can be paused and resumed. A build beside the live database is always staged.
 _Avoid_: incremental build
 
 **Data-through date**:
