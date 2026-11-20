@@ -104,7 +104,7 @@ def test_a_plain_in_place_build_has_no_boundary_so_the_stop_file_is_ignored_and_
     archive, live = harness.new_archive("plain"), harness.new_live()
     (archive / STOP_FILE).touch()
     out = harness.run(archive, live, "--in-place")  # asserts exit 0
-    assert (archive / STOP_FILE).exists() and out.graph is not None
+    assert not (archive / STOP_FILE).exists() and out.graph is not None  # ignored by the build, removed when it finished: it never pauses a later build by surprise
     with psycopg.connect(live) as c:
         assert c.execute("SELECT state FROM build.run").fetchone() == ("complete",)
 
@@ -117,6 +117,28 @@ def test_a_stop_file_left_before_the_run_pauses_it_at_the_first_boundary_and_is_
     assert not (archive / STOP_FILE).exists()
     assert "after step schema" in harness.capsys.readouterr().err
     assert harness.run(archive, live).first.startswith("rebuild: resume - ")
+
+
+# --- a request after the last boundary ---------------------------------------------------------------------------------------------------------------------
+
+def _touch_stop_file_in_last_step(monkeypatch, archive: Path) -> None:
+    import pipeline.build_steps as build_steps
+    real, last = build_steps.write_step, build_steps.STEPS[-1].name
+
+    def write_step(cur, name, ordinal, summary):
+        if name == last:
+            (archive / STOP_FILE).touch()  # the last Step is running: no boundary follows it
+        return real(cur, name, ordinal, summary)
+    monkeypatch.setattr(build_steps, "write_step", write_step)
+
+
+def test_a_stop_file_touched_during_the_last_step_is_consumed_and_the_build_completes_and_switches(harness, monkeypatch):
+    ref = harness.reference()
+    archive, live = harness.new_archive("last-file"), harness.new_live()
+    with monkeypatch.context() as m:
+        _touch_stop_file_in_last_step(m, archive)
+        out = harness.run(archive, live)  # exit 0: a finished build is complete, not paused
+    assert not (archive / STOP_FILE).exists() and out.graph == ref.graph
 
 
 # --- the deadline -------------------------------------------------------------------------------------------------------------------------------------
@@ -253,6 +275,26 @@ def test_a_second_sigterm_aborts_only_the_step_in_progress_and_the_earlier_steps
     assert rerun.first.startswith("rebuild: resume - ") and rerun.graph == ref.graph
 
 
+def test_a_first_sigterm_during_the_last_step_completes_the_build_and_exits_0_with_a_log_line(harness, tmp_path):
+    from pipeline.build_steps import STEPS
+    ref = harness.reference()
+    archive, live = harness.new_archive("sigterm-last"), harness.new_live()
+    proc, lines = _start(harness, tmp_path, archive, live, STEPS[-1].name, "stop"), []
+    try:
+        _wait_for(proc, f"SLOW-STEP {STEPS[-1].name}", lines)
+        proc.send_signal(signal.SIGTERM)
+        lines += proc.communicate(timeout=300)[0].splitlines()
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+    text = "\n".join(lines)
+    assert proc.returncode == 0, text  # no boundary to pause at, and a finished build is not thrown away
+    assert "stop requested after the last boundary: the build is complete; stopping after it" in text and "Traceback" not in text
+    from resume_harness import dump_graph
+    assert dump_graph(live) == ref.graph  # switched over: the live database holds the finished graph
+
+
 # --- the refresh run -----------------------------------------------------------------------------------------------------------------------------------
 
 def test_a_refresh_whose_load_pauses_records_paused_in_the_ledger_pings_log_and_the_next_trigger_resumes_it(server, tmp_path, monkeypatch, capsys):
@@ -273,7 +315,9 @@ def test_a_refresh_whose_load_pauses_records_paused_in_the_ledger_pings_log_and_
         assert run["status"] == "paused" and [(s["name"], s["status"]) for s in run["steps"]][-1] == ("load", "paused")  # the backups after it did not start
         assert "after unit 3/" in run["steps"][-1]["note"]
         assert pings.urls == ["https://hc.example/p/log"]  # neither the success ping (resets the dead-man's switch) nor /fail (pages)
-        assert "refresh paused: load paused after unit 3/" in pings.calls[0][1] and "full extra copy" in pings.calls[0][1]
+        assert "refresh paused: load paused after unit 3/" in pings.calls[0][1]
+        assert f"{live.rsplit('/', 1)[1]}_next holds a full extra copy of the graph on disk" in pings.calls[0][1]  # D9: names the database
+        assert run["steps"][-1]["database"] == f"{live.rsplit('/', 1)[1]}_next"
         assert Ledger(archive / "refresh-ledger.json").consecutive_failed_runs() == 0
         code, text = _status(h, archive, capsys)
         assert "paused" in text and "not a failure" in text
@@ -287,3 +331,32 @@ def test_a_refresh_whose_load_pauses_records_paused_in_the_ledger_pings_log_and_
     with psycopg.connect(live) as c:
         assert c.execute("SELECT state FROM build.run").fetchone() == ("complete",)
     assert onrc_rows(live, "SELECT count(*) FROM seap.record") == onrc_rows(ref.url, "SELECT count(*) FROM seap.record")
+
+
+# --- the step reached after a resume (N6) and a code change confined to a later Step (N7) ----------------------------------------------------------------
+
+def test_a_resumed_build_that_pauses_again_names_the_step_the_earlier_run_committed(harness, capsys):
+    archive, live = harness.new_archive("resume-reached"), harness.new_live()
+    harness.run(archive, live, pause=STEP_POINTS["pause-after-step-estimates"])
+    second = harness.run(archive, live, pause=unit_pause_point(3))  # the resumed run pauses in the unit loop, before it commits a Step of its own
+    assert second.first.startswith("rebuild: resume - ")
+    assert read_status(harness.tmp / "status.json")["committed"] == "estimates"
+    code, text = _status(harness, archive, capsys)
+    assert code == 0 and "last committed Step is estimates" in text
+
+
+def test_a_pause_then_a_code_change_confined_to_a_later_step_resumes_with_the_new_code_and_equals_the_reference(harness, tmp_path, monkeypatch):
+    import pipeline.pins as pins_module
+    from resume_harness import copy_package, edit_code
+    harness.reference()
+    package = copy_package(tmp_path / "code" / "elsewhere" / "pipeline")
+    monkeypatch.setattr(pins_module, "PACKAGE", package)
+    archive, live = harness.new_archive("pause-code"), harness.new_live()
+    harness.run(archive, live, pause=STEP_POINTS["pause-after-step-analyze-search"])
+    edit_code(package, "onrc/search.py")  # the onrc-search Step's own file: not run yet
+    rerun = harness.run(archive, live)
+    assert rerun.first.startswith("rebuild: resume - ") and "code changed only in Steps not yet run: onrc/search.py" in rerun.first
+    ref = harness.run(harness.new_archive("pause-code-ref"), harness.new_live())  # the same edited package, never paused
+    strip = lambda g: {**g, "build.run": [{k: v for k, v in row.items() if k != "changed_files"} for row in g["build.run"]]}  # noqa: E731
+    assert strip(rerun.graph) == strip(ref.graph)
+    assert rerun.graph["build.run"][0]["changed_files"] == ["onrc/search.py"]

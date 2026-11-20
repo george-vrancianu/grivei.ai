@@ -36,7 +36,6 @@ from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
 from .onrc.fetch import fetch_onrc
 from . import acceptance_cli, placement_cli, stop
-from .stop import parse_duration
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
 from .refresh.ledger import LEDGER_NAME
@@ -78,7 +77,7 @@ def _in_place_arg(p) -> None:
 
 def _duration_arg(text: str) -> float:
     try:
-        return parse_duration(text)
+        return stop.parse_duration(text)
     except ValueError as e:
         raise argparse.ArgumentTypeError(str(e)) from None
 
@@ -197,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
 
     lq = sub.add_parser("load-quarter", help="load one quarter again from the archive, without downloading: requeue its quarantined files, then rebuild")
     lq.add_argument("quarter", help="e.g. 2023Q2")
-    load_args(lq, False)
+    load_args(lq, verb_with_pause=False)
 
     for verb, text in (("rollback", "swap the database back to the graph from before the last switchover (and back again)"),
                        ("cleanup", "drop the old graph kept by the last switchover (<db>_prev) and any unfinished or refused build (<db>_next)")):

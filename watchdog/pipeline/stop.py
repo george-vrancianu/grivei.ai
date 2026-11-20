@@ -6,11 +6,14 @@ a Step, after a unit of the unit loop, after an ONRC snapshot): `pause_point` ma
 next trigger resumes instead of pausing again) and raises `BuildPaused`. A second SIGTERM aborts the Step in progress as before (`SystemExit`: it rolls back,
 the committed work stays, the run reads `interrupted (resumable)`).
 
+A request that arrives after the last boundary (during the last Step) cannot pause anything: the build is complete, and a complete build is never resumed, so
+throwing it away would waste it. The build finishes and switches over; `build_finished` notes the request, and a refresh or seed run ends after its load
+(the backups stay due). A stop file nobody consumed is removed when a build finishes and when a run ends, so it never pauses a later build by surprise.
+
 Only a staged build has boundaries: a plain `--in-place` build is one transaction, so there a signal behaves as it always did and the stop file is ignored.
 """
 from __future__ import annotations
 
-import logging
 import re
 import signal
 import sys
@@ -23,7 +26,6 @@ import psycopg
 
 from .build_ledger import PAUSED
 
-log = logging.getLogger("pipeline.stop")
 STOP_FILE = "rebuild.stop"
 PAUSED_EXIT_CODE = 75  # EX_TEMPFAIL: not done, try again later; `rebuild && next` never goes on as if the graph had switched
 
@@ -31,9 +33,9 @@ PAUSED_EXIT_CODE = 75  # EX_TEMPFAIL: not done, try again later; `rebuild && nex
 class BuildPaused(Exception):
     """A staged build stopped at a committed boundary on request. `reached` says where (the step, unit or snapshot just committed), `reason` why."""
 
-    def __init__(self, reached: str, reason: str):
+    def __init__(self, reached: str, reason: str, database: str = ""):
         super().__init__(f"paused {reached}: {reason}")
-        self.reached, self.reason = reached, reason
+        self.reached, self.reason, self.database = reached, reason, database  # `database`: the one holding the committed work (a full extra copy of the graph on disk for a beside build)
 
 
 def parse_duration(text: str) -> float:
@@ -54,6 +56,7 @@ class _Controller:
         self.deadline = clock() + pause_after if pause_after else None
         self.requested = False
         self.building = False
+        self.late = False  # a stop request that arrived after the last boundary of a build that then completed (see `build_finished`)
 
     def reason(self) -> str | None:
         if self.requested:
@@ -67,10 +70,34 @@ class _Controller:
     def on_sigterm(self, signum, frame) -> None:
         if self.building and not self.requested:
             self.requested = True
-            log.warning("stop requested: pausing at the next boundary (a second SIGTERM aborts the step in progress)")
-            print("stop requested: pausing at the next boundary (a second SIGTERM aborts the step in progress)", file=sys.stderr, flush=True)
+            say("stop requested: pausing at the next boundary (a second SIGTERM aborts the step in progress)")
             return
         sys.exit(128 + signum)
+
+    def build_finished(self) -> None:
+        """A build completed (staged or plain `--in-place`). A request that came after its last boundary is not lost work: the build is complete and `decide()` would
+        not resume a complete one, so it is kept and the run stops after it (`pending()`: a refresh ends before its backups). A stop file left over is removed,
+        so it never pauses a later build by surprise."""
+        if self.requested:
+            self.late = True
+            say("stop requested after the last boundary: the build is complete; stopping after it")
+        if self.root is not None and (self.root / STOP_FILE).exists():
+            self.late = True
+            self.clear_stop_file("it arrived after the last boundary of a build that completed")
+
+    def clear_stop_file(self, why: str) -> None:
+        if self.root is not None and (self.root / STOP_FILE).exists():
+            (self.root / STOP_FILE).unlink(missing_ok=True)
+            say(f"{STOP_FILE} removed: {why}")
+
+    def pending(self) -> bool:
+        """A stop request is outstanding after the load: the signal flag, a stop file, or one `build_finished` saw."""
+        return self.requested or self.late or (self.root is not None and (self.root / STOP_FILE).exists())
+
+
+def say(message: str) -> None:
+    """One line on stderr: `rebuild` does not route the `pipeline` logger, `refresh`/`seed` do (a log line there would appear twice)."""
+    print(message, file=sys.stderr, flush=True)
 
 
 STOP = _Controller()
@@ -99,4 +126,4 @@ def pause_point(cur: psycopg.Cursor, reached: str) -> None:
     cur.execute("UPDATE build.run SET state = %s WHERE one", (PAUSED,))
     if STOP.root is not None:
         (STOP.root / STOP_FILE).unlink(missing_ok=True)  # consumed: the next trigger resumes instead of pausing again
-    raise BuildPaused(reached, reason)
+    raise BuildPaused(reached, reason, cur.connection.info.dbname)

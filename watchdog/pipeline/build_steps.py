@@ -30,7 +30,6 @@ import psycopg
 from .analyze import analyze
 from .archive import QUARANTINE_DIR, Archive, sha256_of
 from .build_ledger import finish_run, now, resume_run, stamp_step, start_run
-from .stop import pause_point
 from .bulk import KINDS
 from .coverage import build_coverage, flagged as flagged_cells
 from .coverage import parse_quarter as _parse_quarter
@@ -59,6 +58,7 @@ from .rollup import build_rollup
 from .search import create_index
 from .signals import build_signals
 from .sources import SOURCES
+from .stop import pause_point
 
 P = ""  # the declarations below are package-relative (see the module doc); `P +` stays so a path reads as a package path
 
@@ -416,6 +416,8 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: boo
             ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root, unit_counts(load_units(ctx.cur)))
         if ctx.staged:
             resume_run(ctx.cur)  # an earlier run may have paused it
+            if ctx.progress and start:
+                ctx.progress.committed(steps[start - 1].name)  # the step reached counts what the earlier run committed: a pause or a kill before this run's first commit names it
         if start and ctx.staged:  # a kill between that Step's commit and its VACUUM skipped it: speed only, so it is simply run again (the graph and the ledger do not change)
             _vacuum_after(ctx, steps[start - 1])
     if ctx.staged:

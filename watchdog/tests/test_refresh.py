@@ -582,7 +582,7 @@ def test_status_on_an_archive_with_no_runs_names_every_step_that_is_due_now(arch
 
 def _paused(*_):
     from pipeline.stop import BuildPaused
-    return BuildPaused("after unit 3/9 (da 2023Q1)", "stop requested (rebuild.stop)")
+    return BuildPaused("after unit 3/9 (da 2023Q1)", "stop requested (rebuild.stop)", "grivei_next")
 
 
 def test_a_paused_load_is_its_own_outcome_pinged_to_log_not_success_not_fail_and_ends_the_run(go, impl, archive, pings, clock):
@@ -594,6 +594,7 @@ def test_a_paused_load_is_its_own_outcome_pinged_to_log_not_success_not_fail_and
     assert "after unit 3/9" in steps["load"]["note"] and "backup" not in steps  # the steps after it stay due
     assert pings.urls == ["https://hc.example/ping/abc/log"] and pings.calls[0][1].startswith("refresh paused: load paused after unit 3/9")
     assert "next trigger resumes" in pings.calls[0][1]
+    assert "grivei_next holds a full extra copy of the graph on disk" in pings.calls[0][1] and steps["load"]["database"] == "grivei_next"  # D9: the database is named
     ledger = Ledger(archive.root / "refresh-ledger.json")
     assert ledger.last_success("load") is None and ledger.consecutive_failed_runs() == 0
     clock.next_day()
@@ -618,3 +619,65 @@ def test_status_and_the_acceptance_week_show_a_paused_run_explicitly(go, impl, a
     assert "paused: " in text and "load paused after unit 3/9" in text and "not a failure" in text
     ok, lines = week_report([result.run], START.date(), days=1)
     assert ok and any("paused" in line and "next trigger resumes" in line for line in lines)
+
+
+# ---- a stop request after the load's last boundary (#296) ---------------------------------------------------------------------------------------------
+
+@pytest.fixture
+def stop_state(archive):
+    """The process-wide stop controller, configured for this archive and reset afterwards."""
+    from pipeline.stop import STOP
+    STOP.configure(archive.root, None)
+    archive.root.mkdir(parents=True, exist_ok=True)
+    yield STOP
+    STOP.configure(None, None)
+
+
+def _stop_during_load(impl, stop_state, how: str):
+    """The load completes, and a stop request arrives while its last Step runs (after the last boundary), as `STOP.build_finished()` saw it."""
+    from pipeline.stop import STOP_FILE
+    real = impl.load
+
+    def load():
+        result = real()
+        if how == "signal":
+            stop_state.requested = True
+        else:
+            (stop_state.root / STOP_FILE).touch()
+        stop_state.build_finished()  # what rebuild() does when the load is complete
+        return result
+    impl.load = load
+
+
+@pytest.mark.parametrize("how", ["signal", "file"])
+def test_a_stop_request_after_the_loads_last_boundary_ends_the_run_before_the_backups_and_the_load_is_ok(go, impl, archive, stop_state, how):
+    from pipeline.stop import STOP_FILE
+    _stop_during_load(impl, stop_state, how)
+    result = go()
+    steps = {s["name"]: s["status"] for s in result.run["steps"]}
+    assert steps["load"] == "ok" and "backup" not in steps and "pgdump" not in steps  # the backups are not started and stay due
+    assert result.status == "ok" and result.exit_code == 0
+    assert any("the load is complete" in line and "stay due" in line for line in go.lines)
+    assert not (archive.root / STOP_FILE).exists()  # never left behind to pause a later build
+    assert Ledger(archive.root / "refresh-ledger.json").last_success("load") is not None
+
+
+def test_a_stop_file_nobody_consumed_is_removed_when_a_run_ends(go, impl, archive, stop_state, capsys):
+    from pipeline.stop import STOP_FILE
+    (archive.root / STOP_FILE).touch()  # arrived during a step that is no build: there is nothing to pause
+    result = go()  # load is due, but the fake build never reads the file
+    assert result.status == "ok" and not (archive.root / STOP_FILE).exists()
+    assert f"{STOP_FILE} removed" in capsys.readouterr().err
+
+
+def test_a_leftover_stop_file_is_removed_when_a_plain_rebuild_finishes_with_a_log_line(archive, stop_state, capsys):
+    from pipeline.stop import STOP_FILE
+    (archive.root / STOP_FILE).touch()
+    stop_state.build_finished()
+    assert not (archive.root / STOP_FILE).exists() and f"{STOP_FILE} removed" in capsys.readouterr().err
+
+
+def test_a_first_sigterm_noted_after_the_last_boundary_logs_that_the_build_is_complete(stop_state, capsys):
+    stop_state.requested = True
+    stop_state.build_finished()
+    assert "stop requested after the last boundary: the build is complete; stopping after it" in capsys.readouterr().err
