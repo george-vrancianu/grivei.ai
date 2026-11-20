@@ -19,7 +19,7 @@ from pipeline.rebuild import rebuild  # noqa: E402
 from pipeline.resume import RESUME, Verdict, load_held  # noqa: E402
 from pipeline.refresh import Pinger, StepResult, run_refresh  # noqa: E402
 from pipeline.refresh.steps import Impl  # noqa: E402
-from resume_harness import FIXTURES, Harness, KillPoint, copy_package, edit_code, make_world, onrc_snapshot_kill_points, step_kill_points, vacuum_kill_points  # noqa: E402
+from resume_harness import FIXTURES, Harness, KillPoint, copy_package, edit_code, make_world, onrc_snapshot_kill_points, step_kill_points, unit_kill_points, vacuum_kill_points  # noqa: E402
 from test_refresh import Clock  # noqa: E402
 from test_bulk_loader_db import HEAD, _write, server  # noqa: E402,F401
 
@@ -326,16 +326,16 @@ def _without_changed_files(graph: dict) -> dict:
     return {**graph, "build.run": [{k: v for k, v in row.items() if k != "changed_files"} for row in graph["build.run"]]}
 
 
-def _code_change(h, tmp_path, monkeypatch, kill: KillPoint, relpath: str, label: str = "a", edit=None, between=None):
-    """Kill at `kill`, edit `relpath` in the package copy (or call `edit(package)`), run `between()` if given, rerun: (the rerun, the live url, the package copy)."""
+def _code_change(h, tmp_path, monkeypatch, kill: KillPoint, relpath: str, label: str = "a", edit=None, between=None, flags: tuple[str, ...] = ()):
+    """Kill at `kill`, edit `relpath` in the package copy (or call `edit(package)`), run `between()` if given, rerun (both runs with `flags`, e.g. `--in-place --staged`): (the rerun, the live url, the package copy)."""
     package = copy_package(tmp_path / label / "elsewhere" / "pipeline")  # not <repo>/watchdog/pipeline: the gate must not depend on where the package sits
     monkeypatch.setattr(pins_module, "PACKAGE", package)
     archive, live = h.new_archive("code-gate"), h.new_live()
-    h.run(archive, live, kill=kill, killed_by=SystemExit(143))
+    h.run(archive, live, *flags, kill=kill, killed_by=SystemExit(143))
     (edit or (lambda p: edit_code(p, relpath)))(package)
     if between:
         between()
-    return h.run(archive, live), live, package
+    return h.run(archive, live, *flags), live, package
 
 
 def test_a_fix_in_a_step_that_has_not_run_resumes_runs_the_new_code_and_leaves_the_graph_of_an_uninterrupted_build_with_it(harness, tmp_path, monkeypatch):
@@ -370,7 +370,6 @@ def test_a_change_to_a_completed_steps_code_or_to_a_shared_module_starts_fresh(s
 def test_a_change_to_a_units_file_after_a_kill_inside_the_unit_loop_starts_fresh_and_leaves_the_uninterrupted_graph(server, tmp_path, monkeypatch, capsys):
     """#293 x #295: the committed `build.unit` rows are units' work with no `build.step` row yet, so the gate counts the Step as run: a mid-loop resume must not mix two versions of its code."""
     from test_resume_units_db import UNITS_WORLD
-    from resume_harness import unit_kill_points
 
     h = Harness(server, tmp_path, monkeypatch, capsys, world=UNITS_WORLD)
     kill = unit_kill_points(1)[1]  # after-unit-1-commit: one loaded unit is committed and nothing is quarantined yet (a quarantine move is not undone by a fresh build, so the graphs would differ by design)
@@ -415,3 +414,75 @@ def test_a_ledger_written_before_per_file_code_hashes_is_fresh(server, tmp_path,
     with psycopg.connect(switchover.names_of(live).next_url, autocommit=True) as c:
         c.execute("ALTER TABLE build.run DROP COLUMN code_files")
     assert h.run(archive, live).first.startswith("rebuild: fresh - the next database has no usable build ledger (the build ledger was written before per-file code hashes)")
+
+
+# --- `rebuild --in-place --staged` (#297): the major-upgrade build into a fresh database nobody reads, committed per Step, Unit and snapshot, resumable
+
+IN_PLACE_STAGED = ("--in-place", "--staged")
+UNIT_POINTS = {p.name: p for p in unit_kill_points()}
+STAGED_KILLS = [(POINTS["in-onrc"], SystemExit(143)), (POINTS["in-onrc"], RuntimeError("bug")), (POINTS["in-entities"], SystemExit(143)),
+                (UNIT_POINTS["after-unit-3-commit"], SystemExit(143)), (UNIT_POINTS["after-unit-3-commit"], RuntimeError("bug")),
+                (ONRC_POINTS["after-onrc-snapshot-2"], SystemExit(143)), (ONRC_POINTS["after-onrc-snapshot-2"], RuntimeError("bug"))]
+
+
+@pytest.mark.parametrize("point, killed_by", STAGED_KILLS, ids=[f"{p.name}-{type(k).__name__}" for p, k in STAGED_KILLS])
+def test_an_in_place_staged_build_resumes_like_a_beside_one(harness, point, killed_by):
+    rerun = harness.assert_resumes_like_reference(point, killed_by, flags=IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: resume - ")
+
+
+def test_an_in_place_staged_build_commits_per_step_and_the_first_line_says_fresh_on_an_empty_database(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    live = h.new_live()
+    killed = h.run(h.new_archive("a"), live, *IN_PLACE_STAGED, kill=POINTS["in-aep"], killed_by=SystemExit(143))
+    assert killed.first == "rebuild: fresh - the next database has no usable build ledger (the build schema is missing)"  # the target database exists but is empty
+    assert "the database keeps its committed Steps; rerun the same command" in killed.out[-1] and "live graph" not in killed.out[-1]
+    assert onrc_rows(live, "SELECT count(*) FROM build.step")[0][0] > 0  # the Steps before the kill are committed in the target database itself
+    assert h.run(h.new_archive("b"), live, *IN_PLACE_STAGED, "--fresh").first == "rebuild: fresh - --fresh given"
+
+
+def test_staged_without_in_place_is_a_parser_error(server, tmp_path, monkeypatch, capsys):
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    with pytest.raises(SystemExit) as e:
+        cli.main(h.args(h.new_archive("a"), h.new_live(), "--staged"))
+    assert e.value.code == 2 and "a beside build is always staged" in capsys.readouterr().err
+
+
+def _databases(server) -> set[str]:
+    with psycopg.connect(f"{server}/postgres", autocommit=True) as c:
+        return {r[0] for r in c.execute("SELECT datname FROM pg_database")}
+
+
+def test_a_complete_in_place_staged_build_is_rebuilt_fresh_on_a_rerun_and_makes_no_next_database(harness, server):
+    ref = harness.reference()
+    archive, live = harness.new_archive("complete"), harness.new_live()
+    harness.run(archive, live, *IN_PLACE_STAGED)
+    again = harness.run(harness.new_archive("complete2"), live, *IN_PLACE_STAGED)  # the runbook's "run step 2 again"
+    assert again.first.startswith("rebuild: fresh - ") and "already complete" in again.first
+    assert again.graph == ref.graph
+    assert f"{live.rsplit('/', 1)[1]}_next" not in _databases(server)
+
+
+def test_a_staged_build_over_a_plain_in_place_graph_without_a_build_schema_starts_fresh_then_resumes(harness, server):
+    ref = harness.reference()
+    live = harness.new_live()
+    harness.run(harness.new_archive("plain"), live, "--in-place")
+    with psycopg.connect(live, autocommit=True) as c:
+        c.execute("DROP SCHEMA build CASCADE")  # a graph from before the build ledger
+    archive = harness.new_archive("over")
+    killed = harness.run(archive, live, *IN_PLACE_STAGED, kill=POINTS["in-onrc"], killed_by=SystemExit(143))
+    assert killed.first.startswith("rebuild: fresh - ") and "build schema is missing" in killed.first
+    rerun = harness.run(archive, live, *IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: resume - ")
+    assert rerun.graph == ref.graph
+    assert f"{live.rsplit('/', 1)[1]}_next" not in _databases(server)
+
+
+def test_the_code_gate_applies_to_an_in_place_staged_build_like_to_a_beside_one(server, tmp_path, monkeypatch, capsys):
+    """#295 x #297: the target database holds the ledger; a change to a completed Step's file starts fresh, one to a Step not yet run resumes."""
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
+    rerun, _, _ = _code_change(h, tmp_path, monkeypatch, POINTS["in-onrc-search"], "estimates.py", "a", flags=IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: fresh - ") and "estimates.py" in rerun.first and "'estimates'" in rerun.first
+    rerun, _, _ = _code_change(h, tmp_path, monkeypatch, POINTS["in-onrc-search"], "onrc/search.py", "b", flags=IN_PLACE_STAGED)
+    assert rerun.first.startswith("rebuild: resume - ") and "code changed only in Steps not yet run: onrc/search.py" in rerun.first
+    assert rerun.graph["build.run"][0]["changed_files"] == ["onrc/search.py"]

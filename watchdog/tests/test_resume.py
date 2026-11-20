@@ -179,7 +179,8 @@ def test_a_mid_unit_loop_resume_is_gated_by_the_code_too():
     assert same.verdict == RESUME and "unit 1 of 2" in same.reason  # unchanged code: the mid-loop resume
     v = _decide(held, _pins(code="code-2", code_files=_code(**{"coverage/grid.py": "g2"})))  # coverage/ belongs to units and to the later coverage Step: only the units rows make it "run"
     assert v.verdict == FRESH and "coverage/grid.py" in v.reason and "'units'" in v.reason
-    assert _decide(held, _pins(code="code-2", code_files=_code(**{"onrc/search.py": "s2"}))).verdict == RESUME  # a later Step's file: the loop continues with the new code
+    later = _decide(held, _pins(code="code-2", code_files=_code(**{"onrc/search.py": "s2"})))  # a later Step's file: the loop continues with the new code
+    assert later.verdict == RESUME and "unit 1 of 2" in later.reason and "onrc/search.py" in later.reason
 
 
 def test_the_other_fresh_conditions_still_win_over_the_gate():
