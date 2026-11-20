@@ -200,7 +200,7 @@ class Task:
     """One part of the screen: a name, how it is served, and a function that runs its statements through `timed`."""
 
     name: str
-    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design; a rollup-ranked entity tab: its Signal counts read the index) or "record" (a read of seap.record)
+    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design; a rollup-ranked entity tab: its Signal counts read the index) or "record" (a plain table read, no aggregate: seap.record, or the stored core.data_through)
     statements: list[str]  # the statement names, in the order they run (the API runs them in sequence within a task)
     alternatives: list[str] = field(default_factory=list)  # statements that replace one of the above in some case (the terms aggregation instead of the exact rank)
     rollup_statements: list[str] = field(default_factory=list)  # the statements that must read the rollup tables (checked with EXPLAIN)
@@ -389,12 +389,8 @@ def plan_tasks(f: dict, *, rollup: bool = True, exact_group_limit: int = AGG_BUC
         sql = "SELECT key FROM core.entity WHERE key = %s AND identity = 'CUI' LIMIT 2" if cui else "SELECT key FROM core.entity WHERE name_folded = %s AND name_folded <> '' LIMIT 2"
         tasks.append(Task("goto", "scan", ["go_to"], run=lambda timed, s=sql, q=w.q_folded: timed("go_to", s, [q])))
 
-    # dataThrough: asked by every MainScreen request, not cached by the API, and a scan of seap.record (store.ts: no index serves it);
-    # a known cost the whole keystroke pays, judged in every state
-    data_through = (
-        "SELECT kind, max(d)::text AS date FROM (SELECT kind, max(published_on) AS d FROM seap.record WHERE via IS DISTINCT FROM 'CRAWL' GROUP BY kind "
-        "UNION ALL SELECT kind, through FROM seap.crawl_state) x GROUP BY kind ORDER BY kind"
-    )
+    # dataThrough: asked by every MainScreen request and not cached by the API: a read of the rows the rebuild stores (store.ts)
+    data_through = "SELECT kind, through::text AS date FROM core.data_through WHERE source = 'SEAP' ORDER BY kind"
     tasks.append(Task("data_through", "record", ["data_through"], run=lambda timed, s=data_through: timed("data_through", s, [])))
     return tasks
 

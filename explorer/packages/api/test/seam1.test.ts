@@ -26,6 +26,7 @@ import { rootValue } from "../src/resolvers.ts";
 import { cancellableQuery } from "../src/search.ts";
 import { cachedStore, canonicalFilter } from "../src/cache.ts";
 import { postgresStore } from "../src/store.ts";
+import { createPool } from "../src/pool.ts";
 import { ENTITY_KEYS, RECORDED_ENTITY_CASES, type RecordedEntityCase } from "./recordedEntityCases.ts";
 import { RECORDED_RECORDS_CASES, type RecordedRecordsCase } from "./recordedRecordsCases.ts";
 import { RECORDED_CASES, type RecordedCase } from "./recordedCases.ts";
@@ -4466,6 +4467,80 @@ describe.skipIf(reason !== null)("seam 1: fixture archive -> rebuild -> GraphQL"
   });
 
 });
+
+// The API survives its database restarting (#288): the same api and pool objects answer before and after. Its own throwaway container on a fixed
+// host port (an ephemeral one may change on `docker restart`, and the pool keeps its connection string). Never a shared or dev database.
+describe.skipIf(reason !== null)("seam 1: the API survives a database restart", () => {
+  const restartContainer = `pp37-seam1-restart-${process.pid}`;
+  let scratch = "";
+  let admin: pg.Pool;
+  let baseUrl = "";
+  let pool: pg.Pool;
+  const cleanup = () => {
+    spawnSync("docker", ["rm", "-f", "-v", restartContainer], { stdio: "ignore" });
+  };
+
+  beforeAll(async () => {
+    process.on("exit", cleanup);
+    scratch = mkdtempSync(join(here, "..", ".seam1-restart-"));
+    cpSync(fixtureArchive, join(scratch, "archive"), { recursive: true });
+    const port = await freePort();
+    execFileSync("docker", [
+      "run", "-d", "--name", restartContainer, "--memory=3g", "--cpus=2", "--label", "pp37=seam1",
+      "-e", "POSTGRES_PASSWORD=seam1", "-p", `127.0.0.1:${port}:5432`, image,
+    ], { stdio: "pipe" });
+    baseUrl = `postgresql://postgres:seam1@127.0.0.1:${port}`;
+    admin = createPool({ connectionString: `${baseUrl}/postgres`, max: 1 });
+    await waitForPostgres(admin);
+    await admin.query("CREATE DATABASE restart_a");
+    const r = spawnSync(python, ["-m", "pipeline", "--archive", join(scratch, "archive"), "rebuild", "--db", `${baseUrl}/restart_a`, "--in-place"], {
+      cwd: watchdog, encoding: "utf8", env: { ...process.env, GRIVEI_PERSON_ID_SECRET: "dummy-secret-for-tests-only-0123456789" },
+    });
+    if (r.status !== 0) throw new Error(`pipeline rebuild failed:\n${r.stdout}\n${r.stderr}`);
+  });
+
+  afterAll(async () => {
+    await Promise.all([pool?.end().catch(() => undefined), admin?.end().catch(() => undefined)]);
+    cleanup();
+    if (scratch) rmSync(scratch, { recursive: true, force: true });
+  });
+
+  it("answers the app's persisted query again after the database restarts, with the same API and pool", async () => {
+    pool = createPool({ connectionString: `${baseUrl}/restart_a`, max: 2 });
+    const api = createApi(postgresStore(pool), schema);
+    const ask = () => api.respond({ id: mainScreen.sha256, variables: EMPTY_FILTER });
+
+    const before = await ask();
+    expect(before.body.errors).toBeUndefined();
+    expect(validateResponse(schema, parse(mainScreen.document), before.body.data, EMPTY_FILTER)).toEqual([]);
+
+    // a request in flight when the database goes down fails with an error and the process lives on (a crash would be an unhandled error in this run)
+    const inFlight = cancellableQuery(pool, undefined, "SELECT pg_sleep(60)");
+    const failed = inFlight.then(() => null, (e: unknown) => e);
+    await new Promise((r) => setTimeout(r, 500)); // let the statement start on the server
+    execFileSync("docker", ["kill", restartContainer], { stdio: "pipe" }); // a crash: the sockets die without Postgres saying why
+    execFileSync("docker", ["start", restartContainer], { stdio: "pipe" });
+    expect(await failed).toBeInstanceOf(Error);
+
+    // the idle client of the first answer was dropped too; wait for the server, then the very same API answers again
+    await waitForPostgres(pool);
+    const after = await ask();
+    expect(after.status).toBe(200);
+    expect(after.body.errors).toBeUndefined();
+    expect(after.body.data).toEqual(before.body.data);
+  }, 120_000);
+});
+
+function freePort(): Promise<number> {
+  return new Promise((resolvePort, reject) => {
+    const s = createServer();
+    s.once("error", reject);
+    s.listen(0, "127.0.0.1", () => {
+      const { port } = s.address() as AddressInfo;
+      s.close(() => resolvePort(port));
+    });
+  });
+}
 
 async function waitForPostgres(pool: pg.Pool): Promise<void> {
   const deadline = Date.now() + 90_000;

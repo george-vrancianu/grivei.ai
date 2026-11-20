@@ -24,6 +24,7 @@ from typing import Iterator
 
 import psycopg
 
+from ..analyze import analyze
 from ..archive import Archive, Unit
 from ..identity import compare_name
 from ..placement.tables import load_gazetteer
@@ -162,8 +163,7 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
     summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
-    cur.execute("CREATE INDEX name_span_open ON onrc.name_span (last_seen)")
-    cur.execute("CREATE INDEX status_span_open ON onrc.status_span (last_seen)")
+    # no `last_seen`-only index on the span tables: the per-snapshot statements below join on the primary keys (reg_no first), and with all open spans sharing one `last_seen` the planner takes such an index for selective (#287)
     held: list[Unit] = []
     previous: date | None = None
     for unit in snapshot_units([u for u, _ in surveyed if u is not None]):
@@ -195,7 +195,7 @@ def build_onrc(cur: psycopg.Cursor, archive: Archive, data_dir: Path | str | Non
                         "SELECT snapshot_date::text, snapshot_date, snapshot_date, 'ROLE', 'LOADED', count(*), snapshot_date FROM onrc.role GROUP BY snapshot_date")
             summary.coverage_cells += cur.rowcount
     cur.execute("DROP TABLE IF EXISTS onrc_obs")
-    cur.execute("ANALYZE onrc.registration")
+    analyze(cur, "onrc.snapshot", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.role")
     return summary
 
 
