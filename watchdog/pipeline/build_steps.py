@@ -3,13 +3,14 @@
 A `Step` declares its name, a run function on a shared `BuildContext`, the tables it reads and writes, and the code it owns. `STEPS` is the
 order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
 
-- #291 commits after every Step and writes the Step's ledger row in the same transaction: the place is `run_steps` (marked there).
+- #291: a staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
 - Values one Step hands to a later one are persisted: `run_steps` writes the Step's `build.step` row when it finishes (its `hand_off`, or the
   `RebuildSummary` fields in `summary_fields`), and a consumer Step loads what it needs from the database (hand_offs.py), never from a variable of the
   Step that produced it. The `BuildContext` fields marked "hand-off" are working state inside a Step or loaded at the start of the Step that reads them.
 
-The Steps still run in ONE transaction (the connection of the context); nothing commits until the `commit` Step.
+A staged build commits after every Step, in the Step's own transaction with its ledger row (run_steps); otherwise (--in-place) the Steps run in
+ONE transaction and nothing commits until the last Step's.
 
 Paths in `owns`, `SHARED` and `OUTSIDE_THE_BUILD` are relative to the repo root: a file, or a directory with a trailing `/` (everything under it)."""
 from __future__ import annotations
@@ -24,6 +25,7 @@ import psycopg
 
 from .analyze import analyze
 from .archive import Archive, sha256_of
+from .build_ledger import finish_run, now, stamp_step, start_run
 from .bulk import KINDS
 from .coverage import build_coverage, flagged as flagged_cells
 from .coverage import parse_quarter as _parse_quarter
@@ -63,6 +65,7 @@ class BuildContext:
     summary: RebuildSummary
     today: date
     progress: Progress | None = None
+    staged: bool = False  # each Step commits on its own transaction (a build beside the live graph); False: one transaction for all (--in-place)
     placement_dir: Path | str | None = None
     known_gaps_path: Path | str | None = None
     overrides: Overrides | None = None  # re-read from the identity file, not handed on
@@ -104,7 +107,8 @@ def _schema(c: BuildContext) -> None:
     c.cur.execute(AEP_SQL.read_text(encoding="utf-8"))  # AEP's Mandates and Party (#180): after seap (Party per Record joins its Records)
     c.cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
     c.cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
-    c.cur.execute(BUILD_SQL.read_text(encoding="utf-8"))  # the Steps' hand-offs: build.step, written by every Step (run_steps)
+    c.cur.execute(BUILD_SQL.read_text(encoding="utf-8"))  # the build ledger: build.step (hand-offs and times), written by every Step (run_steps), and build.run
+    start_run(c.cur, c.staged)
 
 
 def _anaf_identities(c: BuildContext) -> None:
@@ -120,8 +124,15 @@ def _estimates(c: BuildContext) -> None:
     c.summary.estimates = len(read_estimates(c.archive))  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network (the units re-read them)
 
 
+def reset_identity(cur: psycopg.Cursor, table: str) -> None:
+    """Set the `id` identity sequence of `table` to continue after the rows committed there (max(id) + 1; 1 when empty). A Step that inserts into an
+    identity column calls it first: an earlier attempt of the Step that rolled back has still used up some ids (sequences are not transactional)."""
+    cur.execute(f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), coalesce(max(id), 0) + 1, false) FROM {table}")
+
+
 def _units(c: BuildContext) -> None:
     """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`)."""
+    reset_identity(c.cur, "seap.search")  # its ids are the BM25 key field
     c.number = load_last_source_file_id(c.cur)
     estimates = read_estimates(c.archive)  # the same answers the `estimates` Step counted, read again: a Step never relies on another's memory
     names_cur = c.conn.cursor()  # the resolver asks in the middle of the Record load: a cursor of its own
@@ -258,11 +269,12 @@ def _analyze_search(c: BuildContext) -> None:
 
 
 def _onrc_search(c: BuildContext) -> None:
+    reset_identity(c.cur, "onrc.search")
     c.summary.onrc_search = build_onrc_search(c.cur)  # #176: after the SEAP search table (it reads who is a SEAP counterparty); its BM25 index is in this transaction too
 
 
 def _commit(c: BuildContext) -> None:
-    c.conn.commit()  # what leaving the `with` would do; explicit so the commit is timed
+    """Nothing to run: the Step's own transaction commits (a staged build), or the one outer transaction (--in-place), right after run_steps wrote its row."""
 
 
 # Code every Step depends on: a change here is a change to every Step (the resume gate treats it as belonging to all of them).
@@ -270,7 +282,7 @@ def _commit(c: BuildContext) -> None:
 # build_entities, the Step bodies) must have the files it uses listed by hand under the Step that runs it.
 SHARED = (
     P + "__init__.py", P + "build_steps.py", P + "rebuild.py", P + "analyze.py", P + "archive.py", P + "counting.py", P + "fold.py",
-    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
+    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "build_ledger.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
     P + "sql/",  # the schema files: each Step's tables are created by the first Step, so a change to any is a change to all
     P + "bulk/", P + "crawl/",  # the Record parsers and the crawl unit directories: read by the schema-independent loaders of several Steps
 )
@@ -291,7 +303,7 @@ _MF = (P + "mf/", *_PLACEMENT)
 # The progress names are the ones the status file and the tests have always shown; the unit loop has none (`progress=()`).
 STEPS: tuple[Step, ...] = (
     # fresh build only: it drops and recreates every schema. The DDL creates every table; `writes` lists the table it fills.
-    Step("schema", _schema, writes=("core.source", "build.step")),  # build.step: the schema Step creates it; every Step writes its own row (run_steps)
+    Step("schema", _schema, writes=("core.source", "build.run", "build.step")),  # build.run (its one row) and build.step: the schema Step creates them; every Step writes its own row (run_steps)
     Step("anaf-identities", _anaf_identities, writes=("core.anaf_company",), owns=(P + "anaf.py",), summary_fields=("anaf_found", "anaf_not_found")),
     Step("onrc", _onrc, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
          writes=("onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
@@ -345,18 +357,29 @@ def step_summary(step: Step, ctx: BuildContext) -> dict:
 
 
 def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS) -> None:
-    """Run the Steps in order on the context's one connection. A Step with one progress name runs inside that timed phase; a Step with several
-    (placement-mf) or none (units) announces them itself."""
+    """Run the Steps in order on the context's one connection, each in its own explicit transaction. A staged build (beside the live graph) commits
+    after every Step, with the Step's `build.step` row; otherwise one outer transaction holds them all, so each Step's block is a savepoint and the
+    commit is the outer block's exit. The last Step also marks the build complete (build_ledger.finish_run). A Step with one progress name runs inside
+    that timed phase; a Step with several (placement-mf) or none (units) announces them itself."""
+    if ctx.staged:
+        _run_each(ctx, steps)
+    else:
+        with ctx.conn.transaction():
+            _run_each(ctx, steps)
+
+
+def _run_each(ctx: BuildContext, steps: tuple[Step, ...]) -> None:
     for ordinal, step in enumerate(steps):
         names = step.progress_names
-        if step.name == "commit":  # its row goes in before the commit, or it would be outside the transaction
-            write_step(ctx.cur, step.name, ordinal, {})
-        with ctx.phase(names[0]) if len(names) == 1 else nullcontext():
-            step.run(ctx)
-        if step.name != "commit":
-            write_step(ctx.cur, step.name, ordinal, step_summary(step, ctx))
-            analyze(ctx.cur, "build.step")  # the entities and coverage Steps look rows up in it
-        # #291: the Step's ledger columns (and its commit) go here, in the Step's own transaction.
+        with ctx.phase(names[0]) if len(names) == 1 else nullcontext():  # the commit of a staged Step is inside its phase
+            with ctx.conn.transaction():
+                started = now()
+                step.run(ctx)
+                write_step(ctx.cur, step.name, ordinal, step_summary(step, ctx))
+                stamp_step(ctx.cur, step.name, started)
+                analyze(ctx.cur, "build.step")  # the entities and coverage Steps look rows up in it
+                if ordinal == len(steps) - 1:
+                    finish_run(ctx.cur)
 
 
 def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:

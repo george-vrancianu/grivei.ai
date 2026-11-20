@@ -43,7 +43,7 @@ def _databases(url: str) -> set[str]:
 
 
 def _build(archive: Archive):
-    return lambda url, gate=None: rebuild(archive, url, gate=gate)
+    return lambda url, gate=None: rebuild(archive, url, gate=gate, staged=True)
 
 
 def test_a_rebuild_switches_over_only_after_its_checks_pass_keeps_the_old_graph_and_rollback_cleanup_work(live, tmp_path):
@@ -202,7 +202,7 @@ def test_a_swap_killed_between_the_renames_is_repaired_by_the_next_run_which_nev
 
     def build(url, gate):
         seen.append(names.live in _databases(live))  # while the new graph builds, the live name must serve again
-        return rebuild(_archive(tmp_path, "full"), url, gate=gate)
+        return rebuild(_archive(tmp_path, "full"), url, gate=gate, staged=True)
 
     lines = []
     switchover.build_and_switch(live, build, say=lines.append)
@@ -231,7 +231,7 @@ def test_a_refused_graph_is_not_reported_as_finished_and_writes_no_outlines(live
     status_file, geo = tmp_path / "status.json", tmp_path / "geo"
 
     with pytest.raises(switchover.SwitchoverRefused):
-        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate), say=lambda _: None)
+        switchover.build_and_switch(live, lambda url, gate: rebuild(shrunk, url, Progress(status_file, out=lambda _: None), geo_dir=geo, gate=gate, staged=True), say=lambda _: None)
 
     status = read_status(status_file)
     assert status["state"] == "failed" and "SwitchoverRefused" in status["error"]  # `pipeline status` must not call the refused graph finished

@@ -2,8 +2,9 @@
 
 Reads only units with a complete manifest, oldest fetch first, and loads each unit all or nothing (SEAP bulk files of
 every registered kind: DA, DAN, contracte, fara-anunt). A unit that fails validation is moved to the quarantine area with
-a reason file and loads nothing. The whole rebuild is one transaction, so a failed or killed rebuild leaves the previous
-schema in place and nothing half-loaded: rerun it from scratch. The same archive always gives the same database.
+a reason file and loads nothing. An in-place rebuild is one transaction, so a failed or killed one leaves the previous
+schema in place and nothing half-loaded; a staged one (beside the live graph) commits after every Step into its own next database, where a failure leaves a
+partial graph nothing serves. Either way: rerun it from scratch. The same archive always gives the same database.
 
 The rebuild's steps are declared in build_steps.py (`STEPS`, each with the tables it reads and writes and the code it owns); `rebuild()` runs them in order.
 
@@ -493,25 +494,28 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
             today: date | None = None, known_gaps_path: Path | str | None = None,
-            gate: Callable[[], None] | None = None) -> RebuildSummary:
-    """`gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
+            gate: Callable[[], None] | None = None, staged: bool = False) -> RebuildSummary:
+    """`staged` commits after every Step (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
+    the default is one transaction for the whole build (`--in-place`), which rolls back as one. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
     live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
     from .build_steps import BuildContext, run_steps  # here, not at the top: build_steps imports this module's helpers
 
     summary = RebuildSummary()
     today = today or datetime.now(timezone.utc).date()
+    if progress and staged:
+        progress.mark_staged()
 
     def step(name: str):  # a timed `rebuild step NAME` start/done pair in the log (progress.py); nothing without a Progress
         return progress.step(name) if progress else nullcontext()
 
     try:
         with psycopg.connect(db_url) as conn, conn.cursor() as cur:
-            ctx = BuildContext(archive, cur, conn, summary, today, progress, placement_dir, known_gaps_path,
+            ctx = BuildContext(archive, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
                                person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES))  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
-            run_steps(ctx)  # build_steps.STEPS, in one transaction; the last Step commits
+            run_steps(ctx)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits
             data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
-    except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the transaction rolls back, the old schema stays
+    except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the open transaction rolls back (all of it in place; the running Step when staged), the old schema stays
         if progress:
             progress.fail(e)
         raise

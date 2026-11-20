@@ -102,7 +102,7 @@ There is **no tooling** for a trial rebuild of a subset: the graph is derived wh
 ### 4. The one national rebuild with ONRC, and the switchover
 
 ```bash
-nohup docker compose run --rm -T pipeline rebuild >> ~/grivei-data/rebuild-r2.log 2>&1 &     # beside the live graph, checked against it, then switched over; one transaction, a kill rolls back and the live graph is untouched
+nohup docker compose run --rm -T pipeline rebuild >> ~/grivei-data/rebuild-r2.log 2>&1 &     # beside the live graph, checked against it, then switched over; each step commits in the next database, a kill leaves the live graph untouched and the next run drops the partial next database and rebuilds
 tail -n 2 ~/grivei-data/rebuild-r2.log        # one line per step and per unit
 $P status                                     # the rebuild's progress file
 ```
