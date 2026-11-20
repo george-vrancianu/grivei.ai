@@ -367,6 +367,20 @@ def test_a_change_to_a_completed_steps_code_or_to_a_shared_module_starts_fresh(s
     assert rerun.graph["build.run"][0]["changed_files"] == []  # a fresh build records nothing of the dropped one
 
 
+def test_a_change_to_a_units_file_after_a_kill_inside_the_unit_loop_starts_fresh_and_leaves_the_uninterrupted_graph(server, tmp_path, monkeypatch, capsys):
+    """#293 x #295: the committed `build.unit` rows are units' work with no `build.step` row yet, so the gate counts the Step as run: a mid-loop resume must not mix two versions of its code."""
+    from test_resume_units_db import UNITS_WORLD
+    from resume_harness import unit_kill_points
+
+    h = Harness(server, tmp_path, monkeypatch, capsys, world=UNITS_WORLD)
+    kill = unit_kill_points(1)[1]  # after-unit-1-commit: one loaded unit is committed and nothing is quarantined yet (a quarantine move is not undone by a fresh build, so the graphs would differ by design)
+    rerun, live, package = _code_change(h, tmp_path, monkeypatch, kill, "coverage/grid.py")  # owned by units and by the coverage Step, which has not run: only the build.unit rows make the gate fresh
+    assert rerun.first.startswith("rebuild: fresh - ") and "coverage/grid.py" in rerun.first and "'units'" in rerun.first
+    assert any("dropping the leftover" in x for x in rerun.out)
+    ref = h.run(h.new_archive("ref-units-code"), h.new_live())  # the same edited package, never interrupted
+    assert _without_changed_files(rerun.graph) == _without_changed_files(ref.graph)
+
+
 def test_a_change_to_a_file_outside_the_build_does_not_stop_a_resume(server, tmp_path, monkeypatch, capsys):
     h = Harness(server, tmp_path, monkeypatch, capsys, world=SMALL)
     rerun, _, _ = _code_change(h, tmp_path, monkeypatch, POINTS["in-onrc-search"], "cli.py")

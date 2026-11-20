@@ -1,6 +1,6 @@
 """The build ledger (spec #285, ticket #291): the record inside a built graph of how it was built (`build.run`, and the times on each `build.step` row).
 
-A Step's `build.step` row is written in the transaction of the Step's own work (build_steps.run_steps), so in a staged build (beside the live graph) a
+A Step's `build.step` row is written in the transaction of the Step's own work (build_steps.run_steps; the `units` Step commits each unit with its `build.unit` row and writes its row in a final transaction), so in a staged build (beside the live graph) a
 row means the Step is committed. The ledger says the build is complete only when the last Step's transaction sets `build.run.state` to 'complete';
 `ledger_failures` is what a Switchover asks of a next database before it swaps it in. The Steps' hand-off values live in hand_offs.py (same table).
 """

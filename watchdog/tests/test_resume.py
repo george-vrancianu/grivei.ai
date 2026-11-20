@@ -126,7 +126,8 @@ def _code(**files) -> dict:
 
 
 def _gate(changed: dict, steps=3, partial=(), held_files=None, **kw):
-    held = Held(_pins(code_files=held_files or _code()), "building", [(n, i) for i, n in enumerate(NAMES[:steps])], frozenset(), partial=frozenset(partial))
+    held = Held(_pins(code_files=held_files or _code()), "building", [(n, i) for i, n in enumerate(NAMES[:steps])], frozenset(),
+                unit_rows=(("p", None),) if "units" in partial else (), units_total=2, snapshot_rows="onrc" in partial)
     return _decide(held, _pins(code="code-2", code_files=_code(**changed)), **kw)
 
 
@@ -167,6 +168,18 @@ def test_a_step_with_committed_work_but_no_ledger_row_counts_as_run():
     assert _gate({"onrc/build.py": "b2"}, steps=steps).verdict == RESUME
     v = _gate({"onrc/build.py": "b2"}, steps=steps, partial={"onrc"})
     assert v.verdict == FRESH and "'onrc'" in v.reason
+
+
+def test_a_mid_unit_loop_resume_is_gated_by_the_code_too():
+    """#293 resumes inside the `units` Step when `build.unit` rows exist; a changed units-owned file must start fresh first (#295): the rows are units' work."""
+    pins = _pins(code_files=_code())
+    unit_rows = ((next(iter(pins.units)), next(iter(pins.units.values()))),)
+    held = Held(pins, "building", [(n, i) for i, n in enumerate(NAMES[:NAMES.index("units")])], frozenset(), unit_rows=unit_rows, units_total=2)
+    same = _decide(held, pins)
+    assert same.verdict == RESUME and "unit 1 of 2" in same.reason  # unchanged code: the mid-loop resume
+    v = _decide(held, _pins(code="code-2", code_files=_code(**{"coverage/grid.py": "g2"})))  # coverage/ belongs to units and to the later coverage Step: only the units rows make it "run"
+    assert v.verdict == FRESH and "coverage/grid.py" in v.reason and "'units'" in v.reason
+    assert _decide(held, _pins(code="code-2", code_files=_code(**{"onrc/search.py": "s2"}))).verdict == RESUME  # a later Step's file: the loop continues with the new code
 
 
 def test_the_other_fresh_conditions_still_win_over_the_gate():

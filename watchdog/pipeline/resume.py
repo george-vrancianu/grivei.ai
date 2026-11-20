@@ -38,7 +38,14 @@ class Held:
     steps: Sequence[tuple[str, int]]
     quarantined: frozenset[str]
     problem: str | None = None
-    partial: frozenset[str] = frozenset()  # Steps with committed work of their own but no ledger row yet (onrc: `build.snapshot` rows; units: `build.unit` rows, #293): they have run, for the code gate
+    unit_rows: Sequence[tuple[str, str | None]] = ()  # the committed units of an unfinished `units` Step (build.unit, #293): (path, manifest checksum), in unit order
+    units_total: int = 0  # the units the loop planned, as those rows record it
+    snapshot_rows: bool = False  # the `onrc` Step has committed `build.snapshot` rows of its own (#295)
+
+    @property
+    def partial(self) -> frozenset[str]:
+        """Steps with committed work of their own but no ledger row yet (onrc: `build.snapshot` rows; units: `build.unit` rows, #293): they have run, for the code gate."""
+        return frozenset((["onrc"] if self.snapshot_rows else []) + (["units"] if self.unit_rows else []))
 
 
 @dataclass(frozen=True)
@@ -101,6 +108,9 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
     changed = _changed_units(held, pins.units)
     if changed:
         return _fresh(f"{len(changed)} pinned unit{'s' if len(changed) != 1 else ''} changed or missing: {changed[0]}", pins)
+    stale = _unit_rows_off_the_pin(held)
+    if stale:
+        return _fresh(f"the ledger's unit {stale} is not the unit the pinned inputs hold", pins)
     prefix = [(name, i) for i, name in enumerate(names[:len(held.steps)])]
     if not held.steps or list(held.steps) != prefix or len(held.steps) >= len(names):
         listed = ", ".join(f"{n}#{i}" for n, i in held.steps) or "none"
@@ -111,6 +121,8 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
     gated = _code_gate(pins, held, names, steps, changed_code, owners)
     if gated:
         return gated
+    if nxt == "units" and held.unit_rows:  # inside the unit loop: it continues from the next unit
+        return Verdict(RESUME, f"continuing the units Step after unit {len(held.unit_rows)} of {held.units_total}; the pinned inputs and the code are unchanged", held.pins)
     return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
 
 
@@ -149,6 +161,15 @@ def _changed_units(held: Held, units: Mapping[str, str | None]) -> list[str]:
     return out
 
 
+def _unit_rows_off_the_pin(held: Held) -> str | None:
+    """The first committed unit (build.unit) whose path is not pinned, or whose manifest checksum differs from the pinned one: read from the pins the ledger
+    holds, no file is hashed. Cannot happen in a ledger one build wrote; a tampered or mixed one is not resumed."""
+    for path, checksum in held.unit_rows:
+        if path not in held.pins.units or held.pins.units[path] != checksum:
+            return path
+    return None
+
+
 def load_held(next_url: str) -> Held:
     """What the database at `next_url` holds: its `build.run` pins and state and its committed Steps. A database with no ledger, or one built before
     the pins existed, comes back with a `problem` (the decision says fresh)."""
@@ -172,16 +193,19 @@ def load_held(next_url: str) -> Held:
             state, units, code, schema, today, quarantine, files = runs[0]
             cur.execute("SELECT name, ordinal FROM build.step ORDER BY ordinal")
             steps = [(n, o) for n, o in cur.fetchall()]
-            cur.execute("SELECT summary->'quarantined' FROM build.step WHERE name = 'units'")
-            row = cur.fetchone()
-            quarantined = frozenset(row[0] or []) if row else frozenset()
-            partial = set()  # Steps that committed work inside themselves (to_regclass: a table this build has not got is no work)
-            for table, step in (("build.snapshot", "onrc"), ("build.unit", "units")):
-                cur.execute("SELECT to_regclass(%s) IS NOT NULL", (table,))
-                if cur.fetchone()[0]:
-                    cur.execute(f"SELECT EXISTS (SELECT 1 FROM {table})")
-                    if cur.fetchone()[0]:
-                        partial.add(step)
-            return Held(Pins(units, code, schema, today, tuple(quarantine), files), state, steps, quarantined, partial=frozenset(partial))
+            rows, total, quarantined = [], 0, frozenset()
+            cur.execute("SELECT to_regclass('build.unit') IS NOT NULL")
+            if cur.fetchone()[0]:  # the committed units (#293): the quarantined ones count as held whether or not their directory has moved yet
+                cur.execute("SELECT path, manifest_sha256, units_total, quarantined_to FROM build.unit ORDER BY ordinal")
+                units_rows = cur.fetchall()
+                rows, total = [(p, sha) for p, sha, _, _ in units_rows], max((t for _, _, t, _ in units_rows), default=0)
+                quarantined = frozenset(to for _, _, _, to in units_rows if to)
+            snapshot_rows = False  # to_regclass: a build that has no such table has no such work
+            cur.execute("SELECT to_regclass('build.snapshot') IS NOT NULL")
+            if cur.fetchone()[0]:
+                cur.execute("SELECT EXISTS (SELECT 1 FROM build.snapshot)")
+                snapshot_rows = cur.fetchone()[0]
+            return Held(Pins(units, code, schema, today, tuple(quarantine), files), state, steps, quarantined, unit_rows=tuple(rows), units_total=total,
+                        snapshot_rows=snapshot_rows)
     except psycopg.Error as e:
         return Held(None, None, [], frozenset(), f"the next database could not be read: {type(e).__name__}")

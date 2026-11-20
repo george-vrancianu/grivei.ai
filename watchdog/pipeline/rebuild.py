@@ -33,7 +33,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Sequence
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -62,7 +62,7 @@ from .build_ledger import record_code_change
 from .pins import SQL_DIR, compute_pins, pin_extra
 from .progress import Progress
 from .resume import Verdict, decide
-from .hand_offs import load_data_through
+from .hand_offs import load_data_through, unit_counts
 from .sources import SEAP, SOURCES
 from .search import value_bucket, vacuum
 
@@ -305,30 +305,44 @@ class UnitOutcome:
     rows: int = 0  # data rows read from its files, duplicates included
     reason: str | None = None
     set_aside: dict[str, SetAside] = field(default_factory=dict)  # file name -> the tail set aside (a file that switches kind partway)
+    duplicate_files: list[Path] = field(default_factory=list)  # this unit's files that are byte-identical to one already planned (also of a unit that is then quarantined)
+    problems: list[str] = field(default_factory=list)  # a quarantined unit's problems: its reason file lists them
 
 
 def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | None = None,
-               loaded: set[tuple[str, str]] | None = None) -> Iterator[UnitOutcome]:
+               loaded: set[tuple[str, str]] | None = None, recorded: Sequence = ()) -> Iterator[UnitOutcome]:
     """Read the archive one unit at a time: complete units only, each file validated; a failing unit is quarantined.
 
     Oldest fetch first, so a re-uploaded file (a later fetch of the same unit) is applied after the original. A file
     whose bytes were already planned is skipped. A file's (kind, sha) counts as planned only once its whole unit validates.
     `loaded` is the (kind, sha256) set of files the graph already holds (hand_offs.load_loaded_hashes); it grows as units validate.
+
+    `recorded` (a resumed build, #293): the `build.unit` rows of the units already committed, units 1..N of the same ordering. Those are not read, hashed or
+    yielded again; the others carry on from N+1 and the total counts both, so every index, `units_total` and the progress counters are an uninterrupted run's.
+    A unit that was quarantined is gone from the listing (moved), which is why the total is the recorded units plus the ones still to read.
+
+    A quarantined unit is yielded BEFORE it is moved: the consumer records it (and commits that row), and the move happens when the consumer asks for the
+    next unit. A kill in between leaves a recorded quarantine whose directory is still in the archive: the resume finishes the move (Archive.complete_quarantine).
     """
-    summary.incomplete = archive.incomplete(skip=("onrc", "financials"))  # ONRC and the financial statements report their own (their files are too big to hash twice)
-    units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
+    done = {r.path for r in recorded}
+    summary.incomplete = archive.incomplete(skip=("onrc", "financials"), exclude=done)  # ONRC and the financial statements report their own (their files are too big to hash twice)
+    units = [u for u in archive.units("seap", exclude=done) if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
-    summary.units_total = len(units)
+    total = len(recorded) + len(units)
+    summary.units_total = total
     if progress:
-        progress.start(len(units), archive.root)
+        progress.start(total, archive.root)
+        if recorded:
+            progress.restore_units(**unit_counts(list(recorded)))
     loaded = set() if loaded is None else loaded  # (kind, sha256) of files already planned
-    for index, unit in enumerate(units, start=1):
+    for index, unit in enumerate(units, start=len(recorded) + 1):
         if progress:
-            progress.begin(index, len(units), unit.kind, unit.unit)
+            progress.begin(index, total, unit.kind, unit.unit)
         files: list[tuple[str, list[BulkRecord]]] = []
         keys = []  # recorded as loaded only once the whole unit validates
         rows = 0
         set_aside: dict[str, SetAside] = {}
+        duplicates: list[Path] = []
         try:
             if unit.stream == "crawl":  # a crawled day: one parse of its list and contracts pages, Records by kind
                 parsed_day = parse_crawl_unit(unit)
@@ -340,6 +354,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
                     key = (unit.kind, sha256_of(path))
                     if key in loaded or key in keys:  # the same bytes again (a re-fetch of an unchanged file): nothing to load
                         summary.duplicate_files.append(path)
+                        duplicates.append(path)
                         continue
                     parsed = parse_file_stats(unit.kind, unit.unit, path)
                     files.append((name, parsed.records))
@@ -348,13 +363,14 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
                         set_aside[name] = parsed.set_aside
                     keys.append(key)
         except InvalidFile as e:
-            summary.quarantined.append(archive.quarantine(unit, e.reason, [p for p in e.problems if p]))
-            yield UnitOutcome(index, len(units), unit, "quarantined", rows=rows, reason=e.reason)
+            problems = [p for p in e.problems if p]
+            yield UnitOutcome(index, total, unit, "quarantined", rows=rows, reason=e.reason, duplicate_files=duplicates, problems=problems)  # recorded (and committed) first
+            summary.quarantined.append(archive.quarantine(unit, e.reason, problems))
             continue  # all or nothing: none of this unit's files load
         loaded.update(keys)
         summary.set_aside += [(unit.file_path(name), aside) for name, aside in set_aside.items()]
-        yield UnitOutcome(index, len(units), unit, "loaded" if files else "skipped", files, rows,
-                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"), set_aside)
+        yield UnitOutcome(index, total, unit, "loaded" if files else "skipped", files, rows,
+                          None if files else ("no Records" if unit.stream == "crawl" else "same file already loaded"), set_aside, duplicates)
 
 
 @dataclass
@@ -502,7 +518,7 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
             today: date | None = None, known_gaps_path: Path | str | None = None,
             gate: Callable[[], None] | None = None, staged: bool = False, verdict: Verdict | None = None) -> RebuildSummary:
-    """`staged` commits after every Step (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
+    """`staged` commits after every Step and every Raw archive unit (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
     the default is one transaction for the whole build (`--in-place`), which rolls back as one. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
     live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file.
 
