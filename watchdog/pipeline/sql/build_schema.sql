@@ -56,4 +56,13 @@ CREATE TABLE build.unit (
     set_aside        jsonb NOT NULL DEFAULT '[]',  -- the tails set aside: [{"path", "line", "kind", "rows", "last_published"}]
     quarantined_to   text,                 -- of a quarantined unit: where its directory goes (relative to the archive root); the row commits BEFORE the move
     problems         jsonb NOT NULL DEFAULT '[]'   -- of a quarantined unit: the problems its reason file lists (a resume that finds the move pending writes the same file)
+
+-- One row per ONRC snapshot the `onrc` Step handled (pipeline/onrc/build.py), written in the transaction that holds the snapshot's span work: a staged build
+-- commits after every snapshot, so a resume continues from the next one and reads from these rows what the interrupted Step had done. A snapshot that did not
+-- read is set aside (`applied` false, `skipped` the message). No timestamps: the rows of a resumed build equal an uninterrupted build's.
+CREATE TABLE build.snapshot (
+    snapshot_date  date PRIMARY KEY,
+    ordinal        integer NOT NULL UNIQUE,  -- the snapshot's position in the Step's loop (oldest first)
+    applied        boolean NOT NULL,
+    skipped        text  -- why it was set aside; null when applied
 );

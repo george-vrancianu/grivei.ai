@@ -23,6 +23,7 @@ from typing import Callable
 import psycopg
 
 import pipeline.build_steps as build_steps_module
+import pipeline.onrc.build as onrc_build_module
 from graph_dump import dump_graph
 from pipeline import cli
 from pipeline.archive import Archive
@@ -118,6 +119,23 @@ def unit_kill_points(after: int = 3) -> list[KillPoint]:
         KillPoint("before-first-quarantine-move", nth(real_move, 1, quarantine_move)),
         KillPoint("after-last-unit-before-step-row", _after_body_before_row("units")),
     ]
+
+def onrc_snapshot_kill_points(snapshots: int = 4) -> list[KillPoint]:
+    """For every ONRC snapshot k of the default world: killed right after the k-th snapshot's commit (#294). The rerun resumes with the next snapshot; after the
+    last one only the Step's closing work (coverage, registrations, people) is left."""
+    def after_snapshot(k: int):
+        def arm(monkeypatch, killed_by: BaseException) -> None:
+            seen = []
+
+            def hook(unit):
+                seen.append(unit)
+                if len(seen) == k:
+                    raise killed_by
+
+            monkeypatch.setattr(onrc_build_module, "_after_snapshot", hook)  # a module global, looked up at call time
+        return arm
+
+    return [KillPoint(f"after-onrc-snapshot-{k}", after_snapshot(k)) for k in range(1, snapshots + 1)]
 
 
 def make_world(root: Path, worlds=WORLD, drop: tuple[str, ...] = ()) -> Path:
