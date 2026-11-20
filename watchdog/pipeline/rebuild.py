@@ -4,7 +4,8 @@ Reads only units with a complete manifest, oldest fetch first, and loads each un
 every registered kind: DA, DAN, contracte, fara-anunt). A unit that fails validation is moved to the quarantine area with
 a reason file and loads nothing. An in-place rebuild is one transaction, so a failed or killed one leaves the previous
 schema in place and nothing half-loaded; a staged one (beside the live graph) commits after every Step into its own next database, where a failure leaves a
-partial graph nothing serves. Either way: rerun it from scratch. The same archive always gives the same database.
+partial graph nothing serves, and the next run resumes it after the last committed Step when the pinned inputs and the code are unchanged (resume.py, pins.py),
+else rebuilds it; an in-place build is always rerun from scratch. The same archive always gives the same database, resumed or not.
 
 The rebuild's steps are declared in build_steps.py (`STEPS`, each with the tables it reads and writes and the code it owns); `rebuild()` runs them in order.
 
@@ -39,7 +40,7 @@ from psycopg.types.json import Jsonb
 
 from .analyze import analyze
 from .anaf import iter_companies
-from .archive import Archive, Unit, sha256_of
+from .archive import QUARANTINE_DIR, Archive, Unit, sha256_of
 from .bulk import KINDS, BulkRecord, InvalidFile, SetAside, parse_file_stats
 from .counting import Estimate, count
 from .coverage import parse_quarter as _parse_quarter
@@ -57,7 +58,9 @@ from .aep.build import AepSummary
 from .financials.build import FinancialsSummary
 from .banipartide.build import DonationsSummary
 from .placement.build import PlacementSummary
+from .pins import compute_pins, pin_extra
 from .progress import Progress
+from .resume import FRESH, Verdict, decide
 from .hand_offs import load_data_through
 from .sources import SEAP, SOURCES
 from .search import value_bucket, vacuum
@@ -77,6 +80,7 @@ BUILD_SQL = SQL_DIR / "build_schema.sql"  # the Steps' hand-offs (pipeline/hand_
 @dataclass
 class RebuildSummary:
     files_loaded: int = 0
+    units_total: int = 0  # the units the loop planned (not printed; a resume gives the progress file this total)
     records: int = 0
     anaf_found: int = 0  # CUIs the archived ANAF answers confirm
     anaf_not_found: int = 0  # CUIs ANAF was asked about and does not know
@@ -312,6 +316,7 @@ def iter_units(archive: Archive, summary: RebuildSummary, progress: Progress | N
     summary.incomplete = archive.incomplete(skip=("onrc", "financials"))  # ONRC and the financial statements report their own (their files are too big to hash twice)
     units = [u for u in archive.units("seap") if u.source == "seap" and ((u.stream == "bulk" and u.kind in KINDS) or (u.stream == "crawl" and u.kind in (CRAWL_KIND, BACKFILL_KIND)))]
     units.sort(key=lambda u: (u.fetched_at, str(u.path)))
+    summary.units_total = len(units)
     if progress:
         progress.start(len(units), archive.root)
     loaded = set() if loaded is None else loaded  # (kind, sha256) of files already planned
@@ -494,14 +499,28 @@ def build_frameworks(cur: psycopg.Cursor) -> None:
 def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, overrides_path: Path | str | None = None,
             placement_dir: Path | str | None = None, geo_dir: Path | str | None = None,
             today: date | None = None, known_gaps_path: Path | str | None = None,
-            gate: Callable[[], None] | None = None, staged: bool = False) -> RebuildSummary:
+            gate: Callable[[], None] | None = None, staged: bool = False, verdict: Verdict | None = None) -> RebuildSummary:
     """`staged` commits after every Step (a build into the next database beside the live graph, switchover.py, which nothing reads until it is swapped in);
     the default is one transaction for the whole build (`--in-place`), which rolls back as one. `gate` runs once the load has committed, before the status file says finished and the outlines are written: a rebuild beside the
-    live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file."""
-    from .build_steps import BuildContext, run_steps  # here, not at the top: build_steps imports this module's helpers
+    live database (switchover.py) refuses a bad graph there, so a refused graph is never reported as finished. `today` (default: the UTC day) ends the Coverage grid's last quarter; `known_gaps_path` overrides the checked-in known-gaps file.
+
+    `verdict` (resume.py) is the decision made before the next database was touched (switchover.build_and_switch): a resume continues the Steps that
+    are committed there, with the pinned inputs it holds; fresh builds from the start with the verdict's pins. Without one (a direct call, `--in-place`)
+    the build is fresh, pinned now, and this function prints the verdict line itself: it is always the first line of a run. Every read of the Raw
+    archive goes through a view pinned to the verdict's units, so a unit that lands during the build waits for the next one."""
+    from .build_steps import STEPS, BuildContext, run_steps  # here, not at the top: build_steps imports this module's helpers
 
     summary = RebuildSummary()
-    today = today or datetime.now(timezone.utc).date()
+    if verdict is None:
+        pins = compute_pins(archive, today or datetime.now(timezone.utc).date(),
+                            pin_extra(overrides_path, placement_dir, known_gaps_path))
+        verdict = (decide(pins, None, STEPS, staged=False) if not staged else
+                   Verdict(FRESH, "no resume decision was made for this build (a direct call), so it starts from the first Step", pins))
+        if progress:
+            progress.note(verdict.line)
+    today = verdict.pins.today
+    quarantine_base = archive.root / QUARANTINE_DIR
+    pinned = archive.pinned(verdict.pins.units, {p.relative_to(quarantine_base).as_posix() for p in archive.quarantined()})
     if progress and staged:
         progress.mark_staged()
 
@@ -510,10 +529,11 @@ def rebuild(archive: Archive, db_url: str, progress: Progress | None = None, ove
 
     try:
         with psycopg.connect(db_url, autocommit=staged) as conn, conn.cursor() as cur:  # staged: autocommit, so every Step's `conn.transaction()` is a real BEGIN/COMMIT whatever ran between Steps; in place: the one outer transaction of run_steps
-            ctx = BuildContext(archive, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
+            ctx = BuildContext(pinned, cur, conn, summary, today, progress, staged, placement_dir, known_gaps_path,
                                overrides=Overrides.load(overrides_path or DEFAULT_OVERRIDES),
-                               person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES))  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
-            run_steps(ctx)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits
+                               person_overrides=PersonOverrides.load(overrides_path or DEFAULT_OVERRIDES),  # `[[person_split]]` / `[[person_merge]]` of the same file (#177)
+                               pins=verdict.pins)
+            run_steps(ctx, resume=True) if verdict.resume else run_steps(ctx)  # build_steps.STEPS: one transaction, or one per Step when staged; the last Step commits (a resume skips the committed ones)
             data_through = load_data_through(cur)  # from core.data_through, which the signals Step filled
     except BaseException as e:  # incl. KeyboardInterrupt / SystemExit: the open transaction rolls back (all of it in place; the running Step when staged), the old schema stays
         if progress:

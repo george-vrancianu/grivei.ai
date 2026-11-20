@@ -3,15 +3,15 @@
 An in-place rebuild is one transaction that drops and recreates the `seap` and `core` schemas, so run against the live database it holds
 exclusive locks for hours and the API stalls. Instead the graph is built into a fresh database in the same cluster, `<db>_next`
 (a full copy of the graph beside the live one; the live database is not touched while it builds; each Step commits there, and the build ledger
-records it), checked (a build whose ledger is not complete is refused), and only then swapped
+records it; a build that was interrupted is resumed from that ledger when its pinned inputs and the code are unchanged, resume.py), checked (a build whose ledger is not complete is refused), and only then swapped
 in by renaming: the live `<db>` becomes `<db>_prev` and `<db>_next` becomes `<db>`. The swap is two renames and a session
 termination, so the API sees a moment of refused connections and its pool reconnects to the new graph (its cache checks the load
 generation, which differs). A database is the unit because every query is schema-qualified and a database rename moves the BM25
 index with it, untouched.
 
 `<db>_prev` is the fallback: kept until the next successful switchover replaces it or `cleanup` drops it; `rollback` swaps it back
-(and back again, it is symmetric). A failed check leaves `<db>` serving and `<db>_next` in place for a look (`cleanup`, or the
-next build, drops it). A major Postgres/ParadeDB upgrade is the same idea one level up: a rebuild into a new cluster on a new
+(and back again, it is symmetric). A failed check leaves `<db>` serving and `<db>_next` in place for a look (`cleanup` drops it; the
+next build drops it too, since a complete build is never resumed). A major Postgres/ParadeDB upgrade is the same idea one level up: a rebuild into a new cluster on a new
 volume, `verify`, then repoint DATABASE_URL (watchdog/README.md).
 
 Needs a role that may create databases and terminate sessions (the compose `grivei` role is the superuser).
@@ -25,6 +25,8 @@ from typing import Callable
 import psycopg
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
+from .resume import Held, Verdict, load_held
 
 NEXT, PREV, SWAP = "_next", "_prev", "_swap"  # `_swap` is the live graph's parking place during a rollback
 MIN_RATIO = 0.95  # the new graph may hold at most 5% fewer Records than the one it replaces (Records are only ever added: the archive is append-only)
@@ -181,21 +183,43 @@ def _say_default(line: str) -> None:
     print(line, flush=True)
 
 
-def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], object], *, say: Callable[[str], None] = _say_default,
-                     check: Callable[[str, str | None], list[str]] = check_graph) -> object:
+def _needs_repair(admin: psycopg.Connection, n: Names) -> bool:
+    """Whether `recover` has something to repair (what it checks, without changing anything)."""
+    if not _exists(admin, n.live):
+        return any(_exists(admin, name) for name in (n.live + SWAP, n.prev))
+    if admin.execute("SELECT datallowconn FROM pg_database WHERE datname = %s", (n.live,)).fetchone()[0] is False:
+        return True
+    return _exists(admin, n.live + SWAP) and not _exists(admin, n.prev)
+
+
+def build_and_switch(db_url: str, build: Callable[..., object], *, say: Callable[[str], None] = _say_default,
+                     check: Callable[[str, str | None], list[str]] = check_graph,
+                     decide: Callable[[Held | None, bool], Verdict] | None = None) -> object:
     """`build(next_url, gate)` builds the graph into a fresh `<db>_next` and calls `gate()` once it has committed (before reporting
     anything as finished); if `check(next_url, live_url)` finds nothing wrong the databases are swapped, else `SwitchoverRefused` and
-    the live database is untouched. A `build` that never calls the gate is checked after it returns. Returns what `build` returned."""
+    the live database is untouched. A `build` that never calls the gate is checked after it returns. Returns what `build` returned.
+
+    `decide(held, repair)` (resume.decide with the run's pins) chooses between resuming a leftover `<db>_next` and dropping it: `held` is what that
+    database holds (None: there is none) and `repair` whether `recover` has an interrupted swap to repair first (then the verdict is fresh). Its
+    verdict line is the first thing `say` prints; a resume keeps `<db>_next` and `build(next_url, gate, verdict)` continues it. Without `decide` the
+    leftover is always dropped and `build(next_url, gate)` builds from scratch."""
     n = names_of(db_url)
+    verdict = None
     with psycopg.connect(n.admin_url, autocommit=True) as admin:
+        if decide:
+            repair = _needs_repair(admin, n)
+            verdict = decide(load_held(n.next_url) if _exists(admin, n.next) else None, repair)
+            say(verdict.line)  # the first line of the run, before the repair or anything else is said
         recover(n, say, admin)  # before anything is dropped or built: an interrupted swap must not leave the API without a database for the hours of a build
-        if _exists(admin, n.next):
-            say(f"switchover: dropping the leftover {n.next} of an earlier build")
-            _drop(admin, n.next)
-        admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(n.next)))
+        resuming = verdict is not None and verdict.resume and _exists(admin, n.next)
+        if not resuming:
+            if _exists(admin, n.next):
+                say(f"switchover: dropping the leftover {n.next} of an earlier build")
+                _drop(admin, n.next)
+            admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(n.next)))
     with psycopg.connect(n.next_url, autocommit=True) as c:
         c.execute("CREATE EXTENSION IF NOT EXISTS pg_search")
-    say(f"switchover: building into {n.next} beside the live {n.live} (the live one keeps serving)")
+    say(f"switchover: {'resuming the build in' if resuming else 'building into'} {n.next} beside the live {n.live} (the live one keeps serving)")
     checked = []
 
     def gate() -> None:
@@ -211,7 +235,7 @@ def build_and_switch(db_url: str, build: Callable[[str, Callable[[], None]], obj
         checked.append(True)
         say("switchover: checks passed")
 
-    result = build(n.next_url, gate)
+    result = build(n.next_url, gate, verdict) if decide else build(n.next_url, gate)
     gate()
     swap_in(n, say)
     return result

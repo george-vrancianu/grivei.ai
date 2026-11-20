@@ -105,7 +105,7 @@ def test_a_staged_failure_says_the_live_graph_is_untouched_and_the_status_says_i
     p.mark_staged()
     p.start(5, "/archive")
     p.fail(RuntimeError("connection lost"))
-    assert re.fullmatch(rf"{TS} rebuild FAILED after 0/5 units: RuntimeError: connection lost; the live graph is untouched; the next run drops the next database and rebuilds", lines[-1])
+    assert re.fullmatch(rf"{TS} rebuild FAILED after 0/5 units: RuntimeError: connection lost; the live graph is untouched; the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it", lines[-1])
     p.state.update(state="running")  # a kill never gets to write `failed`: the file still says running
     p._write()
     gone = "\n".join(describe(read_status(status_file), alive=lambda pid: False))

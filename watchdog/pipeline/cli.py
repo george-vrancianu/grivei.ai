@@ -41,7 +41,10 @@ from .refresh.engine import DeterministicError, TransientError, locked, refresh_
 from .refresh.ledger import LEDGER_NAME
 from .refresh.steps import Impl
 from .progress import DEFAULT_STATUS_NAME, Progress, describe, effective_state, read_status, stamp
+from .build_steps import STEPS
+from .pins import compute_pins, pin_extra
 from .rebuild import rebuild
+from .resume import decide as decide_resume
 from .seap_status import backfill_totals
 from .sources import SOURCES
 from .validate import summary_lines, validate_archive
@@ -85,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
     placement_cli.add_rebuild_args(r)
     _in_place_arg(r)
+    r.add_argument("--fresh", action="store_true", help="start the build from scratch whatever the next database holds: never resume an interrupted build (a beside build resumes by default when its pinned inputs and the code are unchanged)")
 
     r.add_argument("--today", type=_day, default=os.environ.get("PIPELINE_TODAY"), help="the day that ends the Coverage grid's last quarter (env PIPELINE_TODAY; default: today, UTC; for tests)")
     r.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV for the Coverage grid (env PIPELINE_KNOWN_GAPS; default: pipeline/coverage/known_gaps.csv)")
@@ -345,12 +349,16 @@ def _log_line(line: str) -> None:
 def _rebuild_beside(archive: Archive, args, progress: Progress, say):
     """The rebuild every verb shares: into a fresh database beside the live one, checked, then switched over (switchover.py);
     `--in-place` rebuilds into the database itself (it locks it for the whole load)."""
-    def build(url: str, gate=None, staged: bool = False):
+    def build(url: str, gate=None, staged: bool = False, verdict=None):
         return rebuild(archive, url, progress, overrides_path=args.identity_overrides, placement_dir=args.placement_data,
-                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps, gate=gate, staged=staged)
+                       geo_dir=args.geo_dir, today=args.today, known_gaps_path=args.known_gaps, gate=gate, staged=staged, verdict=verdict)
     if args.in_place:
-        return build(args.db)
-    return switchover.build_and_switch(args.db, lambda url, gate: build(url, gate, staged=True), say=say)  # beside the live graph: each Step commits
+        return build(args.db)  # prints its own "fresh" first line: one transaction, nothing committed to resume from
+    # the pins are fixed here, once, before anything is dropped or built: a unit that lands from now on waits for the next build
+    pins = compute_pins(archive, args.today or datetime.now(timezone.utc).date(), pin_extra(args.identity_overrides, args.placement_data, args.known_gaps))
+    fresh = getattr(args, "fresh", False)  # `rebuild` only: refresh and seed resume by default
+    return switchover.build_and_switch(args.db, lambda url, gate, verdict: build(url, gate, True, verdict), say=say,  # beside the live graph: each Step commits
+                                       decide=lambda held, repair: decide_resume(pins, held, STEPS, fresh=fresh, repair=repair))
 
 
 def _operate(archive: Archive, args, parser) -> int:

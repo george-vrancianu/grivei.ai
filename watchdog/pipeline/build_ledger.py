@@ -9,13 +9,17 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import psycopg
+from psycopg.types.json import Jsonb
+
+from .pins import Pins
 
 BUILDING, COMPLETE = "building", "complete"
 
 
-def start_run(cur: psycopg.Cursor, staged: bool) -> None:
-    """The run's one row, in the schema Step (after build_schema.sql has recreated the `build` schema)."""
-    cur.execute("INSERT INTO build.run (started, state, staged) VALUES (clock_timestamp(), %s, %s)", (BUILDING, staged))
+def start_run(cur: psycopg.Cursor, staged: bool, pins: Pins) -> None:
+    """The run's one row, in the schema Step (after build_schema.sql has recreated the `build` schema), with the pinned inputs of the run."""
+    cur.execute("INSERT INTO build.run (started, state, staged, pinned_units, code_version, schema_files, today) VALUES (clock_timestamp(), %s, %s, %s, %s, %s, %s)",
+                (BUILDING, staged, Jsonb(dict(pins.units)), pins.code_version, Jsonb(dict(pins.schema_files)), pins.today))
 
 
 def stamp_step(cur: psycopg.Cursor, name: str, started: datetime) -> None:

@@ -12,7 +12,12 @@ CREATE TABLE build.run (
     started  timestamptz NOT NULL,
     ended    timestamptz,
     state    text NOT NULL,
-    staged   boolean NOT NULL
+    staged   boolean NOT NULL,
+    -- the pinned inputs (pipeline/pins.py): what this build reads, fixed at its start; a resume reads exactly this set (pipeline/resume.py decides whether it may)
+    pinned_units  jsonb NOT NULL,  -- Raw archive fetch directory, relative to the archive root -> sha256 of its manifest.json (null: no manifest at pin time)
+    code_version  text NOT NULL,   -- content hash of the pipeline package (and of any input file passed from outside it)
+    schema_files  jsonb NOT NULL,  -- sql/*_schema.sql file name -> sha256
+    today         date NOT NULL    -- the day that ends the Coverage grid's last quarter
 );
 
 -- One row per Step of the rebuild (pipeline/build_steps.py), written in the transaction of the Step when it finishes: a row exists only for a Step that
