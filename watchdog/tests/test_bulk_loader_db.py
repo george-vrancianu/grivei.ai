@@ -316,7 +316,7 @@ def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db,
     # every stage outside the unit loop is timed, in order, with a start line and a done line
     steps = [m.group(1, 2) for m in (re.search(r" rebuild step (\S+?)(: start| done in \d+:\d\d:\d\d)$", x) for x in lines) if m]
     names = ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf", "amepip", "aep", "financials",
-             "donations", "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "onrc-search", "commit", "vacuum", "outlines"]
+             "donations", "coverage", "record-indexes", "signals", "rollup", "search-index", "analyze-search", "onrc-search", "commit", "vacuum", "outlines"]
     assert [n for n, _ in steps] == [n for n in names for _ in (0, 1)]
     assert [k == ": start" for _, k in steps] == [True, False] * len(names)
     assert lines.index(next(x for x in lines if " rebuild done " in x)) > lines.index(next(x for x in lines if "step commit done" in x))
