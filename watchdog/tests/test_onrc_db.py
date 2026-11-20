@@ -82,6 +82,46 @@ def test_a_status_that_disappears_and_comes_back_starts_a_new_run(db, tmp_path):
     assert spans(db, "J40/1/2000", 1048) == [("2026-03-02", "2026-05-06", True)]
 
 
+def test_the_span_tables_over_name_changes_status_changes_and_a_registration_that_disappears_and_returns(db, tmp_path):
+    """Pins the whole of both span tables for five snapshots (#304): the history is written where it changes, so every shape is spelled out. `RET` is absent
+    from the 3rd and 4th snapshot and back in the 5th, under a new name and another status; `GONE` leaves for good; `NEW` appears late; `STEADY` never changes;
+    `NOSTATUS` has a name and no status code."""
+    root = tmp_path / "archive"
+    archive = Archive(root)
+    snapshots = {
+        "2026-03-02": ["STEADY SRL^0^J40/1/2000^E^1048", "RET SRL^0^J40/2/2000^E^1048,1074", "GONE SRL^0^J40/3/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^"],
+        "2026-04-03": ["STEADY SRL^0^J40/1/2000^E^1048", "RET SRL^0^J40/2/2000^E^1048", "GONE SRL^0^J40/3/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^"],
+        "2026-05-06": ["STEADY SRL^0^J40/1/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
+        "2026-06-02": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
+        "2026-07-01": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "RET NOU SRL^0^J40/2/2000^E^1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
+    }
+    for when, rows in snapshots.items():
+        name = f"firme_{when}.csv"
+        body = ("DENUMIRE^CUI^COD_INMATRICULARE^EUID^STARE_FIRMA\n" + "".join(r + "\n" for r in rows)).encode()
+        archive.write_unit(source="onrc", stream="snapshot", kind="firme", unit=when, fetched_at=datetime(2026, 11, 13, tzinfo=timezone.utc), files={name: body},
+                           origin={"system": "data.gov.ro", "layout": "legacy", "resources": [{"role": "legacy", "resourceId": "r", "name": name, "url": f"https://x/{name}"}]})
+    rebuild(archive, db)
+    s1, s2, s3, s4, s5 = snapshots
+    assert q(db, "SELECT reg_no, code, first_seen::text, last_seen::text, since_at_least FROM onrc.status_span ORDER BY reg_no, code, first_seen") == [
+        ("J40/1/2000", 1048, s1, s5, True),
+        ("J40/1/2000", 1074, s4, s5, False),
+        ("J40/2/2000", 1048, s1, s2, True),
+        ("J40/2/2000", 1074, s1, s1, True),
+        ("J40/2/2000", 1074, s5, s5, False),
+        ("J40/3/2000", 1048, s1, s2, True),
+        ("J40/4/2000", 1048, s3, s5, False),
+    ]
+    assert q(db, "SELECT reg_no, name, first_seen::text, last_seen::text, since_at_least FROM onrc.name_span ORDER BY reg_no, name, first_seen") == [
+        ("J40/1/2000", "STEADY SRL", s1, s5, True),
+        ("J40/2/2000", "RET NOU SRL", s5, s5, False),
+        ("J40/2/2000", "RET SRL", s1, s2, True),
+        ("J40/3/2000", "GONE SRL", s1, s2, True),
+        ("J40/4/2000", "NEW SRL", s3, s5, False),
+        ("J40/5/2000", "NOSTATUS SRL", s1, s5, True),
+    ]
+    assert q(db, "SELECT count(*) FROM pg_constraint WHERE contype = 'p' AND conrelid IN ('onrc.status_span'::regclass, 'onrc.name_span'::regclass)") == [(2,)]
+
+
 def test_a_cui_anaf_knows_keeps_anafs_name_and_onrc_names_are_aliases_only(built):
     url, _ = built
     for company in (ALFA, BETA, GAMMA, DUBLA, AUTH):
