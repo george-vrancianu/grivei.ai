@@ -259,7 +259,8 @@ def recover(n: Names, say: Callable[[str], None] = _say_default, admin: psycopg.
         swap = n.live + SWAP
         if _exists(admin, swap):  # a rollback killed after its second rename: the graph that was live is parked as `_swap`
             if _exists(admin, n.prev):
-                say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
+                if not dry_run:
+                    say(f"switchover: {swap} is left over beside {n.prev} (`pipeline cleanup` drops it)")
             else:
                 if dry_run:
                     return True

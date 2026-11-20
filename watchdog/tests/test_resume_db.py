@@ -245,6 +245,6 @@ def test_load_quarter_always_builds_fresh_and_prints_its_verdict_first(server, t
         signal.signal(signal.SIGTERM, previous)
     out = capsys.readouterr().out.splitlines()
     assert code == 0, out
-    assert "rebuild: fresh - load-quarter requeued units" in out[0] and sum("rebuild: fresh" in line for line in out) == 1  # first, and once
+    assert "rebuild: fresh - load-quarter always starts over" in out[0] and sum("rebuild: fresh" in line for line in out) == 1  # first, and once
     with psycopg.connect(live) as c:
         assert c.execute("SELECT count(*) FROM seap.record WHERE code = 'DANNEW1'").fetchone() == (1,)

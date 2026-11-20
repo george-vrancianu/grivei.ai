@@ -105,8 +105,8 @@ def test_ledger_rows_that_are_not_a_prefix_of_the_steps_are_fresh():
 
 
 def test_a_verb_that_always_starts_over_gives_its_own_reason():
-    v = _decide(_held(), fresh="load-quarter requeued units")
-    assert v.verdict == FRESH and v.line == "rebuild: fresh - load-quarter requeued units"
+    v = _decide(_held(), fresh="load-quarter always starts over")
+    assert v.verdict == FRESH and v.line == "rebuild: fresh - load-quarter always starts over"
 
 
 def test_a_direct_staged_call_is_fresh_with_the_one_reason_the_decision_owns():

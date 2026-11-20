@@ -22,7 +22,7 @@ import psycopg
 from .pins import Pins
 
 RESUME, FRESH = "resume", "fresh"
-LOAD_QUARTER_REASON = "load-quarter requeued units, which an interrupted build never pinned, so the build starts over"
+LOAD_QUARTER_REASON = "load-quarter always starts over (units it requeues or that landed since were never pinned by an interrupted build)"
 
 
 @dataclass(frozen=True)

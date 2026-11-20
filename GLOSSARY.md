@@ -51,7 +51,7 @@ The record inside a built graph of how it was built: one row per Step, committed
 _Avoid_: build log, migration table
 
 **Pinned inputs**:
-What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version, the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set and is refused, starting a fresh build, when any of it differs; a unit that lands in the Raw archive later waits for the next build.
+What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version, the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now) and is refused, starting a fresh build, when a pinned unit, the code or the schema files differ; a unit that lands in the Raw archive later waits for the next build.
 _Avoid_: snapshot, lockfile
 
 **Data-through date**:
