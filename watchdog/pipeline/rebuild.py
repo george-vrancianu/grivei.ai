@@ -28,6 +28,7 @@ records absent from a re-upload are kept.
 """
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import nullcontext
 from dataclasses import dataclass, field
@@ -193,16 +194,67 @@ _CONTENT = (
     "counted_bani", "ceiling_bani", "suspect", "framework_role", "suspect_rule", "suspect_threshold_bani", "load_notes", "winners", "badges", "notice_code", "contract_numbers", "procedure", "concluded_by",
     "initiation_code", "lot_count", "via", "url", "ca_notice_id", "sys_notice_type_id", "sys_notice_version_id",
 )
-_UPSERT = f"""
-INSERT INTO seap.record (code, {", ".join(_CONTENT)}, source_file_id)
-VALUES (%(code)s, {", ".join(f"%({c})s" for c in _CONTENT)}, %(source_file_id)s)
-ON CONFLICT (code) DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in _CONTENT)}, source_file_id = EXCLUDED.source_file_id
-WHERE (EXCLUDED.via = 'BULK' AND seap.record.via = 'CRAWL')
-   OR (EXCLUDED.via = seap.record.via AND (EXCLUDED.published_on > seap.record.published_on
-   OR (EXCLUDED.published_on = seap.record.published_on
-       AND ROW({", ".join(f"EXCLUDED.{c}" for c in _CONTENT)}) IS DISTINCT FROM ROW({", ".join(f"seap.record.{c}" for c in _CONTENT)}))))
-RETURNING (xmax = 0) AS inserted
+_RECORD_COLUMNS = ("code", *_CONTENT, "source_file_id")
+_SEARCH_COLUMNS = ("record_code", "winner_position", "winners", "channel", "award_date", "award_year", "value_bani", "value_bucket", "badges", "procedure",
+                   "cpv_code", "counted_bani", "ceiling_bani", "suspect", "share_bani", "authority_key", "authority_cui", "supplier_cui", "supplier_key",
+                   "supplier_spelling", "supplier_vat", "supplier_curated", "supplier_differs", "doc")
+_WITHHELD_COLUMNS = ("record_code", "winner_position", "name", "had_cnp")
+
+# Staging: one batch of Records and their search and withheld rows is COPYed into these (session-local and never written to the WAL, like an unlogged table,
+# and not part of any schema the graph holds), then three set-based statements apply it. `seq` is the order the rows came in.
+_STAGING = (
+    f"CREATE TEMP TABLE IF NOT EXISTS stage_record AS SELECT 0 AS seq, {', '.join(_RECORD_COLUMNS)} FROM seap.record WITH NO DATA",
+    f"CREATE TEMP TABLE IF NOT EXISTS stage_search AS SELECT 0 AS seq, {', '.join(_SEARCH_COLUMNS)} FROM seap.search WITH NO DATA",
+    f"CREATE TEMP TABLE IF NOT EXISTS stage_withheld AS SELECT 0 AS seq, {', '.join(_WITHHELD_COLUMNS)} FROM withheld.natural_person_name WITH NO DATA",
+    "CREATE TEMP TABLE IF NOT EXISTS stage_applied (code text PRIMARY KEY, inserted boolean NOT NULL)",
+)
+# Precedence, in one statement for the whole batch (ADR 0002 and its amendment; the rule is the WHERE): a BULK row replaces a CRAWL row and a CRAWL row never
+# replaces a BULK one; within the same `via`, a newer publication replaces, the same publication with different content replaces (a later file wins the tie),
+# and the same content changes nothing. What it applied (a row that lost is not in the result) goes to stage_applied, `inserted` false for a replacement.
+_APPLY = f"""
+WITH applied AS (
+    INSERT INTO seap.record ({", ".join(_RECORD_COLUMNS)})
+    SELECT {", ".join(_RECORD_COLUMNS)} FROM stage_record ORDER BY seq
+    ON CONFLICT (code) DO UPDATE SET {", ".join(f"{c} = EXCLUDED.{c}" for c in _CONTENT)}, source_file_id = EXCLUDED.source_file_id
+    WHERE (EXCLUDED.via = 'BULK' AND seap.record.via = 'CRAWL')
+       OR (EXCLUDED.via = seap.record.via AND (EXCLUDED.published_on > seap.record.published_on
+       OR (EXCLUDED.published_on = seap.record.published_on
+           AND ROW({", ".join(f"EXCLUDED.{c}" for c in _CONTENT)}) IS DISTINCT FROM ROW({", ".join(f"seap.record.{c}" for c in _CONTENT)}))))
+    RETURNING code, (xmax = 0) AS inserted)
+INSERT INTO stage_applied SELECT code, inserted FROM applied
 """
+# A replaced version's search rows and withheld names go; then the applied Records' rows come in, in the order they arrived (so seap.search ids follow it).
+_DROP_REPLACED = (
+    "DELETE FROM seap.search WHERE record_code IN (SELECT code FROM stage_applied WHERE NOT inserted)",
+    "DELETE FROM withheld.natural_person_name WHERE record_code IN (SELECT code FROM stage_applied WHERE NOT inserted)",
+)
+_WRITE_WITHHELD = f"""INSERT INTO withheld.natural_person_name ({", ".join(_WITHHELD_COLUMNS)})
+    SELECT {", ".join(f"w.{c}" for c in _WITHHELD_COLUMNS)} FROM stage_withheld w JOIN stage_applied a ON a.code = w.record_code ORDER BY w.seq"""
+_WRITE_SEARCH = f"""INSERT INTO seap.search ({", ".join(_SEARCH_COLUMNS)})
+    SELECT {", ".join(f"s.{c}" for c in _SEARCH_COLUMNS)} FROM stage_search s JOIN stage_applied a ON a.code = s.record_code ORDER BY s.seq"""
+
+_TRUNCATE_STAGING = "TRUNCATE stage_record, stage_search, stage_withheld, stage_applied"
+
+
+def _copy(cur: psycopg.Cursor, table: str, columns: Sequence[str], rows: list[tuple]) -> None:
+    with cur.copy(f"COPY {table} (seq, {', '.join(columns)}) FROM STDIN") as copy:
+        for seq, row in enumerate(rows):
+            copy.write_row((seq, *row))
+
+
+def _batches(rows: list[BulkRecord]) -> Iterator[list[BulkRecord]]:
+    """The rows in order, cut so that no code is twice in a batch: a code that comes again in the same file meets the rule against the version before it, as if
+    loaded one by one. (A bulk file keeps one version per identity, so this is one batch; a crawled day may repeat a code.)"""
+    batch: list[BulkRecord] = []
+    seen: set[str] = set()
+    for r in rows:
+        if r.code in seen:
+            yield batch
+            batch, seen = [], set()
+        batch.append(r)
+        seen.add(r.code)
+    if batch:
+        yield batch
 
 
 def _winner_json(name: str | None, w: Resolved, share: int | None = None) -> dict:
@@ -239,17 +291,19 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
     nothing is confirmed, so every supplier is name-only. What each Record adds to a sum is decided here, once, by the counting
     rule (counting.py; `estimates` are the archived e-licitatie lookups): the API only sums what is stored."""
     resolver = resolver or Resolver()
-    for r in rows:
-        winners = r.all_winners
-        contract = r.kind in ("CONTRACT", "AWARD_NOTICE")
-        authority = resolve_authority(r.authority_cui, r.authority_name)
-        resolved = [(w.name, resolver.supplier(w.name, w.cui, r.authority_cui)) for w in winners]
-        first_name, first = resolved[0] if resolved else (None, None)
-        counted = count(r.kind, r.value_bani, r.award_date, r.contract_type, r.cpv_code, r.concluded_by, r.notice_code, len(winners), estimates)
-        badges = [*counted.badges, *_identity_badges([w for _, w in resolved])]  # on the Record and on each of its search rows
-        cur.execute(
-            _UPSERT,
-            dict(
+    for stmt in _STAGING:
+        cur.execute(stmt)
+    for batch in _batches(rows):
+        records, searches, withheld = [], [], []
+        for r in batch:
+            winners = r.all_winners
+            contract = r.kind in ("CONTRACT", "AWARD_NOTICE")
+            authority = resolve_authority(r.authority_cui, r.authority_name)
+            resolved = [(w.name, resolver.supplier(w.name, w.cui, r.authority_cui)) for w in winners]
+            first_name, first = resolved[0] if resolved else (None, None)
+            counted = count(r.kind, r.value_bani, r.award_date, r.contract_type, r.cpv_code, r.concluded_by, r.notice_code, len(winners), estimates)
+            badges = [*counted.badges, *_identity_badges([w for _, w in resolved])]  # on the Record and on each of its search rows
+            params = dict(
                 code=r.code, kind=r.kind, channel="CONTRACT" if contract else "DIRECT_PURCHASE", title=r.title, state=r.state,
                 authority_cui=authority.cui, authority_key=authority.key, authority_name=r.authority_name,
                 supplier_cui=first.cui if first and first.identity == "CUI" else None,
@@ -260,39 +314,36 @@ def load_records(cur: psycopg.Cursor, source_file_id: int, rows: list[BulkRecord
                 ceiling_bani=counted.ceiling_bani, suspect=counted.suspect, framework_role=counted.framework_role, suspect_rule=counted.suspect_rule,
                 suspect_threshold_bani=counted.suspect_threshold_bani,
                 load_notes=list(dict.fromkeys((*r.notes, *counted.notes))),
-                winners=Jsonb([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
+                winners=json.dumps([_winner_json(n, w, counted.shares[i] if counted.shares else None) for i, (n, w) in enumerate(resolved)]),
                 badges=badges,
                 notice_code=r.notice_code, contract_numbers=list(r.contract_numbers), procedure=r.procedure,
                 concluded_by=r.concluded_by, initiation_code=r.initiation_code, lot_count=r.lot_count, via=r.via, url=r.url,
                 ca_notice_id=r.ca_notice_id, sys_notice_type_id=r.sys_notice_type_id, sys_notice_version_id=r.sys_notice_version_id,
                 source_file_id=source_file_id,
-            ),
-        )
-        replaced = cur.fetchone()
-        if replaced is None:  # unchanged, or older than what is stored
-            continue
-        if not replaced[0]:  # a version that replaces another: its search rows and withheld names go
-            cur.execute("DELETE FROM seap.search WHERE record_code = %s", (r.code,))
-            cur.execute("DELETE FROM withheld.natural_person_name WHERE record_code = %s", (r.code,))
-        for position, (name, w) in enumerate(resolved, start=1):  # natural persons: the name, withheld (never served, never a CNP)
-            if w.natural_person and (kept := withheld_name(name)):
-                cur.execute("INSERT INTO withheld.natural_person_name (record_code, winner_position, name, had_cnp) VALUES (%s, %s, %s, %s)",
-                            (r.code, position, kept, w.had_cnp))
-        doc = _search_doc(r, authority, resolved)
-        # one row per winner; share_bani is the winner's equal share of the counted value (counting.split_evenly), a sole winner has it all
-        for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
-            keyed = w is not None and not w.natural_person
-            cur.execute(
-                """INSERT INTO seap.search (record_code, winner_position, winners, channel, award_date, award_year, value_bani, value_bucket,
-                       badges, procedure, cpv_code, counted_bani, ceiling_bani, suspect, share_bani, authority_key, authority_cui, supplier_cui,
-                       supplier_key, supplier_spelling, supplier_vat, supplier_curated, supplier_differs, doc)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
-                 counted.value_bani, value_bucket(counted.value_bani), badges, r.procedure, r.cpv_code, counted.counted_bani, counted.ceiling_bani,
-                 counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.key, authority.cui,
-                 w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
-                 w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc),
             )
+            records.append(tuple(params[c] for c in _RECORD_COLUMNS))
+            for position, (name, w) in enumerate(resolved, start=1):  # natural persons: the name, withheld (never served, never a CNP)
+                if w.natural_person and (kept := withheld_name(name)):
+                    withheld.append((r.code, position, kept, w.had_cnp))
+            doc = _search_doc(r, authority, resolved)
+            # one row per winner; share_bani is the winner's equal share of the counted value (counting.split_evenly), a sole winner has it all
+            for position, (name, w) in enumerate(resolved or [(None, None)], start=1):
+                keyed = w is not None and not w.natural_person
+                searches.append((r.code, position, max(len(winners), 1), "CONTRACT" if contract else "DIRECT_PURCHASE", r.award_date, r.award_date.year,
+                                 counted.value_bani, value_bucket(counted.value_bani), badges, r.procedure, r.cpv_code, counted.counted_bani, counted.ceiling_bani,
+                                 counted.suspect, counted.counted_shares[position - 1] if counted.counted_shares else None, authority.key, authority.cui,
+                                 w.cui if keyed and w.identity == "CUI" else None, w.key if keyed else None, (name or None) if keyed else None,
+                                 w.foreign_vat_id if keyed else None, bool(keyed and w.curated), bool(keyed and w.differs_from_anaf), doc))
+        cur.execute(_TRUNCATE_STAGING)
+        _copy(cur, "stage_record", _RECORD_COLUMNS, records)
+        _copy(cur, "stage_search", _SEARCH_COLUMNS, searches)
+        _copy(cur, "stage_withheld", _WITHHELD_COLUMNS, withheld)
+        cur.execute(_APPLY)
+        for stmt in _DROP_REPLACED:
+            cur.execute(stmt)
+        cur.execute(_WRITE_WITHHELD)
+        cur.execute(_WRITE_SEARCH)
+        cur.execute(_TRUNCATE_STAGING)  # a batch of staged rows is not kept until the top-level commit
 
 
 @dataclass
