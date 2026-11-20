@@ -15,3 +15,7 @@ Every file a Connector fetches (bulk CSVs, crawled award-notice JSON, ANAF respo
 ## Amended 2026-11-13: the archive may hold a derived copy for declared personal fields
 
 [ADR 0016](0016-public-tier-names-follow-their-source-publication-window.md): a Connector may declare personal fields it strips or tokenises at fetch. The archive then holds the file as fetched except those fields, recorded with the original file's hash. Natural persons' names from the fund Sources go to a name sidecar outside the archive, which is a rebuild input with its own backup. SEAP's CNPs are replaced by a marker, and files already archived are rewritten once, with a manifest.
+
+## Amended 2026-11-20: a beside build may be interrupted and resumed
+
+A beside build may be interrupted and resumed; resumed and uninterrupted builds of the same pinned inputs give the same graph (spec #285, #292). The build fixes its inputs at its start (the Raw archive units by manifest checksum, the code version, the schema files, the quarantine listing and the day that ends the Coverage grid) and a resume reads exactly that set; a unit that lands later waits for the next build. A resume happens only when those inputs and the code are unchanged; any difference drops the next database and rebuilds it. The graph is still derived from the archive alone: a resume skips work already committed, it never adds an input.

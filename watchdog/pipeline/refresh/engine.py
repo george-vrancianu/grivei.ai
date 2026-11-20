@@ -219,7 +219,7 @@ def refresh_steps(archive: Archive, impl) -> list[Step]:
         *financials,
         *banipartide,
         Step("anaf", impl.anaf, anaf_due, fingerprint_no_anaf),
-        Step("load", impl.load, load_due, fingerprint_all),
+        Step("load", impl.load, load_due, getattr(impl, "loaded_marker", fingerprint_all)),  # what the load covered (a resumed build reads its pins), not the archive at the end
         *backups,  # step 5 (#82): the raw archive to restic nightly, a pg_dump of the graph weekly, same repository
     ]
 
@@ -235,7 +235,7 @@ def seed_steps(archive: Archive, impl, backfill: bool) -> list[Step]:
              *([Step("amepip", impl.amepip, not_done("amepip"))] if _has_amepip(impl) else []),
              *([Step("financials", impl.financials, not_done("financials"))] if _has_financials(impl) else []),
              Step("anaf", impl.anaf, not_done("anaf"), marker_anaf),
-             Step("load", impl.load, not_done("load"), marker_load)]
+             Step("load", impl.load, not_done("load"), getattr(impl, "loaded_marker", marker_load))]
     if backfill:
         steps.append(Step("backfill", impl.backfill, not_done("backfill")))
     # ONRC last: a failing ONRC step (or ~60 snapshots to download) never holds up SEAP's ANAF and load; the next refresh's load picks the snapshots up

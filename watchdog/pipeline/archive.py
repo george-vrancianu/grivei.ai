@@ -71,6 +71,32 @@ def _format_time(moment: datetime) -> str:
 class Archive:
     def __init__(self, root: str | os.PathLike):
         self.root = Path(root)
+        self._pin: dict[str, str | None] | None = None  # a pinned view (`pinned`): the fetch directories a build may see
+        self._pinned_quarantine: set[str] | None = None
+
+    def pinned(self, units: Mapping[str, str | None], quarantined: set[str] | None = None) -> "Archive":
+        """A view of this archive that holds only the fetch directories in `units` (relative path -> manifest checksum; the build's pinned inputs, pins.py),
+        so a unit that lands later is invisible to every reader that goes through it (and through `holds`). A directory pinned with no checksum had no
+        manifest at pin time and stays incomplete. `quarantined` (paths relative to the quarantine area) pins the quarantine listing; what this view
+        quarantines itself is added. Writes go to the same directories."""
+        view = Archive(self.root)
+        view._pin = dict(units)
+        view._pinned_quarantine = None if quarantined is None else set(quarantined)
+        return view
+
+    def holds(self, directory: Path) -> bool:
+        """Whether a fetch directory is visible here: always, unless this is a pinned view."""
+        return self._pin is None or directory.relative_to(self.root).as_posix() in self._pin
+
+    def add_pinned_quarantine(self, unit_dir: Path) -> None:
+        """A pinned view lists one more unit as quarantined: what an earlier run of the same build moved there (a resume restores it from the ledger)."""
+        if self._pinned_quarantine is not None:
+            self._pinned_quarantine.add(unit_dir.relative_to(self.root / QUARANTINE_DIR).as_posix())
+
+    def complete_at_pin(self, directory: Path) -> bool:
+        """Whether a fetch directory counts as complete here: always, unless this is a pinned view, where only a directory pinned WITH a manifest checksum
+        does (one that had no manifest at pin time stays incomplete for every reader, even if its writer finishes during the build)."""
+        return self._pin is None or self._pin.get(directory.relative_to(self.root).as_posix()) is not None
 
     # ---- writing ------------------------------------------------------------------------------------------
 
@@ -148,6 +174,8 @@ class Archive:
             raise ArchiveError(f"already quarantined: {dest}")
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(unit.path), str(dest))
+        if self._pinned_quarantine is not None:
+            self._pinned_quarantine.add(rel.as_posix())
         (dest / REASON).write_text(
             json.dumps({"reason": reason, "problems": problems or []}, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
@@ -188,7 +216,7 @@ class Archive:
         if not self.root.is_dir():
             return
         for directory in sorted(self.root.glob("*/*/*/*/*")):
-            if directory.is_dir() and directory.relative_to(self.root).parts[0] != QUARANTINE_DIR:
+            if directory.is_dir() and directory.relative_to(self.root).parts[0] != QUARANTINE_DIR and self.holds(directory):
                 yield directory
 
     def units(self, source: str | None = None) -> list[Unit]:
@@ -202,11 +230,15 @@ class Archive:
 
     def quarantined(self) -> list[Path]:
         base = self.root / QUARANTINE_DIR
+        if self._pinned_quarantine is not None:  # a pinned view: the listing the build pinned (plus what it moved itself), whatever is on disk now: a unit requeued since is still quarantined for this build
+            return [base / rel for rel in sorted(self._pinned_quarantine)]
         return sorted(p.parent for p in base.rglob(REASON)) if base.is_dir() else []
 
     def survey(self, keep=None) -> list[tuple[Unit | None, Path]]:
         """Every fetch directory (or those `keep(directory)` accepts) with its Unit, None when incomplete. Read-only; hashes the files of the kept ones."""
-        return [(self._read_unit(d), d) for d in self._unit_dirs() if keep is None or keep(d)]
+        pin = self._pin or {}
+        return [(None if self._pin is not None and pin.get(d.relative_to(self.root).as_posix()) is None else self._read_unit(d), d)
+                for d in self._unit_dirs() if keep is None or keep(d)]
 
     def _read_all(self, source: str | None = None, skip: tuple[str, ...] = ()) -> list[tuple[Unit | None, Path]]:
         if source is None and not skip:

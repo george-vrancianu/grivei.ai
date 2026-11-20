@@ -3,7 +3,9 @@
 A `Step` declares its name, a run function on a shared `BuildContext`, the tables it reads and writes, and the code it owns. `STEPS` is the
 order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
 
-- #291: a staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
+- A staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
+- A resumed build (`run_steps(..., resume=True)`, decided by resume.py before the Steps run) skips the committed Steps and restores what they reported
+  (hand_offs.restore_summary); the Steps that remain load their hand-offs from the graph as in an uninterrupted run. No Step may therefore be run twice.
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
 - Values one Step hands to a later one are persisted: `run_steps` writes the Step's `build.step` row when it finishes (its `hand_off`, or the
   `RebuildSummary` fields in `summary_fields`), and a consumer Step loads what it needs from the database (hand_offs.py), never from a variable of the
@@ -34,6 +36,7 @@ from .crawl.unitdir import CRAWLED_KINDS, BACKFILL_KIND, contiguous_through as c
 from .estimates import read_estimates
 from .hand_offs import (entities_hand_off, encode, load_anaf_names, load_bulk_rows, load_data_through, load_last_source_file_id, load_loaded_hashes,
                         load_onrc_summary, load_set_aside, onrc_hand_off, units_hand_off, write_step)
+from .hand_offs import committed_steps, restore_summary
 from .identity import Overrides, Resolver
 from .mf.build import build_mf
 from .onrc.build import OnrcNames, build_onrc, build_onrc_placement
@@ -44,6 +47,7 @@ from .aep.build import build_aep
 from .financials.build import build_financials
 from .banipartide.build import build_donations
 from .placement.build import build_placement
+from .pins import Pins, files_under
 from .progress import Progress
 from .rebuild import (BUILD_SQL, CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DIR, WITHHELD_SQL, AEP_SQL, AMEPIP_SQL, RebuildSummary, _quarter_label,
                       build_entities, build_frameworks, iter_units, load_anaf, load_records, store_data_through, store_sources)
@@ -70,6 +74,7 @@ class BuildContext:
     known_gaps_path: Path | str | None = None
     overrides: Overrides | None = None  # re-read from the identity file, not handed on
     person_overrides: PersonOverrides | None = None
+    pins: Pins | None = None  # the pinned inputs of the run (pins.py): written into build.run by the schema Step
     # Working state of ONE Step, never read by another (a test pins the field list): a value a later Step needs is loaded from the graph by that Step
     # (hand_offs.py), or rebuilt from the archive and the graph, and persisted in build.step by its producer.
     number: int = 0  # units: the last seap.source_file id handed out (starts at max(seap.source_file.id))
@@ -109,7 +114,7 @@ def _schema(c: BuildContext) -> None:
     c.cur.execute(FINANCIALS_SQL.read_text(encoding="utf-8"))  # MF's annual financial statements (#179): a Reference source too
     c.cur.execute(DONATIONS_SQL.read_text(encoding="utf-8"))  # BaniPartide's firm donations (#182): a Reference source too
     c.cur.execute(BUILD_SQL.read_text(encoding="utf-8"))  # the build ledger: build.step (hand-offs and times), written by every Step (run_steps), and build.run
-    start_run(c.cur, c.staged)
+    start_run(c.cur, c.staged, c.pins)
 
 
 def _anaf_identities(c: BuildContext) -> None:
@@ -285,6 +290,7 @@ SHARED = (
     P + "__init__.py", P + "build_steps.py", P + "rebuild.py", P + "analyze.py", P + "archive.py", P + "counting.py", P + "fold.py",
     P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "build_ledger.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
     P + "sql/",  # the schema files: each Step's tables are created by the first Step, so a change to any is a change to all
+    P + "pins.py",  # the pinned inputs build_ledger.start_run writes into build.run
     P + "bulk/", P + "crawl/",  # the Record parsers and the crawl unit directories: read by the schema-independent loaders of several Steps
 )
 
@@ -294,6 +300,7 @@ OUTSIDE_THE_BUILD = (
     P + "__main__.py", P + "cli.py", P + "acceptance.py", P + "acceptance_cli.py", P + "backup.py", P + "bench.py", P + "bench_onrc.py",
     P + "bench_onrc_queries.json", P + "bench_queries.json", P + "datagov.py", P + "placement_cli.py", P + "seap_status.py", P + "switchover.py",
     P + "validate.py", P + "refresh/", P + "geo/",
+    P + "resume.py",  # the resume decision: made before any Step runs (#295 adds the per-Step gate here)
 )
 
 # Code several Steps run: listed under each of them, with what it imports (the declarations test checks the closure).
@@ -313,7 +320,7 @@ STEPS: tuple[Step, ...] = (
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
     Step("units", _units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.bulk_rows, c.summary.duplicate_files, c.summary.set_aside, c.summary.quarantined,
-                                           c.summary.incomplete, c.archive.root),
+                                           c.summary.incomplete, c.archive.root, c.summary.units_total),
          reads=("core.anaf_company", "onrc.registration"),  # the resolver confirms a CUI by ANAF's answers, then the register's
          writes=("seap.source_file", "seap.record", "seap.search", "withheld.natural_person_name")),
     Step("crawl-status", _crawl_status, reads=("seap.source_file",), writes=("seap.record", "seap.crawl_state")),
@@ -359,20 +366,36 @@ def step_summary(step: Step, ctx: BuildContext) -> dict:
     return out
 
 
-def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS) -> None:
+def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: bool = False) -> None:
     """Run the Steps in order on the context's one connection, each in its own explicit transaction. A staged build (beside the live graph) commits
     after every Step, with the Step's `build.step` row; otherwise one outer transaction holds them all, so each Step's block is a savepoint and the
     commit is the outer block's exit. The last Step also marks the build complete (build_ledger.finish_run). A Step with one progress name runs inside
-    that timed phase; a Step with several (placement-mf) or none (units) announces them itself."""
+    that timed phase; a Step with several (placement-mf) or none (units) announces them itself.
+
+    `resume` (a staged build into a next database that already holds committed Steps, resume.py): the committed Steps are skipped, never run twice
+    (the schema Step would drop the graph, `crawl-badges` would append its badges again), and what they reported is restored into `ctx.summary`.
+    The hand-offs the remaining Steps need are loaded from the graph by those Steps, as in an uninterrupted run."""
+    start = 0
+    if resume:
+        start = committed_steps(ctx.cur, steps)
+        restore_summary(ctx.cur, ctx.summary, steps[:start], ctx.archive.root)
+        for unit_dir in ctx.summary.quarantined:  # the units the committed `units` Step moved: quarantined as far as this build is concerned (Coverage flags their cells)
+            ctx.archive.add_pinned_quarantine(unit_dir)
+        if ctx.progress and ctx.summary.units_total:
+            ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root)
+        if start and ctx.staged:  # a kill between that Step's commit and its VACUUM skipped it: speed only, so it is simply run again (the graph and the ledger do not change)
+            _vacuum_after(ctx, steps[start - 1])
     if ctx.staged:
-        _run_each(ctx, steps)
+        _run_each(ctx, steps, start)
     else:
         with ctx.conn.transaction():  # the commit phase line (the `commit` Step) ends before this COMMIT: only a staged Step's commit is inside its timed phase
-            _run_each(ctx, steps)
+            _run_each(ctx, steps, start)
 
 
-def _run_each(ctx: BuildContext, steps: tuple[Step, ...]) -> None:
+def _run_each(ctx: BuildContext, steps: tuple[Step, ...], start: int = 0) -> None:
     for ordinal, step in enumerate(steps):
+        if ordinal < start:
+            continue
         names = step.progress_names
         with ctx.phase(names[0]) if len(names) == 1 else nullcontext():  # the commit of a staged Step is inside its phase
             with ctx.conn.transaction():
@@ -402,7 +425,7 @@ def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:
     for pattern in patterns:
         path = root / pattern
         if pattern.endswith("/"):
-            files.update(p for p in path.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
+            files.update(files_under(path))
         else:
             files.add(path)
     return files

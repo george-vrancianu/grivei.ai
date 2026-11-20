@@ -14,6 +14,7 @@ from pipeline import switchover  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from graph_dump import dump_graph  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
+from pipeline.resume import FRESH, Verdict  # noqa: E402
 from test_bulk_loader_db import FIXTURE, server  # noqa: E402,F401
 
 
@@ -292,6 +293,20 @@ def test_a_rollback_killed_before_its_last_rename_is_finished_by_the_next_run_an
     with psycopg.connect(names.admin_url, autocommit=True) as admin:  # an orphan beside a fallback that is already there
         admin.execute(f'CREATE DATABASE "{swap}"')
     assert set(switchover.cleanup(live, lambda _: None)) == {names.prev, swap}
+
+
+def test_a_swap_left_over_beside_a_fallback_is_not_said_before_the_verdict(live, tmp_path):
+    names = switchover.names_of(live)
+    swap = names.live + switchover.SWAP
+    rebuild(_archive(tmp_path, "old", drop=("seap/bulk/dan",)), live)
+    switchover.build_and_switch(live, _build(_archive(tmp_path, "full")), say=lambda _: None)  # live and prev both exist
+    with psycopg.connect(names.admin_url, autocommit=True) as admin:
+        admin.execute(f'CREATE DATABASE "{swap}"')
+    said: list[str] = []
+    archive = _archive(tmp_path, "again")
+    switchover.build_and_switch(live, lambda url, gate=None, verdict=None: rebuild(archive, url, gate=gate, staged=True), say=said.append,
+                                decide=lambda held, repair: Verdict(FRESH, "test", None))
+    assert said[0].startswith("rebuild: ")  # the dry-run decision must not print the leftover line first
 
 
 ONRC_ARCHIVE = Path(__file__).parent / "fixtures" / "archive-onrc-search"

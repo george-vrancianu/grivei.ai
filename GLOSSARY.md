@@ -43,12 +43,16 @@ Every file a Connector fetched, kept as fetched and dated, apart from the person
 _Avoid_: cache, dump, backup
 
 **Switchover**:
-Replacing the served graph with a freshly rebuilt one: the rebuild is built into a database beside the live one, must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
+Replacing the served graph with a rebuilt one: the rebuild is built into a database beside the live one (an interrupted build there is resumed when its Pinned inputs and the code are unchanged, else rebuilt from scratch), must pass its checks, and is then swapped in by renaming, so the API keeps reading the old graph until a moment-long swap. The old graph is kept as the fallback until the next switchover or an explicit cleanup, and a rollback swaps it back.
 _Avoid_: migration, cutover (for a rebuild that locks the live database)
 
 **Build ledger**:
 The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work, and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
 _Avoid_: build log, migration table
+
+**Pinned inputs**:
+What a build fixes at its start and records in the Build ledger: the Raw archive units it will read (by manifest checksum), the code version, the schema files, the quarantine listing and the day that ends the Coverage grid. A resume reads exactly that set (the held quarantine listing and day, whatever they are now) and is refused, starting a fresh build, when a pinned unit, the code or the schema files differ; a unit that lands in the Raw archive later waits for the next build.
+_Avoid_: snapshot, lockfile
 
 **Data-through date**:
 The date up to which one Source's records of one kind are complete in the graph.

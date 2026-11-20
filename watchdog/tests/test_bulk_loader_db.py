@@ -304,13 +304,14 @@ def test_a_rebuild_reports_every_unit_as_it_goes_and_updates_the_status_file(db,
 
     rebuild(Archive(root), db, Progress(status_file, out=out))
     units = [x for x in lines if " rebuild unit " in x]
+    assert " rebuild: fresh - in-place builds run in one transaction" in lines[0]  # the first line of every run says resume or fresh, and why (#292)
     assert len(units) == 7  # six loaded files and the quarantined one
     assert re.search(r"rebuild unit 1/7 kind=contracte unit=2021Q3 files=1 rows=2 records=2 loaded in \d+\.\ds$", units[0])
     assert re.search(r"rebuild unit 3/7 kind=contracte unit=2022Q2 files=1 rows=2 records=2 loaded in", units[2])
     assert re.search(r"rebuild unit 5/7 kind=contracte unit=2023Q1 files=1 rows=0 records=0 quarantined \(headers do not match a CONTRACT file\)$", units[4])
     assert re.search(r"rebuild unit 7/7 kind=fara-anunt unit=2025Q1 files=1 rows=4 records=2 loaded", units[6])
     assert any("rebuild done units=7 loaded=6 skipped=0 quarantined=1 records=12 in" in x for x in lines)
-    unit_seen = [done for line, done in zip(lines, seen) if " rebuild step " not in line]
+    unit_seen = [done for line, done in zip(lines, seen) if " rebuild step " not in line and " rebuild: fresh - " not in line]  # the first line of the run is the verdict (#292), printed before the status file exists
     # the file moves with the run: at each line it shows the units done before it (it exists before `rebuild start`: the schema steps wrote it)
     assert unit_seen == [0, 0, 1, 2, 3, 4, 5, 6, 7]
     # every stage outside the unit loop is timed, in order, with a start line and a done line
