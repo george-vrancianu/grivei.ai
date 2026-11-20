@@ -21,7 +21,7 @@ CREATE TABLE build.run (
     pinned_quarantine jsonb NOT NULL  -- the archive's quarantine listing at the start (paths relative to the quarantine area, sorted): a resume reads this listing, not the one of the day it runs
 );
 
--- One row per Step of the rebuild (pipeline/build_steps.py), written in the transaction of the Step when it finishes: a row exists only for a Step that
+-- One row per Step of the rebuild (pipeline/build_steps.py), written in the transaction of the Step when it finishes (for `units`, which commits per unit, in a small final one): a row exists only for a Step that
 -- is committed (in a staged build) or will be with the whole build. `summary` is what the Step hands to later Steps and to the run's output beyond what the
 -- graph's own tables hold (pipeline/hand_offs.py): `{}` when it has nothing. Deterministic JSON (sorted keys, no timestamps), so a before/after comparison
 -- of two builds sees no noise; the times are columns, which the graph dump leaves out.
@@ -33,6 +33,30 @@ CREATE TABLE build.step (
     ended    timestamptz
 );
 
+-- One row per Raw archive unit the `units` Step's loop has finished (pipeline/build_steps.py `_load_units`), whatever its outcome (loaded, skipped or
+-- quarantined), written in the unit's own transaction: a staged build commits each unit with its source_file, record and search rows, so a row means the
+-- unit is committed and a resume continues from the next one (pipeline/resume.py). The per-unit lists the Step used to keep in its build.step row (duplicate
+-- files, files set aside, the quarantine, the bulk row counts) live here and nowhere else (pipeline/hand_offs.py reads them back, in `ordinal` order).
+-- Deterministic like the rest of `build`: no serial id and no times (a resumed build must dump the same rows), paths relative to the archive root.
+CREATE TABLE build.unit (
+    ordinal          integer PRIMARY KEY,  -- the unit's position in the loop, 1-based, oldest fetch first: the committed rows are always 1..N
+    path             text NOT NULL UNIQUE, -- the fetch directory, relative to the archive root
+    manifest_sha256  text,                 -- from the pinned inputs (build.run.pinned_units): null when it had no manifest at pin time
+    status           text NOT NULL CHECK (status IN ('loaded', 'skipped', 'quarantined')),
+    reason           text,                 -- why it was skipped or quarantined
+    units_total      integer NOT NULL,     -- the units the loop planned: the same in every row (a resume names "unit N of M" from it)
+    files            integer NOT NULL,     -- files its manifest lists
+    rows             integer NOT NULL,     -- data rows read from them, duplicates included
+    records          integer NOT NULL,     -- Records the files hold
+    files_loaded     integer NOT NULL,     -- seap.source_file rows it created
+    bulk_kind        text,                 -- of a loaded bulk unit: its Coverage cell (kind label and quarter), and `rows` is what the cell's largest unit says
+    bulk_year        integer,
+    bulk_quarter     integer,
+    duplicate_files  jsonb NOT NULL DEFAULT '[]',  -- the files byte-identical to one already planned: relative paths, in order
+    set_aside        jsonb NOT NULL DEFAULT '[]',  -- the tails set aside: [{"path", "line", "kind", "rows", "last_published"}]
+    quarantined_to   text,                 -- of a quarantined unit: where its directory goes (relative to the archive root); the row commits BEFORE the move
+    problems         jsonb NOT NULL DEFAULT '[]'   -- of a quarantined unit: the problems its reason file lists (a resume that finds the move pending writes the same file)
+);
 -- One row per ONRC snapshot the `onrc` Step handled (pipeline/onrc/build.py), written in the transaction that holds the snapshot's span work: a staged build
 -- commits after every snapshot, so a resume continues from the next one and reads from these rows what the interrupted Step had done. A snapshot that did not
 -- read is set aside (`applied` false, `skipped` the message). No timestamps: the rows of a resumed build equal an uninterrupted build's.

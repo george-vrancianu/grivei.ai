@@ -1,6 +1,6 @@
 """What one Step hands to a later one, persisted in the graph (spec #285, ticket #290).
 
-`build.step` (sql/build_schema.sql) holds one row per Step, written in the rebuild's transaction when the Step finishes: its name, its position in
+`build.step` (sql/build_schema.sql) holds one row per Step, written in the rebuild's transaction when the Step finishes (the unit loop's per-unit lists are in `build.unit`, one row per unit, committed with it): its name, its position in
 `STEPS`, and `summary`, a JSON object with the values the Step produced that no table of the graph holds. A later Step (or a resumed build, #295)
 reads them back through the loaders below, never from a variable of the run that produced them. Values the graph already holds are loaded from
 their own tables: ANAF's names (`core.anaf_company`), the loaded file hashes and the last source-file id (`seap.source_file`), SEAP's data-through
@@ -19,7 +19,7 @@ import json
 import types
 import typing
 from collections import Counter
-from dataclasses import fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -126,32 +126,96 @@ def load_onrc_summary(cur: psycopg.Cursor) -> OnrcSummary | None:
     return OnrcSummary(**data, people=PeopleSummary(**people))
 
 
-def units_hand_off(files_loaded: int, bulk_rows: dict, duplicate_files: list, set_aside: list, quarantined: list, incomplete: list, root: Path, units_total: int = 0) -> dict:
-    """The `units` Step's row: the summary fields it fills, and the two values the Coverage grid reads (`bulk_rows`, `set_aside`)."""
+def units_hand_off(files_loaded: int, incomplete: list, root: Path, units_total: int = 0) -> dict:
+    """The `units` Step's row: the scalar counts and the incomplete listing. The per-unit lists (duplicate files, set aside, quarantined, the bulk row
+    counts the Coverage grid reads) are in `build.unit`, their one source (#293): the Step commits each unit with its row, so a Step row would only repeat them."""
     return {
         "files_loaded": files_loaded,
         "units_total": units_total,  # what the unit loop planned: a resumed build that skips the Step gives the progress file its total
-        "bulk_rows": [{"kind": kind, "quarter": list(quarter), "rows": rows} for (kind, quarter), rows in sorted(bulk_rows.items())],
-        "duplicate_files": encode(duplicate_files, root),
-        "set_aside": [{"path": encode(path, root), "line": a.line, "kind": a.kind, "rows": a.rows, "last_published": encode(a.last_published)} for path, a in set_aside],
-        "quarantined": encode(quarantined, root),
         "incomplete": encode(incomplete, root),
     }
 
 
 def load_bulk_rows(cur: psycopg.Cursor) -> dict[tuple[str, tuple[int, int]], int]:
-    """(kind label, (year, quarter)) -> data rows of the largest bulk unit. Not `seap.source_file.row_count`: that counts loaded Records, this the rows read."""
-    return {(x["kind"], tuple(x["quarter"])): x["rows"] for x in read_step(cur, "units")["bulk_rows"]}
+    """(kind label, (year, quarter)) -> data rows of the largest bulk unit (from `build.unit`). Not `seap.source_file.row_count`: that counts loaded Records, this the rows read."""
+    cur.execute("SELECT bulk_kind, bulk_year, bulk_quarter, max(rows) FROM build.unit WHERE bulk_kind IS NOT NULL GROUP BY 1, 2, 3")
+    return {(kind, (year, quarter)): rows for kind, year, quarter, rows in cur.fetchall()}
 
 
 def load_set_aside(cur: psycopg.Cursor, root: Path) -> list[tuple[Path, SetAside]]:
-    """The files that switch kind partway, with the tail each one set aside, in the order the units were read."""
-    return [(root / x["path"], SetAside(x["line"], x["kind"], x["rows"], date.fromisoformat(x["last_published"]) if x["last_published"] else None))
-            for x in read_step(cur, "units")["set_aside"]]
+    """The files that switch kind partway, with the tail each one set aside, in the order the units were read (`build.unit` in ordinal order)."""
+    return _set_aside_of(load_units(cur), root)
 
 
 def entities_hand_off(entities: int, onrc: OnrcSummary | None) -> dict:
     return {"entities": entities, "onrc_entities_only": None if onrc is None else onrc.entities_only}
+
+
+# ---- build.unit: one row per Raw archive unit the unit loop finished (#293) -------------------------------------------------------
+
+@dataclass
+class UnitRow:
+    """What the unit loop records about one unit, in the unit's own transaction (sql/build_schema.sql `build.unit`). Paths are relative to the archive root."""
+    ordinal: int
+    path: str
+    manifest_sha256: str | None
+    status: str  # 'loaded' | 'skipped' | 'quarantined'
+    units_total: int
+    reason: str | None = None
+    files: int = 0
+    rows: int = 0
+    records: int = 0
+    files_loaded: int = 0
+    bulk: tuple[str, tuple[int, int]] | None = None  # a loaded bulk unit's Coverage cell: (kind label, (year, quarter))
+    duplicate_files: list[str] = field(default_factory=list)
+    set_aside: list[dict] = field(default_factory=list)  # [{"path", "line", "kind", "rows", "last_published"}]
+    quarantined_to: str | None = None
+    problems: list[str] = field(default_factory=list)
+
+
+def set_aside_json(set_aside: list[tuple[Path, SetAside]], root: Path) -> list[dict]:
+    return [{"path": encode(path, root), "line": a.line, "kind": a.kind, "rows": a.rows, "last_published": encode(a.last_published)} for path, a in set_aside]
+
+
+def _set_aside_of(rows: list[UnitRow], root: Path) -> list[tuple[Path, SetAside]]:
+    return [(root / x["path"], SetAside(x["line"], x["kind"], x["rows"], date.fromisoformat(x["last_published"]) if x["last_published"] else None))
+            for row in rows for x in row.set_aside]
+
+
+def write_unit(cur: psycopg.Cursor, row: UnitRow) -> None:
+    """The unit's row: written in the unit's transaction, so it exists exactly when the unit's source_file, record and search rows do."""
+    kind, (year, quarter) = row.bulk if row.bulk else (None, (None, None))
+    cur.execute(
+        "INSERT INTO build.unit (ordinal, path, manifest_sha256, status, reason, units_total, files, rows, records, files_loaded, bulk_kind, bulk_year, bulk_quarter, "
+        "duplicate_files, set_aside, quarantined_to, problems) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (row.ordinal, row.path, row.manifest_sha256, row.status, row.reason, row.units_total, row.files, row.rows, row.records, row.files_loaded, kind, year, quarter,
+         Jsonb(row.duplicate_files), Jsonb(row.set_aside), row.quarantined_to, Jsonb(row.problems)))
+
+
+def load_units(cur: psycopg.Cursor) -> list[UnitRow]:
+    """The committed units, in unit order. They are always units 1..N (the loop commits in order): anything else is a ledger with a hole, which raises."""
+    cur.execute("SELECT ordinal, path, manifest_sha256, status, units_total, reason, files, rows, records, files_loaded, bulk_kind, bulk_year, bulk_quarter, "
+                "duplicate_files, set_aside, quarantined_to, problems FROM build.unit ORDER BY ordinal")
+    out = [UnitRow(o, path, sha, status, total, reason, files, rows, records, loaded, (kind, (year, quarter)) if kind else None, dups, aside, to, problems)
+           for o, path, sha, status, total, reason, files, rows, records, loaded, kind, year, quarter, dups, aside, to, problems in cur.fetchall()]
+    if [r.ordinal for r in out] != list(range(1, len(out) + 1)):
+        raise MissingHandOff(f"build.unit holds units {[r.ordinal for r in out][:8]}..., not 1..{len(out)}: the build cannot resume from a ledger with a hole; rebuild with --fresh")
+    return out
+
+
+def unit_counts(rows: list[UnitRow]) -> dict[str, int]:
+    """The progress counters after the committed units (`Progress.restore_units`): the last unit's position, the outcomes, the Records loaded."""
+    return {"done": len(rows), "loaded": sum(r.status == "loaded" for r in rows), "skipped": sum(r.status == "skipped" for r in rows),
+            "quarantined": sum(r.status == "quarantined" for r in rows), "records": sum(r.records for r in rows if r.status == "loaded")}
+
+
+def restore_units(summary, rows: list[UnitRow], root: Path) -> None:
+    """The `RebuildSummary` fields the committed units fill, in unit order, so a resumed run prints what an uninterrupted one does. Assigns: a resumed unit
+    loop then goes on from here (`files_loaded`, `duplicate_files`, `set_aside` and `quarantined` grow with each later unit)."""
+    summary.files_loaded = sum(r.files_loaded for r in rows)
+    summary.duplicate_files = [root / p for r in rows for p in r.duplicate_files]
+    summary.set_aside = _set_aside_of(rows, root)
+    summary.quarantined = [root / r.quarantined_to for r in rows if r.quarantined_to]
 
 
 # ---- a resume: the committed Steps and the summary they reported ---------------------------------------------------------------
@@ -215,11 +279,8 @@ def restore_summary(cur: psycopg.Cursor, summary, steps, root: Path) -> None:
         summary.onrc = load_onrc_summary(cur)
     if "units" in done:
         row = read_step(cur, "units")
-        summary.files_loaded = row["files_loaded"]
+        restore_units(summary, load_units(cur), root)
         summary.units_total = row.get("units_total", 0)
-        summary.duplicate_files = [root / p for p in row["duplicate_files"]]
-        summary.set_aside = load_set_aside(cur, root)
-        summary.quarantined = [root / p for p in row["quarantined"]]
         summary.incomplete = [root / p for p in row["incomplete"]]
     if "entities" in done:
         row = read_step(cur, "entities")

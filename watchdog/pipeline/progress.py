@@ -93,9 +93,18 @@ class Progress:
         self.state.update(state="running", total=total)
         self._line(f"rebuild start units={total} archive={archive} pid={os.getpid()}")
 
-    def resumed(self, total: int, archive: Path | str) -> None:
-        """A resumed build skipped the unit loop (it is committed): the status file still gets its unit total, and every unit counts as done."""
+    def resumed(self, total: int, archive: Path | str, counts: dict[str, int] | None = None) -> None:
+        """A resumed build skipped the unit loop (it is committed): the status file still gets its unit total, and every unit counts as done.
+        `counts` (hand_offs.unit_counts, from build.unit: the `restore_units` arguments) restores the loaded, skipped, quarantined and records counters too."""
         self.state.update(state="running", total=total, done=total)
+        if counts:
+            self.restore_units(**counts)
+        self._write()
+
+    def restore_units(self, done: int, loaded: int, skipped: int, quarantined: int, records: int) -> None:
+        """A build resumed inside the unit loop: the first `done` units are committed (build.unit), so the counters start where an uninterrupted run
+        stood after them. Their `rebuild unit` lines are not printed again."""
+        self.state.update(done=done, loaded=loaded, skipped=skipped, quarantined=quarantined, records=records)
         self._write()
 
     def note(self, text: str) -> None:

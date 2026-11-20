@@ -4,7 +4,7 @@ A `Step` declares its name, a run function on a shared `BuildContext`, the table
 order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
 
 - A staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
-- A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294); its `run` then finishes the Step in the Step's transaction.
+- A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294; the `units` Step per Raw archive unit with its `build.unit` row, #293); its `run` then finishes the Step in the Step's transaction.
 - A resumed build (`run_steps(..., resume=True)`, decided by resume.py before the Steps run) skips the committed Steps and restores what they reported
   (hand_offs.restore_summary); the Steps that remain load their hand-offs from the graph as in an uninterrupted run. No Step may therefore be run twice.
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
@@ -27,7 +27,7 @@ from typing import Callable
 import psycopg
 
 from .analyze import analyze
-from .archive import Archive, sha256_of
+from .archive import QUARANTINE_DIR, Archive, sha256_of
 from .build_ledger import finish_run, now, stamp_step, start_run
 from .bulk import KINDS
 from .coverage import build_coverage, flagged as flagged_cells
@@ -38,6 +38,7 @@ from .estimates import read_estimates
 from .hand_offs import (entities_hand_off, encode, load_anaf_names, load_bulk_rows, load_data_through, load_last_source_file_id, load_loaded_hashes,
                         load_onrc_summary, load_set_aside, onrc_hand_off, units_hand_off, write_step)
 from .hand_offs import committed_steps, restore_summary
+from .hand_offs import UnitRow, load_units, restore_units, set_aside_json, unit_counts, write_unit
 from .identity import Overrides, Resolver
 from .mf.build import build_mf
 from .onrc.build import OnrcNames, build_onrc_placement, build_onrc_snapshots, finish_onrc
@@ -70,7 +71,7 @@ class BuildContext:
     summary: RebuildSummary
     today: date
     progress: Progress | None = None
-    staged: bool = False  # each Step commits on its own transaction (a build beside the live graph); False: one transaction for all (--in-place)
+    staged: bool = False  # each Step commits on its own transaction, and the `units` Step each unit (a build beside the live graph); False: one transaction for all (--in-place)
     placement_dir: Path | str | None = None
     known_gaps_path: Path | str | None = None
     overrides: Overrides | None = None  # re-read from the identity file, not handed on
@@ -79,7 +80,6 @@ class BuildContext:
     # Working state of ONE Step, never read by another (a test pins the field list): a value a later Step needs is loaded from the graph by that Step
     # (hand_offs.py), or rebuilt from the archive and the graph, and persisted in build.step by its producer.
     number: int = 0  # units: the last seap.source_file id handed out (starts at max(seap.source_file.id))
-    bulk_rows: dict[tuple[str, tuple[int, int]], int] = field(default_factory=dict)  # units' accumulator; persisted in its build.step row, loaded by coverage
     data_through: dict[str, str] = field(default_factory=dict)  # signals: SEAP's dates per Record kind, loaded from core.data_through
 
     def phase(self, name: str):
@@ -142,38 +142,57 @@ def reset_identity(cur: psycopg.Cursor, table: str) -> None:
     cur.execute(f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), coalesce(max(id), 0) + 1, false) FROM {table}")
 
 
+def _units_end(c: BuildContext) -> None:
+    """Nothing to run in the Step's own transaction: the unit loop (`_units`, the Step's segments) has committed every unit; the row follows."""
+
+
 def _units(c: BuildContext) -> None:
-    """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`)."""
-    reset_identity(c.cur, "seap.search")  # its ids are the BM25 key field
-    c.number = load_last_source_file_id(c.cur)
+    """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`). Each unit commits with its `build.unit` row (staged builds),
+    so a resumed Step finds the units already committed in that table and continues from the next one (#293)."""
+    reset_identity(c.cur, "seap.search")  # its ids are the BM25 key field: a unit that rolled back has used some up
+    c.number = load_last_source_file_id(c.cur)  # the committed units' last id (a rolled-back unit's ids were never committed)
+    recorded = load_units(c.cur)
+    restore_units(c.summary, recorded, c.archive.root)  # what the committed units reported: the lists the loop goes on appending to
+    for row in recorded:
+        if row.quarantined_to:  # recorded quarantined: finish a move that a kill left pending, and count it as quarantined for this build
+            c.archive.complete_quarantine(Path(row.path), row.reason or "", row.problems)
+    for unit_dir in c.summary.quarantined:
+        c.archive.add_pinned_quarantine(unit_dir)
     estimates = read_estimates(c.archive)  # the same answers the `estimates` Step counted, read again: a Step never relies on another's memory
     names_cur = c.conn.cursor()  # the resolver asks in the middle of the Record load: a cursor of its own
     try:
         resolver = Resolver(OnrcNames(names_cur, load_anaf_names(c.cur)), c.overrides)  # ANAF's names from core.anaf_company, ONRC's from onrc.registration
-        _load_units(c, resolver, estimates)
+        _load_units(c, resolver, estimates, recorded)
     finally:
         names_cur.close()
 
 
-def _load_units(c: BuildContext, resolver: Resolver, estimates: dict) -> None:
-    for o in iter_units(c.archive, c.summary, c.progress, load_loaded_hashes(c.cur)):
-        if o.status == "loaded" and o.unit.stream == "bulk":
-            cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
-            c.bulk_rows[cell] = max(c.bulk_rows.get(cell, 0), o.rows)
-        for name, rows in o.files:
-            c.number += 1
-            crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
-            c.cur.execute(
-                "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream, load_notes) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                (c.number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
-                 sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
-                 None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream,
-                 [aside.note()] if (aside := o.set_aside.get(name)) else []),
-            )
-            load_records(c.cur, c.number, rows, resolver, estimates)
-            c.summary.files_loaded += 1
-        if c.progress:
+def _load_units(c: BuildContext, resolver: Resolver, estimates: dict, recorded: list[UnitRow]) -> None:
+    root = c.archive.root
+    for o in iter_units(c.archive, c.summary, c.progress, load_loaded_hashes(c.cur), recorded):
+        rel = o.unit.path.relative_to(root).as_posix()
+        loaded_files = 0
+        with c.conn.transaction():  # the unit's own transaction (a savepoint inside the one in-place transaction): its rows and its build.unit row commit together
+            for name, rows in o.files:
+                c.number += 1
+                crawled = o.unit.stream == "crawl"  # one source_file per Record kind of a crawled day: `name` is the kind
+                c.cur.execute(
+                    "INSERT INTO seap.source_file (id, kind, unit, file_name, sha256, via, url, fetched_at, row_count, stream, load_notes) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (c.number, name if crawled else KINDS[o.unit.kind].label, o.unit.unit, o.unit.unit if crawled else name,
+                     sha256_of(o.unit.path / "manifest.json" if crawled else o.unit.file_path(name)),
+                     None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream,
+                     [aside.note()] if (aside := o.set_aside.get(name)) else []),
+                )
+                load_records(c.cur, c.number, rows, resolver, estimates)
+                c.summary.files_loaded += 1
+                loaded_files += 1
+            bulk = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit)) if o.status == "loaded" and o.unit.stream == "bulk" else None
+            moved_to = (Path(QUARANTINE_DIR) / rel).as_posix() if o.status == "quarantined" else None
+            write_unit(c.cur, UnitRow(
+                o.index, rel, (c.pins.units if c.pins else {}).get(rel), o.status, o.total, o.reason, len(o.unit.files), o.rows, sum(len(rows) for _, rows in o.files),
+                loaded_files, bulk, encode(o.duplicate_files, root), set_aside_json([(o.unit.file_path(n), a) for n, a in o.set_aside.items()], root), moved_to, o.problems))
+        if c.progress:  # after the commit: the line says the unit is durable
             c.progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                  sum(len(rows) for _, rows in o.files), o.status, o.reason)
 
@@ -243,7 +262,7 @@ def _donations(c: BuildContext) -> None:
 
 
 def _coverage(c: BuildContext) -> None:
-    set_aside = load_set_aside(c.cur, c.archive.root)  # the units' hand-offs, from their build.step row
+    set_aside = load_set_aside(c.cur, c.archive.root)  # the units' hand-offs, from build.unit
     cells = build_coverage(c.cur, c.archive, c.today, load_bulk_rows(c.cur), c.known_gaps_path)
     c.summary.coverage = flagged_cells(cells)
     gaps = {(x.kind, x.quarter) for x in cells if x.state == "KNOWN_GAP"}
@@ -324,11 +343,10 @@ STEPS: tuple[Step, ...] = (
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override"),
          vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen")),  # a dead version per snapshot per open span, one per CUI's primary registration; the visibility map for onrc-search's index-only scans
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
-    Step("units", _units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
-         hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.bulk_rows, c.summary.duplicate_files, c.summary.set_aside, c.summary.quarantined,
-                                           c.summary.incomplete, c.archive.root, c.summary.units_total),
+    Step("units", _units_end, segments=_units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
+         hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.summary.incomplete, c.archive.root, c.summary.units_total),
          reads=("core.anaf_company", "onrc.registration"),  # the resolver confirms a CUI by ANAF's answers, then the register's
-         writes=("seap.source_file", "seap.record", "seap.search", "withheld.natural_person_name")),
+         writes=("seap.source_file", "seap.record", "seap.search", "withheld.natural_person_name", "build.unit")),
     Step("crawl-status", _crawl_status, reads=("seap.source_file",), writes=("seap.record", "seap.crawl_state")),
     Step("crawl-badges", _crawl_badges, reads=("seap.record",), writes=("seap.search",)),
     Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",), summary_fields=("estimates_missing",)),
@@ -343,7 +361,7 @@ STEPS: tuple[Step, ...] = (
          writes=("aep.snapshot", "aep.mandate", "aep.gap", "aep.authority", "aep.record_party", "aep.subordinate", "seap.search")),
     Step("financials", _financials, owns=(P + "financials/", *_MF), summary_fields=("financials",), writes=("financials.source_file", "financials.statement")),
     Step("donations", _donations, owns=(P + "banipartide/",), summary_fields=("donations",), reads=("core.entity", "onrc.registration"), writes=("donations.source_file", "donations.donation")),
-    Step("coverage", _coverage, owns=(P + "coverage/",), summary_fields=("coverage", "set_aside_without_gap"), reads=("build.step", "seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
+    Step("coverage", _coverage, owns=(P + "coverage/",), summary_fields=("coverage", "set_aside_without_gap"), reads=("build.step", "build.unit", "seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
     # creates indexes on seap.record and seap.search (no rows written): before the Signals, whose per-authority and per-supplier queries use them
     Step("record-indexes", _record_indexes, reads=("seap.record", "seap.search")),
     Step("signals", _signals, owns=(P + "signals/", P + "aep/", *_MF), summary_fields=("records", "signals"),
@@ -387,8 +405,8 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: boo
         restore_summary(ctx.cur, ctx.summary, steps[:start], ctx.archive.root)
         for unit_dir in ctx.summary.quarantined:  # the units the committed `units` Step moved: quarantined as far as this build is concerned (Coverage flags their cells)
             ctx.archive.add_pinned_quarantine(unit_dir)
-        if ctx.progress and ctx.summary.units_total:
-            ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root)
+        if ctx.progress and ctx.summary.units_total:  # the `units` Step is committed: its progress counters come from build.unit
+            ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root, unit_counts(load_units(ctx.cur)))
         if start and ctx.staged:  # a kill between that Step's commit and its VACUUM skipped it: speed only, so it is simply run again (the graph and the ledger do not change)
             _vacuum_after(ctx, steps[start - 1])
     if ctx.staged:

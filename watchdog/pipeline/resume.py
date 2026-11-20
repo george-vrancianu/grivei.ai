@@ -34,6 +34,8 @@ class Held:
     steps: Sequence[tuple[str, int]]
     quarantined: frozenset[str]
     problem: str | None = None
+    unit_rows: Sequence[tuple[str, str | None]] = ()  # the committed units of an unfinished `units` Step (build.unit, #293): (path, manifest checksum), in unit order
+    units_total: int = 0  # the units the loop planned, as those rows record it
 
 
 @dataclass(frozen=True)
@@ -83,11 +85,16 @@ def decide(pins: Pins, held: Held | None, steps, *, fresh: bool | str = False, s
     changed = _changed_units(held, pins.units)
     if changed:
         return _fresh(f"{len(changed)} pinned unit{'s' if len(changed) != 1 else ''} changed or missing: {changed[0]}", pins)
+    stale = _unit_rows_off_the_pin(held)
+    if stale:
+        return _fresh(f"the ledger's unit {stale} is not the unit the pinned inputs hold", pins)
     prefix = [(name, i) for i, name in enumerate(names[:len(held.steps)])]
     if not held.steps or list(held.steps) != prefix or len(held.steps) >= len(names):
         listed = ", ".join(f"{n}#{i}" for n, i in held.steps) or "none"
         return _fresh(f"the committed Steps ({listed}) are not a proper prefix of the Steps", pins)
     last, nxt = held.steps[-1][0], names[len(held.steps)]
+    if nxt == "units" and held.unit_rows:  # inside the unit loop: it continues from the next unit
+        return Verdict(RESUME, f"continuing the units Step after unit {len(held.unit_rows)} of {held.units_total}; the pinned inputs and the code are unchanged", held.pins)
     return Verdict(RESUME, f"continuing after the committed Step {last!r} with {nxt!r}; the pinned inputs and the code are unchanged", held.pins)
 
 
@@ -101,6 +108,15 @@ def _changed_units(held: Held, units: Mapping[str, str | None]) -> list[str]:
         if units.get(path) != checksum and f"quarantine/{path}" not in held.quarantined:
             out.append(path)
     return out
+
+
+def _unit_rows_off_the_pin(held: Held) -> str | None:
+    """The first committed unit (build.unit) whose path is not pinned, or whose manifest checksum differs from the pinned one: read from the pins the ledger
+    holds, no file is hashed. Cannot happen in a ledger one build wrote; a tampered or mixed one is not resumed."""
+    for path, checksum in held.unit_rows:
+        if path not in held.pins.units or held.pins.units[path] != checksum:
+            return path
+    return None
 
 
 def load_held(next_url: str) -> Held:
@@ -123,9 +139,13 @@ def load_held(next_url: str) -> Held:
             state, units, code, schema, today, quarantine = runs[0]
             cur.execute("SELECT name, ordinal FROM build.step ORDER BY ordinal")
             steps = [(n, o) for n, o in cur.fetchall()]
-            cur.execute("SELECT summary->'quarantined' FROM build.step WHERE name = 'units'")
-            row = cur.fetchone()
-            quarantined = frozenset(row[0] or []) if row else frozenset()
-            return Held(Pins(units, code, schema, today, tuple(quarantine)), state, steps, quarantined)
+            rows, total, quarantined = [], 0, frozenset()
+            cur.execute("SELECT to_regclass('build.unit') IS NOT NULL")
+            if cur.fetchone()[0]:  # the committed units (#293): the quarantined ones count as held whether or not their directory has moved yet
+                cur.execute("SELECT path, manifest_sha256, units_total, quarantined_to FROM build.unit ORDER BY ordinal")
+                units_rows = cur.fetchall()
+                rows, total = [(p, sha) for p, sha, _, _ in units_rows], max((t for _, _, t, _ in units_rows), default=0)
+                quarantined = frozenset(to for _, _, _, to in units_rows if to)
+            return Held(Pins(units, code, schema, today, tuple(quarantine)), state, steps, quarantined, unit_rows=tuple(rows), units_total=total)
     except psycopg.Error as e:
         return Held(None, None, [], frozenset(), f"the next database could not be read: {type(e).__name__}")
