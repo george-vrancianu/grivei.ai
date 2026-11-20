@@ -14,9 +14,7 @@ import pipeline.build_steps as build_steps_module  # noqa: E402
 from graph_dump import dump_graph  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.build_steps import STEPS  # noqa: E402
-from pipeline.bulk import KINDS  # noqa: E402
-from pipeline.hand_offs import (MissingHandOff, load_anaf_names, load_bulk_rows, load_data_through, load_last_source_file_id, load_loaded_hashes,  # noqa: E402
-                                load_onrc_summary, load_set_aside, onrc_hand_off, read_step, write_step)
+from pipeline.hand_offs import MissingHandOff, load_onrc_summary, onrc_hand_off, read_step, write_step  # noqa: E402
 from pipeline.onrc.people import SECRET_ENV  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import db, server  # noqa: E402,F401
@@ -100,20 +98,20 @@ def test_the_loader_raises_on_a_missing_row_even_when_the_table_is_empty(db):
             load_onrc_summary(c.cursor())
 
 
-def test_the_values_the_graph_holds_are_loaded_from_their_tables(db, tmp_path, monkeypatch):
+def test_the_values_the_graph_holds_are_not_stored_twice_and_agree_with_it(db, tmp_path, monkeypatch):
+    """The consumers load these from their own tables (every rebuild runs through the loaders); here, that the graph holds what they load."""
     archive, summary = _build(db, tmp_path, monkeypatch, "archive-onrc-signals")
+    summaries, _ = _rows(db)
     with psycopg.connect(db) as c:
-        cur = c.cursor()
-        assert load_anaf_names(cur) and len(load_anaf_names(cur)) == summary.anaf_found
-        assert load_last_source_file_id(cur) == summary.files_loaded
-        assert load_data_through(cur) == dict(c.execute("SELECT kind, through::text FROM core.data_through WHERE source = 'SEAP'").fetchall())
-        hashes = load_loaded_hashes(cur)
-        assert len(hashes) == c.execute("SELECT count(*) FROM seap.source_file WHERE stream = 'bulk'").fetchone()[0]
-        assert {kind for kind, _ in hashes} <= set(KINDS)  # the archive's kind (da), not the label (DA)
+        assert c.execute("SELECT count(*) FROM core.anaf_company").fetchone()[0] == summary.anaf_found > 0
+        assert c.execute("SELECT max(id), count(*) FROM seap.source_file").fetchone() == (summary.files_loaded, summary.files_loaded)
+        assert dict(c.execute("SELECT kind, through::text FROM core.data_through WHERE source = 'SEAP'").fetchall())
+        assert c.execute("SELECT count(*) FROM seap.source_file WHERE stream = 'bulk'").fetchone()[0] > 0
+    assert not {"anaf_names", "data_through", "next_id", "hashes"} & {k for row in summaries.values() for k in row}  # held by their tables, not in a row
 
 
-def test_the_units_hand_offs_come_back_from_their_row(db, tmp_path):
-    """bulk_rows (data rows read, not the loaded Records) and the set-aside tails, as the Coverage grid reads them."""
+def test_the_units_hand_offs_are_in_their_row_and_the_coverage_step_uses_them(db, tmp_path):
+    """bulk_rows (data rows read, not the loaded Records) and the set-aside tails: in the `units` row; the coverage Step reads them from it."""
     from test_bulk_loader_db import _no_gaps
     from test_real_headers import _CONTRACTE_HEAD, _CONTRACTE_ROWS, _DA_HEAD, _DA_ROW, _DA_ROW_2
 
@@ -121,8 +119,21 @@ def test_the_units_hand_offs_come_back_from_their_row(db, tmp_path):
     a.write_unit(source="seap", stream="bulk", kind="da", unit="2022Q2", fetched_at=datetime(2022, 9, 15, 9, tzinfo=timezone.utc),
                  files={"t2.csv": (_DA_HEAD + _DA_ROW + _DA_ROW_2 + _CONTRACTE_HEAD + _CONTRACTE_ROWS).encode()}, via="v")
     summary = rebuild(a, db, known_gaps_path=_no_gaps(tmp_path))
-    with psycopg.connect(db) as c:
-        assert load_set_aside(c.cursor(), a.root) == summary.set_aside and summary.set_aside
-        assert load_bulk_rows(c.cursor()) == {("DA", (2022, 2)): 2}
-        units = read_step(c.cursor(), "units")
-    assert units["files_loaded"] == 1 and units["set_aside"][0]["path"].endswith("t2.csv") and not units["set_aside"][0]["path"].startswith("/")
+    summaries, _ = _rows(db)
+    units = summaries["units"]
+    assert units["files_loaded"] == 1 and units["bulk_rows"] == [{"kind": "DA", "quarter": [2022, 2], "rows": 2}]
+    assert [(x["path"], x["kind"], x["line"], x["rows"]) for x in units["set_aside"]] == [("seap/bulk/da/2022Q2/2022-09-15/t2.csv", "CONTRACT", 4, 2)]
+    assert summaries["coverage"]["set_aside_without_gap"] == ["seap/bulk/da/2022Q2/2022-09-15/t2.csv"]  # the coverage Step read the tail from the units row
+    assert [p.relative_to(a.root).as_posix() for p, _ in summary.set_aside] == ["seap/bulk/da/2022Q2/2022-09-15/t2.csv"]
+
+
+def test_every_build_of_the_same_archive_state_gives_the_same_build_step_rows(db, tmp_path, monkeypatch):
+    """Determinism on the placement, mf, aep, financials and donations rows too: two separate copies of the world, built once each."""
+    worlds = ("archive-placement", "archive-mf", "archive-aep", "archive-financials", "archive-banipartide", "archive-onrc-signals")
+    first = None
+    for n in range(2):
+        _build(db, tmp_path / f"copy{n}", monkeypatch, *worlds)
+        dump = dump_graph(db, ("build",))
+        first = first or dump
+        assert dump == first
+    assert {r["name"] for r in first["build.step"]} == {s.name for s in STEPS}

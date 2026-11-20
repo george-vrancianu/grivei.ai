@@ -67,11 +67,8 @@ class BuildContext:
     known_gaps_path: Path | str | None = None
     overrides: Overrides | None = None  # re-read from the identity file, not handed on
     person_overrides: PersonOverrides | None = None
-    # working state: loaded from the graph by the Step that needs it (hand_offs.py) or a Step's own accumulator; persisted in build.step by the producer
-    anaf_names: dict[str, str] = field(default_factory=dict)  # onrc: loaded from core.anaf_company, for the resolver the units use
-    names_cur: psycopg.Cursor | None = None  # onrc -> units, entities (the resolver's own cursor, closed by entities)
-    resolver: Resolver | None = None  # onrc -> units
-    estimates: dict = field(default_factory=dict)  # estimates -> units (re-read from the archive, not data of the graph)
+    # Working state of ONE Step, never read by another (a test pins the field list): a value a later Step needs is loaded from the graph by that Step
+    # (hand_offs.py), or rebuilt from the archive and the graph, and persisted in build.step by its producer.
     number: int = 0  # units: the last seap.source_file id handed out (starts at max(seap.source_file.id))
     bulk_rows: dict[tuple[str, tuple[int, int]], int] = field(default_factory=dict)  # units' accumulator; persisted in its build.step row, loaded by coverage
     data_through: dict[str, str] = field(default_factory=dict)  # signals: SEAP's dates per Record kind, loaded from core.data_through
@@ -85,7 +82,7 @@ class BuildContext:
 class Step:
     name: str
     run: Callable[[BuildContext], None]
-    reads: tuple[str, ...] = ()  # qualified tables read, that an earlier Step wrote (a table the Step itself fills is not listed as read)
+    reads: tuple[str, ...] = ()  # qualified tables read, that an earlier Step wrote (a table the Step itself fills is not listed as read, nor its own reload of what it wrote before: `units` reloads seap.source_file)
     writes: tuple[str, ...] = ()  # qualified tables the Step puts rows into (indexes and statistics are not tables: see the comments below)
     owns: tuple[str, ...] = ()  # the code only this Step uses (beside SHARED); a file two Steps use is listed under both
     progress: tuple[str, ...] | None = None  # the `rebuild step NAME` names it shows; default (name,); () for none; several: `run` opens them itself
@@ -111,25 +108,31 @@ def _schema(c: BuildContext) -> None:
 
 
 def _anaf_identities(c: BuildContext) -> None:
-    load_anaf(c.cur, c.archive, c.summary)  # its names are read back from core.anaf_company by the Step that needs them (onrc)
+    load_anaf(c.cur, c.archive, c.summary)  # its names are read back from core.anaf_company by the Step that needs them (units)
     analyze(c.cur, "core.anaf_company")
 
 
 def _onrc(c: BuildContext) -> None:
     c.summary.onrc = build_onrc(c.cur, c.archive, c.placement_dir, c.person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
-    c.anaf_names = load_anaf_names(c.cur)
-    c.names_cur = c.conn.cursor()
-    c.resolver = Resolver(OnrcNames(c.names_cur, c.anaf_names), c.overrides)
 
 
 def _estimates(c: BuildContext) -> None:
-    c.estimates = read_estimates(c.archive)  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network
-    c.summary.estimates = len(c.estimates)
+    c.summary.estimates = len(read_estimates(c.archive))  # the archived e-licitatie lookups for the counting rule; the rebuild never asks the network (the units re-read them)
 
 
 def _units(c: BuildContext) -> None:
     """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`)."""
     c.number = load_last_source_file_id(c.cur)
+    estimates = read_estimates(c.archive)  # the same answers the `estimates` Step counted, read again: a Step never relies on another's memory
+    names_cur = c.conn.cursor()  # the resolver asks in the middle of the Record load: a cursor of its own
+    try:
+        resolver = Resolver(OnrcNames(names_cur, load_anaf_names(c.cur)), c.overrides)  # ANAF's names from core.anaf_company, ONRC's from onrc.registration
+        _load_units(c, resolver, estimates)
+    finally:
+        names_cur.close()
+
+
+def _load_units(c: BuildContext, resolver: Resolver, estimates: dict) -> None:
     for o in iter_units(c.archive, c.summary, c.progress, load_loaded_hashes(c.cur)):
         if o.status == "loaded" and o.unit.stream == "bulk":
             cell = (KINDS[o.unit.kind].label, _parse_quarter(o.unit.unit))
@@ -145,7 +148,7 @@ def _units(c: BuildContext) -> None:
                  None if crawled else o.unit.via, None if crawled else o.unit.url, o.unit.fetched_at, len(rows), "backfill" if o.unit.kind == BACKFILL_KIND else o.unit.stream,
                  [aside.note()] if (aside := o.set_aside.get(name)) else []),
             )
-            load_records(c.cur, c.number, rows, c.resolver, c.estimates)
+            load_records(c.cur, c.number, rows, resolver, estimates)
             c.summary.files_loaded += 1
         if c.progress:
             c.progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
@@ -185,7 +188,6 @@ def _frameworks(c: BuildContext) -> None:
 def _entities(c: BuildContext) -> None:
     c.summary.onrc = load_onrc_summary(c.cur)  # from the `onrc` row: a missing row raises (hand_offs.MissingHandOff), never "no ONRC entities"
     build_entities(c.cur, c.overrides, c.summary)
-    c.names_cur.close()  # the resolver's cursor: the units are loaded
 
 
 def _placement_mf(c: BuildContext) -> None:
@@ -264,6 +266,8 @@ def _commit(c: BuildContext) -> None:
 
 
 # Code every Step depends on: a change here is a change to every Step (the resume gate treats it as belonging to all of them).
+# Caveat: the closure test does not follow the imports of SHARED files, so Step code that lives in rebuild.py or build_steps.py (load_records, iter_units,
+# build_entities, the Step bodies) must have the files it uses listed by hand under the Step that runs it.
 SHARED = (
     P + "__init__.py", P + "build_steps.py", P + "rebuild.py", P + "analyze.py", P + "archive.py", P + "counting.py", P + "fold.py",
     P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
@@ -293,7 +297,7 @@ STEPS: tuple[Step, ...] = (
          writes=("onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override")),
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
-    Step("units", _units, progress=(),
+    Step("units", _units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.bulk_rows, c.summary.duplicate_files, c.summary.set_aside, c.summary.quarantined,
                                            c.summary.incomplete, c.archive.root),
          reads=("core.anaf_company", "onrc.registration"),  # the resolver confirms a CUI by ANAF's answers, then the register's
@@ -302,7 +306,7 @@ STEPS: tuple[Step, ...] = (
     Step("crawl-badges", _crawl_badges, reads=("seap.record",), writes=("seap.search",)),
     Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",), summary_fields=("estimates_missing",)),
     Step("entities", _entities, owns=_ONRC, hand_off=lambda c: entities_hand_off(c.summary.entities, c.summary.onrc),
-         reads=("build.step", "seap.search", "seap.record", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
+         reads=("build.step", "seap.search", "seap.record", "seap.source_file", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
     Step("placement-mf", _placement_mf, progress=("placement", "mf"), owns=(*_PLACEMENT, *_MF, *_ONRC), summary_fields=("placement", "mf"),
          reads=("seap.record", "core.anaf_company", "core.entity", "onrc.registration", "onrc.snapshot"),
          writes=("core.county", "core.uat", "core.placement", "seap.search", "core.mf_principal", "core.mf_snapshot", "core.mf_entity")),

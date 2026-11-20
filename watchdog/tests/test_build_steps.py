@@ -131,3 +131,21 @@ def test_owners_of_names_every_step_for_a_shared_file_and_the_owning_steps_for_t
     assert owners_of("watchdog/pipeline/rebuild.py") == everyone
     assert owners_of("watchdog/pipeline/signals/young_firm.py") == {"signals"}
     assert owners_of("watchdog/pipeline/cli.py") == set()
+
+
+def test_units_owns_the_shared_helpers_it_runs_through_rebuild_py():
+    """The closure test does not follow SHARED files' imports: `value_bucket` (search.py) and `parse_quarter` (coverage/) are run by the unit loop."""
+    assert "units" in owners_of("watchdog/pipeline/search.py")
+    assert "units" in owners_of("watchdog/pipeline/coverage/__init__.py")
+    assert "units" in owners_of("watchdog/pipeline/estimates.py") and "units" in owners_of("watchdog/pipeline/onrc/build.py")
+
+
+def test_no_value_is_handed_between_steps_on_the_build_context():
+    """A Step reads what an earlier one produced from the graph, not from the context: the context holds the run's inputs and the working state of one Step."""
+    from dataclasses import fields
+
+    from pipeline.build_steps import BuildContext
+
+    inputs = {"archive", "cur", "conn", "summary", "today", "progress", "placement_dir", "known_gaps_path", "overrides", "person_overrides"}
+    one_step = {"number", "bulk_rows"}  # units' own: persisted in its row
+    assert {f.name for f in fields(BuildContext)} <= inputs | one_step | {"data_through"}  # data_through: signals' own, loaded from core.data_through

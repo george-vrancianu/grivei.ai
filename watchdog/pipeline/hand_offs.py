@@ -7,7 +7,12 @@ their own tables: ANAF's names (`core.anaf_company`), the loaded file hashes and
 dates (`core.data_through`).
 
 The JSON is deterministic (sorted keys, no timestamps: a `datetime` field is left out, a date is its ISO text), because `build` is part of the graph
-the before/after comparisons dump. Paths are stored relative to the archive root."""
+the before/after comparisons dump. Paths are stored relative to the archive root.
+
+Only some rows are read back (`onrc`, `units`: the loaders below). The others are records of what the Step reported, written so a later run can print the same
+output; they have no decoder yet. The `placement-mf` row in particular is a record, not reloadable: its observations lose `fetched_at` (a timestamp), and
+`build_mf` re-reads the scopes from the archive when they are not handed in. Its size is a guess (no national build measured): check it with
+`SELECT pg_column_size(summary) FROM build.step WHERE name = 'placement-mf'` at the next national rebuild."""
 from __future__ import annotations
 
 import json

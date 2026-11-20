@@ -343,9 +343,9 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     shutil.copytree(CONTRACTS, root)
     archive, status_file = Archive(root), tmp_path / "progress.json"
     rebuild(archive, db)
+    rebuild(archive, db)  # the first build moved a quarantined unit: this one is on the settled archive, which the rerun below also reads
     complete = dump_graph(db)
     assert len(complete["seap.record"]) == 12
-    killed_graph = {k: list(v) for k, v in complete.items()}  # the rolled-back rebuild must leave this exactly, build.step included
 
     # a second rebuild dies in the middle of its third file
     real, calls = build_steps_module.load_records, []
@@ -359,16 +359,13 @@ def test_a_killed_rebuild_leaves_the_previous_graph_and_a_rerun_from_scratch_giv
     monkeypatch.setattr(build_steps_module, "load_records", dying)
     with pytest.raises(type(killed_by)):
         rebuild(archive, db, Progress(status_file, out=lambda line: None))
-    assert dump_graph(db) == killed_graph  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
+    assert dump_graph(db) == complete  # nothing half-loaded: the rolled-back transaction left the previous schema as it was
     status = read_status(status_file)
     assert status["state"] == "failed" and status["done"] == 2 and status["loaded"] == 2
 
     monkeypatch.setattr(build_steps_module, "load_records", real)
     rebuild(archive, db, Progress(status_file, out=lambda line: None))  # rerun from scratch
-    again = dump_graph(db)
-    # build.step holds each run's own output (the first run quarantined a unit, so the rerun's `quarantined` list is empty): same rows, not the same summaries
-    assert [(r["name"], r["ordinal"]) for r in again.pop("build.step")] == [(r["name"], r["ordinal"]) for r in complete.pop("build.step")]
-    assert again == complete
+    assert dump_graph(db) == complete  # the whole dump, build.step included
     assert read_status(status_file)["state"] == "finished"
 
 

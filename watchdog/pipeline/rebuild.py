@@ -373,9 +373,9 @@ ON CONFLICT (cui) DO UPDATE SET name = EXCLUDED.name, status = EXCLUDED.status, 
 """
 
 
-def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) -> dict[str, str]:
+def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) -> None:
     """The archived ANAF answers into `core.anaf_company`, oldest first so the latest answer per CUI wins (a later
-    "not found" removes the company). Returns the CUIs ANAF confirms, each with its `compare_name`, for the resolver."""
+    "not found" removes the company). Fills the summary's counts; the names the resolver asks are read back from the table (hand_offs.load_anaf_names)."""
     names: dict[str, str] = {}
     missing: set[str] = set()
     for company, not_found in iter_companies(archive):
@@ -390,7 +390,6 @@ def load_anaf(cur: psycopg.Cursor, archive: Archive, summary: RebuildSummary) ->
             names.pop(str(not_found), None)
             missing.add(str(not_found))
     summary.anaf_found, summary.anaf_not_found = len(names), len(missing)
-    return names
 
 
 # Every (entity key, spelling, date, role) the loaded Records name: suppliers from the search rows (one per winner, a natural
