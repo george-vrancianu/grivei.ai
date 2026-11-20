@@ -4,6 +4,7 @@ A `Step` declares its name, a run function on a shared `BuildContext`, the table
 order the rebuild runs them in; `rebuild()` (rebuild.py) only opens the connection and calls `run_steps`. What the later tickets read from here:
 
 - A staged build commits after every Step and writes the Step's ledger row in the same transaction (`run_steps`); build_ledger.py holds the ledger.
+- A Step may commit in pieces inside itself (`Step.segments`, run outside the Step's transaction: the `onrc` Step commits per ONRC snapshot, #294); its `run` then finishes the Step in the Step's transaction.
 - A resumed build (`run_steps(..., resume=True)`, decided by resume.py before the Steps run) skips the committed Steps and restores what they reported
   (hand_offs.restore_summary); the Steps that remain load their hand-offs from the graph as in an uninterrupted run. No Step may therefore be run twice.
 - #295's resume gate asks `owners_of(path)` which Steps a changed file belongs to. `SHARED` files belong to every Step.
@@ -39,7 +40,7 @@ from .hand_offs import (entities_hand_off, encode, load_anaf_names, load_bulk_ro
 from .hand_offs import committed_steps, restore_summary
 from .identity import Overrides, Resolver
 from .mf.build import build_mf
-from .onrc.build import OnrcNames, build_onrc, build_onrc_placement
+from .onrc.build import OnrcNames, build_onrc_placement, build_onrc_snapshots, finish_onrc
 from .onrc.people import PersonOverrides
 from .onrc.search import build_onrc_search
 from .amepip.build import build_amepip
@@ -96,6 +97,7 @@ class Step:
     progress: tuple[str, ...] | None = None  # the `rebuild step NAME` names it shows; default (name,); () for none; several: `run` opens them itself
     summary_fields: tuple[str, ...] = ()  # the `RebuildSummary` fields the Step fills: stored in its build.step row (so a later run can print the same output)
     hand_off: Callable[[BuildContext], dict] | None = None  # the row's other values (what is not a summary field); both together are `summary`
+    segments: Callable[[BuildContext], None] | None = None  # work that commits in pieces of its own, run before `run` and outside the Step's transaction: a staged build commits each piece (and a rerun after a kill continues from the next one); in-place the pieces are savepoints of the one transaction. `run` finishes the Step in its transaction
     vacuum: tuple[str, ...] = ()  # qualified tables `VACUUM ANALYZE`d right after the Step commits, staged builds only (VACUUM cannot run inside the one in-place transaction)
 
     @property
@@ -122,8 +124,12 @@ def _anaf_identities(c: BuildContext) -> None:
     analyze(c.cur, "core.anaf_company")
 
 
+def _onrc_snapshots(c: BuildContext) -> None:
+    c.summary.onrc = build_onrc_snapshots(c.cur, c.archive)  # #294: one transaction (a commit, staged) per snapshot, outside the Step's own transaction
+
+
 def _onrc(c: BuildContext) -> None:
-    c.summary.onrc = build_onrc(c.cur, c.archive, c.placement_dir, c.person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
+    c.summary.onrc = finish_onrc(c.cur, c.summary.onrc, c.placement_dir, c.person_overrides)  # #175: the held snapshots -> the `onrc` schema; before the Records, so ONRC can confirm a CUI (ADR 0018)
 
 
 def _estimates(c: BuildContext) -> None:
@@ -313,8 +319,8 @@ STEPS: tuple[Step, ...] = (
     # fresh build only: it drops and recreates every schema. The DDL creates every table; `writes` lists the table it fills.
     Step("schema", _schema, writes=("core.source", "build.run", "build.step")),  # build.run (its one row) and build.step: the schema Step creates them; every Step writes its own row (run_steps)
     Step("anaf-identities", _anaf_identities, writes=("core.anaf_company",), owns=(P + "anaf.py",), summary_fields=("anaf_found", "anaf_not_found")),
-    Step("onrc", _onrc, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
-         writes=("onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
+    Step("onrc", _onrc, segments=_onrc_snapshots, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
+         writes=("build.snapshot", "onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override"),
          vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen")),  # a dead version per snapshot per open span, one per CUI's primary registration; the visibility map for onrc-search's index-only scans
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
@@ -398,8 +404,11 @@ def _run_each(ctx: BuildContext, steps: tuple[Step, ...], start: int = 0) -> Non
             continue
         names = step.progress_names
         with ctx.phase(names[0]) if len(names) == 1 else nullcontext():  # the commit of a staged Step is inside its phase
-            with ctx.conn.transaction():
+            if step.segments:
                 started = now()
+                step.segments(ctx)  # its pieces commit as they finish (staged); the ledger row below is still the Step's
+            with ctx.conn.transaction():
+                started = started if step.segments else now()
                 step.run(ctx)
                 write_step(ctx.cur, step.name, ordinal, step_summary(step, ctx))
                 stamp_step(ctx.cur, step.name, started)

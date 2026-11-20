@@ -47,7 +47,7 @@ Replacing the served graph with a rebuilt one: the rebuild is built into a datab
 _Avoid_: migration, cutover (for a rebuild that locks the live database)
 
 **Build ledger**:
-The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work, and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
+The record inside a built graph of how it was built: one row per Step, committed in the same transaction as that Step's work (and, inside the `onrc` Step, one row per ONRC snapshot in `build.snapshot`, committed with that snapshot's spans), and kept in the served graph as build provenance. A Switchover refuses a graph whose build ledger is not complete. Not the Pipeline ledger, which records refresh runs in the Raw archive.
 _Avoid_: build log, migration table
 
 **Pinned inputs**:
