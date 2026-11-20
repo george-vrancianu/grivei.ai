@@ -14,7 +14,7 @@ import pipeline.build_steps as build_steps_module  # noqa: E402
 from graph_dump import dump_graph  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.build_steps import STEPS  # noqa: E402
-from pipeline.hand_offs import MissingHandOff, load_onrc_summary, onrc_hand_off, read_step, write_step  # noqa: E402
+from pipeline.hand_offs import MissingHandOff, load_bulk_rows, load_onrc_summary, onrc_hand_off, read_step, write_step  # noqa: E402
 from pipeline.onrc.people import SECRET_ENV  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import db, server  # noqa: E402,F401
@@ -111,7 +111,7 @@ def test_the_values_the_graph_holds_are_not_stored_twice_and_agree_with_it(db, t
 
 
 def test_the_units_hand_offs_are_in_their_row_and_the_coverage_step_uses_them(db, tmp_path):
-    """bulk_rows (data rows read, not the loaded Records) and the set-aside tails: in the `units` row; the coverage Step reads them from it."""
+    """bulk_rows (data rows read, not the loaded Records) and the set-aside tails: in `build.unit` (#293), one row per unit; the coverage Step reads them from there."""
     from test_bulk_loader_db import _no_gaps
     from test_real_headers import _CONTRACTE_HEAD, _CONTRACTE_ROWS, _DA_HEAD, _DA_ROW, _DA_ROW_2
 
@@ -121,8 +121,10 @@ def test_the_units_hand_offs_are_in_their_row_and_the_coverage_step_uses_them(db
     summary = rebuild(a, db, known_gaps_path=_no_gaps(tmp_path))
     summaries, _ = _rows(db)
     units = summaries["units"]
-    assert units["files_loaded"] == 1 and units["bulk_rows"] == [{"kind": "DA", "quarter": [2022, 2], "rows": 2}]
-    assert [(x["path"], x["kind"], x["line"], x["rows"]) for x in units["set_aside"]] == [("seap/bulk/da/2022Q2/2022-09-15/t2.csv", "CONTRACT", 4, 2)]
+    assert units["files_loaded"] == 1 and set(units) == {"files_loaded", "units_total", "incomplete"}  # the per-unit lists are not repeated in the Step's row
+    with psycopg.connect(db) as c:
+        assert load_bulk_rows(c.cursor()) == {("DA", (2022, 2)): 2}
+        assert [(x["path"], x["kind"], x["line"], x["rows"]) for [aside] in c.execute("SELECT set_aside FROM build.unit").fetchall() for x in aside] == [("seap/bulk/da/2022Q2/2022-09-15/t2.csv", "CONTRACT", 4, 2)]
     assert summaries["coverage"]["set_aside_without_gap"] == ["seap/bulk/da/2022Q2/2022-09-15/t2.csv"]  # the coverage Step read the tail from the units row
     assert [p.relative_to(a.root).as_posix() for p, _ in summary.set_aside] == ["seap/bulk/da/2022Q2/2022-09-15/t2.csv"]
 

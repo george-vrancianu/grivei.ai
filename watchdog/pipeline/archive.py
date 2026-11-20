@@ -21,7 +21,7 @@ import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator, Mapping
+from typing import Collection, Iterator, Mapping
 
 MANIFEST = "manifest.json"
 REASON = "reason.json"
@@ -182,6 +182,23 @@ class Archive:
         )
         return dest
 
+    def complete_quarantine(self, rel: Path, reason: str, problems: list[str] | None = None) -> bool:
+        """Finish a quarantine a killed build had recorded but not carried out (the ledger row commits before the move): move the unit directory `rel`
+        (relative to the root) if it is still in the archive and its place in the quarantine area is free, and write the reason file if it is missing.
+        Idempotent: True when something was done. The unit counts as quarantined for this view either way."""
+        src, dest = self.root / rel, self.root / QUARANTINE_DIR / rel
+        done = False
+        if src.exists() and not dest.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(src), str(dest))
+            done = True
+        if self._pinned_quarantine is not None:
+            self._pinned_quarantine.add(rel.as_posix())
+        if dest.is_dir() and not (dest / REASON).exists():
+            (dest / REASON).write_text(json.dumps({"reason": reason, "problems": problems or []}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            done = True
+        return done
+
     def requeue(self, match: str = "") -> list[Path]:
         """Move quarantined units back into the archive proper (reason file removed), so the next rebuild reads them again.
 
@@ -219,14 +236,15 @@ class Archive:
             if directory.is_dir() and directory.relative_to(self.root).parts[0] != QUARANTINE_DIR and self.holds(directory):
                 yield directory
 
-    def units(self, source: str | None = None) -> list[Unit]:
+    def units(self, source: str | None = None, exclude: Collection[str] = ()) -> list[Unit]:
         """Complete units only, in a stable order (path, i.e. source/stream/kind/unit/fetch day). Reading a unit hashes its files, so a reader
-        of one Source passes it: a Source's units are never read (and its multi-gigabyte files never hashed) by another Source's reader."""
-        return [u for u, _ in self._read_all(source) if u is not None]
+        of one Source passes it: a Source's units are never read (and its multi-gigabyte files never hashed) by another Source's reader.
+        `exclude` (fetch directories relative to the root) are not read at all: the units a resumed build has already committed."""
+        return [u for u, _ in self._read_all(source, exclude=exclude) if u is not None]
 
-    def incomplete(self, source: str | None = None, skip: tuple[str, ...] = ()) -> list[Path]:
+    def incomplete(self, source: str | None = None, skip: tuple[str, ...] = (), exclude: Collection[str] = ()) -> list[Path]:
         """Directories whose manifest is unreadable or whose files do not match it: skipped by a rebuild. `skip` leaves whole Sources out (they report their own)."""
-        return [p for u, p in self._read_all(source, skip) if u is None]
+        return [p for u, p in self._read_all(source, skip, exclude) if u is None]
 
     def quarantined(self) -> list[Path]:
         base = self.root / QUARANTINE_DIR
@@ -240,10 +258,11 @@ class Archive:
         return [(None if self._pin is not None and pin.get(d.relative_to(self.root).as_posix()) is None else self._read_unit(d), d)
                 for d in self._unit_dirs() if keep is None or keep(d)]
 
-    def _read_all(self, source: str | None = None, skip: tuple[str, ...] = ()) -> list[tuple[Unit | None, Path]]:
-        if source is None and not skip:
+    def _read_all(self, source: str | None = None, skip: tuple[str, ...] = (), exclude: Collection[str] = ()) -> list[tuple[Unit | None, Path]]:
+        if source is None and not skip and not exclude:
             return self.survey()
-        return self.survey(lambda d: (source is None or d.relative_to(self.root).parts[0] == source) and d.relative_to(self.root).parts[0] not in skip)
+        return self.survey(lambda d: (source is None or d.relative_to(self.root).parts[0] == source) and d.relative_to(self.root).parts[0] not in skip
+                           and d.relative_to(self.root).as_posix() not in exclude)
 
     def _read_unit(self, directory: Path) -> Unit | None:
         try:

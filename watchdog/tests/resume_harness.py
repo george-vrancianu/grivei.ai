@@ -25,7 +25,9 @@ import psycopg
 import pipeline.build_steps as build_steps_module
 from graph_dump import dump_graph
 from pipeline import cli
+from pipeline.archive import Archive
 from pipeline.build_steps import STEPS
+from pipeline.progress import Progress
 from pipeline.onrc.people import SECRET_ENV
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -75,6 +77,47 @@ def vacuum_kill_points() -> list[KillPoint]:
         return arm
 
     return [KillPoint(f"before-vacuum-{step.name}", after_commit(step.name)) for step in STEPS if step.vacuum]
+
+
+def unit_kill_points(after: int = 3) -> list[KillPoint]:
+    """Kill points inside the unit loop (#293). `after`: the loop unit they fire at (the Nth, 1-based). Each one is a resume, whatever the unit's outcome:
+
+    - `in-unit-N-before-commit`: the Nth unit's work (source_file, records, search rows) is done in its transaction, killed before its `build.unit` row and COMMIT
+      (the unit rolls back, its `seap.search` ids are used up), so N-1 units are committed;
+    - `after-unit-N-commit`: killed right after the Nth unit's commit (before the next unit is read), N units are committed;
+    - `before-first-quarantine-move`: killed after a quarantined unit's row committed and before its directory is moved (#293, D4);
+    - `after-last-unit-before-step-row`: every unit committed, killed before the `units` Step's own `build.step` row."""
+    real_row, real_done, real_move = build_steps_module.write_unit, Progress.unit_done, Archive.quarantine
+
+    def nth(real, n: int, where: Callable[[object, Callable], Callable]):
+        calls = {"n": 0}
+
+        def arm(monkeypatch, killed_by: BaseException) -> None:
+            calls["n"] = 0
+            where(monkeypatch, lambda *a, **k: _count(calls, n, killed_by, real, *a, **k))
+        return arm
+
+    def _count(calls, n, killed_by, real, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == n:
+            raise killed_by
+        return real(*args, **kwargs)
+
+    def before_commit(monkeypatch, patched):
+        monkeypatch.setattr(build_steps_module, "write_unit", patched)  # a module global of build_steps, looked up at call time
+
+    def after_commit(monkeypatch, patched):
+        monkeypatch.setattr(Progress, "unit_done", lambda self, *a, **k: patched(self, *a, **k))  # called right after the unit's transaction
+
+    def quarantine_move(monkeypatch, patched):
+        monkeypatch.setattr(Archive, "quarantine", lambda self, *a, **k: patched(self, *a, **k))
+
+    return [
+        KillPoint(f"in-unit-{after}-before-commit", nth(real_row, after, before_commit)),
+        KillPoint(f"after-unit-{after}-commit", nth(real_done, after, after_commit)),
+        KillPoint("before-first-quarantine-move", nth(real_move, 1, quarantine_move)),
+        KillPoint("after-last-unit-before-step-row", _after_body_before_row("units")),
+    ]
 
 
 def make_world(root: Path, worlds=WORLD, drop: tuple[str, ...] = ()) -> Path:
