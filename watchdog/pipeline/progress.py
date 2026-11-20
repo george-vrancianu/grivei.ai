@@ -53,6 +53,8 @@ def write_atomically(path: Path, text: str) -> None:
     os.replace(tmp, path)
 
 
+IN_PLACE_STAGED_FAILED = "the database keeps its committed Steps; rerun the same command to resume when the inputs and the code are unchanged, otherwise it rebuilds"  # `--in-place --staged`: no live graph or next database to name
+
 class Progress:
     """Reports a rebuild. `out` takes one finished line (default: stdout, flushed); `now` is injectable for tests."""
 
@@ -111,9 +113,11 @@ class Progress:
         """A timestamped line of the run's log (the resume or fresh verdict is the first one)."""
         self._line(text)
 
-    def mark_staged(self) -> None:
-        """The build commits after every Step, into a database beside the live graph: a failure leaves the live graph untouched and a partial next database."""
-        self.state["staged"] = True
+    def mark_staged(self, in_place: bool = False) -> None:
+        """The build commits after every Step, into a database beside the live graph: a failure leaves the live graph untouched and a partial next database.
+        `in_place` (`--in-place --staged`, #297): there is no next database, the target itself keeps the committed Steps; a later plain call does not undo it."""
+        if in_place or self.state.get("staged") != "in-place":
+            self.state["staged"] = "in-place" if in_place else True
 
     def begin(self, index: int, total: int, kind: str, unit: str) -> None:
         self._unit_started = self._now()
@@ -153,6 +157,7 @@ class Progress:
         try:
             during = f" in step {self.state['step']}" if self.state.get("step") else ""
             self._line(f"rebuild FAILED after {self.state['done']}/{self.state['total']} units{during}: {self.state['error']}; " + (
+                IN_PLACE_STAGED_FAILED if self.state.get("staged") == "in-place" else
                 "the live graph is untouched; the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it" if self.state.get("staged") else "nothing was loaded, rerun from scratch"))
         except OSError:  # the status file cannot be written: the real cause must not be replaced by this one
             pass
@@ -234,7 +239,8 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
     if status.get("last"):
         lines.append(f"last line: {status['last']}")
     if state == "interrupted":
-        lines.append("the rebuild is not running and did not finish: the live graph is untouched (the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it); rerun the same command"
+        lines.append(f"the rebuild is not running and did not finish: {IN_PLACE_STAGED_FAILED}; rerun the same command" if status.get("staged") == "in-place" else
+                     "the rebuild is not running and did not finish: the live graph is untouched (the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it); rerun the same command"
                      if status.get("staged") else
                      "the rebuild is not running and did not finish: the database is as it was before it started; rerun the same command")
     if state == "failed":

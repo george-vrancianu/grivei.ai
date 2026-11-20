@@ -112,6 +112,19 @@ def test_a_staged_failure_says_the_live_graph_is_untouched_and_the_status_says_i
     assert "state: interrupted" in gone and "the live graph is untouched" in gone and "rerun the same command" in gone
 
 
+def test_an_in_place_staged_failure_names_the_target_database_and_a_later_plain_mark_keeps_it(run):
+    p, _, lines, status_file = run
+    p.mark_staged(in_place=True)
+    p.mark_staged()  # what rebuild() itself calls
+    p.start(5, "/archive")
+    p.fail(RuntimeError("connection lost"))
+    assert lines[-1].endswith("; the database keeps its committed Steps; rerun the same command to resume when the inputs and the code are unchanged, otherwise it rebuilds")
+    p.state.update(state="running")
+    p._write()
+    gone = "\n".join(describe(read_status(status_file), alive=lambda pid: False))
+    assert "the database keeps its committed Steps" in gone and "live graph" not in gone and "rerun the same command" in gone
+
+
 def test_a_step_logs_its_start_and_its_duration_and_shows_in_status(run):
     p, clock, lines, status_file = run
     p.start(1, "/archive")
