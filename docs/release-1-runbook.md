@@ -22,7 +22,7 @@ P="docker compose run --rm -T pipeline"  # the pipeline container: 2 CPUs, 2 GB,
 (it reads only `~/grivei-data/refresh.env`), so nightly runs would connect with the default password and skip the backups; a new terminal would read `./archive`. Do not set these twice in two places.
 
 Long steps run detached, with a log (`nohup docker compose run --rm -T pipeline <verb> >> ~/grivei-data/<verb>.log 2>&1 &`; `$P` below is the same command, for the short ones).
-Stop one with `docker stop` of its run container (or `pkill -f 'pipeline <verb>'` from a venv). **Memory:** WSL has crashed near 30 GB; the compose stack caps `db` at 12 GB and 8 CPUs, `api` and `web` at 2 GB,
+Stop one with `docker stop` of its run container (or `pkill -f 'pipeline <verb>'` from a venv). For a `rebuild`, `refresh` or `seed`, the first SIGTERM (and `touch <archive>/rebuild.stop`, the dependable way) only pauses the build at its next committed boundary and the same command resumes it; a paused beside build keeps a full extra copy of the graph on disk (`watchdog/README.md`, "Pause").   **Memory:** WSL has crashed near 30 GB; the compose stack caps `db` at 12 GB and 8 CPUs, `api` and `web` at 2 GB,
 `pipeline` at 2 GB. Check `free -g` before the load; do not run two heavy steps at once. **Do not run `crawl --from/--to`, `anaf-lookup`, `backfill`,
 `fetch-datagov` or `requeue` beside a `seed` or `refresh`** (they do not take the lock).
 

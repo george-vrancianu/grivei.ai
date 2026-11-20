@@ -29,7 +29,7 @@ import psycopg
 
 from .analyze import analyze
 from .archive import QUARANTINE_DIR, Archive, sha256_of
-from .build_ledger import finish_run, now, stamp_step, start_run
+from .build_ledger import finish_run, now, resume_run, stamp_step, start_run
 from .bulk import KINDS
 from .coverage import build_coverage, flagged as flagged_cells
 from .coverage import parse_quarter as _parse_quarter
@@ -58,6 +58,7 @@ from .rollup import build_rollup
 from .search import create_index
 from .signals import build_signals
 from .sources import SOURCES
+from .stop import pause_point
 
 P = ""  # the declarations below are package-relative (see the module doc); `P +` stays so a path reads as a package path
 
@@ -195,6 +196,8 @@ def _load_units(c: BuildContext, resolver: Resolver, estimates: dict, recorded: 
         if c.progress:  # after the commit: the line says the unit is durable
             c.progress.unit_done(o.index, o.total, o.unit.kind, o.unit.unit, len(o.unit.files), o.rows,
                                  sum(len(rows) for _, rows in o.files), o.status, o.reason)
+        if c.staged:
+            pause_point(c.cur, f"after unit {o.index}/{o.total} ({o.unit.kind} {o.unit.unit})")
 
 
 def _crawl_status(c: BuildContext) -> None:
@@ -313,7 +316,7 @@ def _commit(c: BuildContext) -> None:
 # build_entities, the Step bodies) must have the files it uses listed by hand under the Step that runs it.
 SHARED = (
     P + "__init__.py", P + "build_steps.py", P + "rebuild.py", P + "analyze.py", P + "archive.py", P + "counting.py", P + "fold.py",
-    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "hand_offs.py", P + "build_ledger.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
+    P + "identity.py", P + "identity_overrides.toml", P + "progress.py", P + "stop.py", P + "hand_offs.py", P + "build_ledger.py", P + "sources.py", P + "sole_trader.py", P + "fetch.py",
     P + "sql/",  # the schema files: each Step's tables are created by the first Step, so a change to any is a change to all
     P + "pins.py",  # the pinned inputs build_ledger.start_run writes into build.run
     P + "bulk/", P + "crawl/",  # the Record parsers and the crawl unit directories: read by the schema-independent loaders of several Steps
@@ -411,6 +414,10 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: boo
             ctx.archive.add_pinned_quarantine(unit_dir)
         if ctx.progress and ctx.summary.units_total:  # the `units` Step is committed: its progress counters come from build.unit
             ctx.progress.resumed(ctx.summary.units_total, ctx.archive.root, unit_counts(load_units(ctx.cur)))
+        if ctx.staged:
+            resume_run(ctx.cur)  # an earlier run may have paused it
+            if ctx.progress and start:
+                ctx.progress.committed(steps[start - 1].name)  # the step reached counts what the earlier run committed: a pause or a kill before this run's first commit names it
         if start and ctx.staged:  # a kill between that Step's commit and its VACUUM skipped it: speed only, so it is simply run again (the graph and the ledger do not change)
             _vacuum_after(ctx, steps[start - 1])
     if ctx.staged:
@@ -438,7 +445,11 @@ def _run_each(ctx: BuildContext, steps: tuple[Step, ...], start: int = 0) -> Non
                 if ordinal == len(steps) - 1:
                     finish_run(ctx.cur)
         if ctx.staged:  # the connection is autocommit: the Step has committed and no transaction block is open
+            if ctx.progress:
+                ctx.progress.committed(step.name)
             _vacuum_after(ctx, step)
+            if ordinal < len(steps) - 1:
+                pause_point(ctx.cur, f"after step {step.name}")  # the next Step has not begun
 
 
 def _vacuum_after(ctx: BuildContext, step: Step) -> None:

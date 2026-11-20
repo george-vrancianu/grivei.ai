@@ -29,6 +29,7 @@ from pipeline import cli
 from pipeline.archive import Archive
 from pipeline.build_steps import STEPS
 from pipeline.progress import Progress
+from pipeline.stop import PAUSED_EXIT_CODE, STOP_FILE
 from pipeline.onrc.people import SECRET_ENV
 from pipeline.pins import PACKAGE as REAL_PACKAGE  # the source tree, whatever a test later points `pins.PACKAGE` at
 
@@ -139,6 +140,64 @@ def onrc_snapshot_kill_points(snapshots: int = 4) -> list[KillPoint]:
     return [KillPoint(f"after-onrc-snapshot-{k}", after_snapshot(k)) for k in range(1, snapshots + 1)]
 
 
+@dataclass(frozen=True)
+class PausePoint:
+    """A named place where the operator asks for a pause (#296): `arm(monkeypatch, archive)` installs a hook that touches the stop file there. The build is not killed: it
+    finishes the work in hand, commits, and pauses at the next boundary (`pipeline rebuild` exits 75)."""
+    name: str
+    arm: Callable[[object, Path], None]
+    reached: str  # what the paused status names: the boundary the build stopped at
+
+
+def _touch_stop_file(archive: Path) -> None:
+    (archive / STOP_FILE).touch()
+
+
+def step_pause_points() -> list[PausePoint]:
+    """For every Step X but the last: the stop file appears while X runs; the build pauses right after X's commit (and its VACUUM)."""
+    def after(step_name: str):
+        real = build_steps_module.write_step
+
+        def arm(monkeypatch, archive: Path) -> None:
+            def write_step(cur, name, ordinal, summary):
+                real(cur, name, ordinal, summary)
+                if name == step_name:
+                    _touch_stop_file(archive)
+
+            monkeypatch.setattr(build_steps_module, "write_step", write_step)
+        return arm
+
+    return [PausePoint(f"pause-after-step-{s.name}", after(s.name), f"after step {s.name}") for s in STEPS[:-1]]
+
+
+def unit_pause_point(after: int = 3) -> PausePoint:
+    """The stop file appears once unit `after` is committed (progress.unit_done runs after the commit): the build pauses in the middle of the unit loop."""
+    def arm(monkeypatch, archive: Path) -> None:
+        real, seen = Progress.unit_done, []
+
+        def unit_done(self, *a, **k):
+            real(self, *a, **k)
+            seen.append(a)
+            if len(seen) == after:
+                _touch_stop_file(archive)
+
+        monkeypatch.setattr(Progress, "unit_done", unit_done)
+    return PausePoint(f"pause-after-unit-{after}", arm, f"after unit {after}/")
+
+
+def onrc_snapshot_pause_point(k: int = 2) -> PausePoint:
+    def arm(monkeypatch, archive: Path) -> None:
+        seen = []
+
+        def hook(unit):
+            seen.append(unit)
+            if len(seen) == k:
+                _touch_stop_file(archive)
+
+        monkeypatch.setattr(onrc_build_module, "_after_snapshot", hook)
+    return PausePoint(f"pause-after-onrc-snapshot-{k}", arm, "after ONRC snapshot ")
+
+
 def make_world(root: Path, worlds=WORLD, drop: tuple[str, ...] = ()) -> Path:
     """A fresh archive copy of the fixture worlds (a build moves the files it sets aside, so every build reads a copy of its own)."""
     for name in worlds:
@@ -154,6 +213,8 @@ class Outcome:
     graph: dict  # the dump of the live database afterwards (None when the run died)
     url: str = ""  # the live database
     archive: Path = Path()
+    code: int | None = 0  # the exit code (75: paused)
+    err: str = ""  # stderr
 
     @property
     def first(self) -> str:
@@ -189,14 +250,16 @@ class Harness:
                 "--placement-data", str(data), "--geo-dir", str(self.tmp / "geo"), "--known-gaps", str(FIXTURES / "mf-known-gaps.csv"),
                 "--today", TODAY.isoformat(), "--progress-file", str(self.tmp / "status.json"), *extra]
 
-    def run(self, archive: Path, live: str, *extra: str, kill: KillPoint | None = None, killed_by: BaseException | None = None) -> Outcome:
-        """One `pipeline rebuild`. With `kill` armed the build must die with `killed_by`; its stdout lines are returned either way."""
+    def run(self, archive: Path, live: str, *extra: str, kill: KillPoint | None = None, killed_by: BaseException | None = None, pause: PausePoint | None = None) -> Outcome:
+        """One `pipeline rebuild`. With `kill` armed the build must die with `killed_by`; with `pause` armed it must pause (exit 75, no graph dump); its stdout lines are returned either way."""
         self.capsys.readouterr()
         previous = signal.getsignal(signal.SIGTERM)
         try:
             with self.monkeypatch.context() as m:
                 if kill:
                     kill.arm(m, killed_by)
+                if pause:
+                    pause.arm(m, archive)
                 try:
                     code = cli.main(self.args(archive, live, *extra))
                 except BaseException as e:
@@ -205,7 +268,11 @@ class Harness:
                     code = None
         finally:
             signal.signal(signal.SIGTERM, previous)
-        lines = self.capsys.readouterr().out.splitlines()
+        captured = self.capsys.readouterr()
+        lines = captured.out.splitlines()
+        if pause:
+            assert code == PAUSED_EXIT_CODE, (code, lines, captured.err)
+            return Outcome(lines, None, live, archive, code, captured.err)
         if kill:
             assert code is None, f"the build armed with {kill.name} did not die"
             return Outcome(lines, None, live, archive)
@@ -230,6 +297,24 @@ class Harness:
         if between:
             between(archive, live)
         return archive, killed, self.run(archive, live, *flags, *extra)
+
+    def assert_pause_resumes_like_reference(self, point: PausePoint, *, flags: tuple[str, ...] = (), between: Callable[[Path, str], None] | None = None) -> tuple[Outcome, Outcome]:
+        """Ask for a pause at `point` (the stop file), rerun the same command, and compare with the uninterrupted build: the graph (the build ledger included) and the
+        printed summary. The stop file is gone after the pause, so the rerun resumes instead of pausing again. Returns (the paused run, the rerun)."""
+        ref = self.reference()
+        archive, live = self.new_archive(point.name), self.new_live()
+        paused = self.run(archive, live, *flags, pause=point)
+        assert paused.first.startswith("rebuild: fresh - "), paused.out[:2]
+        assert not (archive / STOP_FILE).exists(), "the build deletes the stop file it paused on"
+        assert point.reached in paused.err, paused.err
+        if between:
+            between(archive, live)
+        rerun = self.run(archive, live, *flags)
+        assert rerun.first.startswith("rebuild: resume - "), rerun.out[0]
+        assert rerun.graph == ref.graph, point.name
+        got, want = _summary(rerun.out, archive), _summary(ref.out, ref.archive)
+        assert got == want, f"{point.name}: " + "\n".join(difflib.unified_diff(want, got, "uninterrupted", "resumed", lineterm=""))
+        return paused, rerun
 
     def assert_resumes_like_reference(self, point: KillPoint, killed_by: BaseException, *, between: Callable[[Path, str], None] | None = None,
                                       expect: str | None = None, flags: tuple[str, ...] = ()) -> Outcome:

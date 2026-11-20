@@ -29,6 +29,7 @@ import psycopg
 from ..analyze import analyze
 from ..archive import Archive, Unit
 from ..identity import compare_name
+from ..stop import pause_point
 from ..placement.tables import load_gazetteer
 from . import read
 from .people import PeopleSummary, PersonOverrides, build_people, has_people
@@ -165,7 +166,7 @@ def _store_coverage(cur: psycopg.Cursor, held: list[date]) -> int:
 
 
 def _after_snapshot(unit: Unit) -> None:
-    """Called once a snapshot's transaction has ended (committed, in a staged build). Does nothing; the place a test kills the build after a snapshot."""
+    """Called once a snapshot's transaction has ended (committed, in a staged build). Does nothing; the place a test kills the build after a snapshot (the pause check follows it)."""
 
 
 def _committed_snapshots(cur: psycopg.Cursor) -> list[tuple[date, bool, str | None]]:
@@ -208,6 +209,7 @@ def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
                 previous = when
                 applied.add(when)
         _after_snapshot(unit)
+        pause_point(cur, f"after ONRC snapshot {unit.unit}")  # a staged build only; the hook above is what a test patches
     summary._held = [u for u in snapshot_units([u for u, _ in surveyed if u is not None]) if date.fromisoformat(u.unit) in applied]
     summary.snapshots = len(applied)
     return summary

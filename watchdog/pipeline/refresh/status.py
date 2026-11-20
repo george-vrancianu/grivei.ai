@@ -46,6 +46,8 @@ def describe_refresh(archive: Archive, ledger: Ledger, steps=None, now: datetime
             for s in run["steps"]:
                 if s["error"] and s["status"] == "failed":
                     lines.append(f"      {s['name']}: {s['error']}")
+                if s["status"] == "paused":
+                    lines.append(f"      {s['name']} paused {s.get('note')}: not a failure, the next run resumes it")
                 for w in s["warnings"]:
                     lines.append(f"      {s['name']} warning: {w}")
         streak = ledger.consecutive_failed_runs()

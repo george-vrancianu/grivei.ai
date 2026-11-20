@@ -35,7 +35,7 @@ from .estimates import lookup as estimates_lookup
 from .fetch import fetch_bulk_file
 from .mf.fetch import fetch_mf
 from .onrc.fetch import fetch_onrc
-from . import acceptance_cli, placement_cli
+from . import acceptance_cli, placement_cli, stop
 from .refresh import Ledger, Pinger, run_refresh, run_seed, describe_refresh
 from .refresh.engine import DeterministicError, TransientError, locked, refresh_steps
 from .refresh.ledger import LEDGER_NAME
@@ -75,6 +75,19 @@ def _in_place_arg(p) -> None:
     p.add_argument("--in-place", action="store_true", default=on, help="rebuild into the database itself, locking it for the whole load, instead of beside it and switching over (env PIPELINE_REBUILD_IN_PLACE=1; for a new, empty database, e.g. a major upgrade)")
 
 
+def _duration_arg(text: str) -> float:
+    try:
+        return stop.parse_duration(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from None
+
+
+def _pause_after_arg(p) -> None:
+    p.add_argument("--pause-after", type=_duration_arg, default=None, metavar="DURATION",
+                   help="pause the staged build at the first commit boundary after this long (90m, 8h; measured from the process start; off by default; a paused build is resumed by the next run; "
+                        "not for a plain --in-place build: one transaction has nothing to pause at)")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pipeline")
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="raw archive root (env PIPELINE_ARCHIVE)")
@@ -88,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
                    help=f"status file `status` reads (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
     placement_cli.add_rebuild_args(r)
     _in_place_arg(r)
+    _pause_after_arg(r)
     r.add_argument("--staged", action="store_true", help="opts an --in-place build into the staged mode (commit per Step, Raw archive unit and ONRC snapshot; resumable by rerunning the command) "
                    "for a fresh database nobody reads, e.g. the major-upgrade build; never on the database the API reads")
     r.add_argument("--fresh", action="store_true", help="start the build from scratch whatever the next database holds: never resume an interrupted build (a beside build resumes by default when its pinned inputs and the code are unchanged)")
@@ -157,7 +171,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("fetch-mf", help="fetch the Ministry of Finance's monthly Lista entitatilor publice (newest snapshot) from data.gov.ro into the raw archive (no loading; resumable)")
 
 
-    def load_args(p):  # what the verbs that load into the database share with `rebuild`
+    def load_args(p, verb_with_pause: bool = True):  # what the verbs that load into the database share with `rebuild`
         p.add_argument("--db", default=os.environ.get("DATABASE_URL"), help="Postgres URL (env DATABASE_URL)")
         p.add_argument("--identity-overrides", default=os.environ.get("PIPELINE_IDENTITY_OVERRIDES"), help="the reviewed identity override file (env PIPELINE_IDENTITY_OVERRIDES)")
         p.add_argument("--progress-file", default=os.environ.get("PIPELINE_PROGRESS_FILE"), help=f"the rebuild's status file (env PIPELINE_PROGRESS_FILE; default <archive>/{DEFAULT_STATUS_NAME})")
@@ -165,6 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--known-gaps", default=os.environ.get("PIPELINE_KNOWN_GAPS"), help="hand-edited known-gaps CSV (env PIPELINE_KNOWN_GAPS)")
         placement_cli.add_rebuild_args(p)
         _in_place_arg(p)
+        if verb_with_pause:
+            _pause_after_arg(p)
 
     rf = sub.add_parser("refresh", help="the nightly run (#81): crawl, data.gov.ro + MF list, ANAF, load; each step only when due, under one lock; healthchecks pings")
     load_args(rf)
@@ -180,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
 
     lq = sub.add_parser("load-quarter", help="load one quarter again from the archive, without downloading: requeue its quarantined files, then rebuild")
     lq.add_argument("quarter", help="e.g. 2023Q2")
-    load_args(lq)
+    load_args(lq, verb_with_pause=False)
 
     for verb, text in (("rollback", "swap the database back to the graph from before the last switchover (and back again)"),
                        ("cleanup", "drop the old graph kept by the last switchover (<db>_prev) and any unfinished or refused build (<db>_next)")):
@@ -212,9 +228,10 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--db or DATABASE_URL is required")
         if args.staged and not args.in_place:
             parser.error("--staged only goes with --in-place: a beside build is always staged")
+        _check_pause_after(parser, args)
         status_file = Path(args.progress_file) if args.progress_file else archive.root / DEFAULT_STATUS_NAME
-        # a kill (SIGTERM) must end like any failure: the transaction rolls back and the status file says so
-        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+        # the first SIGTERM of a staged build pauses it at the next boundary, a second (or any outside one) ends like any failure: the transaction rolls back and the status file says so
+        stop.install(archive.root, args.pause_after)
         placement_cli.log_to_stderr()  # the placement step logs every authority it could not match
         with locked(archive) as got:  # one long run at a time: not beside a refresh or a seed
             if not got:
@@ -222,6 +239,9 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
             try:
                 summary = _rebuild_beside(archive, args, Progress(status_file), _log_line)
+            except stop.BuildPaused as e:  # not done, not failed: exit 75 so `rebuild && ...` does not go on
+                print(f"rebuild: {e}; nothing switched, rerun the same command to resume", file=sys.stderr)
+                return stop.PAUSED_EXIT_CODE
             except switchover.SwitchoverRefused as e:
                 print(f"rebuild: the new graph failed its checks, nothing switched: {e}", file=sys.stderr)
                 return 1
@@ -350,6 +370,14 @@ def _log_line(line: str) -> None:
     print(f"{stamp_now()} {line}", flush=True)
 
 
+def _check_pause_after(parser, args) -> None:
+    if getattr(args, "pause_after", None) and args.in_place and not getattr(args, "staged", False):
+        message = "--pause-after: a plain --in-place build is one transaction, nothing to pause at; add --staged (or build beside the live database)"
+        if parser:
+            parser.error(message)
+        raise SystemExit(f"{args.verb}: {message}")
+
+
 def _rebuild_beside(archive: Archive, args, progress: Progress, say):
     """The rebuild every verb shares: into a fresh database beside the live one, checked, then switched over (switchover.py);
     `--in-place` rebuilds into the database itself (it locks it for the whole load, in one transaction); `rebuild --in-place --staged` does it staged and resumable."""
@@ -468,7 +496,8 @@ def _logging_to_stderr() -> None:
 
 def _refresh(archive: Archive, args) -> int:
     """`refresh` (nightly, pings healthchecks.io) and `seed` (first time, no pings): one locked run, one timestamped log on stdout."""
-    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+    _check_pause_after(None, args)
+    stop.install(archive.root, getattr(args, "pause_after", None))  # the load inside is a staged build: the first SIGTERM pauses it there; any other step dies as before
     _logging_to_stderr()
     impl = _impl(archive, args)
     if args.verb == "seed":

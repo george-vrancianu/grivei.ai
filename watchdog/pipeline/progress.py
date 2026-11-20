@@ -55,6 +55,15 @@ def write_atomically(path: Path, text: str) -> None:
 
 IN_PLACE_STAGED_FAILED = "the database keeps its committed Steps; rerun the same command to resume when the inputs and the code are unchanged, otherwise it rebuilds"  # `--in-place --staged`: no live graph or next database to name
 
+def resume_hint(state: dict) -> str:
+    """What a paused or resumable interrupted staged build leaves, and how to go on."""
+    db = state.get("database") or "the next database"
+    if state.get("staged") == "in-place":
+        return f"{IN_PLACE_STAGED_FAILED} (--fresh starts over; the database is {db})"
+    return (f"the live graph is untouched and {db} holds a full extra copy of the graph on disk until it is resumed or cleaned up; "
+            "rerun the same command to resume when the inputs and the code are unchanged (--fresh starts over)")
+
+
 class Progress:
     """Reports a rebuild. `out` takes one finished line (default: stdout, flushed); `now` is injectable for tests."""
 
@@ -83,6 +92,7 @@ class Progress:
             "records": 0,
             "current": None,
             "step": None,
+            "committed": None,  # staged: the last Step that committed (the step reached; units: `done`)
             "last": None,
             "error": None,
         }
@@ -112,6 +122,15 @@ class Progress:
     def note(self, text: str) -> None:
         """A timestamped line of the run's log (the resume or fresh verdict is the first one)."""
         self._line(text)
+
+    def mark_database(self, name: str) -> None:
+        """The database the build writes into (a beside build: the next database), for the paused and interrupted texts."""
+        self.state["database"] = name
+
+    def committed(self, step: str) -> None:
+        """A staged Step has committed: a stop from here on loses nothing before it."""
+        self.state["committed"] = step
+        self._write()
 
     def mark_staged(self, in_place: bool = False) -> None:
         """The build commits after every Step, into a database beside the live graph: a failure leaves the live graph untouched and a partial next database.
@@ -149,6 +168,20 @@ class Progress:
         s.update(state="finished", records=records_in_graph, current=None, dataThrough=data_through or {})
         took = _duration((self._now() - self._started).total_seconds())
         self._line(f"rebuild done units={s['done']} loaded={s['loaded']} skipped={s['skipped']} quarantined={s['quarantined']} records={records_in_graph} in {took}")
+
+    def pause(self, reached: str, reason: str) -> None:
+        """The build stopped at a committed boundary on request (stop.py): not a failure, the next run resumes it."""
+        self.state.update(state="paused", step=None, current=None, reached=reached, pauseReason=reason)
+        self._line(f"rebuild PAUSED {reached} ({reason}): {self.state['done']}/{self.state['total']} units committed; {resume_hint(self.state)}")
+
+    def interrupt(self, error: BaseException) -> None:
+        """A staged build was killed by a second SIGTERM: the Step in progress rolled back, the committed ones stay. Not `failed`: `status` reads it as `interrupted (resumable)`."""
+        self.state.update(state="interrupted", error=f"{type(error).__name__}: {error}".strip(": "))
+        during = f" in step {self.state['step']}" if self.state.get("step") else ""
+        try:
+            self._line(f"rebuild INTERRUPTED after {self.state['done']}/{self.state['total']} units{during} (the last committed Step is {self.state.get('committed') or 'none yet'}): {resume_hint(self.state)}")
+        except OSError:
+            pass
 
     def fail(self, error: BaseException) -> None:
         if self.state.get("state") == "finished":  # the load is committed: a later interrupt (the outlines) must not say "nothing was loaded"
@@ -221,8 +254,10 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
     """The lines `pipeline status` prints."""
     state = effective_state(status, alive, host)
     done, total = status.get("done", 0), status.get("total", 0)
+    resumable = state == "interrupted" and bool(status.get("staged")) and bool(status.get("committed") or done)  # killed after committed boundaries: a rerun continues from them
+    label = "interrupted (resumable)" if resumable else state
     lines = [
-        f"state: {state if state != 'unknown' else 'running? (cannot see the process from here)'}",
+        f"state: {label if state != 'unknown' else 'running? (cannot see the process from here)'}",
         f"units: {done}/{total} done ({status.get('loaded', 0)} loaded, {status.get('skipped', 0)} skipped, {status.get('quarantined', 0)} quarantined)",
         f"records loaded so far: {status.get('records', 0)}",
     ]
@@ -238,7 +273,13 @@ def describe(status: dict, alive: Callable[[int], bool] = _alive, host: str | No
         lines.append(f"written by another host or container; last update {_age(status, now or datetime.now(timezone.utc))} ago: a rebuild still going updates it at least once per unit")
     if status.get("last"):
         lines.append(f"last line: {status['last']}")
-    if state == "interrupted":
+    if state == "paused":
+        lines.append(f"paused {status.get('reached')} ({status.get('pauseReason')}); the last committed Step is {status.get('committed') or 'none yet'}")
+        lines.append(f"the build did not finish and is not running: {resume_hint(status)}")
+    elif resumable:
+        lines.append(f"reached: the last committed Step is {status.get('committed') or 'none yet'}, {done}/{total} units committed")
+        lines.append(f"the rebuild is not running and did not finish: {resume_hint(status)}")
+    elif state == "interrupted":
         lines.append(f"the rebuild is not running and did not finish: {IN_PLACE_STAGED_FAILED}; rerun the same command" if status.get("staged") == "in-place" else
                      "the rebuild is not running and did not finish: the live graph is untouched (the next run resumes the next database when the inputs and the code are unchanged, otherwise rebuilds it); rerun the same command"
                      if status.get("staged") else
