@@ -200,7 +200,7 @@ class Task:
     """One part of the screen: a name, how it is served, and a function that runs its statements through `timed`."""
 
     name: str
-    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design; a rollup-ranked entity tab: its Signal counts read the index) or "record" (a read of seap.record)
+    serving: str  # "rollup", "scan", "mixed" (a chips-only Records page: the count comes from the rollup, the Top-K page is an index query by design; a rollup-ranked entity tab: its Signal counts read the index) or "record" (a plain table read, no aggregate: seap.record, or the stored core.data_through)
     statements: list[str]  # the statement names, in the order they run (the API runs them in sequence within a task)
     alternatives: list[str] = field(default_factory=list)  # statements that replace one of the above in some case (the terms aggregation instead of the exact rank)
     rollup_statements: list[str] = field(default_factory=list)  # the statements that must read the rollup tables (checked with EXPLAIN)

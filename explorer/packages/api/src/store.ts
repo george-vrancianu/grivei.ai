@@ -607,7 +607,7 @@ export function postgresStore(pool: pg.Pool, { exactGroupLimit = 65_000, rollup 
   /** A Source's data-through dates: the rows the rebuild stored in the load transaction (`core.data_through`); no row, no date. */
   async function storedDataThrough(source: "SEAP" | "ONRC", aggregate: string): Promise<{ kind: string; date: string }[]> {
     try {
-      const { rows } = await pool.query(`SELECT kind, through::text AS date FROM core.data_through WHERE source = '${source}' ORDER BY kind`);
+      const { rows } = await pool.query(`SELECT kind, through::text AS date FROM core.data_through WHERE source = $1 ORDER BY kind`, [source]);
       return rows;
     } catch (e) {
       if ((e as { code?: string }).code !== "42P01") throw e;

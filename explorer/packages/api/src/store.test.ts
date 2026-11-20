@@ -67,8 +67,8 @@ describe("a graph without the aep schema (deployed before a rebuild)", () => {
 function dataThroughPool(stored: { rows: unknown[] } | Error, aggregate: unknown[] = []) {
   const seen: string[] = [];
   const pool = {
-    query: async (sql: string) => {
-      seen.push(sql);
+    query: async (sql: string, params?: unknown[]) => {
+      seen.push(`${sql} ${JSON.stringify(params ?? [])}`);
       if (sql.includes("core.data_through")) {
         if (stored instanceof Error) throw stored;
         return stored;
@@ -87,11 +87,11 @@ describe("the data-through dates", () => {
     const a = dataThroughPool({ rows: seap });
     expect(await postgresStore(a.pool, { rollup: false }).dataThrough()).toEqual(seap);
     expect(a.seen).toHaveLength(1);
-    expect(a.seen[0]).toContain("'SEAP'");
+    expect(a.seen[0]).toContain('["SEAP"]');
     const onrc = [{ kind: "REGISTRATION", date: "2026-05-06" }];
     const b = dataThroughPool({ rows: onrc });
     expect(await postgresStore(b.pool, { rollup: false }).onrcDataThrough()).toEqual(onrc);
-    expect(b.seen[0]).toContain("'ONRC'");
+    expect(b.seen[0]).toContain('["ONRC"]');
   });
 
   it("are none for a Source with no stored row", async () => {
