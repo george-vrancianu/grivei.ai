@@ -96,6 +96,7 @@ class Step:
     progress: tuple[str, ...] | None = None  # the `rebuild step NAME` names it shows; default (name,); () for none; several: `run` opens them itself
     summary_fields: tuple[str, ...] = ()  # the `RebuildSummary` fields the Step fills: stored in its build.step row (so a later run can print the same output)
     hand_off: Callable[[BuildContext], dict] | None = None  # the row's other values (what is not a summary field); both together are `summary`
+    vacuum: tuple[str, ...] = ()  # qualified tables `VACUUM ANALYZE`d right after the Step commits, staged builds only (VACUUM cannot run inside the one in-place transaction)
 
     @property
     def progress_names(self) -> tuple[str, ...]:
@@ -254,7 +255,7 @@ def _signals(c: BuildContext) -> None:
 
 
 def _record_indexes(c: BuildContext) -> None:
-    # the entity(key) roles look a record up by authority and a search row by supplier: index after the load, not during it
+    # the entity(key) roles look a record up by authority and a search row by supplier, and so do the Signals' queries: index after the load, not during it, before the Signals
     c.cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
     c.cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
     c.cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
@@ -314,7 +315,8 @@ STEPS: tuple[Step, ...] = (
     Step("anaf-identities", _anaf_identities, writes=("core.anaf_company",), owns=(P + "anaf.py",), summary_fields=("anaf_found", "anaf_not_found")),
     Step("onrc", _onrc, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
          writes=("onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
-                 "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override")),
+                 "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override"),
+         vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen")),  # a dead version per snapshot per open span, one per CUI's primary registration; the visibility map for onrc-search's index-only scans
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
     Step("units", _units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.bulk_rows, c.summary.duplicate_files, c.summary.set_aside, c.summary.quarantined,
@@ -336,13 +338,14 @@ STEPS: tuple[Step, ...] = (
     Step("financials", _financials, owns=(P + "financials/", *_MF), summary_fields=("financials",), writes=("financials.source_file", "financials.statement")),
     Step("donations", _donations, owns=(P + "banipartide/",), summary_fields=("donations",), reads=("core.entity", "onrc.registration"), writes=("donations.source_file", "donations.donation")),
     Step("coverage", _coverage, owns=(P + "coverage/",), summary_fields=("coverage", "set_aside_without_gap"), reads=("build.step", "seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
+    # creates indexes on seap.record and seap.search (no rows written): before the Signals, whose per-authority and per-supplier queries use them
+    Step("record-indexes", _record_indexes, reads=("seap.record", "seap.search")),
     Step("signals", _signals, owns=(P + "signals/", P + "aep/", *_MF), summary_fields=("records", "signals"),
          reads=("seap.record", "seap.search", "seap.framework", "core.anaf_company", "core.entity", "onrc.registration", "onrc.caen", "onrc.status_name",
                 "onrc.status_span", "onrc.role", "aep.mandate", "aep.record_party", "donations.donation", "financials.source_file",
                 "financials.statement", "amepip.enterprise"),
-         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule", "seap.search")),
-    # creates indexes on seap.record and seap.search (no rows written)
-    Step("record-indexes", _record_indexes, reads=("seap.record", "seap.search")),
+         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule", "seap.search"),
+         vacuum=("seap.search",)),  # its last rewrite: the rollup and the BM25 build scan a compact heap
     Step("rollup", _rollup, owns=(P + "rollup.py",), reads=("seap.search",),
          writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta")),
     Step("search-index", _search_index, owns=(P + "search.py",), reads=("seap.search",)),  # creates the seap.search_bm25 index
@@ -399,6 +402,17 @@ def _run_each(ctx: BuildContext, steps: tuple[Step, ...], start: int = 0) -> Non
                 analyze(ctx.cur, "build.step")  # the entities and coverage Steps look rows up in it
                 if ordinal == len(steps) - 1:
                     finish_run(ctx.cur)
+        if ctx.staged:  # the connection is autocommit: the Step has committed and no transaction block is open
+            _vacuum_after(ctx, step)
+
+
+def _vacuum_after(ctx: BuildContext, step: Step) -> None:
+    """The Step's declared tables, vacuumed and analyzed between committed Steps so the next scan reads a compact heap. Not a Step: no ledger row. A failure fails the build."""
+    if not step.vacuum:
+        return
+    with ctx.phase(f"vacuum {step.name}"):
+        for table in step.vacuum:
+            ctx.cur.execute(f"VACUUM ANALYZE {table}")
 
 
 def expand(patterns: tuple[str, ...], root: Path = REPO_ROOT) -> set[Path]:

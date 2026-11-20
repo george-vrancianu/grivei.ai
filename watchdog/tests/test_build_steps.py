@@ -37,7 +37,7 @@ def test_placement_and_mf_are_one_step_that_announces_both_progress_names():
 def test_progress_names_are_the_ones_the_status_file_has_always_shown():
     names = [n for s in STEPS for n in s.progress_names]
     assert names == ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf", "amepip",
-                     "aep", "financials", "donations", "coverage", "signals", "record-indexes", "rollup", "search-index", "analyze-search", "onrc-search", "commit"]
+                     "aep", "financials", "donations", "coverage", "record-indexes", "signals", "rollup", "search-index", "analyze-search", "onrc-search", "commit"]
 
 
 def test_every_table_a_step_reads_is_written_by_an_earlier_step():

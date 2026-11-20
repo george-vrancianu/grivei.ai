@@ -118,8 +118,8 @@ CREATE TABLE seap.framework (
 );
 
 -- The search table (#68): one row per Record x winner, money in integer bani, the share precomputed. `pg_search` (BM25) indexes it
--- (`seap.search_bm25`, created by `pipeline/search.py` after the load, inside its transaction, and followed by VACUUM ANALYZE of
--- this table), so the index is part of every load transaction and a load is visible to search only once it commits. Every
+-- (`seap.search_bm25`, created by `pipeline/search.py` after the load, inside its transaction, after a VACUUM ANALYZE of this table between committed Steps in a beside build, and followed by another
+-- after the commit), so the index is part of every load transaction and a load is visible to search only once it commits. Every
 -- column the query filters or sums on is in the index; `doc` is the one folded text document per Record (pipeline/fold.py).
 CREATE TABLE seap.search (
     id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,  -- the index's key field

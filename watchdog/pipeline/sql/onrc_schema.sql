@@ -76,7 +76,7 @@ CREATE TABLE onrc.name_span (
 
 -- The search table (#176): one row per registration of the newest snapshot that may be searched by name, the way `seap.search` has one per Record x
 -- winner. `pg_search` (BM25) indexes it (`onrc.search_bm25`, created by `pipeline/onrc/search.py` in the rebuild's transaction, followed by VACUUM ANALYZE
--- after the commit). `doc` is the one folded text (pipeline/fold.py) of the registration's name, every earlier name (aliases), its CUI, its registration
+-- after the commit; a beside build also vacuums the span tables, registration and caen after the `onrc` Step). `doc` is the one folded text (pipeline/fold.py) of the registration's name, every earlier name (aliases), its CUI, its registration
 -- number and its authorised CAEN codes; the columns the filters and the count lens read are all in the index.
 -- A sole trader's registration (PFA, II, IF: `pipeline/sole_trader.py`) is never a row: it is named after a natural person, and publishing such names is
 -- an open question (ADR 0009), so ONRC search must not make them findable by name. The match count and the count lens leave them out for the same reason.
