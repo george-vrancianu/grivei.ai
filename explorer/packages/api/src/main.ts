@@ -1,5 +1,5 @@
 // Entry point of the API container: DATABASE_URL, PORT (default 4000), API_CACHE_MAX_MB (result cache budget, default 300), SEAP_BASE_URL (default https://e-licitatie.ro), SEAP_LINK_PUBLIC_BASE (default relative), GRIVEI_RESTRICTED (only the exact value `show` reveals Restricted content, ADR 0015; unset or anything else hides it).
-import pg from "pg";
+import { createPool } from "./pool.ts";
 import { createApi } from "./server.ts";
 import { cachedStore } from "./cache.ts";
 import { postgresStore } from "./store.ts";
@@ -9,9 +9,8 @@ const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required");
 const port = Number(process.env.PORT ?? 4000);
 
-const pool = new pg.Pool({ connectionString: url, max: 8 });
-// A switchover (pipeline rebuild, #82) terminates the sessions of the old database: an idle one errors here, and without a listener that would end the process. The pool reconnects to the new graph on the next query.
-pool.on("error", (e) => console.error(`pg pool: idle connection lost (${e.message}); reconnecting on the next query`));
+// A restart or a switchover (pipeline rebuild, #82) drops connections; the pool factory makes that a logged event, and the pool reconnects on the next query.
+const pool = createPool({ connectionString: url, max: 8 });
 const restricted = restrictedShown(); // read once: the store (SQL) and the API (resolvers) get the same value
 const store = cachedStore(postgresStore(pool, { restricted }), pool, { maxBytes: Number(process.env.API_CACHE_MAX_MB ?? 300) * 1024 * 1024, log: (m) => console.log(m) });
 await store.sync(); // reads the load generation and starts warming the 2-character prefixes in the background
