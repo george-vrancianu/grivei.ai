@@ -5,6 +5,11 @@
 - every held snapshot, oldest first, feeds the derived history: `onrc.status_span` and `onrc.name_span` (consecutive snapshots compared in
   SQL, one snapshot staged at a time, so memory does not grow with the number of snapshots). A status in the earliest held snapshot is
   "since at least" it; any other status is "first seen" in the snapshot where it appears;
+- the history is written only where it changes (#304): the spans open in the last applied snapshot live in two working tables
+  (`onrc.open_status`, `onrc.open_name`, one row per open span); a snapshot moves the spans it no longer shows into the span tables as closed and adds the
+  ones it newly shows to the working tables; `finish_onrc` closes what is still open at the newest snapshot, drops the working tables and adds the span
+  tables' primary keys. They are SQL tables, not Python dicts: the register has about 4.6 M open status spans and 4.2 M open name spans (about 9 M together), roughly 2-2.5 GB as Python dicts: over the pipeline
+  container's 2 GB `mem_limit`, and close to 4 GB once the parsing is counted, and a table survives the commit of every snapshot, so a rerun after a kill needs no rebuilding;
 - the newest readable snapshot also gives `onrc.registration`, `onrc.caen` and `onrc.status_name`;
 - a snapshot that does not read (a broken file) is set aside and named in the summary; the history is built from the others;
 - a staged build commits after every snapshot, with its `build.snapshot` row (`build_onrc_snapshots`), and a rerun after a kill continues from the next snapshot; `finish_onrc` does the work that needs all of them (#294).
@@ -54,6 +59,7 @@ class OnrcSummary:
     coverage_cells: int = 0  # Coverage grid cells: one per snapshot, one per missing month since March 2026 (#176)
 
     def __post_init__(self) -> None:
+        self._registrations_staged = False  # the snapshot loop left the newest snapshot's registrations in `onrc_reg_newest` (a temp table of the connection; not persisted)
         self._held: list[Unit] = []  # working state between the snapshot loop and `finish_onrc`: the applied snapshots, oldest first (not a field: never persisted)
 
     def line(self) -> str:
@@ -80,29 +86,82 @@ def snapshot_units(units: list[Unit]) -> list[Unit]:
 
 
 _STAGE = "CREATE TEMP TABLE IF NOT EXISTS onrc_obs (reg_no text, name text, code integer)"
+_STAGE_NEWEST = "CREATE TEMP TABLE onrc_reg_newest (LIKE onrc.registration INCLUDING DEFAULTS)"  # the newest snapshot's registrations, parsed in the same pass as its spans
 
-_EXTEND_STATUS = """UPDATE onrc.status_span sp SET last_seen = %(d)s FROM onrc_obs o
-    WHERE o.code IS NOT NULL AND sp.reg_no = o.reg_no AND sp.code = o.code AND sp.last_seen = %(prev)s"""
-_NEW_STATUS = """INSERT INTO onrc.status_span (reg_no, code, first_seen, last_seen, since_at_least)
-    SELECT DISTINCT o.reg_no, o.code, %(d)s, %(d)s, %(first)s FROM onrc_obs o
-     WHERE o.code IS NOT NULL AND NOT EXISTS (SELECT 1 FROM onrc.status_span sp WHERE sp.reg_no = o.reg_no AND sp.code = o.code AND sp.last_seen = %(d)s)"""
-_EXTEND_NAME = """UPDATE onrc.name_span sp SET last_seen = %(d)s FROM (SELECT DISTINCT reg_no, name FROM onrc_obs) o
-    WHERE sp.reg_no = o.reg_no AND sp.name = o.name AND sp.last_seen = %(prev)s"""
-_NEW_NAME = """INSERT INTO onrc.name_span (reg_no, name, first_seen, last_seen, since_at_least)
-    SELECT o.reg_no, o.name, %(d)s, %(d)s, %(first)s FROM (SELECT DISTINCT reg_no, name FROM onrc_obs) o
-     WHERE NOT EXISTS (SELECT 1 FROM onrc.name_span sp WHERE sp.reg_no = o.reg_no AND sp.name = o.name AND sp.last_seen = %(d)s)"""
+# The working state: one row per span open in the last applied snapshot (every open span was seen there, so its `last_seen` is that snapshot's date and is not stored).
+_OPEN = ("CREATE TABLE IF NOT EXISTS onrc.open_status (reg_no text NOT NULL, code integer NOT NULL, first_seen date NOT NULL, since_at_least boolean NOT NULL, PRIMARY KEY (reg_no, code))",
+         "CREATE TABLE IF NOT EXISTS onrc.open_name (reg_no text NOT NULL, name text NOT NULL, first_seen date NOT NULL, since_at_least boolean NOT NULL, PRIMARY KEY (reg_no, name))")
+# The span tables are filled without their primary keys; `finish_onrc` adds them back (same names as the DDL's own).
+_SPAN_KEYS = (("onrc.status_span", "status_span_pkey", "(reg_no, code, first_seen)"), ("onrc.name_span", "name_span_pkey", "(reg_no, name, first_seen)"))
+
+# The columns of `onrc.registration` that a snapshot's registration row carries, in the order of `_registration_row`.
+_REG_COLUMNS = "reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date"
+
+# A snapshot closes the open spans it no longer shows (the only rows written to the span tables) and opens the spans it newly shows.
+_CLOSE_STATUS = """WITH closed AS (DELETE FROM onrc.open_status o
+        WHERE NOT EXISTS (SELECT 1 FROM onrc_obs b WHERE b.code IS NOT NULL AND b.reg_no = o.reg_no AND b.code = o.code)
+        RETURNING o.reg_no, o.code, o.first_seen, o.since_at_least)
+    INSERT INTO onrc.status_span (reg_no, code, first_seen, last_seen, since_at_least) SELECT reg_no, code, first_seen, %(prev)s, since_at_least FROM closed"""
+_OPEN_STATUS = """INSERT INTO onrc.open_status (reg_no, code, first_seen, since_at_least)
+    SELECT DISTINCT b.reg_no, b.code, %(d)s, %(first)s FROM onrc_obs b
+     WHERE b.code IS NOT NULL AND NOT EXISTS (SELECT 1 FROM onrc.open_status o WHERE o.reg_no = b.reg_no AND o.code = b.code)"""
+_CLOSE_NAME = """WITH closed AS (DELETE FROM onrc.open_name o
+        WHERE NOT EXISTS (SELECT 1 FROM onrc_obs b WHERE b.reg_no = o.reg_no AND b.name = o.name)
+        RETURNING o.reg_no, o.name, o.first_seen, o.since_at_least)
+    INSERT INTO onrc.name_span (reg_no, name, first_seen, last_seen, since_at_least) SELECT reg_no, name, first_seen, %(prev)s, since_at_least FROM closed"""
+_OPEN_NAME = """INSERT INTO onrc.open_name (reg_no, name, first_seen, since_at_least)
+    SELECT b.reg_no, b.name, %(d)s, %(first)s FROM (SELECT DISTINCT reg_no, name FROM onrc_obs) b
+     WHERE NOT EXISTS (SELECT 1 FROM onrc.open_name o WHERE o.reg_no = b.reg_no AND o.name = b.name)"""
 
 
-def _stage_snapshot(cur: psycopg.Cursor, unit: Unit) -> int:
-    """The snapshot's (registration, name, status code) rows into the staging table; returns the registrations. Nothing reaches the schema if reading fails."""
+def _prepare_history(cur: psycopg.Cursor) -> None:
+    """The working tables, and the span tables without their primary keys, for the fill. Safe to repeat: a rerun after a kill finds both as the last commit left them."""
+    for table, key, _ in _SPAN_KEYS:
+        cur.execute(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {key}")
+    for statement in _OPEN:
+        cur.execute(statement)
+
+
+def _finish_history(cur: psycopg.Cursor, last: date | None) -> None:
+    """Close what is still open at the newest applied snapshot `last`, drop the working tables, add the primary keys the fill left off."""
+    if last is not None:
+        cur.execute("INSERT INTO onrc.status_span (reg_no, code, first_seen, last_seen, since_at_least) SELECT reg_no, code, first_seen, %s, since_at_least FROM onrc.open_status", (last,))
+        cur.execute("INSERT INTO onrc.name_span (reg_no, name, first_seen, last_seen, since_at_least) SELECT reg_no, name, first_seen, %s, since_at_least FROM onrc.open_name", (last,))
+    cur.execute("DROP TABLE IF EXISTS onrc.open_status, onrc.open_name")
+    for table, key, columns in _SPAN_KEYS:
+        cur.execute(f"ALTER TABLE {table} ADD CONSTRAINT {key} PRIMARY KEY {columns}")
+
+
+def _stage_snapshot(cur: psycopg.Cursor, unit: Unit, keep_registrations: bool = False) -> int:
+    """The snapshot's (registration, name, status code) rows into the staging table; returns the registrations. Nothing reaches the schema if reading fails.
+    `keep_registrations` (the newest snapshot) stages the registrations in the same pass, for `finish_onrc`: the snapshot is parsed once."""
     cur.execute(_STAGE)
     cur.execute("TRUNCATE onrc_obs")
+    when = date.fromisoformat(unit.unit)
     companies = 0
-    with cur.copy("COPY onrc_obs (reg_no, name, code) FROM STDIN") as copy:
+    if not keep_registrations:
+        with cur.copy("COPY onrc_obs (reg_no, name, code) FROM STDIN") as copy:
+            for company in read.read_companies(unit):
+                companies += 1
+                for code in company.states or (None,):  # a company with no status still has a name to date
+                    copy.write_row((company.reg_no, company.name, code))
+        cur.execute("ANALYZE onrc_obs")  # a temp table is never analyzed by autovacuum: the anti-joins below plan from these statistics
+        return companies
+    # One COPY (a connection carries one at a time) feeds both: a company's (name, status) rows, and one row with its registration, told apart by `is_reg`.
+    cur.execute("DROP TABLE IF EXISTS onrc_reg_newest, onrc_wide")
+    cur.execute(_STAGE_NEWEST)
+    cur.execute("CREATE TEMP TABLE onrc_wide (LIKE onrc.registration INCLUDING DEFAULTS, code integer, is_reg boolean NOT NULL)")
+    with cur.copy(f"COPY onrc_wide ({_REG_COLUMNS}, code, is_reg) FROM STDIN") as copy:
         for company in read.read_companies(unit):
             companies += 1
-            for code in company.states or (None,):  # a company with no status still has a name to date
-                copy.write_row((company.reg_no, company.name, code))
+            for code in company.states or (None,):
+                copy.write_row((company.reg_no, None, False, company.name, None, None, None, None, None, None, None, None, when, code, False))
+            copy.write_row(_registration_row(company, when) + (None, True))
+    cur.execute("INSERT INTO onrc_obs (reg_no, name, code) SELECT reg_no, name, code FROM onrc_wide WHERE NOT is_reg")
+    cur.execute(f"INSERT INTO onrc_reg_newest SELECT {_REG_COLUMNS} FROM onrc_wide WHERE is_reg")
+    cur.execute("DROP TABLE onrc_wide")
+    cur.execute("ANALYZE onrc_obs")
+    cur.execute("ANALYZE onrc_reg_newest")
     return companies
 
 
@@ -110,34 +169,41 @@ def _apply_snapshot(cur: psycopg.Cursor, unit: Unit, companies: int, previous: d
     when = date.fromisoformat(unit.unit)
     origin = unit.origin or {}
     args = {"d": when, "prev": previous or date.min, "first": first}
-    for statement in (_EXTEND_STATUS, _NEW_STATUS, _EXTEND_NAME, _NEW_NAME):
+    for statement in (_CLOSE_STATUS, _OPEN_STATUS, _CLOSE_NAME, _OPEN_NAME):
         cur.execute(statement, args)
+    if first:
+        analyze(cur, "onrc.open_status", "onrc.open_name")  # the first snapshot fills them: later statements plan from their size
     cur.execute(
         "INSERT INTO onrc.snapshot (snapshot_date, layout, dataset, title, url, fetched_at, archive_path, companies, earliest) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (when, read.layout_of(unit), origin.get("dataset"), origin.get("datasetTitle"), unit.url, unit.fetched_at, str(unit.path.relative_to(archive.root)), companies, first))
 
 
-def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | None) -> tuple[int, int, int]:
-    """`onrc.registration`, `onrc.caen` and `onrc.status_name` from one snapshot; returns (registrations, with a CUI, CAEN rows)."""
+_COPY_REGISTRATIONS = f"COPY onrc_reg_newest ({_REG_COLUMNS}) FROM STDIN"
+
+
+def _registration_row(c: read.Company, when: date) -> tuple:
+    return (c.reg_no, c.cui, False, c.name, c.registration_date, c.legal_form, c.euid, c.county, None, c.locality, c.address, c.postal_code, when)  # county_iso is looked up at the load
+
+
+def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | None, staged: bool = False) -> tuple[int, int, int]:
+    """`onrc.registration`, `onrc.caen` and `onrc.status_name` from one snapshot; returns (registrations, with a CUI, CAEN rows). `staged`: the snapshot loop already
+    put this snapshot's registrations in `onrc_reg_newest`; otherwise (a rerun that found the newest snapshot committed) it is read here."""
     gaz, _ = load_gazetteer(data_dir)
-    counties: dict[str | None, str | None] = {}
-
-    def county_iso(name: str | None) -> str | None:
-        if name not in counties:
-            counties[name] = gaz.county_of_name(name) if name else None
-        return counties[name]
-
-    when = date.fromisoformat(unit.unit)
-    cur.execute("CREATE TEMP TABLE onrc_reg (LIKE onrc.registration INCLUDING DEFAULTS) ON COMMIT DROP")
-    n = with_cui = 0
-    with cur.copy("COPY onrc_reg (reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date) FROM STDIN") as copy:
-        for c in read.read_companies(unit):
-            n += 1
-            with_cui += c.cui is not None
-            copy.write_row((c.reg_no, c.cui, False, c.name, c.registration_date, c.legal_form, c.euid, c.county, county_iso(c.county), c.locality, c.address, c.postal_code, when))
+    if not staged:
+        when = date.fromisoformat(unit.unit)
+        cur.execute("DROP TABLE IF EXISTS onrc_reg_newest")
+        cur.execute(_STAGE_NEWEST)
+        with cur.copy(_COPY_REGISTRATIONS) as copy:
+            for c in read.read_companies(unit):
+                copy.write_row(_registration_row(c, when))
+    cur.execute("SELECT count(*), count(cui) FROM onrc_reg_newest")
+    n, with_cui = cur.fetchone()
+    cur.execute("SELECT DISTINCT county_name FROM onrc_reg_newest WHERE county_name IS NOT NULL AND county_name <> ''")
+    counties = sorted(name for (name,) in cur.fetchall())
     cur.execute("""INSERT INTO onrc.registration
-        SELECT DISTINCT ON (reg_no) reg_no, cui, false, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date
-          FROM onrc_reg ORDER BY reg_no""")
+        SELECT DISTINCT ON (r.reg_no) r.reg_no, r.cui, false, r.name, r.registration_date, r.legal_form, r.euid, r.county_name, m.iso, r.locality, r.address, r.postal_code, r.snapshot_date
+          FROM onrc_reg_newest r LEFT JOIN unnest(%s::text[], %s::text[]) AS m(county, iso) ON m.county = r.county_name ORDER BY r.reg_no""",
+                (counties, [gaz.county_of_name(name) for name in counties]))
     cur.execute("""UPDATE onrc.registration r SET primary_for_cui = true FROM (SELECT DISTINCT ON (cui) reg_no FROM onrc.registration WHERE cui IS NOT NULL ORDER BY cui, reg_no) p
                     WHERE r.reg_no = p.reg_no""")
     cur.execute("CREATE UNIQUE INDEX registration_cui_primary ON onrc.registration (cui) WHERE primary_for_cui")
@@ -182,14 +248,16 @@ def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
     summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
-    # no `last_seen`-only index on the span tables: the per-snapshot statements below join on the primary keys (reg_no first), and with all open spans sharing one `last_seen` the planner takes such an index for selective (#287)
+    _prepare_history(cur)
+    units = snapshot_units([u for u, _ in surveyed if u is not None])
+    newest = units[-1] if units else None  # known before the loop: its registrations are staged with its spans, so it is parsed once
     committed = _committed_snapshots(cur)  # a rerun after a kill inside this Step
     done = {d for d, _, _ in committed}
     applied = {d for d, ok, _ in committed if ok}
     previous: date | None = max(applied, default=None)
     summary.skipped += [why for _, ok, why in committed if not ok]
     ordinal = len(committed)
-    for unit in snapshot_units([u for u, _ in surveyed if u is not None]):
+    for unit in units:
         when = date.fromisoformat(unit.unit)
         if when in done:
             continue
@@ -197,7 +265,7 @@ def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
         with cur.connection.transaction():  # the snapshot's commit: its spans and its ledger row together
             try:
                 with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the snapshot's transaction
-                    companies = _stage_snapshot(cur, unit)
+                    companies = _stage_snapshot(cur, unit, keep_registrations=unit is newest)
             except Exception as e:  # noqa: BLE001 - a broken snapshot must not stop the rebuild: the history is built from the others, the summary says so
                 message = f"snapshot {unit.unit} ({unit.path.relative_to(archive.root)}): {str(e).replace(os.fspath(archive.root) + os.sep, '')}"  # no absolute path: the row is part of the graph, equal in every build of the same archive
                 summary.skipped.append(message)
@@ -208,9 +276,10 @@ def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
                 cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, true, NULL)", (when, ordinal))
                 previous = when
                 applied.add(when)
+                summary._registrations_staged = unit is newest
         _after_snapshot(unit)
         pause_point(cur, f"after ONRC snapshot {unit.unit}")  # a staged build only; the hook above is what a test patches
-    summary._held = [u for u in snapshot_units([u for u, _ in surveyed if u is not None]) if date.fromisoformat(u.unit) in applied]
+    summary._held = [u for u in units if date.fromisoformat(u.unit) in applied]
     summary.snapshots = len(applied)
     return summary
 
@@ -225,7 +294,10 @@ def finish_onrc(cur: psycopg.Cursor, summary: OnrcSummary, data_dir: Path | str 
     if held:
         summary.first, summary.latest = date.fromisoformat(held[0].unit), date.fromisoformat(held[-1].unit)
         summary.coverage_cells = _store_coverage(cur, [date.fromisoformat(u.unit) for u in held])
-        summary.companies, summary.with_cui, summary.caen = _load_registrations(cur, held[-1], data_dir)
+        _finish_history(cur, summary.latest)
+        cur.execute("SELECT to_regclass('pg_temp.onrc_reg_newest') IS NOT NULL")
+        staged = summary._registrations_staged and cur.fetchone()[0]
+        summary.companies, summary.with_cui, summary.caen = _load_registrations(cur, held[-1], data_dir, staged=staged)
         for unit in reversed(held):  # the nomenclature of the newest snapshot that carries one
             if names := read.read_status_names(unit):
                 cur.executemany("INSERT INTO onrc.status_name (code, name, snapshot_date) VALUES (%s, %s, %s)", [(c, n, date.fromisoformat(unit.unit)) for c, n in sorted(names.items())])
@@ -238,7 +310,9 @@ def finish_onrc(cur: psycopg.Cursor, summary: OnrcSummary, data_dir: Path | str 
             cur.execute("INSERT INTO onrc.coverage_cell (period, period_start, period_end, kind, state, records, data_through) "
                         "SELECT snapshot_date::text, snapshot_date, snapshot_date, 'ROLE', 'LOADED', count(*), snapshot_date FROM onrc.role GROUP BY snapshot_date")
             summary.coverage_cells += cur.rowcount
-    cur.execute("DROP TABLE IF EXISTS onrc_obs")
+    else:
+        _finish_history(cur, None)
+    cur.execute("DROP TABLE IF EXISTS onrc_obs, onrc_reg_newest")
     analyze(cur, "onrc.snapshot", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.role")
     return summary
 

@@ -347,7 +347,7 @@ STEPS: tuple[Step, ...] = (
     Step("onrc", _onrc, segments=_onrc_snapshots, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
          writes=("build.snapshot", "onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override"),
-         vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen")),  # a dead version per snapshot per open span, one per CUI's primary registration; the visibility map for onrc-search's index-only scans
+         vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen")),  # the visibility map for onrc-search's index-only scans (the span tables are insert-only now, #304; registration has one dead version per CUI's primary registration)
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
     Step("units", _units_end, segments=_units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.summary.incomplete, c.archive.root, c.summary.units_total),
