@@ -237,7 +237,7 @@ _TRUNCATE_STAGING = "TRUNCATE stage_record, stage_search, stage_withheld, stage_
 
 
 def _copy(cur: psycopg.Cursor, table: str, columns: Sequence[str], rows: list[tuple]) -> None:
-    with cur.copy(f"COPY {table} (seq, {', '.join(columns)}) FROM STDIN") as copy:
+    with cur.copy(f"COPY {table} (seq, {', '.join(columns)}) FROM STDIN (FREEZE)") as copy:
         for seq, row in enumerate(rows):
             copy.write_row((seq, *row))
 

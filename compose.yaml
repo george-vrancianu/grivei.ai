@@ -22,7 +22,8 @@ services:
       POSTGRES_DB: grivei
     # wal_level=minimal (needs max_wal_senders=0): a load into a table created in the same transaction skips WAL (as does a CREATE INDEX), so bulk loads into fresh tables write less.
     # Rules out point-in-time recovery and streaming replicas; the backups are pg_dump + restic (watchdog/README.md, "Backups and restore").
-    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=4GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0"]
+    # max_wal_size=16GB: a rebuild's load triggers fewer checkpoints; WAL only grows that far between checkpoints, and under wal_level=minimal loads into fresh tables skip WAL. Not settable per session, so it lives here.
+    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=16GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0"]
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:
@@ -46,7 +47,8 @@ services:
       POSTGRES_DB: grivei
     # wal_level=minimal (needs max_wal_senders=0): a load into a table created in the same transaction skips WAL (as does a CREATE INDEX), so bulk loads into fresh tables write less.
     # Rules out point-in-time recovery and streaming replicas; the backups are pg_dump + restic (watchdog/README.md, "Backups and restore").
-    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=4GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0"]
+    # max_wal_size=16GB: a rebuild's load triggers fewer checkpoints; WAL only grows that far between checkpoints, and under wal_level=minimal loads into fresh tables skip WAL. Not settable per session, so it lives here.
+    command: ["postgres", "-c", "shared_buffers=3GB", "-c", "effective_cache_size=8GB", "-c", "max_wal_size=16GB", "-c", "wal_level=minimal", "-c", "max_wal_senders=0"]
     volumes:
       - pgdata-next:/var/lib/postgresql
     healthcheck:

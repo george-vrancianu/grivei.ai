@@ -256,7 +256,7 @@ def build_people(cur: psycopg.Cursor, unit: Unit | None, overrides: PersonOverri
     when = date.fromisoformat(unit.unit)
     summary.snapshot = when
     cur.execute(_STAGE)
-    with cur.copy("COPY onrc_role_raw (reg_no, holder_name, role, kind, birth_date, area, pkey, person_id) FROM STDIN") as copy:
+    with cur.copy("COPY onrc_role_raw (reg_no, holder_name, role, kind, birth_date, area, pkey, person_id) FROM STDIN (FREEZE)") as copy:
         for r in read_roles(unit):
             key = person_key(r.name, r.birth_date)
             copy.write_row((r.reg_no, comma_below(r.name.strip()), r.role.strip(), r.kind, r.birth_date, r.area, key, person_id(key, secret) if key else None))

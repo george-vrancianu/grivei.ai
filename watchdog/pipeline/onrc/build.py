@@ -31,7 +31,7 @@ from typing import Iterator
 
 import psycopg
 
-from ..analyze import analyze
+from ..analyze import analyze, local_work_mem
 from ..archive import Archive, Unit
 from ..identity import compare_name
 from ..stop import pause_point
@@ -140,7 +140,7 @@ def _stage_snapshot(cur: psycopg.Cursor, unit: Unit, keep_registrations: bool = 
     when = date.fromisoformat(unit.unit)
     companies = 0
     if not keep_registrations:
-        with cur.copy("COPY onrc_obs (reg_no, name, code) FROM STDIN") as copy:
+        with cur.copy("COPY onrc_obs (reg_no, name, code) FROM STDIN (FREEZE)") as copy:
             for company in read.read_companies(unit):
                 companies += 1
                 for code in company.states or (None,):  # a company with no status still has a name to date
@@ -151,7 +151,7 @@ def _stage_snapshot(cur: psycopg.Cursor, unit: Unit, keep_registrations: bool = 
     cur.execute("DROP TABLE IF EXISTS onrc_reg_newest, onrc_wide")
     cur.execute(_STAGE_NEWEST)
     cur.execute("CREATE TEMP TABLE onrc_wide (LIKE onrc.registration INCLUDING DEFAULTS, code integer, is_reg boolean NOT NULL)")
-    with cur.copy(f"COPY onrc_wide ({_REG_COLUMNS}, code, is_reg) FROM STDIN") as copy:
+    with cur.copy(f"COPY onrc_wide ({_REG_COLUMNS}, code, is_reg) FROM STDIN (FREEZE)") as copy:
         for company in read.read_companies(unit):
             companies += 1
             for code in company.states or (None,):
@@ -178,7 +178,8 @@ def _apply_snapshot(cur: psycopg.Cursor, unit: Unit, companies: int, previous: d
         (when, read.layout_of(unit), origin.get("dataset"), origin.get("datasetTitle"), unit.url, unit.fetched_at, str(unit.path.relative_to(archive.root)), companies, first))
 
 
-_COPY_REGISTRATIONS = f"COPY onrc_reg_newest ({_REG_COLUMNS}) FROM STDIN"
+# FREEZE: onrc_reg_newest is created in the same block (the rerun path). Exercised in place by test_onrc_db (a broken newest snapshot) and staged by test_resume_db [in-onrc].
+_COPY_REGISTRATIONS = f"COPY onrc_reg_newest ({_REG_COLUMNS}) FROM STDIN (FREEZE)"
 
 
 def _registration_row(c: read.Company, when: date) -> tuple:
@@ -209,7 +210,7 @@ def _load_registrations(cur: psycopg.Cursor, unit: Unit, data_dir: Path | str | 
     cur.execute("CREATE UNIQUE INDEX registration_cui_primary ON onrc.registration (cui) WHERE primary_for_cui")
     caen = 0
     cur.execute("CREATE TEMP TABLE onrc_caen (LIKE onrc.caen) ON COMMIT DROP")
-    with cur.copy("COPY onrc_caen (reg_no, code, version) FROM STDIN") as copy:
+    with cur.copy("COPY onrc_caen (reg_no, code, version) FROM STDIN (FREEZE)") as copy:
         for row in read.read_caen(unit):
             copy.write_row(row)
     cur.execute("INSERT INTO onrc.caen SELECT DISTINCT ON (reg_no, code) reg_no, code, version FROM onrc_caen ORDER BY reg_no, code, version DESC NULLS LAST")
@@ -241,10 +242,10 @@ def _committed_snapshots(cur: psycopg.Cursor) -> list[tuple[date, bool, str | No
     return cur.fetchall()
 
 
-def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
+def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive, work_mem: str | None = None) -> OnrcSummary:
     """The first part of the `onrc` Step: every snapshot not yet committed, oldest first, each in a transaction of its own with its `build.snapshot` row. On a
     staged connection (autocommit) each is a real commit, so a failure loses at most one snapshot and a rerun continues with the next; under the one
-    `--in-place` transaction each is a savepoint. Returns the summary so far; `finish_onrc` completes it."""
+    `--in-place` transaction each is a savepoint; `work_mem` is set for the statements of each snapshot's transaction only. Returns the summary so far; `finish_onrc` completes it."""
     summary = OnrcSummary()
     surveyed = archive.survey(lambda d: d.relative_to(archive.root).parts[0] == SOURCE)  # one pass: the files are hashed once per rebuild
     summary.skipped += [f"incomplete unit {p.relative_to(archive.root)}" for u, p in surveyed if u is None]
@@ -263,20 +264,21 @@ def build_onrc_snapshots(cur: psycopg.Cursor, archive: Archive) -> OnrcSummary:
             continue
         ordinal += 1
         with cur.connection.transaction():  # the snapshot's commit: its spans and its ledger row together
-            try:
-                with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the snapshot's transaction
-                    companies = _stage_snapshot(cur, unit, keep_registrations=unit is newest)
-            except Exception as e:  # noqa: BLE001 - a broken snapshot must not stop the rebuild: the history is built from the others, the summary says so
-                message = f"snapshot {unit.unit} ({unit.path.relative_to(archive.root)}): {str(e).replace(os.fspath(archive.root) + os.sep, '')}"  # no absolute path: the row is part of the graph, equal in every build of the same archive
-                summary.skipped.append(message)
-                log.warning("onrc snapshot %s skipped: %s", unit.unit, e)
-                cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, false, %s)", (when, ordinal, message))
-            else:
-                _apply_snapshot(cur, unit, companies, previous, previous is None, archive)
-                cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, true, NULL)", (when, ordinal))
-                previous = when
-                applied.add(when)
-                summary._registrations_staged = unit is newest
+            with local_work_mem(cur, work_mem):
+                try:
+                    with cur.connection.transaction():  # a savepoint: a failed COPY must not abort the snapshot's transaction
+                        companies = _stage_snapshot(cur, unit, keep_registrations=unit is newest)
+                except Exception as e:  # noqa: BLE001 - a broken snapshot must not stop the rebuild: the history is built from the others, the summary says so
+                    message = f"snapshot {unit.unit} ({unit.path.relative_to(archive.root)}): {str(e).replace(os.fspath(archive.root) + os.sep, '')}"  # no absolute path: the row is part of the graph, equal in every build of the same archive
+                    summary.skipped.append(message)
+                    log.warning("onrc snapshot %s skipped: %s", unit.unit, e)
+                    cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, false, %s)", (when, ordinal, message))
+                else:
+                    _apply_snapshot(cur, unit, companies, previous, previous is None, archive)
+                    cur.execute("INSERT INTO build.snapshot (snapshot_date, ordinal, applied, skipped) VALUES (%s, %s, true, NULL)", (when, ordinal))
+                    previous = when
+                    applied.add(when)
+                    summary._registrations_staged = unit is newest
         _after_snapshot(unit)
         pause_point(cur, f"after ONRC snapshot {unit.unit}")  # a staged build only; the hook above is what a test patches
     summary._held = [u for u in units if date.fromisoformat(u.unit) in applied]
