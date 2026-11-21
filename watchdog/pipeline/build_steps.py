@@ -161,17 +161,19 @@ def _units(c: BuildContext) -> None:
     estimates = read_estimates(c.archive)  # the same answers the `estimates` Step counted, read again: a Step never relies on another's memory
     names_cur = c.conn.cursor()  # the resolver asks in the middle of the Record load: a cursor of its own
     try:
-        resolver = Resolver(OnrcNames(names_cur, load_anaf_names(c.cur)), c.overrides)  # ANAF's names from core.anaf_company, ONRC's from onrc.registration
-        _load_units(c, resolver, estimates, recorded)
+        names = OnrcNames(names_cur, load_anaf_names(c.cur))
+        resolver = Resolver(names, c.overrides)  # ANAF's names from core.anaf_company, ONRC's from onrc.registration
+        _load_units(c, resolver, estimates, recorded, names)
     finally:
         names_cur.close()
 
 
-def _load_units(c: BuildContext, resolver: Resolver, estimates: dict, recorded: list[UnitRow]) -> None:
+def _load_units(c: BuildContext, resolver: Resolver, estimates: dict, recorded: list[UnitRow], names: OnrcNames) -> None:
     root = c.archive.root
     for o in iter_units(c.archive, c.summary, c.progress, load_loaded_hashes(c.cur), recorded):
         rel = o.unit.path.relative_to(root).as_posix()
         loaded_files = 0
+        names.prefetch(resolver.asked_cuis(r for _, rows in o.files for r in rows))  # the unit's CUIs in one statement: resolving its Records asks nothing
         with c.conn.transaction():  # the unit's own transaction (a savepoint inside the one in-place transaction): its rows and its build.unit row commit together
             for name, rows in o.files:
                 c.number += 1
