@@ -128,7 +128,7 @@ def _anaf_identities(c: BuildContext) -> None:
 
 # `work_mem` of the heavy Steps (per sort or hash node, and each parallel worker gets its own; the db container has 12 GiB, shared_buffers 3 GB).
 # Sorts and hash aggregates over the whole register or the whole `seap.search` get 512 MB; the Steps whose statements are smaller get 256 MB.
-ONRC_WORK_MEM = "512MB"  # the span anti-joins and the span primary keys over the whole register's history; the reader's aggregates (onrc-search)
+ONRC_WORK_MEM = "512MB"  # the span anti-joins over the whole register's history (the span primary keys are index builds: maintenance_work_mem); the reader's aggregates (onrc-search)
 BIG_WORK_MEM = "512MB"  # rollup: GROUP BY over every seap.search row; search-rows: one INSERT ... SELECT joining four tables with an aggregate
 MEDIUM_WORK_MEM = "256MB"  # entities: GROUP BYs over the parties; signals: the ORDER BY of each rule's query
 

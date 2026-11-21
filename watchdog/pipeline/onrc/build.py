@@ -178,6 +178,7 @@ def _apply_snapshot(cur: psycopg.Cursor, unit: Unit, companies: int, previous: d
         (when, read.layout_of(unit), origin.get("dataset"), origin.get("datasetTitle"), unit.url, unit.fetched_at, str(unit.path.relative_to(archive.root)), companies, first))
 
 
+# FREEZE: onrc_reg_newest is created in the same block (the rerun path). Exercised in place by test_onrc_db (a broken newest snapshot) and staged by test_resume_db [in-onrc].
 _COPY_REGISTRATIONS = f"COPY onrc_reg_newest ({_REG_COLUMNS}) FROM STDIN (FREEZE)"
 
 

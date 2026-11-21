@@ -15,6 +15,10 @@ from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, db, server  # noqa: E402,F401
 
+def mb(size: str) -> int:
+    return int(size.removesuffix("MB")) * 1024 * 1024
+
+
 KEY_INDEXES = {"record_authority_key_idx", "record_notice_code_idx"}
 
 
@@ -36,8 +40,9 @@ def seen(request, server, tmp_path_factory):
         vacuumed, analyzed = cur.fetchone()
         cur.execute("SHOW maintenance_work_mem")
         maintenance = cur.fetchone()[0]
-        cur.execute("SHOW work_mem")
-        seen[label] = {"indexes": indexes, "last_vacuum": vacuumed, "last_analyze": analyzed, "maintenance_work_mem": maintenance, "work_mem": cur.fetchone()[0]}
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")  # bytes; reset_val (kB): what `SET ... TO DEFAULT` returns to
+        work_mem, default = cur.fetchone()
+        seen[label] = {"default_work_mem": default, "indexes": indexes, "last_vacuum": vacuumed, "last_analyze": analyzed, "maintenance_work_mem": maintenance, "work_mem": work_mem}
 
     real_signals, real_index, real_run = build_steps_module.build_signals, build_steps_module.create_index, build_steps_module.run_steps
     real_frameworks = build_steps_module.build_frameworks
@@ -56,8 +61,6 @@ def seen(request, server, tmp_path_factory):
 
     def run(ctx, *args, **kwargs):
         seen["status_before_steps"] = ctx.conn.info.transaction_status
-        ctx.cur.execute("SHOW work_mem")  # no schema yet: not `look`
-        seen["before"] = {"work_mem": ctx.cur.fetchone()[0]}
         return real_run(ctx, *args, **kwargs)
 
     with pytest.MonkeyPatch.context() as mp:
@@ -100,8 +103,8 @@ def test_an_in_place_builds_outer_block_is_the_real_transaction(seen):
 
 def test_a_heavy_step_runs_with_its_own_work_mem_and_the_next_one_does_not_inherit_it(seen):
     """SET LOCAL lasts to the end of the top-level transaction, and under --in-place the Steps are savepoints of one: the value must be put back when the Step ends."""
-    default = seen["before"]["work_mem"]
-    assert seen["signals"]["work_mem"] == build_steps_module.MEDIUM_WORK_MEM != default  # the Step's own block
+    default = seen["signals"]["default_work_mem"]
+    assert seen["signals"]["work_mem"] == mb(build_steps_module.MEDIUM_WORK_MEM) != default  # the Step's own block
     assert seen["frameworks"]["work_mem"] == default  # the Step after `onrc`
     assert seen["search-index"]["work_mem"] == default  # after signals, search-rows and the rollup
 
@@ -118,13 +121,13 @@ def onrc_seen(request, server, tmp_path_factory):
     real_apply, real_frameworks = onrc_build._apply_snapshot, build_steps_module.build_frameworks
 
     def apply_snapshot(cur, *args, **kwargs):
-        cur.execute("SHOW work_mem")
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")
         seen["snapshots"].append(cur.fetchone()[0])
         return real_apply(cur, *args, **kwargs)
 
     def frameworks(cur, *args, **kwargs):
-        cur.execute("SHOW work_mem")
-        seen["after"] = cur.fetchone()[0]
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")
+        seen["after"], seen["default"] = cur.fetchone()
         return real_frameworks(cur, *args, **kwargs)
 
     with pytest.MonkeyPatch.context() as mp:
@@ -135,5 +138,5 @@ def onrc_seen(request, server, tmp_path_factory):
 
 
 def test_an_onrc_snapshots_transaction_has_its_own_work_mem_that_ends_with_it(onrc_seen):
-    assert onrc_seen["snapshots"] and set(onrc_seen["snapshots"]) == {build_steps_module.ONRC_WORK_MEM}
-    assert onrc_seen["after"] not in {build_steps_module.ONRC_WORK_MEM, build_steps_module.MEDIUM_WORK_MEM}
+    assert onrc_seen["snapshots"] and set(onrc_seen["snapshots"]) == {mb(build_steps_module.ONRC_WORK_MEM)}
+    assert onrc_seen["after"] == onrc_seen["default"]
