@@ -320,6 +320,11 @@ def _is_person(spelling: str, raw_id: str | None, kind: str, unusable_cui: bool 
     return kind in ("none", "other") or (kind == "cui" and _ID_CARD.fullmatch(s) is not None)
 
 
+def _published_id(tax: TaxId, raw_id: str | None) -> str | None:
+    """The id a published-id override is looked up under (shared by `Resolver.supplier` and `Resolver.asked_cuis`)."""
+    return tax.value if tax.kind in ("cui", "foreign_vat") else (_loose_id(raw_id) if raw_id and tax.kind == "other" else None)
+
+
 class Resolver:
     """Turns a winner (spelling + published id) into its entity. `anaf` maps a CUI ANAF found to its `compare_name`."""
 
@@ -332,7 +337,7 @@ class Resolver:
         if tax.kind == "cnp":
             return NATURAL_PERSON_WITH_CNP  # before anything else: the id is neither matched nor kept
         spelling = (name or "").strip()
-        published = tax.value if tax.kind in ("cui", "foreign_vat") else (_loose_id(raw_id) if raw_id and tax.kind == "other" else None)
+        published = _published_id(tax, raw_id)
         if published and (o := self.overrides.by_id.get(published)):
             return self._overridden(o, spelling)
         mismatch = False
@@ -369,7 +374,7 @@ class Resolver:
                 tax = classify_tax_id(w.cui)
                 if tax.kind == "cui" and tax.value and tax.value != own and tax.value not in self.overrides.by_id:
                     asked.add(tax.value)
-                if (o := self.overrides.by_id.get(tax.value) if tax.kind in ("cui", "foreign_vat") else None) and o.key.isdigit():
+                if (published := _published_id(tax, w.cui)) and (o := self.overrides.by_id.get(published)) and o.key.isdigit():
                     asked.add(o.key)
                 if (spelling := (w.name or "").strip()) and (o := self.overrides.by_name.get(name_key_text(spelling))) and o.key.isdigit():
                     asked.add(o.key)

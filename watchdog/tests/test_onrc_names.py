@@ -16,7 +16,7 @@ class FakeCursor:
     def execute(self, sql, params):
         if self.refuse:
             raise AssertionError("a query during resolution")
-        if "ANY" in sql:
+        if isinstance(params[0], list):  # the batched lookup passes the CUIs as a list, the single one a CUI
             self._rows = [(c, self.registrations[c]) for c in params[0] if c in self.registrations]
         else:
             self._rows = [(self.registrations[params[0]],)] if params[0] in self.registrations else []
@@ -64,3 +64,14 @@ def test_the_authoritys_own_cui_and_a_published_id_override_are_not_asked():
     resolver = Resolver(OnrcNames(FakeCursor({}), {}), overrides)
     asked = resolver.asked_cuis([rec(AUTH, ("Auth", AUTH), ("Beta", BETA), ("Delta", DELTA), ("Foreign", "DE123456789"), ("Person", "1234567890123"))])
     assert DELTA in asked and AUTH not in asked and BETA not in asked and "DE123456789" not in asked and "1234567890123" not in asked
+
+
+def test_a_published_id_that_fails_the_check_digit_and_is_overridden_to_a_cui_is_prefetched():
+    overrides = Overrides(by_id={"2000008": Override(reason="r", key=ALFA)})  # 2000008 fails the check digit
+    records = [rec(AUTH, ("Alfa", "2000008"))]
+    cursor = FakeCursor(ONRC)
+    names = OnrcNames(cursor, {})
+    resolver = Resolver(names, overrides)
+    names.prefetch(resolver.asked_cuis(records))
+    cursor.refuse = True
+    assert resolver.supplier("Alfa", "2000008", AUTH).key == ALFA
