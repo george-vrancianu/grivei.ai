@@ -47,7 +47,7 @@ def test_killed_inside_each_step_after_its_body_a_rerun_resumes_and_leaves_the_u
     harness.assert_resumes_like_reference(POINTS[name], SystemExit(143))
 
 
-@pytest.mark.parametrize("name", ["in-units", "in-onrc", "in-crawl-badges"])
+@pytest.mark.parametrize("name", ["in-units", "in-onrc", "in-search-rows"])
 def test_a_bug_in_a_step_is_resumed_like_a_kill(harness, name):
     harness.assert_resumes_like_reference(POINTS[name], RuntimeError("bug"))
 
@@ -57,10 +57,10 @@ def test_the_matrix_covers_every_step_of_the_build():
     assert list(POINTS) == [f"in-{s.name}" for s in STEPS] and not POINTS["in-schema"].resumes and POINTS["in-commit"].resumes
 
 
-def test_a_resumed_build_never_applies_the_crawl_badges_twice(server, tmp_path, monkeypatch, capsys):
+def test_a_resumed_build_has_each_crawl_badge_once(server, tmp_path, monkeypatch, capsys):
     h = Harness(server, tmp_path, monkeypatch, capsys, world=CRAWL)
-    _, killed, rerun = h.kill_then_resume(POINTS["in-frameworks"], SystemExit(143))  # crawl-badges is committed, the build dies in the next Step
-    assert rerun.first.startswith("rebuild: resume - ") and "'crawl-badges'" in rerun.first
+    _, killed, rerun = h.kill_then_resume(POINTS["in-search-rows"], SystemExit(143))  # signals is committed, search-rows dies after its body
+    assert rerun.first.startswith("rebuild: resume - ") and "'signals'" in rerun.first
     with psycopg.connect(rerun.url) as c:
         badged = c.execute("SELECT badges FROM seap.search WHERE badges && ARRAY['CRAWL_ONLY', 'CRAWLED_PROVISIONAL']").fetchall()
         assert badged and all(sum(b in ("CRAWL_ONLY", "CRAWLED_PROVISIONAL") for b in badges) == 1 for (badges,) in badged)
@@ -154,7 +154,7 @@ def test_a_resumed_build_gives_the_status_file_its_unit_total(server, tmp_path, 
     h.run(h.new_archive("ref"), h.new_live())
     reference = json.loads((tmp_path / "status.json").read_text())
     archive, live = h.new_archive("r"), h.new_live()
-    h.run(archive, live, kill=POINTS["in-crawl-badges"], killed_by=SystemExit(143))
+    h.run(archive, live, kill=POINTS["in-frameworks"], killed_by=SystemExit(143))
     h.run(archive, live)
     resumed = json.loads((tmp_path / "status.json").read_text())
     assert resumed["total"] == reference["total"] > 0 and resumed["state"] == "finished"

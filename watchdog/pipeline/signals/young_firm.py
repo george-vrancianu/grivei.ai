@@ -43,11 +43,11 @@ def load(cur) -> Context | None:
     # set-based: one join over the registrations with a date; the supplier index (built before the Signals) is the planner's choice, not needed here
     cur.execute(
         """SELECT DISTINCT r.cui, r.registration_date
-             FROM onrc.registration r JOIN seap.search s ON s.supplier_key = r.cui
+             FROM onrc.registration r JOIN seap.search_load s ON s.supplier_key = r.cui
             WHERE r.primary_for_cui AND r.registration_date IS NOT NULL AND NOT s.suspect AND s.award_date - r.registration_date BETWEEN 0 AND %s""", (LARGE_RECORD_DAYS,))
     registered = dict(cur.fetchall())
     cur.execute(
-        """SELECT supplier_key, min(award_date) FROM seap.search
+        """SELECT supplier_key, min(award_date) FROM seap.search_load
             WHERE supplier_key = ANY(%s) AND NOT suspect GROUP BY supplier_key""", (sorted(registered),))
     return Context(registered, dict(cur.fetchall()))
 

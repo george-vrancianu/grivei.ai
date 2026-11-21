@@ -36,8 +36,8 @@ def test_placement_and_mf_are_one_step_that_announces_both_progress_names():
 
 def test_progress_names_are_the_ones_the_status_file_has_always_shown():
     names = [n for s in STEPS for n in s.progress_names]
-    assert names == ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "crawl-badges", "frameworks", "entities", "placement", "mf", "amepip",
-                     "aep", "financials", "donations", "coverage", "record-indexes", "signals", "rollup", "search-index", "analyze-search", "onrc-search", "commit"]
+    assert names == ["schema", "anaf-identities", "onrc", "estimates", "crawl-status", "frameworks", "entities", "placement", "mf", "amepip",
+                     "aep", "financials", "donations", "coverage", "record-indexes", "signals", "search-rows", "rollup", "search-index", "analyze-search", "onrc-search", "commit"]
 
 
 def test_every_table_a_step_reads_is_written_by_an_earlier_step():
@@ -130,7 +130,7 @@ def test_a_step_owns_everything_its_owned_code_imports_or_it_is_shared(step):
 def test_owners_of_names_every_step_for_a_shared_file_and_the_owning_steps_for_the_rest():
     everyone = {s.name for s in STEPS}
     assert owners_of("rebuild.py") == everyone
-    assert owners_of("signals/young_firm.py") == {"signals"}
+    assert owners_of("signals/young_firm.py") == {"signals", "search-rows"}
     assert owners_of("cli.py") == set()
 
 
@@ -161,7 +161,7 @@ def test_a_fix_in_onrc_search_belongs_to_onrc_search_alone_and_the_other_onrc_fi
 def test_owners_of_reads_the_declarations_as_text_so_it_needs_no_checkout_around_the_package():
     """The image copies the package to /app/pipeline: no repo root, and a deleted file is not on disk. Package-relative text must be enough."""
     everyone = {s.name for s in STEPS}
-    assert owners_of("signals/a_rule_that_does_not_exist_yet.py") == {"signals"}
+    assert owners_of("signals/a_rule_that_does_not_exist_yet.py") == {"signals", "search-rows"}
     assert owners_of("brand_new_module.py") == everyone  # no declaration claims it: conservative
     assert owners_of("extra:placement-data/uat.csv") == everyone and owners_of("extra:known-gaps") == everyone
     assert owners_of("switchover.py") == set() and owners_of("geo/topo.py") == set()  # outside the build: no Step

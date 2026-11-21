@@ -1,5 +1,5 @@
 """The planner-statistics rule (ticket #287, spec #285): every table a later rebuild step reads has `pg_stats` rows once the rebuild is done.
-Through `pipeline rebuild` and the graph only; the temp tables (onrc_counterparty, party, spelling) are gone after the commit, so this test cannot observe them:
+Through `pipeline rebuild` and the graph only; the temp tables (onrc_counterparty, party, spelling, seap.search_load) are gone after the commit, so this test cannot observe them:
 their ANALYZE is covered by code review only. Needs Docker (the container fixture of test_bulk_loader_db.py); skipped without it."""
 import shutil
 from datetime import date

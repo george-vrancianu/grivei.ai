@@ -55,7 +55,8 @@ from .rebuild import (BUILD_SQL, CORE_SQL, DONATIONS_SQL, FINANCIALS_SQL, SQL_DI
                       build_entities, build_frameworks, iter_units, load_anaf, load_records, store_data_through, store_sources)
 from .rollup import build_rollup
 from .search import create_index
-from .signals import build_signals
+from .search_rows import write_search
+from .signals import build_signals, restricted_slugs
 from .sources import SOURCES
 from .stop import pause_point
 
@@ -149,7 +150,7 @@ def _units_end(c: BuildContext) -> None:
 def _units(c: BuildContext) -> None:
     """The unit loop: no `rebuild step` name (each unit reports through `progress.unit_done`). Each unit commits with its `build.unit` row (staged builds),
     so a resumed Step finds the units already committed in that table and continues from the next one (#293)."""
-    reset_identity(c.cur, "seap.search")  # its ids are the BM25 key field: a unit that rolled back has used some up
+    reset_identity(c.cur, "seap.search_load")  # its ids become the BM25 key field: a unit that rolled back has used some up
     c.number = load_last_source_file_id(c.cur)  # the committed units' last id (a rolled-back unit's ids were never committed)
     recorded = load_units(c.cur)
     restore_units(c.summary, recorded, c.archive.root)  # what the committed units reported: the lists the loop goes on appending to
@@ -203,7 +204,7 @@ def _load_units(c: BuildContext, resolver: Resolver, estimates: dict, recorded: 
 
 def _crawl_status(c: BuildContext) -> None:
     cur = c.cur
-    analyze(cur, "seap.source_file", "seap.record", "seap.search")  # the unit loop filled them; every step from here on reads them
+    analyze(cur, "seap.source_file", "seap.record", "seap.search_load")  # the unit loop filled them; every step from here on reads them
     # crawled survivors: provisional until the bulk has reached their quarter, crawl-only once it has (and they have no match);
     # a backfilled Record (#78) is crawl-only from the start: the bulk does not hold its kind for 2021-22, and for 2023+ it was chosen for missing from it
     cur.execute(
@@ -215,14 +216,7 @@ def _crawl_status(c: BuildContext) -> None:
         through = crawl_through(c.archive, CRAWL_KIND, bulk_kind)  # derived from the archive, so a rebuild reproduces it
         if through:
             cur.execute("INSERT INTO seap.crawl_state (stream, kind, through) VALUES (%s, %s, %s)", (CRAWL_KIND, kind, through))
-    analyze(cur, "seap.crawl_state", "seap.record")  # the UPDATE above rewrote crawl_status: crawl-badges filters on it
-
-
-def _crawl_badges(c: BuildContext) -> None:
-    # the crawl badges live beside the counting and identity ones on the search rows (the chips filter on them)
-    c.cur.execute(
-        """UPDATE seap.search s SET badges = s.badges || CASE r.crawl_status WHEN 'PROVISIONAL' THEN 'CRAWLED_PROVISIONAL' ELSE 'CRAWL_ONLY' END
-             FROM seap.record r WHERE r.code = s.record_code AND r.crawl_status IS NOT NULL""")
+    analyze(cur, "seap.crawl_state", "seap.record")  # the UPDATE above rewrote crawl_status: `search-rows` joins it into the badges
 
 
 def _frameworks(c: BuildContext) -> None:
@@ -280,15 +274,20 @@ def _signals(c: BuildContext) -> None:
     store_data_through(c.cur)  # SEAP and ONRC are final here; the signals and the status file take SEAP's dates
     c.data_through = load_data_through(c.cur)
     c.summary.signals = build_signals(c.cur, c.data_through)  # #74: before the rollup and the index, so has-Signals, the rollup and the scan agree
-    analyze(c.cur, "seap.search")  # placement, aep and signals rewrote its county, party and has_signals columns: the rollup groups by them
 
 
 def _record_indexes(c: BuildContext) -> None:
-    # the entity(key) roles look a record up by authority and a search row by supplier, and so do the Signals' queries: index after the load, not during it, before the Signals
+    # the entity(key) roles look a record up by authority, and the Signals' queries look a search row (a load row, until `search-rows`) up by supplier: index after the load, not during it, before the Signals
     c.cur.execute("CREATE INDEX record_authority_key_idx ON seap.record (authority_key)")
-    c.cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")
+    c.cur.execute("CREATE INDEX search_load_supplier_key_idx ON seap.search_load (supplier_key)")  # seap.search gets its own, after it is written (`search-rows`)
     c.cur.execute("CREATE INDEX record_notice_code_idx ON seap.record (notice_code) WHERE framework_role IS NOT NULL")
     analyze(c.cur, "seap.record")
+
+
+def _search_rows(c: BuildContext) -> None:
+    # #305: seap.search written once, with the placement, Party, Signal and crawl columns joined in; the load table goes
+    write_search(c.cur, restricted_slugs())
+    reset_identity(c.cur, "seap.search")  # the identity continues after the copied ids
 
 
 def _rollup(c: BuildContext) -> None:
@@ -354,30 +353,31 @@ STEPS: tuple[Step, ...] = (
     Step("units", _units_end, segments=_units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.summary.incomplete, c.archive.root, c.summary.units_total),
          reads=("core.anaf_company", "onrc.registration"),  # the resolver confirms a CUI by ANAF's answers, then the register's
-         writes=("seap.source_file", "seap.record", "seap.search", "withheld.natural_person_name", "build.unit")),
+         writes=("seap.source_file", "seap.record", "seap.search_load", "withheld.natural_person_name", "build.unit")),
     Step("crawl-status", _crawl_status, reads=("seap.source_file",), writes=("seap.record", "seap.crawl_state")),
-    Step("crawl-badges", _crawl_badges, reads=("seap.record",), writes=("seap.search",)),
     Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",), summary_fields=("estimates_missing",)),
     Step("entities", _entities, owns=_ONRC, hand_off=lambda c: entities_hand_off(c.summary.entities, c.summary.onrc),
-         reads=("build.step", "seap.search", "seap.record", "seap.source_file", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
+         reads=("build.step", "seap.search_load", "seap.record", "seap.source_file", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias")),
     Step("placement-mf", _placement_mf, progress=("placement", "mf"), owns=(*_PLACEMENT, *_MF, *_ONRC), summary_fields=("placement", "mf"),
          reads=("seap.record", "core.anaf_company", "core.entity", "onrc.registration", "onrc.snapshot"),
-         writes=("core.county", "core.uat", "core.placement", "seap.search", "core.mf_principal", "core.mf_snapshot", "core.mf_entity")),
+         writes=("core.county", "core.uat", "core.placement", "core.mf_principal", "core.mf_snapshot", "core.mf_entity")),
     Step("amepip", _amepip, owns=(P + "amepip/", *_MF), summary_fields=("amepip",), reads=("core.entity",), writes=("amepip.snapshot", "amepip.enterprise")),
     Step("aep", _aep, owns=(P + "aep/", *_MF), summary_fields=("aep",),
          reads=("core.county", "core.uat", "core.entity", "core.placement", "core.mf_principal", "seap.record"),
-         writes=("aep.snapshot", "aep.mandate", "aep.gap", "aep.authority", "aep.record_party", "aep.subordinate", "seap.search")),
+         writes=("aep.snapshot", "aep.mandate", "aep.gap", "aep.authority", "aep.record_party", "aep.subordinate")),
     Step("financials", _financials, owns=(P + "financials/", *_MF), summary_fields=("financials",), writes=("financials.source_file", "financials.statement")),
     Step("donations", _donations, owns=(P + "banipartide/",), summary_fields=("donations",), reads=("core.entity", "onrc.registration"), writes=("donations.source_file", "donations.donation")),
     Step("coverage", _coverage, owns=(P + "coverage/",), summary_fields=("coverage", "set_aside_without_gap"), reads=("build.step", "build.unit", "seap.record", "seap.crawl_state"), writes=("seap.coverage_cell",)),
-    # creates indexes on seap.record and seap.search (no rows written): before the Signals, whose per-authority and per-supplier queries use them
-    Step("record-indexes", _record_indexes, reads=("seap.record", "seap.search")),
+    # creates indexes on seap.record and seap.search_load (no rows written): before the Signals, whose per-authority and per-supplier queries use them
+    Step("record-indexes", _record_indexes, reads=("seap.record", "seap.search_load")),
     Step("signals", _signals, owns=(P + "signals/", P + "aep/", *_MF), summary_fields=("records", "signals"),
-         reads=("seap.record", "seap.search", "seap.framework", "core.anaf_company", "core.entity", "onrc.registration", "onrc.caen", "onrc.status_name",
+         reads=("seap.record", "seap.search_load", "seap.framework", "core.anaf_company", "core.entity", "onrc.registration", "onrc.caen", "onrc.status_name",
                 "onrc.status_span", "onrc.role", "aep.mandate", "aep.record_party", "donations.donation", "financials.source_file",
                 "financials.statement", "amepip.enterprise"),
-         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule", "seap.search"),
-         vacuum=("seap.search",)),  # its last rewrite: the rollup and the BM25 build scan a compact heap
+         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule")),
+    # after placement, aep and the Signals: seap.search is written here and nowhere else, then the load table is dropped (the rows of a table written once need no vacuum before the rollup)
+    Step("search-rows", _search_rows, owns=(P + "search_rows.py", P + "signals/", P + "aep/", *_MF),  # signals/: which rules are Restricted (restricted_slugs); the rest is what that package imports, as for the signals Step
+         reads=("seap.search_load", "seap.record", "core.placement", "aep.record_party", "aep.mandate", "seap.signal", "seap.signal_member"), writes=("seap.search",)),
     Step("rollup", _rollup, owns=(P + "rollup.py",), reads=("seap.search",),
          writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta")),
     Step("search-index", _search_index, owns=(P + "search.py",), reads=("seap.search",)),  # creates the seap.search_bm25 index
@@ -405,7 +405,7 @@ def run_steps(ctx: BuildContext, steps: tuple[Step, ...] = STEPS, *, resume: boo
     that timed phase; a Step with several (placement-mf) or none (units) announces them itself.
 
     `resume` (a staged build into a next database that already holds committed Steps, resume.py): the committed Steps are skipped, never run twice
-    (the schema Step would drop the graph, `crawl-badges` would append its badges again), and what they reported is restored into `ctx.summary`.
+    (the schema Step would drop the graph, `search-rows` would find its load table already dropped), and what they reported is restored into `ctx.summary`.
     The hand-offs the remaining Steps need are loaded from the graph by those Steps, as in an uninterrupted run."""
     start = 0
     if resume:

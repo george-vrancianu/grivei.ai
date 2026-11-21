@@ -118,7 +118,7 @@ CREATE TABLE seap.framework (
 );
 
 -- The search table (#68): one row per Record x winner, money in integer bani, the share precomputed. `pg_search` (BM25) indexes it
--- (`seap.search_bm25`, created by `pipeline/search.py` after the load, inside its transaction, after a VACUUM ANALYZE of this table between committed Steps in a beside build, and followed by another
+-- (`seap.search_bm25`, created by `pipeline/search.py` after the load, inside its transaction, and followed by a VACUUM
 -- after the commit), so the index is part of every load transaction and a load is visible to search only once it commits. Every
 -- column the query filters or sums on is in the index; `doc` is the one folded text document per Record (pipeline/fold.py).
 CREATE TABLE seap.search (
@@ -159,13 +159,46 @@ CREATE TABLE seap.search (
     supplier_vat     text,                -- a foreign VAT id, when the key is `vat-<id>`
     supplier_curated boolean NOT NULL DEFAULT false,
     supplier_differs boolean NOT NULL DEFAULT false,  -- the spelling differs from ANAF's name under a confirmed CUI
-    -- Party per Record (#181), copied from aep.record_party at the end of the aep step (null on every row when the Record has no Mandate): the party filter reads these indexed columns
+    -- Party per Record (#181), joined in from aep.record_party by the search-rows step (null on every row when the Record has no Mandate): the party filter reads these indexed columns
     party            text,                -- the list as registered ('PSD', an alliance's own name); null for no Mandate AND for an Independent leader, who is never a party
     party_basis      text,                -- DIRECT (the authority's own Mandate) | SUBORDINATE (inherited through its principal credit holder); null = no Mandate. Set for an Independent too (the coverage counts it apart)
     doc              text NOT NULL,       -- folded text: title, authority name, every winner's name, CPV code and description, public code, CUIs
     UNIQUE (record_code, winner_position)
 );
 CREATE INDEX search_award_date_idx ON seap.search (award_date);
+
+-- The build-time load table of `seap.search` (#305): the unit loop writes the rows it computes (everything but the placement, Party, Signal and crawl
+-- columns) here, with the same ids, one commit per unit with its `build.unit` row; the entities step and the Signals read it. The `search-rows` step writes
+-- `seap.search` once from it, with those columns joined in, then drops it: a finished graph has no `seap.search_load`. A logged table on purpose: a kill
+-- leaves the committed units' rows here for the resume, and `build.step` says the units are done.
+CREATE TABLE seap.search_load (
+    id               bigint GENERATED ALWAYS AS IDENTITY,  -- becomes seap.search.id (the BM25 key field), in this order
+    record_code      text NOT NULL,
+    winner_position  integer NOT NULL,
+    winners          integer NOT NULL,
+    channel          text NOT NULL,
+    award_date       date NOT NULL,
+    award_year       integer NOT NULL,
+    value_bani       bigint,
+    value_bucket     text,
+    badges           text[] NOT NULL DEFAULT '{}',  -- counting and identity badges; the crawl badge joins them in `search-rows`
+    procedure        text,
+    cpv_code         text,
+    counted_bani     bigint,
+    ceiling_bani     bigint,
+    suspect          boolean NOT NULL DEFAULT false,
+    share_bani       bigint,
+    authority_key    text,
+    authority_cui    text,
+    supplier_cui     text,
+    supplier_key     text,
+    supplier_spelling text,
+    supplier_vat     text,
+    supplier_curated boolean NOT NULL DEFAULT false,
+    supplier_differs boolean NOT NULL DEFAULT false,
+    doc              text NOT NULL,
+    UNIQUE (record_code, winner_position)  -- a replaced Record's rows are deleted by record_code
+);
 
 -- The rollup (#70): what the empty and chips-only search states read instead of scanning `seap.search`. Filled by
 -- `pipeline/rollup.py` inside the load transaction, from the search table, so it is exactly as fresh as the load.

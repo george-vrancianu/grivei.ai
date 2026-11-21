@@ -66,7 +66,7 @@ def load(cur) -> Context | None:
              FROM onrc.registration r JOIN onrc.status_span s ON s.reg_no = r.reg_no AND s.last_seen = r.snapshot_date
              JOIN onrc.status_name n ON n.code = s.code
             WHERE r.primary_for_cui AND r.cui IS NOT NULL AND s.code = ANY(%s)
-              AND EXISTS (SELECT 1 FROM seap.search x WHERE x.supplier_key = r.cui)
+              AND EXISTS (SELECT 1 FROM seap.search_load x WHERE x.supplier_key = r.cui)
             ORDER BY r.cui, s.first_seen, n.name""", (codes,))
     found: dict[str, Status] = {}
     for cui, name, first_seen, since_at_least in cur.fetchall():
@@ -75,7 +75,7 @@ def load(cur) -> Context | None:
 
 
 def where(context: Context) -> tuple[str, tuple]:
-    return ("NOT suspect AND award_date BETWEEN %s AND %s AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))",
+    return ("NOT suspect AND award_date BETWEEN %s AND %s AND EXISTS (SELECT 1 FROM seap.search_load s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))",
             (months_before(context.snapshot, WINDOW_MONTHS), context.snapshot, sorted(context.insolvent)))
 
 

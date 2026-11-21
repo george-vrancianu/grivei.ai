@@ -1,5 +1,5 @@
-"""Maintenance between the Steps of a rebuild (ticket #298, spec #285), through `rebuild` and the graph: the search table is vacuumed and analyzed
-before the BM25 build in a beside build, the key indexes exist before the Signals, and the build session has a larger `maintenance_work_mem`.
+"""Maintenance between the Steps of a rebuild (ticket #298, spec #285), through `rebuild` and the graph: the search table is analyzed
+before the BM25 build, the key indexes exist before the Signals, and the build session has a larger `maintenance_work_mem`.
 Needs Docker (the container fixture of test_bulk_loader_db.py); skipped without it."""
 import shutil
 import time
@@ -13,7 +13,7 @@ from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, db, server  # noqa: E402,F401
 
-KEY_INDEXES = {"record_authority_key_idx", "search_supplier_key_idx", "record_notice_code_idx"}
+KEY_INDEXES = {"record_authority_key_idx", "record_notice_code_idx"}
 
 
 @pytest.fixture(scope="module", params=[True, False], ids=["beside", "in-place"])
@@ -57,12 +57,11 @@ def seen(request, server, tmp_path_factory):
     return seen
 
 
-def test_a_beside_build_vacuums_and_analyzes_the_search_table_before_the_bm25_index_is_built(seen):
+def test_the_search_table_is_written_once_and_analyzed_before_the_bm25_index_is_built(seen):
+    """seap.search is written by one INSERT (#305), so no step leaves dead row versions for a vacuum to clear: it only needs statistics before the index and the rollup."""
     if not seen["staged"]:
-        pytest.skip("beside builds only")
-    assert seen["signals"]["last_vacuum"] is None  # the Signals are what the vacuum waits for
-    vacuumed, analyzed = seen["search-index"]["last_vacuum"], seen["search-index"]["last_analyze"]
-    assert vacuumed is not None and analyzed >= vacuumed  # the Signals Step's own ANALYZE ran before the VACUUM: only the VACUUM ANALYZE makes this true
+        pytest.skip("beside builds only: the statistics of an uncommitted in-place table are not in pg_stat yet")
+    assert seen["search-index"]["last_analyze"] is not None
 
 
 def test_an_in_place_build_runs_no_vacuum_between_its_steps(seen):
@@ -73,6 +72,7 @@ def test_an_in_place_build_runs_no_vacuum_between_its_steps(seen):
 
 def test_the_key_indexes_exist_before_the_signals_run(seen):
     assert KEY_INDEXES <= seen["signals"]["indexes"]
+    assert "search_supplier_key_idx" in seen["search-index"]["indexes"]  # the final seap.search carries its supplier-key index when the BM25 build starts
 
 
 def test_the_build_session_has_a_larger_maintenance_work_mem(seen):
