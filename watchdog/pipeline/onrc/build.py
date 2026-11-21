@@ -8,8 +8,8 @@
 - the history is written only where it changes (#304): the spans open in the last applied snapshot live in two working tables
   (`onrc.open_status`, `onrc.open_name`, one row per open span); a snapshot moves the spans it no longer shows into the span tables as closed and adds the
   ones it newly shows to the working tables; `finish_onrc` closes what is still open at the newest snapshot, drops the working tables and adds the span
-  tables' primary keys. They are SQL tables, not Python dicts: the register has about 9 M open spans per table, which would take several GB of
-  Python objects against the pipeline container's 2 GB, and a table survives the commit of every snapshot, so a rerun after a kill needs no rebuilding;
+  tables' primary keys. They are SQL tables, not Python dicts: the register has about 4.6 M open status spans and 4.2 M open name spans (about 9 M together), roughly 2-2.5 GB as Python dicts: over the pipeline
+  container's 2 GB `mem_limit`, and close to 4 GB once the parsing is counted, and a table survives the commit of every snapshot, so a rerun after a kill needs no rebuilding;
 - the newest readable snapshot also gives `onrc.registration`, `onrc.caen` and `onrc.status_name`;
 - a snapshot that does not read (a broken file) is set aside and named in the summary; the history is built from the others;
 - a staged build commits after every snapshot, with its `build.snapshot` row (`build_onrc_snapshots`), and a rerun after a kill continues from the next snapshot; `finish_onrc` does the work that needs all of them (#294).
@@ -94,6 +94,9 @@ _OPEN = ("CREATE TABLE IF NOT EXISTS onrc.open_status (reg_no text NOT NULL, cod
 # The span tables are filled without their primary keys; `finish_onrc` adds them back (same names as the DDL's own).
 _SPAN_KEYS = (("onrc.status_span", "status_span_pkey", "(reg_no, code, first_seen)"), ("onrc.name_span", "name_span_pkey", "(reg_no, name, first_seen)"))
 
+# The columns of `onrc.registration` that a snapshot's registration row carries, in the order of `_registration_row`.
+_REG_COLUMNS = "reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date"
+
 # A snapshot closes the open spans it no longer shows (the only rows written to the span tables) and opens the spans it newly shows.
 _CLOSE_STATUS = """WITH closed AS (DELETE FROM onrc.open_status o
         WHERE NOT EXISTS (SELECT 1 FROM onrc_obs b WHERE b.code IS NOT NULL AND b.reg_no = o.reg_no AND b.code = o.code)
@@ -148,14 +151,14 @@ def _stage_snapshot(cur: psycopg.Cursor, unit: Unit, keep_registrations: bool = 
     cur.execute("DROP TABLE IF EXISTS onrc_reg_newest, onrc_wide")
     cur.execute(_STAGE_NEWEST)
     cur.execute("CREATE TEMP TABLE onrc_wide (LIKE onrc.registration INCLUDING DEFAULTS, code integer, is_reg boolean NOT NULL)")
-    with cur.copy("COPY onrc_wide (reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date, code, is_reg) FROM STDIN") as copy:
+    with cur.copy(f"COPY onrc_wide ({_REG_COLUMNS}, code, is_reg) FROM STDIN") as copy:
         for company in read.read_companies(unit):
             companies += 1
             for code in company.states or (None,):
                 copy.write_row((company.reg_no, None, False, company.name, None, None, None, None, None, None, None, None, when, code, False))
             copy.write_row(_registration_row(company, when) + (None, True))
     cur.execute("INSERT INTO onrc_obs (reg_no, name, code) SELECT reg_no, name, code FROM onrc_wide WHERE NOT is_reg")
-    cur.execute("INSERT INTO onrc_reg_newest SELECT reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date FROM onrc_wide WHERE is_reg")
+    cur.execute(f"INSERT INTO onrc_reg_newest SELECT {_REG_COLUMNS} FROM onrc_wide WHERE is_reg")
     cur.execute("DROP TABLE onrc_wide")
     cur.execute("ANALYZE onrc_obs")
     cur.execute("ANALYZE onrc_reg_newest")
@@ -175,8 +178,7 @@ def _apply_snapshot(cur: psycopg.Cursor, unit: Unit, companies: int, previous: d
         (when, read.layout_of(unit), origin.get("dataset"), origin.get("datasetTitle"), unit.url, unit.fetched_at, str(unit.path.relative_to(archive.root)), companies, first))
 
 
-_COPY_REGISTRATIONS = ("COPY onrc_reg_newest (reg_no, cui, primary_for_cui, name, registration_date, legal_form, euid, county_name, county_iso, locality, address, postal_code, snapshot_date) "
-                       "FROM STDIN")
+_COPY_REGISTRATIONS = f"COPY onrc_reg_newest ({_REG_COLUMNS}) FROM STDIN"
 
 
 def _registration_row(c: read.Company, when: date) -> tuple:

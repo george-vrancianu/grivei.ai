@@ -85,15 +85,15 @@ def test_a_status_that_disappears_and_comes_back_starts_a_new_run(db, tmp_path):
 def test_the_span_tables_over_name_changes_status_changes_and_a_registration_that_disappears_and_returns(db, tmp_path):
     """Pins the whole of both span tables for five snapshots (#304): the history is written where it changes, so every shape is spelled out. `RET` is absent
     from the 3rd and 4th snapshot and back in the 5th, under a new name and another status; `GONE` leaves for good; `NEW` appears late; `STEADY` never changes;
-    `NOSTATUS` has a name and no status code."""
+    `NOSTATUS` has a name and no status code; `BACK` is absent from the 2nd snapshot only and returns under the same name and status."""
     root = tmp_path / "archive"
     archive = Archive(root)
     snapshots = {
-        "2026-03-02": ["STEADY SRL^0^J40/1/2000^E^1048", "RET SRL^0^J40/2/2000^E^1048,1074", "GONE SRL^0^J40/3/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^"],
+        "2026-03-02": ["STEADY SRL^0^J40/1/2000^E^1048", "RET SRL^0^J40/2/2000^E^1048,1074", "GONE SRL^0^J40/3/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^", "BACK SRL^0^J40/6/2000^E^1048"],
         "2026-04-03": ["STEADY SRL^0^J40/1/2000^E^1048", "RET SRL^0^J40/2/2000^E^1048", "GONE SRL^0^J40/3/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^"],
-        "2026-05-06": ["STEADY SRL^0^J40/1/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
-        "2026-06-02": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
-        "2026-07-01": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "RET NOU SRL^0^J40/2/2000^E^1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048"],
+        "2026-05-06": ["STEADY SRL^0^J40/1/2000^E^1048", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048", "BACK SRL^0^J40/6/2000^E^1048"],
+        "2026-06-02": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048", "BACK SRL^0^J40/6/2000^E^1048"],
+        "2026-07-01": ["STEADY SRL^0^J40/1/2000^E^1048,1074", "RET NOU SRL^0^J40/2/2000^E^1074", "NOSTATUS SRL^0^J40/5/2000^E^", "NEW SRL^0^J40/4/2000^E^1048", "BACK SRL^0^J40/6/2000^E^1048"],
     }
     for when, rows in snapshots.items():
         name = f"firme_{when}.csv"
@@ -110,6 +110,8 @@ def test_the_span_tables_over_name_changes_status_changes_and_a_registration_tha
         ("J40/2/2000", 1074, s5, s5, False),
         ("J40/3/2000", 1048, s1, s2, True),
         ("J40/4/2000", 1048, s3, s5, False),
+        ("J40/6/2000", 1048, s1, s1, True),
+        ("J40/6/2000", 1048, s3, s5, False),
     ]
     assert q(db, "SELECT reg_no, name, first_seen::text, last_seen::text, since_at_least FROM onrc.name_span ORDER BY reg_no, name, first_seen") == [
         ("J40/1/2000", "STEADY SRL", s1, s5, True),
@@ -118,8 +120,11 @@ def test_the_span_tables_over_name_changes_status_changes_and_a_registration_tha
         ("J40/3/2000", "GONE SRL", s1, s2, True),
         ("J40/4/2000", "NEW SRL", s3, s5, False),
         ("J40/5/2000", "NOSTATUS SRL", s1, s5, True),
+        ("J40/6/2000", "BACK SRL", s1, s1, True),
+        ("J40/6/2000", "BACK SRL", s3, s5, False),
     ]
-    assert q(db, "SELECT count(*) FROM pg_constraint WHERE contype = 'p' AND conrelid IN ('onrc.status_span'::regclass, 'onrc.name_span'::regclass)") == [(2,)]
+    assert q(db, "SELECT conrelid::regclass::text, pg_get_constraintdef(oid) FROM pg_constraint WHERE contype = 'p' AND conrelid IN ('onrc.status_span'::regclass, 'onrc.name_span'::regclass) ORDER BY 1") == [
+        ("onrc.name_span", "PRIMARY KEY (reg_no, name, first_seen)"), ("onrc.status_span", "PRIMARY KEY (reg_no, code, first_seen)")]
 
 
 def test_a_cui_anaf_knows_keeps_anafs_name_and_onrc_names_are_aliases_only(built):
