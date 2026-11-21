@@ -55,11 +55,11 @@ def load(cur) -> Context | None:
     if not loaded:
         return None
     names = table()
-    # set-based: the join runs from the donations (few) into seap.search, which the supplier index (built before the Signals) now serves
+    # set-based: the join runs from the donations (few) into seap.search_load, which the supplier index (built before the Signals) now serves
     cur.execute(
         """SELECT s.record_code, (s.award_date - d.donation_date)::int, d.kind, d.party, m.list_name, m.member_parties, rp.via_key IS NOT NULL
              FROM donations.donation d
-             JOIN seap.search s ON s.supplier_key = d.donor_cui
+             JOIN seap.search_load s ON s.supplier_key = d.donor_cui
              JOIN aep.record_party rp ON rp.record_code = s.record_code
              JOIN aep.mandate m ON m.id = rp.mandate_id
             WHERE d.donation_date IS NOT NULL AND NOT s.suspect AND NOT m.independent

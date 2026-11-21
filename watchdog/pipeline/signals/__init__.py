@@ -7,7 +7,7 @@ rollup and the search index are built, so the has-Signals chip, the rollup and t
   with its dates, authority, suppliers, `numbers` and `reproduce` (jsonb, the field names of the GraphQL types);
 - `seap.signal_member`: its Records;
 - `seap.signal_rule`: per rule its window, base rate, base-rate year and data-through date;
-- `seap.search.signals` / `has_signals`: the rule slugs each Record belongs to, which the `signal` and has-Signals filters read.
+- `seap.search.signals` / `has_signals`: the rule slugs each Record belongs to, which the `signal` and has-Signals filters read (joined in from `seap.signal_member` by the `search-rows` step).
 
 How to add a rule: write `signals/<rule>.py` exposing `SLUG`, `KINDS`, `WHERE`, `detect(rows) -> list[Hit]` (see common.py; the
 single-Record rules call `authority_day_hits`; a rule that groups Records may also declare `ORDER_BY`, a fixed SQL ordering (default
@@ -120,7 +120,7 @@ def _base_rate(cur: psycopg.Cursor, rule: ModuleType, through: date, context: ob
 
 
 def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str, int]:
-    """Recompute every Signal, the rules' windows and base rates, and the search rows' Signal columns. Returns the Signals per rule.
+    """Recompute every Signal and the rules' windows and base rates (the search rows' Signal columns are joined in by the `search-rows` step). Returns the Signals per rule.
     `data_through` is the per-kind date the rebuild reports (`DATA_THROUGH_SQL`); the rule's is the earliest of its loaded kinds."""
     absent: set[str] = set()
     contexts: dict = {}
@@ -153,19 +153,7 @@ def build_signals(cur: psycopg.Cursor, data_through: dict[str, str]) -> dict[str
             "VALUES (%s, GREATEST(make_date((SELECT min(extract(year FROM award_date))::int FROM seap.record WHERE kind = ANY(%s)), 1, 1), %s::date), NULL, %s, %s, %s, %s, %s)",
             (rule.SLUG, list(rule.KINDS), getattr(rule, "WINDOW_FROM", date.min), with_signal / seen if seen else 0.0, year, through, seen, with_signal),
         )
-    analyze(cur, "seap.signal", "seap.signal_member")  # the UPDATEs below join them
-    # the search rows carry the rule slugs of their Record: the signal and has-Signals filters read them, the rollup copies has_signals
-    cur.execute(
-        """UPDATE seap.search s SET signals = m.rules, has_signals = true
-             FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
-                     FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule <> ALL(%s) GROUP BY sm.record_code) m
-            WHERE s.record_code = m.record_code""", (restricted_slugs(),))  # a Restricted rule is never in `signals` or `has_signals` (#185); it has its own `restricted_signals` column
-    # a Restricted rule's Records are marked on their own column, which no public request reads (the API reads it only when `GRIVEI_RESTRICTED=show`)
-    cur.execute(
-        """UPDATE seap.search s SET restricted_signals = m.rules
-             FROM (SELECT sm.record_code, array_agg(DISTINCT g.rule ORDER BY g.rule) AS rules
-                     FROM seap.signal_member sm JOIN seap.signal g ON g.id = sm.signal_id WHERE g.rule = ANY(%s) GROUP BY sm.record_code) m
-            WHERE s.record_code = m.record_code""", (restricted_slugs(),))
+    analyze(cur, "seap.signal", "seap.signal_member")  # the `search-rows` step joins them into the search rows (search_rows.py)
     counts = {r.SLUG: 0 for r in RULES}
     for h in hits:
         counts[h.rule] += 1

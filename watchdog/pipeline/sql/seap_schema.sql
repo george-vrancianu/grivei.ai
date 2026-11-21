@@ -167,6 +167,39 @@ CREATE TABLE seap.search (
 );
 CREATE INDEX search_award_date_idx ON seap.search (award_date);
 
+-- The build-time load table of `seap.search` (#305): the unit loop writes the rows it computes (everything but the placement, Party, Signal and crawl
+-- columns) here, with the same ids, one commit per unit with its `build.unit` row; the entities step and the Signals read it. The `search-rows` step writes
+-- `seap.search` once from it, with those columns joined in, then drops it: a finished graph has no `seap.search_load`. A logged table on purpose: a kill
+-- leaves the committed units' rows here for the resume, and `build.step` says the units are done.
+CREATE TABLE seap.search_load (
+    id               bigint GENERATED ALWAYS AS IDENTITY,  -- becomes seap.search.id (the BM25 key field), in this order
+    record_code      text NOT NULL,
+    winner_position  integer NOT NULL,
+    winners          integer NOT NULL,
+    channel          text NOT NULL,
+    award_date       date NOT NULL,
+    award_year       integer NOT NULL,
+    value_bani       bigint,
+    value_bucket     text,
+    badges           text[] NOT NULL DEFAULT '{}',  -- counting and identity badges; the crawl badge joins them in `search-rows`
+    procedure        text,
+    cpv_code         text,
+    counted_bani     bigint,
+    ceiling_bani     bigint,
+    suspect          boolean NOT NULL DEFAULT false,
+    share_bani       bigint,
+    authority_key    text,
+    authority_cui    text,
+    supplier_cui     text,
+    supplier_key     text,
+    supplier_spelling text,
+    supplier_vat     text,
+    supplier_curated boolean NOT NULL DEFAULT false,
+    supplier_differs boolean NOT NULL DEFAULT false,
+    doc              text NOT NULL,
+    UNIQUE (record_code, winner_position)  -- a replaced Record's rows are deleted by record_code
+);
+
 -- The rollup (#70): what the empty and chips-only search states read instead of scanning `seap.search`. Filled by
 -- `pipeline/rollup.py` inside the load transaction, from the search table, so it is exactly as fresh as the load.
 -- The cube: one row per year x channel x value bucket x has-Signals x authority county x supplier county. `records` counts a

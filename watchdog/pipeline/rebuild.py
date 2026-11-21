@@ -204,7 +204,7 @@ _WITHHELD_COLUMNS = ("record_code", "winner_position", "name", "had_cnp")
 # and not part of any schema the graph holds), then three set-based statements apply it. `seq` is the order the rows came in.
 _STAGING = (
     f"CREATE TEMP TABLE IF NOT EXISTS stage_record AS SELECT 0 AS seq, {', '.join(_RECORD_COLUMNS)} FROM seap.record WITH NO DATA",
-    f"CREATE TEMP TABLE IF NOT EXISTS stage_search AS SELECT 0 AS seq, {', '.join(_SEARCH_COLUMNS)} FROM seap.search WITH NO DATA",
+    f"CREATE TEMP TABLE IF NOT EXISTS stage_search AS SELECT 0 AS seq, {', '.join(_SEARCH_COLUMNS)} FROM seap.search_load WITH NO DATA",
     f"CREATE TEMP TABLE IF NOT EXISTS stage_withheld AS SELECT 0 AS seq, {', '.join(_WITHHELD_COLUMNS)} FROM withheld.natural_person_name WITH NO DATA",
     "CREATE TEMP TABLE IF NOT EXISTS stage_applied (code text PRIMARY KEY, inserted boolean NOT NULL)",
 )
@@ -223,14 +223,14 @@ WITH applied AS (
     RETURNING code, (xmax = 0) AS inserted)
 INSERT INTO stage_applied SELECT code, inserted FROM applied
 """
-# A replaced version's search rows and withheld names go; then the applied Records' rows come in, in the order they arrived (so seap.search ids follow it).
+# A replaced version's search rows and withheld names go; then the applied Records' rows come in, in the order they arrived (so the ids follow it; the load table's, then seap.search's, #305).
 _DROP_REPLACED = (
-    "DELETE FROM seap.search WHERE record_code IN (SELECT code FROM stage_applied WHERE NOT inserted)",
+    "DELETE FROM seap.search_load WHERE record_code IN (SELECT code FROM stage_applied WHERE NOT inserted)",
     "DELETE FROM withheld.natural_person_name WHERE record_code IN (SELECT code FROM stage_applied WHERE NOT inserted)",
 )
 _WRITE_WITHHELD = f"""INSERT INTO withheld.natural_person_name ({", ".join(_WITHHELD_COLUMNS)})
     SELECT {", ".join(f"w.{c}" for c in _WITHHELD_COLUMNS)} FROM stage_withheld w JOIN stage_applied a ON a.code = w.record_code ORDER BY w.seq"""
-_WRITE_SEARCH = f"""INSERT INTO seap.search ({", ".join(_SEARCH_COLUMNS)})
+_WRITE_SEARCH = f"""INSERT INTO seap.search_load ({", ".join(_SEARCH_COLUMNS)})
     SELECT {", ".join(f"s.{c}" for c in _SEARCH_COLUMNS)} FROM stage_search s JOIN stage_applied a ON a.code = s.record_code ORDER BY s.seq"""
 
 _TRUNCATE_STAGING = "TRUNCATE stage_record, stage_search, stage_withheld, stage_applied"
@@ -475,7 +475,7 @@ _PARTIES = """
 CREATE TEMP TABLE party ON COMMIT DROP AS
 SELECT s.supplier_key AS key, s.supplier_spelling AS name, s.award_date, s.record_code, s.supplier_vat AS vat,
        s.supplier_curated AS curated, s.supplier_differs AS differs, r.source_file_id
-  FROM seap.search s JOIN seap.record r ON r.code = s.record_code WHERE s.supplier_key IS NOT NULL
+  FROM seap.search_load s JOIN seap.record r ON r.code = s.record_code WHERE s.supplier_key IS NOT NULL
 UNION ALL
 SELECT authority_key, authority_name, award_date, code, NULL, false, false, source_file_id
   FROM seap.record WHERE authority_key IS NOT NULL

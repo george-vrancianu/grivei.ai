@@ -1,11 +1,10 @@
-"""The search table and its pg_search index through a real rebuild (ticket #68): the index exists and is vacuumed, a load is
-visible to search only after its transaction commits, value buckets mirror the contract's. Needs Docker (the container
+"""The search table and its pg_search index through a real rebuild (ticket #68): the index exists and is vacuumed, a rebuild that rolls back
+leaves the graph it found, value buckets mirror the contract's. Needs Docker (the container
 fixture of test_bulk_loader_db.py); the bucket test does not."""
 import re
 import shutil
 import time
 from contextlib import contextmanager
-from datetime import date
 from pathlib import Path
 
 import pytest
@@ -13,8 +12,7 @@ import pytest
 psycopg = pytest.importorskip("psycopg")
 
 from pipeline.archive import Archive  # noqa: E402
-from pipeline.bulk import BulkRecord  # noqa: E402
-from pipeline.rebuild import load_records, rebuild  # noqa: E402
+from pipeline.rebuild import rebuild  # noqa: E402
 from pipeline.search import VALUE_BUCKETS, value_bucket  # noqa: E402
 from test_bulk_loader_db import db, server  # noqa: E402,F401  (the throwaway ParadeDB container and a database per test)
 
@@ -64,32 +62,26 @@ def test_shares_sum_back_to_the_counted_value_and_the_bucket_is_stored_per_row(b
         "DA95000003": "UP_TO_135K", "DA95000004": "UP_TO_270K", "DA95000011": None}
 
 
-def _new_record(code: str, title: str) -> BulkRecord:
-    return BulkRecord(kind="DA", code=code, published_on=date(2023, 3, 20), awarded_on=date(2023, 3, 20), state=None, authority_name="COMUNA EXEMPLU", authority_cui="1000009",
-                      title=title, contract_type=None, cpv_code="30197000-6", cpv_description="Articole de papetarie", estimated_bani=None, value_bani=1_000_00,
-                      supplier_name="PAPETARIE ALFA SA", supplier_cui="2000007")
+def _smaller_archive(tmp_path):
+    """The search archive without its direct-award unit: a rebuild of it leaves fewer search rows than the full one."""
+    root = tmp_path / "smaller"
+    shutil.copytree(ARCHIVE, root)
+    shutil.rmtree(root / "seap" / "bulk" / "da")
+    return root
 
 
-HIT = "SELECT count(*) FROM seap.search WHERE doc &&& 'zorzon'"
+def test_a_rolled_back_rebuild_leaves_the_graph_it_found(built, tmp_path, monkeypatch):
+    import pipeline.build_steps as steps_module
+    before = q(built, "SELECT id, record_code, doc FROM seap.search ORDER BY id")
 
+    def boom(_cur):
+        raise RuntimeError("died after the search rows were written")
 
-def test_a_load_is_visible_to_search_only_after_its_transaction_commits(built):
-    with psycopg.connect(built) as writer:  # one transaction: the index is updated with the rows
-        writer.execute("SELECT 1")
-        load_records(writer.cursor(), 1, [_new_record("DA95999001", "Zorzon nou")])
-        assert writer.execute(HIT).fetchone() == (1,)  # its own transaction sees it
-        assert q(built, HIT) == [(0,)]  # nobody else does, not through the index and not through the table
-        assert q(built, "SELECT count(*) FROM seap.search WHERE record_code = 'DA95999001'") == [(0,)]
-        writer.commit()
-    assert q(built, HIT) == [(1,)]
-
-
-def test_a_rolled_back_load_never_reaches_search(built):
-    with psycopg.connect(built) as writer:
-        load_records(writer.cursor(), 1, [_new_record("DA95999002", "Zorzon anulat")])
-        assert writer.execute(HIT).fetchone() == (1,)
-        writer.rollback()
-    assert q(built, HIT) == [(0,)]
+    monkeypatch.setattr(steps_module, "build_rollup", boom)
+    with pytest.raises(RuntimeError, match="died after"):
+        rebuild(Archive(_smaller_archive(tmp_path)), built)
+    assert q(built, "SELECT id, record_code, doc FROM seap.search ORDER BY id") == before
+    assert q(built, "SELECT to_regclass('seap.search_load')") == [(None,)]
 
 
 class _Progress:
