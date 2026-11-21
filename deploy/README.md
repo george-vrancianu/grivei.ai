@@ -4,7 +4,7 @@ One Compose project, `compose.yaml` at the repo root, inside WSL2. Run everythin
 
 | Service | What | Limits | Reachable at |
 | --- | --- | --- | --- |
-| `db` | ParadeDB Postgres (`paradedb/paradedb:0.26.6-pg18`, pinned), `shared_buffers` 3 GB | 8 CPU, 12 GB | compose network only |
+| `db` | ParadeDB Postgres (`paradedb/paradedb:0.26.6-pg18`, pinned), `shared_buffers` 3 GB, `wal_level = minimal` (no PITR or replicas; see watchdog/README.md, "Backups and restore") | 8 CPU, 12 GB | compose network only |
 | `api` | the TypeScript GraphQL API (`explorer/packages/api`), persisted queries only | 2 CPU, 2 GB | via Caddy at `/graphql` |
 | `web` | Caddy: `site/` at `/` and `/ro/`, the explorer build at `/explore/` and `/ro/explore/`, `/graphql` and `/source/*` proxied to the API | 2 CPU, 2 GB | http://localhost:8080 |
 | `pipeline` | one-shot Python pipeline (profile `pipeline`, not started by `up`) | 2 CPU, 2 GB | `docker compose run` |
