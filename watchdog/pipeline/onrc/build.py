@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -263,6 +263,17 @@ class OnrcNames(Mapping):
             row = self.cur.fetchone()
             self._cache[cui] = compare_name(row[0]) if row else None
         return self._cache[cui]
+
+    def prefetch(self, cuis: Iterable[str]) -> None:
+        """Ask ONRC about all these CUIs in one statement and cache the answers, absent ones as None (what `_onrc` caches), so resolving a unit's Records
+        after it asks nothing. CUIs ANAF knows or already cached are left out."""
+        missing = sorted(c for c in set(cuis) if c.isdigit() and c not in self._cache and c not in self.anaf)
+        if not missing:
+            return
+        self.cur.execute("SELECT cui, name FROM onrc.registration WHERE cui = ANY(%s) AND primary_for_cui", (missing,))
+        found = {cui: name for cui, name in self.cur.fetchall()}
+        for cui in missing:
+            self._cache[cui] = compare_name(found[cui]) if cui in found else None
 
     def __getitem__(self, cui: str) -> str:
         if cui in self.anaf:
