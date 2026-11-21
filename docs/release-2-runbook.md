@@ -41,9 +41,9 @@ There are no migration files: the DDL lives in `watchdog/pipeline/sql/*_schema.s
 | `financials` | `source_file`, `statement` (also an additive index on `seap.rollup_entity`) | #179 |
 | `donations` | `source_file`, `donation` | #182 |
 | `aep` | `snapshot`, `mandate`, `gap`, `authority`, `subordinate`, `record_party` | #180 |
-| `seap.search` | columns `party` and `party_basis`, both in the BM25 index; filled at the end of the `aep` step | #181 |
+| `seap.search` | columns `party` and `party_basis`, both in the BM25 index; filled by the `search-rows` step | #181 |
 
-The rebuild's steps for them, in order, are `onrc`, `entities`, `placement`, `mf`, `amepip`, `aep`, `financials`, `donations`, `coverage`, `record-indexes`, `signals`, `rollup`, `search-index`, `analyze-search`, `onrc-search`, `commit`, `check` (`STEPS` in `watchdog/pipeline/build_steps.py`). Per spec rule, **the user merges the schema PRs** (#175, #179, #180, #181, #182, #183): this runbook starts after they are merged into the branch that is checked out.
+The rebuild's steps for them, in order, are `onrc`, `entities`, `placement`, `mf`, `amepip`, `aep`, `financials`, `donations`, `coverage`, `record-indexes`, `signals`, `search-rows`, `rollup`, `search-index`, `analyze-search`, `onrc-search`, `commit`, `check` (`STEPS` in `watchdog/pipeline/build_steps.py`). Per spec rule, **the user merges the schema PRs** (#175, #179, #180, #181, #182, #183): this runbook starts after they are merged into the branch that is checked out.
 
 ## Steps
 
@@ -203,7 +203,7 @@ docker compose run --rm -T -v ~/grivei-data/bench:/out pipeline bench --db-cpus 
 # 3. API mode for SEAP (Release 1's step: wait for `cache warmed`, then OPID as in release-1-runbook acceptance B)
 ```
 
-**`[TO MEASURE]`** (copy from the JSON): ONRC slowest query (label, cold ms, warm p95 ms), queries over 500 ms (none or the list); **ONRC count lens** time; Party-filtered queries: the three labels with cold and p95, and the `party_coverage` task apart (one grouped scan of `seap.search` per Party-filtered request, which ticket #181 asks to be timed alone); the time of the `aep` step's `UPDATE seap.search` (from the rebuild log, step 4); whole-list SEAP result. The fixture figures (3 to 25 ms) prove nothing about the national graph. The ONRC search benchmark excludes sole traders, as the search does.
+**`[TO MEASURE]`** (copy from the JSON): ONRC slowest query (label, cold ms, warm p95 ms), queries over 500 ms (none or the list); **ONRC count lens** time; Party-filtered queries: the three labels with cold and p95, and the `party_coverage` task apart (one grouped scan of `seap.search` per Party-filtered request, which ticket #181 asks to be timed alone); the time of the `search-rows` step (from the rebuild log); whole-list SEAP result. The fixture figures (3 to 25 ms) prove nothing about the national graph. The ONRC search benchmark excludes sole traders, as the search does.
 The Source picker's two counts (SEAP and ONRC for one query) come from the same statements as the two searches: if either search is fast, the picker is. Open it once by eye on a 2-character prefix and on a CUI and note the time (manual: there is no harness for the picker).
 
 ### C. Firing rates re-measured, and the methodology sections
@@ -342,7 +342,7 @@ Run on <date range>, <commit>, <machine: CPUs, RAM, disk>, compose stack as in `
 
 ### Latency (<json files>)
 - ONRC search (`bench-onrc`): slowest query <label> <cold ms> / <p95 ms>; over 500 ms: <none | list>; count lens <ms>
-- Party-filtered SEAP search (`bench --only party`): <label> <cold ms> / <p95 ms> each; `party_coverage` task <ms>; the `aep` step's `UPDATE seap.search` <duration>; whole SEAP list: <pass>
+- Party-filtered SEAP search (`bench --only party`): <label> <cold ms> / <p95 ms> each; `party_coverage` task <ms>; the `search-rows` step <duration>; whole SEAP list: <pass>
 - Source picker by eye: <ms>
 
 ### Firing rates (written into the methodology sections at <commit>)

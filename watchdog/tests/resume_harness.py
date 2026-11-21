@@ -34,7 +34,7 @@ from pipeline.onrc.people import SECRET_ENV
 from pipeline.pins import PACKAGE as REAL_PACKAGE  # the source tree, whatever a test later points `pins.PACKAGE` at
 
 FIXTURES = Path(__file__).parent / "fixtures"
-# Every fixture that makes a Step do real work: SEAP bulk and crawl units (units, crawl-status, crawl-badges, frameworks, entities, coverage, signals),
+# Every fixture that makes a Step do real work: SEAP bulk and crawl units (units, crawl-status, frameworks, entities, coverage, signals, search-rows),
 # ANAF answers, ONRC snapshots with people (onrc, onrc-search), the MF list, placement, AEP, financials and donations.
 WORLD = ("archive-placement", "archive-mf", "archive-aep", "archive-financials", "archive-banipartide", "archive-onrc-signals", "archive-crawl")
 TODAY = date(2026, 11, 20)

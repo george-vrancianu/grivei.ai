@@ -9,8 +9,8 @@ Resume only when every one of these holds: not `--fresh`; a staged build (a sing
 database exists and holds a build ledger with pins; its build is not complete (a finished build that was never swapped in is rebuilt); the schema files are
 the ones it was built with; the code is the one it was built with, or every changed code file belongs only to Steps that have not run (#295: ownership comes
 from the Step declarations, `owners_of`; a SHARED file, a file no declaration claims and an outside input belong to every Step, so changing one starts fresh;
-a Step with committed work but no ledger row yet, `Held.partial`, counts as run; a file added or deleted counts as changed). Several Steps rewrite
-`seap.search` in place, so a completed Step cannot be rewound alone: a change to its code starts over. A resume after a code change continues with the new
+a Step with committed work but no ledger row yet, `Held.partial`, counts as run; a file added or deleted counts as changed). A Step's changes
+to the graph are not undone one by one (the `search-rows` Step drops the load table the Steps before it read), so a completed Step cannot be rewound alone: a change to its code starts over. A resume after a code change continues with the new
 code, and `build.run` takes the new hashes and the changed files (build_ledger.record_code_change); every pinned unit is still in the archive with the same manifest checksum (a unit this build's own
 `units` Step quarantined is gone on purpose: not a difference); its `build.step` rows are exactly a non-empty prefix of the Steps, names and ordinals.
 Units that were added to the archive after the pin are NOT a difference: the resume ignores them and the next build pins them (the refresh's load marker then

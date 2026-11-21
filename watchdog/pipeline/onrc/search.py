@@ -27,14 +27,28 @@ CREATE INDEX search_bm25 ON onrc.search USING paradedb (
 
 BATCH = 5000
 
-# A registration of the newest snapshot with what the document and the filters need. The aliases are every other name ONRC listed it under.
-_SOURCE = """
+# The source: a registration of the newest snapshot with what the document and the filters need. The aliases are every other name ONRC listed it under.
+# Each lookup table is aggregated once and joined once to the registrations (no per-registration subqueries: those ran one index descent each, three per
+# registration, over the national register). It is materialized into a temp table, then streamed in reg_no order, which is the order `id` follows.
+_CREATE_ROWS = """
+CREATE TEMP TABLE onrc_search_rows ON COMMIT DROP AS
+WITH al AS (SELECT n.reg_no, array_agg(DISTINCT n.name) AS aliases
+              FROM onrc.name_span n JOIN onrc.registration r USING (reg_no)
+             WHERE n.name <> r.name GROUP BY n.reg_no),
+     ca AS (SELECT reg_no, array_agg(code ORDER BY code) AS caen FROM onrc.caen GROUP BY reg_no),
+     st AS (SELECT sp.reg_no, array_agg(sp.code::text ORDER BY sp.code) AS statuses
+              FROM onrc.status_span sp JOIN onrc.registration r USING (reg_no)
+             WHERE sp.last_seen = r.snapshot_date GROUP BY sp.reg_no)
 SELECT r.reg_no, r.cui, r.name, r.legal_form, r.registration_date, r.county_iso,
-       coalesce((SELECT array_agg(DISTINCT n.name) FROM onrc.name_span n WHERE n.reg_no = r.reg_no AND n.name <> r.name), '{}') AS aliases,
-       coalesce((SELECT array_agg(c.code ORDER BY c.code) FROM onrc.caen c WHERE c.reg_no = r.reg_no), '{}') AS caen,
-       coalesce((SELECT array_agg(sp.code::text ORDER BY sp.code) FROM onrc.status_span sp WHERE sp.reg_no = r.reg_no AND sp.last_seen = r.snapshot_date), '{}') AS statuses,
-       (r.cui IS NOT NULL AND EXISTS (SELECT 1 FROM onrc_counterparty cp WHERE cp.cui = r.cui)) AS seap_counterparty
-  FROM onrc.registration r ORDER BY r.reg_no"""
+       coalesce(al.aliases, '{}') AS aliases, coalesce(ca.caen, '{}') AS caen, coalesce(st.statuses, '{}') AS statuses,
+       (cp.cui IS NOT NULL) AS seap_counterparty
+  FROM onrc.registration r
+       LEFT JOIN al USING (reg_no) LEFT JOIN ca USING (reg_no) LEFT JOIN st USING (reg_no)
+       LEFT JOIN onrc_counterparty cp ON cp.cui = r.cui"""
+
+_SELECT_ROWS = """
+SELECT reg_no, cui, name, legal_form, registration_date, county_iso, aliases, caen, statuses, seap_counterparty
+  FROM onrc_search_rows ORDER BY reg_no"""
 
 _COUNTERPARTIES = """
 CREATE TEMP TABLE onrc_counterparty ON COMMIT DROP AS
@@ -56,11 +70,11 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
     """`onrc.search` and its BM25 index from `onrc.registration` (in the caller's transaction)."""
     summary = SearchSummary()
     cur.execute(_COUNTERPARTIES)
-    cur.execute("CREATE INDEX onrc_counterparty_cui ON onrc_counterparty (cui)")
-    # the source cursor's correlated lookups plan on these: with no statistics the planner picked a scan that ran at ~20 rows/s over the national register (#287)
+    # the source's joins and aggregates plan on these (hash joins over the whole tables); without statistics the planner has no row counts to choose them by (#287)
     analyze(cur, "onrc_counterparty", "onrc.status_span", "onrc.name_span", "onrc.caen")
+    cur.execute(_CREATE_ROWS)
     with cur.connection.cursor(name="onrc_search_source") as source:  # streamed: the register has millions of rows; a COPY cannot run while the cursor fetches, so one batch at a time
-        source.execute(_SOURCE)
+        source.execute(_SELECT_ROWS)
         while batch := source.fetchmany(BATCH):
             rows = []
             for reg_no, cui, name, legal_form, registered, county_iso, aliases, caen, statuses, counterparty in batch:
@@ -74,8 +88,9 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
                 for row in rows:
                     copy.write_row(row)
             summary.indexed += len(rows)
+    cur.execute("DROP TABLE onrc_search_rows")  # its rows are in onrc.search now; free them before the index build
     cur.execute(INDEX_SQL)
-    # the new table the API reads for a page of results (the lookup tables were analyzed by the `onrc` step and before the cursor)
+    # the new table the API reads for a page of results
     analyze(cur, "onrc.search")
     return summary
 

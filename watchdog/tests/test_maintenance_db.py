@@ -1,5 +1,6 @@
-"""Maintenance between the Steps of a rebuild (ticket #298, spec #285), through `rebuild` and the graph: the search table is vacuumed and analyzed
-before the BM25 build in a beside build, the key indexes exist before the Signals, and the build session has a larger `maintenance_work_mem`.
+"""Maintenance between the Steps of a rebuild (ticket #298, spec #285), through `rebuild` and the graph: the search table is analyzed
+before the BM25 build, the key indexes exist before the Signals, the build session has a larger `maintenance_work_mem`, and the heavy Steps (and only they)
+run with their own `work_mem` (#306).
 Needs Docker (the container fixture of test_bulk_loader_db.py); skipped without it."""
 import shutil
 import time
@@ -9,11 +10,16 @@ import pytest
 psycopg = pytest.importorskip("psycopg")
 
 from pipeline import build_steps as build_steps_module  # noqa: E402
+from pipeline.onrc import build as onrc_build  # noqa: E402
 from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, db, server  # noqa: E402,F401
 
-KEY_INDEXES = {"record_authority_key_idx", "search_supplier_key_idx", "record_notice_code_idx"}
+def mb(size: str) -> int:
+    return int(size.removesuffix("MB")) * 1024 * 1024
+
+
+KEY_INDEXES = {"record_authority_key_idx", "record_notice_code_idx"}
 
 
 @pytest.fixture(scope="module", params=[True, False], ids=["beside", "in-place"])
@@ -33,9 +39,17 @@ def seen(request, server, tmp_path_factory):
         cur.execute("SELECT last_vacuum, last_analyze FROM pg_stat_user_tables WHERE schemaname = 'seap' AND relname = 'search'")
         vacuumed, analyzed = cur.fetchone()
         cur.execute("SHOW maintenance_work_mem")
-        seen[label] = {"indexes": indexes, "last_vacuum": vacuumed, "last_analyze": analyzed, "maintenance_work_mem": cur.fetchone()[0]}
+        maintenance = cur.fetchone()[0]
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")  # bytes; reset_val (kB): what `SET ... TO DEFAULT` returns to
+        work_mem, default = cur.fetchone()
+        seen[label] = {"default_work_mem": default, "indexes": indexes, "last_vacuum": vacuumed, "last_analyze": analyzed, "maintenance_work_mem": maintenance, "work_mem": work_mem}
 
     real_signals, real_index, real_run = build_steps_module.build_signals, build_steps_module.create_index, build_steps_module.run_steps
+    real_frameworks = build_steps_module.build_frameworks
+
+    def frameworks(cur, *args, **kwargs):  # a light Step right after the heavy `onrc` Step
+        look("frameworks", cur)
+        return real_frameworks(cur, *args, **kwargs)
 
     def signals(cur, *args, **kwargs):
         look("signals", cur)
@@ -53,16 +67,16 @@ def seen(request, server, tmp_path_factory):
         mp.setattr(build_steps_module, "build_signals", signals)
         mp.setattr(build_steps_module, "create_index", index)
         mp.setattr(build_steps_module, "run_steps", run)
+        mp.setattr(build_steps_module, "build_frameworks", frameworks)
         rebuild(Archive(tmp / "archive"), f"{server}/{name}", staged=staged)
     return seen
 
 
-def test_a_beside_build_vacuums_and_analyzes_the_search_table_before_the_bm25_index_is_built(seen):
+def test_the_search_table_is_written_once_and_analyzed_before_the_bm25_index_is_built(seen):
+    """seap.search is written by one INSERT (#305), so no step leaves dead row versions for a vacuum to clear: it only needs statistics before the index and the rollup."""
     if not seen["staged"]:
-        pytest.skip("beside builds only")
-    assert seen["signals"]["last_vacuum"] is None  # the Signals are what the vacuum waits for
-    vacuumed, analyzed = seen["search-index"]["last_vacuum"], seen["search-index"]["last_analyze"]
-    assert vacuumed is not None and analyzed >= vacuumed  # the Signals Step's own ANALYZE ran before the VACUUM: only the VACUUM ANALYZE makes this true
+        pytest.skip("beside builds only: the statistics of an uncommitted in-place table are not in pg_stat yet")
+    assert seen["search-index"]["last_analyze"] is not None
 
 
 def test_an_in_place_build_runs_no_vacuum_between_its_steps(seen):
@@ -73,6 +87,7 @@ def test_an_in_place_build_runs_no_vacuum_between_its_steps(seen):
 
 def test_the_key_indexes_exist_before_the_signals_run(seen):
     assert KEY_INDEXES <= seen["signals"]["indexes"]
+    assert "search_supplier_key_idx" in seen["search-index"]["indexes"]  # the final seap.search carries its supplier-key index when the BM25 build starts
 
 
 def test_the_build_session_has_a_larger_maintenance_work_mem(seen):
@@ -84,3 +99,44 @@ def test_an_in_place_builds_outer_block_is_the_real_transaction(seen):
     from psycopg.pq import TransactionStatus
 
     assert seen["status_before_steps"] == TransactionStatus.IDLE
+
+
+def test_a_heavy_step_runs_with_its_own_work_mem_and_the_next_one_does_not_inherit_it(seen):
+    """SET LOCAL lasts to the end of the top-level transaction, and under --in-place the Steps are savepoints of one: the value must be put back when the Step ends."""
+    default = seen["signals"]["default_work_mem"]
+    assert seen["signals"]["work_mem"] == mb(build_steps_module.WORK_MEM_256MB) != default  # the Step's own block
+    assert seen["frameworks"]["work_mem"] == default  # the Step after `onrc`
+    assert seen["search-index"]["work_mem"] == default  # after signals, search-rows and the rollup
+
+
+@pytest.fixture(scope="module", params=[True, False], ids=["beside", "in-place"])
+def onrc_seen(request, server, tmp_path_factory):
+    """A rebuild of an archive with ONRC snapshots, read from inside a snapshot's transaction (a segment of the `onrc` Step) and from the Step after `onrc`."""
+    tmp = tmp_path_factory.mktemp("maintenance-onrc")
+    shutil.copytree(FIXTURE.parent / "archive-onrc", tmp / "archive")
+    name = f"m{time.time_ns()}"
+    with psycopg.connect(f"{server}/postgres", autocommit=True) as c:
+        c.execute(f'CREATE DATABASE "{name}"')
+    seen: dict = {"snapshots": []}
+    real_apply, real_frameworks = onrc_build._apply_snapshot, build_steps_module.build_frameworks
+
+    def apply_snapshot(cur, *args, **kwargs):
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")
+        seen["snapshots"].append(cur.fetchone()[0])
+        return real_apply(cur, *args, **kwargs)
+
+    def frameworks(cur, *args, **kwargs):
+        cur.execute("SELECT pg_size_bytes(current_setting('work_mem')), reset_val::bigint * 1024 FROM pg_settings WHERE name = 'work_mem'")
+        seen["after"], seen["default"] = cur.fetchone()
+        return real_frameworks(cur, *args, **kwargs)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(onrc_build, "_apply_snapshot", apply_snapshot)
+        mp.setattr(build_steps_module, "build_frameworks", frameworks)
+        rebuild(Archive(tmp / "archive"), f"{server}/{name}", staged=request.param)
+    return seen
+
+
+def test_an_onrc_snapshots_transaction_has_its_own_work_mem_that_ends_with_it(onrc_seen):
+    assert onrc_seen["snapshots"] and set(onrc_seen["snapshots"]) == {mb(build_steps_module.WORK_MEM_512MB)}
+    assert onrc_seen["after"] == onrc_seen["default"]

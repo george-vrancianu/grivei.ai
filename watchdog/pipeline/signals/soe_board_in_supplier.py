@@ -38,7 +38,7 @@ def load(cur) -> Context | None:
     cur.execute("SELECT EXISTS (SELECT 1 FROM amepip.enterprise) AND EXISTS (SELECT 1 FROM onrc.role WHERE link = 'LINKED')")
     if not cur.fetchone()[0]:
         return None
-    # the confirmed persons' CUIs, joined to the enterprise-supplier pairs that have a Record: the probe is served by seap.search's supplier index (built before the Signals)
+    # the confirmed persons' CUIs, joined to the enterprise-supplier pairs that have a Record: the probe is served by seap.search_load's supplier index (built before the Signals)
     cur.execute(
         """WITH held AS (
                SELECT DISTINCT r.person_id, g.cui
@@ -48,13 +48,13 @@ def load(cur) -> Context | None:
              FROM held a
              JOIN held b ON b.person_id = a.person_id AND b.cui <> a.cui
             WHERE a.cui IN (SELECT cui FROM amepip.enterprise) AND b.cui NOT IN (SELECT cui FROM amepip.enterprise)
-              AND EXISTS (SELECT 1 FROM seap.search w WHERE w.supplier_key = b.cui AND w.authority_key = a.cui AND NOT w.suspect)
+              AND EXISTS (SELECT 1 FROM seap.search_load w WHERE w.supplier_key = b.cui AND w.authority_key = a.cui AND NOT w.suspect)
             GROUP BY a.cui, b.cui""")
     return Context({(enterprise, supplier): n for enterprise, supplier, n in cur.fetchall()})
 
 
 def where(context: Context) -> tuple[str, tuple]:
-    return (f"{WHERE} AND authority_key = ANY(%s) AND EXISTS (SELECT 1 FROM seap.search s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))",
+    return (f"{WHERE} AND authority_key = ANY(%s) AND EXISTS (SELECT 1 FROM seap.search_load s WHERE s.record_code = seap.record.code AND s.supplier_key = ANY(%s))",
             (sorted({e for e, _ in context.shared}), sorted({s for _, s in context.shared})))
 
 

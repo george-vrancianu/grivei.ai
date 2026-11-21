@@ -28,7 +28,7 @@ def load(cur) -> dict[str, date] | None:
         return None
     cur.execute(
         """SELECT cui, registration FROM core.anaf_company a
-            WHERE a.registration ILIKE '%RADIERE%' AND EXISTS (SELECT 1 FROM seap.search s WHERE s.supplier_key = a.cui)""")
+            WHERE a.registration ILIKE '%RADIERE%' AND EXISTS (SELECT 1 FROM seap.search_load s WHERE s.supplier_key = a.cui)""")
     struck = {cui: strike_off_date(registration) for cui, registration in cur.fetchall()}
     return {cui: day for cui, day in struck.items() if day is not None}
 

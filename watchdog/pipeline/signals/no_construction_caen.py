@@ -28,7 +28,7 @@ def load(cur) -> dict[str, list[tuple[str, int | None]]] | None:
         return None
     cur.execute(
         """SELECT r.cui, c.code, c.version
-             FROM (SELECT DISTINCT supplier_key FROM seap.search WHERE supplier_key IS NOT NULL AND NOT suspect AND counted_bani >= %s) big
+             FROM (SELECT DISTINCT supplier_key FROM seap.search_load WHERE supplier_key IS NOT NULL AND NOT suspect AND counted_bani >= %s) big
              JOIN onrc.registration r ON r.cui = big.supplier_key AND r.primary_for_cui
              JOIN onrc.caen c ON c.reg_no = r.reg_no""", (THRESHOLD_BANI,))
     codes: dict[str, list[tuple[str, int | None]]] = {}

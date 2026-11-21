@@ -1,6 +1,7 @@
 """Supplier identity rules (ADR 0003, ticket #66), as pure functions: tax ids, names, entity keys, the override file.
 Every CUI here is invented; `CHECK_OK` / `CHECK_BAD` pass / fail the Romanian check digit."""
 import re
+from types import SimpleNamespace
 
 import pytest
 
@@ -359,3 +360,64 @@ def test_a_real_surname_that_is_also_a_foreign_word_is_a_person_not_a_company(na
 def test_the_foreign_company_words_that_remain_still_read_a_company(name):
     got = Resolver(ANAF).supplier(name, None)
     assert got.identity == "NAME_ONLY" and not got.natural_person
+
+
+class _RecordingAnaf(dict):
+    """An `anaf` mapping that remembers every CUI the Resolver asked it about (by `get`, `in` or `[]`)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.asked: set[str] = set()
+
+    def get(self, key, default=None):
+        self.asked.add(key)
+        return super().get(key, default)
+
+    def __contains__(self, key):
+        self.asked.add(key)
+        return super().__contains__(key)
+
+    def __getitem__(self, key):
+        self.asked.add(key)
+        return super().__getitem__(key)
+
+
+def test_asked_cuis_covers_every_cui_supplier_asks_the_anaf_mapping_about(tmp_path):
+    overrides = Overrides.load(_file(tmp_path, '''
+[[override]]
+reason = "fictional: the CUI is a typo for Drumuri Demo's"
+published_id = "2000001"
+key = "16310091"
+
+[[override]]
+reason = "fictional: published without a CUI, really a company"
+name = "Gama Fara Cui"
+key = "54760"
+
+[[override]]
+reason = "fictional: a pinned name-only entity"
+name = "Asocierea Exemplu"
+key = "consortium-exemplu"
+'''))
+    winners = [
+        ("DRUMURI DEMO SRL", "RO 2000007"),  # a plain CUI
+        ("DRUM CONSTRUCT SRL", "1000009"),  # a plain CUI, and the authority's own below
+        ("DRUMURI DEMO SRL", "2000001"),  # a wrong CUI the id override points at another CUI
+        ("GAMA FARA CUI", None),  # a name override to a CUI nothing else mentions
+        ("GAMA FARA CUI", "-"),
+        ("ASOCIEREA EXEMPLU", None),  # a name override to a pinned key: no CUI
+        ("PERSOANA FIZICA A", "1003600118796"),  # a CNP
+        ("Barely digital GmbH", "BG 103029862"),  # a foreign VAT id
+        ("", ""),
+    ]
+    records = [
+        SimpleNamespace(authority_cui="1000009", all_winners=[SimpleNamespace(name=n, cui=c) for n, c in winners]),
+        SimpleNamespace(authority_cui="RO 3286536", all_winners=[SimpleNamespace(name=n, cui=c) for n, c in winners]),
+    ]
+    anaf = _RecordingAnaf(ANAF)
+    resolver = Resolver(anaf, overrides)
+    for r in records:
+        for w in r.all_winners:
+            resolver.supplier(w.name, w.cui, r.authority_cui)
+    assert anaf.asked  # the scenario does ask
+    assert anaf.asked <= Resolver(ANAF, overrides).asked_cuis(records)
