@@ -285,7 +285,9 @@ def _record_indexes(c: BuildContext) -> None:
 
 
 def _search_rows(c: BuildContext) -> None:
-    write_search(c.cur, restricted_slugs())  # #305: seap.search written once, with the placement, Party, Signal and crawl columns joined in; the load table goes
+    # #305: seap.search written once, with the placement, Party, Signal and crawl columns joined in; the load table goes
+    write_search(c.cur, restricted_slugs())
+    reset_identity(c.cur, "seap.search")  # the identity continues after the copied ids
 
 
 def _rollup(c: BuildContext) -> None:

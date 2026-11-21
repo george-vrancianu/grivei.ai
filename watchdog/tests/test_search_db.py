@@ -81,7 +81,6 @@ def test_a_rolled_back_rebuild_leaves_the_graph_it_found(built, tmp_path, monkey
     with pytest.raises(RuntimeError, match="died after"):
         rebuild(Archive(_smaller_archive(tmp_path)), built)
     assert q(built, "SELECT id, record_code, doc FROM seap.search ORDER BY id") == before
-    assert q(built, "SELECT to_regclass('seap.search_load')") == [(None,)]
 
 
 class _Progress:

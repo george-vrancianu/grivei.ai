@@ -10,7 +10,7 @@ produce joined in, so no step rewrites the table afterwards (a rewrite leaves a 
 - `signals`, `has_signals`, `restricted_signals` from `seap.signal_member` and `seap.signal` (a Restricted rule is never in `signals` or `has_signals`, ADR 0015);
 - `badges`: the counting and identity badges the unit loop wrote, then the crawl badge from `seap.record.crawl_status` (the chips filter on them).
 
-The ids are copied, then the identity continues after them; the supplier-key index the later steps use is built here, after the load, and the load table is dropped."""
+The ids are copied (the Step body then continues the identity after them); the supplier-key index the later steps use is built here, after the load, and the load table is dropped."""
 import psycopg
 
 from .analyze import analyze
@@ -36,7 +36,7 @@ SELECT l.id, l.record_code, l.winner_position, l.winners, l.channel, l.award_dat
        CASE WHEN p.record_code IS NULL THEN NULL WHEN p.via_key IS NULL THEN 'DIRECT' ELSE 'SUBORDINATE' END,
        l.doc
   FROM seap.search_load l
-  JOIN seap.record r ON r.code = l.record_code
+  LEFT JOIN seap.record r ON r.code = l.record_code
   LEFT JOIN core.placement pa ON pa.entity_key = l.authority_key AND (pa.national OR pa.county_iso IS NOT NULL)
   LEFT JOIN core.placement ps ON ps.entity_key = l.supplier_key AND NOT ps.national AND ps.county_iso IS NOT NULL
   LEFT JOIN aep.record_party p ON p.record_code = l.record_code
@@ -53,7 +53,6 @@ def write_search(cur: psycopg.Cursor, restricted_slugs: list[str]) -> None:
     """Write `seap.search` from `seap.search_load` and drop the load table (the caller's transaction). `restricted_slugs`: the Restricted rules (signals.restricted_slugs)."""
     cur.execute("DROP INDEX seap.search_award_date_idx")  # built after the rows are in: one pass, like the supplier-key index
     cur.execute(_WRITE, {"restricted": restricted_slugs})
-    cur.execute("SELECT setval(pg_get_serial_sequence('seap.search', 'id'), coalesce(max(id), 0) + 1, false) FROM seap.search")  # the identity continues after the copied ids
     cur.execute("CREATE INDEX search_award_date_idx ON seap.search (award_date)")
     cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")  # the entity(key) roles look a search row up by supplier
     cur.execute("DROP TABLE seap.search_load")

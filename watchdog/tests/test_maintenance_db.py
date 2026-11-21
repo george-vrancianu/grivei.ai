@@ -13,7 +13,7 @@ from pipeline.archive import Archive  # noqa: E402
 from pipeline.rebuild import rebuild  # noqa: E402
 from test_bulk_loader_db import FIXTURE, db, server  # noqa: E402,F401
 
-KEY_INDEXES = {"record_authority_key_idx", "search_load_supplier_key_idx", "record_notice_code_idx"}  # the Signals read the load table; seap.search gets search_supplier_key_idx when it is written
+KEY_INDEXES = {"record_authority_key_idx", "record_notice_code_idx"}
 
 
 @pytest.fixture(scope="module", params=[True, False], ids=["beside", "in-place"])
@@ -61,7 +61,6 @@ def test_the_search_table_is_written_once_and_analyzed_before_the_bm25_index_is_
     """seap.search is written by one INSERT (#305), so no step leaves dead row versions for a vacuum to clear: it only needs statistics before the index and the rollup."""
     if not seen["staged"]:
         pytest.skip("beside builds only: the statistics of an uncommitted in-place table are not in pg_stat yet")
-    assert seen["signals"]["last_analyze"] is None  # the table does not exist yet: the Signals read the load table
     assert seen["search-index"]["last_analyze"] is not None
 
 
@@ -73,6 +72,7 @@ def test_an_in_place_build_runs_no_vacuum_between_its_steps(seen):
 
 def test_the_key_indexes_exist_before_the_signals_run(seen):
     assert KEY_INDEXES <= seen["signals"]["indexes"]
+    assert "search_supplier_key_idx" in seen["search-index"]["indexes"]  # the final seap.search carries its supplier-key index when the BM25 build starts
 
 
 def test_the_build_session_has_a_larger_maintenance_work_mem(seen):

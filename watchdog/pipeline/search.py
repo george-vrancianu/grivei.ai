@@ -2,7 +2,7 @@
 
 `seap.search` (pipeline/sql/seap_schema.sql) holds one row per Record x winner. Its BM25 index lives in the same Postgres and
 is updated by the same transaction as the rows: `create_index` runs inside its Step's transaction, so the index is visible only once that Step
-commits (in a build beside the live graph, nothing reads it before the Switchover). VACUUM cannot run in a transaction: a beside build vacuums the table between its committed Steps (the `vacuum` field of the `signals` Step, before the rollup and this index, so the build scans a compact heap), and `vacuum` runs right after the commit (it merges the
+commits (in a build beside the live graph, nothing reads it before the Switchover). VACUUM cannot run in a transaction: `vacuum` runs right after the commit (it merges the
 index's segments and drops dead rows: a broad query is several times slower without it). Never `visibility => 'raw'` in a
 query: between a load and its VACUUM it could count dead rows, which is wrong for money.
 """
