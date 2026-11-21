@@ -27,10 +27,10 @@ CREATE INDEX search_bm25 ON onrc.search USING paradedb (
 
 BATCH = 5000
 
-# The source, aggregated once per lookup table and joined once to the registrations (no per-registration subqueries: those ran one index descent each,
-# three per registration, over the national register). It is materialized into a temp table, then streamed in reg_no order, which is the order `id` follows.
-# A registration of the newest snapshot with what the document and the filters need. The aliases are every other name ONRC listed it under.
-_MATERIALIZE_SOURCE = """
+# The source: a registration of the newest snapshot with what the document and the filters need. The aliases are every other name ONRC listed it under.
+# Each lookup table is aggregated once and joined once to the registrations (no per-registration subqueries: those ran one index descent each, three per
+# registration, over the national register). It is materialized into a temp table, then streamed in reg_no order, which is the order `id` follows.
+_CREATE_ROWS = """
 CREATE TEMP TABLE onrc_search_rows ON COMMIT DROP AS
 WITH al AS (SELECT n.reg_no, array_agg(DISTINCT n.name) AS aliases
               FROM onrc.name_span n JOIN onrc.registration r USING (reg_no)
@@ -46,7 +46,7 @@ SELECT r.reg_no, r.cui, r.name, r.legal_form, r.registration_date, r.county_iso,
        LEFT JOIN al USING (reg_no) LEFT JOIN ca USING (reg_no) LEFT JOIN st USING (reg_no)
        LEFT JOIN onrc_counterparty cp ON cp.cui = r.cui"""
 
-_SOURCE = """
+_SELECT_ROWS = """
 SELECT reg_no, cui, name, legal_form, registration_date, county_iso, aliases, caen, statuses, seap_counterparty
   FROM onrc_search_rows ORDER BY reg_no"""
 
@@ -72,9 +72,9 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
     cur.execute(_COUNTERPARTIES)
     # the source's joins and aggregates plan on these (hash joins over the whole tables); without statistics the planner has no row counts to choose them by (#287)
     analyze(cur, "onrc_counterparty", "onrc.status_span", "onrc.name_span", "onrc.caen")
-    cur.execute(_MATERIALIZE_SOURCE)
+    cur.execute(_CREATE_ROWS)
     with cur.connection.cursor(name="onrc_search_source") as source:  # streamed: the register has millions of rows; a COPY cannot run while the cursor fetches, so one batch at a time
-        source.execute(_SOURCE)
+        source.execute(_SELECT_ROWS)
         while batch := source.fetchmany(BATCH):
             rows = []
             for reg_no, cui, name, legal_form, registered, county_iso, aliases, caen, statuses, counterparty in batch:
@@ -88,6 +88,7 @@ def build_onrc_search(cur: psycopg.Cursor) -> SearchSummary:
                 for row in rows:
                     copy.write_row(row)
             summary.indexed += len(rows)
+    cur.execute("DROP TABLE onrc_search_rows")  # its rows are in onrc.search now; free them before the index build
     cur.execute(INDEX_SQL)
     # the new table the API reads for a page of results
     analyze(cur, "onrc.search")
