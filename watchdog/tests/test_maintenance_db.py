@@ -104,7 +104,7 @@ def test_an_in_place_builds_outer_block_is_the_real_transaction(seen):
 def test_a_heavy_step_runs_with_its_own_work_mem_and_the_next_one_does_not_inherit_it(seen):
     """SET LOCAL lasts to the end of the top-level transaction, and under --in-place the Steps are savepoints of one: the value must be put back when the Step ends."""
     default = seen["signals"]["default_work_mem"]
-    assert seen["signals"]["work_mem"] == mb(build_steps_module.MEDIUM_WORK_MEM) != default  # the Step's own block
+    assert seen["signals"]["work_mem"] == mb(build_steps_module.WORK_MEM_256MB) != default  # the Step's own block
     assert seen["frameworks"]["work_mem"] == default  # the Step after `onrc`
     assert seen["search-index"]["work_mem"] == default  # after signals, search-rows and the rollup
 
@@ -138,5 +138,5 @@ def onrc_seen(request, server, tmp_path_factory):
 
 
 def test_an_onrc_snapshots_transaction_has_its_own_work_mem_that_ends_with_it(onrc_seen):
-    assert onrc_seen["snapshots"] and set(onrc_seen["snapshots"]) == {mb(build_steps_module.ONRC_WORK_MEM)}
+    assert onrc_seen["snapshots"] and set(onrc_seen["snapshots"]) == {mb(build_steps_module.WORK_MEM_512MB)}
     assert onrc_seen["after"] == onrc_seen["default"]

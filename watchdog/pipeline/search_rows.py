@@ -49,10 +49,10 @@ SELECT l.id, l.record_code, l.winner_position, l.winners, l.channel, l.award_dat
 """
 
 
-def write_search(cur: psycopg.Cursor, restricted_slugs: list[str]) -> None:
-    """Write `seap.search` from `seap.search_load` and drop the load table (the caller's transaction). `restricted_slugs`: the Restricted rules (signals.restricted_slugs)."""
+def write_search(cur: psycopg.Cursor, restricted: list[str]) -> None:
+    """Write `seap.search` from `seap.search_load` and drop the load table (the caller's transaction). `restricted`: the Restricted rules (signals.restricted_slugs)."""
     cur.execute("DROP INDEX seap.search_award_date_idx")  # built after the rows are in: one pass, like the supplier-key index
-    cur.execute(_WRITE, {"restricted": restricted_slugs})
+    cur.execute(_WRITE, {"restricted": restricted})
     cur.execute("CREATE INDEX search_award_date_idx ON seap.search (award_date)")
     cur.execute("CREATE INDEX search_supplier_key_idx ON seap.search (supplier_key)")  # the entity(key) roles look a search row up by supplier
     cur.execute("DROP TABLE seap.search_load")

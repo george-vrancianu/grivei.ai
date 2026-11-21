@@ -128,13 +128,13 @@ def _anaf_identities(c: BuildContext) -> None:
 
 # `work_mem` of the heavy Steps (per sort or hash node, and each parallel worker gets its own; the db container has 12 GiB, shared_buffers 3 GB).
 # Sorts and hash aggregates over the whole register or the whole `seap.search` get 512 MB; the Steps whose statements are smaller get 256 MB.
-ONRC_WORK_MEM = "512MB"  # the span anti-joins over the whole register's history (the span primary keys are index builds: maintenance_work_mem); the reader's aggregates (onrc-search)
-BIG_WORK_MEM = "512MB"  # rollup: GROUP BY over every seap.search row; search-rows: one INSERT ... SELECT joining four tables with an aggregate
-MEDIUM_WORK_MEM = "256MB"  # entities: GROUP BYs over the parties; signals: the ORDER BY of each rule's query
+# A hash node may use `hash_mem_multiplier` (default 2.0) times this, so 512 MB is up to 1 GB per hash node: keep that in mind before raising a size.
+WORK_MEM_512MB = "512MB"  # onrc, onrc-search: the span anti-joins over the whole register's history (the span primary keys are index builds: maintenance_work_mem), the reader's aggregates; search-rows: one INSERT ... SELECT joining four tables with an aggregate; rollup: GROUP BY over every seap.search row
+WORK_MEM_256MB = "256MB"  # entities: GROUP BYs over the parties; signals: the ORDER BY of each rule's query
 
 
 def _onrc_snapshots(c: BuildContext) -> None:
-    c.summary.onrc = build_onrc_snapshots(c.cur, c.archive, work_mem=ONRC_WORK_MEM)  # #294: one transaction (a commit, staged) per snapshot, outside the Step's own transaction
+    c.summary.onrc = build_onrc_snapshots(c.cur, c.archive, work_mem=WORK_MEM_512MB)  # #294: one transaction (a commit, staged) per snapshot, outside the Step's own transaction
 
 
 def _onrc(c: BuildContext) -> None:
@@ -356,7 +356,7 @@ STEPS: tuple[Step, ...] = (
     Step("onrc", _onrc, segments=_onrc_snapshots, owns=_ONRC, reads=("core.anaf_company",), hand_off=lambda c: onrc_hand_off(c.summary.onrc),
          writes=("build.snapshot", "onrc.snapshot", "onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen", "onrc.status_name", "onrc.coverage_cell",
                  "onrc.role", "onrc.person", "onrc.possible_match", "onrc.person_override"),
-         vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen"), work_mem=ONRC_WORK_MEM),  # the visibility map for onrc-search's index-only scans (the span tables are insert-only now, #304; registration has one dead version per CUI's primary registration)
+         vacuum=("onrc.status_span", "onrc.name_span", "onrc.registration", "onrc.caen"), work_mem=WORK_MEM_512MB),  # the visibility map for onrc-search's index-only scans (the span tables are insert-only now, #304; registration has one dead version per CUI's primary registration)
     Step("estimates", _estimates, owns=(P + "estimates.py",), summary_fields=("estimates",)),
     Step("units", _units_end, segments=_units, progress=(), owns=(P + "estimates.py", P + "search.py", P + "coverage/", *_ONRC),  # estimates.py: the counting rule; search.py: value_bucket; coverage/: parse_quarter (bulk_rows); onrc/: OnrcNames
          hand_off=lambda c: units_hand_off(c.summary.files_loaded, c.summary.incomplete, c.archive.root, c.summary.units_total),
@@ -365,7 +365,7 @@ STEPS: tuple[Step, ...] = (
     Step("crawl-status", _crawl_status, reads=("seap.source_file",), writes=("seap.record", "seap.crawl_state")),
     Step("frameworks", _frameworks, reads=("seap.record",), writes=("seap.framework",), summary_fields=("estimates_missing",)),
     Step("entities", _entities, owns=_ONRC, hand_off=lambda c: entities_hand_off(c.summary.entities, c.summary.onrc),
-         reads=("build.step", "seap.search_load", "seap.record", "seap.source_file", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias"), work_mem=MEDIUM_WORK_MEM),
+         reads=("build.step", "seap.search_load", "seap.record", "seap.source_file", "core.anaf_company", "onrc.registration", "onrc.snapshot"), writes=("core.entity", "core.alias"), work_mem=WORK_MEM_256MB),
     Step("placement-mf", _placement_mf, progress=("placement", "mf"), owns=(*_PLACEMENT, *_MF, *_ONRC), summary_fields=("placement", "mf"),
          reads=("seap.record", "core.anaf_company", "core.entity", "onrc.registration", "onrc.snapshot"),
          writes=("core.county", "core.uat", "core.placement", "core.mf_principal", "core.mf_snapshot", "core.mf_entity")),
@@ -382,17 +382,17 @@ STEPS: tuple[Step, ...] = (
          reads=("seap.record", "seap.search_load", "seap.framework", "core.anaf_company", "core.entity", "onrc.registration", "onrc.caen", "onrc.status_name",
                 "onrc.status_span", "onrc.role", "aep.mandate", "aep.record_party", "donations.donation", "financials.source_file",
                 "financials.statement", "amepip.enterprise"),
-         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule"), work_mem=MEDIUM_WORK_MEM),
+         writes=("core.data_through", "seap.signal", "seap.signal_member", "seap.signal_rule"), work_mem=WORK_MEM_256MB),
     # after placement, aep and the Signals: seap.search is written here and nowhere else, then the load table is dropped (the rows of a table written once need no vacuum before the rollup)
     Step("search-rows", _search_rows, owns=(P + "search_rows.py", P + "signals/", P + "aep/", *_MF),  # signals/: which rules are Restricted (restricted_slugs); the rest is what that package imports, as for the signals Step
-         reads=("seap.search_load", "seap.record", "core.placement", "aep.record_party", "aep.mandate", "seap.signal", "seap.signal_member"), writes=("seap.search",), work_mem=BIG_WORK_MEM),
+         reads=("seap.search_load", "seap.record", "core.placement", "aep.record_party", "aep.mandate", "seap.signal", "seap.signal_member"), writes=("seap.search",), work_mem=WORK_MEM_512MB),
     Step("rollup", _rollup, owns=(P + "rollup.py",), reads=("seap.search",),
-         writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta"), work_mem=BIG_WORK_MEM),
+         writes=("seap.rollup_cube", "seap.rollup_entity", "seap.rollup_prefix", "seap.rollup_meta"), work_mem=WORK_MEM_512MB),
     Step("search-index", _search_index, owns=(P + "search.py",), reads=("seap.search",)),  # creates the seap.search_bm25 index
     Step("analyze-search", _analyze_search, reads=("seap.search",)),  # statistics only
     Step("onrc-search", _onrc_search, owns=_ONRC_SEARCH, summary_fields=("onrc_search",),
          reads=("seap.record", "seap.search", "onrc.registration", "onrc.status_span", "onrc.name_span", "onrc.caen", "onrc.status_name", "onrc.snapshot"),
-         writes=("onrc.search",), work_mem=ONRC_WORK_MEM),
+         writes=("onrc.search",), work_mem=WORK_MEM_512MB),
     Step("commit", _commit),
 )
 
