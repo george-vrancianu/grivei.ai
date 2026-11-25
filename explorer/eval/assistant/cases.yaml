@@ -186,10 +186,11 @@ cases:
     question: Does Cluj-Napoca city hall also receive public money itself?
     outcome: answer
     expected: |
-      Yes, as a supplier, on its own supplier page: in 2024 it won 14 Records worth 1,766 RON in total (monthly rent paid by
-      Inspectoratul Teritorial de Munca Cluj). Its buyer and supplier figures are never added together or netted.
+      Yes, as a supplier, on its own supplier page: 49 Records worth 8,754.72 RON in all years (in 2024, 14 Records worth 1,766 RON,
+      monthly rent paid by Inspectoratul Teritorial de Munca Cluj). Its buyer and supplier figures are never added together or netted.
     must_cite: ["entity:4305857"]
     check: |
+      SELECT sum(records), round(sum(awarded)/100, 2) FROM seap.rollup_entity WHERE entity_key = '4305857' AND side = 'SUPPLIER';  -- 49 | 8754.72
       SELECT sum(records), round(sum(awarded)/100) FROM seap.rollup_entity WHERE entity_key = '4305857' AND side = 'SUPPLIER' AND award_year = 2024;  -- 14 | 1766
 
   - id: counterparties-cluj-2024
@@ -306,13 +307,14 @@ cases:
     outcome: answer
     expected: |
       They are two entities because ANAF knows two CUIs (4267117 and 10210948), and identity is the CUI, never the name.
-      4267117 buys (1,113 Records as contracting authority); 10210948 appears only as a supplier (3 Records). It does not merge them or
+      4267117 buys (1,113 Records as contracting authority) and also has 9 Records as a supplier; 10210948 appears only as a supplier (3 Records). It does not merge them or
       add their figures, and does not guess why the city has two CUIs.
     must_cite: ["entity:4267117", "entity:10210948"]
     check: |
       SELECT key, identity, display_name FROM core.entity WHERE key IN ('4267117', '10210948');
       SELECT count(*) FROM seap.record WHERE authority_key = '4267117';  -- 1113
       SELECT count(*) FROM seap.record WHERE supplier_cui = '10210948';  -- 3
+      SELECT sum(records) FROM seap.rollup_entity WHERE entity_key = '4267117' AND side = 'SUPPLIER';  -- 9
 
   - id: identity-name-only-cluj
     kind: question
@@ -326,7 +328,7 @@ cases:
       name a winner published as "Municipiul Cluj Napoca" with no CUI: a name-only supplier, a separate entity from the city hall (CUI 4305857).
       It never joins them by name, and says the source documents would have to show who the landlord is.
     must_cite: ["record:DAN1856923", "entity:name-municipiul-cluj-napoca"]
-    must_not_mention: ["4305857"]
+    # no must_not_mention: the answer has to name the city hall's CUI to keep the two apart; joining them is for the judge to catch
 
   - id: suspect-value-pork
     kind: question
