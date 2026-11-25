@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "codegen": "npm run codegen --workspace @grivei/contract",
     "storybook": "storybook dev -p 6006 -c .storybook",
-    "storybook:build": "storybook build -c .storybook -o storybook-static"
+    "storybook:build": "storybook build -c .storybook -o storybook-static",
+    "prototype:assistant": "npm run prototype:assistant --workspace @grivei/app"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

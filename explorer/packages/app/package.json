@@ -8,7 +8,8 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --pool=forks --maxWorkers=4",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "prototype:assistant": "vite --config vite.prototype-assistant.config.ts --open /explore/supplier/2000007"
   },
   "dependencies": {
     "@grivei/contract": "*",
