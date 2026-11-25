@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- throwaway eval harness (#339): untyped OpenRouter and tool JSON */
 // Throwaway eval harness (#339): runs models over the evaluation set, both tiers. Raw transcripts go to ../private/runs/ (gitignored:
-// Private-view transcripts hold Restricted content). Usage: node run.ts [--models a,b] [--tiers public,private] [--cases id1,id2] [--tag name]
+// Private-view transcripts hold Restricted content). Usage: node run.ts [--models a,b] [--tiers public,private] [--cases id1,id2] [--tag name] [--prompt v1|v2]
 import { readFileSync, mkdirSync, appendFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
 import { makeStore, Ledger, type Tier } from "./tools.ts";
-import { runTurn, systemPrompt, type ModelConfig } from "./agent.ts";
+import { runTurn, systemPrompt, type ModelConfig, type PromptVersion } from "./agent.ts";
 
 const here = new URL(".", import.meta.url).pathname;
 const arg = (name: string) => {
@@ -58,6 +58,8 @@ async function main() {
   const models = (arg("models") ?? Object.keys(MODELS).join(",")).split(",");
   const tiers = (arg("tiers") ?? "public,private").split(",") as Tier[];
   const only = arg("cases")?.split(",");
+  const prompt = (arg("prompt") ?? "v2") as PromptVersion;
+  if (prompt !== "v1" && prompt !== "v2") throw new Error(`unknown --prompt ${prompt}`);
   const cases = loadCases().filter((c) => !only || only.includes(c.id));
   const outDir = `${here}../private/runs/${tag}`;
   mkdirSync(outDir, { recursive: true });
@@ -88,14 +90,14 @@ async function main() {
       await acquire(model);
       try {
       const cfg = { ...MODELS[model]!.config, provider: providerFor(tier) };
-      const ctx = { store, pool: db, tier, ledger: new Ledger(), dataThrough };
-      const messages: any[] = [{ role: "system", content: systemPrompt(tier) }];
+      const ctx = { store, pool: db, tier, ledger: new Ledger(), dataThrough, prompt };
+      const messages: any[] = [{ role: "system", content: systemPrompt(tier, prompt) }];
       const turns = turnsOf(c);
       for (let i = 0; i < turns.length; i++) {
         const t = turns[i]!;
         if (t.tier && t.tier !== "both" && t.tier !== tier) continue;
         const r = await runTurn(cfg, ctx, messages, t.question);
-        const row = { model, tier, case: c.id, file: c.file, turn: i, question: t.question, ...r, ledger: [...ctx.ledger.ids] };
+        const row = { model, tier, prompt, case: c.id, file: c.file, turn: i, question: t.question, ...r, ledger: [...ctx.ledger.ids] };
         appendFileSync(`${outDir}/${model}.${tier}.jsonl`, JSON.stringify(row) + "\n");
         console.log(`${model} ${tier} ${c.id}#${i} rounds=${r.rounds} calls=${r.toolCalls.length} $${r.usage.cost.toFixed(5)} ${r.latencyMs}ms${r.error ? " ERROR " + r.error : ""}`);
         if (r.error) break;
