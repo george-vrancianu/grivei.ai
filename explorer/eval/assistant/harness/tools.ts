@@ -78,7 +78,7 @@ function recordRow(ctx: ToolContext, r: RecordRow) {
 /** Cuts rows, never fields, to the budget. */
 function fit(header: Record<string, unknown>, rows: unknown[], total: number) {
   let kept = rows;
-  while (kept.length > 1 && JSON.stringify(kept).length > RESULT_CHAR_BUDGET) kept = kept.slice(0, Math.ceil(kept.length * 0.7));
+  while (kept.length > 1 && JSON.stringify(kept).length > RESULT_CHAR_BUDGET) kept = kept.slice(0, Math.min(kept.length - 1, Math.ceil(kept.length * 0.7))); // at 2 rows, ceil(1.4) = 2 looped forever
   return { ...header, total, truncated: kept.length < total, rows: kept };
 }
 
