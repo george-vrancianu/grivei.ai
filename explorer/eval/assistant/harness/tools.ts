@@ -31,6 +31,8 @@ export interface ToolContext {
   tier: Tier;
   ledger: Ledger;
   dataThrough: Record<string, string>;
+  /** which system prompt and tool descriptions run (#349); the tools' results are the same for both */
+  prompt?: "v1" | "v2";
 }
 
 export function makeStore(tier: Tier) {
@@ -76,7 +78,7 @@ function recordRow(ctx: ToolContext, r: RecordRow) {
 /** Cuts rows, never fields, to the budget. */
 function fit(header: Record<string, unknown>, rows: unknown[], total: number) {
   let kept = rows;
-  while (kept.length > 1 && JSON.stringify(kept).length > RESULT_CHAR_BUDGET) kept = kept.slice(0, Math.ceil(kept.length * 0.7));
+  while (kept.length > 1 && JSON.stringify(kept).length > RESULT_CHAR_BUDGET) kept = kept.slice(0, Math.min(kept.length - 1, Math.ceil(kept.length * 0.7))); // at 2 rows, ceil(1.4) = 2 looped forever
   return { ...header, total, truncated: kept.length < total, rows: kept };
 }
 
@@ -391,10 +393,50 @@ const defs: Record<string, { description: string; parameters: object; run: (ctx:
   },
 };
 
-export function toolsFor(tier: Tier) {
+// --- v2 descriptions (#349): what each tool lets the model cite, and the Signal rules (from the methodology copy) -----------------
+
+/** One line per rule: what it tests, with its threshold, then its possible lawful explanations (packages/app/src/copy/methodologyEn.ts). */
+const RULES: Record<string, string> = {
+  OVER_CAP: "a direct purchase strictly above the statutory cap for its date and type (and below 10x it). Lawful: a call-off under a framework, an exception in the law, a data-entry error in the value or type.",
+  SPLITTING: "two or more direct purchases from the same authority to the same supplier in the same CPV group, within 30 days, each at or under the cap but together above it. Lawful: separate needs, separate budget lines, unrelated items sharing a CPV group.",
+  FRAMEWORK_OVERRUN: "the subsequent contracts reported under a framework agreement add up to strictly more than 110% of its ceiling (frameworks from 2021). Lawful: price indexation, modifications the law allows.",
+  NO_PUBLICATION: "a contract awarded by negotiation without prior publication, whatever its value. Lawful: an emergency, a single possible supplier, another legal ground.",
+  YOUNG_FIRM: "a supplier whose first Record comes within 90 days of its ONRC registration, or that wins a Record of at least 1,000,000 RON within 180 days of it. Lawful: a company set up for one contract, an established business re-registered after a restructuring.",
+  NO_CONSTRUCTION_CAEN: "a works Record of at least 1,000,000 RON won by a firm with no construction CAEN code among its authorised codes. Lawful: a subcontractor or partner does the building, an out-of-date register, a code not listed.",
+  AFTER_STRIKE_OFF: "a Record dated after the day ANAF shows the supplier struck off. Lawful: a delay between award and publication, a successor company, a strike-off later reversed.",
+  INSOLVENCY: "the supplier is now (ONRC's newest snapshot; the status is undated) in insolvency or reorganisation and has Records in the last six months: never 'won while insolvent'. Lawful: awarded before the proceedings, a reorganisation plan lets the business go on.",
+  FEW_EMPLOYEES: "a supplier awarded at least 5,000,000 RON in a calendar year that reported at most one average employee to MF for that fiscal year. Lawful: subcontracted work, staff employed through another company, a yearly average understating a seasonal workforce, a mistaken figure on the statement.",
+  NO_FINANCIAL_STATEMENT: "an SRL or SA awarded at least 1,000,000 RON in a year with no MF financial statement for that year or the year before. Lawful: filed late or under another CUI, newly registered, incomplete MF files.",
+  DONOR_TO_PARTY: "a firm won a Record from an authority whose Mandate's Party had received a donation or loan from that firm (matched by CUI) in the 365 days before the award; a subordinate body's Party is derived, a weaker link. The amount is never shown or added. Lawful: donations within legal limits are lawful and public, a donor can win in open competition, the local branch may have had no say.",
+  SOE_BOARD_IN_SUPPLIER: "a confirmed person holds a role both in a public enterprise and in a private supplier the enterprise awarded a Record; roles are undated. Lawful: sitting on several boards is lawful, the roles may not overlap the award, an open competition.",
+};
+
+const CITE = "Cite with the ids in the result, copied exactly.";
+const V2: Record<string, (tier: Tier) => string> = {
+  search: () =>
+    `Find entities (contracting authorities, suppliers) or Records. source=SEAP (default) or ONRC (company register). what=entities (default) returns every candidate with its CUI, exact name matches first, and never picks one: if several share a name, they are different entities. what=records lists SEAP Records (contracts, award notices, direct purchases), filtered by authority/supplier key, channel, signal_rule and date window, ordered VALUE_DESC (use it to find the Record that dominates a total), DATE_DESC or DATE_ASC. ${CITE} Each row's id is [entity:…] or [record:…].`,
+  entity: () =>
+    `One entity by key: identity and CUI, SEAP totals per role (awarded value, Record count, Records with no value, suspect values left out; optional date window), Leadership (Mandates with Party and dates; for a subordinate body, the authority it reports to), ONRC registration and administrators (register roles, not beneficial owners), MF financials (turnover, average employees), BaniPartide donations, and every Source's Data-through date. ${CITE} Cite its facts with [entity:<key>].`,
+  counterparties: () =>
+    `An entity's top counterparties by awarded value in a role (AUTHORITY: its suppliers; SUPPLIER: its buyers), with totals and Record counts, optional window; a joint award is split in equal shares. With other_key: that pair's direct link only (total, first and last award dates, consortia, largest Records). ${CITE} There is no counterparties id: cite each counterparty [entity:…] and each Record [record:…].`,
+  signals: (tier) =>
+    `Signals (rule-based flags worth verifying in the documents, never scores) of an entity, or of a rule+supplier: each Signal's measure in RON, its Records, counts per rule, and each rule's national base rate and window. ${CITE} Cite a Signal with its id exactly as given ([signal:RULE@authority/supplier] or [signal:RULE@authority]) and its Records with [record:…].
+Rules (what each tests; possible lawful explanations to give with it):
+${Object.entries(RULES).filter(([r]) => tier === "private" || r !== "SOE_BOARD_IN_SUPPLIER").map(([r, t]) => `- ${r}: ${t}`).join("\n")}`,
+  record: () =>
+    `One SEAP Record by code: title, date, winners with shares, CPV, procedure, value (suspect values flagged and never counted), source URL, party at award, Signals; for a framework, its ceiling, subsequent contracts reported and the first 10 of them. ${CITE} [record:<code>], and [source:<url>] for the SEAP page.`,
+  coverage: () =>
+    "A Source's Data-through dates and the quarters not fully loaded (gaps, possibly incomplete: totals and counts touching them may be understated). Call it when an answer covers recent quarters or a whole period. Its facts need no citation id: state the dates and quarters in the sentence.",
+  web_search: () =>
+    "Search the web for Outside sources about an entity already in this conversation. Only when the user explicitly asks. Results are cited by URL as [outside:<url>], kept apart from graph facts and never joined to entities by name.",
+  person: () =>
+    "RESTRICTED. A person's roles across organisations (ONRC person key: same name and full birth date), from a person id returned by `entity`. Roles are register roles, undated. Cite [person:<id>] and each organisation's [entity:…].",
+};
+
+export function toolsFor(tier: Tier, version: "v1" | "v2" = "v2") {
   return Object.entries(defs)
     .filter(([, d]) => !d.tier || d.tier === tier)
-    .map(([name, d]) => ({ type: "function" as const, function: { name, description: d.description, parameters: d.parameters } }));
+    .map(([name, d]) => ({ type: "function" as const, function: { name, description: version === "v2" ? V2[name]!(tier) : d.description, parameters: d.parameters } }));
 }
 
 export async function runTool(ctx: ToolContext, name: string, args: unknown): Promise<string> {

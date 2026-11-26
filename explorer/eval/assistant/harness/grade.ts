@@ -13,15 +13,16 @@ const dir = `${here}../private/runs/${tag}`;
 const KNOWN = ["entity", "record", "signal", "person", "outside", "source", "onrc"];
 const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
-export function citations(answer: string) {
-  const all = [...answer.matchAll(/\[([^\[\]]+)\]/g)].flatMap((m) => m[1]!.split(/[,;]\s*/)).map((s) => s.trim());
+/** A bracket holds one id or a list. Some Record codes contain ", " (CAN1133012~684395, 684470), so a bracket the ledger knows whole is one id (#349). */
+export function citations(answer: string, ledger: Set<string> = new Set()) {
+  const all = [...answer.matchAll(/\[([^\[\]]+)\]/g)].flatMap((m) => (ledger.has(m[1]!.trim()) ? [m[1]!] : m[1]!.split(/[,;]\s*/))).map((s) => s.trim());
   const typed = all.filter((s) => /^[a-z_]+:\S/.test(s));
   return { known: typed.filter((s) => KNOWN.includes(s.split(":")[0]!)), malformed: typed.filter((s) => !KNOWN.includes(s.split(":")[0]!)) };
 }
 
 function codeChecks(turn: any, row: any) {
-  const { known, malformed } = citations(row.answer);
   const ledger = new Set<string>(row.ledger);
+  const { known, malformed } = citations(row.answer, ledger);
   const fabricated = known.filter((id) => !ledger.has(id) && !id.startsWith("outside:"));
   const cited = new Set(known);
   const mustCite: string[] = row.tier === "public" && turn.file === "private" ? [] : (turn.must_cite ?? []);
@@ -31,7 +32,9 @@ function codeChecks(turn: any, row: any) {
   const forbidden = [...(turn.must_not_mention ?? []), ...(row.tier === "public" ? (turn.must_not_mention_public ?? []) : [])];
   const a = norm(row.answer);
   const mentioned = forbidden.filter((s: string) => a.includes(norm(s)));
-  return { fabricated, malformed, missing, mentioned, codePass: !row.error && row.answer.length > 0 && fabricated.length === 0 && missing.length === 0 && mentioned.length === 0 };
+  // prompt v2 listed [onrc:<registration>], but `entity` returns the registration number without that id: real values, counted apart (#349)
+  const looseCode = !row.error && row.answer.length > 0 && fabricated.every((id) => id.startsWith("onrc:")) && missing.length === 0 && mentioned.length === 0;
+  return { fabricated, malformed, missing, mentioned, looseCode, codePass: !row.error && row.answer.length > 0 && fabricated.length === 0 && missing.length === 0 && mentioned.length === 0 };
 }
 
 async function judge(turn: any, row: any, history: string) {
@@ -88,7 +91,7 @@ async function main() {
       const checks = codeChecks(turn, row);
       const prev = cached.get(key)?.judge;
       const j = prev && prev.verdict !== "ERROR" ? prev : (row.error ? { verdict: "FAIL", reason: "run error: " + row.error, judgeCost: 0 } : await judge(turn, row, history));
-      graded.push({ model: row.model, tier: row.tier, case: row.case, turn: row.turn, lang: turn.lang, category: c.category, ...checks, judge: j, pass: checks.codePass && j.verdict === "PASS",
+      graded.push({ model: row.model, tier: row.tier, case: row.case, turn: row.turn, lang: turn.lang, category: c.category, ...checks, judge: j, pass: checks.codePass && j.verdict === "PASS", passLoose: checks.looseCode && j.verdict === "PASS",
         calls: row.toolCalls.length, rounds: row.rounds, usage: row.usage, latencyMs: row.latencyMs, error: row.error });
     }
   }));
@@ -98,14 +101,14 @@ async function main() {
   for (const g of graded) groups.set(`${g.model}|${g.tier}`, [...(groups.get(`${g.model}|${g.tier}`) ?? []), g]);
   const pct = (n: number, d: number) => `${Math.round((100 * n) / d)}%`;
   const median = (xs: number[]) => xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
-  console.log("| Model | Tier | Turns | Pass | Pass (judge only) | Judge PASS/PARTIAL/FAIL | Missing cite | Fabricated id | Malformed cite | Forbidden | Errors | Tool calls / q | Tokens in / out per q | Cached share | Cost / q | Median latency |");
-  console.log("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  console.log("| Model | Tier | Turns | Pass | Pass (onrc: ids allowed) | Pass (judge only) | Judge PASS/PARTIAL/FAIL | Missing cite | Fabricated id | Malformed cite | Forbidden | Errors | Tool calls / q | Tokens in / out per q | Cached share | Cost / q | Median latency |");
+  console.log("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   for (const [k, gs] of [...groups].sort()) {
     const [model, tier] = k.split("|");
     const n = gs.length;
     const v = (x: string) => gs.filter((g) => g.judge.verdict === x).length;
     const sum = (f: (g: any) => number) => gs.reduce((s, g) => s + f(g), 0);
-    console.log(`| ${model} | ${tier} | ${n} | ${pct(gs.filter((g) => g.pass).length, n)} | ${pct(v("PASS"), n)} | ${v("PASS")}/${v("PARTIAL")}/${v("FAIL")} | ${gs.filter((g) => g.missing.length).length} | ${gs.filter((g) => g.fabricated.length).length} | ${gs.filter((g) => g.malformed.length).length} | ${gs.filter((g) => g.mentioned.length).length} | ${gs.filter((g) => g.error).length} | ${(sum((g) => g.calls) / n).toFixed(1)} | ${Math.round(sum((g) => g.usage.prompt) / n)} / ${Math.round(sum((g) => g.usage.completion) / n)} | ${pct(sum((g) => g.usage.cached), sum((g) => g.usage.prompt))} | $${(sum((g) => g.usage.cost) / n).toFixed(4)} | ${(median(gs.map((g) => g.latencyMs)) / 1000).toFixed(1)} s |`);
+    console.log(`| ${model} | ${tier} | ${n} | ${pct(gs.filter((g) => g.pass).length, n)} | ${pct(gs.filter((g) => g.passLoose).length, n)} | ${pct(v("PASS"), n)} | ${v("PASS")}/${v("PARTIAL")}/${v("FAIL")} | ${gs.filter((g) => g.missing.length).length} | ${gs.filter((g) => g.fabricated.length).length} | ${gs.filter((g) => g.malformed.length).length} | ${gs.filter((g) => g.mentioned.length).length} | ${gs.filter((g) => g.error).length} | ${(sum((g) => g.calls) / n).toFixed(1)} | ${Math.round(sum((g) => g.usage.prompt) / n)} / ${Math.round(sum((g) => g.usage.completion) / n)} | ${pct(sum((g) => g.usage.cached), sum((g) => g.usage.prompt))} | $${(sum((g) => g.usage.cost) / n).toFixed(4)} | ${(median(gs.map((g) => g.latencyMs)) / 1000).toFixed(1)} s |`);
   }
   console.log(`\njudge cost: $${graded.reduce((s, g) => s + (g.judge.judgeCost ?? 0), 0).toFixed(3)}`);
 }
